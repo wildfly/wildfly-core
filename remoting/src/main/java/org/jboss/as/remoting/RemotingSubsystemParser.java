@@ -22,39 +22,35 @@
 
 package org.jboss.as.remoting;
 
-import org.jboss.as.model.AbstractModelRootElement;
-import org.jboss.msc.service.Location;
+import org.jboss.as.model.ParseResult;
+import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
 /**
- * An element which defines an authentication provider for a Remoting connector.
+ * The root element parser for the Remoting subsystem.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public abstract class AbstractAuthenticationProviderElement<E extends AbstractAuthenticationProviderElement<E>> extends AbstractModelRootElement<E> {
+public final class RemotingSubsystemParser implements XMLElementReader<ParseResult<? super RemotingSubsystemElement>> {
 
-    private static final long serialVersionUID = -3738115019035803045L;
-
-    /**
-     * Construct a new instance.
-     *
-     * @param location the location at which this element was declared
-     * @param elementName the element name
-     */
-    protected AbstractAuthenticationProviderElement(final Location location, final QName elementName) {
-        super(location, elementName);
+    private RemotingSubsystemParser() {
     }
 
+    private static final RemotingSubsystemParser INSTANCE = new RemotingSubsystemParser();
+
     /**
-     * Construct a new instance.
+     * Get the instance.
      *
-     * @param reader the reader from which to build this element
-     * @throws XMLStreamException if an error occurs
+     * @return the instance
      */
-    protected AbstractAuthenticationProviderElement(final XMLExtendedStreamReader reader) throws XMLStreamException {
-        super(reader);
+    public static RemotingSubsystemParser getInstance() {
+        return INSTANCE;
+    }
+
+    /** {@inheritDoc} */
+    public void readElement(final XMLExtendedStreamReader reader, final ParseResult<? super RemotingSubsystemElement> result) throws XMLStreamException {
+        result.setResult(new RemotingSubsystemElement(reader));
     }
 }
