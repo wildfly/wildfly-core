@@ -22,38 +22,35 @@
 
 package org.jboss.as.remoting;
 
-import org.jboss.as.model.AbstractModelUpdate;
+import org.jboss.as.model.ParseResult;
+import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+
+import javax.xml.stream.XMLStreamException;
 
 /**
- * An update which removes a connector from the remoting container.
+ * The root element parser for the Remoting subsystem.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemoveConnectorUpdate extends AbstractModelUpdate<RemotingSubsystemElement> {
+public final class RemotingSubsystemParser implements XMLElementReader<ParseResult<? super RemotingSubsystemElement>> {
 
-    private static final long serialVersionUID = -8965990593053845956L;
+    private RemotingSubsystemParser() {
+    }
 
-    private final String name;
+    private static final RemotingSubsystemParser INSTANCE = new RemotingSubsystemParser();
 
     /**
-     * Construct a new instance.
+     * Get the instance.
      *
-     * @param name the name of the connector to remove
+     * @return the instance
      */
-    public RemoveConnectorUpdate(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        this.name = name;
+    public static RemotingSubsystemParser getInstance() {
+        return INSTANCE;
     }
 
     /** {@inheritDoc} */
-    protected Class<RemotingSubsystemElement> getModelElementType() {
-        return RemotingSubsystemElement.class;
-    }
-
-    /** {@inheritDoc} */
-    protected AbstractModelUpdate<RemotingSubsystemElement> applyUpdate(final RemotingSubsystemElement element) {
-        return new AddConnectorUpdate(element.removeConnector(name).clone());
+    public void readElement(final XMLExtendedStreamReader reader, final ParseResult<? super RemotingSubsystemElement> result) throws XMLStreamException {
+        result.setResult(new RemotingSubsystemElement(reader));
     }
 }
