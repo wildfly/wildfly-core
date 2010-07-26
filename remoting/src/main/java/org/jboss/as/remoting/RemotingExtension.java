@@ -22,38 +22,27 @@
 
 package org.jboss.as.remoting;
 
-import org.jboss.as.model.AbstractModelUpdate;
+import org.jboss.as.Extension;
+import org.jboss.msc.service.BatchBuilder;
+import org.jboss.msc.service.ServiceContainer;
+import org.jboss.staxmapper.XMLMapper;
+
+import javax.xml.namespace.QName;
 
 /**
- * An update which removes a connector from the remoting container.
+ * The implementation of the Remoting extension.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemoveConnectorUpdate extends AbstractModelUpdate<RemotingSubsystemElement> {
+public final class RemotingExtension implements Extension {
 
-    private static final long serialVersionUID = -8965990593053845956L;
-
-    private final String name;
-
-    /**
-     * Construct a new instance.
-     *
-     * @param name the name of the connector to remove
-     */
-    public RemoveConnectorUpdate(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        this.name = name;
+    /** {@inheritDoc} */
+    public void registerElementHandlers(final XMLMapper mapper) {
+        mapper.registerRootElement(new QName(Namespace.REMOTING_1_0.getUriString(), Element.SUBSYSTEM.getLocalName()), RemotingSubsystemParser.getInstance());
     }
 
     /** {@inheritDoc} */
-    protected Class<RemotingSubsystemElement> getModelElementType() {
-        return RemotingSubsystemElement.class;
-    }
-
-    /** {@inheritDoc} */
-    protected AbstractModelUpdate<RemotingSubsystemElement> applyUpdate(final RemotingSubsystemElement element) {
-        return new AddConnectorUpdate(element.removeConnector(name).clone());
+    public void activate(final ServiceContainer container, final BatchBuilder batchBuilder) {
+        // no actions needed
     }
 }

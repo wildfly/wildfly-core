@@ -20,40 +20,45 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.remoting;
+package org.jboss.as.threads;
 
-import org.jboss.as.model.AbstractModelUpdate;
+import java.io.Serializable;
 
 /**
- * An update which removes a connector from the remoting container.
- *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemoveConnectorUpdate extends AbstractModelUpdate<RemotingSubsystemElement> {
+public final class ScaledCount implements Serializable{
+    private static final long serialVersionUID = 50591622989801087L;
 
-    private static final long serialVersionUID = -8965990593053845956L;
+    private final long count;
+    private final long perCpu;
 
-    private final String name;
-
-    /**
-     * Construct a new instance.
-     *
-     * @param name the name of the connector to remove
-     */
-    public RemoveConnectorUpdate(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        this.name = name;
+    public ScaledCount(final long count, final long perCpu) {
+        this.count = count;
+        this.perCpu = perCpu;
     }
 
-    /** {@inheritDoc} */
-    protected Class<RemotingSubsystemElement> getModelElementType() {
-        return RemotingSubsystemElement.class;
+    public long getCount() {
+        return count;
     }
 
-    /** {@inheritDoc} */
-    protected AbstractModelUpdate<RemotingSubsystemElement> applyUpdate(final RemotingSubsystemElement element) {
-        return new AddConnectorUpdate(element.removeConnector(name).clone());
+    public long getPerCpu() {
+        return perCpu;
+    }
+
+    public long elementHash() {
+        return Long.rotateLeft(perCpu, 1) ^ count;
+    }
+
+    public boolean equals(final Object obj) {
+        return obj instanceof ScaledCount && equals((ScaledCount) obj);
+    }
+
+    public boolean equals(final ScaledCount obj) {
+        return obj != null && obj.count == count && obj.perCpu == perCpu;
+    }
+
+    public int hashCode() {
+        return (int) elementHash();
     }
 }

@@ -22,38 +22,54 @@
 
 package org.jboss.as.remoting;
 
-import org.jboss.as.model.AbstractModelUpdate;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * An update which removes a connector from the remoting container.
+ * An enumeration of the supported Remoting subsystem namespaces.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemoveConnectorUpdate extends AbstractModelUpdate<RemotingSubsystemElement> {
+public enum Namespace {
+    // must be first
+    UNKNOWN(null),
 
-    private static final long serialVersionUID = -8965990593053845956L;
+    REMOTING_1_0("urn:jboss:domain:remoting:1.0")
+    ;
+
+    /**
+     * The current namespace version.
+     */
+    public static final Namespace CURRENT = REMOTING_1_0;
 
     private final String name;
 
-    /**
-     * Construct a new instance.
-     *
-     * @param name the name of the connector to remove
-     */
-    public RemoveConnectorUpdate(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
+    Namespace(final String name) {
         this.name = name;
     }
 
-    /** {@inheritDoc} */
-    protected Class<RemotingSubsystemElement> getModelElementType() {
-        return RemotingSubsystemElement.class;
+    /**
+     * Get the URI of this namespace.
+     *
+     * @return the URI
+     */
+    public String getUriString() {
+        return name;
     }
 
-    /** {@inheritDoc} */
-    protected AbstractModelUpdate<RemotingSubsystemElement> applyUpdate(final RemotingSubsystemElement element) {
-        return new AddConnectorUpdate(element.removeConnector(name).clone());
+    private static final Map<String, Namespace> MAP;
+
+    static {
+        final Map<String, Namespace> map = new HashMap<String, Namespace>();
+        for (Namespace namespace : values()) {
+            final String name = namespace.getUriString();
+            if (name != null) map.put(name, namespace);
+        }
+        MAP = map;
+    }
+
+    public static Namespace forUri(String uri) {
+        final Namespace element = MAP.get(uri);
+        return element == null ? UNKNOWN : element;
     }
 }
