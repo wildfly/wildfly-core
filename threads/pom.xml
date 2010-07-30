@@ -33,27 +33,25 @@
     </parent>
 
     <groupId>org.jboss.as</groupId>
-    <artifactId>jboss-as-remoting</artifactId>
-    <version>7.0.0.Beta1-SNAPSHOT</version>
+    <artifactId>jboss-as-threads</artifactId>
 
-    <name>JBoss Application Server: Remoting Subsystem</name>
+    <name>JBoss Application Server: Threading Subsystem</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>
-            <groupId>org.jboss.marshalling</groupId>
-            <artifactId>jboss-marshalling</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.msc</groupId>
-            <artifactId>jboss-msc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.remoting3</groupId>
-            <artifactId>jboss-remoting</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.xnio</groupId>
-            <artifactId>xnio-api</artifactId>
+            <groupId>org.jboss.threads</groupId>
+            <artifactId>jboss-threads</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>

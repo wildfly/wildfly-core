@@ -20,40 +20,37 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.remoting;
+package org.jboss.as.threads;
 
-import org.jboss.as.model.AbstractModelUpdate;
+import org.jboss.as.model.ParseResult;
+import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+
+import javax.xml.stream.XMLStreamException;
 
 /**
- * An update which removes a connector from the remoting container.
+ * The root element handler for threads subsystem elements.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemoveConnectorUpdate extends AbstractModelUpdate<RemotingSubsystemElement> {
+public final class ThreadsParser implements XMLElementReader<ParseResult<? super ThreadsSubsystemElement>> {
 
-    private static final long serialVersionUID = -8965990593053845956L;
+    private static final ThreadsParser INSTANCE = new ThreadsParser();
 
-    private final String name;
+    private ThreadsParser() {
+    }
 
     /**
-     * Construct a new instance.
+     * Get the instance.
      *
-     * @param name the name of the connector to remove
+     * @return the instance
      */
-    public RemoveConnectorUpdate(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        this.name = name;
+    public static ThreadsParser getInstance() {
+        return INSTANCE;
     }
 
     /** {@inheritDoc} */
-    protected Class<RemotingSubsystemElement> getModelElementType() {
-        return RemotingSubsystemElement.class;
-    }
-
-    /** {@inheritDoc} */
-    protected AbstractModelUpdate<RemotingSubsystemElement> applyUpdate(final RemotingSubsystemElement element) {
-        return new AddConnectorUpdate(element.removeConnector(name).clone());
+    public void readElement(final XMLExtendedStreamReader reader, final ParseResult<? super ThreadsSubsystemElement> parseResult) throws XMLStreamException {
+        parseResult.setResult(new ThreadsSubsystemElement(reader));
     }
 }

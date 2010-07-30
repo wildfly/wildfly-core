@@ -20,40 +20,24 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.remoting;
+package org.jboss.as.threads;
 
-import org.jboss.as.model.AbstractModelUpdate;
+import org.jboss.as.Extension;
+import org.jboss.msc.service.BatchBuilder;
+import org.jboss.msc.service.ServiceContainer;
+import org.jboss.staxmapper.XMLMapper;
+
+import javax.xml.namespace.QName;
 
 /**
- * An update which removes a connector from the remoting container.
- *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class RemoveConnectorUpdate extends AbstractModelUpdate<RemotingSubsystemElement> {
+public final class ThreadsExtension implements Extension {
 
-    private static final long serialVersionUID = -8965990593053845956L;
-
-    private final String name;
-
-    /**
-     * Construct a new instance.
-     *
-     * @param name the name of the connector to remove
-     */
-    public RemoveConnectorUpdate(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        this.name = name;
+    public void registerElementHandlers(final XMLMapper mapper) {
+        mapper.registerRootElement(new QName(Namespace.CURRENT.getUriString(), Element.SUBSYSTEM.getLocalName()), ThreadsParser.getInstance());
     }
 
-    /** {@inheritDoc} */
-    protected Class<RemotingSubsystemElement> getModelElementType() {
-        return RemotingSubsystemElement.class;
-    }
-
-    /** {@inheritDoc} */
-    protected AbstractModelUpdate<RemotingSubsystemElement> applyUpdate(final RemotingSubsystemElement element) {
-        return new AddConnectorUpdate(element.removeConnector(name).clone());
+    public void activate(final ServiceContainer container, final BatchBuilder batchBuilder) {
     }
 }
