@@ -20,27 +20,27 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.threads;
-
-import org.jboss.as.Extension;
-import org.jboss.logging.Logger;
-import org.jboss.msc.service.BatchBuilder;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.staxmapper.XMLMapper;
-
-import javax.xml.namespace.QName;
+/**
+ * 
+ */
+package org.jboss.as.server;
 
 /**
- * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * A ServerCommunicationHandlerFactory.
+ * 
+ * @author John E. Bailey
  */
-public final class ThreadsExtension implements Extension {
-    private static final Logger log = Logger.getLogger("org.jboss.as.threads");
+public final class ServerCommunicationHandlerFactory {
 
-    public void registerElementHandlers(final XMLMapper mapper) {
-        mapper.registerRootElement(new QName(Namespace.CURRENT.getUriString(), Element.SUBSYSTEM.getLocalName()), ThreadsParser.getInstance());
+    private static final ServerCommunicationHandlerFactory INSTANCE = new ServerCommunicationHandlerFactory();
+    
+    public static ServerCommunicationHandlerFactory getInstance() {
+        return INSTANCE;
     }
-
-    public void activate(final ServiceContainer container, final BatchBuilder batchBuilder) {
-        log.info("Activating Threading Extension");
+    
+    public ServerCommunicationHandler getProcessManagerSlave(ServerEnvironment environment, MessageHandler handler) {
+        return new ServerCommunicationHandler(environment.getStdin(), environment.getStdout(), handler);
     }
+    
+    private ServerCommunicationHandlerFactory() {}
 }
