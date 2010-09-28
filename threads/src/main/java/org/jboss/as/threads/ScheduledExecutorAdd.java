@@ -20,40 +20,34 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.threads;
 
-import org.jboss.as.model.AbstractModelElement;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import javax.xml.stream.XMLStreamException;
+import org.jboss.as.model.UpdateFailedException;
+import org.jboss.as.model.UpdateResultHandler;
+import org.jboss.msc.service.ServiceContainer;
 
 /**
- * The {@code filter} element which contains exactly one other filter definition.
- *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class FilterElement extends AbstractModelElement<FilterElement> {
+public final class ScheduledExecutorAdd extends AbstractThreadsSubsystemUpdate<Void> {
 
-    private static final long serialVersionUID = -8554228483741953481L;
+    private static final long serialVersionUID = 5228895749512255692L;
 
-    private final FilterType value;
+    private final String name;
+    private final ScaledCount maxSize;
 
-    FilterElement(final FilterType value) {
-        this.value = value;
+    public ScheduledExecutorAdd(final String name, final ScaledCount maxSize) {
+        this.name = name;
+        this.maxSize = maxSize;
     }
 
-    protected Class<FilterElement> getElementClass() {
-        return FilterElement.class;
+    public AbstractThreadsSubsystemUpdate<?> getCompensatingUpdate(final ThreadsSubsystemElement original) {
+        return null;
     }
 
-    public void writeContent(final XMLExtendedStreamWriter streamWriter) throws XMLStreamException {
-        streamWriter.writeStartElement(Element.FILTER.getLocalName());
-        value.writeContent(streamWriter);
-        // end our element
-        streamWriter.writeEndElement();
+    protected <P> void applyUpdate(final ServiceContainer container, final UpdateResultHandler<? super Void, P> handler, final P param) {
     }
 
-    private long elementHash() {
-        return value.hashCode() & 0xFFFFFFFFL;
+    protected void applyUpdate(final ThreadsSubsystemElement element) throws UpdateFailedException {
     }
 }

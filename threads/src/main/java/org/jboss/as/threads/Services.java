@@ -20,40 +20,23 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.threads;
 
-import org.jboss.as.model.AbstractModelElement;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import javax.xml.stream.XMLStreamException;
+import org.jboss.msc.service.ServiceName;
 
 /**
- * The {@code filter} element which contains exactly one other filter definition.
- *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class FilterElement extends AbstractModelElement<FilterElement> {
+final class Services {
 
-    private static final long serialVersionUID = -8554228483741953481L;
-
-    private final FilterType value;
-
-    FilterElement(final FilterType value) {
-        this.value = value;
+    private Services() {
     }
 
-    protected Class<FilterElement> getElementClass() {
-        return FilterElement.class;
-    }
+    private static final ServiceName THREAD = ServiceName.JBOSS.append("thread");
+    private static final ServiceName FACTORY = THREAD.append("factory");
+    private static final ServiceName EXECUTOR = THREAD.append("executor");
 
-    public void writeContent(final XMLExtendedStreamWriter streamWriter) throws XMLStreamException {
-        streamWriter.writeStartElement(Element.FILTER.getLocalName());
-        value.writeContent(streamWriter);
-        // end our element
-        streamWriter.writeEndElement();
-    }
-
-    private long elementHash() {
-        return value.hashCode() & 0xFFFFFFFFL;
+    static ServiceName threadFactoryName(String name) {
+        return FACTORY.append(name);
     }
 }

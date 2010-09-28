@@ -20,40 +20,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.threads;
 
-import org.jboss.as.model.AbstractModelElement;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import javax.xml.stream.XMLStreamException;
+import org.jboss.as.model.AbstractSubsystemUpdate;
 
 /**
- * The {@code filter} element which contains exactly one other filter definition.
- *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class FilterElement extends AbstractModelElement<FilterElement> {
+public abstract class AbstractThreadsSubsystemUpdate<R> extends AbstractSubsystemUpdate<ThreadsSubsystemElement, R> {
 
-    private static final long serialVersionUID = -8554228483741953481L;
+    private static final long serialVersionUID = -4615080847805324009L;
 
-    private final FilterType value;
-
-    FilterElement(final FilterType value) {
-        this.value = value;
+    protected AbstractThreadsSubsystemUpdate() {
+        this(false);
     }
 
-    protected Class<FilterElement> getElementClass() {
-        return FilterElement.class;
+    protected AbstractThreadsSubsystemUpdate(final boolean restart) {
+        super(Namespace.CURRENT.getUriString(), restart);
     }
 
-    public void writeContent(final XMLExtendedStreamWriter streamWriter) throws XMLStreamException {
-        streamWriter.writeStartElement(Element.FILTER.getLocalName());
-        value.writeContent(streamWriter);
-        // end our element
-        streamWriter.writeEndElement();
+    public final Class<ThreadsSubsystemElement> getModelElementType() {
+        return ThreadsSubsystemElement.class;
     }
 
-    private long elementHash() {
-        return value.hashCode() & 0xFFFFFFFFL;
-    }
+    public abstract AbstractThreadsSubsystemUpdate<?> getCompensatingUpdate(final ThreadsSubsystemElement original);
 }
