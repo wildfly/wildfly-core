@@ -20,50 +20,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.jmx;
+package org.jboss.as.remoting;
 
-import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.as.model.AbstractSubsystemElement;
 import org.jboss.as.model.AbstractSubsystemUpdate;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
- * JMX Subsystem element implementation.
+ * The abstract remoting subsystem update.
  *
- * @author John Bailey
+ * @author Emanuel Muckenhuber
  */
-class JmxSubsystemElement extends AbstractSubsystemElement<JmxSubsystemElement> {
+public abstract class AbstractRemotingSubsystemUpdate<R> extends AbstractSubsystemUpdate<RemotingSubsystemElement, R> {
 
-    private static final long serialVersionUID = 4808972600600585073L;
+    private static final long serialVersionUID = 2153633061736452981L;
 
-    /**
-     * Construct a new instance.
-     */
-    public JmxSubsystemElement() {
-        super(Namespace.JMX_1_0.getUriString());
+    protected AbstractRemotingSubsystemUpdate() {
+        super(Namespace.REMOTING_1_0.getUriString());
+    }
+
+    protected AbstractRemotingSubsystemUpdate(final boolean restart) {
+        super(Namespace.REMOTING_1_0.getUriString(), restart);
     }
 
     /** {@inheritDoc} */
-    protected Class<JmxSubsystemElement> getElementClass() {
-        return JmxSubsystemElement.class;
-    }
-
-    /** {@inheritDoc} */
-    public void writeContent(final XMLExtendedStreamWriter streamWriter) throws XMLStreamException {
-        streamWriter.writeEndElement();
-    }
-
-    /** {@inheritDoc} */
-    protected void getClearingUpdates(List<? super AbstractSubsystemUpdate<JmxSubsystemElement, ?>> list) {
-        // TODO Auto-generated method stub
-    }
-
-    /** {@inheritDoc} */
-    protected boolean isEmpty() {
-        // TODO Auto-generated method stub
-        return false;
+    public Class<RemotingSubsystemElement> getModelElementType() {
+        return RemotingSubsystemElement.class;
     }
 }
