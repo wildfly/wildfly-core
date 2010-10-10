@@ -22,36 +22,38 @@
 
 package org.jboss.as.server;
 
+import org.jboss.as.model.AbstractServerModelUpdate;
+import org.jboss.as.model.UpdateResultHandler;
+import org.jboss.msc.service.ServiceName;
 
 /**
- * Used to override System.exit() calls. For our tests we don't
- * want System.exit to have any effect.
+ * The API entry point for a server controller.
  *
- * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
- * @version $Revision: 1.1 $
+ * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public class SystemExiter {
-    private static Exiter exiter;
+public interface ServerController {
 
-    public static void initialize(Exiter exiter) {
-        SystemExiter.exiter = exiter;
-    }
+    /**
+     * The name at which this controller is installed.
+     */
+    ServiceName SERVICE_NAME = ServiceName.JBOSS.append("as", "server", "controller");
 
-    public static void exit(int status) {
-        getExiter().exit(status);
-    }
+    /**
+     * Apply a persistent update.
+     *
+     * @param update the update to apply
+     * @param resultHandler the result handler
+     * @param param the result handler parameter
+     * @param <R> the result type
+     * @param <P> the result handler parameter type
+     */
+    <R, P> void update(AbstractServerModelUpdate<R> update, UpdateResultHandler<R, P> resultHandler, P param);
 
-    private static Exiter getExiter() {
-        return exiter == null ? new DefaultExiter() : exiter;
-    }
+    // TODO - runtime-only updates
+    // <R, P> void update(Something<R> update, UpdateResultHandler<R, P> resultHandler, P param);
 
-    public interface Exiter {
-        void exit(int status);
-    }
-
-    private static class DefaultExiter implements Exiter{
-        public void exit(int status) {
-            System.exit(status);
-        }
-    }
+    /**
+     * Shut down the server.
+     */
+    void shutdown();
 }
