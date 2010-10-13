@@ -22,11 +22,21 @@
 
 package org.jboss.as.protocol;
 
+import java.io.IOException;
+
 /**
-* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
-*/
-public enum Status {
-    MORE,
-    END_OF_LINE,
-    END_OF_STREAM;
+ * A handler for incoming protocol connections.
+ *
+ * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ */
+public interface ConnectionHandler {
+
+    /**
+     * Handle the new connection.
+     *
+     * @param connection the connection
+     * @return the message handler for this connection (must not be {@code null})
+     * @throws IOException if an I/O error occurs
+     */
+    MessageHandler handleConnected(Connection connection) throws IOException;
 }
