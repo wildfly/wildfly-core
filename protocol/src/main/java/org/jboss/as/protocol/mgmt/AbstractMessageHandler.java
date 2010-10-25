@@ -20,15 +20,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.standalone.management;
-
-import static org.jboss.as.protocol.StreamUtils.safeClose;
+package org.jboss.as.protocol.mgmt;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+
 import org.jboss.as.protocol.Connection;
 import org.jboss.as.protocol.MessageHandler;
+import static org.jboss.as.protocol.StreamUtils.safeClose;
 import org.jboss.logging.Logger;
 
 /**
@@ -58,7 +58,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
     public void handleMessage(final Connection connection, final InputStream inputStream) throws IOException {
         try {
             handle(connection, inputStream);
-        } catch (ManagementException e) {
+        } catch (Exception e) {
             throw new IOException("Failed to handle management operation", e);
         } finally {
             safeClose(inputStream);
@@ -70,7 +70,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
      *
      * @param connection The connection
      * @param inputStream The request input
-     * @throws ManagementException If any problems occur handling the request
+     * @throws Exception If any problems occur handling the request
      */
-    abstract void handle(final Connection connection, final InputStream inputStream) throws ManagementException;
+    public abstract void handle(final Connection connection, final InputStream inputStream) throws IOException;
 }

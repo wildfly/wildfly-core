@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.standalone.management;
+package org.jboss.as.protocol.mgmt;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +28,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -40,11 +40,11 @@ import org.jboss.as.protocol.ByteDataOutput;
 import org.jboss.as.protocol.Connection;
 import org.jboss.as.protocol.MessageHandler;
 import org.jboss.as.protocol.ProtocolClient;
+import static org.jboss.as.protocol.ProtocolUtils.expectHeader;
 import org.jboss.as.protocol.SimpleByteDataInput;
 import org.jboss.as.protocol.SimpleByteDataOutput;
 import org.jboss.as.protocol.StreamUtils;
 import static org.jboss.as.protocol.StreamUtils.safeClose;
-import static org.jboss.as.server.standalone.management.ManagementUtils.expectHeader;
 
 /**
  * Base management request used for remote requests.  Provides the basic mechanism for connecting to a remote server manager
@@ -56,9 +56,8 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
     private final InetAddress address;
     private final int port;
     private final long connectTimeout;
-    private final ScheduledExecutorService executorService;
+    private final ExecutorService executorService;
     private final ThreadFactory threadFactory;
-    private Connection connection;
     private int requestId = 0;
     private final ResponseFuture<T> future = new ResponseFuture<T>();
 
@@ -71,7 +70,7 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
      * @param executorService         The executor server to schedule tasks with
      * @param threadFactory           The connection thread factory
      */
-    public ManagementRequest(InetAddress address, int port, long connectTimeout, final ScheduledExecutorService executorService, final ThreadFactory threadFactory) {
+    public ManagementRequest(InetAddress address, int port, long connectTimeout, final ExecutorService executorService, final ThreadFactory threadFactory) {
         this.address = address;
         this.port = port;
         this.connectTimeout = connectTimeout;
@@ -91,9 +90,9 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
      * and return a future used to get the response when complete.
      *
      * @return A future to retrieve the result when the request is complete
-     * @throws ManagementException If any problems occur with the request
+     * @throws Exception if any problems occur
      */
-    public final Future<T> execute() throws ManagementException {
+    public final Future<T> execute() throws Exception {
         final int timeout = (int) TimeUnit.SECONDS.toMillis(connectTimeout);
 
         final ProtocolClient.Configuration config = new ProtocolClient.Configuration();
@@ -108,7 +107,7 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
         OutputStream dataOutput = null;
         ByteDataOutput output = null;
         try {
-            connection = protocolClient.connect();
+            final Connection connection = protocolClient.connect();
             dataOutput = connection.writeMessage();
             output = new SimpleByteDataOutput(dataOutput);
 
@@ -117,8 +116,6 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
             managementRequestHeader.write(output);
             output.close();
             dataOutput.close();
-        } catch (IOException e) {
-            throw new ManagementException("Failed to connect using protocol client", e);
         } finally {
             safeClose(output);
             safeClose(dataOutput);
@@ -130,47 +127,37 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
      * Execute the request and wait for the result.
      *
      * @return The result
-     * @throws ManagementException If any problems occur
+     * @throws IOException If any problems occur
      */
-    public T executeForResult() throws ManagementException {
-        try {
-            return execute().get();
-        } catch (ManagementException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ManagementException("Failed to execute remote request", e);
-        }
+    public T executeForResult() throws Exception {
+        return execute().get();
     }
 
-    public void handle(Connection connection, InputStream input) throws ManagementException {
+    public void handle(Connection connection, InputStream input) throws IOException {
         try {
             expectHeader(input, ManagementProtocol.RESPONSE_START);
             byte responseCode = StreamUtils.readByte(input);
             if (responseCode != getResponseCode()) {
-                throw new ManagementException("Invalid response code.  Expecting '" + getResponseCode() + "' received '" + responseCode + "'");
+                throw new IOException("Invalid response code.  Expecting '" + getResponseCode() + "' received '" + responseCode + "'");
             }
             connection.setMessageHandler(responseBodyHandler);
-        } catch (ManagementException e) {
+        } catch (Exception e) {
             future.setException(e);
-        } catch (Throwable t) {
-            future.setException(new ManagementException("Failed to handle management message", t));
         }
     }
 
     private class InitiatingMessageHandler extends AbstractMessageHandler {
-        void handle(final Connection connection, final InputStream inputStream) throws ManagementException {
+        public final void handle(final Connection connection, final InputStream inputStream) throws IOException {
             final ManagementResponseHeader responseHeader;
             ByteDataInput input = null;
             try {
                 input = new SimpleByteDataInput(inputStream);
                 responseHeader = new ManagementResponseHeader(input);
                 if (requestId != responseHeader.getResponseId()) {
-                    throw new ManagementException("Invalid request ID expecting " + requestId + " received " + responseHeader.getResponseId());
+                    throw new IOException("Invalid request ID expecting " + requestId + " received " + responseHeader.getResponseId());
                 }
                 connection.setMessageHandler(ManagementRequest.this);
                 sendRequest(responseHeader.getVersion(), connection);
-            } catch (IOException e) {
-                throw new ManagementException("Failed to read response header", e);
             } finally {
                 safeClose(input);
             }
@@ -182,51 +169,46 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
      *
      * @param protocolVersion The active protocol version for the request
      * @param connection      The connection
-     * @throws ManagementException If any errors occur
+     * @throws IOException If any errors occur
      */
-    protected void sendRequest(final int protocolVersion, final Connection connection) throws ManagementException {
+    protected void sendRequest(final int protocolVersion, final Connection connection) throws IOException {
         OutputStream outputStream = null;
         ByteDataOutput output = null;
         try {
-            try {
-                outputStream = connection.writeMessage();
-                output = new SimpleByteDataOutput(outputStream);
-                output.writeByte(ManagementProtocol.REQUEST_OPERATION);
-                output.writeByte(getRequestCode());
-                output.writeByte(ManagementProtocol.REQUEST_START);
-                output.close();
-                outputStream.close();
-            } finally {
-                safeClose(output);
-                safeClose(outputStream);
-            }
+            outputStream = connection.writeMessage();
+            output = new SimpleByteDataOutput(outputStream);
+            output.writeByte(ManagementProtocol.REQUEST_OPERATION);
+            output.writeByte(getRequestCode());
+            output.writeByte(ManagementProtocol.REQUEST_START);
+            output.close();
+            outputStream.close();
+        } finally {
+            safeClose(output);
+            safeClose(outputStream);
+        }
 
-            try {
-                outputStream = connection.writeMessage();
-                sendRequest(protocolVersion, outputStream);
-                outputStream.close();
-            } finally {
-                safeClose(outputStream);
-            }
+        try {
+            outputStream = connection.writeMessage();
+            outputStream.write(ManagementProtocol.REQUEST_BODY);
+            sendRequest(protocolVersion, outputStream);
+            outputStream.close();
+        } finally {
+            safeClose(outputStream);
+        }
 
-            try {
-                outputStream = connection.writeMessage();
-                output = new SimpleByteDataOutput(outputStream);
-                output.writeByte(ManagementProtocol.REQUEST_END);
-                output.close();
-                outputStream.close();
-            } finally {
-                safeClose(output);
-                safeClose(outputStream);
-            }
-        } catch (ManagementException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new ManagementException("Failed to send management request", t);
+        try {
+            outputStream = connection.writeMessage();
+            output = new SimpleByteDataOutput(outputStream);
+            output.writeByte(ManagementProtocol.REQUEST_END);
+            output.close();
+            outputStream.close();
+        } finally {
+            safeClose(output);
+            safeClose(outputStream);
         }
     }
 
-    protected void sendRequest(final int protocolVersion, final OutputStream output) throws ManagementException {
+    protected void sendRequest(final int protocolVersion, final OutputStream output) throws IOException {
     }
 
     protected abstract byte getRequestCode();
@@ -234,24 +216,21 @@ public abstract class ManagementRequest<T> extends AbstractMessageHandler {
     protected abstract byte getResponseCode();
 
     private MessageHandler responseBodyHandler = new AbstractMessageHandler() {
-        void handle(final Connection connection, final InputStream input) throws ManagementException {
-            future.set(receiveResponse(input));
+        public final void handle(final Connection connection, final InputStream input) throws IOException {
             connection.setMessageHandler(responseEndHandler);
+            expectHeader(input, ManagementProtocol.RESPONSE_BODY);
+            future.set(receiveResponse(input));
         }
     };
 
     private MessageHandler responseEndHandler = new AbstractMessageHandler() {
-        void handle(final Connection connection, final InputStream input) throws ManagementException {
-            try {
-                expectHeader(input, ManagementProtocol.RESPONSE_END);
-                connection.setMessageHandler(MessageHandler.NULL);
-            } catch (IOException e) {
-                throw new ManagementException("Failed to read response end", e);
-            }
+        public final void handle(final Connection connection, final InputStream input) throws IOException {
+            connection.setMessageHandler(MessageHandler.NULL);
+            expectHeader(input, ManagementProtocol.RESPONSE_END);
         }
     };
 
-    protected T receiveResponse(final InputStream input) throws ManagementException {
+    protected T receiveResponse(final InputStream input) throws IOException {
         return null;
     }
 

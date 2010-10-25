@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.standalone.management;
 
+import org.jboss.as.protocol.mgmt.ManagementOperationHandler;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;

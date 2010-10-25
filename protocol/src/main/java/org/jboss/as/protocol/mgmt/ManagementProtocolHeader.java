@@ -20,13 +20,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.standalone.management;
+package org.jboss.as.protocol.mgmt;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import static org.jboss.as.server.standalone.management.ManagementUtils.expectHeader;
+import static org.jboss.as.protocol.ProtocolUtils.expectHeader;
 
 /**
  * DomainClientProtocol header used to send the required information to establish a request with a remote server manager.  The primary
@@ -50,9 +50,8 @@ public abstract class ManagementProtocolHeader {
      *
      * @param input The input to read the header information from
      * @throws IOException If any problem occur reading from the input
-     * @throws ManagementException If any information read is invalid.
      */
-    protected ManagementProtocolHeader(final DataInput input) throws IOException, ManagementException {
+    protected ManagementProtocolHeader(final DataInput input) throws IOException {
         read(input);
     }
 
@@ -70,9 +69,8 @@ public abstract class ManagementProtocolHeader {
      *
      * @param input The input to read from
      * @throws IOException If any problems occur reading from the input
-     * @throws ManagementException If any of the input values are incorrect
      */
-    public void read(final DataInput input) throws IOException, ManagementException {
+    public void read(final DataInput input) throws IOException {
         validateSignature(input);
         expectHeader(input, ManagementProtocol.VERSION_FIELD);
         this.version = input.readInt();
@@ -83,9 +81,8 @@ public abstract class ManagementProtocolHeader {
      *
      * @param output The output to write to
      * @throws IOException If any problems occur writing to the output
-     * @throws ManagementException If any of the output values are incorrect
      */
-    public void write(final DataOutput output) throws IOException, ManagementException {
+    public void write(final DataOutput output) throws IOException {
         output.write(ManagementProtocol.SIGNATURE);
         output.writeByte(ManagementProtocol.VERSION_FIELD);
         output.writeInt(getVersion());
@@ -105,13 +102,12 @@ public abstract class ManagementProtocolHeader {
      *
      * @param input The input to read the signature from
      * @throws IOException If any read problems occur
-     * @throws ManagementException If the signature information is invalid
      */
-    protected void validateSignature(final DataInput input) throws IOException, ManagementException {
+    protected void validateSignature(final DataInput input) throws IOException {
         final byte[] signatureBytes = new byte[4];
         input.readFully(signatureBytes);
         if (!Arrays.equals(ManagementProtocol.SIGNATURE, signatureBytes)) {
-            throw new ManagementException("Invalid signature [" + Arrays.toString(signatureBytes) + "]");
+            throw new IOException("Invalid signature [" + Arrays.toString(signatureBytes) + "]");
         }
     }
 }

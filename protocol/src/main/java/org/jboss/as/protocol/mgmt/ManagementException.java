@@ -20,14 +20,14 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.standalone.management;
+package org.jboss.as.protocol.mgmt;
 
 /**
  * Exception thrown when a problem occurs processing a domain management operation.
  *
  * @author John Bailey
  */
-public class ManagementException extends Exception {
+public class ManagementException extends RuntimeException {
     private static final long serialVersionUID = -7500137184431829933L;
 
     /**

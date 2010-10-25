@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.standalone.management;
+package org.jboss.as.protocol.mgmt;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -42,9 +42,8 @@ public class ManagementRequestHeader extends ManagementProtocolHeader {
      *
      * @param input The input to read the header information from
      * @throws IOException If any problem occur reading from the input
-     * @throws ManagementException If any information read is invalid.
      */
-    public ManagementRequestHeader(final DataInput input) throws IOException, ManagementException {
+    public ManagementRequestHeader(final DataInput input) throws IOException {
         super(input);
     }
 
@@ -62,14 +61,14 @@ public class ManagementRequestHeader extends ManagementProtocolHeader {
     }
 
     /** {@inheritDoc} */
-    public void read(final DataInput input) throws IOException, ManagementException {
+    public void read(final DataInput input) throws IOException {
         super.read(input);
         requestId = input.readInt();
         operationHandlerId = input.readByte();
     }
 
     /** {@inheritDoc} */
-    public void write(final DataOutput output) throws IOException, ManagementException {
+    public void write(final DataOutput output) throws IOException {
         super.write(output);
         output.writeInt(requestId);
         output.writeByte(operationHandlerId);

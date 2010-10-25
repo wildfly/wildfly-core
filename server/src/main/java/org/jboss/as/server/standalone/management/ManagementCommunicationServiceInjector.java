@@ -22,13 +22,14 @@
 
 package org.jboss.as.server.standalone.management;
 
+import org.jboss.as.protocol.mgmt.ManagementOperationHandler;
 import org.jboss.msc.inject.InjectionException;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.value.Value;
 
 /**
- * Injector used to add a {@link org.jboss.as.server.manager.management.ManagementOperationHandler} to the
- * {@link org.jboss.as.server.manager.management.ManagementCommunicationService}.
+ * Injector used to add a {@link org.jboss.as.protocol.mgmt.ManagementOperationHandler} to the
+ * {@link ManagementCommunicationService}.
  *
  * @author John Bailey
  */
@@ -46,8 +47,8 @@ public class ManagementCommunicationServiceInjector implements Injector<Manageme
     }
 
     /**
-     * Add the {@link org.jboss.as.server.manager.management.ManagementOperationHandler} to the injected
-     * {@link org.jboss.as.server.manager.management.ManagementCommunicationService}.
+     * Add the {@link org.jboss.as.protocol.mgmt.ManagementOperationHandler} to the injected
+     * {@link ManagementCommunicationService}.
      *
      * @param value The ManagementCommunicationService
      * @throws InjectionException
@@ -58,8 +59,8 @@ public class ManagementCommunicationServiceInjector implements Injector<Manageme
     }
 
     /**
-     * Remove the {@link org.jboss.as.server.manager.management.ManagementOperationHandler} from the injected
-     * {@link org.jboss.as.server.manager.management.ManagementCommunicationService}.
+     * Remove the {@link org.jboss.as.protocol.mgmt.ManagementOperationHandler} from the injected
+     * {@link ManagementCommunicationService}.
      */
     public synchronized void uninject() {
         if(communicationService  != null) {

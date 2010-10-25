@@ -40,6 +40,10 @@ import org.jboss.as.protocol.ProtocolServer;
 import org.jboss.as.protocol.SimpleByteDataInput;
 import org.jboss.as.protocol.SimpleByteDataOutput;
 import static org.jboss.as.protocol.StreamUtils.safeClose;
+import org.jboss.as.protocol.mgmt.ManagementOperationHandler;
+import org.jboss.as.protocol.mgmt.ManagementProtocol;
+import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
+import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.services.net.NetworkInterfaceBinding;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -51,7 +55,7 @@ import org.jboss.msc.value.InjectedValue;
 
 /**
  * Service responsible for accepting remote communication to server manager processes.  This will wait on a {@link java.net.ServerSocket}
- * for requests and will and the requesting socket over to a {@link org.jboss.as.server.manager.management.ManagementOperationHandler} to
+ * for requests and will and the requesting socket over to a {@link org.jboss.as.protocol.mgmt.ManagementOperationHandler} to
  * process the request.
  *
  * @author John E. Bailey
