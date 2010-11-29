@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.standalone.management;
+package org.jboss.as.host.controller.mgmt;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,21 +30,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+
 import javax.net.ServerSocketFactory;
 import org.jboss.as.protocol.ByteDataInput;
 import org.jboss.as.protocol.ByteDataOutput;
 import org.jboss.as.protocol.Connection;
 import org.jboss.as.protocol.ConnectionHandler;
+import org.jboss.as.protocol.mgmt.ManagementOperationHandler;
+import org.jboss.as.protocol.mgmt.ManagementProtocol;
+import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
+import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.protocol.MessageHandler;
 import org.jboss.as.protocol.ProtocolServer;
 import org.jboss.as.protocol.SimpleByteDataInput;
 import org.jboss.as.protocol.SimpleByteDataOutput;
 import static org.jboss.as.protocol.StreamUtils.safeClose;
-import org.jboss.as.protocol.mgmt.ManagementOperationHandler;
-import org.jboss.as.protocol.mgmt.ManagementProtocol;
-import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
-import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.services.net.NetworkInterfaceBinding;
+import org.jboss.as.standalone.client.impl.StandaloneClientProtocol;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -62,12 +64,6 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class ManagementCommunicationService implements Service<ManagementCommunicationService>, ConnectionHandler {
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "management", "communication");
-
-    /**
-     * The (invalid if received here) protocol identifier for a client wishing
-     * to communicate with a host controller.
-     */
-    private final byte DOMAIN_CONTROLLER_CLIENT_REQUEST = 0x0A;
 
     private final InjectedValue<NetworkInterfaceBinding> interfaceBindingValue = new InjectedValue<NetworkInterfaceBinding>();
     private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
@@ -188,11 +184,11 @@ public class ManagementCommunicationService implements Service<ManagementCommuni
                 handler = handlers.get(handlerId);
                 if (handler == null) {
                     String msg = null;
-                    if (handlerId == DOMAIN_CONTROLLER_CLIENT_REQUEST) {
+                    if (handlerId == StandaloneClientProtocol.SERVER_CONTROLLER_REQUEST) {
                         msg = "Management request failed.  A request from a client " +
-                                "wishing to communicate with a domain controller " +
-                                "was received by this standalone server. Standalone " +
-                                "servers do not support the domain client protocol";
+                                 "wishing to communicate with a standalone server " +
+                                 "was received by this host controller. Server " +
+                                 "managers do not support the standalone client protocol";
                     }
                     else {
                         msg = "Management request failed.  No handler found for id " + handlerId;

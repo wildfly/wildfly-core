@@ -20,23 +20,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.protocol.mgmt;
+package org.jboss.as.process;
 
-import org.jboss.as.protocol.MessageHandler;
+import java.io.IOException;
+import java.util.Map;
 
 /**
- * Interface for handling management operations coming into a host controller process.  Each handler
- * is identified by a single byte that will be used to route the operation request to the correct handler.
- *
- * @author John Bailey
+ * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface ManagementOperationHandler extends MessageHandler {
+public interface ProcessMessageHandler {
 
-    /**
-     * The identifier for this handler.
-     *
-     * @return the identifier
-     */
-    byte getIdentifier();
+    void handleProcessAdded(ProcessControllerClient client, String processName);
 
+    void handleProcessStarted(ProcessControllerClient client, String processName);
+
+    void handleProcessStopped(ProcessControllerClient client, String processName, long uptimeMillis);
+
+    void handleProcessRemoved(ProcessControllerClient client, String processName);
+
+    void handleProcessInventory(ProcessControllerClient client, Map<String, ProcessInfo> inventory);
+
+    void handleConnectionShutdown(ProcessControllerClient client);
+
+    void handleConnectionFailure(ProcessControllerClient client, IOException cause);
+
+    void handleConnectionFinished(ProcessControllerClient client);
 }

@@ -19,24 +19,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.as.process.support;
 
-package org.jboss.as.protocol.mgmt;
-
-import org.jboss.as.protocol.MessageHandler;
+import org.junit.internal.runners.model.EachTestNotifier;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
 
 /**
- * Interface for handling management operations coming into a host controller process.  Each handler
- * is identified by a single byte that will be used to route the operation request to the correct handler.
  *
- * @author John Bailey
+ * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @version $Revision: 1.1 $
  */
-public interface ManagementOperationHandler extends MessageHandler {
+public class LoggingTestRunner extends BlockJUnit4ClassRunner{
 
-    /**
-     * The identifier for this handler.
-     *
-     * @return the identifier
-     */
-    byte getIdentifier();
+    public LoggingTestRunner(Class<?> klass) throws InitializationError {
+        super(klass);
+    }
+
+    protected EachTestNotifier makeNotifier(FrameworkMethod method,
+            RunNotifier notifier) {
+
+        System.err.println("\n===== Test " + getTestClass().getJavaClass().getSimpleName() + "." + testName(method) + " ===========");
+        return super.makeNotifier(method, notifier);
+    }
+
+
 
 }

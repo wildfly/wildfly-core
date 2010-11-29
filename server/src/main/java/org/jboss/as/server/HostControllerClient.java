@@ -63,13 +63,13 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 
 /**
- * Client used to interact with the local server manager.
+ * Client used to interact with the local {@link HostController}.
  *
  * @author John Bailey
  */
-public class ServerManagerClient implements Service<Void> {
+public class HostControllerClient implements Service<Void> {
 
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "manager", "client");
+    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "client");
     private final InjectedValue<Connection> smConnection = new InjectedValue<Connection>();
     private final InjectedValue<ServerController> serverController = new InjectedValue<ServerController>();
 
@@ -79,7 +79,7 @@ public class ServerManagerClient implements Service<Void> {
         try {
             new ServerRegisterRequest().executeForResult(new ManagementRequestConnectionStrategy.ExistingConnectionStrategy(smConnection));
         } catch (Exception e) {
-            throw new StartException("Failed to send registration message to server manager", e);
+            throw new StartException("Failed to send registration message to host controller", e);
         }
         smConnection.setMessageHandler(managementHeaderMessageHandler);
     }
@@ -94,7 +94,7 @@ public class ServerManagerClient implements Service<Void> {
     }
 
     /**
-     * Get the injector for the server manager connection.
+     * Get the injector for the host controller connection.
      *
      * @return The injector
      */
@@ -192,7 +192,7 @@ public class ServerManagerClient implements Service<Void> {
     private class ServerRegisterRequest extends ManagementRequest<Void> {
         @Override
         protected byte getHandlerId() {
-            return DomainServerProtocol.SERVER_TO_SERVER_MANAGER_OPERATION;
+            return DomainServerProtocol.SERVER_TO_HOST_CONTROLLER_OPERATION;
         }
 
         @Override

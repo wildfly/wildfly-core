@@ -24,12 +24,12 @@ package org.jboss.as.protocol.mgmt;
 
 /**
  * Headers used in the management protocol between the Domain Controller and
- * the Server Manager.
+ * the Host Controller.
  *
  * @author John Bailey
  */
-public interface ServerManagerProtocol {
-    int SERVER_MANAGER_REQUEST = 0x25;
+public interface HostControllerProtocol {
+    int HOST_CONTROLLER_REQUEST = 0x25;
     int PARAM_DOMAIN_MODEL = 0x13;
     int UPDATE_FULL_DOMAIN_REQUEST = 0x26;
     int UPDATE_FULL_DOMAIN_RESPONSE = 0x27;

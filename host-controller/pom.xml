@@ -33,9 +33,9 @@
     </parent>
 
     <groupId>org.jboss.as</groupId>
-    <artifactId>jboss-as-server</artifactId>
+    <artifactId>jboss-as-host-controller</artifactId>
 
-    <name>JBoss Application Server: Server</name>
+    <name>JBoss Application Server: Host Controller</name>
 
     <build>
         <plugins>
@@ -50,12 +50,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-domain</artifactId>
+            <groupId>org.jboss</groupId>
+            <artifactId>staxmapper</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-domain-client</artifactId>
+            <artifactId>jboss-as-domain</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
@@ -63,24 +63,43 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-standalone-client</artifactId>
+            <artifactId>jboss-as-protocol</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-domain-controller</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-threads</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>jboss-logmanager-log4j</artifactId>
+            <groupId>org.jboss.marshalling</groupId>
+            <artifactId>jboss-marshalling</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
-            <artifactId>jboss-marshalling</artifactId>
+            <artifactId>jboss-marshalling-river</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.stdio</groupId>
             <artifactId>jboss-stdio</artifactId>
         </dependency>
+        <dependency>
+           <groupId>junit</groupId>
+           <artifactId>junit</artifactId>
+           <scope>test</scope>
+        </dependency>
+        
     </dependencies>
 
 </project>

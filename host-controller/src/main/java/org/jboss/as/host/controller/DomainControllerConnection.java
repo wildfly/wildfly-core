@@ -20,23 +20,37 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.protocol.mgmt;
+package org.jboss.as.host.controller;
 
-import org.jboss.as.protocol.MessageHandler;
+import org.jboss.as.domain.controller.FileRepository;
+import org.jboss.as.model.DomainModel;
+import org.jboss.msc.service.ServiceName;
 
 /**
- * Interface for handling management operations coming into a host controller process.  Each handler
- * is identified by a single byte that will be used to route the operation request to the correct handler.
+ * Contract for communicating with a domain controller.
  *
  * @author John Bailey
  */
-public interface ManagementOperationHandler extends MessageHandler {
+public interface DomainControllerConnection {
+    ServiceName SERVICE_NAME = ServiceName.JBOSS.append("domain", "controller", "connection");
 
     /**
-     * The identifier for this handler.
+     * Register with the domain controller.
      *
-     * @return the identifier
+     * @return The latest domain model
      */
-    byte getIdentifier();
+    DomainModel register();
 
+    /*
+     * Unregister from the domain controller.
+     */
+    void unregister();
+
+    /**
+     * Get the file repository for the domain controller.  This can be used to pull contents from the domain
+     * controllers repository.
+     *
+     * @return The file repository
+     */
+    FileRepository getRemoteFileRepository();
 }

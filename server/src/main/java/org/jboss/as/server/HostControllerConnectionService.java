@@ -39,12 +39,12 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 
 /**
- * Service used to connect to the server manager.  Will maintain the connection for the length of the service life.
+ * Service used to connect to the host controller.  Will maintain the connection for the length of the service life.
  *
  * @author John Bailey
  */
-public class ServerManagerConnectionService implements Service<Connection> {
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "manager", "connection");
+public class HostControllerConnectionService implements Service<Connection> {
+    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "connection");
     private final InjectedValue<InetSocketAddress> smAddress = new InjectedValue<InetSocketAddress>();
 
     private Connection connection;
@@ -62,7 +62,7 @@ public class ServerManagerConnectionService implements Service<Connection> {
         try {
             connection = protocolClient.connect();
         } catch (IOException e) {
-            throw new StartException("Failed to start remote Server Manager connection", e);
+            throw new StartException("Failed to start remote Host Controller connection", e);
         }
     }
 
@@ -78,7 +78,7 @@ public class ServerManagerConnectionService implements Service<Connection> {
     }
 
     /**
-     * Get the server manager address injector.
+     * Get the host controller address injector.
      *
      * @return The injector
      */

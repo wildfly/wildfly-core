@@ -20,23 +20,31 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.protocol.mgmt;
-
-import org.jboss.as.protocol.MessageHandler;
+package org.jboss.as.process;
 
 /**
- * Interface for handling management operations coming into a host controller process.  Each handler
- * is identified by a single byte that will be used to route the operation request to the correct handler.
- *
- * @author John Bailey
+ * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface ManagementOperationHandler extends MessageHandler {
+public final class ProcessInfo {
+    private final String processName;
+    private final byte[] authKey;
+    private final boolean running;
 
-    /**
-     * The identifier for this handler.
-     *
-     * @return the identifier
-     */
-    byte getIdentifier();
+    ProcessInfo(final String processName, final byte[] authKey, final boolean running) {
+        this.processName = processName;
+        this.authKey = authKey;
+        this.running = running;
+    }
 
+    public String getProcessName() {
+        return processName;
+    }
+
+    public byte[] getAuthKey() {
+        return authKey;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
 }

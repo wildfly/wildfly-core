@@ -19,24 +19,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.as.process.test;
 
-package org.jboss.as.protocol.mgmt;
-
-import org.jboss.as.protocol.MessageHandler;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
 /**
- * Interface for handling management operations coming into a host controller process.  Each handler
- * is identified by a single byte that will be used to route the operation request to the correct handler.
  *
- * @author John Bailey
+ * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @version $Revision: 1.1 $
  */
-public interface ManagementOperationHandler extends MessageHandler {
+@RunWith(Suite.class)
+@SuiteClasses({
+})
+public class ProcessControllerTests {
 
-    /**
-     * The identifier for this handler.
-     *
-     * @return the identifier
-     */
-    byte getIdentifier();
 
 }
