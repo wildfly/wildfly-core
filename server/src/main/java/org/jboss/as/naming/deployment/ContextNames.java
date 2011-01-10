@@ -44,45 +44,4 @@ public class ContextNames {
      * ServiceName for java: namespace
      */
     public static final ServiceName JAVA_CONTEXT_SERVICE_NAME = NAMING.append("context", "java");
-
-    /**
-     * Jndi name for java:global namespace
-     */
-    public static final JndiName GLOBAL_CONTEXT_NAME = JndiName.of("java:global");
-
-    /**
-     * ServiceName for java:global namespace
-     */
-    public static final ServiceName GLOBAL_CONTEXT_SERVICE_NAME = JAVA_CONTEXT_SERVICE_NAME.append("global");
-
-    /**
-     * Jndi name for java:app namespace
-     */
-    public static final JndiName APPLICATION_CONTEXT_NAME = JndiName.of("java:app");
-
-    /**
-     * Parent ServiceName for java:app namespace
-     */
-    public static final ServiceName APPLICATION_CONTEXT_SERVICE_NAME = JAVA_CONTEXT_SERVICE_NAME.append("application");
-
-    /**
-     * Jndi name for java:module namespace
-     */
-    public static final JndiName MODULE_CONTEXT_NAME = JndiName.of("java:module");
-
-    /**
-     * Parent ServiceName for java:module namespace
-     */
-    public static final ServiceName MODULE_CONTEXT_SERVICE_NAME = JAVA_CONTEXT_SERVICE_NAME.append("module");
-
-    /**
-     * Jndi name for java:comp namespace
-     */
-    public static final JndiName COMPONENT_CONTEXT_NAME = JndiName.of("java:comp");
-
-
-    /**
-     * Parent ServiceName for java:comp namespace
-     */
-    public static final ServiceName COMPONENT_CONTEXT_SERVICE_NAME = JAVA_CONTEXT_SERVICE_NAME.append("component");
 }
