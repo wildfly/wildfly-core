@@ -20,45 +20,39 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.model;
+package org.jboss.as.server.legacy;
 
-import org.jboss.as.controller.parsing.JvmType;
+import org.jboss.as.model.UpdateContext;
+import org.jboss.msc.service.ServiceRegistry;
+import org.jboss.msc.service.ServiceTarget;
 
 /**
- * Updates a {@link JvmElement}'s {@link JvmElement#getJavaHome() java home}.
+ * Simple implementation of {@link UpdateContext}.
  *
  * @author Brian Stansberry
  */
-public class JvmTypeUpdate extends AbstractModelUpdate<JvmElement, Void> {
+class SimpleUpdateContext implements UpdateContext {
 
-    private static final long serialVersionUID = -3406895728835596414L;
+    private final ServiceRegistry serviceRegistry;
+    private final ServiceTarget serviceTarget;
 
-    private final JvmType type;
+    SimpleUpdateContext(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget) {
+        if (serviceRegistry == null)
+            throw new IllegalArgumentException("serviceRegistry is null");
+        if (serviceTarget == null)
+            throw new IllegalArgumentException("serviceTarget is null");
 
-    public JvmTypeUpdate(final JvmType type) {
-        this.type = type;
+        this.serviceRegistry = serviceRegistry;
+        this.serviceTarget = serviceTarget;
     }
 
     @Override
-    public JvmTypeUpdate getCompensatingUpdate(JvmElement original) {
-        return new JvmTypeUpdate(original.getJvmType());
+    public ServiceTarget getServiceTarget() {
+        return serviceTarget;
     }
 
     @Override
-    protected AbstractServerModelUpdate<Void> getServerModelUpdate() {
-        // JvmElement changes do not affect running servers; they are picked up by
-        // HostController when it launches servers
-        return null;
+    public ServiceRegistry getServiceRegistry() {
+        return serviceRegistry;
     }
-
-    @Override
-    protected void applyUpdate(JvmElement element) throws UpdateFailedException {
-        element.setJvmType(type);
-    }
-
-    @Override
-    public Class<JvmElement> getModelElementType() {
-        return JvmElement.class;
-    }
-
 }

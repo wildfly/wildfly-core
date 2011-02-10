@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.mgmt;
+package org.jboss.as.server.legacy;
 
 import java.util.ArrayList;
 import java.util.List;

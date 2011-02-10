@@ -61,14 +61,14 @@ import org.jboss.msc.value.InjectedValue;
  * @author John Bailey
  * @author Emanuel Muckenhuber
  */
-public class NewHostControllerServerClient implements Service<Void> {
+public class HostControllerServerClient implements Service<Void> {
 
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "client");
     private final InjectedValue<Connection> smConnection = new InjectedValue<Connection>();
     private final InjectedValue<ServerController> controller = new InjectedValue<ServerController>();
     private final String serverName;
 
-    public NewHostControllerServerClient(final String serverName) {
+    public HostControllerServerClient(final String serverName) {
         this.serverName = serverName;
     }
 

@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.client.impl.deployment;
+package org.jboss.as.server.legacy;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,6 +51,11 @@ import org.jboss.as.server.client.api.deployment.ServerDeploymentManager;
 import org.jboss.as.server.client.api.deployment.ServerDeploymentPlanResult;
 import org.jboss.as.server.client.api.deployment.ServerUpdateActionResult.Result;
 import org.jboss.as.server.client.api.deployment.SimpleServerDeploymentActionResult;
+import org.jboss.as.server.client.impl.deployment.DeploymentActionImpl;
+import org.jboss.as.server.client.impl.deployment.DeploymentContentDistributor;
+import org.jboss.as.server.client.impl.deployment.DeploymentPlanImpl;
+import org.jboss.as.server.client.impl.deployment.DeploymentPlanResultImpl;
+import org.jboss.as.server.client.impl.deployment.InitialDeploymentPlanBuilderFactory;
 import org.jboss.as.server.deployment.ServerModelDeploymentAdd;
 import org.jboss.as.server.deployment.ServerModelDeploymentFullReplaceUpdate;
 import org.jboss.as.server.deployment.ServerModelDeploymentRemove;
@@ -58,12 +63,9 @@ import org.jboss.as.server.deployment.ServerModelDeploymentReplaceUpdate;
 import org.jboss.as.server.deployment.ServerModelDeploymentStartUpdate;
 import org.jboss.as.server.deployment.ServerModelDeploymentStopUpdate;
 import org.jboss.as.server.deployment.api.ServerDeploymentRepository;
-import org.jboss.as.server.mgmt.ServerConfigurationPersister;
-import org.jboss.as.server.mgmt.ServerUpdateController;
-import org.jboss.as.server.mgmt.ServerUpdateController.ServerUpdateCommitHandler;
-import org.jboss.as.server.mgmt.ServerUpdateController.Status;
+import org.jboss.as.server.legacy.ServerUpdateController.ServerUpdateCommitHandler;
+import org.jboss.as.server.legacy.ServerUpdateController.Status;
 import org.jboss.as.server.mgmt.ShutdownHandler;
-import org.jboss.as.server.mgmt.SimpleFuture;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceContainer;
@@ -230,7 +232,6 @@ public class ServerDeploymentManagerImpl implements ServerDeploymentManager, Ser
         // Verify injections
         String type = null;
         try {
-            type = ServerConfigurationPersister.class.getSimpleName();
             type = Executor.class.getSimpleName();
             injectedDeploymentExecutor.getValue();
             type = ServerDeploymentRepository.class.getSimpleName();
@@ -425,7 +426,7 @@ public class ServerDeploymentManagerImpl implements ServerDeploymentManager, Ser
         }
 
         @Override
-        public void handleUpdateCommit(ServerUpdateController controller, org.jboss.as.server.mgmt.ServerUpdateController.Status priorStatus) {
+        public void handleUpdateCommit(ServerUpdateController controller, org.jboss.as.server.legacy.ServerUpdateController.Status priorStatus) {
             //getConfigurationPersister().configurationModified();
 
             generateResult(priorStatus);
