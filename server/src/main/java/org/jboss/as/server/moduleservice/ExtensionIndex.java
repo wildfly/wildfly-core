@@ -20,7 +20,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.deployment.module;
+package org.jboss.as.server.moduleservice;
+
+import org.jboss.modules.ModuleIdentifier;
 
 /**
  * An index of available extensions.
@@ -38,5 +40,5 @@ public interface ExtensionIndex {
      * @param requiredVendorId the vendor ID to require, or {@code null} to match any
      * @return the resource root of the first matched extension
      */
-    ResourceRoot findExtension(String name, String minSpecVersion, String minImplVersion, String requiredVendorId);
+    ModuleIdentifier findExtension(String name, String minSpecVersion, String minImplVersion, String requiredVendorId);
 }
