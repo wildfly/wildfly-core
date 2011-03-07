@@ -21,15 +21,17 @@
  */
 package org.jboss.as.server;
 
+import org.jboss.msc.value.Value;
+
 /**
  * A ManagedReference that simply holds a value'
  *
  * @author Stuart Douglas
  */
 public class ValueManagedReference implements ManagedReference {
-    private final Object value;
+    private final Value<Object> value;
 
-    public ValueManagedReference(Object value) {
+    public ValueManagedReference(Value<Object> value) {
         this.value = value;
     }
 
@@ -40,6 +42,6 @@ public class ValueManagedReference implements ManagedReference {
 
     @Override
     public Object getInstance() {
-        return value;
+        return value.getValue();
     }
 }
