@@ -18,6 +18,13 @@
  */
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+
+import java.util.Locale;
+
 import org.jboss.as.controller.BasicOperationResult;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -25,6 +32,10 @@ import org.jboss.as.controller.OperationResult;
 import org.jboss.as.controller.ResultHandler;
 import org.jboss.as.controller.RuntimeTask;
 import org.jboss.as.controller.RuntimeTaskContext;
+import org.jboss.as.controller.descriptions.common.CommonDescriptions;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.validation.ParametersValidator;
+import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -33,15 +44,53 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  *
  */
-public class SystemPropertyAddHandler
-    extends org.jboss.as.controller.operations.common.SystemPropertyAddHandler {
+public class SystemPropertyAddHandler extends org.jboss.as.controller.operations.common.SystemPropertyAddHandler {
 
     public static final SystemPropertyAddHandler INSTANCE = new SystemPropertyAddHandler();
 
-    private SystemPropertyAddHandler() {
+    public static ModelNode getOperation(ModelNode address, String name, String value) {
+        ModelNode op = Util.getEmptyOperation(OPERATION_NAME, address);
+        if (value == null) {
+            op.get(name).set(new ModelNode());
+        }
+        else {
+            op.get(name).set(value);
+        }
+        return op;
     }
 
-    @Override
+    private final ParametersValidator validator = new ParametersValidator();
+    /**
+     * Create the SystemPropertyAddHandler
+     */
+    protected SystemPropertyAddHandler() {
+        validator.registerValidator(NAME, new StringLengthValidator(1));
+        validator.registerValidator(VALUE, new StringLengthValidator(0, true));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public OperationResult execute(OperationContext context, ModelNode operation, ResultHandler resultHandler) throws OperationFailedException {
+        validator.validate(operation);
+
+        String name = operation.get(NAME).asString();
+        String value = operation.get(VALUE).isDefined() ? operation.get(VALUE).asString() : null;
+        ModelNode node = context.getSubModel().get(SYSTEM_PROPERTIES, name);
+        if (value == null) {
+            node.set(new ModelNode());
+        }
+        else {
+            node.set(value);
+        }
+        ModelNode compensating = SystemPropertyRemoveHandler.getOperation(operation.get(OP_ADDR), name);
+        return updateSystemProperty(name, value, context, resultHandler, compensating);
+    }
+
+    public ModelNode getModelDescription(Locale locale) {
+        return CommonDescriptions.getAddSystemPropertyOperation(locale, true);
+    }
+
     protected OperationResult updateSystemProperty(final String name, final String value, final OperationContext context, final ResultHandler resultHandler, final ModelNode compensating) {
         if (context.getRuntimeContext() != null) {
             context.getRuntimeContext().setRuntimeTask(new RuntimeTask() {
