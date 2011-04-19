@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.deployment.api;
 
+import org.jboss.msc.service.ServiceName;
+import org.jboss.vfs.VirtualFile;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -30,7 +33,13 @@ import java.io.InputStream;
  *
  * @author John Bailey
  */
-public interface DeploymentRepository {
+public interface ContentRepository {
+
+    /**
+     * Standard ServiceName under which a service controller for an instance of
+     * @code Service<ContentRepository> would be registered.
+     */
+    ServiceName SERVICE_NAME = ServiceName.JBOSS.append("content-repository");
 
     /**
      * Add the given content to the repository.
@@ -40,7 +49,14 @@ public interface DeploymentRepository {
      *         for the content. Will not be <code>null</code>
      * @throws IOException
      */
-    byte[] addDeploymentContent(InputStream stream) throws IOException;
+    byte[] addContent(InputStream stream) throws IOException;
+
+    /**
+     * Get the content as a virtual file.
+     *
+     * @param hash the hash. Cannot be {@code null}
+     */
+    VirtualFile getContent(byte[] hash);
 
     /**
      * Gets whether content with the given hash is stored in the repository.
@@ -49,5 +65,12 @@ public interface DeploymentRepository {
      *
      * @return {@code true} if the repository has content with the given hash
      */
-    boolean hasDeploymentContent(byte[] hash);
+    boolean hasContent(byte[] hash);
+
+    /**
+     * Remove the given content from the repository.
+     *
+     * @param hash the hash. Cannot be {@code null}
+     */
+    void removeContent(byte[] hash);
 }
