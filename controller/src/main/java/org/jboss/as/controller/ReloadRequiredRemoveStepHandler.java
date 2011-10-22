@@ -33,7 +33,7 @@ public class ReloadRequiredRemoveStepHandler extends AbstractRemoveStepHandler {
 
     public static final ReloadRequiredRemoveStepHandler INSTANCE = new ReloadRequiredRemoveStepHandler();
 
-    protected ReloadRequiredRemoveStepHandler() {
+    public ReloadRequiredRemoveStepHandler() {
     }
 
     @Override
