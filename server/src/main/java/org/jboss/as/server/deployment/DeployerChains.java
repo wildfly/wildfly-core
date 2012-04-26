@@ -31,13 +31,13 @@ import java.util.List;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class DeployerChains {
-    private final EnumMap<Phase, List<DeploymentUnitProcessor>> phases;
+    private final EnumMap<Phase, List<RegisteredDeploymentUnitProcessor>> phases;
 
-    DeployerChains(final EnumMap<Phase, List<DeploymentUnitProcessor>> phases) {
+    DeployerChains(final EnumMap<Phase, List<RegisteredDeploymentUnitProcessor>> phases) {
         this.phases = phases;
     }
 
-    List<DeploymentUnitProcessor> getChain(Phase phase) {
+    List<RegisteredDeploymentUnitProcessor> getChain(Phase phase) {
         return phases.get(phase);
     }
 }
