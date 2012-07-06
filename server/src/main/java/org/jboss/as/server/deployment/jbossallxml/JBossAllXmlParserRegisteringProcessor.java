@@ -32,7 +32,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 
 /**
  * DUP that registers a {@link JBossAllXMLParserDescription} with the DU. These should all be registered in the
- * {@link org.jboss.as.server.deployment.Phase#STRUCTURE_REGISTER_JBOSS_XML_PARSER} phase.
+ * {@link org.jboss.as.server.deployment.Phase#STRUCTURE_REGISTER_JBOSS_ALL_XML_PARSER} phase.
  *
  * @author Stuart Douglas
  */
