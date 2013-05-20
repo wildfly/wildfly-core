@@ -21,8 +21,6 @@
  */
 package org.jboss.as.remoting;
 
-import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
-
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -33,16 +31,16 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
 
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
+
 /**
- *
- * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
- * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author Stuart Douglas
  */
-public class ConnectorResource extends SimpleResourceDefinition {
+public class HttpConnectorResource extends SimpleResourceDefinition {
 
-    static final PathElement PATH = PathElement.pathElement(CommonAttributes.CONNECTOR);
+    static final PathElement PATH = PathElement.pathElement(CommonAttributes.HTTP_CONNECTOR);
 
-    static final ConnectorResource INSTANCE = new ConnectorResource();
+    static final HttpConnectorResource INSTANCE = new HttpConnectorResource();
 
     //FIXME is this attribute still used?
     static final SimpleAttributeDefinition AUTHENTICATION_PROVIDER = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_PROVIDER, ModelType.STRING)
@@ -51,22 +49,22 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.NAME))
             .build();
 
-    static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinition(CommonAttributes.SOCKET_BINDING, ModelType.STRING, false);
+    static final SimpleAttributeDefinition CONNECTOR_REF = new SimpleAttributeDefinition(CommonAttributes.CONNECTOR_REF, ModelType.STRING, false);
     static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(
             CommonAttributes.SECURITY_REALM, ModelType.STRING, true).setValidator(
             new StringLengthValidator(1, Integer.MAX_VALUE, true, false)).build();
 
-    private ConnectorResource() {
-        super(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR),
-                ConnectorAdd.INSTANCE, ConnectorRemove.INSTANCE);
+    private HttpConnectorResource() {
+        super(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR),
+                HttpConnectorAdd.INSTANCE, HttpConnectorRemove.INSTANCE);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(AUTHENTICATION_PROVIDER,
-                SOCKET_BINDING, SECURITY_REALM);
+                CONNECTOR_REF, SECURITY_REALM);
         resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_PROVIDER, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(CONNECTOR_REF, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, writeHandler);
     }
 }
