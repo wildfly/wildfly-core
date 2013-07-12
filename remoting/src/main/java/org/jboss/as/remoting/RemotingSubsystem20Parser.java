@@ -51,13 +51,15 @@ import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.readArrayAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readProperty;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
+import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.remoting.CommonAttributes.AUTHENTICATION_PROVIDER;
 import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
+import static org.jboss.as.remoting.CommonAttributes.CONNECTOR_REF;
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.INCLUDE_MECHANISMS;
 import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
 import static org.jboss.as.remoting.CommonAttributes.QOP;
@@ -68,13 +70,13 @@ import static org.jboss.as.remoting.CommonAttributes.VALUE;
 import static org.jboss.as.remoting.RemotingMessages.MESSAGES;
 
 /**
- * Parser for remoting subsystem 1.1 version
+ * Parser for remoting subsystem 2.0 version
  *
  * @author Jaikiran Pai
  */
-class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+class RemotingSubsystem20Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
-    static final RemotingSubsystem11Parser INSTANCE = new RemotingSubsystem11Parser();
+    static final RemotingSubsystem20Parser INSTANCE = new RemotingSubsystem20Parser();
 
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
@@ -85,7 +87,7 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
         final ModelNode subsystem = Util.getEmptyOperation(ADD, address);
         list.add(subsystem);
 
-        requireNoAttributes(reader);
+        requireAttributes(reader);
 
         // Handle elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -102,6 +104,11 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
                 case CONNECTOR: {
                     // Add connector updates
                     parseConnector(reader, address, list);
+                    break;
+                }
+                case HTTP_CONNECTOR: {
+                    // Add http connector updates
+                    parseHttpConnector(reader, address, list);
                     break;
                 }
                 case OUTBOUND_CONNECTIONS: {
@@ -215,6 +222,61 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
         }
         list.add(connector);
 
+        // Handle nested elements.
+        parseConnectorNestledElements(reader, list, connector);
+    }
+
+
+    void parseHttpConnector(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+
+            String name = null;
+            String securityRealm = null;
+            String connectorRef = null;
+            final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.CONNECTOR_REF);
+            final int count = reader.getAttributeCount();
+            for (int i = 0; i < count; i++) {
+                requireNoNamespaceAttribute(reader, i);
+                final String value = reader.getAttributeValue(i);
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                required.remove(attribute);
+                switch (attribute) {
+                    case NAME: {
+                        name = value;
+                        break;
+                    }
+                    case SECURITY_REALM: {
+                        securityRealm = value;
+                        break;
+                    }
+                    case CONNECTOR_REF: {
+                        connectorRef = value;
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+            if (!required.isEmpty()) {
+                throw missingRequired(reader, required);
+            }
+            assert name != null;
+            assert connectorRef != null;
+
+            final ModelNode connector = new ModelNode();
+            connector.get(OP).set(ADD);
+            connector.get(OP_ADDR).set(address).add(HTTP_CONNECTOR, name);
+            // requestProperties.get(NAME).set(name); // Name is part of the address
+            connector.get(CONNECTOR_REF).set(connectorRef);
+            if (securityRealm != null) {
+                connector.get(SECURITY_REALM).set(securityRealm);
+            }
+            list.add(connector);
+        parseConnectorNestledElements(reader, list, connector);
+
+
+    }
+
+    private void parseConnectorNestledElements(final XMLExtendedStreamReader reader, final List<ModelNode> list, final ModelNode connector) throws XMLStreamException {
         // Handle nested elements.
         final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -370,7 +432,7 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
 
     private void parseProperties(XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         while (reader.nextTag() != END_ELEMENT) {
-            reader.require(START_ELEMENT, Namespace.REMOTING_1_1.getUriString(), Element.PROPERTY.getLocalName());
+            reader.require(START_ELEMENT, Namespace.CURRENT.getUriString(), Element.PROPERTY.getLocalName());
             final Property property = readProperty(reader, true);
             ModelNode propertyOp = new ModelNode();
             propertyOp.get(OP).set(ADD);
@@ -409,6 +471,7 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
         final int count = reader.getAttributeCount();
         String name = null;
         String outboundSocketBindingRef = null;
+        String protocol = null;
         ModelNode username = null;
         String securityRealm = null;
         for (int i = 0; i < count; i++) {
@@ -433,6 +496,10 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
                     securityRealm = value;
                     break;
                 }
+                case PROTOCOL: {
+                    protocol = value;
+                    break;
+                }
                 default:
                     throw unexpectedAttribute(reader, i);
             }
@@ -443,8 +510,7 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
         final PathAddress address = PathAddress.pathAddress(PathAddress.pathAddress(parentAddress), PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION, name));
 
         // create add operation add it to the list of operations
-        ModelNode connectionAddOperation = getConnectionAddOperation(name, outboundSocketBindingRef, username, securityRealm, address);
-        operations.add(connectionAddOperation);
+        operations.add(getConnectionAddOperation(name, outboundSocketBindingRef, username, securityRealm, protocol, address));
         // parse the nested elements
         final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -570,10 +636,10 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
     }
 
     static ModelNode getConnectionAddOperation(final String connectionName, final String outboundSocketBindingRef, PathAddress address) {
-        return getConnectionAddOperation(connectionName, outboundSocketBindingRef, null, null, address);
+        return getConnectionAddOperation(connectionName, outboundSocketBindingRef, null, null, null, address);
     }
 
-    static ModelNode getConnectionAddOperation(final String connectionName, final String outboundSocketBindingRef, final ModelNode userName, final String securityRealm, PathAddress address) {
+    static ModelNode getConnectionAddOperation(final String connectionName, final String outboundSocketBindingRef, final ModelNode userName, final String securityRealm, final String protocol, PathAddress address) {
         if (connectionName == null || connectionName.trim().isEmpty()) {
             throw MESSAGES.connectionNameEmpty();
         }
@@ -594,6 +660,10 @@ class RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<
 
         if (securityRealm != null) {
             addOperation.get(CommonAttributes.SECURITY_REALM).set(securityRealm);
+        }
+
+        if(protocol != null) {
+            addOperation.get(CommonAttributes.PROTOCOL).set(protocol);
         }
 
         return addOperation;
