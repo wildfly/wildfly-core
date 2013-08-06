@@ -20,51 +20,39 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.domain.management.security;
+package org.jboss.as.core.security;
 
-import static org.jboss.as.domain.management.DomainManagementMessages.MESSAGES;
+import java.lang.reflect.Method;
+import java.security.CodeSource;
 import java.security.Principal;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.Subject;
 
 /**
- * Base class for Principals defined for security realms.
+ * Interface to the servers security manager implementation.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public abstract class SecurityRealmPrincipal implements Principal {
+public interface ServerSecurityManager {
 
-    private final String name;
+    void push(final String securityDomain);
+    void push(final String securityDomain, String userName, char[] password, final Subject subject);
 
-    SecurityRealmPrincipal(final String name) {
-        if (name == null) {
-            throw MESSAGES.canNotBeNull("name");
-        }
-        this.name = name;
-    }
+    void authenticate();
+    void authenticate(final String runAs, final String runAsPrincipal, final Set<String> extraRoles);
 
-    /**
-     * @see java.security.Principal#getName()
-     */
-    public String getName() {
-        return name;
-    }
+    void pop();
 
-    @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
+    Principal getCallerPrincipal();
 
-    @Override
-    public boolean equals(Object obj) {
-        return obj != null && this.getClass().equals(obj.getClass()) ? equals((SecurityRealmPrincipal) obj) : false;
-    }
+    Subject getSubject();
 
-    protected boolean equals(SecurityRealmPrincipal principal) {
-        return this == principal || name.equals(principal.name);
-    }
+    boolean isCallerInRole(final Object mappedRoles, final Map<String, Collection<String>> roleLinks,
+            final String... roleNames);
 
-    @Override
-    public String toString() {
-        return name;
-    }
+    boolean authorize(String ejbName, CodeSource ejbCodeSource, String ejbMethodIntf, Method ejbMethod, Set<Principal> methodRoles, String contextID);
 
 }

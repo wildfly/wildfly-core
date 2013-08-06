@@ -20,39 +20,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.security;
-
-import java.lang.reflect.Method;
-import java.security.CodeSource;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import javax.security.auth.Subject;
+package org.jboss.as.core.security;
 
 /**
- * Interface to the servers security manager implementation.
+ * An interface to be implement by UserInfo implementations where a unique identifier
+ * is needed to represent that UserInfo.
+ *
+ * The purpose of this ID is to act as the credential when transitioning from one
+ * authentication mechanism to the next e.g. from SASL to JAAS.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface ServerSecurityManager {
+public interface UniqueIdUserInfo {
 
-    void push(final String securityDomain);
-    void push(final String securityDomain, String userName, char[] password, final Subject subject);
-
-    void authenticate();
-    void authenticate(final String runAs, final String runAsPrincipal, final Set<String> extraRoles);
-
-    void pop();
-
-    Principal getCallerPrincipal();
-
-    Subject getSubject();
-
-    boolean isCallerInRole(final Object mappedRoles, final Map<String, Collection<String>> roleLinks,
-            final String... roleNames);
-
-    boolean authorize(String ejbName, CodeSource ejbCodeSource, String ejbMethodIntf, Method ejbMethod, Set<Principal> methodRoles, String contextID);
+    String getId();
 
 }

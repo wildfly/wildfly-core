@@ -1,6 +1,6 @@
-package org.jboss.as.domain.management.security;
+package org.jboss.as.core.security;
 
-import static org.jboss.as.domain.management.DomainManagementMessages.MESSAGES;
+import static org.jboss.as.core.security.CoreSecurityMessages.MESSAGES;
 
 abstract class AbstractRealmPrincipal extends SecurityRealmPrincipal implements RealmPrincipal {
 

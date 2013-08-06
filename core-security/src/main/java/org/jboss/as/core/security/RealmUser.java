@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2013, Red Hat, Inc., and individual contributors
+ * Copyright 2012, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,15 +20,21 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.security;
-
-import java.security.Principal;
+package org.jboss.as.core.security;
 
 /**
- * An interfaces to be implemented by {@link Principal} instances that represent group membership.
+ * The Principal used to represent the name of an authenticated user.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface GroupPrincipal extends Principal {
+public class RealmUser extends AbstractRealmPrincipal implements AccountPrincipal {
+
+    public RealmUser(String realm, String name) {
+        super(realm, name);
+    }
+
+    public RealmUser(String name) {
+        super(name);
+    }
 
 }

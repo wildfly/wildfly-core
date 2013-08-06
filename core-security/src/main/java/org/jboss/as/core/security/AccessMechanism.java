@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2013, Red Hat, Inc., and individual contributors
+ * Copyright 2012, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -19,23 +19,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.domain.management.security;
-
-import java.nio.file.attribute.GroupPrincipal;
+package org.jboss.as.core.security;
 
 /**
- * A {@link Principal} used to represent an authenticated identities group membership.
  *
- * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public final class RealmGroup extends AbstractRealmPrincipal implements GroupPrincipal {
-
-    public RealmGroup(String realm, String name) {
-        super(realm, name);
-    }
-
-    public RealmGroup(String name) {
-        super(name);
-    }
-
+public enum AccessMechanism {
+    NATIVE,
+    HTTP,
+    JMX
 }

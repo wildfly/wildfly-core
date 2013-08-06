@@ -19,18 +19,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.as.core.security;
 
-package org.jboss.as.controller.security;
-
-import java.security.Principal;
 
 /**
- * An interfaces to be implemented by all {@link Principal} instances that are also assoicated with a realm.
+ * A {@link Principal} used to represent an authenticated identities group membership.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface RealmPrincipal extends Principal {
+public final class RealmGroup extends AbstractRealmPrincipal implements GroupPrincipal {
 
-    String getRealm();
+    public RealmGroup(String realm, String name) {
+        super(realm, name);
+    }
+
+    public RealmGroup(String name) {
+        super(name);
+    }
 
 }

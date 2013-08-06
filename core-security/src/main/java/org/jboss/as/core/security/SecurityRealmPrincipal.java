@@ -20,43 +20,52 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.security;
+package org.jboss.as.core.security;
+
+import static org.jboss.as.core.security.CoreSecurityMessages.MESSAGES;
 
 import java.security.Principal;
-import java.util.Collection;
-
-import javax.security.auth.Subject;
 
 /**
- * A UserInfo definition that also allows for a Subject to be returned.
- *
- * This interface contains a method from the Remoting UserInfo definition, however
- * domain management is both about Remoting and non-Remoting invocations so we do not
- * tie this directly to the Remoting class.
+ * Base class for Principals defined for security realms.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface SubjectUserInfo {
+public abstract class SecurityRealmPrincipal implements Principal {
 
-    // TODO - This is currently within this module as it needs to be widely accessible - the domain-management
-    //        module currently depends on controller so can't see this class.  We really need to split the domain
-    //        management into two pieces - 1 for the management operations and 2 the core library handling security
-    //        the latter should have no other dependencies within the AS tree.
+    private final String name;
 
-    /**
-     * Get the name for this user.
-     *
-     * @return the name
-     */
-    String getUserName();
+    SecurityRealmPrincipal(final String name) {
+        if (name == null) {
+            throw MESSAGES.canNotBeNull("name");
+        }
+        this.name = name;
+    }
 
     /**
-     * Get the principals for this user.
-     *
-     * @return the principals
+     * @see java.security.Principal#getName()
      */
-    Collection<Principal> getPrincipals();
+    public String getName() {
+        return name;
+    }
 
-    Subject getSubject();
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj != null && this.getClass().equals(obj.getClass()) ? equals((SecurityRealmPrincipal) obj) : false;
+    }
+
+    protected boolean equals(SecurityRealmPrincipal principal) {
+        return this == principal || name.equals(principal.name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 
 }

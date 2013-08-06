@@ -20,15 +20,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.security;
+package org.jboss.as.core.security;
 
 import java.security.Principal;
 
 /**
- * An interfaces to be implemented by a {@link Principal} that represents the account used for authentication.
+ * An interfaces to be implemented by {@link Principal} instances that represent group membership.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface AccountPrincipal extends Principal {
+public interface GroupPrincipal extends Principal {
 
 }

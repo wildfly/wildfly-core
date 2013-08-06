@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
+ * Copyright 2013, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,19 +20,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.domain.management.security;
+package org.jboss.as.core.security;
 
-import org.jboss.as.controller.security.RolePrincipal;
+import java.security.Principal;
 
 /**
- * A {@link Principal} used to represent an authenticated identities role assignment.
+ * An interfaces to be implemented by a {@link Principal} that represents the account used for authentication.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class RealmRole extends SecurityRealmPrincipal implements RolePrincipal {
-
-    public RealmRole(final String name) {
-        super(name);
-    }
+public interface AccountPrincipal extends Principal {
 
 }

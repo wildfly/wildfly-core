@@ -20,15 +20,17 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.security;
+package org.jboss.as.core.security;
 
 import java.security.Principal;
 
 /**
- * An interfaces to be implemented by {@link Principal} instances that represent role assignment.
+ * An interfaces to be implemented by all {@link Principal} instances that are also assoicated with a realm.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface RolePrincipal extends Principal {
+public interface RealmPrincipal extends Principal {
+
+    String getRealm();
 
 }

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
+ * Copyright 2011, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,19 +20,22 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.security;
+package org.jboss.as.controller.audit;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
- * An interface to be implement by UserInfo implementations where a unique identifier
- * is needed to represent that UserInfo.
- *
- * The purpose of this ID is to act as the credential when transitioning from one
- * authentication mechanism to the next e.g. from SASL to JAAS.
- *
- * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author John Bailey
  */
-public interface UniqueIdUserInfo {
+final class Util {
 
-    String getId();
+    static final byte[] RECORD_HEADER = new byte[]{(byte) 0xEE, (byte) 0xFF, (byte) 0xEE, (byte) 0xFF};
+    static final byte[] EMPTY_BYTES = new byte[0];
+
+    static OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
+        public void write(int i) throws IOException {
+        }
+    };
 
 }
