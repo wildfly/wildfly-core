@@ -21,18 +21,18 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-
-<module xmlns="urn:jboss:module:1.3" name="org.jboss.as.console.main" slot="2.0.0">
+<module xmlns="urn:jboss:module:1.3" name="org.codehaus.woodstox">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <resources>
-        <!-- Insert resources here -->
+        <artifact name="${org.codehaus.woodstox:woodstox-core-asl}"/>
+        <artifact name="${org.codehaus.woodstox:stax2-api}"/>
     </resources>
 
     <dependencies>
-        <!-- Do not add dependencies to the console as resources in any
-             dependencies could be served up through the HTTP interface. -->
+        <module name="javax.xml.stream.api"/>
+        <module name="javax.api"/>
     </dependencies>
 </module>
