@@ -96,9 +96,12 @@ import org.jboss.as.server.operations.ProcessTypeHandler;
 import org.jboss.as.server.operations.RootResourceHack;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessReloadHandler;
+import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
 import org.jboss.as.server.operations.ServerProcessReloadHandler;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
+import org.jboss.as.server.operations.ServerResumeHandler;
 import org.jboss.as.server.operations.ServerShutdownHandler;
+import org.jboss.as.server.operations.ServerSuspendHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.SetServerGroupHostHandler;
 import org.jboss.as.server.services.net.BindingGroupAddHandler;
@@ -284,8 +287,17 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             // TODO enable the descriptions so that they show up in the resource description
             final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater);
             resourceRegistration.registerOperationHandler(ServerDomainProcessReloadHandler.DOMAIN_DEFINITION, reloadHandler, false);
-
             resourceRegistration.registerOperationHandler(SetServerGroupHostHandler.DEFINITION, SetServerGroupHostHandler.INSTANCE);
+
+            final ServerSuspendHandler suspendHandler = new ServerSuspendHandler();
+            resourceRegistration.registerOperationHandler(ServerSuspendHandler.DOMAIN_DEFINITION, suspendHandler, false);
+
+            final ServerResumeHandler resumeHandler = new ServerResumeHandler();
+            resourceRegistration.registerOperationHandler(ServerResumeHandler.DOMAIN_DEFINITION, resumeHandler, false);
+
+            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler(operationIDUpdater), false);
+
+
 //            // Trick the resource-description for domain servers to be included in the server-resource
 //            resourceRegistration.registerOperationHandler(getOperationDefinition("start"), NOOP);
 //            resourceRegistration.registerOperationHandler(getOperationDefinition("stop"), NOOP);
@@ -295,6 +307,9 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         } else {
             final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState);
             resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.DEFINITION, reloadHandler, false);
+
+            resourceRegistration.registerOperationHandler(ServerSuspendHandler.DEFINITION, ServerSuspendHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(ServerResumeHandler.DEFINITION, ServerResumeHandler.INSTANCE);
         }
 
         // Runtime operations
@@ -303,6 +318,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             if (serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.STANDALONE) {
                 ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState);
                 resourceRegistration.registerOperationHandler(ServerShutdownHandler.DEFINITION, serverShutdownHandler);
+
             }
             resourceRegistration.registerSubModel(ServerEnvironmentResourceDescription.of(serverEnvironment));
         }

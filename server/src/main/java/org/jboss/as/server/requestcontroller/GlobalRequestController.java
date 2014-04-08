@@ -1,0 +1,329 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2014, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.jboss.as.server.requestcontroller;
+
+import org.jboss.as.server.shutdown.ServerActivity;
+import org.jboss.as.server.shutdown.ServerActivityListener;
+import org.jboss.as.server.shutdown.SuspendController;
+import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import static org.jboss.as.server.requestcontroller.RunResult.REJECTED;
+import static org.jboss.as.server.requestcontroller.RunResult.RUN;
+
+/**
+ * A controller that manages the active requests that are running in the container.
+ * <p/>
+ * There are two main use cases for this:
+ * <p/>
+ * 1) Graceful shutdown - When the number of active request reaches zero then the container can be gracefully shut down
+ * 2) Request limiting - This allows the total number of requests that are active to be limited.
+ * <p/>
+ *
+ * @author Stuart Douglas
+ */
+public class GlobalRequestController implements Service<GlobalRequestController>, ServerActivity {
+
+    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "global-request-controller");
+
+    private static final AtomicIntegerFieldUpdater<GlobalRequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(GlobalRequestController.class, "activeRequestCount");
+    private static final AtomicReferenceFieldUpdater<GlobalRequestController, ServerActivityListener> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(GlobalRequestController.class, ServerActivityListener.class, "listener");
+
+    private volatile int maxRequestCount = 0;
+
+    private volatile int activeRequestCount = 0;
+
+    private volatile boolean paused = false;
+
+    private final Map<EntryPointIdentifier, ControlPoint> entryPoints = new HashMap<>();
+
+    private final InjectedValue<SuspendController> shutdownControllerInjectedValue = new InjectedValue<>();
+
+    @SuppressWarnings("unused")
+    private volatile ServerActivityListener listener = null;
+
+    /**
+     * Pause the controller. All existing requests will have a chance to finish, and once all requests are
+     * finished the provided listener will be invoked.
+     * <p/>
+     * While the container is paused no new requests will be accepted.
+     *
+     * @param requestCountListener The listener that will be notified when all requests are done
+     */
+    public synchronized void pause(ServerActivityListener requestCountListener) {
+        this.paused = true;
+        listenerUpdater.set(this, requestCountListener);
+
+        if (activeRequestCountUpdater.get(this) == 0) {
+            if (listenerUpdater.compareAndSet(this, requestCountListener, null)) {
+                requestCountListener.requestsComplete();
+            }
+        }
+    }
+
+    /**
+     * Unpause the server, allowing it to resume normal operations
+     */
+    @Override
+    public synchronized void resume() {
+        this.paused = false;
+        ServerActivityListener listener = listenerUpdater.get(this);
+        if (listener != null) {
+            if (listenerUpdater.compareAndSet(this, listener, null)) {
+                listener.unPaused();
+            }
+        }
+    }
+
+    /**
+     * Pauses a given deployment
+     *
+     * @param deployment The deployment to pause
+     * @param listener The listener that will be notified when the pause is complete
+     */
+    public synchronized void pauseDeployment(final String deployment, ServerActivityListener listener) {
+        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
+        for (ControlPoint ep : entryPoints.values()) {
+            if (ep.getDeployment().equals(deployment)) {
+                eps.add(ep);
+            }
+        }
+        CountingRequestCountListener realListener = new CountingRequestCountListener(eps.size(), listener);
+        for (ControlPoint ep : eps) {
+            ep.pause(realListener);
+        }
+    }
+
+    /**
+     * resumed a given deployment
+     *
+     * @param deployment The deployment to resume
+     */
+    public synchronized void resumeDeployment(final String deployment) {
+        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
+        for (ControlPoint ep : entryPoints.values()) {
+            if (ep.getDeployment().equals(deployment)) {
+                ep.resume();
+            }
+        }
+    }
+
+    /**
+     * Pauses a given entry point. This can be used to stop all requests though a given mechanism, e.g. all web requests
+     *
+     * @param entryPoint The entry point
+     * @param listener   The listener
+     */
+    public synchronized void pauseEntryPoint(final String entryPoint, ServerActivityListener listener) {
+        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
+        for (ControlPoint ep : entryPoints.values()) {
+            if (ep.getEntryPoint().equals(entryPoint)) {
+                eps.add(ep);
+            }
+        }
+        CountingRequestCountListener realListener = new CountingRequestCountListener(eps.size(), listener);
+        for (ControlPoint ep : eps) {
+            ep.pause(realListener);
+        }
+    }
+
+    /**
+     * Resumes a given entry point type;
+     *
+     * @param entryPoint The entry point
+     */
+    public synchronized void resumeEntryPoint(final String entryPoint) {
+        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
+        for (ControlPoint ep : entryPoints.values()) {
+            if (ep.getEntryPoint().equals(entryPoint)) {
+                ep.resume();
+            }
+        }
+    }
+
+    public synchronized RequestControllerState getState() {
+        final List<RequestControllerState.EntryPointState> eps = new ArrayList<>();
+        for (ControlPoint controlPoint : entryPoints.values()) {
+            eps.add(new RequestControllerState.EntryPointState(controlPoint.getDeployment(), controlPoint.getEntryPoint(), controlPoint.isPaused(), controlPoint.getActiveRequestCount()));
+        }
+        return new RequestControllerState(paused, activeRequestCount, maxRequestCount, eps);
+    }
+
+    RunResult beginRequest() {
+        int maxRequests = maxRequestCount;
+        int active = activeRequestCountUpdater.get(this);
+        boolean success = false;
+        while ((maxRequests <= 0 || active < maxRequests) && !paused) {
+            if (activeRequestCountUpdater.compareAndSet(this, active, active + 1)) {
+                success = true;
+                break;
+            }
+            active = activeRequestCountUpdater.get(this);
+        }
+        if (success) {
+            //re-check the paused state
+            //this is necessary because there is a race between checking paused and updating active requests
+            //if this happens we just call requestComplete(), as the listener can only be invoked once it does not
+            //matter if it has already been invoked
+            if(paused) {
+                requestComplete();
+                return REJECTED;
+            }
+            return RUN;
+        } else {
+            return REJECTED;
+        }
+    }
+
+
+    void requestComplete() {
+        int result = activeRequestCountUpdater.decrementAndGet(this);
+        if (paused) {
+            if (paused && result == 0) {
+                ServerActivityListener listener = listenerUpdater.get(this);
+                if (listener != null) {
+                    if (listenerUpdater.compareAndSet(this, listener, null)) {
+                        listener.requestsComplete();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets an entry point for the given deployment . If one does not exist it will be created.
+     *
+     * Entry points are reference counted. If this method is called n times then {@link #removeEntryPoint(ControlPoint)}
+     * must also be called n times to clean up the entry points.
+     *
+     * @param deploymentName The top level deployment name
+     * @param entryPointName The entry point name
+     * @return The entry point
+     */
+    public synchronized ControlPoint getEntryPoint(final String deploymentName, final String entryPointName) {
+        EntryPointIdentifier id = new EntryPointIdentifier(deploymentName, entryPointName);
+        ControlPoint ep = entryPoints.get(id);
+        if (ep == null) {
+            ep = new ControlPoint(this, deploymentName, entryPointName);
+            entryPoints.put(id, ep);
+        }
+        ep.increaseReferenceCount();
+        return ep;
+    }
+
+    /**
+     * Removes the specified entry point
+     *
+     * @param controlPoint The entry point
+     */
+    public synchronized void removeEntryPoint(ControlPoint controlPoint) {
+        if (controlPoint.decreaseReferenceCount() == 0) {
+            EntryPointIdentifier id = new EntryPointIdentifier(controlPoint.getDeployment(), controlPoint.getEntryPoint());
+            entryPoints.remove(id);
+        }
+    }
+
+    /**
+     * @return The maximum number of requests that can be active at a time
+     */
+    public int getMaxRequestCount() {
+        return maxRequestCount;
+    }
+
+    /**
+     * Sets the maximum number of requests that can be active at a time.
+     * <p/>
+     * If this is higher that the number of currently running requests the no new requests
+     * will be able to run until the number of active requests has dropped below this level.
+     *
+     * @param maxRequestCount The max request count
+     */
+    public void setMaxRequestCount(int maxRequestCount) {
+        this.maxRequestCount = maxRequestCount;
+    }
+
+    /**
+     * @return <code>true</code> If the server is currently pause
+     */
+    public boolean isPaused() {
+        return paused;
+    }
+
+    @Override
+    public void start(StartContext startContext) throws StartException {
+        shutdownControllerInjectedValue.getValue().registerActivity(this);
+    }
+
+    @Override
+    public void stop(StopContext stopContext) {
+        shutdownControllerInjectedValue.getValue().unRegisterActivity(this);
+    }
+
+    @Override
+    public GlobalRequestController getValue() throws IllegalStateException, IllegalArgumentException {
+        return this;
+    }
+
+    public InjectedValue<SuspendController> getShutdownControllerInjectedValue() {
+        return shutdownControllerInjectedValue;
+    }
+
+    private static final class EntryPointIdentifier {
+        private final String deployment, name;
+
+        private EntryPointIdentifier(String deployment, String name) {
+            this.deployment = deployment;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EntryPointIdentifier that = (EntryPointIdentifier) o;
+
+            if (deployment != null ? !deployment.equals(that.deployment) : that.deployment != null) return false;
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = deployment != null ? deployment.hashCode() : 0;
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            return result;
+        }
+    }
+}

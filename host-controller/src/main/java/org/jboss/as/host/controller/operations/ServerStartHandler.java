@@ -64,13 +64,16 @@ public class ServerStartHandler implements OperationStepHandler {
 
     private final ServerInventory serverInventory;
 
-    static OperationDefinition getOperationDefinition(String name) {
-        return new SimpleOperationDefinitionBuilder(name, HostResolver.getResolver("host.server"))
-            .setParameters(SERVER, BLOCKING)
-            .setReplyType(ModelType.STRING)
-            .setRuntimeOnly()
-            .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-            .build();
+    static OperationDefinition getOperationDefinition(String name, AttributeDefinition... additional) {
+        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, HostResolver.getResolver("host.server"))
+                .setParameters(SERVER, BLOCKING)
+                .setReplyType(ModelType.STRING)
+                .setRuntimeOnly()
+                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY);
+        for (AttributeDefinition param : additional) {
+            builder.addParameter(param);
+        }
+        return builder.build();
     }
 
     /**

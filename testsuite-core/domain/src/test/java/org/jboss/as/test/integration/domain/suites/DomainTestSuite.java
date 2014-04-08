@@ -100,6 +100,7 @@ public class DomainTestSuite {
     @AfterClass
     public static synchronized void afterClass() {
         stop();
+        initializedLocally = false;
     }
 
 }

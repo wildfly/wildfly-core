@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -238,7 +239,8 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return ServerStatus.STOPPED;
         }
-        server.stop();
+        Integer currentOperationID = CurrentOperationIdHolder.getCurrentOperationID();
+        server.stop(currentOperationID == null ? -1 : currentOperationID, gracefulTimeout);
         if(blocking) {
             server.awaitState(ManagedServer.InternalState.STOPPED);
         }
@@ -302,7 +304,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return;
         }
-        server.destroy();
+        server.destroy(CurrentOperationIdHolder.getCurrentOperationID());
     }
 
     @Override
@@ -311,7 +313,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return;
         }
-        server.kill();
+        server.kill(CurrentOperationIdHolder.getCurrentOperationID());
     }
 
     @Override
@@ -322,7 +324,8 @@ public class ServerInventoryImpl implements ServerInventory {
     @Override
     public void stopServers(final int gracefulTimeout, final boolean blockUntilStopped) {
         for(final ManagedServer server : servers.values()) {
-            server.stop();
+            Integer currentOperationID = CurrentOperationIdHolder.getCurrentOperationID();
+            server.stop(currentOperationID == null ? -1 : currentOperationID, gracefulTimeout);
         }
         if(blockUntilStopped) {
             synchronized (shutdownCondition) {
@@ -366,6 +369,47 @@ public class ServerInventoryImpl implements ServerInventory {
             }
             server.awaitState(started ? ManagedServer.InternalState.SERVER_STARTED : ManagedServer.InternalState.STOPPED);
         }
+    }
+
+    @Override
+    public void suspendServer(String serverName) {
+        final ManagedServer server = servers.get(serverName);
+        if(server == null) {
+            return;
+        }
+        server.suspend();
+    }
+
+    @Override
+    public void resumeServer(String serverName) {
+        final ManagedServer server = servers.get(serverName);
+        if(server == null) {
+            return;
+        }
+        server.resume();
+    }
+
+    @Override
+    public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
+        long end = System.currentTimeMillis() + timeout;
+        for (String serverName : waitForServers) {
+
+            final ManagedServer server = servers.get(serverName);
+            if (server != null) {
+                if (timeout == -1) {
+                    server.awaitSuspended(-1);
+                } else {
+                    long time = end - System.currentTimeMillis();
+                    if (time > 0) {
+                        server.awaitSuspended(time);
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+        long time = end - System.currentTimeMillis();
+        return time > 0;
     }
 
     void shutdown(final boolean shutdownServers, final int gracefulTimeout, final boolean blockUntilStopped) {

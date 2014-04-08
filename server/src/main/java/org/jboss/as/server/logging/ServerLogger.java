@@ -1041,4 +1041,15 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 209, value = "When specifying a 'module' you also need to specify the 'code'")
     OperationFailedException vaultModuleWithNoCode();
+
+    @Message(id = 210, value = "Server is already paused")
+    IllegalStateException serverAlreadyPaused();
+
+    @LogMessage(level = INFO)
+    @Message(id = 211, value = "Suspending server")
+    void suspendingServer();
+
+    @LogMessage(level = INFO)
+    @Message(id = 212, value = "Resuming server")
+    void resumingServer();
 }

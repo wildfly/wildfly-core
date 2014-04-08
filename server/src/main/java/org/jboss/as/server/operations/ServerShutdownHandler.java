@@ -37,8 +37,14 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
+import org.jboss.as.server.shutdown.OperationListener;
+import org.jboss.as.server.shutdown.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceRegistry;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Handler that shuts down the standalone server.
@@ -47,12 +53,17 @@ import org.jboss.dmr.ModelType;
  */
 public class ServerShutdownHandler implements OperationStepHandler {
 
-    private static final SimpleAttributeDefinition RESTART = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESTART, ModelType.BOOLEAN)
+    protected static final SimpleAttributeDefinition RESTART = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESTART, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
             .setAllowNull(true)
             .build();
-    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("shutdown", ServerDescriptions.getResourceDescriptionResolver())
-            .setParameters(RESTART)
+    protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
+            .setDefaultValue(new ModelNode(0))
+            .setAllowNull(true)
+            .build();
+
+    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SHUTDOWN, ServerDescriptions.getResourceDescriptionResolver())
+            .setParameters(RESTART, TIMEOUT)
             .setRuntimeOnly()
             .build();
 
@@ -69,6 +80,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final boolean restart = RESTART.resolveModelAttribute(context, operation).asBoolean();
+        final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in seconds, need to convert to ms
         // Acquire the controller lock to prevent new write ops and wait until current ones are done
         context.acquireControllerLock();
         context.addStep(new OperationStepHandler() {
@@ -87,16 +99,42 @@ public class ServerShutdownHandler implements OperationStepHandler {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if(resultAction == OperationContext.ResultAction.KEEP) {
-                            processState.setStopping();
-                            final Thread thread = new Thread(new Runnable() {
-                                public void run() {
-                                    System.exit(restart ? ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT : ExitCodes.NORMAL);
+                            //even if the timeout is zero we still pause the server
+                            //to stop new requests being accepted as it is shutting down
+                            final ShutdownAction shutdown = new ShutdownAction(restart);
+                            final ServiceRegistry registry = context.getServiceRegistry(false);
+                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
+                            final SuspendController suspendController = suspendControllerServiceController.getValue();
+                            OperationListener listener = new OperationListener() {
+                                @Override
+                                public void suspendStarted() {
+
                                 }
-                            });
-                            // The intention is that this shutdown is graceful, and so the client gets a reply.
-                            // At the time of writing we did not yet have graceful shutdown.
-                            thread.setName("Management Triggered Shutdown");
-                            thread.start();
+
+                                @Override
+                                public void complete() {
+                                    suspendController.removeListener(this);
+                                    shutdown.shutdown();
+                                }
+
+                                @Override
+                                public void cancelled() {
+                                    suspendController.removeListener(this);
+                                    shutdown.cancel();
+                                }
+
+                                @Override
+                                public void timeout() {
+                                    suspendController.removeListener(this);
+                                    shutdown.shutdown();
+                                }
+                            };
+                            suspendController.addListener(listener);
+                            suspendController.suspend(timeout > 0 ?  timeout * 1000 : timeout);
+                            if(timeout == 0) {
+                                shutdown.shutdown();
+                            }
+
                         }
                     }
                 });
@@ -104,5 +142,33 @@ public class ServerShutdownHandler implements OperationStepHandler {
         }, OperationContext.Stage.RUNTIME);
 
         context.stepCompleted();
+    }
+
+    private final class ShutdownAction extends AtomicBoolean {
+
+        private final boolean restart;
+
+        private ShutdownAction(boolean restart) {
+            this.restart = restart;
+        }
+
+        void cancel() {
+            compareAndSet(false, true);
+        }
+
+        void shutdown() {
+            if(compareAndSet(false, true)) {
+                processState.setStopping();
+                final Thread thread = new Thread(new Runnable() {
+                    public void run() {
+                        System.exit(restart ? ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT : ExitCodes.NORMAL);
+                    }
+                });
+                // The intention is that this shutdown is graceful, and so the client gets a reply.
+                // At the time of writing we did not yet have graceful shutdown.
+                thread.setName("Management Triggered Shutdown");
+                thread.start();
+            }
+        }
     }
 }

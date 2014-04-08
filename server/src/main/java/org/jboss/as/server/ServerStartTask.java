@@ -147,6 +147,8 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
                         .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, service.getExecutorInjector())
                         .setInitialMode(ServiceController.Mode.ACTIVE)
                         .install();
+
+
             }
         };
         services.add(activator);

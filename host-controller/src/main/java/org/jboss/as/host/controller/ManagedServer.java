@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
@@ -159,7 +160,7 @@ class ManagedServer {
      *
      * @return the server name
      */
-    public String getServerName() {
+    String getServerName() {
         return serverName;
     }
 
@@ -168,7 +169,7 @@ class ManagedServer {
      *
      * @return the proxy controller
      */
-    public TransformingProxyController getProxyController() {
+    TransformingProxyController getProxyController() {
         return proxyController;
     }
 
@@ -177,7 +178,7 @@ class ManagedServer {
      *
      * @return the server status
      */
-    public ServerStatus getState() {
+    ServerStatus getState() {
         final InternalState requiredState = this.requiredState;
         final InternalState state = internalState;
         if(requiredState == InternalState.FAILED) {
@@ -198,14 +199,14 @@ class ManagedServer {
         }
     }
 
-    protected boolean isRequiresReload() {
+    boolean isRequiresReload() {
         return requiresReload;
     }
 
     /**
      * Require a reload on the the next reconnect.
      */
-    protected void requireReload() {
+    void requireReload() {
         requiresReload = true;
     }
 
@@ -215,7 +216,7 @@ class ManagedServer {
      * @param permit the controller permit
      * @return whether the state was changed successfully or not
      */
-    protected synchronized boolean reload(int permit) {
+    synchronized boolean reload(int permit) {
         return internalSetState(new ReloadTask(permit), InternalState.SERVER_STARTED, InternalState.RELOADING);
     }
 
@@ -224,7 +225,7 @@ class ManagedServer {
      *
      * @param factory the boot command factory
      */
-    protected synchronized void start(final ManagedServerBootCmdFactory factory) {
+    synchronized void start(final ManagedServerBootCmdFactory factory) {
         final InternalState required = this.requiredState;
         // Ignore if the server is already started
         if(required == InternalState.SERVER_STARTED) {
@@ -248,17 +249,16 @@ class ManagedServer {
     /**
      * Stop a managed server.
      */
-    protected synchronized void stop() {
+    synchronized void stop(int operationID, int timeout) {
         final InternalState required = this.requiredState;
         if(required != InternalState.STOPPED) {
             this.requiredState = InternalState.STOPPED;
             ROOT_LOGGER.stoppingServer(serverName);
-            // Transition, but don't wait for async notifications to complete
-            transition(false);
+            internalSetState(new ServerStopTask(operationID, timeout), internalState, InternalState.PROCESS_STOPPING);
         }
     }
 
-    protected synchronized void destroy() {
+    synchronized void destroy(int permit) {
         final InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
@@ -269,11 +269,11 @@ class ManagedServer {
                 }
             }
         } else {
-            stop();
+            stop(permit, 0);
         }
     }
 
-    protected synchronized void kill() {
+    synchronized void kill(int permit) {
         final InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
@@ -284,14 +284,14 @@ class ManagedServer {
                 }
             }
         } else {
-            stop();
+            stop(permit, 0);
         }
     }
 
     /**
      * Try to reconnect to a started server.
      */
-    protected synchronized void reconnectServerProcess(final ManagedServerBootCmdFactory factory) {
+    synchronized void reconnectServerProcess(final ManagedServerBootCmdFactory factory) {
         if(this.requiredState != InternalState.SERVER_STARTED) {
             this.bootConfiguration = factory;
             this.requiredState = InternalState.SERVER_STARTED;
@@ -303,7 +303,7 @@ class ManagedServer {
     /**
      * On host controller reload, remove a not running server registered in the process controller declared as down.
      */
-    protected synchronized void removeServerProcess() {
+    synchronized void removeServerProcess() {
         this.requiredState = InternalState.STOPPED;
         internalSetState(new ProcessRemoveTask(), InternalState.STOPPED, InternalState.PROCESS_REMOVING);
     }
@@ -311,7 +311,7 @@ class ManagedServer {
     /**
      * On host controller reload, remove a not running server registered in the process controller declared as stopping.
      */
-    protected synchronized void setServerProcessStopping() {
+    synchronized void setServerProcessStopping() {
         this.requiredState = InternalState.STOPPED;
         internalSetState(null, InternalState.STOPPED, InternalState.PROCESS_STOPPING);
     }
@@ -322,7 +322,7 @@ class ManagedServer {
      * @param expected the expected state
      * @return {@code true} if the state was reached, {@code false} otherwise
      */
-    protected boolean awaitState(final InternalState expected) {
+    boolean awaitState(final InternalState expected) {
         synchronized (this) {
             final InternalState initialRequired = this.requiredState;
             for(;;) {
@@ -351,18 +351,18 @@ class ManagedServer {
     /**
      * Notification that the process was added
      */
-    protected void processAdded() {
+    void processAdded() {
         finishTransition(InternalState.PROCESS_ADDING, InternalState.PROCESS_ADDED);
     }
 
     /**
      * Notification that the process was started.
      */
-    protected void processStarted() {
+    void processStarted() {
         finishTransition(InternalState.PROCESS_STARTING, InternalState.PROCESS_STARTED);
     }
 
-    protected synchronized TransactionalProtocolClient channelRegistered(final ManagementChannelHandler channelAssociation) {
+    synchronized TransactionalProtocolClient channelRegistered(final ManagementChannelHandler channelAssociation) {
         final InternalState current = this.internalState;
         // Create the remote controller client
         channelAssociation.getAttachments().attach(TransactionalProtocolClient.SEND_SUBJECT, Boolean.TRUE);
@@ -392,11 +392,11 @@ class ManagedServer {
         return remoteClient;
     }
 
-    protected synchronized void serverStarted(final TransitionTask task) {
+    synchronized void serverStarted(final TransitionTask task) {
         internalSetState(task, InternalState.SERVER_STARTING, InternalState.SERVER_STARTED);
     }
 
-    protected synchronized void serverStartFailed() {
+    synchronized void serverStartFailed() {
         internalSetState(null, InternalState.SERVER_STARTING, InternalState.FAILED);
     }
 
@@ -407,7 +407,7 @@ class ManagedServer {
      * @param shuttingDown whether the server inventory is shutting down
      * @return whether the registration can be removed from the domain-controller
      */
-    protected synchronized boolean callbackUnregistered(final TransactionalProtocolClient old, final boolean shuttingDown) {
+    synchronized boolean callbackUnregistered(final TransactionalProtocolClient old, final boolean shuttingDown) {
         // Disconnect the remote connection
         protocolClient.disconnected(old);
 
@@ -439,7 +439,7 @@ class ManagedServer {
     /**
      * Notification that the server process finished.
      */
-    protected synchronized void processFinished() {
+    synchronized void processFinished() {
         final InternalState required = this.requiredState;
         final InternalState state = this.internalState;
         // If the server was not stopped
@@ -454,7 +454,7 @@ class ManagedServer {
     /**
      * Notification that the process got removed from the process controller.
      */
-    protected void processRemoved() {
+    void processRemoved() {
         finishTransition(InternalState.PROCESS_REMOVING, InternalState.STOPPED);
     }
 
@@ -550,7 +550,7 @@ class ManagedServer {
             } case SERVER_STARTED: {
                 return new ServerStartedTask();
             } case PROCESS_STOPPING: {
-                return new ServerStopTask();
+                return new ServerStopTask(-1, 0);
             } case PROCESS_REMOVING: {
                 return new ProcessRemoveTask();
             } default: {
@@ -640,6 +640,66 @@ class ManagedServer {
         return null;
     }
 
+    boolean suspend() {
+
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set("suspend");
+        operation.get(OP_ADDR).setEmptyList();
+
+        try {
+            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
+            if (prepared.isFailed()) {
+                return false;
+            }
+            prepared.commit();
+            prepared.getFinalResult().get();
+        } catch (Exception ignore) {
+            return false;
+        }
+        return true;
+    }
+
+
+    boolean resume() {
+
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set("resume");
+        operation.get(OP_ADDR).setEmptyList();
+
+        try {
+            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
+            if (prepared.isFailed()) {
+                return false;
+            }
+            prepared.commit();
+            prepared.getFinalResult().get();
+        } catch (Exception ignore) {
+            return false;
+        }
+        return true;
+    }
+
+    void awaitSuspended(long timeout) {
+
+        //we just re-suspend, but this time give a timeout
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set("suspend");
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(TIMEOUT).set(timeout);
+
+        try {
+            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
+            if (prepared.isFailed()) {
+                return;
+            }
+            prepared.commit();
+            prepared.getFinalResult().get();
+        } catch (Exception ignore) {
+            return;
+        }
+        return;
+    }
+
     static enum InternalState {
 
         STOPPED,
@@ -654,6 +714,7 @@ class ManagedServer {
         PROCESS_STOPPING(true),
         PROCESS_STOPPED,
         PROCESS_REMOVING(true),
+        SUSPENDING(true),
 
         FAILED,
         ;
@@ -669,7 +730,7 @@ class ManagedServer {
             this.async = async;
         }
 
-        public boolean isAsync() {
+        boolean isAsync() {
             return async;
         }
     }
@@ -753,11 +814,46 @@ class ManagedServer {
 
     private class ServerStopTask implements TransitionTask {
 
+        private final int permit;
+        private final int timeout;
+
+        private ServerStopTask(int permit, int timeout) {
+            this.permit = permit;
+            this.timeout = timeout;
+        }
+
         @Override
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
             // Stop process
-            processControllerClient.stopProcess(serverProcessName);
+
+            try {
+                //graceful shutdown
+                //this just suspends the server, it does not actually shut it down
+                if (operationID != -1) {
+
+                    final ModelNode operation = new ModelNode();
+                    operation.get(OP).set("shutdown");
+                    operation.get(OP_ADDR).setEmptyList();
+                    operation.get("operation-id").set(permit);
+                    operation.get("timeout").set(timeout);
+
+                    final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
+                    if (prepared.isFailed()) {
+                        return true;
+                    }
+                    //we stop the server via an operation
+                    prepared.commit();
+                    prepared.getFinalResult().get();
+                }
+            } catch (Exception ignore) {
+            } finally {
+                try {
+                    processControllerClient.stopProcess(serverProcessName);
+                } catch (IOException ignore) {
+
+                }
+            }
             return true;
         }
     }
