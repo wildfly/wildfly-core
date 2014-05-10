@@ -1,0 +1,20 @@
+SYNOPSIS
+
+   embed-server [--jboss-home=rootdir]
+
+DESCRIPTION
+
+   Launches a standalone server embedded in the CLI process.
+   Only available if the CLI process is running in a modular
+   classloading environment with a module loader able to
+   load all necessary server modules.
+
+ARGUMENTS
+
+ --jboss-home      - Filesystem path pointing to the root directory
+                     of the installation from which the CLI is
+                     running and from which the embedded server
+                     should run. If not specified, the value of the
+                     environment variable JBOSS_HOME will be used.
+                     Must be specified if the environment variable
+                     JBOSS_HOME is not set.

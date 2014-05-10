@@ -720,6 +720,12 @@
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-embedded</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-host-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
