@@ -92,6 +92,7 @@ import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.batch.impl.DefaultBatchManager;
 import org.jboss.as.cli.batch.impl.DefaultBatchedCommand;
+import org.jboss.as.cli.embedded.EmbeddedControllerHandlerRegistrar;
 import org.jboss.as.cli.handlers.ArchiveHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
@@ -427,6 +428,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
+
+        // Embedded server/host, if we are running in a modular environment
+        EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry);
 
         registerExtraHandlers();
     }
@@ -1080,13 +1084,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if (promptConnectPart == null) {
             buffer.append('[');
             String controllerHost = getControllerHost();
-            if (controllerHost != null) {
+            if (client != null) {
                 if (domainMode) {
                     buffer.append("domain@");
                 } else {
                     buffer.append("standalone@");
                 }
-                buffer.append(controllerHost).append(':').append(getControllerPort()).append(' ');
+                if (controllerHost != null) {
+                    buffer.append(controllerHost).append(':').append(getControllerPort()).append(' ');
+                } else {
+                    buffer.append("embedded ");
+                }
                 promptConnectPart = buffer.toString();
             } else {
                 buffer.append("disconnected ");
