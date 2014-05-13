@@ -1,10 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<host xmlns="urn:jboss:domain:3.0">
+
+<host name="master" xmlns="urn:jboss:domain:3.0">
+
     <management>
         <security-realms>
             <security-realm name="ManagementRealm">
                 <authentication>
-                    <local default-user="$local" skip-group-loading="true" />
+                    <local default-user="$local" />
+                    <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
                 </authentication>
             </security-realm>
         </security-realms>
@@ -12,6 +15,9 @@
             <native-interface security-realm="ManagementRealm">
                 <socket interface="management" port="${jboss.management.native.port:9999}"/>
             </native-interface>
+            <http-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.http.port:9990}" secure-port="${jboss.management.https.port:9943}" secure-interface="secure-management"/>
+            </http-interface>
         </management-interfaces>
     </management>
 
@@ -25,6 +31,8 @@
         <interface name="management">
             <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
         </interface>
+        <interface name="secure-management">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
     </interfaces>
-
 </host>
