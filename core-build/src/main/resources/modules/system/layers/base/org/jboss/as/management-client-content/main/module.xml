@@ -22,17 +22,19 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.3" name="org.jboss.as.console.main" slot="2.0.0">
+<module xmlns="urn:jboss:module:1.3" name="org.jboss.as.management-client-content">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <resources>
-        <!-- Insert resources here -->
+        <artifact name="${org.wildfly:wildfly-management-client-content}"/>
     </resources>
 
     <dependencies>
-        <!-- Do not add dependencies to the console as resources in any
-             dependencies could be served up through the HTTP interface. -->
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.deployment-repository"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.vfs"/>
     </dependencies>
 </module>

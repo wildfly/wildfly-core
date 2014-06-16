@@ -22,17 +22,25 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.3" name="org.jboss.as.console.main" slot="2.0.0">
-    <properties>
-        <property name="jboss.api" value="private"/>
-    </properties>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:domain:jmx:1.0"
+            xmlns="urn:jboss:domain:jmx:1.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
 
-    <resources>
-        <!-- Insert resources here -->
-    </resources>
+    <!-- The jmx subsystem root element -->
+    <xs:element name="subsystem" type="subsystem"/>
 
-    <dependencies>
-        <!-- Do not add dependencies to the console as resources in any
-             dependencies could be served up through the HTTP interface. -->
-    </dependencies>
-</module>
+    <xs:complexType name="subsystem">
+      <xs:sequence>
+         <xs:element name="jmx-connector" type="jmx-connectorType" />
+      </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="jmx-connectorType">
+       <xs:attribute name="registry-binding" use="required" />
+       <xs:attribute name="server-binding" use="required" />
+    </xs:complexType>
+
+</xs:schema>
