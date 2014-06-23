@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.transform.description;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 
 /**
@@ -71,12 +72,30 @@ public interface TransformationDescriptionBuilder {
         /**
          * Create a builder instance.
          *
+         * @param currentVersion the current version of the model
          * @return the transformation builder
          */
         public static RejectTransformationDescriptionBuilder createRejectInstance(PathElement pathElement) {
             return new RejectTransformationDescriptionBuilder(pathElement);
         }
 
+        /**
+         * Create a chained builder instance for a subsystem
+         *
+         * @param currentVersion the current version of the subsystem.
+         */
+        public static ChainedTransformationDescriptionBuilder createChainedSubystemInstance(ModelVersion currentVersion) {
+            return new ChainedTransformationDescriptionBuilderImpl(currentVersion, null);
+        }
+
+        /**
+         * Create a chained builder instance
+         *
+         * @param currentVersion the current version of the model containing the resource being transformed.
+         */
+        public static ChainedTransformationDescriptionBuilder createChainedInstance(PathElement pathElement, ModelVersion currentVersion) {
+            return new ChainedTransformationDescriptionBuilderImpl(currentVersion, pathElement);
+        }
     }
 
 }

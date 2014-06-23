@@ -89,15 +89,15 @@ public class GlobalTransformerRegistry {
     }
 
     public void createDiscardingChildRegistry(final PathAddress address, final ModelVersion version) {
-        createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, DISCARD, OperationTransformerRegistry.DISCARD);
+        createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, DISCARD, OperationTransformerRegistry.DISCARD, false);
     }
 
     public void createChildRegistry(final PathAddress address, final ModelVersion version, OperationTransformer transformer) {
-        createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, new OperationTransformerRegistry.OperationTransformerEntry(transformer, false));
+        createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, new OperationTransformerRegistry.OperationTransformerEntry(transformer, false), false);
     }
 
     public void createChildRegistry(final PathAddress address, final ModelVersion version, ResourceTransformer resourceTransformer, boolean inherited) {
-        createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, inherited), OperationTransformerRegistry.FORWARD);
+        createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, inherited), OperationTransformerRegistry.FORWARD, false);
     }
 
     public void createChildRegistry(final PathAddress address, final ModelVersion version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
@@ -105,11 +105,22 @@ public class GlobalTransformerRegistry {
     }
 
     public void createChildRegistry(final PathAddress address, final ModelVersion version, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-        createChildRegistry(address.iterator(), version, pathAddressTransformer, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, false), new OperationTransformerRegistry.OperationTransformerEntry(operationTransformer, false));
+        createChildRegistry(address.iterator(), version, pathAddressTransformer, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, false), new OperationTransformerRegistry.OperationTransformerEntry(operationTransformer, false), false);
     }
 
-    public void createChildRegistry(final PathAddress address, final ModelVersion version, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean inherited) {
-        createChildRegistry(address.iterator(), version, pathAddressTransformer, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, false), new OperationTransformerRegistry.OperationTransformerEntry(operationTransformer, inherited));
+    /**
+     * Register an operation transformer.
+     *
+     * @param address the transformer address
+     * @param version the model version
+     * @param pathAddressTransformer the path address transformer
+     * @param resourceTransformer the resource transformer
+     * @param operationTransformer the operation transformer
+     * @param inherited whether the transformers are inherited
+     * @param placeholder if {@code true} the pathAddress-, resource-, and operationTransformers are responsible for handling children of their address via a {@link org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver}
+     */
+    public void createChildRegistry(final PathAddress address, final ModelVersion version, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean inherited, boolean placeholder) {
+        createChildRegistry(address.iterator(), version, pathAddressTransformer, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, false), new OperationTransformerRegistry.OperationTransformerEntry(operationTransformer, inherited), placeholder);
     }
 
 
@@ -126,7 +137,7 @@ public class GlobalTransformerRegistry {
     }
 
     public OperationTransformerRegistry mergeSubtree(final OperationTransformerRegistry parent, final PathAddress address, final Map<PathAddress, ModelVersion> subTree) {
-        final OperationTransformerRegistry target = parent.createChildRegistry(address.iterator(), PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, OperationTransformerRegistry.FORWARD);
+        final OperationTransformerRegistry target = parent.createChildRegistry(address.iterator(), PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, OperationTransformerRegistry.FORWARD, false);
         mergeSubtree(target, subTree);
         return target;
     }
@@ -151,7 +162,7 @@ public class GlobalTransformerRegistry {
     }
 
     public OperationTransformerRegistry create(final ModelVersion version, final Map<PathAddress, ModelVersion> versions) {
-        final OperationTransformerRegistry registry = new OperationTransformerRegistry(PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, null);
+        final OperationTransformerRegistry registry = new OperationTransformerRegistry(PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, null, false);
         process(registry, PathAddress.EMPTY_ADDRESS, version, versions);
         return registry;
     }
@@ -161,7 +172,7 @@ public class GlobalTransformerRegistry {
         if(current != null) {
             final OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer = current.getResourceTransformer();
             final OperationTransformerRegistry.OperationTransformerEntry defaultTransformer = current.getDefaultTransformer();
-            registry.createChildRegistry(address.iterator(), current.getPathAddressTransformer(), resourceTransformer, defaultTransformer);
+            registry.createChildRegistry(address.iterator(), current.getPathAddressTransformer(), resourceTransformer, defaultTransformer, current.isPlaceholder());
             final Map<String, OperationTransformerRegistry.OperationTransformerEntry> transformers = current.getTransformers();
             for(final Map.Entry<String, OperationTransformerRegistry.OperationTransformerEntry> transformer : transformers.entrySet()) {
                 registry.registerTransformer(address, transformer.getKey(), transformer.getValue().getTransformer());
@@ -186,19 +197,19 @@ public class GlobalTransformerRegistry {
         }
     }
 
-    protected void createChildRegistry(final Iterator<PathElement> iterator, ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, OperationTransformerRegistry.OperationTransformerEntry entry) {
+    protected void createChildRegistry(final Iterator<PathElement> iterator, ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, OperationTransformerRegistry.OperationTransformerEntry entry, boolean placeholder) {
         if(! iterator.hasNext()) {
-            getOrCreate(version, pathAddressTransformer, resourceTransformer, entry);
+            getOrCreate(version, pathAddressTransformer, resourceTransformer, entry, placeholder);
         } else {
             final PathElement element = iterator.next();
-            getOrCreate(element.getKey()).getOrCreate(element.getValue()).createChildRegistry(iterator, version, pathAddressTransformer, resourceTransformer, entry);
+            getOrCreate(element.getKey()).getOrCreate(element.getValue()).createChildRegistry(iterator, version, pathAddressTransformer, resourceTransformer, entry, placeholder);
         }
     }
 
     protected void registerTransformer(final Iterator<PathElement> iterator, ModelVersion version, String operationName, OperationTransformerRegistry.OperationTransformerEntry entry) {
         if(! iterator.hasNext()) {
             // by default skip the default transformer
-            getOrCreate(version, PathAddressTransformer.DEFAULT, null, null).registerTransformer(PathAddress.EMPTY_ADDRESS.iterator(), operationName, entry);
+            getOrCreate(version, PathAddressTransformer.DEFAULT, null, null, false).registerTransformer(PathAddress.EMPTY_ADDRESS.iterator(), operationName, entry);
         } else {
             final PathElement element = iterator.next();
             final SubRegistry subRegistry = getOrCreate(element.getKey());
@@ -212,7 +223,7 @@ public class GlobalTransformerRegistry {
             if(registry == null) {
                 return null;
             }
-            return registry.resolveOperationTransformer(PathAddress.EMPTY_ADDRESS, operationName);
+            return registry.resolveOperationTransformer(PathAddress.EMPTY_ADDRESS, operationName, null);
         } else {
             final PathElement element = iterator.next();
             final SubRegistry registry = subRegistriesUpdater.get(this, element.getKey());
@@ -257,12 +268,12 @@ public class GlobalTransformerRegistry {
         }
     }
 
-    OperationTransformerRegistry getOrCreate(final ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, final OperationTransformerRegistry.OperationTransformerEntry defaultTransformer) {
+    OperationTransformerRegistry getOrCreate(final ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, final OperationTransformerRegistry.OperationTransformerEntry defaultTransformer, boolean placeholder) {
         for(;;) {
             final Map<ModelVersion, OperationTransformerRegistry> snapshot = registryUpdater.get(this);
             OperationTransformerRegistry registry = snapshot.get(version);
             if(registry == null) {
-                registry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer);
+                registry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
                 OperationTransformerRegistry existing = registryUpdater.putAtomic(this, version, registry, snapshot);
                 if(existing == null) {
                     return registry;

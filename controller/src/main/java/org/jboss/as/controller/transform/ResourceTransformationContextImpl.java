@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import java.util.Iterator;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -35,7 +34,9 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -70,17 +71,59 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         return new ResourceTransformationContextImpl(root, PathAddress.EMPTY_ADDRESS, originalModel, skipRuntimeIgnoreCheck);
     }
 
-    ResourceTransformationContextImpl(Resource root, PathAddress address, final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck) {
+    private ResourceTransformationContextImpl(Resource root, PathAddress address, final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck) {
         this(root, address, address, originalModel, skipRuntimeIgnoreCheck);
     }
 
-    ResourceTransformationContextImpl(Resource root, PathAddress address, PathAddress read, final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck) {
+    private ResourceTransformationContextImpl(Resource root, PathAddress address, PathAddress read, final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck) {
         this.root = root;
         this.current = address;
         this.read = read;
         this.originalModel = originalModel;
         this.logger = TransformersLogger.getLogger(originalModel.target);
         this.skipRuntimeIgnoreCheck = skipRuntimeIgnoreCheck;
+    }
+
+    private ResourceTransformationContextImpl(ResourceTransformationContextImpl context, OriginalModel originalModel) {
+        this.root = context.root.clone();
+        this.current = context.current;
+        this.read = context.read;
+        this.logger = context.getLogger();
+        this.skipRuntimeIgnoreCheck = context.skipRuntimeIgnoreCheck;
+        this.originalModel = originalModel;
+    }
+
+    ResourceTransformationContextImpl copy(PlaceholderResolver extraResolver) {
+        assert originalModel.target instanceof TransformationTargetImpl : "Wrong target";
+        TransformationTargetImpl tgt = (TransformationTargetImpl)originalModel.target;
+        TransformationTargetImpl targetCopy = tgt.copyWithExtraResolver(extraResolver);
+        OriginalModel originalModelCopy = new OriginalModel(originalModel.original, originalModel.mode, originalModel.type, targetCopy, originalModel.registration, originalModel.expressionResolver);
+        return new ResourceTransformationContextImpl(this, originalModelCopy);
+    }
+
+    public ResourceTransformationContext copyAndReplaceOriginalModel(PlaceholderResolver extraResolver) {
+        assert originalModel.target instanceof TransformationTargetImpl : "Wrong target";
+        TransformationTargetImpl tgt = (TransformationTargetImpl)originalModel.target;
+        TransformationTargetImpl targetCopy = tgt.copyWithExtraResolver(extraResolver);
+        final OriginalModel originalModelCopy = new OriginalModel(root, originalModel.mode,
+                originalModel.type, targetCopy, originalModel.registration, originalModel.expressionResolver);
+        ResourceTransformationContext copy = new ResourceTransformationContextImpl(this, originalModelCopy);
+        Resource root = copy.getTransformedRoot();
+        if (current.size() > 0) {
+            PathElement last = current.getLastElement();
+            Resource parent = root;
+            for (PathElement element : read) {
+                if (element.equals(last)) {
+                    parent.removeChild(element);
+                } else {
+                    parent = parent.getChild(element);
+                    if (parent == null) {
+                        break;
+                    }
+                }
+            }
+        }
+        return copy;
     }
 
     public Resource createResource(final PathAddress element) {

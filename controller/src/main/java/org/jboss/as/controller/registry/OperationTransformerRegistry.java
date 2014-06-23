@@ -51,22 +51,24 @@ public class OperationTransformerRegistry {
     private final PathAddressTransformer pathAddressTransformer;
     private final ResourceTransformerEntry resourceTransformer;
     private final OperationTransformerEntry defaultTransformer;
+    private final boolean placeholder;
     private volatile Map<String, SubRegistry> subRegistries;
     private volatile Map<String, OperationTransformerEntry> transformerEntries;
 
     private static final AtomicMapFieldUpdater<OperationTransformerRegistry, String, SubRegistry> subRegistriesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(OperationTransformerRegistry.class, Map.class, "subRegistries"));
     private static final AtomicMapFieldUpdater<OperationTransformerRegistry, String, OperationTransformerEntry> entriesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(OperationTransformerRegistry.class, Map.class, "transformerEntries"));
 
-    protected OperationTransformerRegistry(final PathAddressTransformer pathAddressTransformer, final ResourceTransformerEntry resourceTransformer, final OperationTransformerEntry defaultTransformer) {
+    protected OperationTransformerRegistry(final PathAddressTransformer pathAddressTransformer, final ResourceTransformerEntry resourceTransformer, final OperationTransformerEntry defaultTransformer, final boolean placeholder) {
         entriesUpdater.clear(this);
         subRegistriesUpdater.clear(this);
         this.defaultTransformer = defaultTransformer;
         this.resourceTransformer = resourceTransformer;
         this.pathAddressTransformer = pathAddressTransformer;
+        this.placeholder = placeholder;
     }
 
-    public TransformerEntry getTransformerEntry(final PathAddress address) {
-        return resolveTransformerEntry(address.iterator());
+    public TransformerEntry getTransformerEntry(final PathAddress address, PlaceholderResolver extraResolver) {
+        return resolveTransformerEntry(address.iterator(), extraResolver);
     }
 
     protected TransformerEntry getTransformerEntry() {
@@ -89,8 +91,8 @@ public class OperationTransformerRegistry {
      * @param address the address
      * @return the resource transformer
      */
-    public ResourceTransformerEntry resolveResourceTransformer(final PathAddress address) {
-        return resolveResourceTransformer(address.iterator(), null);
+    public ResourceTransformerEntry resolveResourceTransformer(final PathAddress address, final PlaceholderResolver extraResolver) {
+        return resolveResourceTransformer(address.iterator(), null, extraResolver);
     }
 
     /**
@@ -100,9 +102,9 @@ public class OperationTransformerRegistry {
      * @param operationName the operation name
      * @return the transformer entry
      */
-    public OperationTransformerEntry resolveOperationTransformer(final PathAddress address, final String operationName) {
+    public OperationTransformerEntry resolveOperationTransformer(final PathAddress address, final String operationName, PlaceholderResolver extraResolver) {
         final Iterator<PathElement> iterator = address.iterator();
-        final OperationTransformerEntry entry = resolveOperationTransformer(iterator, operationName);
+        final OperationTransformerEntry entry = resolveOperationTransformer(iterator, operationName, extraResolver);
         if(entry != null) {
             return entry;
         }
@@ -128,10 +130,10 @@ public class OperationTransformerRegistry {
      * @param address the path address
      * @return a list of path transformations
      */
-    public List<PathAddressTransformer> getPathTransformations(final PathAddress address) {
+    public List<PathAddressTransformer> getPathTransformations(final PathAddress address, PlaceholderResolver extraResolver) {
         final List<PathAddressTransformer> list = new ArrayList<PathAddressTransformer>();
         final Iterator<PathElement> iterator = address.iterator();
-        resolvePathTransformers(iterator, list);
+        resolvePathTransformers(iterator, list, extraResolver);
         if(iterator.hasNext()) {
             while(iterator.hasNext()) {
                 iterator.next();
@@ -146,9 +148,17 @@ public class OperationTransformerRegistry {
         return resolveChild(iterator);
     }
 
-    private TransformerEntry resolveTransformerEntry(Iterator<PathElement> iterator) {
+    public boolean isPlaceholder() {
+        return placeholder;
+    }
+
+    private TransformerEntry resolveTransformerEntry(Iterator<PathElement> iterator, PlaceholderResolver extraResolver) {
         if(!iterator.hasNext()) {
-            return getTransformerEntry();
+            if (placeholder && extraResolver != null) {
+                return extraResolver.resolveTransformerEntry(iterator);
+            } else {
+                return getTransformerEntry();
+            }
         } else {
             final PathElement element = iterator.next();
             SubRegistry sub = subRegistriesUpdater.get(this, element.getKey());
@@ -159,7 +169,11 @@ public class OperationTransformerRegistry {
             if(registry == null) {
                 return null;
             }
-            return registry.resolveTransformerEntry(iterator);
+            if (registry.placeholder) {
+                return extraResolver != null ? extraResolver.resolveTransformerEntry(iterator) : registry.getTransformerEntry();
+            } else {
+                return registry.resolveTransformerEntry(iterator, extraResolver);
+            }
         }
     }
 
@@ -181,7 +195,7 @@ public class OperationTransformerRegistry {
         }
     }
 
-    private void resolvePathTransformers(Iterator<PathElement> iterator, List<PathAddressTransformer> list) {
+    private void resolvePathTransformers(Iterator<PathElement> iterator, List<PathAddressTransformer> list, PlaceholderResolver extraResolver) {
         if(iterator.hasNext()) {
             final PathElement element = iterator.next();
             SubRegistry sub = subRegistriesUpdater.get(this, element.getKey());
@@ -189,7 +203,7 @@ public class OperationTransformerRegistry {
                 final OperationTransformerRegistry reg = sub.get(element.getValue());
                 if(reg != null) {
                     list.add(reg.getPathAddressTransformer());
-                    reg.resolvePathTransformers(iterator, list);
+                    reg.resolvePathTransformers(iterator, list, extraResolver);
                     return;
                 }
             }
@@ -214,12 +228,12 @@ public class OperationTransformerRegistry {
         return entriesUpdater.get(this);
     }
 
-    OperationTransformerRegistry createChildRegistry(final Iterator<PathElement> iterator, PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer) {
+    OperationTransformerRegistry createChildRegistry(final Iterator<PathElement> iterator, PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer, boolean placeholder) {
         if(!iterator.hasNext()) {
             return this;
         } else {
             final PathElement element = iterator.next();
-            return getOrCreate(element.getKey()).createChild(iterator, element.getValue(), pathAddressTransformer, resourceTransformer, defaultTransformer);
+            return getOrCreate(element.getKey()).createChild(iterator, element.getValue(), pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
         }
     }
 
@@ -235,7 +249,7 @@ public class OperationTransformerRegistry {
         }
     }
 
-    private ResourceTransformerEntry resolveResourceTransformer(final Iterator<PathElement> iterator, final ResourceTransformerEntry inherited) {
+    private ResourceTransformerEntry resolveResourceTransformer(final Iterator<PathElement> iterator, final ResourceTransformerEntry inherited, final PlaceholderResolver extraResolver) {
         if(! iterator.hasNext()) {
             if(resourceTransformer == null) {
                 return inherited;
@@ -249,11 +263,11 @@ public class OperationTransformerRegistry {
             if(registry == null) {
                 return inherited;
             }
-            return registry.resolveResourceTransformer(iterator, element.getValue(), inheritedEntry);
+            return registry.resolveResourceTransformer(iterator, element.getValue(), inheritedEntry, extraResolver);
         }
     }
 
-    private OperationTransformerEntry resolveOperationTransformer(final Iterator<PathElement> iterator, final String operationName) {
+    private OperationTransformerEntry resolveOperationTransformer(final Iterator<PathElement> iterator, final String operationName, final PlaceholderResolver extraResolver) {
         if(! iterator.hasNext()) {
             final OperationTransformerEntry entry = entriesUpdater.get(this, operationName);
             if(entry == null) {
@@ -266,7 +280,7 @@ public class OperationTransformerRegistry {
             SubRegistry registry = subRegistriesUpdater.get(this, key);
             OperationTransformerEntry entry = null;
             if(registry != null) {
-                entry = registry.resolveTransformer(iterator, element.getValue(), operationName);
+                entry = registry.resolveTransformer(iterator, element.getValue(), operationName, extraResolver);
                 if (entry != null) {
                     return entry;
                 }
@@ -311,23 +325,23 @@ public class OperationTransformerRegistry {
             childrenUpdater.clear(this);
         }
 
-        public OperationTransformerEntry resolveTransformer(Iterator<PathElement> iterator, String value, String operationName) {
+        public OperationTransformerEntry resolveTransformer(Iterator<PathElement> iterator, String value, String operationName, PlaceholderResolver extraResolver) {
             final OperationTransformerRegistry reg = get(value);
             if(reg == null) {
                 return null;
             }
-            return reg.resolveOperationTransformer(iterator, operationName);
+            return reg.resolveOperationTransformer(iterator, operationName, extraResolver);
         }
 
-        public OperationTransformerRegistry createChild(Iterator<PathElement> iterator, String value, final PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer) {
+        public OperationTransformerRegistry createChild(Iterator<PathElement> iterator, String value, final PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer, boolean placeholder) {
             if(! iterator.hasNext()) {
-                return create(value, pathAddressTransformer, resourceTransformer, defaultTransformer);
+                return create(value, pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
             } else {
                 OperationTransformerRegistry entry = get(value);
                 if(entry == null) {
-                    entry = create(value, PathAddressTransformer.DEFAULT, GlobalTransformerRegistry.RESOURCE_TRANSFORMER, FORWARD);
+                    entry = create(value, PathAddressTransformer.DEFAULT, GlobalTransformerRegistry.RESOURCE_TRANSFORMER, FORWARD, placeholder);
                 }
-                return entry.createChildRegistry(iterator, pathAddressTransformer, resourceTransformer, defaultTransformer);
+                return entry.createChildRegistry(iterator, pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
             }
         }
 
@@ -357,14 +371,14 @@ public class OperationTransformerRegistry {
             return entry.resolveChild(iterator);
         }
 
-        OperationTransformerRegistry create(final String value, final PathAddressTransformer pathAddressTransformer, final ResourceTransformerEntry resourceTransformer, final OperationTransformerEntry defaultTransformer) {
+        OperationTransformerRegistry create(final String value, final PathAddressTransformer pathAddressTransformer, final ResourceTransformerEntry resourceTransformer, final OperationTransformerEntry defaultTransformer, boolean placeholder) {
             for(;;) {
                 final Map<String, OperationTransformerRegistry> entries = childrenUpdater.get(this);
                 OperationTransformerRegistry entry = entries.get(value);
                 if(entry != null) {
                     return entry;
                 } else {
-                    entry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer);
+                    entry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
                     final OperationTransformerRegistry existing = childrenUpdater.putAtomic(this, value, entry, entries);
                     if(existing == null) {
                         return entry;
@@ -375,12 +389,12 @@ public class OperationTransformerRegistry {
             }
         }
 
-        public ResourceTransformerEntry resolveResourceTransformer(Iterator<PathElement> iterator, String value, ResourceTransformerEntry inheritedEntry) {
+        public ResourceTransformerEntry resolveResourceTransformer(Iterator<PathElement> iterator, String value, ResourceTransformerEntry inheritedEntry, PlaceholderResolver extraResolver) {
             final OperationTransformerRegistry registry = get(value);
             if(registry == null) {
                 return inheritedEntry;
             }
-            return registry.resolveResourceTransformer(iterator, inheritedEntry);
+            return registry.resolveResourceTransformer(iterator, inheritedEntry, extraResolver);
         }
     }
 
@@ -436,4 +450,33 @@ public class OperationTransformerRegistry {
     public static final OperationTransformerEntry DISCARD = new OperationTransformerEntry(DISCARD_TRANSFORMER, true);
     public static final OperationTransformerEntry FORWARD = new OperationTransformerEntry(FORWARD_TRANSFORMER, false);
 
+    /**
+     * An extra resolver to be used for {@link OperationTransformerRegistry} entries where {@code placeholder==true}. These placeholder entries transformers should create
+     * a new {@link org.jboss.as.controller.transform.TransformationTarget} containing the {@code PlaceholderResolver} and resolve the children themselves.
+     */
+    public interface PlaceholderResolver {
+        /**
+         * Resolves a resource transformer from the relative address of the current {@code OperationTransformerRegistry} entry
+         *
+         *  @param iterator an iterator of the path elements of the resource we want to transform. On the initial call, this will be at the address of the placeholder entry
+         *  @param operationName the name of the operation transformer to resolve
+         * @return the operation transformer, or {@code null} if not found
+         */
+        OperationTransformerEntry resolveOperationTransformer(final Iterator<PathElement> iterator, final String operationName);
+
+        /**
+         * Adds path address transformers to the list for the relative address and below of the current {@code OperationTransformerRegistry} entry
+         *
+         * @param iterator an iterator of the path elements of the resource we want to transform. On the initial call, this will be at the address of the placeholder entry
+         * @param list the list of path address transformers to add the results to
+         */
+        void resolvePathTransformers(Iterator<PathElement> iterator, List<PathAddressTransformer> list);
+
+        /**
+         * Resolves a {@link TransformerEntry} from the relative address of the current {@code OperationTransformerRegistry} entry
+         * @param iterator an iterator of the path elements of the resource we want to transform. On the initial call, this will be at the address of the placeholder entry
+         * @return the transformer entry, or {@code null} if not found
+         */
+        TransformerEntry resolveTransformerEntry(Iterator<PathElement> iterator);
+    }
 }

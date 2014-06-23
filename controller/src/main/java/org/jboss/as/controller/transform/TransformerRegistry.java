@@ -315,14 +315,14 @@ public final class TransformerRegistry {
 
         @Override
         public TransformersSubRegistration registerSubResource(PathElement element, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-            return registerSubResource(element, pathAddressTransformer, resourceTransformer, operationTransformer, false);
+            return registerSubResource(element, pathAddressTransformer, resourceTransformer, operationTransformer, false, false);
         }
 
         @Override
-        public TransformersSubRegistration registerSubResource(PathElement element, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean inherited) {
+        public TransformersSubRegistration registerSubResource(PathElement element, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean inherited, boolean handleAllChildren) {
             final PathAddress address = current.append(element);
             for(final ModelVersion version : range.getVersions()) {
-                registry.createChildRegistry(address, version, pathAddressTransformer, resourceTransformer, operationTransformer, inherited);
+                registry.createChildRegistry(address, version, pathAddressTransformer, resourceTransformer, operationTransformer, inherited, handleAllChildren);
             }
             return new TransformersSubRegistrationImpl(range, registry, address);
         }

@@ -27,10 +27,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationRejectionPolicy;
 import org.jboss.as.controller.transform.OperationResultTransformer;
@@ -165,4 +165,8 @@ class TransformingDescription extends AbstractDescription implements Transformat
         return discardedOperations;
     }
 
+    @Override
+    public boolean isPlaceHolder() {
+        return false;
+    }
 }

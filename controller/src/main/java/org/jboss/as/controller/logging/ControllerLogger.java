@@ -3199,4 +3199,6 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 355, value = "Reconnecting to syslog handler '%s failed")
     void reconnectToSyslogFailed(String name, @Cause Throwable e);
 
+    @Message(id = 356, value = "No chained transformer between %s and %s")
+    IllegalStateException noChainedTransformerBetween(ModelVersion fromVersion, ModelVersion toVersion);
 }

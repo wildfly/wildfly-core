@@ -93,5 +93,4 @@ public interface ResourceTransformationContext extends TransformationContext {
      * @return the transformed root
      */
     Resource getTransformedRoot();
-
 }

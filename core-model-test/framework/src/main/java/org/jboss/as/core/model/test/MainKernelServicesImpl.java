@@ -88,7 +88,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
                 subsystemVersions, MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.DOMAIN, null);
         TransformationContext transformationContext = createTransformationContext(target);
 
-        OperationTransformer operationTransformer = registry.resolveOperationTransformer(address, operation.get(OP).asString()).getTransformer();
+        OperationTransformer operationTransformer = registry.resolveOperationTransformer(address, operation.get(OP).asString(), null).getTransformer();
         if (operationTransformer != null) {
             return operationTransformer.transformOperation(transformationContext, address, operation);
         }

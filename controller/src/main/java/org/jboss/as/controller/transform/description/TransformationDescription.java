@@ -97,6 +97,13 @@ public interface TransformationDescription {
      */
     List<String> getDiscardedOperations();
 
+    /**
+     * Return {@code} true if this description is a placeholder. This is currently only true for chained descriptions
+     *
+     * @return {@code true} if a placeholder.
+     */
+    boolean isPlaceHolder();
+
     public static final class Tools {
 
         private Tools() {
@@ -117,7 +124,8 @@ public interface TransformationDescription {
                             description.getPathAddressTransformer(),
                             description.getResourceTransformer(),
                             description.getOperationTransformer(),
-                            description.isInherited());
+                            description.isInherited(),
+                            description.isPlaceHolder());
             for (final Map.Entry<String, OperationTransformer> entry : description.getOperationTransformers().entrySet()) {
                 registration.registerOperationTransformer(entry.getKey(), entry.getValue());
             }
