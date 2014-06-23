@@ -61,14 +61,6 @@ public interface ResourceTransformationContext extends TransformationContext {
     void addTransformedRecursiveResource(PathAddress relativeAddress, Resource resource);
 
     /**
-     * Resolve the resource transformer for a given address.
-     *
-     * @param address the absolute address
-     * @return the resource transformer
-     */
-    ResourceTransformer resolveTransformer(PathAddress address);
-
-    /**
      * Process all children of a given resource.
      *
      * @param resource the resource

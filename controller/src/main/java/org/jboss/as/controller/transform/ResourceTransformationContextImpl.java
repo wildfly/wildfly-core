@@ -179,22 +179,6 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         return entry;
     }
 
-    @Override
-    public ResourceTransformer resolveTransformer(PathAddress address) {
-        final ResourceTransformer transformer = originalModel.target.resolveTransformer(this, address);
-        if (transformer == null) {
-            final ImmutableManagementResourceRegistration childReg = originalModel.getRegistration(address);
-            if (childReg == null) {
-                return ResourceTransformer.DISCARD;
-            }
-            if (childReg.isRemote() || childReg.isRuntimeOnly()) {
-                return ResourceTransformer.DISCARD;
-            }
-            return ResourceTransformer.DEFAULT;
-        }
-        return transformer;
-    }
-
     protected ResourceTransformer resolveTransformer(TransformerEntry entry, PathAddress address) {
         final ResourceTransformer transformer = entry.getResourceTransformer();
         if (transformer == null) {
