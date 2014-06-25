@@ -21,11 +21,16 @@
  */
 package org.jboss.as.controller.transform.description;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -33,6 +38,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.controller.transform.ChainedTransformationTools;
+import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.PathAddressTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
@@ -50,18 +56,48 @@ import org.jboss.dmr.ModelNode;
  */
 class ChainedTransformingDescription extends AbstractDescription implements TransformationDescription, ResourceTransformer, OperationTransformer {
 
-    private final LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> extraResolvers;
+    private final LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> placeholderResolvers;
 
-    ChainedTransformingDescription(PathElement pathElement, LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> extraResolvers) {
+    ChainedTransformingDescription(PathElement pathElement, LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> placeholderResolvers) {
         super(pathElement, PathAddressTransformer.DEFAULT, true);
-        this.extraResolvers = extraResolvers;
+        this.placeholderResolvers = placeholderResolvers;
     }
 
     @Override
     public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation)
             throws OperationFailedException {
-        //TODO
-        return null;
+        assert context instanceof ResourceTransformationContext : "Wrong context type";
+        ResourceTransformationContext currentCtx = (ResourceTransformationContext)context;
+
+        List<TransformedOperation> delegates = new ArrayList<TransformedOperation>();
+        ModelNode currentOp = operation;
+        Iterator<Map.Entry<ModelVersionPair, ChainedPlaceholderResolver>> it = placeholderResolvers.entrySet().iterator();
+        if (it.hasNext()) {
+            ChainedPlaceholderResolver resolver = it.next().getValue();
+            currentCtx = ChainedTransformationTools.initialiseChain(currentCtx, resolver);
+            PathAddress addr = ChainedTransformationTools.transformAddress(PathAddress.pathAddress(currentOp.require(OP_ADDR)), currentCtx.getTarget());
+            currentOp.get(OP_ADDR).set(addr.toModelNode());
+            OperationTransformer transformer = currentCtx.getTarget().resolveTransformer(context, address, currentOp.require(OP).asString());
+            TransformedOperation transformed = transformer.transformOperation(currentCtx, address, currentOp);
+            currentOp = transformed.getTransformedOperation();
+            delegates.add(transformed);
+        }
+        while (it.hasNext()) {
+            if (currentOp == null) {
+                break;
+            }
+            ChainedPlaceholderResolver resolver = it.next().getValue();
+            currentCtx = ChainedTransformationTools.nextInChain(currentCtx, resolver);
+            PathAddress currentAddress = PathAddress.pathAddress(currentOp.require(OP_ADDR));
+            PathAddress addr = ChainedTransformationTools.transformAddress(currentAddress, currentCtx.getTarget());
+            currentOp.get(OP_ADDR).set(addr.toModelNode());
+            OperationTransformer transformer = currentCtx.getTarget().resolveTransformer(context, currentAddress, currentOp.require(OP).asString());
+            TransformedOperation transformed = transformer.transformOperation(currentCtx, address, currentOp);
+            currentOp = transformed.getTransformedOperation();
+            delegates.add(transformed);
+        }
+
+        return new ChainedTransformedOperation(currentOp, delegates.toArray(new TransformedOperation[delegates.size()]));
     }
 
     @Override
@@ -72,10 +108,10 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
 
         //For now just assume we come in through the top layer
         ResourceTransformationContext current = context;
-        Iterator<Map.Entry<ModelVersionPair, ChainedPlaceholderResolver>> it = extraResolvers.entrySet().iterator();
+        Iterator<Map.Entry<ModelVersionPair, ChainedPlaceholderResolver>> it = placeholderResolvers.entrySet().iterator();
         if (it.hasNext()) {
             ChainedPlaceholderResolver resolver = it.next().getValue();
-            current = ChainedTransformationTools.initialiseChain(context, resolver);
+            current = ChainedTransformationTools.initialiseChain(current, resolver);
             resolver.getDescription().getResourceTransformer().transformResource(current, address, resource);
         }
         while (it.hasNext()) {
@@ -118,9 +154,8 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
     }
 
     @Override
-    public List<String> getDiscardedOperations() {
-        //TODO make this configurable
-        return Collections.emptyList();
+    public Set<String> getDiscardedOperations() {
+        return Collections.emptySet();
     }
 
     @Override
@@ -139,4 +174,66 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
         }
     }
 
+    private PathAddress transformAddress(final PathAddress original, final ResourceTransformationContext context) {
+        return ChainedTransformationTools.transformAddress(original, context.getTarget());
+    }
+
+    private static class ChainedTransformedOperation extends TransformedOperation {
+
+        private TransformedOperation[] delegates;
+        private volatile String failure;
+        private volatile boolean initialized;
+
+        public ChainedTransformedOperation(ModelNode transformedOperation, TransformedOperation...delegates) {
+            // FIXME ChainedTransformedOperation constructor
+            super(transformedOperation, null);
+            this.delegates = delegates;
+        }
+
+        @Override
+        public ModelNode getTransformedOperation() {
+            return super.getTransformedOperation();
+        }
+
+        @Override
+        public OperationResultTransformer getResultTransformer() {
+            return this;
+        }
+
+        @Override
+        public boolean rejectOperation(ModelNode preparedResult) {
+            for (TransformedOperation delegate : delegates) {
+                if (delegate.rejectOperation(preparedResult)) {
+                    failure = delegate.getFailureDescription();
+                    initialized = true; //See comment in getFailureDescription()
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public String getFailureDescription() {
+            //In real life this will always be initialized by the transforming proxy before anyone calls this method
+            //For testing we call it directly from ModelTestUtils
+            if (!initialized) {
+                for (TransformedOperation delegate : delegates) {
+                    String failure = delegate.getFailureDescription();
+                    if (failure != null) {
+                        return failure;
+                    }
+                }
+            }
+            return failure;
+        }
+
+        @Override
+        public ModelNode transformResult(ModelNode result) {
+            ModelNode currentResult = result;
+            for (int i = delegates.length - 1 ; i >= 0 ; --i) {
+                currentResult = delegates[i].transformResult(currentResult);
+            }
+            return currentResult;
+        }
+    }
 }

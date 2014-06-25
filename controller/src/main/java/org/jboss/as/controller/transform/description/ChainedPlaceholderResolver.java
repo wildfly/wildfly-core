@@ -30,6 +30,7 @@ import java.util.Map;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.OperationTransformerRegistry.OperationTransformerEntry;
 import org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver;
+import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.PathAddressTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformerEntry;
@@ -76,8 +77,37 @@ class ChainedPlaceholderResolver implements PlaceholderResolver {
 
     @Override
     public OperationTransformerEntry resolveOperationTransformer(Iterator<PathElement> iterator, String operationName) {
-        //TODO Figure out if this is needed and plug in / remove
-        return null;
+        if (!iterator.hasNext()) {
+            if (description.getDiscardedOperations().contains(operationName)) {
+                return new OperationTransformerEntry(OperationTransformer.DISCARD, description.isInherited());
+            }
+            OperationTransformer transformer = description.getOperationTransformers().get(operationName);
+            if (transformer == null) {
+                return new OperationTransformerEntry(description.getOperationTransformer(), description.isInherited());
+            }
+            return new OperationTransformerEntry(transformer, description.isInherited());
+        } else {
+            final PathElement element = iterator.next();
+            final String key = element.getKey();
+            SubRegistry registry = subRegistries.get(key);
+            OperationTransformerEntry entry = null;
+            if (registry != null) {
+                entry = registry.resolveTransformer(iterator, element.getValue(), operationName);
+                if (entry != null) {
+                    return entry;
+                }
+            }
+            //Look for inherited entries
+            OperationTransformer transformer = description.getOperationTransformers().get(operationName);
+            if (transformer != null && description.isInherited()) {
+                return new OperationTransformerEntry(transformer, description.isInherited());
+            }
+            transformer = description.getOperationTransformer();
+            if (transformer != null && description.isInherited()) {
+                return new OperationTransformerEntry(transformer, description.isInherited());
+            }
+            return null;
+        }
     }
 
     @Override
@@ -100,8 +130,23 @@ class ChainedPlaceholderResolver implements PlaceholderResolver {
 
     @Override
     public void resolvePathTransformers(Iterator<PathElement> iterator, List<PathAddressTransformer> list) {
+        if(iterator.hasNext()) {
+            final PathElement element = iterator.next();
+            SubRegistry sub = subRegistries.get(element.getKey());
+            if(sub != null) {
+                final ChainedPlaceholderResolver reg = sub.get(element.getValue());
+                if(reg != null) {
+                    list.add(reg.description.getPathAddressTransformer());
+                    reg.resolvePathTransformers(iterator, list);
+                    return;
+                }
+            }
+            list.add(PathAddressTransformer.DEFAULT);
+            return;
+        } else {
+            list.add(description.getPathAddressTransformer());
+        }
     }
-
 
     private ChainedPlaceholderResolver resolveChild(final Iterator<PathElement> iterator) {
 

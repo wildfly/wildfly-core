@@ -93,18 +93,18 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         this.originalModel = originalModel;
     }
 
-    ResourceTransformationContextImpl copy(PlaceholderResolver extraResolver) {
+    ResourceTransformationContextImpl copy(PlaceholderResolver placeholderResolver) {
         assert originalModel.target instanceof TransformationTargetImpl : "Wrong target";
         TransformationTargetImpl tgt = (TransformationTargetImpl)originalModel.target;
-        TransformationTargetImpl targetCopy = tgt.copyWithExtraResolver(extraResolver);
+        TransformationTargetImpl targetCopy = tgt.copyWithplaceholderResolver(placeholderResolver);
         OriginalModel originalModelCopy = new OriginalModel(originalModel.original, originalModel.mode, originalModel.type, targetCopy, originalModel.registration, originalModel.expressionResolver);
         return new ResourceTransformationContextImpl(this, originalModelCopy);
     }
 
-    public ResourceTransformationContext copyAndReplaceOriginalModel(PlaceholderResolver extraResolver) {
+    public ResourceTransformationContext copyAndReplaceOriginalModel(PlaceholderResolver placeholderResolver) {
         assert originalModel.target instanceof TransformationTargetImpl : "Wrong target";
         TransformationTargetImpl tgt = (TransformationTargetImpl)originalModel.target;
-        TransformationTargetImpl targetCopy = tgt.copyWithExtraResolver(extraResolver);
+        TransformationTargetImpl targetCopy = tgt.copyWithplaceholderResolver(placeholderResolver);
         final OriginalModel originalModelCopy = new OriginalModel(root, originalModel.mode,
                 originalModel.type, targetCopy, originalModel.registration, originalModel.expressionResolver);
         ResourceTransformationContext copy = new ResourceTransformationContextImpl(this, originalModelCopy);

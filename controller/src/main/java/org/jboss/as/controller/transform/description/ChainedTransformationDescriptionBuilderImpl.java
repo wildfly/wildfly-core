@@ -72,7 +72,7 @@ class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformati
             }
         });
 
-        final LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> extraResolvers = new LinkedHashMap<>();
+        final LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> placeholderResolvers = new LinkedHashMap<>();
         for (int i = 1 ; i < allVersions.length ; i++) {
             final ModelVersion from = allVersions[i - 1];
             final ModelVersion to = allVersions[i];
@@ -84,9 +84,9 @@ class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformati
             if (builder == null) {
                 throw ControllerLogger.ROOT_LOGGER.noChainedTransformerBetween(from, to);
             }
-            extraResolvers.put(new ModelVersionPair(from, to), ChainedPlaceholderResolver.create(builder.build()));
+            placeholderResolvers.put(new ModelVersionPair(from, to), ChainedPlaceholderResolver.create(builder.build()));
         }
-        return new ChainedTransformingDescription(element, extraResolvers);
+        return new ChainedTransformingDescription(element, placeholderResolvers);
     }
 
     static class ModelVersionPair {

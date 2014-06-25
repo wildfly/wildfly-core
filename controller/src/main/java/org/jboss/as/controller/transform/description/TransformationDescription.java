@@ -24,6 +24,7 @@ package org.jboss.as.controller.transform.description;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
@@ -93,9 +94,9 @@ public interface TransformationDescription {
     /**
      * operations that must be flat out discarded and not forwarded
      *
-     * @return list of discarded operations
+     * @return set of discarded operations
      */
-    List<String> getDiscardedOperations();
+    Set<String> getDiscardedOperations();
 
     /**
      * Return {@code} true if this description is a placeholder. This is currently only true for chained descriptions

@@ -49,12 +49,12 @@ public class TransformationTargetImpl implements TransformationTarget {
     private final TransformationTargetType type;
     private final IgnoredTransformationRegistry transformationExclusion;
     private final RuntimeIgnoreTransformation runtimeIgnoreTransformation;
-    private final PlaceholderResolver extraResolver;
+    private final PlaceholderResolver placeholderResolver;
 
     private TransformationTargetImpl(final TransformerRegistry transformerRegistry, final ModelVersion version,
                                      final Map<PathAddress, ModelVersion> subsystemVersions, final OperationTransformerRegistry transformers,
                                      final IgnoredTransformationRegistry transformationExclusion, final TransformationTargetType type,
-                                     final RuntimeIgnoreTransformation runtimeIgnoreTransformation, final PlaceholderResolver extraResolver) {
+                                     final RuntimeIgnoreTransformation runtimeIgnoreTransformation, final PlaceholderResolver placeholderResolver) {
         this.version = version;
         this.transformerRegistry = transformerRegistry;
         this.extensionRegistry = transformerRegistry.getExtensionRegistry();
@@ -66,10 +66,10 @@ public class TransformationTargetImpl implements TransformationTarget {
         this.type = type;
         this.transformationExclusion = transformationExclusion == null ? null : transformationExclusion;
         this.runtimeIgnoreTransformation = runtimeIgnoreTransformation;
-        this.extraResolver = extraResolver;
+        this.placeholderResolver = placeholderResolver;
     }
 
-    private TransformationTargetImpl(final TransformationTargetImpl target, final PlaceholderResolver extraResolver) {
+    private TransformationTargetImpl(final TransformationTargetImpl target, final PlaceholderResolver placeholderResolver) {
         this.version = target.version;
         this.transformerRegistry = target.transformerRegistry;
         this.extensionRegistry = target.extensionRegistry;
@@ -78,7 +78,7 @@ public class TransformationTargetImpl implements TransformationTarget {
         this.type = target.type;
         this.transformationExclusion = target.transformationExclusion;
         this.runtimeIgnoreTransformation = target.runtimeIgnoreTransformation;
-        this.extraResolver = extraResolver;
+        this.placeholderResolver = placeholderResolver;
     }
 
     public static TransformationTargetImpl create(final TransformerRegistry transformerRegistry, final ModelVersion version,
@@ -96,8 +96,8 @@ public class TransformationTargetImpl implements TransformationTarget {
         return new TransformationTargetImpl(transformerRegistry, version, subsystems, registry, transformationExclusion, type, runtimeIgnoreTransformation, null);
     }
 
-    TransformationTargetImpl copyWithExtraResolver(final PlaceholderResolver extraResolver) {
-        return new TransformationTargetImpl(this, extraResolver);
+    TransformationTargetImpl copyWithplaceholderResolver(final PlaceholderResolver placeholderResolver) {
+        return new TransformationTargetImpl(this, placeholderResolver);
     }
 
     @Override
@@ -119,7 +119,7 @@ public class TransformationTargetImpl implements TransformationTarget {
         if (ignoreResourceTransformation(context, address)) {
             return ResourceTransformer.DISCARD;
         }
-        OperationTransformerRegistry.ResourceTransformerEntry entry = registry.resolveResourceTransformer(address, extraResolver);
+        OperationTransformerRegistry.ResourceTransformerEntry entry = registry.resolveResourceTransformer(address, placeholderResolver);
         if(entry == null) {
             return ResourceTransformer.DEFAULT;
         }
@@ -131,12 +131,12 @@ public class TransformationTargetImpl implements TransformationTarget {
         if (ignoreResourceTransformation(context, address)) {
             return TransformerEntry.DISCARD;
         }
-        return registry.getTransformerEntry(address, extraResolver);
+        return registry.getTransformerEntry(address, placeholderResolver);
     }
 
     @Override
     public List<PathAddressTransformer> getPathTransformation(final PathAddress address) {
-        return registry.getPathTransformations(address, extraResolver);
+        return registry.getPathTransformations(address, placeholderResolver);
     }
 
     @Override
@@ -150,7 +150,7 @@ public class TransformationTargetImpl implements TransformationTarget {
                 return new CompositeOperationTransformer();
             }
         }
-        final OperationTransformerRegistry.OperationTransformerEntry entry = registry.resolveOperationTransformer(address, operationName, extraResolver);
+        final OperationTransformerRegistry.OperationTransformerEntry entry = registry.resolveOperationTransformer(address, operationName, placeholderResolver);
         return entry.getTransformer();
     }
 

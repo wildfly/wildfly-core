@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -51,7 +52,7 @@ class TransformingDescription extends AbstractDescription implements Transformat
     private final Map<String, AttributeTransformationDescription> attributeTransformations;
     private final List<TransformationRule> rules = Collections.emptyList();
     private final Map<String, OperationTransformer> operationTransformers;
-    private final List<String> discardedOperations;
+    private final Set<String> discardedOperations;
     private final ResourceTransformer resourceTransformer;
 
     protected TransformingDescription(final PathElement pathElement, final PathAddressTransformer pathAddressTransformer,
@@ -60,7 +61,7 @@ class TransformingDescription extends AbstractDescription implements Transformat
                                    final Map<String, AttributeTransformationDescription> attributeTransformations,
                                    final Map<String, OperationTransformer> operations,
                                    final List<TransformationDescription> children,
-                                   final List<String> discardedOperations) {
+                                   final Set<String> discardedOperations) {
         super(pathElement, pathAddressTransformer, inherited);
         this.children = children;
         this.discardPolicy = discardPolicy;
@@ -161,7 +162,7 @@ class TransformingDescription extends AbstractDescription implements Transformat
         rule.transformResource(original, address, context);
     }
 
-    public List<String> getDiscardedOperations() {
+    public Set<String> getDiscardedOperations() {
         return discardedOperations;
     }
 

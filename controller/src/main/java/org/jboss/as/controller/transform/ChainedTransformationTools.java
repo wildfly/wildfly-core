@@ -21,6 +21,7 @@
  */
 package org.jboss.as.controller.transform;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver;
 
 
@@ -38,13 +39,13 @@ public class ChainedTransformationTools {
      * to resolve the children of the placeholder resource.
      *
      * @param context the context to copy. It should be at a chained placeholder
-     * @param extraResolver the extra resolver to use to resolve the placeholder's children for the first model version delta in the chain
+     * @param placeholderResolver the extra resolver to use to resolve the placeholder's children for the first model version delta in the chain
      * @return a new {@code ResourceTransformationContext} instance using the extra resolver
      */
-    public static ResourceTransformationContext initialiseChain(ResourceTransformationContext context, PlaceholderResolver extraResolver) {
+    public static ResourceTransformationContext initialiseChain(ResourceTransformationContext context, PlaceholderResolver placeholderResolver) {
         assert context instanceof ResourceTransformationContextImpl : "Wrong type of context";
         ResourceTransformationContextImpl ctx = (ResourceTransformationContextImpl)context;
-        return ctx.copy(extraResolver);
+        return ctx.copy(placeholderResolver);
     }
 
     /**
@@ -52,14 +53,25 @@ public class ChainedTransformationTools {
      * to resolve the children of the placeholder resource.
      *
      * @param context the context to copy. It should be at a chained placeholder
-     * @param extraResolver the extra resolver to use to resolve the placeholder's children for the model version delta we are transforming
+     * @param placeholderResolver the extra resolver to use to resolve the placeholder's children for the model version delta we are transforming
      * @return a new {@code ResourceTransformationContext} instance using the extra resolver
      */
-    public static ResourceTransformationContext nextInChain(ResourceTransformationContext context, PlaceholderResolver extraResolver) {
+    public static ResourceTransformationContext nextInChain(ResourceTransformationContext context, PlaceholderResolver placeholderResolver) {
         assert context instanceof ResourceTransformationContextImpl : "Wrong type of context";
         ResourceTransformationContextImpl ctx = (ResourceTransformationContextImpl)context;
-        ResourceTransformationContext copy = ctx.copyAndReplaceOriginalModel(extraResolver);
+        ResourceTransformationContext copy = ctx.copyAndReplaceOriginalModel(placeholderResolver);
 
         return copy;
+    }
+
+    /**
+     * Transform a path address.
+     *
+     * @param original the path address to be transformed
+     * @param target the transformation target
+     * @return the transformed path address
+     */
+    public static PathAddress transformAddress(final PathAddress original, final TransformationTarget target) {
+        return TransformersImpl.transformAddress(original, target);
     }
 }

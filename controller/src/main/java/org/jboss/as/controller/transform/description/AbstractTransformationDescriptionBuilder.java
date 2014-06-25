@@ -25,8 +25,10 @@ package org.jboss.as.controller.transform.description;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -96,7 +98,9 @@ abstract class AbstractTransformationDescriptionBuilder implements Transformatio
             }
         }
         // Create the description
-        return new TransformingDescription(pathElement, pathAddressTransformer, discardPolicy, inherited, resourceTransformer, attributes, operations, children, discardedOperations);
+        Set<String> discarded = new HashSet<>();
+        discarded.addAll(discardedOperations);
+        return new TransformingDescription(pathElement, pathAddressTransformer, discardPolicy, inherited, resourceTransformer, attributes, operations, children, discarded);
     }
 
     /**
