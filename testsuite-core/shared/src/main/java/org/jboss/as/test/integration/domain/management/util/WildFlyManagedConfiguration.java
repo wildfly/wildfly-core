@@ -21,24 +21,20 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-
 import javax.security.auth.callback.CallbackHandler;
 
-import org.jboss.arquillian.container.spi.ConfigurationException;
-import org.jboss.arquillian.container.spi.client.deployment.Validate;
-import org.jboss.as.arquillian.container.CommonContainerConfiguration;
 import org.jboss.as.test.shared.TimeoutUtil;
 
 /**
- * JBossAsManagedConfiguration
+ * WildFlyManagedConfiguration
  *
  * @author Brian Stansberry
  */
-public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
+public class WildFlyManagedConfiguration {
 
-    public static JBossAsManagedConfiguration createFromClassLoaderResources(String domainConfigPath,
+    public static WildFlyManagedConfiguration createFromClassLoaderResources(String domainConfigPath,
                                                                              String hostConfigPath) {
-        JBossAsManagedConfiguration result = new JBossAsManagedConfiguration();
+        WildFlyManagedConfiguration result = new WildFlyManagedConfiguration();
         if (domainConfigPath != null) {
             result.setDomainConfigFile(loadConfigFileFromContextClassLoader(domainConfigPath));
         }
@@ -109,32 +105,24 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
 
     private boolean cachedDC;
 
-    public JBossAsManagedConfiguration(String jbossHome) {
+    public WildFlyManagedConfiguration(String jbossHome) {
         if (jbossHome != null) {
             this.jbossHome = jbossHome;
             this.modulePath = new File(jbossHome, "modules").getAbsolutePath();
         }
     }
 
-    public JBossAsManagedConfiguration() {
+    public WildFlyManagedConfiguration() {
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.jboss.as.arquillian.container.JBossAsContainerConfiguration#validate()
-     */
-    @Override
-    public void validate() throws ConfigurationException {
-        super.validate();
-
-        Validate.configurationDirectoryExists(jbossHome, "jbossHome must exist at " + jbossHome);
+    public void validate(){
+        /*Validate.configurationDirectoryExists(jbossHome, "jbossHome must exist at " + jbossHome);
         if (javaHome != null) {
             Validate.configurationDirectoryExists(javaHome, "javaHome must exist at " + javaHome);
         }
         if (controllerJavaHome != null) {
             Validate.configurationDirectoryExists(controllerJavaHome, "controllerJavaHome must exist at " + controllerJavaHome);
-        }
+        }*/
     }
 
     /**
@@ -178,6 +166,7 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
     public void setControllerJavaHome(String controllerJavaHome) {
         this.controllerJavaHome = controllerJavaHome;
     }
+
     /**
      * @return the javaVmArguments
      */
