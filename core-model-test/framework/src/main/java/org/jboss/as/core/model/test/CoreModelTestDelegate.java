@@ -618,15 +618,15 @@ public class CoreModelTestDelegate {
                 //Here the NDC hangs onto the classloader
                 classLoaderBuilder.addParentFirstClassPattern("org.jboss.logmanager.*");
 
-                classLoaderBuilder.addMavenResourceURL("org.wildfly:wildfly-core-model-test-framework:" + ModelTestControllerVersion.CurrentVersion.VERSION);
-                classLoaderBuilder.addMavenResourceURL("org.wildfly:wildfly-model-test:" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-core-model-test-framework:" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-model-test:" + ModelTestControllerVersion.CurrentVersion.VERSION);
 
                 if (testControllerVersion != ModelTestControllerVersion.MASTER) {
                     String groupId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "org.jboss.as" : "org.wildfly";
                     String hostControllerArtifactId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "jboss-as-host-controller" : "wildfly-host-controller";
 
                     classLoaderBuilder.addRecursiveMavenResourceURL(groupId + ":" + hostControllerArtifactId + ":" + testControllerVersion.getMavenGavVersion());
-                    classLoaderBuilder.addMavenResourceURL("org.wildfly:wildfly-core-model-test-controller-" + testControllerVersion.getTestControllerVersion() + ":" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                    classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-core-model-test-controller-" + testControllerVersion.getTestControllerVersion() + ":" + ModelTestControllerVersion.CurrentVersion.VERSION);
                 }
                 legacyCl = classLoaderBuilder.build();
                 if (currentTransformerClassloaderParameter != null) {

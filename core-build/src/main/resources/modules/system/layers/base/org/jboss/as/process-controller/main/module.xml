@@ -35,7 +35,7 @@
     <main-class name="org.jboss.as.process.Main"/>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-process-controller}"/>
+        <artifact name="${org.wildfly.core:wildfly-process-controller}"/>
     </resources>
 
     <dependencies>

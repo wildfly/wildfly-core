@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-core-security}"/>
+        <artifact name="${org.wildfly.core:wildfly-core-security}"/>
     </resources>
 
     <dependencies>

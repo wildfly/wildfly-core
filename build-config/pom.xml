@@ -33,10 +33,10 @@
       <relativePath></relativePath>
     </parent>
 
-    <groupId>org.wildfly</groupId>
+    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-build-config</artifactId>
     <name>WildFly: Build Configuration</name>
-    <version>9.0.0.Alpha1-SNAPSHOT</version>
+    <version>1.0.0.Alpha1-SNAPSHOT</version>
 
     <licenses>
         <license>

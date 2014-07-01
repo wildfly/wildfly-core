@@ -33,7 +33,7 @@
     </exports>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-domain-management}"/>
+        <artifact name="${org.wildfly.core:wildfly-domain-management}"/>
     </resources>
 
     <dependencies>

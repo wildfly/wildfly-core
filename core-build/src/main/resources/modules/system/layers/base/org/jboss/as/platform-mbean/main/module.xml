@@ -32,7 +32,7 @@
     </exports>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-platform-mbean}"/>
+        <artifact name="${org.wildfly.core:wildfly-platform-mbean}"/>
     </resources>
 
     <dependencies>

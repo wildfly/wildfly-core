@@ -32,7 +32,7 @@
     </exports>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-remoting}"/>
+        <artifact name="${org.wildfly.core:wildfly-remoting}"/>
     </resources>
 
     <dependencies>

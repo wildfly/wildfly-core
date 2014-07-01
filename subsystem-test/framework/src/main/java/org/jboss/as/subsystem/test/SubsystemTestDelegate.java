@@ -757,8 +757,8 @@ final class SubsystemTestDelegate {
 
             classLoaderBuilder.addParentFirstClassPattern("org.jboss.as.subsystem.bridge.shared.*");
 
-            classLoaderBuilder.addMavenResourceURL("org.wildfly:wildfly-subsystem-test-framework:" + ModelTestControllerVersion.CurrentVersion.VERSION);
-            classLoaderBuilder.addMavenResourceURL("org.wildfly:wildfly-model-test:" + ModelTestControllerVersion.CurrentVersion.VERSION);
+            classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-subsystem-test-framework:" + ModelTestControllerVersion.CurrentVersion.VERSION);
+            classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-model-test:" + ModelTestControllerVersion.CurrentVersion.VERSION);
 
             if (testControllerVersion != ModelTestControllerVersion.MASTER && testControllerVersion.getTestControllerVersion() != null) {
                 String groupId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "org.jboss.as" : "org.wildfly";
@@ -771,7 +771,7 @@ final class SubsystemTestDelegate {
                 classLoaderBuilder.addParentFirstClassPattern("__redirected.*");
                 classLoaderBuilder.addParentFirstClassPattern("org.jboss.modules.*");
 
-                classLoaderBuilder.addMavenResourceURL("org.wildfly:wildfly-subsystem-test-controller-" + testControllerVersion.getTestControllerVersion() + ":" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-subsystem-test-controller-" + testControllerVersion.getTestControllerVersion() + ":" + ModelTestControllerVersion.CurrentVersion.VERSION);
             }
             ClassLoader legacyCl = classLoaderBuilder.build();
 

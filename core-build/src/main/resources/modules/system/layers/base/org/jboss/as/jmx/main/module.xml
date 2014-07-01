@@ -32,7 +32,7 @@
     </exports>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-jmx}"/>
+        <artifact name="${org.wildfly.core:wildfly-jmx}"/>
     </resources>
 
     <dependencies>

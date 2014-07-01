@@ -32,7 +32,7 @@
     </exports>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-protocol}"/>
+        <artifact name="${org.wildfly.core:wildfly-protocol}"/>
     </resources>
 
     <dependencies>

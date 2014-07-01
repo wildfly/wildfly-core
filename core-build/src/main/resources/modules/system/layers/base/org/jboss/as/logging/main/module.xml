@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-logging}"/>
+        <artifact name="${org.wildfly.core:wildfly-logging}"/>
     </resources>
 
     <dependencies>

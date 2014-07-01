@@ -27,9 +27,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.wildfly</groupId>
+        <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>9.0.0.Alpha1-SNAPSHOT</version>
+        <version>1.0.0.Alpha1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-tests</artifactId>
@@ -49,7 +49,7 @@
 
     <dependencies>
         <dependency>
-           <groupId>org.wildfly</groupId>
+           <groupId>org.wildfly.core</groupId>
            <artifactId>wildfly-subsystem-test</artifactId>
            <type>pom</type>
         </dependency>

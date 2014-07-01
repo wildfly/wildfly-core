@@ -31,7 +31,7 @@
     <main-class name="org.jboss.as.cli.CommandLineMain"/>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-cli}"/>
+        <artifact name="${org.wildfly.core:wildfly-cli}"/>
     </resources>
 
     <dependencies>

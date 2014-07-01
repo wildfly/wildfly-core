@@ -31,7 +31,7 @@
     <main-class name="org.jboss.as.server.DomainServerMain"/>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-server}"/>
+        <artifact name="${org.wildfly.core:wildfly-server}"/>
     </resources>
 
     <dependencies>

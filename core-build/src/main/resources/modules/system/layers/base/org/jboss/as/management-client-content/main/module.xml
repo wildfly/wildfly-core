@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-management-client-content}"/>
+        <artifact name="${org.wildfly.core:wildfly-management-client-content}"/>
     </resources>
 
     <dependencies>

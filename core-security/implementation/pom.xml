@@ -29,20 +29,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-       <groupId>org.wildfly</groupId>
+       <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-security-parent</artifactId>
-        <version>9.0.0.Alpha1-SNAPSHOT</version>
+        <version>1.0.0.Alpha1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.wildfly</groupId>
+    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-security</artifactId>
 
     <name>WildFly: Core Security Utilities</name>
 
     <dependencies>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-security-api</artifactId>
         </dependency>
 

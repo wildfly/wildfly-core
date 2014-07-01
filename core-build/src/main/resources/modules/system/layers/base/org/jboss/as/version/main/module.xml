@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-version}"/>
+        <artifact name="${org.wildfly.core:wildfly-version}"/>
     </resources>
 
     <dependencies>

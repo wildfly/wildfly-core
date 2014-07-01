@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-domain-http-error-context}"/>
+        <artifact name="${org.wildfly.core:wildfly-domain-http-error-context}"/>
     </resources>
 
     <dependencies>

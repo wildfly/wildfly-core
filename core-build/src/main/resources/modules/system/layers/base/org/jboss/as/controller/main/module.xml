@@ -28,7 +28,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly:wildfly-controller}"/>
+        <artifact name="${org.wildfly.core:wildfly-controller}"/>
     </resources>
 
     <dependencies>

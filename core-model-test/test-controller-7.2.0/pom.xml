@@ -33,10 +33,10 @@
       <relativePath></relativePath>
     </parent>
 
-    <groupId>org.wildfly</groupId>
+    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-model-test-controller-7.2.0</artifactId>
     <name>WildFly: Core Model Test Controller 7.2.0</name>
-    <version>9.0.0.Alpha1-SNAPSHOT</version>
+    <version>1.0.0.Alpha1-SNAPSHOT</version>
 
     <properties>
         <property.old.as.version>7.2.0.Final</property.old.as.version>
@@ -51,7 +51,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-           <groupId>org.wildfly</groupId>
+           <groupId>org.wildfly.core</groupId>
            <artifactId>wildfly-core-model-test-framework</artifactId>
            <version>${project.version}</version>
 	        <scope>provided</scope>
