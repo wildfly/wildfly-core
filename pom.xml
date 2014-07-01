@@ -302,27 +302,34 @@
     <modules>
 
         <module>build-config</module>
-        <module>core-build</module>
         <module>build-plugin</module>
+        <module>cli</module>
+        <module>core-build</module>
+        <module>core-model-test</module>
+        <module>core-security</module>
         <module>controller</module>
         <module>controller-client</module>
         <module>core-security</module>
         <module>deployment-repository</module>
+        <module>deployment-scanner</module>
         <module>domain-http</module>
         <module>domain-management</module>
-
+        <module>host-controller</module>
+        <module>logging</module>
         <module>management-client-content</module>
         <module>io</module>
         <module>jmx</module>
+        <module>model-test</module>
         <module>network</module>
         <module>patching</module>
-
         <module>platform-mbean</module>
         <module>process-controller</module>
         <module>protocol</module>
         <module>remoting</module>
         <module>server</module>
         <module>subsystem-test</module>
+        <module>system-jmx</module>
+        <module>testsuite-core</module>
         <module>threads</module>
         <module>version</module>
     </modules>
@@ -6664,67 +6671,6 @@
                 <surefire.jpda.args>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y</surefire.jpda.args>
             </properties>
         </profile>
-
-        <profile>
-            <id>normal</id>
-            <activation>
-                <property><name>!minimalistic</name></property>
-            </activation>
-            <modules>
-
-
-
-                <module>build-config</module>
-
-                <module>cli</module>
-
-
-
-
-
-                <module>core-model-test</module>
-                <module>core-security</module>
-                <module>deployment-scanner</module>
-
-
-
-                <module>host-controller</module>
-
-
-
-
-
-
-
-
-
-                <module>logging</module>
-
-
-
-                <module>model-test</module>
-
-
-
-
-
-
-
-                <module>system-jmx</module>
-
-
-
-
-
-
-
-
-
-                <module>testsuite-core</module>
-
-            </modules>
-        </profile>
-
         <profile>
             <id>victims-scan</id>
             <activation>
