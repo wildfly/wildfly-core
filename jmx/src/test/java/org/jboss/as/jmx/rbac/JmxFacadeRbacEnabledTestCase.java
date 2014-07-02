@@ -46,6 +46,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -756,16 +757,16 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     }
 
 
-    protected void initModel(Resource rootResource, ManagementResourceRegistration registration) {
-        this.rootResource = rootResource;
-        this.rootRegistration = registration;
+    protected void initModel(ManagementModel managementModel) {
+        this.rootResource = managementModel.getRootResource();
+        this.rootRegistration = managementModel.getRootResourceRegistration();
         PathManagerService pathManagerService = new PathManagerService() {
         };
-        GlobalOperationHandlers.registerGlobalOperations(registration, processType);
-        registration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
-        registration.registerOperationHandler(RootResourceHack.DEFINITION, RootResourceHack.INSTANCE);
+        GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
+        rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
+        rootRegistration.registerOperationHandler(RootResourceHack.DEFINITION, RootResourceHack.INSTANCE);
 
-        GlobalNotifications.registerGlobalNotifications(registration, processType);
+        GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
         TestServiceListener listener = new TestServiceListener();
         listener.reset(1);
@@ -780,8 +781,8 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             throw new RuntimeException(e);
         }
 
-        registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        rootRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
+        rootRegistration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }

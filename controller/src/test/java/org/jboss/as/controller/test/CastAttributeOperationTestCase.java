@@ -20,13 +20,19 @@
  */
 package org.jboss.as.controller.test;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.junit.Assert.assertThat;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -39,24 +45,14 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
-
-import static org.junit.Assert.assertThat;
-
 import org.junit.Test;
 
 /**
@@ -142,7 +138,7 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
             BOOLEAN_ATT, LONG_ATT, STRING_ATT, DOUBLE_ATT, INT_ATT, BYTES_ATT, BIGINT_ATT, BIGDEC_ATT);
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
+    protected void initModel(ManagementModel managementModel) {
         System.setProperty("boolean-value", "true");
         System.setProperty("long-value", "1000");
         System.setProperty("string-value", "wildfly");
@@ -152,6 +148,7 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
         System.setProperty("bigint-value", "100");
         System.setProperty("bigdec-value", "10.0");
 
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         rootRegistration.registerOperationHandler(SETUP_OP_DEF, new OperationStepHandler() {
             @Override

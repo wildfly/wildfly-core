@@ -20,12 +20,23 @@
  */
 package org.jboss.as.controller.test;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.junit.Assert.assertThat;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -37,23 +48,14 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RELOAD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
-import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 /**
@@ -136,7 +138,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
             BOOLEAN_ATT, LONG_ATT, STRING_ATT, DOUBLE_ATT, INT_ATT, BYTES_ATT, BIGINT_ATT, BIGDEC_ATT);
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
+    protected void initModel(ManagementModel managementModel) {
         System.setProperty("boolean-value", "true");
         System.setProperty("long-value", "1000");
         System.setProperty("string-value", "wildfly");
@@ -146,6 +148,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
         System.setProperty("bigint-value", "100");
         System.setProperty("bigdec-value", "10.0");
 
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         rootRegistration.registerOperationHandler(SETUP_OP_DEF, new OperationStepHandler() {
             @Override
@@ -441,7 +444,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
         assertThat(result.getType(), is(ModelType.EXPRESSION));
         assertThat(result.asExpression().resolveString(), is("100"));
     }
-    
+
     @Test
     public void testWriteReloadBigintAttributeExpressionOverValue() throws Exception {
         ModelNode operation = createOperation(READ_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");

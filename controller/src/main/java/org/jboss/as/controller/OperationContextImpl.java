@@ -154,9 +154,9 @@ final class OperationContextImpl extends AbstractOperationContext {
     /** Tracks whether any steps have gotten write access to the management resource registration*/
     private volatile boolean affectsResourceRegistration;
 
-    private volatile Resource model;
+    private volatile ModelControllerImpl.ManagementModelImpl managementModel;
 
-    private volatile Resource originalModel;
+    private volatile ModelControllerImpl.ManagementModelImpl originalModel;
 
     /** Tracks the relationship between domain resources and hosts and server groups */
     private volatile HostServerGroupTracker hostServerGroupTracker;
@@ -187,10 +187,11 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private volatile ExecutionStatus executionStatus = ExecutionStatus.EXECUTING;
 
-    OperationContextImpl(final Integer operationId, final String operationName, final ModelNode operationAddress, final ModelControllerImpl modelController, final ProcessType processType,
+    OperationContextImpl(final Integer operationId, final String operationName, final ModelNode operationAddress,
+                         final ModelControllerImpl modelController, final ProcessType processType,
                          final RunningMode runningMode, final EnumSet<ContextFlag> contextFlags,
                          final OperationMessageHandler messageHandler, final OperationAttachments attachments,
-                         final Resource model, final ModelController.OperationTransactionControl transactionControl,
+                         final ModelControllerImpl.ManagementModelImpl managementModel, final ModelController.OperationTransactionControl transactionControl,
                          final ControlledProcessState processState, final AuditLogger auditLogger, final boolean booting,
                          final HostServerGroupTracker hostServerGroupTracker,
                          final ModelNode blockingTimeoutConfig,
@@ -201,8 +202,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.operationName = operationName;
         this.operationAddress = operationAddress.isDefined()
                 ? operationAddress : ModelControllerImpl.EMPTY_ADDRESS;
-        this.model = model;
-        this.originalModel = model;
+        this.managementModel = managementModel;
+        this.originalModel = managementModel;
         this.modelController = modelController;
         this.messageHandler = messageHandler;
         this.attachments = attachments;
@@ -279,7 +280,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     ConfigurationPersister.PersistenceResource createPersistenceResource() throws ConfigurationPersistenceException {
-        return modelController.writeModel(model, affectsModel.keySet());
+        return modelController.writeModel(managementModel, affectsModel.keySet());
     }
 
     @Override
@@ -292,8 +293,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         return contextFlags.contains(ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
     }
 
-
     public ManagementResourceRegistration getResourceRegistrationForUpdate() {
+        return getMutableResourceRegistration(activeStep.address);
+    }
+
+    private ManagementResourceRegistration getMutableResourceRegistration(PathAddress absoluteAddress) {
         assert isControllingThread();
 
         readOnly = false;
@@ -307,11 +311,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         //    throw MESSAGES.stageAlreadyComplete(Stage.MODEL);
         //}
         authorize(false, READ_WRITE_CONFIG);
-        if (!affectsResourceRegistration) {
-            takeWriteLock();
-            affectsResourceRegistration = true;
-        }
-        ManagementResourceRegistration delegate = modelController.getRootRegistration().getSubModel(address);
+        ensureLocalManagementResourceRegistration();
+        ManagementResourceRegistration mrr =  managementModel.getRootResourceRegistration();
+        ManagementResourceRegistration delegate = absoluteAddress == null ? mrr : mrr.getSubModel(absoluteAddress);
         return new DescriptionCachingResourceRegistration(delegate, address);
 
     }
@@ -325,13 +327,13 @@ final class OperationContextImpl extends AbstractOperationContext {
             throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
         }
         authorize(false, Collections.<ActionEffect>emptySet());
-        ImmutableManagementResourceRegistration delegate = modelController.getRootRegistration().getSubModel(address);
+        ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration().getSubModel(address);
         return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, address);
     }
 
     @Override
     public ImmutableManagementResourceRegistration getRootResourceRegistration() {
-        ImmutableManagementResourceRegistration delegate = modelController.getRootRegistration();
+        ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration();
         return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, PathAddress.EMPTY_ADDRESS);
     }
 
@@ -583,7 +585,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
             throw ControllerLogger.ROOT_LOGGER.unauthorized(activeStep.operationId.name, activeStep.address, authResult.getExplanation());
         }
-        Resource model = this.model;
+        Resource model = this.managementModel.getRootResource();
         final Iterator<PathElement> iterator = address.iterator();
         while(iterator.hasNext()) {
             final PathElement element = iterator.next();
@@ -592,7 +594,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 final Set<Resource.ResourceEntry> children = model.getChildren(element.getKey());
                 if(children.isEmpty()) {
                     final PathAddress parent = address.subAddress(0, address.size() -1);
-                    final Set<String> childrenTypes = modelController.getRootRegistration().getChildNames(parent);
+                    final Set<String> childrenTypes = managementModel.getRootResourceRegistration().getChildNames(parent);
                     if(! childrenTypes.contains(element.getKey())) {
                         throw ControllerLogger.ROOT_LOGGER.managementResourceNotFound(address);
                     }
@@ -644,15 +646,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         checkHostServerGroupTracker(address);
         authorize(false, runtimeOnly ? READ_WRITE_RUNTIME : READ_WRITE_CONFIG);
-        if ((!runtimeOnly && !isModelAffected()) || (runtimeOnly && !affectsRuntime)) {
-            takeWriteLock();
-            model = model.clone();
-            if (runtimeOnly) {
-                affectsRuntime = true;
-            }
-        }
+        ensureLocalRootResource(runtimeOnly);
         affectsModel.put(address, NULL);
-        Resource resource = this.model;
+        Resource resource = this.managementModel.getRootResource();
         for (PathElement element : address) {
             if (element.isMultiTarget()) {
                 throw ControllerLogger.ROOT_LOGGER.cannotWriteTo("*");
@@ -663,7 +659,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private boolean isResourceRuntimeOnly(PathAddress fullAddress) {
-        Resource resource = this.model;
+        Resource resource = this.managementModel.getRootResource();
         for (Iterator<PathElement> it = fullAddress.iterator(); it.hasNext() && resource != null;) {
             PathElement element = it.next();
             if (element.isMultiTarget()) {
@@ -677,14 +673,14 @@ final class OperationContextImpl extends AbstractOperationContext {
             return resource.isRuntime();
         }
         // No resource -- op will eventually fail
-        ImmutableManagementResourceRegistration mrr = modelController.getRootRegistration().getSubModel(fullAddress);
+        ImmutableManagementResourceRegistration mrr = managementModel.getRootResourceRegistration().getSubModel(fullAddress);
         return mrr != null && mrr.isRuntimeOnly();
     }
 
     @Override
     public Resource getOriginalRootResource() {
         // TODO restrict
-        return originalModel.clone();
+        return originalModel.getRootResource().clone();
     }
 
     @Override
@@ -720,15 +716,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         checkHostServerGroupTracker(absoluteAddress);
         authorizeAdd(runtimeOnly);
-        if ((!runtimeOnly && !isModelAffected()) || (runtimeOnly && !affectsRuntime)) {
-            takeWriteLock();
-            model = model.clone();
-            if (runtimeOnly) {
-                affectsRuntime = true;
-            }
-        }
+        ensureLocalRootResource(runtimeOnly);
         affectsModel.put(absoluteAddress, NULL);
-        Resource model = this.model;
+        Resource model = this.managementModel.getRootResource();
         final Iterator<PathElement> i = absoluteAddress.iterator();
         while (i.hasNext()) {
             final PathElement element = i.next();
@@ -741,7 +731,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     throw ControllerLogger.ROOT_LOGGER.duplicateResourceAddress(absoluteAddress);
                 } else {
                     final PathAddress parent = absoluteAddress.subAddress(0, absoluteAddress.size() -1);
-                    final Set<String> childrenNames = modelController.getRootRegistration().getChildNames(parent);
+                    final Set<String> childrenNames = managementModel.getRootResourceRegistration().getChildNames(parent);
                     if(!childrenNames.contains(key)) {
                         throw ControllerLogger.ROOT_LOGGER.noChildType(key);
                     }
@@ -790,15 +780,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         checkHostServerGroupTracker(address);
         authorize(false, runtimeOnly ? READ_WRITE_RUNTIME : READ_WRITE_CONFIG);
-        if ((!runtimeOnly && !isModelAffected()) || (runtimeOnly && !affectsRuntime)) {
-            takeWriteLock();
-            model = model.clone();
-            if (runtimeOnly) {
-                affectsRuntime = true;
-            }
-        }
+        ensureLocalRootResource(runtimeOnly);
         affectsModel.put(address, NULL);
-        Resource model = this.model;
+        Resource model = this.managementModel.getRootResource();
         final Iterator<PathElement> i = address.iterator();
         while (i.hasNext()) {
             final PathElement element = i.next();
@@ -912,7 +896,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     ManagementResourceRegistration getRootResourceRegistrationForUpdate() {
-        return modelController.getRootRegistration();
+        return getMutableResourceRegistration(null);
     }
 
     private static Resource requireChild(final Resource resource, final PathElement childPath, final PathAddress fullAddress) {
@@ -1068,7 +1052,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     Resource getModel() {
-        return model;
+        return managementModel.getRootResource();
     }
 
     @Override
@@ -1271,7 +1255,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private AuthorizationResponseImpl getBasicAuthorizationResponse(OperationId opId, ModelNode operation) {
         Caller caller = getCaller();
-        ImmutableManagementResourceRegistration mrr = modelController.getRootRegistration().getSubModel(opId.address);
+        ImmutableManagementResourceRegistration mrr = managementModel.getRootResourceRegistration().getSubModel(opId.address);
         if (mrr == null) {
             return null;
         }
@@ -1286,13 +1270,13 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (processType.isManagedDomain()) {
             HostServerGroupTracker.HostServerGroupEffect hostServerGroupEffect;
             if (processType.isServer()) {
-                ModelNode rootModel = model.getModel();
+                ModelNode rootModel = managementModel.getRootResource().getModel();
                 String serverGroup = rootModel.get(SERVER_GROUP).asString();
                 String host = rootModel.get(HOST).asString();
                 hostServerGroupEffect = HostServerGroupTracker.HostServerGroupEffect.forServer(opId.address, serverGroup, host);
             } else {
                 hostServerGroupEffect =
-                    hostServerGroupTracker.getHostServerGroupEffects(opId.address, operation, model);
+                    hostServerGroupTracker.getHostServerGroupEffects(opId.address, operation, managementModel.getRootResource());
             }
             targetResource = TargetResource.forDomain(opId.address, mrr, resource, hostServerGroupEffect, hostServerGroupEffect);
         } else {
@@ -1313,7 +1297,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private Resource getAuthorizationResource(PathAddress address) {
-        Resource model = this.model;
+        Resource model = this.managementModel.getRootResource();
         for (PathElement element : address) {
             // Allow wildcard navigation for the last element
             if (element.isWildcard()) {
@@ -1362,6 +1346,25 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
         }
         return blockingTimeout;
+    }
+
+    private void ensureLocalRootResource(boolean runtimeOnly) {
+        if ((!runtimeOnly && !isModelAffected()) || (runtimeOnly && !affectsRuntime)) {
+            takeWriteLock();
+            managementModel = managementModel.cloneRootResource();
+            if (runtimeOnly) {
+                affectsRuntime = true;
+            }
+        }
+    }
+
+    private void ensureLocalManagementResourceRegistration() {
+        if (!affectsResourceRegistration) {
+            takeWriteLock();
+            // TODO call this if we decide to make the MRR cloneable
+            //managementModel = managementModel.cloneRootResourceRegistration();
+            affectsResourceRegistration = true;
+        }
     }
 
     class ContextServiceTarget implements ServiceTarget {

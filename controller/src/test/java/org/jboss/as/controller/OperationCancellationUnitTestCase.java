@@ -161,8 +161,8 @@ public class OperationCancellationUnitTestCase {
         private volatile Resource managementControllerResource;
 
         @Override
-        protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
-
+        protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+            ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
             rootRegistration.registerOperationHandler(getOD("setup"), new SetupHandler());
             rootRegistration.registerOperationHandler(getOD("composite"), CompositeOperationHandler.INSTANCE);
             rootRegistration.registerOperationHandler(getOD("good"), new ModelStageGoodHandler());

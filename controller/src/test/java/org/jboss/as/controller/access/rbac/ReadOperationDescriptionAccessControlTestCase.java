@@ -47,6 +47,7 @@ import java.util.Set;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -257,9 +258,9 @@ public class ReadOperationDescriptionAccessControlTestCase extends AbstractContr
     }
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration registration) {
-        this.rootResource = rootResource;
-        this.rootRegistration = registration;
+    protected void initModel(ManagementModel managementModel) {
+        this.rootResource = managementModel.getRootResource();
+        this.rootRegistration = managementModel.getRootResourceRegistration();
     }
 
     private static class TestResourceDefinition extends SimpleResourceDefinition {

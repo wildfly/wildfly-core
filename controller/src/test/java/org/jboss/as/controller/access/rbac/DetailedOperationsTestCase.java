@@ -34,6 +34,7 @@ import java.util.Random;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -55,7 +56,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Before;
@@ -578,7 +578,8 @@ public class DetailedOperationsTestCase extends AbstractRbacTestBase {
             = new ApplicationTypeAccessConstraintDefinition(MY_APPLICATION_TYPE);
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration registration) {
+    protected void initModel(ManagementModel managementModel) {
+        ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(registration, ProcessType.EMBEDDED_SERVER);
 
         GlobalNotifications.registerGlobalNotifications(registration, ProcessType.EMBEDDED_SERVER);

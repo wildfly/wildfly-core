@@ -34,12 +34,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -62,7 +62,8 @@ public class ResourceWithNotificationDefinitionTestCase extends AbstractControll
     }
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration registration) {
+    protected void initModel(ManagementModel managementModel) {
+        ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(registration, ProcessType.STANDALONE_SERVER);
         NotificationDefinition notificationDefinition = NotificationDefinition.Builder.create(MY_TYPE,
                 new NonResolvingResourceDescriptionResolver() {

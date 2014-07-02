@@ -26,6 +26,7 @@ import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -50,7 +51,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
     protected volatile File logDir;
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration registration) {
+    protected void initModel(ManagementModel managementModel) {
         if (logDir == null){
             logDir = new File(".");
             logDir = new File(logDir, "target");
@@ -63,7 +64,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
         for (File file : logDir.listFiles()){
             file.delete();
         }
-
+        ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         pathManagerService = new PathManagerService() {
             {
                 super.addHardcodedAbsolutePath(getContainer(), "log.dir", logDir.getAbsolutePath());
@@ -106,7 +107,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
             }
         }));
 
-
+        Resource rootResource = managementModel.getRootResource();
         pathManagerService.addPathManagerResources(rootResource);
         rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, Resource.Factory.create());
     }

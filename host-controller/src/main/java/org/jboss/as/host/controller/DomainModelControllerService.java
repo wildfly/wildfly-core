@@ -65,6 +65,7 @@ import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
@@ -471,11 +472,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
     }
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
-        HostModelUtil.createRootRegistry(rootRegistration, environment, ignoredRegistry, this, processType, authorizer, modelControllerResource);
-        VersionModelInitializer.registerRootResource(rootResource, environment != null ? environment.getProductConfig() : null);
-        CoreManagementResourceDefinition.registerDomainResource(rootResource, authorizer.getWritableAuthorizerConfiguration());
-        this.modelNodeRegistration = rootRegistration;
+    protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+        HostModelUtil.createRootRegistry(managementModel.getRootResourceRegistration(), environment, ignoredRegistry, this, processType, authorizer, modelControllerResource);
+        VersionModelInitializer.registerRootResource(managementModel.getRootResource(), environment != null ? environment.getProductConfig() : null);
+        CoreManagementResourceDefinition.registerDomainResource(managementModel.getRootResource(), authorizer.getWritableAuthorizerConfiguration());
+        this.modelNodeRegistration = managementModel.getRootResourceRegistration();
 
         // Register the slave host info
         ResourceProvider.Tool.addResourceProvider(HOST_CONNECTION, new ResourceProvider() {
@@ -513,7 +514,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             public ResourceProvider clone() {
                 return this;
             }
-        }, rootResource.getChild(CoreManagementResourceDefinition.PATH_ELEMENT));
+        }, managementModel.getRootResource().getChild(CoreManagementResourceDefinition.PATH_ELEMENT));
 
     }
 
@@ -723,19 +724,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
     }
 
     @Override
-    protected void performControllerInitialization(ServiceTarget target, Resource rootResource, ManagementResourceRegistration rootRegistration) {
+    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
         //
         final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-        final Iterator<ModelControllerServiceInitialization> iterator = sl.iterator();
-        while(iterator.hasNext()) {
-            final String hostName = hostControllerInfo.getLocalHostName();
-            final PathElement host = PathElement.pathElement(HOST, hostName);
-            final ManagementResourceRegistration hostRegistration = rootRegistration.getSubModel(PathAddress.EMPTY_ADDRESS.append(host));
-            final Resource hostResource = rootResource.getChild(host);
-
-            final ModelControllerServiceInitialization init = iterator.next();
-            init.initializeHost(target, hostRegistration, hostResource);
-            init.initializeDomain(target, rootRegistration, rootResource);
+        final String hostName = hostControllerInfo.getLocalHostName();
+        for (ModelControllerServiceInitialization init : sl) {
+            init.initializeHost(target, managementModel, hostName);
+            init.initializeDomain(target, managementModel);
         }
     }
 

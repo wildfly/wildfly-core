@@ -42,256 +42,290 @@ import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 /**
  * {@link ManagementResourceRegistration} implementation that simply delegates to another
  * {@link ManagementResourceRegistration}. Intended as a convenience class to allow overriding
- * of standard behaviors.
+ * of standard behaviors and also as a means to support a copy-on-write/publish-on-commit
+ * semantic for the management resource tree.
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
 @SuppressWarnings("deprecation")
 public class DelegatingManagementResourceRegistration implements ManagementResourceRegistration {
 
-    private final ManagementResourceRegistration delegate;
+    /**
+     * Provides a delegate for use by a {@code DelegatingManagementResourceRegistration}.
+     * Does not need to provide the same delegate for every call, allowing a copy-on-write
+     * semantic for the underlying @{code ManagementResourceRegistration}.
+     */
+    public interface RegistrationDelegateProvider {
+        /**
+         * Gets the delegate.
+         * @return the delegate. Cannot return {@code null}
+         */
+        ManagementResourceRegistration getDelegateRegistration();
+    }
+
+    private final RegistrationDelegateProvider delegateProvider;
 
     /**
-     * Creates a new DelegatingManagementResourceRegistration.
+     * Creates a new DelegatingManagementResourceRegistration with a fixed delegate.
      *
      * @param delegate the delegate. Cannot be {@code null}
      */
-    public DelegatingManagementResourceRegistration(ManagementResourceRegistration delegate) {
-        this.delegate = delegate;
+    public DelegatingManagementResourceRegistration(final ManagementResourceRegistration delegate) {
+        this(new RegistrationDelegateProvider() {
+            @Override
+            public ManagementResourceRegistration getDelegateRegistration() {
+                return delegate;
+            }
+        });
+    }
+
+    /**
+     * Creates a new DelegatingManagementResourceRegistration with a possibly changing delegate.
+     *
+     * @param delegateProvider provider of the delegate. Cannot be {@code null}
+     */
+    public DelegatingManagementResourceRegistration(final RegistrationDelegateProvider delegateProvider) {
+        assert delegateProvider != null;
+        assert delegateProvider.getDelegateRegistration() != null;
+        this.delegateProvider = delegateProvider;
     }
 
     @Override
     public boolean isRuntimeOnly() {
-        return delegate.isRuntimeOnly();
+        return getDelegate().isRuntimeOnly();
     }
 
     @Override
     public boolean isRemote() {
-        return delegate.isRemote();
+        return getDelegate().isRemote();
     }
 
     @Override
     public boolean isAlias() {
-        return delegate.isAlias();
+        return getDelegate().isAlias();
     }
 
     @Override
     public OperationEntry getOperationEntry(PathAddress address, String operationName) {
-        return delegate.getOperationEntry(address, operationName);
+        return getDelegate().getOperationEntry(address, operationName);
     }
 
     @Override
     public OperationStepHandler getOperationHandler(PathAddress address, String operationName) {
-        return delegate.getOperationHandler(address, operationName);
+        return getDelegate().getOperationHandler(address, operationName);
     }
 
     @Override
     public DescriptionProvider getOperationDescription(PathAddress address, String operationName) {
-        return delegate.getOperationDescription(address, operationName);
+        return getDelegate().getOperationDescription(address, operationName);
     }
 
     @Override
     public Set<OperationEntry.Flag> getOperationFlags(PathAddress address, String operationName) {
-        return delegate.getOperationFlags(address, operationName);
+        return getDelegate().getOperationFlags(address, operationName);
     }
 
     @Override
     public Set<String> getAttributeNames(PathAddress address) {
-        return delegate.getAttributeNames(address);
+        return getDelegate().getAttributeNames(address);
     }
 
     @Override
     public AttributeAccess getAttributeAccess(PathAddress address, String attributeName) {
-        return delegate.getAttributeAccess(address, attributeName);
+        return getDelegate().getAttributeAccess(address, attributeName);
     }
 
     @Override
     public Set<String> getChildNames(PathAddress address) {
-        return delegate.getChildNames(address);
+        return getDelegate().getChildNames(address);
     }
 
     @Override
     public Set<PathElement> getChildAddresses(PathAddress address) {
-        return delegate.getChildAddresses(address);
+        return getDelegate().getChildAddresses(address);
     }
 
     @Override
     public DescriptionProvider getModelDescription(PathAddress address) {
-        return delegate.getModelDescription(address);
+        return getDelegate().getModelDescription(address);
     }
 
     @Override
     public Map<String, OperationEntry> getOperationDescriptions(PathAddress address, boolean inherited) {
-        return delegate.getOperationDescriptions(address, inherited);
+        return getDelegate().getOperationDescriptions(address, inherited);
     }
 
     @Override
     public Map<String, NotificationEntry> getNotificationDescriptions(PathAddress address, boolean inherited) {
-        return delegate.getNotificationDescriptions(address, inherited);
+        return getDelegate().getNotificationDescriptions(address, inherited);
     }
 
     @Override
     public ProxyController getProxyController(PathAddress address) {
-        return delegate.getProxyController(address);
+        return getDelegate().getProxyController(address);
     }
 
     @Override
     public Set<ProxyController> getProxyControllers(PathAddress address) {
-        return delegate.getProxyControllers(address);
+        return getDelegate().getProxyControllers(address);
     }
 
     @Override
     public ManagementResourceRegistration getOverrideModel(String name) {
-        return delegate.getOverrideModel(name);
+        return getDelegate().getOverrideModel(name);
     }
 
     @Override
     public ManagementResourceRegistration getSubModel(PathAddress address) {
-        return delegate.getSubModel(address);
+        return getDelegate().getSubModel(address);
     }
 
     @Override
     public ManagementResourceRegistration registerSubModel(PathElement address, DescriptionProvider descriptionProvider) {
-        return delegate.registerSubModel(address, descriptionProvider);
+        return getDelegate().registerSubModel(address, descriptionProvider);
     }
 
     @Override
     public ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition) {
-        return delegate.registerSubModel(resourceDefinition);
+        return getDelegate().registerSubModel(resourceDefinition);
     }
 
     @Override
     public void unregisterSubModel(PathElement address) {
-        delegate.unregisterSubModel(address);
+        getDelegate().unregisterSubModel(address);
     }
 
     @Override
     public boolean isAllowsOverride() {
-        return delegate.isAllowsOverride();
+        return getDelegate().isAllowsOverride();
     }
 
     @Override
     public void setRuntimeOnly(boolean runtimeOnly) {
-        delegate.setRuntimeOnly(runtimeOnly);
+        getDelegate().setRuntimeOnly(runtimeOnly);
     }
 
     @Override
     public ManagementResourceRegistration registerOverrideModel(String name, OverrideDescriptionProvider descriptionProvider) {
-        return delegate.registerOverrideModel(name, descriptionProvider);
+        return getDelegate().registerOverrideModel(name, descriptionProvider);
     }
 
     @Override
     public void unregisterOverrideModel(String name) {
-        delegate.unregisterOverrideModel(name);
+        getDelegate().unregisterOverrideModel(name);
     }
 
     @Override
     public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags) {
-        delegate.registerOperationHandler(operationName, handler, descriptionProvider, flags);
+        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, flags);
     }
 
     @Override
     public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited) {
-        delegate.registerOperationHandler(operationName, handler, descriptionProvider, inherited);
+        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited);
     }
 
     @Override
     public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType) {
-        delegate.registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType);
+        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType);
     }
 
     @Override
     public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags) {
-        delegate.registerOperationHandler(operationName, handler, descriptionProvider, inherited, flags);
+        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited, flags);
     }
 
     @Override
     public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        delegate.registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType, flags);
+        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType, flags);
     }
 
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler) {
-        delegate.registerOperationHandler(definition, handler);
+        getDelegate().registerOperationHandler(definition, handler);
     }
 
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
-        delegate.registerOperationHandler(definition, handler, inherited);
+        getDelegate().registerOperationHandler(definition, handler, inherited);
     }
 
     @Override
     public void unregisterOperationHandler(String operationName) {
-        delegate.unregisterOperationHandler(operationName);
+        getDelegate().unregisterOperationHandler(operationName);
     }
 
     @Override
     public void registerReadWriteAttribute(AttributeDefinition definition, OperationStepHandler readHandler, OperationStepHandler writeHandler) {
-        delegate.registerReadWriteAttribute(definition, readHandler, writeHandler);
+        getDelegate().registerReadWriteAttribute(definition, readHandler, writeHandler);
     }
 
     @Override
     public void registerReadOnlyAttribute(String attributeName, OperationStepHandler readHandler, AttributeAccess.Storage storage) {
-        delegate.registerReadOnlyAttribute(attributeName, readHandler, storage);
+        getDelegate().registerReadOnlyAttribute(attributeName, readHandler, storage);
     }
 
     @Override
     public void registerReadOnlyAttribute(AttributeDefinition definition, OperationStepHandler readHandler) {
-        delegate.registerReadOnlyAttribute(definition, readHandler);
+        getDelegate().registerReadOnlyAttribute(definition, readHandler);
     }
 
     @Override
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
-        delegate.registerMetric(definition, metricHandler);
+        getDelegate().registerMetric(definition, metricHandler);
     }
 
     @Override
     public void unregisterAttribute(String attributeName) {
-        delegate.unregisterAttribute(attributeName);
+        getDelegate().unregisterAttribute(attributeName);
     }
 
     @Override
     public void registerNotification(NotificationDefinition notification, boolean inherited) {
-        delegate.registerNotification(notification, inherited);
+        getDelegate().registerNotification(notification, inherited);
     }
 
     @Override
     public void registerNotification(NotificationDefinition notification) {
-        delegate.registerNotification(notification);
+        getDelegate().registerNotification(notification);
     }
 
     @Override
     public void unregisterNotification(String notificationType) {
-        delegate.unregisterNotification(notificationType);
+        getDelegate().unregisterNotification(notificationType);
     }
 
     @Override
     public void registerProxyController(PathElement address, ProxyController proxyController) {
-        delegate.registerProxyController(address, proxyController);
+        getDelegate().registerProxyController(address, proxyController);
     }
 
     @Override
     public void unregisterProxyController(PathElement address) {
-        delegate.unregisterProxyController(address);
+        getDelegate().unregisterProxyController(address);
     }
 
     @Override
     public void registerAlias(PathElement address, AliasEntry aliasEntry) {
-        delegate.registerAlias(address, aliasEntry);
+        getDelegate().registerAlias(address, aliasEntry);
     }
 
     @Override
     public void unregisterAlias(PathElement address) {
-        delegate.unregisterAlias(address);
+        getDelegate().unregisterAlias(address);
     }
 
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
-        return delegate.getAccessConstraints();
+        return getDelegate().getAccessConstraints();
     }
 
     @Override
     public AliasEntry getAliasEntry() {
-        return delegate.getAliasEntry();
+        return getDelegate().getAliasEntry();
+    }
+
+    private ManagementResourceRegistration getDelegate() {
+        return delegateProvider.getDelegateRegistration();
     }
 }

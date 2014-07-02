@@ -41,6 +41,7 @@ import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -296,8 +297,8 @@ public class ServerControllerUnitTestCase {
         }
 
         @Override
-        protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
-            this.rootRegistration = rootRegistration;
+        protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+            this.rootRegistration = managementModel.getRootResourceRegistration();
         }
 
         @Override

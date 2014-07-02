@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2013, Red Hat, Inc., and individual contributors
+ * Copyright 2014, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -22,37 +22,29 @@
 
 package org.jboss.as.controller;
 
-import org.jboss.msc.service.ServiceTarget;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 
 /**
- * Internal extension point for core resource registrations.
- *
- * @author Emanuel Muckenhuber
- */
-public interface ModelControllerServiceInitialization {
+* Encapsulates the elements of a management model.
+*
+* @author Brian Stansberry (c) 2014 Red Hat Inc.
+*/
+public interface ManagementModel {
 
     /**
-     * Initialize a standalone server.
+     * Gets the registration of resource, attribute and operation definitions and
+     * operation handlers.
      *
-     * @param target the service target
-     * @param managementModel the management model
+     * @return the resource registration. Will not be {@code null}
      */
-    void initializeStandalone(ServiceTarget target, ManagementModel managementModel);
+    ManagementResourceRegistration getRootResourceRegistration();
 
     /**
-     * Initialize the domain controller.
+     * Gets the root resource of the concrete configuration model.
      *
-     * @param target the service target
-     * @param managementModel the management model
+     * @return the resource. Will not be {@code null}
      */
-    void initializeDomain(ServiceTarget target, ManagementModel managementModel);
-
-    /**
-     * Initialize a host controller.
-     *  @param target the service target
-     * @param managementModel the management model
-     * @param hostName the name of the host
-     */
-    void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName);
+    Resource getRootResource();
 
 }

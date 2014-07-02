@@ -49,6 +49,7 @@ import java.util.UUID;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -61,7 +62,6 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -93,7 +93,8 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
     private final PathAddress resourceAddress = pathAddress(pathElement("profile", "myprofile"));
 
     @Override
-    protected void initModel(Resource rootResource, final ManagementResourceRegistration rootRegistration) {
+    protected void initModel(ManagementModel managementModel) {
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
         // register the global operations to be able to call :read-attribute and :write-attribute
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         // register the global notifications so there is no warning that emitted notifications are not described by the resource.
