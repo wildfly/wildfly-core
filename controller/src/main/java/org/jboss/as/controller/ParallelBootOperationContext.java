@@ -30,6 +30,7 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
@@ -52,7 +53,7 @@ import org.jboss.msc.service.ServiceTarget;
 @SuppressWarnings("deprecation")
 class ParallelBootOperationContext extends AbstractOperationContext {
 
-    private final AbstractOperationContext primaryContext;
+    private final OperationContextImpl primaryContext;
     private final List<ParsedBootOp> runtimeOps;
 
     private Step lockStep;
@@ -60,7 +61,7 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     private final ModelControllerImpl controller;
 
     ParallelBootOperationContext(final ModelController.OperationTransactionControl transactionControl,
-                                 final ControlledProcessState processState, final AbstractOperationContext primaryContext,
+                                 final ControlledProcessState processState, final OperationContextImpl primaryContext,
                                  final List<ParsedBootOp> runtimeOps, final Thread controllingThread,
                                  final ModelControllerImpl controller, final int operationId, final AuditLogger auditLogger, final Resource model) {
         super(primaryContext.getProcessType(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger, controller.getNotificationSupport(), controller);
@@ -304,6 +305,47 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     @Override
     public void emit(Notification notification) {
         primaryContext.emit(notification);
+    }
+
+    @Override
+    public void registerCapability(RuntimeCapability capability, String attribute) {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        primaryContext.registerCapability(capability, activeStep, attribute);
+    }
+
+    @Override
+    public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        primaryContext.registerAdditionalCapabilityRequirement(required, dependent, activeStep, attribute);
+    }
+
+    @Override
+    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        return primaryContext.requestOptionalCapability(required, dependent, activeStep, attribute);
+    }
+
+    @Override
+    public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        primaryContext.requireOptionalCapability(required, dependent, activeStep, attribute);
+    }
+
+    @Override
+    public void deregisterCapabilityRequirement(String required, String dependent) {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        primaryContext.removeCapabilityRequirement(required, dependent, activeStep);
+    }
+
+    @Override
+    public void deregisterCapability(String capability) {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        primaryContext.removeCapability(capability, activeStep);
+    }
+
+    @Override
+    public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+        return primaryContext.getCapabilityRuntimeAPI(capabilityName, apiType, activeStep);
     }
 
     @Override

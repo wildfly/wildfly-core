@@ -20,39 +20,42 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller;
+package org.jboss.as.controller.capability.registry;
 
-import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.PathAddress;
 
 /**
-* Encapsulates the elements of a management model.
-*
-* @author Brian Stansberry (c) 2014 Red Hat Inc.
-*/
-public interface ManagementModel {
+ * Encapsulates the point in the model that triggered the registration of a capability or requirement.
+ *
+ * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ */
+public class RegistrationPoint {
+
+    private final PathAddress address;
+    private final String attribute;
+
+    public RegistrationPoint(PathAddress address, String attribute) {
+        this.address = address;
+
+        this.attribute = attribute;
+    }
 
     /**
-     * Gets the registration of resource, attribute and operation definitions and
-     * operation handlers.
+     * Gets the address of the resource that triggered the registration.
      *
-     * @return the resource registration. Will not be {@code null}
+     * @return the address. Will not be {@code null}
      */
-    ManagementResourceRegistration getRootResourceRegistration();
+    public PathAddress getAddress() {
+        return address;
+    }
 
     /**
-     * Gets the root resource of the concrete configuration model.
+     * Gets the name of the specific attribute at {@link #getAddress() address} that triggered the registration,
+     * if the was a single attribute responsible.
      *
-     * @return the resource. Will not be {@code null}
+     * @return the name of the attribute, or {@code null} if there wasn't a single attribute responsible
      */
-    Resource getRootResource();
-
-    /**
-     * Gets the registry of capabilities and their requirements.
-     *
-     * @return the registry. Will not be {@code null}
-     */
-    RuntimeCapabilityRegistry getCapabilityRegistry();
-
+    public String getAttribute() {
+        return attribute;
+    }
 }

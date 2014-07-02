@@ -131,7 +131,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             transactionControls.put(entry.getKey(), txControl);
 
             // Execute the subsystem's ops in another thread
-            ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, entry.getValue(), (AbstractOperationContext)context, txControl,
+            ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, entry.getValue(), (OperationContextImpl)context, txControl,
                     subsystemRuntimeOps, controllingThread, controller, operationId);
             executor.execute(subsystemTask);
         }
@@ -266,7 +266,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     transactionControls.put(subsystemName, txControl);
 
                     // Execute the subsystem's ops in another thread
-                    ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, entry.getValue(), (AbstractOperationContext)context, txControl, null, controllingThread, controller, operationId);
+                    ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, entry.getValue(), (OperationContextImpl)context, txControl, null, controllingThread, controller, operationId);
                     executor.execute(subsystemTask);
                 }
 
@@ -312,7 +312,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
         private final String subsystemName;
         private final List<ParsedBootOp> bootOperations;
-        private final AbstractOperationContext primaryContext;
+        private final OperationContextImpl primaryContext;
         private final OperationContext.Stage executionStage;
         private final ParallelBootTransactionControl transactionControl;
         private final List<ParsedBootOp> runtimeOps;
@@ -322,7 +322,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
         public ParallelBootTask(final String subsystemName,
                                 final List<ParsedBootOp> bootOperations,
-                                final AbstractOperationContext primaryContext,
+                                final OperationContextImpl primaryContext,
                                 final ParallelBootTransactionControl transactionControl,
                                 final List<ParsedBootOp> runtimeOps,
                                 final Thread controllingThread,
