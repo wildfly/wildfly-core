@@ -47,17 +47,17 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:${jboss.as.scm.connection}</connection>
-        <developerConnection>scm:git:${jboss.as.scm.connection}</developerConnection>
-        <url>${jboss.as.scm.url}</url>
+        <connection>scm:git:${wildfly.core.scm.connection}</connection>
+        <developerConnection>scm:git:${wildfly.core.scm.connection}</developerConnection>
+        <url>${wildfly.core.scm.url}</url>
     </scm>
 
     <properties>
         <!-- Release Info -->
-        <jboss.as.release.version>${project.version}</jboss.as.release.version>
-        <jboss.as.release.codename>Kenny</jboss.as.release.codename>
-        <jboss.as.scm.url>https://github.com/wildfly/wildfly-core</jboss.as.scm.url>
-        <jboss.as.scm.connection>git@github.com:wildfly/wildfly-core.git</jboss.as.scm.connection>
+        <wildfly.core.release.version>${project.version}</wildfly.core.release.version>
+        <wildfly.core.release.codename>Kenny</wildfly.core.release.codename>
+        <wildfly.core.scm.url>https://github.com/wildfly/wildfly-core</wildfly.core.scm.url>
+        <wildfly.core.scm.connection>git@github.com:wildfly/wildfly-core.git</wildfly.core.scm.connection>
 
         <!--
             Build configuration.  Override JBoss Parent settings as necessary.
@@ -128,8 +128,6 @@
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
         <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
-        <version.help.plugin>2.2</version.help.plugin>
-        <version.properties.plugin>2.0.1</version.properties.plugin>
         <version.xml.plugin>1.0</version.xml.plugin>
 
         <!-- Surefire args -->
@@ -140,8 +138,8 @@
         <linkXRef>false</linkXRef>
 
         <server.output.dir.prefix>wildfly</server.output.dir.prefix>
-        <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${jboss.as.release.version}</wildfly.build.output.dir>
-        <wildfly.core.build.output.dir>core-build/target/${server.output.dir.prefix}-core-${jboss.as.release.version}</wildfly.core.build.output.dir>
+        <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
+        <wildfly.core.build.output.dir>core-build/target/${server.output.dir.prefix}-core-${wildfly.core.release.version}</wildfly.core.build.output.dir>
 
         <!--
             See ChildFirstClassLoaderBuilder in model-test for the explanation of the org.jboss.model.test.cache.root and org.jboss.model.test.classpath.cache properties.
@@ -231,9 +229,9 @@
                     <configuration>
                         <archive>
                             <manifestEntries>
-                                <Scm-Url>${jboss.as.scm.url}</Scm-Url>
-                                <JBossAS-Release-Version>${jboss.as.release.version}</JBossAS-Release-Version>
-                                <JBossAS-Release-Codename>${jboss.as.release.codename}</JBossAS-Release-Codename>
+                                <Scm-Url>${wildfly.core.scm.url}</Scm-Url>
+                                <JBossAS-Release-Version>${wildfly.core.release.version}</JBossAS-Release-Version>
+                                <JBossAS-Release-Codename>${wildfly.core.release.codename}</JBossAS-Release-Codename>
                             </manifestEntries>
                         </archive>
                     </configuration>
@@ -255,7 +253,6 @@
                         <systemPropertyVariables>
                             <org.jboss.model.test.cache.root>${org.jboss.model.test.cache.root}</org.jboss.model.test.cache.root>
                             <org.jboss.model.test.classpath.cache>${org.jboss.model.test.classpath.cache}</org.jboss.model.test.classpath.cache>
-                            <org.jboss.model.test.maven.repository.urls>${org.jboss.model.test.maven.repository.urls}</org.jboss.model.test.maven.repository.urls>
                         </systemPropertyVariables>
                         <systemProperties>
                               <property>
@@ -331,38 +328,12 @@
                                             <exclude>concurrent:concurrent</exclude>
                                             <exclude>jacorb:jacorb</exclude>
                                             <exclude>javassist:javassist</exclude>
-                                            <exclude>javax.persistence:persistence-api</exclude>
-                                            <exclude>javax.servlet:servlet-api</exclude>
-                                            <exclude>javax.transaction:jta</exclude>
                                             <exclude>javax.xml:jaxrpc-api</exclude>
                                             <exclude>javax.xml.soap:saaj-api</exclude>
                                             <exclude>javax.xml.stream:stax-api</exclude>
-                                            <exclude>jboss:jboss-logging-spi</exclude>
-                                            <exclude>jboss:jboss-serialization</exclude>
-                                            <exclude>jboss.web:el-api</exclude>
-                                            <exclude>jboss.web:jsp-api</exclude>
-                                            <exclude>jboss.web:servlet-api</exclude>
                                             <exclude>net.sf.kxml:kxml2</exclude>
-                                            <exclude>org.apache.geronimo.specs:geronimo-activation_1.1_spec</exclude>
-                                            <exclude>org.apache.geronimo.specs:geronimo-jaxb_2.1_spec</exclude>
-                                            <exclude>org.apache.geronimo.specs:geronimo-saaj_1.3_spec</exclude>
-                                            <exclude>org.apache.geronimo.specs:geronimo-stax-api_1.0_spec</exclude>
                                             <exclude>org.apache.xalan:serializer</exclude>
                                             <exclude>org.apache.xalan:xalan</exclude>
-                                            <exclude>org.hibernate:ejb3-persistence</exclude>
-                                            <exclude>org.hibernate.java-persistence:jpa-api</exclude>
-                                            <exclude>org.jboss.integration:jboss-jca-spi</exclude>
-                                            <exclude>org.jboss.interceptor:jboss-interceptor-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-javaee</exclude>
-                                            <exclude>org.jboss.javaee:jboss-ejb-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-jacc-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-jad-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-jaspi-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-jca-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-jms-api</exclude>
-                                            <exclude>org.jboss.javaee:servlet-api</exclude>
-                                            <exclude>org.jboss.javaee:jsp-api</exclude>
-                                            <exclude>org.jboss.javaee:jboss-transaction-api</exclude>
                                             <exclude>org.jboss.logging:jboss-logging-generator</exclude>
                                             <exclude>org.jboss.logging:jboss-logging-log4j</exclude>
                                             <exclude>org.jboss.logging:jboss-logging-jdk</exclude>
@@ -376,8 +347,6 @@
                                             <exclude>org.jboss.remoting3:jboss-remoting</exclude>
                                             <exclude>org.jboss.security:jbosssx</exclude>
                                             <exclude>org.jboss.slf4j:slf4j-jboss-logging</exclude>
-                                            <exclude>org.jboss.spec.javax.resource:jboss-connector-api_1.5_spec</exclude>
-                                            <exclude>org.jboss.spec.javax.transaction:jboss-transaction-api_1.1_spec</exclude>
                                             <exclude>org.ops4j.base</exclude>
                                             <exclude>org.ops4j.pax.swissbox</exclude>
                                             <exclude>org.ops4j.pax.web</exclude>
@@ -525,49 +494,6 @@
                                 <pluginExecution>
                                     <pluginExecutionFilter>
                                         <groupId>
-                                            org.apache.maven.plugins
-                                        </groupId>
-                                        <artifactId>
-                                            maven-help-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [2.1.1,)
-                                        </versionRange>
-                                        <goals>
-                                       <goal>active-profiles</goal>
-                                       <goal>effective-pom</goal>
-                                       <goal>effective-settings</goal>
-                                       <goal>system</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.codehaus.mojo
-                                        </groupId>
-                                        <artifactId>
-                                            properties-maven-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [1.0-alpha-2,)
-                                        </versionRange>
-                                        <goals>
-                                            <goal>
-                                                write-project-properties
-                                            </goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
                                             org.codehaus.mojo
                                         </groupId>
                                         <artifactId>
@@ -589,27 +515,6 @@
                                         <ignore></ignore>
                                     </action>
                                 </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.kuali.maven.plugins
-                                        </groupId>
-                                        <artifactId>
-                                            properties-maven-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [2.0.1,)
-                                        </versionRange>
-                                        <goals>
-                                            <goal>
-                                                write-project-properties
-                                            </goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
-                                    </action>
-                                </pluginExecution>
                             </pluginExecutions>
                         </lifecycleMappingMetadata>
                     </configuration>
@@ -618,37 +523,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>xml-maven-plugin</artifactId>
                     <version>${version.xml.plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-help-plugin</artifactId>
-                    <version>${version.help.plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.kuali.maven.plugins</groupId>
-                    <artifactId>properties-maven-plugin</artifactId>
-                    <version>${version.properties.plugin}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.kuali.common</groupId>
-                            <artifactId>kuali-util</artifactId>
-                            <version>4.1.0</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-context</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-core</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                    <groupId>org.springframework</groupId>
-                                    <artifactId>spring-beans</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.core</groupId>
@@ -1421,7 +1295,7 @@
                             <dependency>
                                 <groupId>com.redhat.victims</groupId>
                                 <artifactId>enforce-victims-rule</artifactId>
-                                <version>1.3.1</version>
+                                <version>1.3.4</version>
                             </dependency>
                         </dependencies>
                         <executions>
