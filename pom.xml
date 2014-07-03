@@ -79,7 +79,6 @@
         <version.commons-io>2.4</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>1.1.0.Beta3</version.io.undertow>
-        <version.javax.activation>1.1.1</version.javax.activation>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.16</version.log4j>
@@ -774,12 +773,6 @@
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>${version.commons-lang}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${version.javax.activation}</version>
             </dependency>
 
             <dependency>
