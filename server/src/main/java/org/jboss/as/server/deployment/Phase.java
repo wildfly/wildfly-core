@@ -488,6 +488,7 @@ public enum Phase {
     public static final int POST_MODULE_WS_SERVICES_DEPS                = 0x3200;
     public static final int POST_MODULE_RAR_SERVICES_DEPS               = 0x3300;
     public static final int POST_MODULE_UNDERTOW_MODCLUSTER             = 0x3400;
+    public static final int POST_MODULE_TRANSACTIONS_EE_CONCURRENCY     = 0x3500;
 
     // INSTALL
     public static final int INSTALL_SHARED_SESSION_MANAGER              = 0x0100;
