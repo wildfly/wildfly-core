@@ -238,9 +238,10 @@ public enum Phase {
     public static final int STRUCTURE_CLASS_PATH                        = 0x1900;
     public static final int STRUCTURE_MODULE_IDENTIFIERS                = 0x1A00;
     public static final int STRUCTURE_EE_MODULE_INIT                    = 0x1B00;
-    public static final int STRUCTURE_EE_RESOURCE_INJECTION_REGISTRY            = 0x1C00;
-    public static final int STRUCTURE_DATASOURCE_RESOURCE_INJECTION             = 0x1C01;
-    public static final int STRUCTURE_JMS_CONNECTION_FACTORY_RESOURCE_INJECTION = 0x1C02;
+    public static final int STRUCTURE_EE_RESOURCE_INJECTION_REGISTRY                = 0x1C00;
+    public static final int STRUCTURE_DATASOURCE_RESOURCE_INJECTION                 = 0x1C01;
+    public static final int STRUCTURE_JMS_CONNECTION_FACTORY_RESOURCE_INJECTION     = 0x1C02;
+    public static final int STRUCTURE_BEAN_VALIDATION_RESOURCE_INJECTION_REGISTRY   = 0x1C03;
     public static final int STRUCTURE_DEPLOYMENT_DEPENDENCIES           = 0x1D00;
     public static final int STRUCTURE_GLOBAL_MODULES                    = 0x1E00;
     public static final int STRUCTURE_NAMING_EXTERNAL_CONTEXTS          = 0x1F00;
@@ -347,6 +348,7 @@ public enum Phase {
     public static final int DEPENDENCIES_MODULE                         = 0x0300;
     public static final int DEPENDENCIES_RAR_CONFIG                     = 0x0400;
     public static final int DEPENDENCIES_MANAGED_BEAN                   = 0x0500;
+    public static final int DEPENDENCIES_BEAN_VALIDATION                = 0x0580;
     public static final int DEPENDENCIES_SAR_MODULE                     = 0x0600;
     public static final int DEPENDENCIES_WAR_MODULE                     = 0x0700;
     public static final int DEPENDENCIES_CLASS_PATH                     = 0x0800;
