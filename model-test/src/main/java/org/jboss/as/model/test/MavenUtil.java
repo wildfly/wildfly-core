@@ -210,9 +210,9 @@ class MavenUtil {
         if (remoteReposFromSysProp == null || remoteReposFromSysProp.trim().length() == 0 || remoteReposFromSysProp.startsWith("${")) {
             if (useEapRepository) {
                 remoteRepositories.add(new RemoteRepository.Builder("jboss-product-repository", "default", "http://download.lab.bos.redhat.com/brewroot/repos/jb-eap-6-rhel-6-build/latest/maven/").build());
-            } else {
-                remoteRepositories.add(new RemoteRepository.Builder("jboss-developer", "default", "http://repository.jboss.org/nexus/content/groups/developer/").build());
             }
+            //always add jboss developer repository
+            remoteRepositories.add(new RemoteRepository.Builder("jboss-developer", "default", "http://repository.jboss.org/nexus/content/groups/developer/").build());
         } else {
             int i = 0;
             for (String repoUrl : remoteReposFromSysProp.split(",")) {
