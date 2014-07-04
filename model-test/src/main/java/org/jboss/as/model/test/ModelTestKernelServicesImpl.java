@@ -41,14 +41,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ExpressionResolverImpl;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -56,11 +56,10 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformerRegistry;
-import org.jboss.as.controller.transform.TransformersLogger;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 import org.junit.Assert;
@@ -321,7 +320,9 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
     }
 
     protected TransformationContext createTransformationContext(TransformationTarget target) {
-        return new TestTransformationContext(target, ModelTestModelControllerService.grabRootResource(this));
+        //It would be nice to get this from the controller, but probably not too important
+        ExpressionResolver resolver = new ExpressionResolverImpl() {};
+        return Transformers.Factory.create(target, ModelTestModelControllerService.grabRootResource(this), controllerService.getRootRegistration(), resolver, controllerService.getRunningMode(), controllerService.getProcessType());
     }
 
     protected TransformerRegistry getTransformersRegistry() {
@@ -332,64 +333,4 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         return controllerService.getClass().getSimpleName();
     }
 
-    private class TestTransformationContext implements TransformationContext {
-
-        private final TransformationTarget target;
-        private final Resource rootResource;
-
-        TestTransformationContext(TransformationTarget target, Resource rootResource){
-            this.target = target;
-            this.rootResource = rootResource;
-        }
-
-        @Override
-        public TransformationTarget getTarget() {
-            return target;
-        }
-
-        @Override
-        public ProcessType getProcessType() {
-            return controllerService.getProcessType();
-        }
-
-        @Override
-        public RunningMode getRunningMode() {
-            return controllerService.getRunningMode();
-        }
-
-        @Override
-        public ImmutableManagementResourceRegistration getResourceRegistration(final PathAddress address) {
-            return controllerService.getRootRegistration().getSubModel(address);
-        }
-
-        @Override
-        public ImmutableManagementResourceRegistration getResourceRegistrationFromRoot(PathAddress address) {
-            return controllerService.getRootRegistration().getSubModel(address);
-        }
-
-        @Override
-        public Resource readResource(final PathAddress address) {
-            return Resource.Tools.navigate(rootResource, address);
-        }
-
-        @Override
-        public Resource readResourceFromRoot(final PathAddress address) {
-            return Resource.Tools.navigate(rootResource, address);
-        }
-
-        @Override
-        public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-            return node.resolve();
-        }
-
-        @Override
-        public TransformersLogger getLogger() {
-            return TransformersLogger.getLogger(getTarget());
-        }
-
-        @Override
-        public boolean isSkipRuntimeIgnoreCheck() {
-            return false;
-        }
-    }
 }
