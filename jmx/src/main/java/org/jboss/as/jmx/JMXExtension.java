@@ -72,6 +72,7 @@ import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker.DiscardAttributeValueChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -132,8 +133,7 @@ public class JMXExtension implements Extension {
         registration.registerXMLElementWriter(writer);
 
         if (context.isRegisterTransformers()) {
-            registerTransformers1_0_0(registration);
-            registerTransformers1_1_0(registration);
+            registerTransformers(registration);
         }
     }
 
@@ -162,10 +162,25 @@ public class JMXExtension implements Extension {
         return op;
     }
 
-    private void registerTransformers1_0_0(SubsystemRegistration registration) {
+    private void registerTransformers(SubsystemRegistration registration) {
+        final ModelVersion version1_1_0 = ModelVersion.create(1, 1, 0);
+        final ModelVersion version1_0_0 = ModelVersion.create(1, 0, 0);
 
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
-        rejectDefinedCoreMBeansSensitivity(builder);
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
+
+        //Current 1.2.0 to 1.1.0
+        buildTransformers1_1_0(chainedBuilder.createBuilder(registration.getSubsystemVersion(), version1_1_0));
+
+        //1.1.0 to 1.0.0
+        buildTransformers1_0_0(chainedBuilder.createBuilder(version1_1_0, version1_0_0));
+
+        //Register the 1.0.0 transformer
+        TransformationDescription.Tools.register(chainedBuilder.build(version1_0_0, version1_1_0), registration, version1_0_0);
+        //Register the 1.1.0 transformer
+        TransformationDescription.Tools.register(chainedBuilder.build(version1_1_0), registration, version1_1_0);
+    }
+
+    private void buildTransformers1_0_0(ResourceTransformationDescriptionBuilder builder) {
         builder.setCustomResourceTransformer(new ResourceTransformer() {
             @Override
             public void transformResource(ResourceTransformationContext context, PathAddress address, Resource resource)
@@ -255,16 +270,11 @@ public class JMXExtension implements Extension {
             .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT);
 
-        registerRejectAuditLogTransformers(builder);
-
-        TransformationDescription.Tools.register(builder.build(), registration, ModelVersion.create(1, 0, 0));
     }
 
-    private void registerTransformers1_1_0(SubsystemRegistration registration) {
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
+    private void buildTransformers1_1_0(ResourceTransformationDescriptionBuilder builder) {
         rejectDefinedCoreMBeansSensitivity(builder);
         registerRejectAuditLogTransformers(builder);
-        TransformationDescription.Tools.register(builder.build(), registration, ModelVersion.create(1, 1, 0));
     }
 
     private void rejectDefinedCoreMBeansSensitivity(ResourceTransformationDescriptionBuilder builder) {
