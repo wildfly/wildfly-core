@@ -391,6 +391,9 @@
                                             <goal>
                                                 copy-dependencies
                                             </goal>
+                                            <goal>
+                                            	unpack-dependencies
+                                            </goal>
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
