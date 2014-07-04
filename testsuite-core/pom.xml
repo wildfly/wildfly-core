@@ -57,12 +57,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.Alpha2</version>
+        <version>1.0.0.Alpha3-SNAPSHOT</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-testsuite</artifactId>
-    <version>1.0.0.Alpha2</version>
+    <version>1.0.0.Alpha3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>WildFly core Test Suite: Aggregator</name>
