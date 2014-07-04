@@ -92,4 +92,11 @@ public interface SubsystemRegistration {
      */
     TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer);
 
+    /**
+     * Get the version of the subsystem
+     *
+     * @return the version
+     */
+    ModelVersion getSubsystemVersion();
+
 }

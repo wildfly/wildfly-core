@@ -39,8 +39,8 @@ import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -66,6 +66,7 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
@@ -535,7 +536,7 @@ public class ExtensionRegistry {
             if (deprecated){
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
-            return new SubsystemRegistrationImpl(name);
+            return new SubsystemRegistrationImpl(name, majorVersion, minorVersion, microVersion);
         }
 
         @Override
@@ -639,9 +640,11 @@ public class ExtensionRegistry {
 
     public class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
+        private final ModelVersion version;
 
-        private SubsystemRegistrationImpl(String name) {
+        private SubsystemRegistrationImpl(String name, int major, int minor, int micro) {
             this.name = name;
+            this.version = ModelVersion.create(major, minor, micro);
         }
 
         @Override
@@ -697,6 +700,10 @@ public class ExtensionRegistry {
             });
         }
 
+        @Override
+        public ModelVersion getSubsystemVersion() {
+            return version;
+        }
     }
 
     public class ExtensionInfo {
