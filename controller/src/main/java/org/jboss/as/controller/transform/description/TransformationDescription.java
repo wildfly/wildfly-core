@@ -158,7 +158,9 @@ public interface TransformationDescription {
          * @return the create sub registration
          */
         public static TransformersSubRegistration register(TransformationDescription description, SubsystemRegistration registration, ModelVersionRange range) {
-            final TransformersSubRegistration subRegistration = registration.registerModelTransformers(range, description.getResourceTransformer(), description.getOperationTransformer());
+            final TransformersSubRegistration subRegistration = registration.registerModelTransformers(range, description.getResourceTransformer(),
+                    description.getOperationTransformer(), description.isPlaceHolder());
+
             for (final Map.Entry<String, OperationTransformer> entry : description.getOperationTransformers().entrySet()) {
                 subRegistration.registerOperationTransformer(entry.getKey(), entry.getValue());
             }

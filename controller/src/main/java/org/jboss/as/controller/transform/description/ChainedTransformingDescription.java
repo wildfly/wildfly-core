@@ -77,7 +77,7 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
             currentCtx = ChainedTransformationTools.initialiseChain(currentCtx, resolver);
             PathAddress addr = ChainedTransformationTools.transformAddress(PathAddress.pathAddress(currentOp.require(OP_ADDR)), currentCtx.getTarget());
             currentOp.get(OP_ADDR).set(addr.toModelNode());
-            OperationTransformer transformer = currentCtx.getTarget().resolveTransformer(context, address, currentOp.require(OP).asString());
+            OperationTransformer transformer = currentCtx.getTarget().resolveTransformer(currentCtx, address, currentOp.require(OP).asString());
             TransformedOperation transformed = transformer.transformOperation(currentCtx, address, currentOp);
             currentOp = transformed.getTransformedOperation();
             delegates.add(transformed);
@@ -91,7 +91,7 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
             PathAddress currentAddress = PathAddress.pathAddress(currentOp.require(OP_ADDR));
             PathAddress addr = ChainedTransformationTools.transformAddress(currentAddress, currentCtx.getTarget());
             currentOp.get(OP_ADDR).set(addr.toModelNode());
-            OperationTransformer transformer = currentCtx.getTarget().resolveTransformer(context, currentAddress, currentOp.require(OP).asString());
+            OperationTransformer transformer = currentCtx.getTarget().resolveTransformer(currentCtx, currentAddress, currentOp.require(OP).asString());
             TransformedOperation transformed = transformer.transformOperation(currentCtx, address, currentOp);
             currentOp = transformed.getTransformedOperation();
             delegates.add(transformed);

@@ -682,13 +682,13 @@ public class ExtensionRegistry {
         }
 
         @Override
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer);
+        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
+            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, placeholder);
         }
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
-            return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer);
+            return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
         }
 
         private ManagementResourceRegistration getDummyRegistration() {

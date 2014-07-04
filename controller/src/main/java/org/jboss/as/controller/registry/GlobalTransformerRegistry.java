@@ -100,12 +100,12 @@ public class GlobalTransformerRegistry {
         createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, inherited), OperationTransformerRegistry.FORWARD, false);
     }
 
-    public void createChildRegistry(final PathAddress address, final ModelVersion version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-        createChildRegistry(address, version, PathAddressTransformer.DEFAULT, resourceTransformer, operationTransformer);
+    public void createChildRegistry(final PathAddress address, final ModelVersion version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
+        createChildRegistry(address, version, PathAddressTransformer.DEFAULT, resourceTransformer, operationTransformer, placeholder);
     }
 
-    public void createChildRegistry(final PathAddress address, final ModelVersion version, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-        createChildRegistry(address.iterator(), version, pathAddressTransformer, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, false), new OperationTransformerRegistry.OperationTransformerEntry(operationTransformer, false), false);
+    public void createChildRegistry(final PathAddress address, final ModelVersion version, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
+        createChildRegistry(address.iterator(), version, pathAddressTransformer, new OperationTransformerRegistry.ResourceTransformerEntry(resourceTransformer, false), new OperationTransformerRegistry.OperationTransformerEntry(operationTransformer, false), placeholder);
     }
 
     /**

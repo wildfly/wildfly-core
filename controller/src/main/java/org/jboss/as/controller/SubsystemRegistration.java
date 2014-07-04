@@ -79,9 +79,10 @@ public interface SubsystemRegistration {
      * @param version the model version
      * @param resourceTransformer the subsystem resource transformer
      * @param operationTransformer the subsystem operation transformer
+     * @param placeholder whether or not the transformers are placeholders
      * @return the transformers registry
      */
-    TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer);
+    TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder);
 
     /**
      * Register transformers for a given model version.
