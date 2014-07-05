@@ -68,4 +68,10 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl impleme
         checkIsMainController();
         return null;
     }
+
+    @Override
+    public Class<?> getTestClass() {
+        checkIsMainController();
+        return null;
+    }
 }

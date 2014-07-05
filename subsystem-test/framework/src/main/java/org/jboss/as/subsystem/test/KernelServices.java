@@ -14,6 +14,7 @@ import org.jboss.dmr.ModelNode;
  */
 public interface KernelServices extends ModelTestKernelServices<KernelServices> {
 
+    Class<?> getTestClass();
 
     /**
      * Transforms an operation in the main controller to the format expected by the model controller containing

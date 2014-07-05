@@ -82,4 +82,9 @@ public class LegacyControllerKernelServicesProxy extends ModelTestLegacyControll
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public Class<?> getTestClass() {
+        throw new IllegalStateException("Only callable from the main controller");
+    }
 }

@@ -405,29 +405,34 @@ final class SubsystemTestDelegate {
      * @deprecated this might no longer be needed following refactoring of TransformerRegistry
      */
     @Deprecated
-    void generateLegacySubsystemResourceRegistrationDmr(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
+    File generateLegacySubsystemResourceRegistrationDmr(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
         KernelServices legacy = kernelServices.getLegacyServices(modelVersion);
 
         //Generate the org.jboss.as.controller.transform.subsystem-version.dmr file - just use the format used by TransformerRegistry for now
         PathAddress pathAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName));
         ModelNode desc = ((KernelServicesInternal)legacy).readFullModelDescription(pathAddress.toModelNode());
-        File file = new File("target/test-classes").getAbsoluteFile();
-        Assert.assertTrue(file.exists());
-        for (String part : this.getClass().getPackage().getName().split("\\.")) {
-            file = new File(file, part);
-            if (!file.exists()) {
-                file.mkdir();
-            }
-        }
-        File dmrFile = new File(file, mainSubsystemName + "-" + modelVersion.getMajor() + "." + modelVersion.getMinor() +"."+modelVersion.getMicro()+ ".dmr");
+        File dmrFile = getDmrFile(kernelServices, modelVersion);
         PrintWriter pw = new PrintWriter(dmrFile);
         try {
             desc.writeString(pw, false);
             //Leave this println - it only gets executed when people generate the legacy dmr files, and is useful to know where it has been written.
             System.out.println("Legacy resource definition dmr written to: " + dmrFile.getAbsolutePath());
+            return dmrFile;
         } finally {
             IoUtils.safeClose(pw);
         }
+    }
+
+    private File getDmrFile(KernelServices kernelServices, ModelVersion modelVersion) {
+        File file = new File("target/test-classes").getAbsoluteFile();
+        Assert.assertTrue(file.exists());
+        for (String part : kernelServices.getTestClass().getPackage().getName().split("\\.")) {
+            file = new File(file, part);
+            if (!file.exists()) {
+                file.mkdir();
+            }
+        }
+        return new File(file, mainSubsystemName + "-" + modelVersion.getMajor() + "." + modelVersion.getMinor() +"."+modelVersion.getMicro()+ ".dmr");
     }
 
     /**
@@ -465,11 +470,28 @@ final class SubsystemTestDelegate {
         ModelTestUtils.compare(legacySubsystem, transformed, true);
 
         //2) Check that the transformed model is valid according to the resource definition in the legacy subsystem controller
-        ResourceDefinition rd = TransformerRegistry.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
+        ResourceDefinition rd = getResourceDefinition(kernelServices, modelVersion);
         Assert.assertNotNull("Could not load legacy dmr for subsystem '" + mainSubsystemName + "' version: '" + modelVersion + "' please add it", rd);
         ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.create(rd);
         ModelTestUtils.checkModelAgainstDefinition(transformed, rr);
         return legacyModel;
+    }
+
+    private ResourceDefinition getResourceDefinition(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
+        //Look for the file in the org.jboss.as.subsystem.test package - this is where we used to store them before the split
+        ResourceDefinition rd = TransformerRegistry.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
+
+        if (rd == null) {
+            //This is the 'new' post-split way. First check for a cached .dmr file. This which also allows people
+            //to override the file for the very rare cases where the rd needed touching up (probably only the case for 7.1.x descriptions).
+            File file = getDmrFile(kernelServices, modelVersion);
+            if (!file.exists()) {
+                generateLegacySubsystemResourceRegistrationDmr(kernelServices, modelVersion);
+            }
+            System.out.println("Using legacy resource definition dmr: " + file);
+            rd = TransformerRegistry.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
+        }
+        return rd;
     }
 
     void addAdditionalParsers(AdditionalParsers additionalParsers) {
@@ -588,7 +610,7 @@ final class SubsystemTestDelegate {
         public KernelServices build() throws Exception {
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
-            AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
+            AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
                     testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
             SubsystemTestDelegate.this.kernelServices.add(kernelServices);
 

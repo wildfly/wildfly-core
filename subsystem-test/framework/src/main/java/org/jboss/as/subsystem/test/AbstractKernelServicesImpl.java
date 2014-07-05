@@ -50,7 +50,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         this.registerTransformers = registerTransformers;
     }
 
-    public static AbstractKernelServicesImpl create(String mainSubsystemName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
+    public static AbstractKernelServicesImpl create(Class<?> testClass, String mainSubsystemName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
             ExtensionRegistry controllerExtensionRegistry, List<ModelNode> bootOperations, ModelTestParser testParser, Extension mainExtension, ModelVersion legacyModelVersion,
             boolean registerTransformers, boolean persistXml) throws Exception {
         ControllerInitializer controllerInitializer = additionalInit.createControllerInitializer();
@@ -99,7 +99,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
         AbstractKernelServicesImpl kernelServices = legacyModelVersion == null ?
                     new MainKernelServicesImpl(container, svc, persister, svc.getRootRegistration(),
-                            new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers) :
+                            new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers, testClass) :
                                 new LegacyKernelServicesImpl(container, svc, persister, svc.getRootRegistration(), new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers);
 
         return kernelServices;
