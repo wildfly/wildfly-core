@@ -328,6 +328,10 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         return controllerService.getTransformersRegistry();
     }
 
+    protected String getControllerClassSimpleName() {
+        return controllerService.getClass().getSimpleName();
+    }
+
     private class TestTransformationContext implements TransformationContext {
 
         private final TransformationTarget target;

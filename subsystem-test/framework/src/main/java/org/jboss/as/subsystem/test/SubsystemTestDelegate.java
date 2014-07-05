@@ -112,7 +112,8 @@ import org.xnio.IoUtils;
  */
 final class SubsystemTestDelegate {
 
-    private final String TEST_NAMESPACE = "urn.org.jboss.test:1.0";
+    private static final String TEST_OLD_LEGACY = "jboss.test.transformers.subsystem.old";
+    private static final String TEST_NAMESPACE = "urn.org.jboss.test:1.0";
 
     private static final ModelNode SUCCESS;
     static
@@ -586,7 +587,11 @@ final class SubsystemTestDelegate {
         }
 
         public LegacyKernelServicesInitializer createLegacyKernelServicesBuilder(AdditionalInitialization additionalInit, ModelTestControllerVersion version, ModelVersion modelVersion) {
-            Assume.assumeTrue("No legacy controller to test against",version.hasValidLegacyController());
+            boolean valid = version.hasValidLegacyController();
+            if (!valid) {
+                valid = System.getProperties().containsKey(TEST_OLD_LEGACY);
+            }
+            Assume.assumeTrue("No legacy controller to test against", valid);
             //Ignore this test if it is eap
             if (version.isEap()) {
                 Assume.assumeTrue(EAPRepositoryReachableUtil.isReachable());

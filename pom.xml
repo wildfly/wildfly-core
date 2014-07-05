@@ -733,6 +733,12 @@
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-subsystem-test-controller-7.1.2</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-subsystem-test-controller-7.2.0</artifactId>
                 <version>${project.version}</version>
             </dependency>
