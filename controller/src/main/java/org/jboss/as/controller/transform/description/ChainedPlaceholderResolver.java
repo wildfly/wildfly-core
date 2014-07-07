@@ -60,8 +60,12 @@ class ChainedPlaceholderResolver implements PlaceholderResolver {
                 subMap = new HashMap<>();
                 childResolvers.put(pathElement.getKey(), subMap);
             }
-            assert !subMap.containsKey(pathElement.getValue()) : "already have resolver for " + pathElement;
-            subMap.put(pathElement.getValue(), childResolver);
+            //Although this looks weird, this is exactly the same behaviour as
+            //GlobalTransformerRegistry.getOrCreate(final ModelVersion, PathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry, final OperationTransformerRegistry.OperationTransformerEntry, boolean)
+            //This is something which should be revisited in the future
+            if (!subMap.containsKey(pathElement.getValue())) {
+                subMap.put(pathElement.getValue(), childResolver);
+            }
         }
 
         final Map<String, SubRegistry> subRegistries = new HashMap<>();
