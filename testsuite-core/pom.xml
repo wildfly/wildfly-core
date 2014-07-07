@@ -411,6 +411,7 @@
                 </property>
             </activation>
             <modules>
+                <module>patching</module>
                 <module>domain</module>
             </modules>
         </profile>
@@ -573,6 +574,19 @@
                 <jvm.args.securityManagerOther>${security.manager.other}</jvm.args.securityManagerOther>
             </properties>
         </profile>
+        <!-- -Dts.patching -->
+        <profile>
+            <id>ts.integ.group.patching</id>
+            <activation>
+                <property>
+                    <name>ts.patching</name>
+                </property>
+            </activation>
+            <modules>
+                <module>patching</module>
+            </modules>
+        </profile>
+
 
     </profiles>
 </project>
