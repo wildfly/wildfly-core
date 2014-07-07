@@ -104,6 +104,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
+import org.wildfly.legacy.test.spi.Version;
 
 
 
@@ -620,13 +621,15 @@ public class CoreModelTestDelegate {
 
                 classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-core-model-test-framework:" + ModelTestControllerVersion.CurrentVersion.VERSION);
                 classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-model-test:" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-spi:" + Version.LEGACY_TEST_CONTROLLER_VERSION);
 
                 if (testControllerVersion != ModelTestControllerVersion.MASTER) {
                     String groupId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "org.jboss.as" : "org.wildfly";
                     String hostControllerArtifactId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "jboss-as-host-controller" : "wildfly-host-controller";
 
                     classLoaderBuilder.addRecursiveMavenResourceURL(groupId + ":" + hostControllerArtifactId + ":" + testControllerVersion.getMavenGavVersion());
-                    classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-core-model-test-controller-" + testControllerVersion.getTestControllerVersion() + ":" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                    classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-core-" + testControllerVersion.getTestControllerVersion() + ":" + Version.LEGACY_TEST_CONTROLLER_VERSION);
+
                 }
                 legacyCl = classLoaderBuilder.build();
                 if (currentTransformerClassloaderParameter != null) {

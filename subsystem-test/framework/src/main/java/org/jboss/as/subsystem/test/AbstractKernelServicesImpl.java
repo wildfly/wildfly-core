@@ -25,6 +25,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.legacy.test.spi.subsystem.TestModelControllerFactory;
 
 
 /**
@@ -106,7 +107,6 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         return kernelServices;
     }
 
-
     public ModelNode readFullModelDescription(ModelNode pathAddress) {
         final PathAddress addr = PathAddress.pathAddress(pathAddress);
         ManagementResourceRegistration reg = (ManagementResourceRegistration)getRootRegistration().getSubModel(addr);
@@ -146,7 +146,8 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
         @Override
         public ModelTestModelControllerService create(Extension mainExtension, ControllerInitializer controllerInitializer,
-                AdditionalInitialization additionalInit, ExtensionRegistry extensionRegistry, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
+                AdditionalInitialization additionalInit, ExtensionRegistry extensionRegistry,
+                StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
                 boolean registerTransformers) {
             return TestModelControllerService.create(mainExtension, controllerInitializer, additionalInit, extensionRegistry, persister, validateOpsFilter, registerTransformers);
         }

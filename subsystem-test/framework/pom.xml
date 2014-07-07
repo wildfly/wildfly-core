@@ -72,5 +72,10 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>org.wildfly.legacy.test</groupId>
+            <artifactId>wildfly-legacy-spi</artifactId>
+        </dependency>
     </dependencies>
 </project>

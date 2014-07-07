@@ -35,6 +35,8 @@ import org.jboss.as.model.test.ModelTestControllerVersion;
  */
 public class TransformersTestParameter extends ClassloaderParameter {
 
+    private static final String TEST_OLD_LEGACY = "jboss.test.transformers.core.old";
+
     private final ModelVersion modelVersion;
     private final ModelTestControllerVersion testControllerVersion;
 
@@ -56,13 +58,23 @@ public class TransformersTestParameter extends ClassloaderParameter {
     }
 
     public static List<TransformersTestParameter> setupVersions(){
+        boolean includeLegacy = System.getProperties().containsKey(TEST_OLD_LEGACY);
+
         List<TransformersTestParameter> data = new ArrayList<TransformersTestParameter>();
         //AS releases
+        if (includeLegacy) {
+            data.add(new TransformersTestParameter(ModelVersion.create(1, 2, 0), ModelTestControllerVersion.V7_1_2_FINAL));
+            data.add(new TransformersTestParameter(ModelVersion.create(1, 3, 0), ModelTestControllerVersion.V7_1_3_FINAL));
+        }
         data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.V7_2_0_FINAL));
         data.add(new TransformersTestParameter(ModelVersion.create(2, 0, 0), ModelTestControllerVersion.MASTER));
 
         //EAP releases - these will only get tested if the EAPRepositoryReachableUtil.TEST_TRANSFORMERS_EAP system property is set AND the EAP repostitory is available
         if (EAPRepositoryReachableUtil.isReachable()) {
+            if (includeLegacy) {
+                data.add(new TransformersTestParameter(ModelVersion.create(1, 2, 0), ModelTestControllerVersion.EAP_6_0_0));
+                data.add(new TransformersTestParameter(ModelVersion.create(1, 3, 0), ModelTestControllerVersion.EAP_6_0_1));
+            }
             data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_0));
             data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_1));
         }

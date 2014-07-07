@@ -40,5 +40,11 @@
             <artifactId>junit</artifactId>
             <scope>provided</scope>
         </dependency>
+       <dependency>
+           <groupId>org.wildfly.legacy.test</groupId>
+           <artifactId>wildfly-legacy-spi</artifactId>
+	        <scope>provided</scope>
+       </dependency>
     </dependencies>
+    
 </project>
