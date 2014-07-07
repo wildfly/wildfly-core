@@ -173,6 +173,7 @@ public class Server {
             shutdownThread = null;
         }
         try {
+            client.close();
             if (process != null) {
                 Thread shutdown = new Thread(new Runnable() {
                     @Override
