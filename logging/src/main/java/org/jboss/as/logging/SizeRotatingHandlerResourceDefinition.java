@@ -86,6 +86,7 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
                         .getAttributeBuilder()
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, APPEND, FILE, MAX_BACKUP_INDEX, ROTATE_SIZE)
                         .end();
+                break;
             }
             case VERSION_1_2_0: {
                 resourceBuilder
@@ -93,13 +94,12 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
                         .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
                         .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
                         .end();
-                if (loggingProfileBuilder != null) {
-                    loggingProfileBuilder
-                            .getAttributeBuilder()
-                            .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
-                            .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
-                            .end();
-                }
+                loggingProfileBuilder
+                        .getAttributeBuilder()
+                        .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
+                        .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
+                        .end();
+                break;
             }
         }
 

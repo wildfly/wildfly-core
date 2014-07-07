@@ -23,6 +23,7 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -66,6 +67,7 @@ class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition {
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, TARGET)
                         .end()
                         .discardOperations();
+                break;
             }
         }
     }

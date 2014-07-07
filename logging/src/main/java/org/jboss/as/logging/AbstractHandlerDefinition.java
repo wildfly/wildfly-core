@@ -33,6 +33,7 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.NAME;
 
 import java.util.logging.Handler;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -238,21 +239,24 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                             .end()
                                     // Discard 'name' as legacy slaves didn't store it in resources
                             .setCustomResourceTransformer(new LoggingResourceTransformer(NAME));
-                case VERSION_1_2_0:
+                    break;
+                case VERSION_1_2_0: {
+                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
+                    break;
+                }
                 case VERSION_1_3_0: {
                     resourceBuilder
                             .getAttributeBuilder()
                             .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
                             .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
                             .end();
-                    if (loggingProfileBuilder != null) {
-                        loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-                        loggingProfileResourceBuilder
-                                .getAttributeBuilder()
-                                .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
-                                .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
-                                .end();
-                    }
+                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
+                    loggingProfileResourceBuilder
+                            .getAttributeBuilder()
+                            .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
+                            .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
+                            .end();
+                    break;
                 }
             }
             registerResourceTransformers(modelVersion, resourceBuilder, loggingProfileResourceBuilder);

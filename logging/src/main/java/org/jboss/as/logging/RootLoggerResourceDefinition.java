@@ -183,6 +183,7 @@ public class RootLoggerResourceDefinition extends TransformerResourceDefinition 
                             .end()
                                     // Set the custom resource transformer
                             .setCustomResourceTransformer(new LoggingResourceTransformer(NAME));
+                    break;
                 }
             }
         }
