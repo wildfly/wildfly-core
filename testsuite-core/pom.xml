@@ -412,6 +412,7 @@
             </activation>
             <modules>
                 <module>domain</module>
+                <module>patching</module>
             </modules>
         </profile>
 
