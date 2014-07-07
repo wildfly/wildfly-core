@@ -179,6 +179,12 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-host-controller</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-annotations</artifactId>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
