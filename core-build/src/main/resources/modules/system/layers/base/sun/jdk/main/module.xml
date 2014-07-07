@@ -28,10 +28,9 @@
         <resource-root path="service-loader-resources"/>
     </resources>
     <dependencies>
+        <module name="sun.scripting" export="true"/>
         <system export="true">
             <paths>
-                <path name="com/sun/script/javascript"/>
-                <path name="jdk/nashorn/api/scripting"/>
                 <path name="com/sun/image/codec/jpeg"/>
                 <path name="com/sun/imageio/plugins/bmp"/>
                 <path name="com/sun/imageio/plugins/common"/>
