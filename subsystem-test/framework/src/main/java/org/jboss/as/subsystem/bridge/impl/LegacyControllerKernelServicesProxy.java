@@ -73,6 +73,7 @@ public class LegacyControllerKernelServicesProxy extends ModelTestLegacyControll
             if (readFullModelDescription == null) {
                 readFullModelDescription = childFirstClassLoaderServices.getClass().getMethod("readFullModelDescription",
                         childFirstClassLoader.loadClass(ModelNode.class.getName()));
+                System.out.println(readFullModelDescription);
             }
             return convertModelNodeFromChildCl(
                     readFullModelDescription.invoke(childFirstClassLoaderServices,
@@ -81,5 +82,10 @@ public class LegacyControllerKernelServicesProxy extends ModelTestLegacyControll
             unwrapInvocationTargetRuntimeException(e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Class<?> getTestClass() {
+        throw new IllegalStateException("Only callable from the main controller");
     }
 }

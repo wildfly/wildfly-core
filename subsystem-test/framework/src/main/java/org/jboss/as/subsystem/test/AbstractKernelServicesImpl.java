@@ -1,5 +1,6 @@
 package org.jboss.as.subsystem.test;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -50,7 +51,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         this.registerTransformers = registerTransformers;
     }
 
-    public static AbstractKernelServicesImpl create(String mainSubsystemName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
+    public static AbstractKernelServicesImpl create(Class<?> testClass, String mainSubsystemName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
             ExtensionRegistry controllerExtensionRegistry, List<ModelNode> bootOperations, ModelTestParser testParser, Extension mainExtension, ModelVersion legacyModelVersion,
             boolean registerTransformers, boolean persistXml) throws Exception {
         ControllerInitializer controllerInitializer = additionalInit.createControllerInitializer();
@@ -99,7 +100,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
         AbstractKernelServicesImpl kernelServices = legacyModelVersion == null ?
                     new MainKernelServicesImpl(container, svc, persister, svc.getRootRegistration(),
-                            new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers) :
+                            new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers, testClass) :
                                 new LegacyKernelServicesImpl(container, svc, persister, svc.getRootRegistration(), new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers);
 
         return kernelServices;
@@ -107,7 +108,24 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
 
     public ModelNode readFullModelDescription(ModelNode pathAddress) {
-        return SubsystemDescriptionDump.readFullModelDescription(PathAddress.pathAddress(pathAddress), getRootRegistration().getSubModel(PathAddress.pathAddress(pathAddress)));
+        final PathAddress addr = PathAddress.pathAddress(pathAddress);
+        ManagementResourceRegistration reg = (ManagementResourceRegistration)getRootRegistration().getSubModel(addr);
+        try {
+            //This is compiled against the current version of WildFly
+            return SubsystemDescriptionDump.readFullModelDescription(addr, reg);
+        } catch (NoSuchMethodError e) {
+            if (getControllerClassSimpleName().equals("TestModelControllerService7_1_2")) {
+                try {
+                    //Older versions use ManagementResourceRegistration in the method signature, while the newer ones above use ImmutableResourceRegistration
+                    //Call via reflection instead
+                    Method m = SubsystemDescriptionDump.class.getMethod("readFullModelDescription", PathAddress.class, ManagementResourceRegistration.class);
+                    return (ModelNode)m.invoke(null, addr, reg);
+                } catch (Exception e1) {
+                    throw new RuntimeException(e1);
+                }
+            }
+            throw e;
+        }
     }
 
     @Override

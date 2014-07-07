@@ -65,17 +65,18 @@ import org.xnio.IoUtils;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 class MainKernelServicesImpl extends AbstractKernelServicesImpl {
-
+    private Class<?> testClass;
     private static final ModelVersion CURRENT_CORE_VERSION = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION,
             Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
     protected MainKernelServicesImpl(ServiceContainer container, ModelTestModelControllerService controllerService,
             StringConfigurationPersister persister, ManagementResourceRegistration rootRegistration,
             OperationValidator operationValidator, String mainSubsystemName, ExtensionRegistry extensionRegistry,
-            ModelVersion legacyModelVersion, boolean successfulBoot, Throwable bootError, boolean registerTransformers) {
+            ModelVersion legacyModelVersion, boolean successfulBoot, Throwable bootError, boolean registerTransformers, Class<?> testClass) {
         // FIXME MainKernelServicesImpl constructor
         super(container, controllerService, persister, rootRegistration, operationValidator, mainSubsystemName, extensionRegistry,
                 legacyModelVersion, successfulBoot, bootError, registerTransformers);
+        this.testClass = testClass;
     }
 
     /**
@@ -162,6 +163,11 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         return result;
     }
 
+    @Override
+    public Class<?> getTestClass() {
+        return testClass;
+    }
+
     private ModelVersion getCoreModelVersionByLegacyModelVersion(ModelVersion legacyModelVersion) {
         //The reason the core model version is important is that is used to know if the ignored slave resources are known on the host or not
         //e.g 7.2.x uses core model version >= 1.4.0 and so we know which resources are ignored
@@ -233,4 +239,5 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
             return null;
         }
     };
+
 }
