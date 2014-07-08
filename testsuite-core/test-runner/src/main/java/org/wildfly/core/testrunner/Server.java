@@ -92,6 +92,7 @@ public class Server {
             cmd.add("-Djboss.home.dir=" + JBOSS_HOME);
             cmd.add("-Dorg.jboss.boot.log.file=" + getSystemPropertyValue(cmd, "org.jboss.boot.log.file", getFile(bootLogFileDefaultValue, JBOSS_HOME).getAbsolutePath()));
             cmd.add("-Dlogging.configuration=" + getSystemPropertyValue(cmd, "logging.configuration", getFile(loggingConfigurationDefaultValue, JBOSS_HOME).toURI().toString()));
+            cmd.add("-Djboss.bind.address.management="+MANAGEMENT_ADDRESS);
             cmd.add("-jar");
             cmd.add(modulesJar.getAbsolutePath());
             cmd.add("-mp");
