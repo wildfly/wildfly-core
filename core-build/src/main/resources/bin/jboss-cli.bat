@@ -1,4 +1,5 @@
 @echo off
+setlocal ENABLEEXTENSIONS
 rem -------------------------------------------------------------------------
 rem JBoss Admin CLI Script for Windows
 rem -------------------------------------------------------------------------
@@ -48,6 +49,7 @@ set "JBOSS_RUNJAR=%JBOSS_HOME%\jboss-modules.jar"
 if not exist "%JBOSS_RUNJAR%" (
   echo Could not locate "%JBOSS_RUNJAR%".
   echo Please check that you are in the bin directory when running this script.
+  set /A RC=1
   goto END
 )
 
@@ -71,5 +73,11 @@ if errorlevel == 1 (
      org.jboss.as.cli ^
      %*
 
+set /A RC=%errorlevel%
 :END
 if "x%NOPAUSE%" == "x" pause
+
+if "x%RC%" == "x" (
+  set /A RC=0
+)
+exit /B %RC%
