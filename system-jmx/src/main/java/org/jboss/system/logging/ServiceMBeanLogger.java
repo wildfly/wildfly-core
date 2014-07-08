@@ -61,6 +61,6 @@ public interface ServiceMBeanLogger extends BasicLogger {
     @Message(id = 8, value = "Destroying failed %s")
     IllegalArgumentException destroyingFailed(@Cause Throwable cause, String description);
 
-    @Message(id = 17808, value = "Initialization failed during postRegister")
+    @Message(id = 9, value = "Initialization failed during postRegister")
     String postRegisterInitializationFailed();
 }
