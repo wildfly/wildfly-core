@@ -1,15 +1,15 @@
 package org.wildfly.core.testrunner;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import javax.inject.Inject;
+
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
-
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 /**
  * A lightweight test runner for running management based tests
@@ -18,17 +18,22 @@ import java.lang.reflect.Modifier;
  */
 public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
-    private static volatile boolean started = false;
-    private static volatile Server server;
+    private ServerController controller = new ServerController();
+    private final boolean automaticServerControl;
 
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
      *
-     * @throws org.junit.runners.model.InitializationError
-     *          if the test class is malformed.
+     * @throws org.junit.runners.model.InitializationError if the test class is malformed.
      */
     public WildflyTestRunner(Class<?> klass) throws InitializationError {
         super(klass);
+        if (klass.isAnnotationPresent(ServerControl.class)) {
+            ServerControl serverControl = klass.getAnnotation(ServerControl.class);
+            automaticServerControl = !serverControl.manual();
+        }else{
+            automaticServerControl = true;
+        }
         startServerIfRequired();
         doInject(klass, null);
 
@@ -44,9 +49,11 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                         if (field.isAnnotationPresent(Inject.class)) {
                             field.setAccessible(true);
                             if (field.getType() == ManagementClient.class) {
-                                field.set(instance, server.getClient());
+                                field.set(instance, controller.getClient());
                             } else if (field.getType() == ModelControllerClient.class) {
-                                field.set(instance, server.getClient().getControllerClient());
+                                field.set(instance, controller.getClient().getControllerClient());
+                            } else if (field.getType() == ServerController.class) {
+                                field.set(instance, controller);
                             }
                         }
                     }
@@ -60,7 +67,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected Object createTest() throws Exception {
-        Object res =  super.createTest();
+        Object res = super.createTest();
         doInject(getTestClass().getJavaClass(), res);
         return res;
     }
@@ -72,10 +79,10 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
             @Override
             public void testRunFinished(Result result) throws Exception {
                 super.testRunFinished(result);
-                if (server != null) {
-                    server.stop();
-                    server = null;
+                if (automaticServerControl) {
+                    controller.stop();
                 }
+
             }
         });
         startServerIfRequired();
@@ -83,10 +90,8 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     }
 
     private void startServerIfRequired() {
-        if (!started) {
-            started = true;
-            server = new Server();
-            server.start();
+        if (automaticServerControl) {
+            controller.start();
         }
     }
 }

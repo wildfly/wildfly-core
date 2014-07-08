@@ -172,6 +172,7 @@ public class Server {
             shutdownThread = null;
         }
         try {
+            client.close();
             if (process != null) {
                 Thread shutdown = new Thread(new Runnable() {
                     @Override
@@ -194,10 +195,14 @@ public class Server {
                 });
                 shutdown.start();
 
-                // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
-                ModelNode op = new ModelNode();
-                op.get("operation").set("shutdown");
-                client.getControllerClient().executeAsync(op, null);
+                try {
+                    // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
+                    ModelNode op = new ModelNode();
+                    op.get("operation").set("shutdown");
+                    client.getControllerClient().executeAsync(op, null);
+                } catch (AssertionError e) {
+                    //ignore as this can only fail if shutdown is already in progress
+                }
 
                 process.waitFor();
                 process = null;
