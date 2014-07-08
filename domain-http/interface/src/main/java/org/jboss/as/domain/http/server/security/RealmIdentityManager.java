@@ -116,6 +116,11 @@ public class RealmIdentityManager implements IdentityManager {
 
     @Override
     public Account verify(String id, Credential credential) {
+        if (id == null || id.length() == 0) {
+            HttpServerLogger.ROOT_LOGGER.debug("Missing or empty username received, aborting account verification.");
+            return null;
+        }
+
         if (credential instanceof PasswordCredential) {
             return verify(id, (PasswordCredential) credential);
         } else if (credential instanceof DigestCredential) {
@@ -135,7 +140,7 @@ public class RealmIdentityManager implements IdentityManager {
         Callback[] callbacks = new Callback[3];
         callbacks[0] = new RealmCallback("Realm", securityRealm.getName());
         callbacks[1] = new NameCallback("Username", id);
-        callbacks[2] = new VerifyPasswordCallback(new String(((PasswordCredential) credential).getPassword()));
+        callbacks[2] = new VerifyPasswordCallback(new String(credential.getPassword()));
 
         try {
             ach.handle(callbacks);
