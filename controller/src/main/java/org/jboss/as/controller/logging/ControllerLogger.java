@@ -54,6 +54,7 @@ import org.jboss.as.controller._private.OperationCancellationException;
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
+import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -3198,4 +3199,12 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 355, value = "Reconnecting to syslog handler '%s failed")
     void reconnectToSyslogFailed(String name, @Cause Throwable e);
+
+    @LogMessage(level = WARN)
+    @Message(id = 356, value = "Failed to emit notification %s")
+    void failedToEmitNotification(Notification notification, @Cause Throwable cause);
+
+    @LogMessage(level = WARN)
+    @Message(id = 357, value = "Notification of type %s is not described for the resource at the address %s")
+    void notificationIsNotDescribed(String type, PathAddress source);
 }
