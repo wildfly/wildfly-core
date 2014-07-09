@@ -6,17 +6,17 @@
         <security-realms>
             <security-realm name="ManagementRealm">
                 <authentication>
-                    <local default-user="$local" skip-group-loading="true" />
+                    <local default-user="$local" skip-group-loading="true"/>
                     <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
                 </authentication>
                 <authorization map-groups-to-roles="false">
                     <properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
-                </authorization>                
+                </authorization>
             </security-realm>
             <security-realm name="ApplicationRealm">
                 <authentication>
-                    <local default-user="$local" allowed-users="*" skip-group-loading="true" />
-                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir" />
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
                 </authentication>
                 <authorization>
                     <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
@@ -25,16 +25,16 @@
         </security-realms>
         <audit-log>
             <formatters>
-               <json-formatter name="json-formatter"/>
+                <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
                 <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
                 <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
             </handlers>
             <logger log-boot="true" log-read-only="false" enabled="false">
-               <handlers>
-                  <handler name="host-file"/>
-               </handlers>
+                <handlers>
+                    <handler name="host-file"/>
+                </handlers>
             </logger>
             <server-logger log-boot="true" log-read-only="false" enabled="false">
                 <handlers>
@@ -53,9 +53,9 @@
     </management>
 
     <domain-controller>
-       <local/>
-       <!-- Alternative remote domain controller configuration with a host and port -->
-       <!-- <remote host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/> -->
+        <local/>
+        <!-- Alternative remote domain controller configuration with a host and port -->
+        <!-- <remote host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/> -->
     </domain-controller>
 
     <interfaces>
@@ -63,7 +63,7 @@
             <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
         </interface>
         <interface name="public">
-           <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
         </interface>
         <interface name="unsecure">
             <!-- Used for IIOP sockets in the standard configuration.
@@ -72,15 +72,15 @@
         </interface>
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-          <heap size="64m" max-size="256m"/>
-          <permgen size="256m" max-size="256m"/>
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="256m"/>
+            <permgen size="256m" max-size="256m"/>
             <jvm-options>
                 <option value="-server"/>
             </jvm-options>
-       </jvm>
- 	</jvms>
+        </jvm>
+    </jvms>
 
     <servers>
         <server name="server-one" group="main-server-group">

@@ -6,8 +6,8 @@
         <security-realms>
             <security-realm name="ManagementRealm">
                 <server-identities>
-                     <!-- Replace this with either a base64 password of your own, or use a vault with a vault expression -->
-                     <secret value="c2xhdmVfdXNlcl9wYXNzd29yZA=="/>
+                    <!-- Replace this with either a base64 password of your own, or use a vault with a vault expression -->
+                    <secret value="c2xhdmVfdXNlcl9wYXNzd29yZA=="/>
                 </server-identities>
 
                 <authentication>
@@ -16,12 +16,12 @@
                 </authentication>
                 <authorization map-groups-to-roles="false">
                     <properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
-                </authorization>                
+                </authorization>
             </security-realm>
             <security-realm name="ApplicationRealm">
                 <authentication>
-                    <local default-user="$local" allowed-users="*" skip-group-loading="true" />
-                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir" />
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
                 </authentication>
                 <authorization>
                     <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
@@ -55,7 +55,7 @@
     </management>
 
     <domain-controller>
-       <remote host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/>
+        <remote host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/>
     </domain-controller>
 
     <interfaces>
@@ -63,7 +63,7 @@
             <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
         </interface>
         <interface name="public">
-           <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
         </interface>
         <interface name="unsecure">
             <!-- Used for IIOP sockets in the standard configuration.
@@ -73,14 +73,14 @@
     </interfaces>
 
     <jvms>
-   	   <jvm name="default">
+        <jvm name="default">
             <heap size="64m" max-size="256m"/>
             <permgen size="256m" max-size="256m"/>
-              <jvm-options>
-                  <option value="-server"/>
-              </jvm-options>
-         </jvm>
-   	</jvms>
+            <jvm-options>
+                <option value="-server"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
 
     <servers>
         <server name="server-one" group="main-server-group"/>
