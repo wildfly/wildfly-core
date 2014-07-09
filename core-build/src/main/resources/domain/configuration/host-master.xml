@@ -10,17 +10,17 @@
         <security-realms>
             <security-realm name="ManagementRealm">
                 <authentication>
-                    <local default-user="$local" skip-group-loading="true" />
+                    <local default-user="$local" skip-group-loading="true"/>
                     <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
                 </authentication>
                 <authorization map-groups-to-roles="false">
                     <properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
-                </authorization>                
+                </authorization>
             </security-realm>
             <security-realm name="ApplicationRealm">
                 <authentication>
-                     <local default-user="$local" allowed-users="*" skip-group-loading="true" />
-                     <properties path="application-users.properties" relative-to="jboss.domain.config.dir" />
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
                 </authentication>
                 <authorization>
                     <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
@@ -57,7 +57,7 @@
     </management>
 
     <domain-controller>
-       <local/>
+        <local/>
     </domain-controller>
 
     <interfaces>
@@ -67,13 +67,13 @@
     </interfaces>
 
     <jvms>
-   	   <jvm name="default">
+        <jvm name="default">
             <heap size="64m" max-size="256m"/>
             <permgen size="256m" max-size="256m"/>
-              <jvm-options>
-                  <option value="-server"/>
-              </jvm-options>
-         </jvm>
-   	</jvms>
+            <jvm-options>
+                <option value="-server"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
 
 </host>
