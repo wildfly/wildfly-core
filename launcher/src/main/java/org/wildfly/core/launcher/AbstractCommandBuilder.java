@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 import org.wildfly.core.launcher.logger.LauncherMessages;
 
@@ -40,6 +41,7 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
 abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> implements CommandBuilder {
 
     private static final String MODULES_JAR_NAME = "jboss-modules.jar";
+    private static final String JAVA_EXE = "java" + getExeSuffix();
 
     // TODO (jrp) should java.awt.headless=true be added?
     private static final List<String> DEFAULT_VM_ARGUMENTS = Arrays.asList(
@@ -824,8 +826,10 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
 
     protected static Path validateJavaHome(final Path javaHome) {
         final Path result = validateAndNormalizeDir(javaHome, false);
-        if (Files.notExists(result.resolve("bin").resolve("java"))) {
-            throw LauncherMessages.MESSAGES.invalidDirectory("bin/java", javaHome);
+        final Path exe = result.resolve("bin").resolve(JAVA_EXE);
+        if (Files.notExists(exe)) {
+            final int count = exe.getNameCount();
+            throw LauncherMessages.MESSAGES.invalidDirectory(exe.subpath(count - 2, count).toString(), javaHome);
         }
         return result;
     }
@@ -847,5 +851,13 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
             throw LauncherMessages.MESSAGES.invalidDirectory(path);
         }
         return path.normalize();
+    }
+
+    private static String getExeSuffix() {
+        final String os = System.getProperty("os.name");
+        if (os != null && os.toLowerCase(Locale.ROOT).contains("win")) {
+            return ".exe";
+        }
+        return "";
     }
 }
