@@ -232,6 +232,7 @@ rem if x%XLOGGC% == x (
    "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       -jar "%JBOSS_HOME%\jboss-modules.jar" ^
       -mp "%JBOSS_MODULEPATH%" ^
+      %MODULE_OPTS% ^
       -jaxpmodule "javax.xml.jaxp-provider" ^
        org.jboss.as.standalone ^
       "-Djboss.home.dir=%JBOSS_HOME%" ^
@@ -242,6 +243,7 @@ rem ) else (
    rem "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       rem -jar "%JBOSS_HOME%\jboss-modules.jar" ^
       rem -mp "%JBOSS_MODULEPATH%" ^
+      rem %MODULE_OPTS% ^
       rem -jaxpmodule "javax.xml.jaxp-provider" ^
       rem org.jboss.as.standalone ^
       rem "-Djboss.home.dir=%JBOSS_HOME%" ^
