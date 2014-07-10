@@ -32,6 +32,7 @@
     </config>
     <artifacts>
         <copy-artifact artifact="org.jboss.modules:jboss-modules" to-location="jboss-modules.jar"/>
+        <copy-artifact artifact="org.wildfly.core:wildfly-launcher" to-location="bin/wildfly-launcher.jar"/>
     </artifacts>
     <mkdirs>
         <dir name="domain/data/content"/>
