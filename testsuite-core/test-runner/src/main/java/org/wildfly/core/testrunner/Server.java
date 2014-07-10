@@ -92,6 +92,7 @@ public class Server {
             cmd.add("-Djboss.home.dir=" + JBOSS_HOME);
             cmd.add("-Dorg.jboss.boot.log.file=" + getSystemPropertyValue(cmd, "org.jboss.boot.log.file", getFile(bootLogFileDefaultValue, JBOSS_HOME).getAbsolutePath()));
             cmd.add("-Dlogging.configuration=" + getSystemPropertyValue(cmd, "logging.configuration", getFile(loggingConfigurationDefaultValue, JBOSS_HOME).toURI().toString()));
+            cmd.add("-Djboss.bind.address.management="+MANAGEMENT_ADDRESS);
             cmd.add("-jar");
             cmd.add(modulesJar.getAbsolutePath());
             cmd.add("-mp");
@@ -172,6 +173,7 @@ public class Server {
             shutdownThread = null;
         }
         try {
+            client.close();
             if (process != null) {
                 Thread shutdown = new Thread(new Runnable() {
                     @Override
@@ -194,10 +196,14 @@ public class Server {
                 });
                 shutdown.start();
 
-                // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
-                ModelNode op = new ModelNode();
-                op.get("operation").set("shutdown");
-                client.getControllerClient().executeAsync(op, null);
+                try {
+                    // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
+                    ModelNode op = new ModelNode();
+                    op.get("operation").set("shutdown");
+                    client.getControllerClient().executeAsync(op, null);
+                } catch (AssertionError e) {
+                    //ignore as this can only fail if shutdown is already in progress
+                }
 
                 process.waitFor();
                 process = null;
