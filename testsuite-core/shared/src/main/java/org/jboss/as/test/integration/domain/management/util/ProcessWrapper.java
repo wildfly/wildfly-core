@@ -23,14 +23,14 @@
 package org.jboss.as.test.integration.domain.management.util;
 
 import org.jboss.as.process.protocol.StreamUtils;
+import org.wildfly.core.launcher.CommandBuilder;
+import org.wildfly.core.launcher.Launcher;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,20 +41,20 @@ import java.util.Map;
 class ProcessWrapper {
 
     private final String processName;
-    private final List<String> command;
+    private final CommandBuilder commandBuilder;
     private final Map<String, String> env;
     private final String workingDirectory;
 
     private Process process;
     private volatile boolean stopped;
 
-    ProcessWrapper(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory) {
+    ProcessWrapper(final String processName, final CommandBuilder commandBuilder, final Map<String, String> env, final String workingDirectory) {
         assert processName != null;
-        assert command != null;
+        assert commandBuilder != null;
         assert env != null;
         assert workingDirectory != null;
         this.processName = processName;
-        this.command = command;
+        this.commandBuilder = commandBuilder;
         this.env = env;
         this.workingDirectory = workingDirectory;
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -80,14 +80,12 @@ class ProcessWrapper {
             if(stopped) {
                 throw new IllegalStateException();
             }
-            final ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectErrorStream(true);
-            builder.environment().putAll(env);
-            builder.directory(new File(workingDirectory));
-            process = builder.start();
-
-            final InputStream stdout = process.getInputStream();
-            final Runnable consoleConsumer = new ConsoleConsumer(stdout, System.out);
+            process = Launcher.of(commandBuilder)
+                    .setRedirectErrorStream(true)
+                    .addEnvironmentVariables(env)
+                    .setDirectory(workingDirectory)
+                    .launch();
+            final Runnable consoleConsumer = new ConsoleConsumer(process.getInputStream(), System.out);
             new Thread(consoleConsumer, "Console consumer " + processName).start();
         }
     }
@@ -118,10 +116,9 @@ class ProcessWrapper {
 
     @Override
     public String toString() {
-        return "ProcessWrapper [processName=" + processName + ", command=" + command + ", env=" + env + ", workingDirectory="
+        return "ProcessWrapper [processName=" + processName + ", command=" + commandBuilder + ", env=" + env + ", workingDirectory="
                 + workingDirectory + ", stopped=" + stopped + "]";
     }
-
     /**
      * Runnable that consumes the output of the process. If nothing consumes the output the AS will hang on some platforms
      *
@@ -131,15 +128,19 @@ class ProcessWrapper {
     private class ConsoleConsumer implements Runnable {
         private final InputStream source;
         private final PrintStream target;
-        private final boolean writeOutput = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        private final boolean writeOutput;
 
-            @Override
-            public Boolean run() {
-                // this needs a better name
-                String val = System.getProperty("org.jboss.as.writeconsole");
-                return val == null || !"false".equals(val);
-            }
-        });
+        {
+            writeOutput = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+
+                @Override
+                public Boolean run() {
+                    // this needs a better name
+                    String val = System.getProperty("org.jboss.as.writeconsole");
+                    return val == null || !"false".equals(val);
+                }
+            });
+        }
 
         private ConsoleConsumer(final InputStream source, final PrintStream target) {
             this.source = source;
@@ -149,13 +150,13 @@ class ProcessWrapper {
         public void run() {
             final InputStream source = this.source;
             try {
-               byte[] buf = new byte[32];
-               int num;
-               // Do not try reading a line cos it considers '\r' end of line
-               while((num = source.read(buf)) != -1){
-                  if (writeOutput)
-                     System.out.write(buf, 0, num);
-               }
+                byte[] buf = new byte[32];
+                int num;
+                // Do not try reading a line cos it considers '\r' end of line
+                while((num = source.read(buf)) != 1){
+                    if (writeOutput)
+                        System.out.write(buf, 0, num);
+                }
             } catch (IOException e) {
                 if(! ProcessWrapper.this.stopped) {
                     e.printStackTrace(target);
