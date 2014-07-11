@@ -798,7 +798,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             public String getProductName() {
                 return null;
             }
-        }));
+        }, null, new ResourceDefinition[0]));
 
 
         pathManagerService.addPathManagerResources(rootResource);

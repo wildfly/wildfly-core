@@ -414,7 +414,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     null,
                     authorizer,
                     AuditLogger.NO_OP_LOGGER,
-                    getMutableRootResourceRegistrationProvider()));
+                    getMutableRootResourceRegistrationProvider(),
+                    getBootErrorCollector()));
         }
 
         @Override
@@ -459,7 +460,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
                             processState,
                             pathManagerService,
                             authorizer,
-                            AuditLogger.NO_OP_LOGGER));
+                            AuditLogger.NO_OP_LOGGER,
+                            getBootErrorCollector()));
         }
 
         @Override
@@ -492,7 +494,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     processState,
                     pathManagerService,
                     authorizer,
-                    AuditLogger.NO_OP_LOGGER);
+                    AuditLogger.NO_OP_LOGGER,
+                    getBootErrorCollector());
         }
     }
 
