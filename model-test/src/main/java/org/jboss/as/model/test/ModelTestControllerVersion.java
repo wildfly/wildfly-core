@@ -39,7 +39,7 @@ public enum ModelTestControllerVersion {
     EAP_6_0_1 ("7.1.3.Final-redhat-4", true, "7.1.2", false),
     EAP_6_1_0 ("7.2.0.Final-redhat-8", true, "7.2.0"),
     EAP_6_1_1 ("7.2.1.Final-redhat-10", true, "7.2.0"),
-    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, null)
+    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, null),
     ;
 
     private final String mavenGavVersion;
@@ -97,4 +97,6 @@ public enum ModelTestControllerVersion {
         static String getCurrentVersion() {
             return VERSION;
         }
-    }}
+    }
+
+}

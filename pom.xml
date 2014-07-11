@@ -123,6 +123,7 @@
         <version.org.picketbox>4.0.21.Beta3</version.org.picketbox>
         <version.org.slf4j>1.7.2.jbossorg-1</version.org.slf4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
+        <version.org.wildfly.legacy.test>1.0.0.Alpha1</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.manager>1.0.0.Final</version.org.wildfly.security.manager>
         <version.org.wildfly.checkstyle-config>1.0.0.Final</version.org.wildfly.checkstyle-config>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
@@ -642,12 +643,6 @@
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-model-test-controller-7.2.0</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-host-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -728,18 +723,6 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-subsystem-test</artifactId>
                 <type>pom</type>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test-controller-7.1.2</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test-controller-7.2.0</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -1205,6 +1188,12 @@
                 <groupId>org.wildfly.checkstyle</groupId>
                 <artifactId>wildfly-checkstyle-config</artifactId>
                 <version>${version.org.wildfly.checkstyle-config}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.legacy.test</groupId>
+                <artifactId>wildfly-legacy-spi</artifactId>
+                <version>${version.org.wildfly.legacy.test}</version>
             </dependency>
 
             <dependency>

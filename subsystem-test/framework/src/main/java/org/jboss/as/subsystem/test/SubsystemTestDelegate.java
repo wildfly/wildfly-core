@@ -104,6 +104,7 @@ import org.jboss.modules.filter.ClassFilter;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.wildfly.legacy.test.spi.Version;
 import org.xnio.IoUtils;
 
 /**
@@ -786,6 +787,7 @@ final class SubsystemTestDelegate {
 
             classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-subsystem-test-framework:" + ModelTestControllerVersion.CurrentVersion.VERSION);
             classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-model-test:" + ModelTestControllerVersion.CurrentVersion.VERSION);
+            classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-spi:" + Version.LEGACY_TEST_CONTROLLER_VERSION);
 
             if (testControllerVersion != ModelTestControllerVersion.MASTER && testControllerVersion.getTestControllerVersion() != null) {
                 String groupId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "org.jboss.as" : "org.wildfly";
@@ -798,7 +800,7 @@ final class SubsystemTestDelegate {
                 classLoaderBuilder.addParentFirstClassPattern("__redirected.*");
                 classLoaderBuilder.addParentFirstClassPattern("org.jboss.modules.*");
 
-                classLoaderBuilder.addMavenResourceURL("org.wildfly.core:wildfly-subsystem-test-controller-" + testControllerVersion.getTestControllerVersion() + ":" + ModelTestControllerVersion.CurrentVersion.VERSION);
+                classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-subsystem-" + testControllerVersion.getTestControllerVersion() + ":" + Version.LEGACY_TEST_CONTROLLER_VERSION);
             }
             ClassLoader legacyCl = classLoaderBuilder.build();
 
