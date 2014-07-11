@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelController;
@@ -317,7 +318,7 @@ public class ServerControllerUnitTestCase {
         @Override
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
-                    persister, environment, processState, null, null, extensionRegistry, false, MOCK_PATH_MANAGER, null, authorizer, AuditLogger.NO_OP_LOGGER));
+                    persister, environment, processState, null, null, extensionRegistry, false, MOCK_PATH_MANAGER, null, authorizer, AuditLogger.NO_OP_LOGGER, new BootErrorCollector()));
             super.start(context);
         }
     }
