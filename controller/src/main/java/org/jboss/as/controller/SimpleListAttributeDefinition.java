@@ -33,6 +33,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * Date: 13.10.2011
@@ -102,22 +103,30 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
 
     @Override
     protected void addValueTypeDescription(final ModelNode node, final ResourceBundle bundle) {
-        addValueTypeDescription(node);
+        addValueTypeDescription(node, null, bundle);
     }
 
 
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle) {
-        addValueTypeDescription(node);
+        if (valueType.getType() == ModelType.OBJECT) {
+            final ModelNode param = valueType.getNoTextDescription(true);
+            final ModelNode childType = node.get(ModelDescriptionConstants.VALUE_TYPE, valueType.getName()).set(param);
+            if (valueType instanceof ObjectTypeAttributeDefinition) {
+                ObjectTypeAttributeDefinition.class.cast(valueType).addOperationParameterDescription(bundle, prefix, childType);
+            }
+        } else {
+            addSimpleValueTypeDescription(node);
+        }
     }
 
     @Override
     protected void addAttributeValueTypeDescription(final ModelNode node, final ResourceDescriptionResolver resolver, final Locale locale, final ResourceBundle bundle) {
-        addValueTypeDescription(node);
+        addValueTypeDescription(node, bundle);
     }
 
     @Override
     protected void addOperationParameterValueTypeDescription(final ModelNode node, final String operationName, final ResourceDescriptionResolver resolver, final Locale locale, final ResourceBundle bundle) {
-        addValueTypeDescription(node);
+        addValueTypeDescription(node, bundle);
     }
 
     /**
@@ -140,7 +149,7 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
         return allowExp ? convertStringExpression(parameterElement) : parameterElement;
     }
 
-    private void addValueTypeDescription(final ModelNode node) {
+    private void addSimpleValueTypeDescription(final ModelNode node) {
         node.get(ModelDescriptionConstants.VALUE_TYPE).set(valueType.getType());
     }
 
