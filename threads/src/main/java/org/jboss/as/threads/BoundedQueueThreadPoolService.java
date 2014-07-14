@@ -28,7 +28,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.threads.EventListener;
 import org.jboss.threads.QueueExecutor;
 
 import java.util.concurrent.Executor;
@@ -41,15 +40,16 @@ import java.util.concurrent.TimeUnit;
  * @author John E. Bailey
  */
 public class BoundedQueueThreadPoolService implements Service<ManagedQueueExecutorService> {
+
     private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
     private final InjectedValue<Executor> handoffExecutorValue = new InjectedValue<Executor>();
+    private final boolean blocking;
+    private final int queueLength;
 
     private ManagedQueueExecutorService executor;
 
     private int coreThreads;
     private int maxThreads;
-    private int queueLength;
-    private boolean blocking;
     private TimeSpec keepAlive;
     private boolean allowCoreTimeout;
 
@@ -70,20 +70,22 @@ public class BoundedQueueThreadPoolService implements Service<ManagedQueueExecut
         executor = new ManagedQueueExecutorService(queueExecutor);
     }
 
-    public synchronized void stop(final StopContext context) {
-        final ManagedQueueExecutorService executor = getValue();
+    public void stop(final StopContext context) {
+        final ManagedQueueExecutorService executor;
+        synchronized (this) {
+            executor = this.executor;
+            this.executor = null;
+        }
         context.asynchronous();
         executor.internalShutdown();
-        executor.addShutdownListener(new EventListener<StopContext>() {
-            public void handleEvent(final StopContext stopContext) {
-                stopContext.complete();
-            }
-        }, context);
-        this.executor = null;
+        executor.addShutdownListener(StopContextEventListener.getInstance(), context);
     }
 
-    public synchronized ManagedQueueExecutorService getValue() throws IllegalStateException {
-        final ManagedQueueExecutorService value = this.executor;
+    public ManagedQueueExecutorService getValue() throws IllegalStateException {
+        final ManagedQueueExecutorService value;
+        synchronized (this) {
+            value = this.executor;
+        }
         if (value == null) {
             throw ThreadsLogger.ROOT_LOGGER.boundedQueueThreadPoolExecutorUninitialized();
         }
