@@ -53,6 +53,7 @@ import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.services.net.BindingGroupAddHandler;
 import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
@@ -78,15 +79,15 @@ public class ControllerInitializer {
     protected final Map<String, OutboundSocketBinding> outboundSocketBindings = new HashMap<String, OutboundSocketBinding>();
     protected final Map<String, PathInfo> paths = new HashMap<String, PathInfo>();
     private volatile PathManagerService pathManager;
-    private volatile TestModelControllerService testModelControllerService;
+    private volatile TestControllerAccessor testControllerAccessor;
 
     /**
      * Sets the controller being created. Internal use only.
      *
      * @param service the controller being created.
      */
-    void setTestModelControllerService(TestModelControllerService service) {
-        this.testModelControllerService = service;
+    void setTestModelControllerAccessor(TestControllerAccessor testControllerAccessor) {
+        this.testControllerAccessor = testControllerAccessor;
     }
 
     void setPathManger(PathManagerService pathManager) {
@@ -228,7 +229,7 @@ public class ControllerInitializer {
             return;
         }
         rootResource.getModel().get(SYSTEM_PROPERTY);
-        ManagementResourceRegistration sysProps = rootRegistration.registerSubModel(SystemPropertyResourceDefinition.createForStandaloneServer(testModelControllerService.getServerEnvironment()));
+        ManagementResourceRegistration sysProps = rootRegistration.registerSubModel(SystemPropertyResourceDefinition.createForStandaloneServer(testControllerAccessor.getServerEnvironment()));
     }
 
     /**
@@ -435,5 +436,9 @@ public class ControllerInitializer {
         boolean isRemote() {
             return this.remote;
         }
+    }
+
+    public interface TestControllerAccessor {
+        ServerEnvironment getServerEnvironment();
     }
 }

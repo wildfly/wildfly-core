@@ -123,7 +123,7 @@
         <version.org.picketbox>4.0.21.Beta3</version.org.picketbox>
         <version.org.slf4j>1.7.2.jbossorg-1</version.org.slf4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
-        <version.org.wildfly.legacy.test>1.0.0.Alpha1</version.org.wildfly.legacy.test>
+        <version.org.wildfly.legacy.test>1.0.0.Alpha2</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.manager>1.0.0.Final</version.org.wildfly.security.manager>
         <version.org.wildfly.checkstyle-config>1.0.0.Final</version.org.wildfly.checkstyle-config>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
