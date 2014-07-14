@@ -24,9 +24,12 @@ package org.jboss.as.domain.controller.transformers;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.AddNameFromAddressResourceTransformer;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
  * Transformer registration for the deployment resources.
@@ -35,8 +38,22 @@ import org.jboss.as.controller.transform.TransformersSubRegistration;
  */
 class DeploymentTransformers {
 
-    static void registerTransformers120(TransformersSubRegistration parent) {
-        parent.registerSubResource(PathElement.pathElement(DEPLOYMENT), AddNameFromAddressResourceTransformer.INSTANCE);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PathElement.pathElement(DEPLOYMENT), currentVersion);
+
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_3);
+        internalRegisterTransformers1_3_AndBelow(builder);
+
+        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
+
+        return chainedBuilder;
     }
 
+    static void registerTransformers1_3_AndBelow(ResourceTransformationDescriptionBuilder parent) {
+        internalRegisterTransformers1_3_AndBelow(parent.addChildResource(PathElement.pathElement(DEPLOYMENT)));
+    }
+
+    private static void internalRegisterTransformers1_3_AndBelow(ResourceTransformationDescriptionBuilder builder) {
+        builder.setCustomResourceTransformer(AddNameFromAddressResourceTransformer.INSTANCE);
+    }
 }

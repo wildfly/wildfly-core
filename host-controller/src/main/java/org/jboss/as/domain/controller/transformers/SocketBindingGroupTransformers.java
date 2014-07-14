@@ -22,9 +22,11 @@
 
 package org.jboss.as.domain.controller.transformers;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
-import org.jboss.as.controller.transform.ResourceTransformer;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
  * The older versions of the model do not allow expressions for some socket-binding resource attributes.
@@ -34,8 +36,13 @@ import org.jboss.as.controller.transform.TransformersSubRegistration;
  */
 class SocketBindingGroupTransformers {
 
-    static void registerTransformers120(TransformersSubRegistration parent) {
-        TransformersSubRegistration reg = parent.registerSubResource(SocketBindingGroupResourceDefinition.PATH, ResourceTransformer.DEFAULT);
-        SocketBindingTransformers.registerTransformers(reg);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(SocketBindingGroupResourceDefinition.PATH, currentVersion);
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_3);
+        SocketBindingTransformers.registerTransformers1_3_AndBelow(builder);
+
+        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
+
+        return chainedBuilder;
     }
 }

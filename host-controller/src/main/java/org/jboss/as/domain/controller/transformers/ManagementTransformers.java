@@ -25,6 +25,7 @@ package org.jboss.as.domain.controller.transformers;
 import java.util.Locale;
 
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -33,11 +34,10 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -50,15 +50,15 @@ import org.jboss.dmr.ModelNode;
  */
 class ManagementTransformers {
 
-    /**
-     * Transformation for versions prior to support for RBAC (WFLY-490)
-     *
-     * @param domain the domain level registration
-     */
-    static void registerTransformersPreRBAC(TransformersSubRegistration domain) {
+    private ManagementTransformers() {
+        // prevent instantiation
+    }
+
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
         // Discard the domain level core-service=management resource and its children unless RBAC is enabled
         // Configuring rbac details is OK (i.e. discarable), so long as the provider is not enabled
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(CoreManagementResourceDefinition.PATH_ELEMENT);
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(CoreManagementResourceDefinition.PATH_ELEMENT, currentVersion);
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_4);
         builder.setCustomResourceTransformer(new ResourceTransformer() {
             @Override
             public void transformResource(ResourceTransformationContext context, PathAddress address, Resource resource) throws OperationFailedException {
@@ -94,10 +94,9 @@ class ManagementTransformers {
         accessBuilder.discardChildResource(PathElement.pathElement(ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE));
         accessBuilder.discardChildResource(PathElement.pathElement(ModelDescriptionConstants.HOST_SCOPED_ROLE));
 
-        TransformationDescription.Tools.register(builder.build(), domain);
-    }
+        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3);
+        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
 
-    private ManagementTransformers() {
-        // prevent instantiation
+        return chainedBuilder;
     }
 }

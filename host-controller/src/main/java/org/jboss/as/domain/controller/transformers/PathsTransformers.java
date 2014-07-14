@@ -24,13 +24,12 @@ package org.jboss.as.domain.controller.transformers;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.AttributeConverter;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
@@ -40,9 +39,9 @@ import org.jboss.as.controller.transform.description.TransformationDescriptionBu
  */
 class PathsTransformers {
 
-    static void registerTransformers120(TransformersSubRegistration parent) {
-
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(PathResourceDefinition.PATH_ADDRESS)
+    public static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PathResourceDefinition.PATH_ADDRESS, currentVersion);
+        chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_3)
              .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PathResourceDefinition.PATH)
                 .setValueConverter(AttributeConverter.NAME_FROM_ADDRESS, ModelDescriptionConstants.NAME)
@@ -50,7 +49,7 @@ class PathsTransformers {
             .addOperationTransformationOverride(ADD)
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PathResourceDefinition.PATH)
                 .end();
-
-        TransformationDescription.Tools.register(builder.build(), parent);
+        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
+        return chainedBuilder;
     }
 }

@@ -22,17 +22,12 @@
 
 package org.jboss.as.domain.controller.transformers;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
-import org.jboss.as.controller.transform.AttributeTransformationRequirementChecker;
-import org.jboss.as.controller.transform.RejectExpressionValuesTransformer;
-import org.jboss.as.controller.transform.ResourceTransformer;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.resources.SocketBindingResourceDefinition;
 
 /**
@@ -43,21 +38,15 @@ import org.jboss.as.domain.controller.resources.SocketBindingResourceDefinition;
  */
 class SocketBindingTransformers {
 
-    static TransformersSubRegistration registerTransformers(TransformersSubRegistration parent) {
-
-        Map<String, AttributeTransformationRequirementChecker> fieldCheckers = new HashMap<String, AttributeTransformationRequirementChecker>();
-        fieldCheckers.put(AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_SOURCE_NETWORK.getName(), AttributeTransformationRequirementChecker.SIMPLE_EXPRESSIONS);
-        fieldCheckers.put(AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_DESTINATION_ADDRESS.getName(), AttributeTransformationRequirementChecker.SIMPLE_EXPRESSIONS);
-        fieldCheckers.put(AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_DESTINATION_PORT.getName(), AttributeTransformationRequirementChecker.SIMPLE_EXPRESSIONS);
-
-        AttributeTransformationRequirementChecker elementChecker = new AttributeTransformationRequirementChecker.ObjectFieldsAttributeTransformationRequirementChecker(fieldCheckers);
-        AttributeTransformationRequirementChecker attrChecker = new AttributeTransformationRequirementChecker.ListAttributeTransformationRequirementChecker(elementChecker);
-        RejectExpressionValuesTransformer rejectExpression = new RejectExpressionValuesTransformer(SocketBindingResourceDefinition.CLIENT_MAPPINGS.getName(), attrChecker);
-        TransformersSubRegistration reg = parent.registerSubResource(SocketBindingResourceDefinition.PATH, (ResourceTransformer) rejectExpression);
-
-        reg.registerOperationTransformer(ADD, rejectExpression);
-        reg.registerOperationTransformer(WRITE_ATTRIBUTE_OPERATION, rejectExpression.getWriteAttributeTransformer());
-
-        return reg;
+    static void registerTransformers1_3_AndBelow(ResourceTransformationDescriptionBuilder parent) {
+        ResourceTransformationDescriptionBuilder builder = parent.addChildResource(SocketBindingResourceDefinition.PATH);
+        Map<String, RejectAttributeChecker> fields = new HashMap<>();
+        fields.put(AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_SOURCE_NETWORK.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
+        fields.put(AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_DESTINATION_ADDRESS.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
+        fields.put(AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_DESTINATION_PORT.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
+        RejectAttributeChecker element = new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(fields);
+        RejectAttributeChecker attr = new RejectAttributeChecker.ListRejectAttributeChecker(element);
+        builder.getAttributeBuilder()
+            .addRejectCheck(attr, AbstractSocketBindingResourceDefinition.CLIENT_MAPPINGS);
     }
 }

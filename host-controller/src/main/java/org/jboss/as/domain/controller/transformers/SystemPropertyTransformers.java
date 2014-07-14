@@ -28,17 +28,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UND
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
-import org.jboss.as.controller.transform.RejectExpressionValuesTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.AttributeConverter;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -51,43 +50,49 @@ import org.jboss.dmr.ModelNode;
  */
 class SystemPropertyTransformers {
 
-    @SuppressWarnings("deprecation")
-    static final RejectExpressionValuesTransformer rejectExpressions =
-            new RejectExpressionValuesTransformer(SystemPropertyResourceDefinition.VALUE, SystemPropertyResourceDefinition.BOOT_TIME);
+    static ChainedTransformationDescriptionBuilder  buildTransformerChain(ModelVersion currentVersion) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(SystemPropertyResourceDefinition.PATH, currentVersion);
 
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_3);
+        internalRegisterTransformers1_3_AndBelow(builder);
 
-    static void registerTransformers120(TransformersSubRegistration parent) {
+        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
 
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(SystemPropertyResourceDefinition.PATH)
-            .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, SystemPropertyResourceDefinition.VALUE, SystemPropertyResourceDefinition.BOOT_TIME)
-                .setValueConverter(new AttributeConverter.DefaultAttributeConverter(){
-                    @Override
-                    protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue,
-                            TransformationContext context) {
-                        if (!attributeValue.isDefined()) {
-                            attributeValue.set(true);
-                        }
-                    }
-
-                }, BOOT_TIME)
-                .end()
-            .addRawOperationTransformationOverride(UNDEFINE_ATTRIBUTE_OPERATION, new OperationTransformer() {
-                @Override
-                public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation)
-                        throws OperationFailedException {
-                    if (operation.get(NAME).asString().equals(BOOT_TIME)) {
-                        ModelNode op = operation.clone();
-                        op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-                        op.get(VALUE).set(true);
-                        return new TransformedOperation(op, OperationResultTransformer.ORIGINAL_RESULT);
-                    }
-                    return OperationTransformer.DEFAULT.transformOperation(context, address, operation);
-                }
-            });
-
-        TransformationDescription.Tools.register(builder.build(), parent);
+        return chainedBuilder;
     }
 
+    static void registerTransformers1_3_AndBelow(ResourceTransformationDescriptionBuilder parent) {
+        ResourceTransformationDescriptionBuilder builder = parent.addChildResource(SystemPropertyResourceDefinition.PATH);
+        internalRegisterTransformers1_3_AndBelow(builder);
+    }
+
+    private static void internalRegisterTransformers1_3_AndBelow(ResourceTransformationDescriptionBuilder builder) {
+        builder.getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, SystemPropertyResourceDefinition.VALUE, SystemPropertyResourceDefinition.BOOT_TIME)
+            .setValueConverter(new AttributeConverter.DefaultAttributeConverter(){
+                @Override
+                protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue,
+                        TransformationContext context) {
+                    if (!attributeValue.isDefined()) {
+                        attributeValue.set(true);
+                    }
+                }
+
+            }, BOOT_TIME)
+            .end()
+        .addRawOperationTransformationOverride(UNDEFINE_ATTRIBUTE_OPERATION, new OperationTransformer() {
+            @Override
+            public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation)
+                    throws OperationFailedException {
+                if (operation.get(NAME).asString().equals(BOOT_TIME)) {
+                    ModelNode op = operation.clone();
+                    op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+                    op.get(VALUE).set(true);
+                    return new TransformedOperation(op, OperationResultTransformer.ORIGINAL_RESULT);
+                }
+                return OperationTransformer.DEFAULT.transformOperation(context, address, operation);
+            }
+        });
+    }
 
 }
