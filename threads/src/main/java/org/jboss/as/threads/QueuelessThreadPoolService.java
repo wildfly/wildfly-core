@@ -28,7 +28,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.threads.EventListener;
 import org.jboss.threads.JBossExecutors;
 import org.jboss.threads.QueuelessExecutor;
 
@@ -44,11 +43,11 @@ import java.util.concurrent.TimeUnit;
 public class QueuelessThreadPoolService implements Service<ManagedQueuelessExecutorService> {
     private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
     private final InjectedValue<Executor> handoffExecutorValue = new InjectedValue<Executor>();
+    private final boolean blocking;
 
     private ManagedQueuelessExecutorService executor;
 
     private int maxThreads;
-    private boolean blocking;
     private TimeSpec keepAlive;
 
     public QueuelessThreadPoolService(int maxThreads, boolean blocking, TimeSpec keepAlive) {
@@ -66,20 +65,22 @@ public class QueuelessThreadPoolService implements Service<ManagedQueuelessExecu
         executor = new ManagedQueuelessExecutorService(queuelessExecutor);
     }
 
-    public synchronized void stop(final StopContext context) {
-        final ManagedQueuelessExecutorService executor = getValue();
+    public void stop(final StopContext context) {
+        final ManagedQueuelessExecutorService executor;
+        synchronized (this) {
+            executor = this.executor;
+            this.executor = null;
+        }
         context.asynchronous();
         executor.internalShutdown();
-        executor.addShutdownListener(new EventListener<StopContext>() {
-            public void handleEvent(final StopContext stopContext) {
-                stopContext.complete();
-            }
-        }, context);
-        this.executor = null;
+        executor.addShutdownListener(StopContextEventListener.getInstance(), context);
     }
 
-    public synchronized ManagedQueuelessExecutorService getValue() throws IllegalStateException {
-        final ManagedQueuelessExecutorService value = this.executor;
+    public ManagedQueuelessExecutorService getValue() throws IllegalStateException {
+        final ManagedQueuelessExecutorService value;
+        synchronized (this) {
+            value = this.executor;
+        }
         if (value == null) {
             throw ThreadsLogger.ROOT_LOGGER.queuelessThreadPoolExecutorUninitialized();
         }

@@ -52,24 +52,32 @@ public final class ScheduledThreadPoolService implements Service<ManagedSchedule
         this.keepAlive = keepAlive;
     }
 
-    public synchronized void start(final StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
         ScheduledThreadPoolExecutor scheduledExecutor = new ExecutorImpl(0, threadFactoryValue.getValue());
         scheduledExecutor.setCorePoolSize(maxThreads);
-        if(keepAlive != null)
-            scheduledExecutor.setKeepAliveTime(keepAlive.getDuration(), keepAlive.getUnit());
-        executor = new ManagedScheduledExecutorService(scheduledExecutor);
+        if (keepAlive != null) scheduledExecutor.setKeepAliveTime(keepAlive.getDuration(), keepAlive.getUnit());
+        final ManagedScheduledExecutorService executorService = new ManagedScheduledExecutorService(scheduledExecutor);
+        synchronized (this) {
+            executor = executorService;
+        }
     }
 
-    public synchronized void stop(final StopContext context) {
-        final ManagedScheduledExecutorService executor = getValue();
-        this.context = context;
+    public void stop(final StopContext context) {
+        final ManagedScheduledExecutorService executor;
+        synchronized (this) {
+            executor = this.executor;
+            this.context = context;
+            this.executor = null;
+        }
         context.asynchronous();
         executor.internalShutdown();
-        this.executor = null;
     }
 
-    public synchronized ManagedScheduledExecutorService getValue() throws IllegalStateException {
-        final ManagedScheduledExecutorService value = this.executor;
+    public ManagedScheduledExecutorService getValue() throws IllegalStateException {
+        final ManagedScheduledExecutorService value;
+        synchronized (this) {
+            value = this.executor;
+        }
         if (value == null) {
             throw ThreadsLogger.ROOT_LOGGER.scheduledThreadPoolExecutorUninitialized();
         }
@@ -117,11 +125,13 @@ public final class ScheduledThreadPoolService implements Service<ManagedSchedule
         }
 
         protected void terminated() {
+            super.terminated();
+            StopContext context;
             synchronized (ScheduledThreadPoolService.this) {
-                super.terminated();
-                context.complete();
-                context = null;
+                context = ScheduledThreadPoolService.this.context;
+                ScheduledThreadPoolService.this.context = null;
             }
+            context.complete();
         }
     }
 }

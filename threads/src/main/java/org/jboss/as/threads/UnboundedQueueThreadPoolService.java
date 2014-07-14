@@ -32,7 +32,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.threads.EventListener;
 import org.jboss.threads.JBossThreadPoolExecutor;
 
 /**
@@ -60,16 +59,15 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
         executor = new ManagedJBossThreadPoolExecutorService(jbossExecutor);
     }
 
-    public synchronized void stop(final StopContext context) {
-        final ManagedJBossThreadPoolExecutorService executor = getValue();
+    public void stop(final StopContext context) {
+        final ManagedJBossThreadPoolExecutorService executor;
+        synchronized (this) {
+            executor = this.executor;
+            this.executor = null;
+        }
         context.asynchronous();
         executor.internalShutdown();
-        executor.addShutdownListener(new EventListener<StopContext>() {
-            public void handleEvent(final StopContext stopContext) {
-                stopContext.complete();
-            }
-        }, context);
-        this.executor = null;
+        executor.addShutdownListener(StopContextEventListener.getInstance(), context);
     }
 
     public synchronized ManagedJBossThreadPoolExecutorService getValue() throws IllegalStateException {
