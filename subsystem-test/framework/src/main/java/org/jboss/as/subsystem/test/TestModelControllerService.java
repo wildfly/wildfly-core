@@ -45,13 +45,14 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
 import org.jboss.as.server.operations.RootResourceHack;
+import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-class TestModelControllerService extends ModelTestModelControllerService {
+class TestModelControllerService extends ModelTestModelControllerService implements TestControllerAccessor {
     private final Extension mainExtension;
     private final AdditionalInitialization additionalInit;
     private final ControllerInitializer controllerInitializer;
@@ -90,7 +91,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         rootRegistration.registerOperationHandler(RootResourceHack.DEFINITION, RootResourceHack.INSTANCE);
 
         extensionRegistry.setSubsystemParentResourceRegistrations(rootRegistration, deployments);
-        controllerInitializer.setTestModelControllerService(this);
+        controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);
         additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
 
@@ -114,7 +115,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         file.delete();
     }
 
-    ServerEnvironment getServerEnvironment() {
+    public ServerEnvironment getServerEnvironment() {
         Properties props = new Properties();
         File home = new File("target/jbossas");
         delete(home);

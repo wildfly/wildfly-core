@@ -32,7 +32,7 @@ public enum ModelTestControllerVersion {
     V7_2_0_FINAL ("7.2.0.Final", false, "7.2.0"),
 
     //WILDFLY RELEASES
-    WILDFLY_8_0_0_FINAL ("8.0.0.Final", false, null, false),
+    WILDFLY_8_0_0_FINAL ("8.0.0.Final", false, "8.0.0", false),
 
     //EAP releases
     EAP_6_0_0 ("7.1.2.Final-redhat-1", true, "7.1.2", false),

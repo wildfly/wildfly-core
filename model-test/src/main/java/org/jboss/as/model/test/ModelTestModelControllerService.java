@@ -122,7 +122,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
 
 
     /**
-     * This is the constructor to use for master's core model test
+     * This is the constructor to use for 8.0.x core model tests
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
@@ -138,7 +138,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
     }
 
     /**
-     * THis is the constructor to
+     * This is the constructor to use for 8.0.x subsystem tests
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
@@ -152,6 +152,35 @@ public abstract class ModelTestModelControllerService extends AbstractController
         this.runningModeControl = runningModeControl;
     }
 
+    /**
+     * This is the constructor to use for 9.0.x core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+            final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState,
+            ExpressionResolver expressionResolver, Controller90x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
+                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 9.0.x subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+            final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller90x version) {
+        super(processType, runningModeControl, persister,
+         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.DEFAULT);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
     public boolean isSuccessfulBoot() {
         return bootSuccess;
     }
@@ -349,6 +378,12 @@ public abstract class ModelTestModelControllerService extends AbstractController
     public static class Controller80x {
         public static Controller80x INSTANCE = new Controller80x();
         private Controller80x() {
+        }
+    }
+
+    public static class Controller90x {
+        public static Controller90x INSTANCE = new Controller90x();
+        private Controller90x() {
         }
     }
 
