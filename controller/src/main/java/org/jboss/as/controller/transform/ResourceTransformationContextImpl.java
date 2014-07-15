@@ -112,7 +112,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         if (current.size() > 0) {
             PathElement last = current.getLastElement();
             Resource parent = root;
-            for (PathElement element : read) {
+            for (PathElement element : current) {
                 if (element.equals(last)) {
                     parent.removeChild(element);
                 } else {

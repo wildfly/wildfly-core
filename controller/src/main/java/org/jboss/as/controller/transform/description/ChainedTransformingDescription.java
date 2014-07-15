@@ -117,18 +117,23 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
         while (it.hasNext()) {
             ChainedPlaceholderResolver resolver = it.next().getValue();
             current = ChainedTransformationTools.nextInChain(current, resolver);
-            resolver.getDescription().getResourceTransformer().transformResource(current, address, current.readResourceFromRoot(address));
+            try {
+                Resource currentResource = current.readResourceFromRoot(address);
+                resolver.getDescription().getResourceTransformer().transformResource(current, address, currentResource);
+            } catch (Resource.NoSuchResourceException e) {
+                //The resource was rejected/discarded
+                continue;
+            }
         }
 
         Resource transformed = current.getTransformedRoot();
         Resource originalTransformed = context.getTransformedRoot();
-        copy(transformed, originalTransformed);
+        copy(transformed, originalTransformed, address);
     }
 
 
     @Override
     public PathAddressTransformer getPathAddressTransformer() {
-        //TODO
         return PathAddressTransformer.DEFAULT;
     }
 
@@ -144,7 +149,6 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
 
     @Override
     public Map<String, OperationTransformer> getOperationTransformers() {
-        //TODO make this configurable
         return Collections.emptyMap();
     }
 
@@ -161,6 +165,20 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
     @Override
     public boolean isPlaceHolder() {
         return true;
+    }
+
+    private void copy(Resource src, Resource dest, PathAddress address) {
+        PathAddress parentAddress = address.size() > 1 ? address.subAddress(0, address.size() - 1) : PathAddress.EMPTY_ADDRESS;
+        PathElement childElement = address.getLastElement();
+        Resource source = src.navigate(parentAddress);
+        Resource destination = dest.navigate(parentAddress);
+        Resource sourceChild = source.getChild(childElement);
+        if (sourceChild != null) {
+            Resource destChild = Resource.Factory.create();
+            destination.registerChild(childElement, destChild);
+            copy(sourceChild, destChild);
+        }
+        //copy(src, dest);
     }
 
     private void copy(Resource src, Resource dest) {

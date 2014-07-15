@@ -37,6 +37,8 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.PathAddressTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
@@ -977,6 +979,90 @@ public class ChainedResourceBuilderTestCase {
         Assert.assertEquals("value-B", model.get("attributeB").asString());
     }
 
+    @Test
+    public void testChainedTransformersWhenParentAddressChanges() throws Exception {
+        TransformersSubRegistration subsystemReg = transformersSubRegistration.registerSubResource(PATH);
+        TransformersSubRegistration leafOneReg = subsystemReg.registerSubResource(
+                PathElement.pathElement("leaf-one", "one"),
+                new PathAddressTransformer.ReplaceElementKey("one-leaf"),
+                ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT);
+        TransformersSubRegistration leafTwoReg = subsystemReg.registerSubResource(
+                PathElement.pathElement("leaf-two", "two"),
+                new PathAddressTransformer.ReplaceElementKey("two-leaf"),
+                ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT);
+
+        ChainedTransformationDescriptionBuilder chainedBuilder =
+                TransformationDescriptionBuilder.Factory.createChainedInstance(PathElement.pathElement("chained", "one"), V3_0_0);
+        chainedBuilder.createBuilder(V3_0_0, V2_0_0)
+                .addChildRedirection(PathElement.pathElement("thing", "x"), PathElement.pathElement("Thing", "ex"))
+                .getAttributeBuilder()
+                    .setValueConverter(new SimpleAttributeConverter("Original", "One"), "attr1");
+        chainedBuilder.createBuilder(V2_0_0, V1_0_0)
+                .addChildRedirection(PathElement.pathElement("Thing", "ex"), PathElement.pathElement("THING", "X"))
+                .getAttributeBuilder()
+                    .setValueConverter(new SimpleAttributeConverter("One", "Two"), "attr1");
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0).get(V1_0_0), leafOneReg);
+
+        chainedBuilder =
+                TransformationDescriptionBuilder.Factory.createChainedInstance(PathElement.pathElement("chained", "two"), V3_0_0);
+        chainedBuilder.createBuilder(V3_0_0, V2_0_0)
+                .addChildRedirection(PathElement.pathElement("thing", "y"), PathElement.pathElement("Thing", "why"))
+                .getAttributeBuilder()
+                    .setValueConverter(new SimpleAttributeConverter("Original", "Three"), "attr2");
+        chainedBuilder.createBuilder(V2_0_0, V1_0_0)
+                .addChildRedirection(PathElement.pathElement("Thing", "why"), PathElement.pathElement("THING", "Y"))
+                .getAttributeBuilder()
+                    .setValueConverter(new SimpleAttributeConverter("Three", "Four"), "attr2");
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0).get(V1_0_0), leafTwoReg);
+
+        Resource leafOneResource = addChild(toto, "leaf-one", "one");
+        Resource chainedOneResource = addChild(leafOneResource, "chained", "one");
+        Resource thingXResource = addChild(chainedOneResource, "thing", "x");
+        thingXResource.getModel().get("attr1").set("Original");
+
+        Resource leafTwoResource = addChild(toto, "leaf-two", "two");
+        Resource chainedTwoResource = addChild(leafTwoResource, "chained", "two");
+        Resource thingYResource = addChild(chainedTwoResource, "thing", "y");
+        thingYResource.getModel().get("attr2").set("Original");
+
+        final Resource resource = transformResource();
+
+        Assert.assertEquals(1, resource.getChildTypes().size());
+        Assert.assertEquals(1, resource.getChildrenNames("toto").size());
+        Resource subsystem = resource.getChild(PathElement.pathElement("toto", "testSubsystem"));
+        Assert.assertNotNull(subsystem);
+
+        Assert.assertEquals(2, subsystem.getChildTypes().size());
+        Assert.assertEquals(1, subsystem.getChildren("one-leaf").size());
+        Resource oneLeaf = subsystem.getChild(PathElement.pathElement("one-leaf", "one"));
+        Assert.assertNotNull(oneLeaf);
+        Assert.assertEquals(1, oneLeaf.getChildTypes().size());
+        Assert.assertEquals(1, oneLeaf.getChildren("chained").size());
+        Resource chainedOne = oneLeaf.getChild(PathElement.pathElement("chained", "one"));
+        Assert.assertNotNull(chainedOne);
+        Assert.assertEquals(1, chainedOne.getChildTypes().size());
+        Assert.assertEquals(1, chainedOne.getChildren("THING").size());
+        Resource thingX = chainedOne.getChild(PathElement.pathElement("THING", "X"));
+        Assert.assertNotNull(thingX);
+        Assert.assertEquals(1, thingX.getModel().keys().size());
+        Assert.assertEquals("Two", thingX.getModel().get("attr1").asString());
+
+        Assert.assertEquals(1, subsystem.getChildren("two-leaf").size());
+        Assert.assertEquals(1, subsystem.getChildren("two-leaf").size());
+        Resource twoLeaf = subsystem.getChild(PathElement.pathElement("two-leaf", "two"));
+        Assert.assertNotNull(twoLeaf);
+        Assert.assertEquals(1, twoLeaf.getChildTypes().size());
+        Assert.assertEquals(1, twoLeaf.getChildren("chained").size());
+        Resource chainedTwo = twoLeaf.getChild(PathElement.pathElement("chained", "two"));
+        Assert.assertNotNull(chainedTwo);
+        Assert.assertEquals(1, chainedTwo.getChildTypes().size());
+        Assert.assertEquals(1, chainedTwo.getChildren("THING").size());
+        Resource thingY = chainedTwo.getChild(PathElement.pathElement("THING", "Y"));
+        Assert.assertNotNull(thingY);
+        Assert.assertEquals(1, thingY.getModel().keys().size());
+        Assert.assertEquals("Four", thingY.getModel().get("attr2").asString());
+
+    }
 
     private Resource addChild(Resource parent, String key, String value) {
         Resource resource = Resource.Factory.create();
