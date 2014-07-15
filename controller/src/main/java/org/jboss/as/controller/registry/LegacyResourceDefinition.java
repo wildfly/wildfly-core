@@ -27,11 +27,13 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -130,6 +132,16 @@ public class LegacyResourceDefinition implements ResourceDefinition {
         for (ResourceDefinition rd : children) {
             resourceRegistration.registerSubModel(rd);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return this default implementation simply returns an empty list.
+     */
+    @Override
+    public List<AccessConstraintDefinition> getAccessConstraints() {
+        return Collections.emptyList();
     }
 }
 

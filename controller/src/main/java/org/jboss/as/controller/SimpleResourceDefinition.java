@@ -27,7 +27,6 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.access.management.ConstrainedResourceDefinition;
 import org.jboss.as.controller.descriptions.DefaultResourceAddDescriptionProvider;
 import org.jboss.as.controller.descriptions.DefaultResourceDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -43,7 +42,7 @@ import org.jboss.as.controller.registry.OperationEntry;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class SimpleResourceDefinition implements ConstrainedResourceDefinition {
+public class SimpleResourceDefinition implements ResourceDefinition {
 
     private static final EnumSet<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_NONE,
             OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM);

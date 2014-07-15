@@ -13,8 +13,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DefaultResourceDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -60,6 +63,11 @@ public class ListAttributeDefinitionTestCase {
                 StandardResourceDescriptionResolver descriptionResolver = new StandardResourceDescriptionResolver(MY_RESOURCE, ListAttributeDefinitionTestCase.class.getName(), Thread.currentThread().getContextClassLoader());
                 return new DefaultResourceDescriptionProvider(registration, descriptionResolver);
             }
+
+            @Override
+            public List<AccessConstraintDefinition> getAccessConstraints() {
+                return Collections.emptyList();
+            }
         };
 
         ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.create(resource);
@@ -102,6 +110,11 @@ public class ListAttributeDefinitionTestCase {
             public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration registration) {
                 StandardResourceDescriptionResolver descriptionResolver = new StandardResourceDescriptionResolver(MY_RESOURCE, ListAttributeDefinitionTestCase.class.getName(), Thread.currentThread().getContextClassLoader());
                 return new DefaultResourceDescriptionProvider(registration, descriptionResolver);
+            }
+
+            @Override
+            public List<AccessConstraintDefinition> getAccessConstraints() {
+                return Collections.emptyList();
             }
         };
 

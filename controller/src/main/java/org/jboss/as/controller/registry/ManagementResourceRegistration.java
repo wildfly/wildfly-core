@@ -22,19 +22,22 @@
 
 package org.jboss.as.controller.registry;
 
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 
 /**
  * A registration for a management resource which consists of a resource description plus registered operation handlers.
@@ -426,6 +429,11 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                 @Override
                 public void registerChildren(ManagementResourceRegistration resourceRegistration) {
                     //  no-op
+                }
+
+                @Override
+                public List<AccessConstraintDefinition> getAccessConstraints() {
+                    return Collections.emptyList();
                 }
             };
             return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, false);

@@ -23,6 +23,7 @@ package org.jboss.as.model.test;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -42,6 +43,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -359,7 +361,15 @@ public abstract class ModelTestModelControllerService extends AbstractController
         public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
             return delegate.getDescriptionProvider(resourceRegistration);
         }
-    };
+
+        @Override
+        public List<AccessConstraintDefinition> getAccessConstraints() {
+            if (delegate == null) {
+                return Collections.emptyList();
+            }
+            return delegate.getAccessConstraints();
+        }
+    }
 
     //These are here to overload the constuctor used for the different legacy controllers
 

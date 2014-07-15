@@ -27,6 +27,7 @@ import static java.security.AccessController.doPrivileged;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -45,6 +46,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -65,9 +67,9 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.deployment.Attachments;
-import org.jboss.as.server.deployment.DeploymentOverlayDeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentCompleteServiceProcessor;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
+import org.jboss.as.server.deployment.DeploymentOverlayDeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -120,8 +122,8 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Service for the {@link org.jboss.as.controller.ModelController} for an AS server instance.
@@ -463,6 +465,14 @@ public final class ServerService extends AbstractControllerService {
         @Override
         public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
             return delegate.getDescriptionProvider(resourceRegistration);
+        }
+
+        @Override
+        public List<AccessConstraintDefinition> getAccessConstraints() {
+            if (delegate == null) {
+                return Collections.emptyList();
+            }
+            return delegate.getAccessConstraints();
         }
     }
 }

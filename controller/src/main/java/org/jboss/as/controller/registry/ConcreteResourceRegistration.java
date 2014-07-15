@@ -36,8 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.descriptions.DefaultResourceDescriptionProvider;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -46,8 +44,9 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.access.management.ConstrainedResourceDefinition;
+import org.jboss.as.controller.descriptions.DefaultResourceDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
 import org.jboss.as.controller.registry.OperationEntry.EntryType;
@@ -124,9 +123,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     void addAccessConstraints(List<AccessConstraintDefinition> list) {
-        if (resourceDefinition instanceof ConstrainedResourceDefinition) {
-            list.addAll(((ConstrainedResourceDefinition) resourceDefinition).getAccessConstraints());
-        }
+        list.addAll(resourceDefinition.getAccessConstraints());
     }
 
     @Override
@@ -151,9 +148,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         resourceDefinition.registerAttributes(resourceRegistration);
         resourceDefinition.registerOperations(resourceRegistration);
         resourceDefinition.registerChildren(resourceRegistration);
-        if (constraintUtilizationRegistry != null && resourceDefinition instanceof ConstrainedResourceDefinition) {
+        if (constraintUtilizationRegistry != null) {
             PathAddress childAddress = getPathAddress().append(address);
-            List<AccessConstraintDefinition> constraintDefinitions = ((ConstrainedResourceDefinition) resourceDefinition).getAccessConstraints();
+            List<AccessConstraintDefinition> constraintDefinitions = resourceDefinition.getAccessConstraints();
             for (AccessConstraintDefinition acd : constraintDefinitions) {
                 constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
             }
