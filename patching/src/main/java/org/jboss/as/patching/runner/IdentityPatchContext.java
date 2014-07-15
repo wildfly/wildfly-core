@@ -1,6 +1,8 @@
 package org.jboss.as.patching.runner;
 
-import javax.xml.stream.XMLStreamException;
+import static org.jboss.as.patching.runner.PatchUtils.BACKUP_EXT;
+import static org.jboss.as.patching.runner.PatchUtils.JAR_EXT;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -18,16 +20,18 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchInfo;
-import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.InstalledImage;
 import org.jboss.as.patching.installation.PatchableTarget;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.ContentType;
@@ -45,9 +49,6 @@ import org.jboss.as.patching.metadata.impl.PatchElementImpl;
 import org.jboss.as.patching.tool.ContentVerificationPolicy;
 import org.jboss.as.patching.tool.PatchingHistory;
 import org.jboss.as.patching.tool.PatchingResult;
-
-import static org.jboss.as.patching.runner.PatchUtils.BACKUP_EXT;
-import static org.jboss.as.patching.runner.PatchUtils.JAR_EXT;
 
 /**
  * @author Emanuel Muckenhuber
@@ -873,6 +874,7 @@ class IdentityPatchContext implements PatchContentProvider {
         element.setProvider(patchElement.getProvider());
         // Add all the rollback actions
         element.getModifications().addAll(modifications);
+        element.setDescription(patchElement.getDescription());
         return element;
     }
 

@@ -32,6 +32,13 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-patching</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <version>${version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-testsuite-shared</artifactId>
         </dependency>
         <dependency>

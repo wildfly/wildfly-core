@@ -23,6 +23,7 @@ package org.jboss.as.test.patching;
 
 import static java.lang.String.format;
 import static org.jboss.as.patching.Constants.BASE;
+import static org.jboss.as.patching.Constants.BUNDLES;
 import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.Constants.OVERLAYS;
@@ -55,7 +56,6 @@ import java.util.jar.Attributes.Name;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import com.google.common.base.Joiner;
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.HashUtils;
@@ -79,6 +79,8 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 
+import com.google.common.base.Joiner;
+
 /**
  * @author Jan Martiska, Jeff Mesnil
  */
@@ -96,6 +98,7 @@ public class PatchingTestUtil {
     private static final String RELATIVE_MODULES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE});
     public static final String MODULES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_MODULES_PATH;
     public static final File BASE_MODULE_DIRECTORY = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), MODULES, SYSTEM, LAYERS, BASE);
+    public static final File BASE_BUNDLE_DIRECTORY = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), BUNDLES, SYSTEM, LAYERS, BASE);
     public static final boolean DO_CLEANUP = Boolean.getBoolean("cleanup.tmp");
 
     public static final String AS_VERSION = ProductInfo.PRODUCT_VERSION;

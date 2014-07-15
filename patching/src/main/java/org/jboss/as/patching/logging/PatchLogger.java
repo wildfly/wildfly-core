@@ -22,7 +22,8 @@
 
 package org.jboss.as.patching.logging;
 
-import static org.jboss.logging.Logger.Level.*;
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
 import java.io.SyncFailedException;
