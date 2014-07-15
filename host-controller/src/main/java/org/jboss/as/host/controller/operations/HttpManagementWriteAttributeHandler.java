@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2014, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -26,25 +26,23 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
+import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 
 /**
  * {@code OperationStepHandler} for changing attributes on the native management interface.
  *
- * @author Emanuel Muckenhuber
+ * @author Wang Chao
  */
-public class NativeManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+public class HttpManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+    public static final OperationStepHandler INSTANCE = new HttpManagementWriteAttributeHandler();
 
-    public static final OperationStepHandler INSTANCE = new NativeManagementWriteAttributeHandler();
-
-    public NativeManagementWriteAttributeHandler() {
-        super(NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+    public HttpManagementWriteAttributeHandler() {
+        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
         return context.getRunningMode() == RunningMode.NORMAL && !context.isBooting();
-
     }
 
 }
