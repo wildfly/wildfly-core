@@ -36,7 +36,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -49,11 +48,11 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.HttpManagementAddHandler;
 import org.jboss.as.host.controller.operations.HttpManagementRemoveHandler;
+import org.jboss.as.host.controller.operations.HttpManagementWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -124,9 +123,9 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeAttributeHandler = new WriteAttributeHandler(ATTRIBUTE_DEFINITIONS);
+
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, writeAttributeHandler);
+            resourceRegistration.registerReadWriteAttribute(attr, null, HttpManagementWriteAttributeHandler.INSTANCE);
         }
     }
 
@@ -139,21 +138,6 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
         ModelNode operation = Util.createOperation("validate-http-interface", PathAddress.pathAddress(fromOperation.require(OP_ADDR)));
 
         operationContext.addStep(operation, VALIDATING_HANDLER, Stage.MODEL);
-    }
-
-    private static class WriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
-
-        private WriteAttributeHandler(AttributeDefinition[] attributes) {
-            super(attributes);
-        }
-
-        @Override
-        protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName,
-                ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
-            super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
-            addValidatingHandler(context, operation);
-        }
-
     }
 
     private static class HttpManagementValidatingHandler implements OperationStepHandler {

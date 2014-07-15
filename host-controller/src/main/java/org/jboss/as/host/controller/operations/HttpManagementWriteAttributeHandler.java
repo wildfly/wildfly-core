@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2014, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -23,28 +23,36 @@
 package org.jboss.as.host.controller.operations;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
+import org.jboss.dmr.ModelNode;
 
 /**
  * {@code OperationStepHandler} for changing attributes on the native management interface.
  *
- * @author Emanuel Muckenhuber
+ * @author Wang Chao
  */
-public class NativeManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+public class HttpManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+    public static final OperationStepHandler INSTANCE = new HttpManagementWriteAttributeHandler();
 
-    public static final OperationStepHandler INSTANCE = new NativeManagementWriteAttributeHandler();
+    public HttpManagementWriteAttributeHandler() {
+        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+    }
 
-    public NativeManagementWriteAttributeHandler() {
-        super(NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+    @Override
+    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName,
+                                    ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
+        super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+        HttpManagementResourceDefinition.addValidatingHandler(context, operation);
     }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
         return context.getRunningMode() == RunningMode.NORMAL && !context.isBooting();
-
     }
 
 }
