@@ -65,6 +65,17 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    ResultAction executeOperation() {
+        // WFCORE-2 allow this thread to be treated as a controlling thread
+        AbstractOperationContext.controllingThread.set(primaryContext.initiatingThread);
+        try {
+            return super.executeOperation();
+        } finally {
+            AbstractOperationContext.controllingThread.remove();
+        }
+    }
+
+    @Override
     void awaitServiceContainerStability() throws InterruptedException {
         // nothing here
     }
