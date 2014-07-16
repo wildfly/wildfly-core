@@ -104,6 +104,7 @@ public enum Element {
     JVMS("jvms"),
     JVM_OPTIONS("jvm-options"),
 
+    KEYCLOAK("keycloak"),
     KEYSTORE("keystore"),
 
     LAUNCH_COMMAND("launch-command"),

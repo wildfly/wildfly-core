@@ -26,14 +26,6 @@ import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
 import static org.xnio.SslClientAuthMode.REQUESTED;
 import static org.xnio.SslClientAuthMode.REQUIRED;
 
-import javax.net.ssl.SSLContext;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
@@ -56,6 +48,17 @@ import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
+import io.undertow.server.session.SessionAttachmentHandler;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
@@ -65,11 +68,16 @@ import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
 import org.jboss.as.domain.http.server.security.LogoutHandler;
 import org.jboss.as.domain.http.server.security.RealmIdentityManager;
 import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
+import org.jboss.as.domain.http.server.security.keycloak.KeycloakConfig;
+import org.jboss.as.domain.http.server.security.keycloak.KeycloakLogoutHandler;
+import org.jboss.as.domain.http.server.security.keycloak.KeycloakAuthenticationMechanism;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.undertow.UndertowAuthenticatedActionsHandler;
 import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
 import org.xnio.ChannelListener;
@@ -107,7 +115,6 @@ public class ManagementHttpServer {
         this.secureAddress = secureAddress;
         this.securityRealm = securityRealm;
     }
-
 
     public void start() {
         final Xnio xnio;
@@ -214,7 +221,7 @@ public class ManagementHttpServer {
 
         ResourceHandlerDefinition consoleHandler = null;
         try {
-            consoleHandler = consoleMode.createConsoleHandler(consoleSlot);
+            consoleHandler = consoleMode.createConsoleHandler(consoleSlot, securityRealm);
         } catch (ModuleLoadException e) {
             ROOT_LOGGER.consoleModuleNotFound(consoleSlot == null ? "main" : consoleSlot);
         }
@@ -238,9 +245,21 @@ public class ManagementHttpServer {
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
         pathHandler.addExactPath("management-upload", readinessHandler);
 
-        if (securityRealm != null) {
+        if (usingKeycloak(securityRealm)){
+            KeycloakLogoutHandler logoutHandler = new KeycloakLogoutHandler();
+            pathHandler.addPrefixPath(LogoutHandler.PATH, new SessionAttachmentHandler(logoutHandler, KeycloakConfig.sessionManager(), KeycloakConfig.sessionConfig()));
+        } else if (securityRealm != null) {
             pathHandler.addPrefixPath(LogoutHandler.PATH, new LogoutHandler(securityRealm.getName()));
         }
+    }
+
+    /**
+     * Does the SecurityRealm contain a Keycloak AuthMechanism?
+     */
+    public static boolean usingKeycloak(final SecurityRealm securityRealm) {
+        if (securityRealm == null) return false;
+        Set<AuthMechanism> mechanisms = securityRealm.getSupportedAuthenticationMechanisms();
+        return mechanisms.contains(AuthMechanism.KEYCLOAK);
     }
 
     private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
@@ -251,6 +270,11 @@ public class ManagementHttpServer {
             undertowMechanisms.add(wrap(new CachedAuthenticatedSessionMechanism(), null));
             for (AuthMechanism current : mechanisms) {
                 switch (current) {
+                    case KEYCLOAK:
+                        KeycloakDeployment httpEndpoint = KeycloakConfig.HTTP_ENDPOINT.deployment();
+                        KeycloakAuthenticationMechanism keycloakAuth = new KeycloakAuthenticationMechanism(httpEndpoint, KeycloakConfig.keycloakSessionManagement());
+                        undertowMechanisms.add(wrap(keycloakAuth, AuthMechanism.KEYCLOAK));
+                        break;
                     case CLIENT_CERT:
                         undertowMechanisms.add(wrap(new ClientCertAuthenticationMechanism(), current));
                         break;
@@ -278,6 +302,11 @@ public class ManagementHttpServer {
         // this point.
         current = new AuthenticationConstraintHandler(current);
         current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
+
+        if (usingKeycloak(securityRealm)) {
+            current = new UndertowAuthenticatedActionsHandler(KeycloakConfig.HTTP_ENDPOINT.context(), current);
+            current = new SessionAttachmentHandler(current, KeycloakConfig.sessionManager(), KeycloakConfig.sessionConfig());
+        }
 
         return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, new RealmIdentityManager(securityRealm), current);
     }

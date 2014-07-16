@@ -55,6 +55,7 @@ public class ModelDescriptionConstants {
     public static final String JAAS = "jaas";
     public static final String JKS = "JKS";
     public static final String KEY_PASSWORD = "key-password";
+    public static final String KEYCLOAK = "keycloak";
     public static final String KEYSTORE_PASSWORD = "keystore-password";
     public static final String KEYSTORE_PATH = "keystore-path";
     public static final String KEYSTORE_PROVIDER = "keystore-provider";

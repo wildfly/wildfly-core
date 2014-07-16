@@ -89,6 +89,7 @@ public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new PropertiesAuthorizationResourceDefinition());
         resourceRegistration.registerSubModel(new PlugInAuthorizationResourceDefinition());
         resourceRegistration.registerSubModel(new LdapAuthorizationResourceDefinition());
+        resourceRegistration.registerSubModel(new KeycloakResourceDefinition());
     }
 
     @Override

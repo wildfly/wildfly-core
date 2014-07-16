@@ -39,6 +39,26 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-undertow-adapter</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-subsystem</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
           <groupId>io.undertow</groupId>
           <artifactId>undertow-core</artifactId>
         </dependency>
