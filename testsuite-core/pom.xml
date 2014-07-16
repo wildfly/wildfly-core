@@ -417,7 +417,6 @@
                 </property>
             </activation>
             <modules>
-                <module>patching</module>
                 <module>domain</module>
             </modules>
         </profile>
