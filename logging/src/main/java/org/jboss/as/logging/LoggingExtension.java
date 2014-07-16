@@ -244,21 +244,13 @@ public class LoggingExtension implements Extension {
         registerTransformers(defs, chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0);
         registerTransformers(defs, chainedBuilder, KnownModelVersion.VERSION_1_2_0, KnownModelVersion.VERSION_1_1_0);
 
-        TransformationDescription.Tools.register(
-                chainedBuilder.build(
-                        KnownModelVersion.VERSION_1_1_0.getModelVersion(),
-                        KnownModelVersion.VERSION_1_2_0.getModelVersion(),
-                        KnownModelVersion.VERSION_1_3_0.getModelVersion()), registration, KnownModelVersion.VERSION_1_1_0.getModelVersion());
-
-        TransformationDescription.Tools.register(
-                chainedBuilder.build(
-                        KnownModelVersion.VERSION_1_2_0.getModelVersion(),
-                        KnownModelVersion.VERSION_1_3_0.getModelVersion()), registration, KnownModelVersion.VERSION_1_2_0.getModelVersion());
-
-        TransformationDescription.Tools.register(
-                chainedBuilder.build(
-                        KnownModelVersion.VERSION_1_3_0.getModelVersion()), registration, KnownModelVersion.VERSION_1_3_0.getModelVersion());
-
+        ModelVersion[] versions = new ModelVersion[] {
+                KnownModelVersion.VERSION_1_1_0.getModelVersion(),
+                KnownModelVersion.VERSION_1_2_0.getModelVersion(),
+                KnownModelVersion.VERSION_1_3_0.getModelVersion()};
+        for (Map.Entry<ModelVersion, TransformationDescription> entry : chainedBuilder.build(versions).entrySet()) {
+            TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
+        }
     }
 
     private void registerTransformers(SubsystemDefinitions defs, ChainedTransformationDescriptionBuilder chainedBuilder, KnownModelVersion fromVersion, KnownModelVersion toVersion) {

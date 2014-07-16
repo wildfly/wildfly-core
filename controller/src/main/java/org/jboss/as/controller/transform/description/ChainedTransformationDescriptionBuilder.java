@@ -21,9 +21,15 @@
  */
 package org.jboss.as.controller.transform.description;
 
+import java.util.Map;
+
 import org.jboss.as.controller.ModelVersion;
 
 /**
+ * A builder used to create chained transformers. Created using
+ * {@link TransformationDescriptionBuilder.Factory#createChainedInstance(org.jboss.as.controller.PathElement, ModelVersion) or
+ * {@link TransformationDescriptionBuilder.Factory#createChainedSubystemInstance(ModelVersion). The {@code ModelVersion} parameter
+ * to these operations is the 'current' model version.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -40,12 +46,12 @@ public interface ChainedTransformationDescriptionBuilder {
 
 
     /**
-     * Build the transformer chain for a version, specifying the chained versions.
+     * Build the transformer chains for chain of versions.
      *
-     * @param toVersion the version to transform to
+     * @param versions the versions in the transformer chain. This should not include the 'current' version mentioned in the class javadoc.
      * @param intermediates the intermediate model versions to use in the chain.
-     * @return the transformation description
+     * @return a map of transformation descriptions for each model version
      *
      */
-    TransformationDescription build(ModelVersion toVersion, ModelVersion...intermediates);
+    Map<ModelVersion, TransformationDescription> build(ModelVersion...versions);
 }

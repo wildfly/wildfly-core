@@ -174,10 +174,11 @@ public class JMXExtension implements Extension {
         //1.1.0 to 1.0.0
         buildTransformers1_0_0(chainedBuilder.createBuilder(version1_1_0, version1_0_0));
 
-        //Register the 1.0.0 transformer
-        TransformationDescription.Tools.register(chainedBuilder.build(version1_0_0, version1_1_0), registration, version1_0_0);
-        //Register the 1.1.0 transformer
-        TransformationDescription.Tools.register(chainedBuilder.build(version1_1_0), registration, version1_1_0);
+        ModelVersion[] versions = new ModelVersion[] {version1_0_0, version1_1_0};
+
+        for (Map.Entry<ModelVersion, TransformationDescription> entry : chainedBuilder.build(versions).entrySet()) {
+            TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
+        }
     }
 
     private void buildTransformers1_0_0(ResourceTransformationDescriptionBuilder builder) {

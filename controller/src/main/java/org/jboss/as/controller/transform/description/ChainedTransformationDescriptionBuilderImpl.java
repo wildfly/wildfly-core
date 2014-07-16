@@ -29,15 +29,13 @@ import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.logging.ControllerLogger;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformationDescriptionBuilder {
     private final ModelVersion currentVersion;
-    //private final Map<ModelVersion, Map<ModelVersion, LazyDescription>> versions = new HashMap<>();
-    private final Map<ModelVersion, Map<ModelVersion, TransformationDescriptionBuilder>> versions = new HashMap<>();
+    private final Map<ModelVersionPair, TransformationDescriptionBuilder> builders = new HashMap<>();
 
     private final PathElement element;
     ChainedTransformationDescriptionBuilderImpl(ModelVersion currentVersion, PathElement element) {
@@ -47,46 +45,41 @@ class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformati
 
     @Override
     public ResourceTransformationDescriptionBuilder createBuilder(ModelVersion fromVersion, ModelVersion toVersion) {
-        //DelegatingResourceTransformationDescriptionBuilder builder = new DelegatingResourceTransformationDescriptionBuilder(fromVersion, toVersion, element);
         ResourceTransformationDescriptionBuilder builder = new ResourceTransformationDescriptionBuilderImpl(element);
-        Map<ModelVersion, TransformationDescriptionBuilder> map = versions.get(fromVersion);
-        if (map == null) {
-            map = new HashMap<>();
-            versions.put(fromVersion, map);
-        }
-        //map.put(toVersion, new LazyDescription(builder));
-        map.put(toVersion, builder);
+        builders.put(new ModelVersionPair(fromVersion, toVersion), builder);
         return builder;
     }
 
-    @Override
-    public TransformationDescription build(ModelVersion toVersion, ModelVersion... intermediates) {
-        ModelVersion[] allVersions = new ModelVersion[intermediates.length + 2];
+    public Map<ModelVersion, TransformationDescription> build(ModelVersion...versions) {
+        ModelVersion[] allVersions = new ModelVersion[versions.length + 1];
         allVersions[0] = currentVersion;
-        allVersions[intermediates.length + 1] = toVersion;
-        System.arraycopy(intermediates, 0, allVersions, 1, intermediates.length);
+        System.arraycopy(versions, 0, allVersions, 1, versions.length);
         Arrays.sort(allVersions, new Comparator<ModelVersion>() {
             @Override
             public int compare(ModelVersion o1, ModelVersion o2) {
                 return ModelVersion.compare(o1, o2);
             }
         });
+        return doBuild(allVersions);
+    }
 
+    private Map<ModelVersion, TransformationDescription> doBuild(ModelVersion...versions) {
+        final Map<ModelVersion, TransformationDescription> result = new HashMap<>();
         final LinkedHashMap<ModelVersionPair, ChainedPlaceholderResolver> placeholderResolvers = new LinkedHashMap<>();
-        for (int i = 1 ; i < allVersions.length ; i++) {
-            final ModelVersion from = allVersions[i - 1];
-            final ModelVersion to = allVersions[i];
-            final Map<ModelVersion, TransformationDescriptionBuilder> map = versions.get(from);
-            if (map == null ) {
-                throw ControllerLogger.ROOT_LOGGER.noChainedTransformerBetween(from, to);
-            }
-            TransformationDescriptionBuilder builder = map.get(to);
+        for (int i = 1 ; i < versions.length ; i++) {
+            ModelVersionPair pair = new ModelVersionPair(versions[i - 1], versions[i]);
+            TransformationDescriptionBuilder builder = builders.get(pair);
             if (builder == null) {
-                throw ControllerLogger.ROOT_LOGGER.noChainedTransformerBetween(from, to);
+                //Insert an empty builder in the chain for version deltas which don't have one registered
+                builder = new ResourceTransformationDescriptionBuilderImpl(element);
             }
-            placeholderResolvers.put(new ModelVersionPair(from, to), ChainedPlaceholderResolver.create(builder.build()));
+            placeholderResolvers.put(pair, ChainedPlaceholderResolver.create(builder.build()));
+            TransformationDescription desc = new ChainedTransformingDescription(element, new LinkedHashMap<>(placeholderResolvers));
+            result.put(pair.toVersion, desc);
         }
-        return new ChainedTransformingDescription(element, placeholderResolvers);
+
+
+        return result;
     }
 
     static class ModelVersionPair {

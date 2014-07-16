@@ -23,6 +23,8 @@
 package org.jboss.as.remoting;
 
 
+import java.util.Map;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -124,17 +126,14 @@ public class RemotingExtension implements Extension {
         buildTransformers_1_3(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_1_3));
 
         //1.3.0 to 1.2.0 (do nothing)
-        chainedBuilder.createBuilder(VERSION_1_3, VERSION_1_2);
 
         //1.2.0 to 1.1.0
         buildTransformers_1_1(chainedBuilder.createBuilder(VERSION_1_2, VERSION_1_1));
 
-        //Register the 1.1.0 transformer
-        TransformationDescription.Tools.register(chainedBuilder.build(VERSION_1_1, VERSION_1_2, VERSION_1_3), registration, VERSION_1_1);
-        //Register the 1.2.0 transformer
-        TransformationDescription.Tools.register(chainedBuilder.build(VERSION_1_2, VERSION_1_3), registration, VERSION_1_2);
-        //Register the 1.3.0 transformer
-        TransformationDescription.Tools.register(chainedBuilder.build(VERSION_1_3), registration, VERSION_1_3);
+        ModelVersion[] versions = new ModelVersion[] {VERSION_1_1, VERSION_1_2, VERSION_1_3};
+        for (Map.Entry<ModelVersion, TransformationDescription> entry : chainedBuilder.build(versions).entrySet()) {
+            TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
+        }
     }
 
     private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {

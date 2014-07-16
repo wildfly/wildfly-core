@@ -41,8 +41,6 @@ class SocketBindingGroupTransformers {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_3);
         SocketBindingTransformers.registerTransformers1_3_AndBelow(builder);
 
-        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
-
         return chainedBuilder;
     }
 }

@@ -85,15 +85,6 @@ public class ChainedResourceBuilderTestCase {
         transformersSubRegistration = registry.getServerRegistration(ModelVersion.create(1));
     }
 
-
-    @Test(expected=IllegalStateException.class)
-    public void testBadSimpleChainCalculation() throws Exception {
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(V3_0_0);
-        chainedBuilder.createBuilder(V2_0_0, V1_0_0);
-        chainedBuilder.createBuilder(V3_0_0, V2_0_0);
-        chainedBuilder.build(V1_0_0, V2_0_0, V2_0_0);
-    }
-
     @Test
     public void testResourceChildrenNoTransformation() throws Exception {
         //Set up the model
@@ -106,7 +97,7 @@ public class ChainedResourceBuilderTestCase {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PATH, V2_0_0);
         chainedBuilder.createBuilder(V2_0_0, V1_0_0);
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -145,7 +136,7 @@ public class ChainedResourceBuilderTestCase {
                     .setValueConverter(new SimpleAttributeConverter("test3", "test31"), "attr3");
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -180,7 +171,7 @@ public class ChainedResourceBuilderTestCase {
                     .setValueConverter(new SimpleAttributeConverter("test111", "test1111"), "attr1")
                 .end();
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -190,34 +181,6 @@ public class ChainedResourceBuilderTestCase {
         Assert.assertEquals("test1111", model.get("attr1").asString());
     }
 
-    @Test
-    public void testResourceNoChildrenChainedTransformationDontUseAllVersions() throws Exception {
-        //Set up the model
-        resourceModel.get("attr1").set("test1");
-
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PATH, V4_0_0);
-        chainedBuilder.createBuilder(V4_0_0, V3_0_0)
-                .getAttributeBuilder()
-                    .setValueConverter(new SimpleAttributeConverter("test1", "test11"), "attr1")
-                .end();
-        chainedBuilder.createBuilder(V3_0_0, V2_0_0)
-                .getAttributeBuilder()
-                    .setValueConverter(new SimpleAttributeConverter("test11", "test111"), "attr1")
-                .end();
-        chainedBuilder.createBuilder(V2_0_0, V1_0_0)
-                .getAttributeBuilder()
-                    .setValueConverter(new SimpleAttributeConverter("test111", "test1111"), "attr1")
-                .end();
-
-        TransformationDescription.Tools.register(chainedBuilder.build(V2_0_0, V3_0_0), transformersSubRegistration);
-
-        final Resource resource = transformResource();
-        Assert.assertNotNull(resource);
-        final Resource toto = resource.getChild(PATH);
-        Assert.assertNotNull(toto);
-        final ModelNode model = toto.getModel();
-        Assert.assertEquals("test111", model.get("attr1").asString());
-    }
 
     @Test
     public void testResourceChildrenChainedTransformation() throws Exception {
@@ -279,7 +242,7 @@ public class ChainedResourceBuilderTestCase {
                 .setValueConverter(new SimpleAttributeConverter("test411", "test4111"), "attr4")
                 .end();
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -324,7 +287,7 @@ public class ChainedResourceBuilderTestCase {
                 .getAttributeBuilder()
                     .setValueConverter(new SimpleAttributeConverter("test11", "test111"), "attr1");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -391,7 +354,7 @@ public class ChainedResourceBuilderTestCase {
         builder.addChildResource(PathElement.pathElement("child", "five")).discardChildResource(PathElement.pathElement("grand", "J"));
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -497,7 +460,7 @@ public class ChainedResourceBuilderTestCase {
         builder.addChildResource(PathElement.pathElement("child", "five")).rejectChildResource(PathElement.pathElement("grand", "J"));
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V3_0_0, V2_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -566,7 +529,7 @@ public class ChainedResourceBuilderTestCase {
                 .addChildRedirection(PathElement.pathElement("child", "one"), PathElement.pathElement("chico", "uno"));
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -613,7 +576,7 @@ public class ChainedResourceBuilderTestCase {
                 .addChildRedirection(PathElement.pathElement("grandchild", "one"), PathElement.pathElement("nieto", "uno"));
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -660,7 +623,7 @@ public class ChainedResourceBuilderTestCase {
         builder.addChildRedirection(PathElement.pathElement("grandchild", "one"), PathElement.pathElement("nieto", "uno"));
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
@@ -737,7 +700,7 @@ public class ChainedResourceBuilderTestCase {
             .addChildRedirection(PathElement.pathElement("enkel", "Eh!"), PathElement.pathElement("GRAND", "Eee"));
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V3_0_0, V2_0_0, V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V3_0_0, V2_0_0, V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
         final Resource toto = resource.getChild(PATH);
@@ -970,10 +933,9 @@ public class ChainedResourceBuilderTestCase {
             }
         });
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V3_0_0, V2_0_0, V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V3_0_0, V2_0_0, V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final Resource resource = transformResource();
-        System.out.println(Resource.Tools.readModel(resource));
 
         final Resource toto = resource.getChild(PATH);
         Assert.assertNotNull(toto);

@@ -67,15 +67,12 @@ class ServerGroupTransformers {
         SystemPropertyTransformers.registerTransformers1_3_AndBelow(builder);
         JvmTransformers.registerTransformers1_3_AndBelow(builder);
 
-        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
-
         //////////////////////////////////
         //The WildFly chains
 
         builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_2_1);
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
-        chainedBuilder.createBuilder(DomainTransformers.VERSION_2_1, DomainTransformers.VERSION_2_0);
         return chainedBuilder;
     }
 }

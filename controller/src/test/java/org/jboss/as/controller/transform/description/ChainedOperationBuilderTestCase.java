@@ -97,7 +97,7 @@ public class ChainedOperationBuilderTestCase {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PATH, V2_0_0);
         chainedBuilder.createBuilder(V2_0_0, V1_0_0);
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
         ModelNode node = new ModelNode();
@@ -121,7 +121,7 @@ public class ChainedOperationBuilderTestCase {
         chainedBuilder.createBuilder(V3_0_0, V2_0_0);
         chainedBuilder.createBuilder(V2_0_0, V1_0_0);
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0).get(V1_0_0), transformersSubRegistration);
 
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
         ModelNode node = new ModelNode();
@@ -147,7 +147,7 @@ public class ChainedOperationBuilderTestCase {
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "attr1")
                 .setValueConverter(new SimpleAttributeConverter("old", "new"), "attr2");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0).get(V1_0_0), transformersSubRegistration);
 
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
         ModelNode original = new ModelNode();
@@ -189,7 +189,7 @@ public class ChainedOperationBuilderTestCase {
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "attr3")
                 .setValueConverter(new SimpleAttributeConverter("two", "three"), "attr");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
         ModelNode original = new ModelNode();
@@ -233,38 +233,6 @@ public class ChainedOperationBuilderTestCase {
 
 
     @Test
-    public void testDefaultOperationChainNotAllVersions() throws Exception {
-
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PATH, V4_0_0);
-        chainedBuilder.createBuilder(V4_0_0, V3_0_0)
-            .getAttributeBuilder()
-                .setValueConverter(new SimpleAttributeConverter("old", "one"), "attr");
-        chainedBuilder.createBuilder(V3_0_0, V2_0_0)
-            .getAttributeBuilder()
-                .setValueConverter(new SimpleAttributeConverter("one", "two"), "attr");
-        chainedBuilder.createBuilder(V2_0_0, V1_0_0)
-            .getAttributeBuilder()
-                .setValueConverter(new SimpleAttributeConverter("two", "three"), "attr");
-
-        TransformationDescription.Tools.register(chainedBuilder.build(V2_0_0, V3_0_0), transformersSubRegistration);
-
-        final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
-        ModelNode original = new ModelNode();
-        original.get(OP_ADDR).set(address.toModelNode());
-        original.get(OP).set(ADD);
-        original.get("attr1").set("a");
-        original.get("attr2").set("b");
-        original.get("attr3").set("c");
-        original.get("attr").set("old");
-
-        OperationTransformer.TransformedOperation op = transformOperation(original);
-        Assert.assertFalse(op.rejectOperation(success()));
-        ModelNode expected = original.clone();
-        expected.get("attr").set("two");
-        Assert.assertEquals(expected, op.getTransformedOperation());
-    }
-
-    @Test
     public void testDefaultOperationChildWithNoTransformer() throws Exception {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PATH, V4_0_0);
         chainedBuilder.createBuilder(V4_0_0, V3_0_0)
@@ -280,7 +248,7 @@ public class ChainedOperationBuilderTestCase {
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "attr1")
                 .setValueConverter(new SimpleAttributeConverter("old", "new"), "attr2");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH).append("one", "two");
         ModelNode original = new ModelNode();
@@ -322,7 +290,7 @@ public class ChainedOperationBuilderTestCase {
         builder.discardChildResource(PathElement.pathElement("child", "discard3"));
         builder.rejectChildResource(PathElement.pathElement("child", "reject3"));
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that the root operations get transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
@@ -470,7 +438,7 @@ public class ChainedOperationBuilderTestCase {
             .setValueConverter(new SimpleAttributeConverter("two", "three"), "attr")
             .end();
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that not overridded operations get transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
@@ -500,7 +468,7 @@ public class ChainedOperationBuilderTestCase {
         chainedBuilder.createBuilder(V2_0_0, V1_0_0)
                 .discardOperations("discard3A", "discard3B");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that not discarded operations get transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
@@ -576,7 +544,7 @@ public class ChainedOperationBuilderTestCase {
             .addRename("attr-new", "new-attr")
             .rename("testB");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that the main operation gets transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
@@ -662,7 +630,7 @@ public class ChainedOperationBuilderTestCase {
             .addRename("attr-new", "new-attr")
             .rename("testB");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that the main operation gets transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
@@ -722,7 +690,7 @@ public class ChainedOperationBuilderTestCase {
             .setValueConverter(new NewAttributeConverter("c"), "attr-3");
 
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that the root operation gets (not) transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);
@@ -817,7 +785,7 @@ public class ChainedOperationBuilderTestCase {
         grandChildBuilder = builder.addChildResource(PathElement.pathElement("b", "two")).addChildRedirection(PathElement.pathElement("y2", "b2"), PathElement.pathElement("y3", "b3"));
         grandChildBuilder.getAttributeBuilder().setValueConverter(new SimpleAttributeConverter("third", "fourth"), "gc");
 
-        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0), transformersSubRegistration);
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
 
         //Although tested elsewhere test that the root operation gets transformed as expected
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PATH);

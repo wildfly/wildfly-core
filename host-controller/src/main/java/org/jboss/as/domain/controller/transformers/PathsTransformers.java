@@ -49,7 +49,6 @@ class PathsTransformers {
             .addOperationTransformationOverride(ADD)
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PathResourceDefinition.PATH)
                 .end();
-        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
         return chainedBuilder;
     }
 }

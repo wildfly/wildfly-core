@@ -94,9 +94,6 @@ class ManagementTransformers {
         accessBuilder.discardChildResource(PathElement.pathElement(ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE));
         accessBuilder.discardChildResource(PathElement.pathElement(ModelDescriptionConstants.HOST_SCOPED_ROLE));
 
-        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3);
-        chainedBuilder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
-
         return chainedBuilder;
     }
 }

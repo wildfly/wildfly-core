@@ -106,36 +106,28 @@ public class DomainTransformers {
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3, VERSION_1_4);
-        registerChainedTransformer(registry, builder, VERSION_1_3, VERSION_1_4);
-        registerChainedTransformer(registry, builder, VERSION_1_4);
     }
 
     private static void registerChainedPathsTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = PathsTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3);
-        registerChainedTransformer(registry, builder, VERSION_1_3);
     }
 
     private static void registerChainedDeploymentTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = DeploymentTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3);
-        registerChainedTransformer(registry, builder, VERSION_1_3);
     }
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3, VERSION_1_4);
-        registerChainedTransformer(registry, builder, VERSION_1_3, VERSION_1_4);
-        registerChainedTransformer(registry, builder, VERSION_1_4);
 
         registerChainedTransformer(registry, builder, VERSION_2_0, VERSION_2_1);
-        registerChainedTransformer(registry, builder, VERSION_2_1);
     }
 
     private static void registerChainedSystemPropertyTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = SystemPropertyTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3);
-        registerChainedTransformer(registry, builder, VERSION_1_3);
     }
 
     private static void registerChainedInterfaceTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
@@ -148,21 +140,20 @@ public class DomainTransformers {
            .addOperationTransformationOverride(ADD)
                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PathResourceDefinition.PATH)
                .end();
-        builder.createBuilder(DomainTransformers.VERSION_1_3, DomainTransformers.VERSION_1_2);
 
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3);
-        registerChainedTransformer(registry, builder, VERSION_1_3);
     }
 
     private static void registerChainedSocketBindingGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = SocketBindingGroupTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3);
-        registerChainedTransformer(registry, builder, VERSION_1_3);
     }
 
-    private static TransformersSubRegistration registerChainedTransformer(TransformerRegistry registry, ChainedTransformationDescriptionBuilder builder, ModelVersion toVersion, ModelVersion...intermediates) {
-        TransformersSubRegistration domain = registry.getDomainRegistration(toVersion);
-        return TransformationDescription.Tools.register(builder.build(toVersion, intermediates), domain);
+    private static void registerChainedTransformer(TransformerRegistry registry, ChainedTransformationDescriptionBuilder builder , ModelVersion...versions) {
+        for (Map.Entry<ModelVersion, TransformationDescription> entry : builder.build(versions).entrySet()) {
+            TransformersSubRegistration domain = registry.getDomainRegistration(entry.getKey());
+            TransformationDescription.Tools.register(entry.getValue(), domain);
+        }
     }
 
     private static void registerJsfTransformers(TransformerRegistry registry, ModelVersion...versions) {
