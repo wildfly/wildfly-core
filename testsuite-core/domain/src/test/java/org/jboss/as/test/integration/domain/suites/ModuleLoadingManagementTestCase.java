@@ -120,7 +120,7 @@ public class ModuleLoadingManagementTestCase {
         List<ModelNode> hostResult = validateResponse(response).asList();
         Assert.assertTrue(hostResult.size() > 0);
         for (ModelNode path : hostResult) {
-            Assert.assertTrue(path.asString().contains(LAYERS_BASE));
+            Assert.assertTrue(path.asString().contains(LAYERS_BASE) || path.asString().matches(".*org.jboss.jboss-dmr.*"));
         }
 
         op = Util.createEmptyOperation("list-resource-loader-paths", SERVER_PA);

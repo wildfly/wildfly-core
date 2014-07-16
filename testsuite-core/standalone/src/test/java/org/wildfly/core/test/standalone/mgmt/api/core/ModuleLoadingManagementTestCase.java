@@ -88,7 +88,8 @@ public class ModuleLoadingManagementTestCase extends ContainerResourceMgmtTestBa
         List<ModelNode> hostResult = validateResponse(response).asList();
         Assert.assertTrue(hostResult.size() > 0);
         for (ModelNode path : hostResult) {
-            Assert.assertTrue(path.asString().contains(LAYERS_BASE));
+            //result will different depending on if artifact or resource is in use
+            Assert.assertTrue("Failed " + hostResult, path.asString().contains(LAYERS_BASE) || path.asString().matches(".*org.jboss.jboss-dmr.*"));
         }
     }
 }
