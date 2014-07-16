@@ -330,6 +330,20 @@ public interface RejectAttributeChecker {
         }
     };
 
+
+    RejectAttributeChecker ALL = new DefaultRejectAttributeChecker() {
+        @Override
+        public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+            return ControllerLogger.ROOT_LOGGER.attributesMustBeDefined(attributes.keySet());
+        }
+
+        @Override
+        protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode attributeValue,
+                                          TransformationContext context) {
+            return true;
+        }
+    };
+
     /**
      * Rejects the attribute if the value is equal to the specified value.
      */
