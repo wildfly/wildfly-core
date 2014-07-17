@@ -52,8 +52,6 @@ class JvmTransformers {
     public static void registerTransformers1_3_AndBelow(ResourceTransformationDescriptionBuilder parent) {
         parent.addChildResource(JvmResourceDefinition.GLOBAL.getPathElement())
             .getAttributeBuilder()
-            //.setDiscard(DiscardAttributeChecker.UNDEFINED, LAUNCH_COMMAND)
-            //.addRejectCheck(RejectAttributeChecker.DEFINED, LAUNCH_COMMAND)
             .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AGENT_PATH, HEAP_SIZE, JAVA_HOME, MAX_HEAP_SIZE,
                     PERMGEN_SIZE, MAX_PERMGEN_SIZE,
                     STACK_SIZE, OPTIONS, ENVIRONMENT_VARIABLES, ENV_CLASSPATH_IGNORED, AGENT_LIB, JAVA_AGENT)

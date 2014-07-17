@@ -75,7 +75,8 @@ public interface TransformersSubRegistration {
     /**
      * Register a sub resource.
      *
-     * @param element the path element     * @param resourceTransformer the resource transformer
+     * @param element the path element
+     * @param resourceTransformer the resource transformer
      * @param operationTransformer the default operation transformer
      * @return the transformers sub registration
      */
@@ -100,10 +101,10 @@ public interface TransformersSubRegistration {
      * @param resourceTransformer the resource transformer
      * @param operationTransformer the default operation transformer
      * @param inherited {@code true} to make the default operation transformer inherited
-     * @param placeholder {@code true} if the transformers are placeholders and will do more work when resolving the children
+     * @param placeholder {@code true} if the transformers are placeholders and are responsible for resolving the children
      * @return the transformers sub registration
      */
-    TransformersSubRegistration registerSubResource(PathElement element, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean inherited, boolean handleAllChildren);
+    TransformersSubRegistration registerSubResource(PathElement element, PathAddressTransformer pathAddressTransformer, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean inherited, boolean placeholder);
 
     /**
      * Register a sub resource.

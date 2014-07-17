@@ -91,6 +91,7 @@ public interface TransformationDescriptionBuilder {
         /**
          * Create a chained builder instance
          *
+         * @param pathElement the child resource element which the chained transformers handle
          * @param currentVersion the current version of the model containing the resource being transformed.
          */
         public static ChainedTransformationDescriptionBuilder createChainedInstance(PathElement pathElement, ModelVersion currentVersion) {

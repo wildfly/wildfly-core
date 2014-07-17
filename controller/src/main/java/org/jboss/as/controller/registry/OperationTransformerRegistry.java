@@ -89,6 +89,7 @@ public class OperationTransformerRegistry {
      * Resolve a resource transformer for a given address.
      *
      * @param address the address
+     * @param placeholderResolver a placeholder resolver used to resolve children of a placeholder registration
      * @return the resource transformer
      */
     public ResourceTransformerEntry resolveResourceTransformer(final PathAddress address, final PlaceholderResolver placeholderResolver) {
@@ -100,6 +101,7 @@ public class OperationTransformerRegistry {
      *
      * @param address the address
      * @param operationName the operation name
+     * @param placeholderResolver a placeholder resolver used to resolve children of a placeholder registration
      * @return the transformer entry
      */
     public OperationTransformerEntry resolveOperationTransformer(final PathAddress address, final String operationName, PlaceholderResolver placeholderResolver) {
@@ -128,6 +130,7 @@ public class OperationTransformerRegistry {
      * Get a list of path transformers for a given address.
      *
      * @param address the path address
+     * @param placeholderResolver a placeholder resolver used to resolve children of a placeholder registration
      * @return a list of path transformations
      */
     public List<PathAddressTransformer> getPathTransformations(final PathAddress address, PlaceholderResolver placeholderResolver) {
@@ -339,14 +342,6 @@ public class OperationTransformerRegistry {
         SubRegistry() {
             childrenUpdater.clear(this);
         }
-
-//        public OperationTransformerEntry resolveTransformer(Iterator<PathElement> iterator, String value, String operationName, PlaceholderResolver placeholderResolver) {
-//            final OperationTransformerRegistry reg = get(value);
-//            if(reg == null) {
-//                return null;
-//            }
-//            return reg.resolveOperationTransformer(iterator, operationName, placeholderResolver);
-//        }
 
         public OperationTransformerRegistry createChild(Iterator<PathElement> iterator, String value, final PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer, boolean placeholder) {
             if(! iterator.hasNext()) {
