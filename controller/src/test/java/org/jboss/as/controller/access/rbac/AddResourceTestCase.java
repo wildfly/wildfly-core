@@ -36,12 +36,12 @@ import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.constraint.VaultExpressionSensitivityConfig;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.access.management.ConstrainedResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -314,7 +314,7 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         }
     }
 
-    private static class ChildResourceDefinition extends TestResourceDefinition implements ConstrainedResourceDefinition {
+    private static class ChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
         private final List<AccessConstraintDefinition> constraints;
         private final List<AttributeDefinition> attributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
 

@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import java.util.List;
+
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -69,4 +72,11 @@ public interface ResourceDefinition {
      * @param resourceRegistration a {@link ManagementResourceRegistration} created from this definition
      */
     void registerChildren(final ManagementResourceRegistration resourceRegistration);
+
+    /**
+     * Get the definition of any access constraints associated with the resource.
+     *
+     * @return the access constraints or an empty list; will not return {@code null}.
+     */
+    List<AccessConstraintDefinition> getAccessConstraints();
 }

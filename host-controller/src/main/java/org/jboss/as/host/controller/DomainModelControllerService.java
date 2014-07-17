@@ -39,7 +39,6 @@ import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
-import javax.security.auth.callback.CallbackHandler;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -60,6 +59,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.security.auth.callback.CallbackHandler;
+
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
@@ -76,6 +77,7 @@ import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
@@ -1058,6 +1060,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
         @Override
         public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
             return delegate.getDescriptionProvider(resourceRegistration);
+        }
+
+        @Override
+        public List<AccessConstraintDefinition> getAccessConstraints() {
+            if (delegate == null) {
+                return Collections.emptyList();
+            }
+            return delegate.getAccessConstraints();
         }
     }
 

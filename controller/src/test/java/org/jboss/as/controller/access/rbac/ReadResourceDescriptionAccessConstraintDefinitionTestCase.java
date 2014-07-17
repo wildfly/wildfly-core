@@ -48,6 +48,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -55,7 +56,6 @@ import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
-import org.jboss.as.controller.access.management.ConstrainedResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -265,7 +265,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
         }
     }
 
-    private static class ConstrainedChildResourceDefinition extends TestResourceDefinition implements ConstrainedResourceDefinition {
+    private static class ConstrainedChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
         ConstrainedChildResourceDefinition(){
             super(PathElement.pathElement("constrained-resource"));
         }
@@ -304,7 +304,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
         }
     }
 
-    private static class ApplicationChildResourceDefinition extends TestResourceDefinition implements ConstrainedResourceDefinition {
+    private static class ApplicationChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
         ApplicationChildResourceDefinition(){
             super(PathElement.pathElement("application-resource"));
         }
