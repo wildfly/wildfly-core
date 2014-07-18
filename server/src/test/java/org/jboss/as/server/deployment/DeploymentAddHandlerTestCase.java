@@ -21,8 +21,15 @@
  */
 package org.jboss.as.server.deployment;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -31,12 +38,21 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
+import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.vfs.VirtualFile;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
+import static org.mockito.Matchers.eq;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
@@ -55,24 +71,40 @@ public class DeploymentAddHandlerTestCase {
         }
      * @throws OperationFailedException
      */
-    @Ignore("TODO: JBAS-9020: Archive deployments are not yet implemented")
     @Test
-    public void testContent() throws OperationFailedException {
+    public void testContent() throws OperationFailedException, URISyntaxException {
         final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
         final OperationContext context = Mockito.mock(OperationContext.class);
+        final Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(resource.getModel()).thenReturn(new ModelNode());
         Mockito.when(context.getResult()).thenReturn(new ModelNode());
-        Mockito.when(context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel()).thenReturn(new ModelNode());
+        Mockito.when(context.createResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
+        Mockito.when(context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
         Mockito.when(context.getProcessType()).thenReturn(ProcessType.STANDALONE_SERVER);
         Mockito.when(context.getRunningMode()).thenReturn(RunningMode.NORMAL);
         Mockito.when(context.isNormalServer()).thenReturn(true);
+        final ServiceRegistry registry = Mockito.mock(ServiceRegistry.class);
+        final ServiceController service = Mockito.mock(ServiceController.class);
+        final PathManager pathManager = Mockito.mock(PathManager.class);
+        File war = new File(DeploymentAddHandler.class.getClassLoader().getResource("test.war").toURI());
+        ModelNode urlNode = new ModelNode(war.toURI().toString());
+        Mockito.when(context.resolveExpressions(eq(urlNode))).thenReturn(urlNode);
+        ModelNode enabledModelNode = new ModelNode(true);
+        Mockito.when(context.resolveExpressions(eq(enabledModelNode))).thenReturn(enabledModelNode);
+        Mockito.when(pathManager.resolveRelativePathEntry("test.war", "wildlfy")).thenReturn(war.getAbsolutePath());
+        Mockito.when(service.getValue()).thenReturn(pathManager);
+        Mockito.when(context.getServiceRegistry(true)).thenReturn(registry);
+        Mockito.when(registry.getService(PathManagerService.SERVICE_NAME)).thenReturn(service);
         final ModelNode operation = new ModelNode();
         //operation.get("address").setEmptyList().get(0).get("deployment").set("test.war");
         operation.get("address").get(0).setExpression("deployment", "test.war");
         operation.get("content").get(0).get("archive").set(true);
-        operation.get("content").get(0).get("path").set("test.war");
+        operation.get("content").get(0).get(DeploymentAttributes.CONTENT_PATH.getName()).set("test.war");
+        operation.get("content").get(0).get(RELATIVE_TO).set("wildlfy");
+        operation.get(ENABLED).set(true);
         handler.execute(context, operation);
-        Mockito.verify(context).addStep(Mockito.any(OperationStepHandler.class), OperationContext.Stage.RUNTIME);
-        Mockito.verify(context).stepCompleted();
+        Mockito.verify(context).addStep(Mockito.any(OperationStepHandler.class), Mockito.eq(OperationContext.Stage.MODEL));
+        Mockito.verify(context).completeStep(Mockito.any(OperationContext.ResultHandler.class));
 
     }
 
@@ -127,7 +159,33 @@ public class DeploymentAddHandlerTestCase {
 
         @Override
         public byte[] addContent(InputStream stream) throws IOException {
-            return null;
+            try {
+                MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+                ByteArrayOutputStream fos = new ByteArrayOutputStream();
+                try {
+                    DigestOutputStream dos = new DigestOutputStream(fos, messageDigest);
+                    BufferedInputStream bis = new BufferedInputStream(stream);
+                    byte[] bytes = new byte[8192];
+                    int read;
+                    while ((read = bis.read(bytes)) > -1) {
+                        dos.write(bytes, 0, read);
+                    }
+                    fos.flush();
+                    fos.close();
+                    fos = null;
+                } finally {
+                    if (fos != null) {
+                        try {
+                            fos.close();
+                        } catch (Exception ignore) {
+                            //
+                        }
+                    }
+                }
+                return messageDigest.digest();
+            } catch (NoSuchAlgorithmException e) {
+                throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotObtainSha1(e, MessageDigest.class.getSimpleName());
+            }
         }
 
         @Override
