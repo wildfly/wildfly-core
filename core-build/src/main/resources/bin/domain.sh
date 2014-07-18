@@ -203,6 +203,7 @@ while true; do
          \"-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties\" \
          -jar \"$JBOSS_HOME/jboss-modules.jar\" \
          -mp \"${JBOSS_MODULEPATH}\" \
+         $MODULE_OPTS \
          org.jboss.as.process-controller \
          -jboss-home \"$JBOSS_HOME\" \
          -jvm \"$JAVA_FROM_JVM\" \
@@ -222,6 +223,7 @@ while true; do
          \"-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties\" \
          -jar \"$JBOSS_HOME/jboss-modules.jar\" \
          -mp \"${JBOSS_MODULEPATH}\" \
+         $MODULE_OPTS \
          org.jboss.as.process-controller \
          -jboss-home \"$JBOSS_HOME\" \
          -jvm \"$JAVA_FROM_JVM\" \

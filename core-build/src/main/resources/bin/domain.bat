@@ -156,6 +156,7 @@ echo.
  "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\process-controller.log" ^
  "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
     -jar "%JBOSS_HOME%\jboss-modules.jar" ^
+    %MODULE_OPTS% ^
     -mp "%JBOSS_MODULEPATH%" ^
      org.jboss.as.process-controller ^
     -jboss-home "%JBOSS_HOME%" ^

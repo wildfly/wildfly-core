@@ -55,6 +55,9 @@ set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.system.pkgs=org.jboss.byteman"
 rem # Use JBoss Modules lockless mode
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.lockless=true"
 
+rem # Uncomment this to add various Jboss Modules options
+rem set "MODULE_OPTS=%MODULE_OPTS% -addindex"
+
 rem The ProcessController process uses its own set of java options
 set "PROCESS_CONTROLLER_JAVA_OPTS=%JAVA_OPTS%"
 
