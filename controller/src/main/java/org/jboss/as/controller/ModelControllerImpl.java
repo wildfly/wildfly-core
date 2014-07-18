@@ -73,6 +73,8 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.extension.ExtensionAddHandler;
 import org.jboss.as.controller.extension.ParallelExtensionAddHandler;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.notification.NotificationRegistry;
+import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -124,6 +126,8 @@ class ModelControllerImpl implements ModelController {
     private final ConcurrentMap<Integer, OperationContextImpl> activeOperations = new ConcurrentHashMap<>();
     private final ManagedAuditLogger auditLogger;
 
+    private final NotificationSupport notificationSupport;
+
     /** Tracks the relationship between domain resources and hosts and server groups */
     private final HostServerGroupTracker hostServerGroupTracker;
     private final Resource.ResourceEntry modelControllerResource;
@@ -133,7 +137,7 @@ class ModelControllerImpl implements ModelController {
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer,
-                        final ManagedAuditLogger auditLogger) {
+                        final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport) {
         this.serviceRegistry = serviceRegistry;
         this.serviceTarget = serviceTarget;
         this.rootRegistration = rootRegistration;
@@ -141,6 +145,7 @@ class ModelControllerImpl implements ModelController {
         this.persister = persister;
         this.processType = processType;
         this.runningModeControl = runningModeControl;
+        this.notificationSupport = notificationSupport;
         this.prepareStep = prepareStep == null ? new DefaultPrepareStepHandler() : prepareStep;
         this.processState = processState;
         this.serviceTarget.addListener(stateMonitor);
@@ -277,7 +282,7 @@ class ModelControllerImpl implements ModelController {
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, model, originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism);
+                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
@@ -331,7 +336,7 @@ class ModelControllerImpl implements ModelController {
         final OperationContextImpl context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, model, control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null);
+                hostServerGroupTracker, null, null, notificationSupport);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -350,7 +355,7 @@ class ModelControllerImpl implements ModelController {
             // Success. Now any extension handlers are registered. Continue with remaining ops
             final OperationContextImpl postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
-                    contextFlags, handler, null, model, control, processState, auditLogger, bootingFlag.get(), hostServerGroupTracker, null, null);
+                    contextFlags, handler, null, model, control, processState, auditLogger, bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -703,6 +708,15 @@ class ModelControllerImpl implements ModelController {
 
     ServiceTarget getServiceTarget() {
         return serviceTarget;
+    }
+
+    @Override
+    public NotificationRegistry getNotificationRegistry() {
+        return notificationSupport.getNotificationRegistry();
+    }
+
+    NotificationSupport getNotificationSupport() {
+        return notificationSupport;
     }
 
     ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
