@@ -23,8 +23,6 @@
 package org.jboss.as.remoting;
 
 
-import java.util.Map;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -44,7 +42,6 @@ import org.jboss.as.controller.transform.description.ChainedTransformationDescri
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
 
@@ -130,10 +127,7 @@ public class RemotingExtension implements Extension {
         //1.2.0 to 1.1.0
         buildTransformers_1_1(chainedBuilder.createBuilder(VERSION_1_2, VERSION_1_1));
 
-        ModelVersion[] versions = new ModelVersion[] {VERSION_1_1, VERSION_1_2, VERSION_1_3};
-        for (Map.Entry<ModelVersion, TransformationDescription> entry : chainedBuilder.build(versions).entrySet()) {
-            TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
-        }
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_1, VERSION_1_2, VERSION_1_3});
     }
 
     private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {

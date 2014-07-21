@@ -170,6 +170,5 @@ public interface TransformationDescription {
             subRegistration.discardOperations(description.getDiscardedOperations().toArray(new String[description.getDiscardedOperations().size()]));
             return subRegistration;
         }
-
     }
 }
