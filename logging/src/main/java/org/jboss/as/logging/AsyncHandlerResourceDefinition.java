@@ -30,6 +30,7 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
 
 import java.util.Locale;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -145,12 +146,13 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
                         .addOperationTransformationOverride(REMOVE_HANDLER_OPERATION_NAME)
                             .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
                             .end();
+                break;
             }
-            case VERSION_1_2_0:
             case VERSION_1_3_0: {
                 // These attributes at some point made it on the resource model, but should have never been there. They
                 // are not used by the handler and not persisted to the XML. Discarding them should have no effect.
                 attributeBuilder.setDiscard(DiscardAttributeChecker.ALWAYS, FORMATTER, ENCODING);
+                break;
             }
         }
         attributeBuilder.end();

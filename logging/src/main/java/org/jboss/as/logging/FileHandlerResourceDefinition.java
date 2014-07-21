@@ -57,6 +57,7 @@ class FileHandlerResourceDefinition extends AbstractFileHandlerDefinition {
                         .getAttributeBuilder()
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, APPEND, FILE)
                         .end();
+                break;
             }
         }
     }

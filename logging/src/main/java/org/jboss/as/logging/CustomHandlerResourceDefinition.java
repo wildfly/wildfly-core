@@ -54,6 +54,7 @@ class CustomHandlerResourceDefinition extends AbstractHandlerDefinition {
                         .getAttributeBuilder()
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PROPERTIES)
                         .end();
+                break;
             }
         }
     }

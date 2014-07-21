@@ -59,9 +59,7 @@ class ResourceTransformationDescriptionBuilderImpl extends AbstractTransformatio
 
     @Override
     public ResourceTransformationDescriptionBuilder addChildResource(final ResourceDefinition definition) {
-        final ResourceTransformationDescriptionBuilderImpl builder = new ResourceTransformationDescriptionBuilderImpl(definition.getPathElement());
-        children.add(builder);
-        return builder;
+        return addChildResource(definition.getPathElement());
     }
 
     @Override

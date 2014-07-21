@@ -22,13 +22,13 @@
 
 package org.jboss.as.domain.controller.transformers;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.transform.TransformationContext;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.AttributeConverter;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -41,8 +41,15 @@ import org.jboss.dmr.ModelType;
  */
 class ServerGroupTransformers {
 
-    static void registerTransformers120(TransformersSubRegistration parent) {
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(ServerGroupResourceDefinition.PATH)
+    public static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(ServerGroupResourceDefinition.PATH, currentVersion);
+
+        //////////////////////////////////
+        //The EAP/AS 7.x chains
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_4);
+        JvmTransformers.registerTransformers2_1_AndBelow(builder);
+
+        builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3)
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT, ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET)
                 .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
@@ -56,17 +63,16 @@ class ServerGroupTransformers {
                     }
                 }, ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT)
                 .end();
-        TransformersSubRegistration serverGroup = TransformationDescription.Tools.register(builder.build(), parent);
+        DeploymentTransformers.registerTransformers1_3_AndBelow(builder);
+        SystemPropertyTransformers.registerTransformers1_3_AndBelow(builder);
+        JvmTransformers.registerTransformers1_3_AndBelow(builder);
 
-        DeploymentTransformers.registerTransformers120(serverGroup);
+        //////////////////////////////////
+        //The WildFly chains
 
-        SystemPropertyTransformers.registerTransformers120(serverGroup);
-        JvmTransformers.registerTransformers120(serverGroup);
-    }
+        builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_2_1);
+        JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
-    static void registerTransformers14_21(TransformersSubRegistration parent) {
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(ServerGroupResourceDefinition.PATH);
-        TransformersSubRegistration serverGroup = TransformationDescription.Tools.register(builder.build(), parent);
-        JvmTransformers.registerTransformers14_21(serverGroup);
+        return chainedBuilder;
     }
 }

@@ -24,6 +24,7 @@ package org.jboss.as.controller.transform.description;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
@@ -93,9 +94,16 @@ public interface TransformationDescription {
     /**
      * operations that must be flat out discarded and not forwarded
      *
-     * @return list of discarded operations
+     * @return set of discarded operations
      */
-    List<String> getDiscardedOperations();
+    Set<String> getDiscardedOperations();
+
+    /**
+     * Return {@code} true if this description is a placeholder. This is currently only true for chained descriptions
+     *
+     * @return {@code true} if a placeholder.
+     */
+    boolean isPlaceHolder();
 
     public static final class Tools {
 
@@ -117,7 +125,8 @@ public interface TransformationDescription {
                             description.getPathAddressTransformer(),
                             description.getResourceTransformer(),
                             description.getOperationTransformer(),
-                            description.isInherited());
+                            description.isInherited(),
+                            description.isPlaceHolder());
             for (final Map.Entry<String, OperationTransformer> entry : description.getOperationTransformers().entrySet()) {
                 registration.registerOperationTransformer(entry.getKey(), entry.getValue());
             }
@@ -149,7 +158,9 @@ public interface TransformationDescription {
          * @return the create sub registration
          */
         public static TransformersSubRegistration register(TransformationDescription description, SubsystemRegistration registration, ModelVersionRange range) {
-            final TransformersSubRegistration subRegistration = registration.registerModelTransformers(range, description.getResourceTransformer(), description.getOperationTransformer());
+            final TransformersSubRegistration subRegistration = registration.registerModelTransformers(range, description.getResourceTransformer(),
+                    description.getOperationTransformer(), description.isPlaceHolder());
+
             for (final Map.Entry<String, OperationTransformer> entry : description.getOperationTransformers().entrySet()) {
                 subRegistration.registerOperationTransformer(entry.getKey(), entry.getValue());
             }

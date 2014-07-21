@@ -28,6 +28,7 @@ import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 import static org.jboss.as.logging.Logging.createOperationFailure;
 
 import java.util.List;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -180,13 +181,10 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
-            case VERSION_1_1_0:
-            case VERSION_1_2_0:
             case VERSION_1_3_0:
                 rootResourceBuilder.rejectChildResource(CUSTOM_FORMATTER_PATH);
-                if (loggingProfileBuilder != null) {
-                    loggingProfileBuilder.rejectChildResource(CUSTOM_FORMATTER_PATH);
-                }
+                loggingProfileBuilder.rejectChildResource(CUSTOM_FORMATTER_PATH);
+                break;
         }
     }
 }

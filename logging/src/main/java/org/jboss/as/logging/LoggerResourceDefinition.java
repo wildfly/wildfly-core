@@ -199,14 +199,13 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
                             .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
                             .inheritResourceAttributeDefinitions()
                             .end();
+                    break;
                 }
-                case VERSION_1_2_0:
                 case VERSION_1_3_0: {
                     resourceBuilder.setCustomResourceTransformer(new LoggingResourceTransformer(CATEGORY));
-                    if (loggingProfileBuilder != null) {
-                        final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-                        loggingProfileResourceBuilder.setCustomResourceTransformer(new LoggingResourceTransformer(CATEGORY));
-                    }
+                    final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
+                    loggingProfileResourceBuilder.setCustomResourceTransformer(new LoggingResourceTransformer(CATEGORY));
+                    break;
                 }
             }
         }

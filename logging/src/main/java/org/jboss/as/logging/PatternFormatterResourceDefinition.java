@@ -186,6 +186,7 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
                 if (loggingProfileBuilder != null) {
                     loggingProfileBuilder.rejectChildResource(PATTERN_FORMATTER_PATH);
                 }
+                break;
         }
     }
 }

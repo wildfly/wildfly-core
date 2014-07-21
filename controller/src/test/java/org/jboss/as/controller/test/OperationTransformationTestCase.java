@@ -136,13 +136,13 @@ public class OperationTransformationTestCase {
         final PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"));
         final OperationTransformerRegistry localRegistry = registry.create(ModelVersion.create(1, 0, 0), Collections.<PathAddress, ModelVersion>emptyMap());
 
-        OperationTransformerRegistry.OperationTransformerEntry entry = localRegistry.resolveOperationTransformer(address, "testing");
+        OperationTransformerRegistry.OperationTransformerEntry entry = localRegistry.resolveOperationTransformer(address, "testing", null);
         Assert.assertSame(OperationTransformerRegistry.FORWARD, entry);
 
         registry.registerTransformer(address, 1, 0, "testing", NOOP_TRANSFORMER);
         localRegistry.mergeSubsystem(registry, "test", ModelVersion.create(1, 0));
 
-        entry = localRegistry.resolveOperationTransformer(address, "testing");
+        entry = localRegistry.resolveOperationTransformer(address, "testing", null);
         Assert.assertNotNull(entry);
         Assert.assertSame(NOOP_TRANSFORMER, entry.getTransformer());
 
@@ -166,11 +166,11 @@ public class OperationTransformationTestCase {
 
         final OperationTransformerRegistry server = transformers.resolveServer(ModelVersion.create(1, 2, 3), subsystems);
         Assert.assertNotNull(server);
-        Assert.assertEquals(transformer, server.resolveOperationTransformer(address, "test").getTransformer());
+        Assert.assertEquals(transformer, server.resolveOperationTransformer(address, "test", null).getTransformer());
         final OperationTransformerRegistry host = transformers.resolveHost(ModelVersion.create(1, 2, 3), subsystems);
         Assert.assertNotNull(host);
-        Assert.assertNotSame(transformer, host.resolveOperationTransformer(address, "test").getTransformer());
-        Assert.assertEquals(transformer, host.resolveOperationTransformer(profile.append(address), "test").getTransformer());
+        Assert.assertNotSame(transformer, host.resolveOperationTransformer(address, "test", null).getTransformer());
+        Assert.assertEquals(transformer, host.resolveOperationTransformer(profile.append(address), "test", null).getTransformer());
     }
 
     @Test
@@ -251,7 +251,7 @@ public class OperationTransformationTestCase {
     protected ModelNode transform(final PathAddress address, final ModelNode operation, int major, int minor) throws OperationFailedException {
         final String operationName = operation.require(ModelDescriptionConstants.OP).asString();
         final OperationTransformerRegistry transformerRegistry = registry.create(ModelVersion.create(major, minor), Collections.<PathAddress, ModelVersion>emptyMap());
-        final OperationTransformerRegistry.OperationTransformerEntry entry = transformerRegistry.resolveOperationTransformer(address, operationName);
+        final OperationTransformerRegistry.OperationTransformerEntry entry = transformerRegistry.resolveOperationTransformer(address, operationName, null);
         if (entry.getTransformer() == OperationTransformer.DISCARD) {
             return null;
         } else {

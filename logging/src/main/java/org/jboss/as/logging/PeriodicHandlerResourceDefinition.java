@@ -65,6 +65,7 @@ class PeriodicHandlerResourceDefinition extends AbstractFileHandlerDefinition {
                         .getAttributeBuilder()
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, APPEND, FILE, SUFFIX)
                         .end();
+                break;
             }
         }
     }

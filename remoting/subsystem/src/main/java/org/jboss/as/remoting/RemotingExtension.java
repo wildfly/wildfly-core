@@ -23,6 +23,8 @@
 package org.jboss.as.remoting;
 
 
+import java.util.Map;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -38,11 +40,12 @@ import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
-import org.jboss.as.controller.transform.description.AttributeTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
+import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -110,21 +113,35 @@ public class RemotingExtension implements Extension {
         subsystem.registerSubModel(GenericOutboundConnectionResourceDefinition.INSTANCE);
 
         if (context.isRegisterTransformers()) {
-            registerTransformers_1_1(registration);
-            registerTransformers_1_2(registration);
-            registerTransformers_1_3(registration);
+            registerTransformers(registration);
         }
     }
 
-    private void registerTransformers_1_1(SubsystemRegistration registration) {
+    private void registerTransformers(SubsystemRegistration registration) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        ResourceTransformationDescriptionBuilder builder = ResourceTransformationDescriptionBuilder.Factory.createSubsystemInstance();
+
+
+        //Current 2.1.0 to 1.3.0
+        buildTransformers_1_3(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_1_3));
+
+        //1.3.0 to 1.2.0 (do nothing)
+
+        //1.2.0 to 1.1.0
+        buildTransformers_1_1(chainedBuilder.createBuilder(VERSION_1_2, VERSION_1_1));
+
+        ModelVersion[] versions = new ModelVersion[] {VERSION_1_1, VERSION_1_2, VERSION_1_3};
+        for (Map.Entry<ModelVersion, TransformationDescription> entry : chainedBuilder.build(versions).entrySet()) {
+            TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
+        }
+    }
+
+    private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
+
         builder.getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, RemotingSubsystemRootResource.ATTRIBUTES);
 
         builder.rejectChildResource(HttpConnectorResource.PATH);
-
-        endpointTransform(builder);
 
         ResourceTransformationDescriptionBuilder connector = builder.addChildResource(ConnectorResource.PATH);
         connector.addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE);
@@ -134,8 +151,8 @@ public class RemotingExtension implements Extension {
         sasl.addChildResource(SaslPolicyResource.INSTANCE).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, SaslPolicyResource.ATTRIBUTES);
         sasl.addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE);
 
-        protocolTransform(builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS)
-                .getAttributeBuilder()).addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, RemoteOutboundConnectionResourceDefinition.USERNAME).end()
+        builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, RemoteOutboundConnectionResourceDefinition.USERNAME).end()
                 .addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE).end();
 
         builder.addChildResource(LocalOutboundConnectionResourceDefinition.ADDRESS)
@@ -143,34 +160,16 @@ public class RemotingExtension implements Extension {
 
         builder.addChildResource(GenericOutboundConnectionResourceDefinition.ADDRESS)
                 .addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE).end();
-
-        TransformationDescription.Tools.register(builder.build(), registration, VERSION_1_1);
     }
 
-    private void registerTransformers_1_2(SubsystemRegistration registration) {
-        TransformationDescription.Tools.register(get1_2_0_1_3_0Description(), registration, VERSION_1_2);
-    }
-
-    private void registerTransformers_1_3(SubsystemRegistration registration) {
-        TransformationDescription.Tools.register(get1_2_0_1_3_0Description(), registration, VERSION_1_3);
-    }
-
-    private static TransformationDescription get1_2_0_1_3_0Description() {
-        ResourceTransformationDescriptionBuilder builder = ResourceTransformationDescriptionBuilder.Factory.createSubsystemInstance();
+    private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
         builder.rejectChildResource(HttpConnectorResource.PATH);
 
         endpointTransform(builder);
 
-        protocolTransform(builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS)
-                .getAttributeBuilder());
-
-        return builder.build();
-    }
-
-    private static AttributeTransformationDescriptionBuilder protocolTransform(AttributeTransformationDescriptionBuilder builder) {
-        builder.setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(Protocol.REMOTE.toString())), RemoteOutboundConnectionResourceDefinition.PROTOCOL)
+        builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(Protocol.REMOTE.toString())), RemoteOutboundConnectionResourceDefinition.PROTOCOL)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL);
-        return builder;
     }
 
     private static ResourceTransformationDescriptionBuilder endpointTransform(ResourceTransformationDescriptionBuilder parent) {
