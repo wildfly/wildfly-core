@@ -222,27 +222,29 @@ public class LoggingExtension implements Extension {
         registration.registerSubModel(CustomFormatterResourceDefinition.INSTANCE);
 
         if (registerTransformers) {
-            registerTransformers(
-                    new SubsystemDefinitions(
-                            subsystemResourceDefinition,
-                            rootLoggerResourceDefinition,
-                            loggerResourceDefinition,
-                            asyncHandlerResourceDefinition,
-                            consoleHandlerResourceDefinition,
-                            fileHandlerResourceDefinition,
-                            periodicHandlerResourceDefinition,
-                            sizeRotatingHandlerResourceDefinition,
-                            customHandlerResourceDefinition), subsystem);
+            registerTransformers(subsystem,
+                    subsystemResourceDefinition,
+                    rootLoggerResourceDefinition,
+                    loggerResourceDefinition,
+                    asyncHandlerResourceDefinition,
+                    consoleHandlerResourceDefinition,
+                    fileHandlerResourceDefinition,
+                    periodicHandlerResourceDefinition,
+                    sizeRotatingHandlerResourceDefinition,
+                    customHandlerResourceDefinition,
+                    SyslogHandlerResourceDefinition.INSTANCE,
+                    PatternFormatterResourceDefinition.INSTANCE,
+                    CustomFormatterResourceDefinition.INSTANCE);
         }
     }
 
-    private void registerTransformers(SubsystemDefinitions defs, SubsystemRegistration registration) {
+    private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
         //Current 3.0.0 to 1.3.0 (there are no transformers for 2.0.0 at present so we don't bother with that one for now)
-        registerTransformers(defs, chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_3_0);
-        registerTransformers(defs, chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0);
-        registerTransformers(defs, chainedBuilder, KnownModelVersion.VERSION_1_2_0, KnownModelVersion.VERSION_1_1_0);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_3_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_2_0, KnownModelVersion.VERSION_1_1_0, defs);
 
         ModelVersion[] versions = new ModelVersion[] {
                 KnownModelVersion.VERSION_1_1_0.getModelVersion(),
@@ -253,11 +255,11 @@ public class LoggingExtension implements Extension {
         }
     }
 
-    private void registerTransformers(SubsystemDefinitions defs, ChainedTransformationDescriptionBuilder chainedBuilder, KnownModelVersion fromVersion, KnownModelVersion toVersion) {
-        registerTransformers(defs, chainedBuilder, fromVersion.getModelVersion(), toVersion);
+    private void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final KnownModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
+        registerTransformers(chainedBuilder, fromVersion.getModelVersion(), toVersion, defs);
     }
 
-    private void registerTransformers(SubsystemDefinitions defs, ChainedTransformationDescriptionBuilder chainedBuilder, ModelVersion fromVersion, KnownModelVersion toVersion) {
+    private void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final ModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
         final ResourceTransformationDescriptionBuilder subsystemBuilder = chainedBuilder.createBuilder(fromVersion, toVersion.getModelVersion());
         final ResourceTransformationDescriptionBuilder loggingProfileBuilder;
         if (toVersion == KnownModelVersion.VERSION_1_1_0) {
@@ -268,49 +270,8 @@ public class LoggingExtension implements Extension {
             loggingProfileBuilder = subsystemBuilder.addChildResource(LOGGING_PROFILE_PATH);
         }
 
-        // Register the transformers
-        defs.subsystemResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.rootLoggerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.loggerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.asyncHandlerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.consoleHandlerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.fileHandlerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.periodicHandlerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.sizeRotatingHandlerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        defs.customHandlerResourceDefinition.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        SyslogHandlerResourceDefinition.INSTANCE.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        PatternFormatterResourceDefinition.INSTANCE.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-        CustomFormatterResourceDefinition.INSTANCE.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
-    }
-
-    private static class SubsystemDefinitions {
-        final LoggingRootResource subsystemResourceDefinition;
-        final RootLoggerResourceDefinition rootLoggerResourceDefinition;
-        final LoggerResourceDefinition loggerResourceDefinition;
-        final AsyncHandlerResourceDefinition asyncHandlerResourceDefinition;
-        final ConsoleHandlerResourceDefinition consoleHandlerResourceDefinition;
-        final FileHandlerResourceDefinition fileHandlerResourceDefinition;
-        final PeriodicHandlerResourceDefinition periodicHandlerResourceDefinition;
-        final SizeRotatingHandlerResourceDefinition sizeRotatingHandlerResourceDefinition;
-        final CustomHandlerResourceDefinition customHandlerResourceDefinition;
-
-        public SubsystemDefinitions(LoggingRootResource subsystemResourceDefinition,
-                RootLoggerResourceDefinition rootLoggerResourceDefinition, LoggerResourceDefinition loggerResourceDefinition,
-                AsyncHandlerResourceDefinition asyncHandlerResourceDefinition,
-                ConsoleHandlerResourceDefinition consoleHandlerResourceDefinition,
-                FileHandlerResourceDefinition fileHandlerResourceDefinition,
-                PeriodicHandlerResourceDefinition periodicHandlerResourceDefinition,
-                SizeRotatingHandlerResourceDefinition sizeRotatingHandlerResourceDefinition,
-                CustomHandlerResourceDefinition customHandlerResourceDefinition) {
-            this.subsystemResourceDefinition = subsystemResourceDefinition;
-            this.rootLoggerResourceDefinition = rootLoggerResourceDefinition;
-            this.loggerResourceDefinition = loggerResourceDefinition;
-            this.asyncHandlerResourceDefinition = asyncHandlerResourceDefinition;
-            this.consoleHandlerResourceDefinition = consoleHandlerResourceDefinition;
-            this.fileHandlerResourceDefinition = fileHandlerResourceDefinition;
-            this.periodicHandlerResourceDefinition = periodicHandlerResourceDefinition;
-            this.sizeRotatingHandlerResourceDefinition = sizeRotatingHandlerResourceDefinition;
-            this.customHandlerResourceDefinition = customHandlerResourceDefinition;
+        for (TransformerResourceDefinition def : defs) {
+            def.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
         }
     }
 
