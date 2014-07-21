@@ -48,6 +48,10 @@ public class ListAttributeDefinitionTestCase {
             }
 
             @Override
+            public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
+            }
+
+            @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 final PrimitiveListAttributeDefinition attr = PrimitiveListAttributeDefinition.Builder.of(MY_LIST_OF_STRINGS, STRING).build();
                 resourceRegistration.registerReadOnlyAttribute(attr, null);
@@ -85,6 +89,10 @@ public class ListAttributeDefinitionTestCase {
 
             @Override
             public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+            }
+
+            @Override
+            public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
             }
 
             @Override
