@@ -18,11 +18,12 @@
  */
 package org.jboss.as.server.deployment;
 
+import java.io.File;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FULL_REPLACE_DEPLOYMENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
@@ -35,6 +36,7 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidCont
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -45,12 +47,18 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 
 /**
  * Handles replacement in the runtime of one deployment by another.
@@ -129,7 +137,15 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
             content.add(contentItemNode);
         } else {
             contentItem = addUnmanaged(context, contentItemNode);
-            newHash = null;
+            if (contentItem.getHash() != null) {
+                newHash = contentItem.getHash();
+                contentItemNode = new ModelNode();
+                contentItemNode.get(CONTENT_HASH.getName()).set(newHash);
+                content.clear();
+                content.add(contentItemNode);
+            } else {
+                newHash = null;
+            }
         }
 
         // deploymentModel.get(NAME).set(name); // already there
@@ -200,6 +216,20 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         final String path = CONTENT_PATH.resolveModelAttribute(context, contentItemNode).asString();
         final String relativeTo = asString(contentItemNode, CONTENT_RELATIVE_TO.getName());
         final boolean archive = CONTENT_ARCHIVE.resolveModelAttribute(context, contentItemNode).asBoolean();
+        if (archive) {
+            ServiceController<PathManager> service = (ServiceController<PathManager>) context.getServiceRegistry(true).getService(PathManagerService.SERVICE_NAME);
+            if (service != null) {
+                PathManager pathManager = service.getValue();
+                File deployedArchive = new File(pathManager.resolveRelativePathEntry(path, relativeTo));
+                if (deployedArchive.exists() && deployedArchive.isFile()) {
+                    try {
+                        contentItemNode.get(URL).set(deployedArchive.toURI().toURL().toString());
+                        return addFromContentAdditionParameter(context, contentItemNode);
+                    } catch (MalformedURLException ex) {
+                    }
+                }
+            }
+        }
         return new DeploymentHandlerUtil.ContentItem(path, relativeTo, archive);
     }
 

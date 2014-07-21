@@ -18,6 +18,8 @@
  */
 package org.jboss.as.server.deployment;
 
+import java.io.File;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -37,6 +39,7 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidCont
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.HashUtil;
@@ -49,11 +52,16 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 
 /**
  * Handles addition of a deployment to the model.
@@ -119,7 +127,14 @@ public class DeploymentAddHandler implements OperationStepHandler {
             content.add(contentItemNode);
             newModel.get(CONTENT_ALL.getName()).set(content);
         } else {
-            contentItem = addUnmanaged(contentItemNode);
+            contentItem = addUnmanaged(context, contentItemNode);
+            if (contentItem.getHash() != null) {
+                contentItemNode = new ModelNode();
+                contentItemNode.get(CONTENT_HASH.getName()).set(contentItem.getHash());
+                content = new ModelNode();
+                content.add(contentItemNode);
+                newModel.get(CONTENT_ALL.getName()).set(content);
+            }
         }
 
         if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
@@ -212,10 +227,24 @@ public class DeploymentAddHandler implements OperationStepHandler {
         return new DeploymentHandlerUtil.ContentItem(hash);
     }
 
-    DeploymentHandlerUtil.ContentItem addUnmanaged(ModelNode contentItemNode) throws OperationFailedException {
+    DeploymentHandlerUtil.ContentItem addUnmanaged(OperationContext context, ModelNode contentItemNode) throws OperationFailedException {
         final String path = contentItemNode.require(CONTENT_PATH.getName()).asString();
         final String relativeTo = asString(contentItemNode, CONTENT_RELATIVE_TO.getName());
         final boolean archive = contentItemNode.require(CONTENT_ARCHIVE.getName()).asBoolean();
+        if (archive) {
+            ServiceController<PathManager> service = (ServiceController<PathManager>) context.getServiceRegistry(true).getService(PathManagerService.SERVICE_NAME);
+            if (service != null) {
+                PathManager pathManager = service.getValue();
+                File deployedArchive = new File(pathManager.resolveRelativePathEntry(path, relativeTo));
+                if (deployedArchive.exists() && deployedArchive.isFile()) {
+                    try {
+                        contentItemNode.get(URL).set(deployedArchive.toURI().toURL().toString());
+                        return addFromContentAdditionParameter(context, contentItemNode);
+                    } catch (MalformedURLException ex) {
+                    }
+                }
+            }
+        }
         return new DeploymentHandlerUtil.ContentItem(path, relativeTo, archive);
     }
 }
