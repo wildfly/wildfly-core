@@ -110,11 +110,17 @@ public class ExtensionRegistry {
     private final RunningModeControl runningModeControl;
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
-    // protected by extensions
-    private boolean unnamedMerged;
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create(this);
 
+    /**
+     * Constructor
+     *
+     * @param processType the type of the process
+     * @param runningModeControl the process' running mode
+     * @param auditLogger logger for auditing changes
+     * @param authorizer hook for exposing access control information to the JMX subsystem
+     */
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer) {
         this.processType = processType;
         this.runningModeControl = runningModeControl;
@@ -125,8 +131,8 @@ public class ExtensionRegistry {
     /**
      * Constructor
      *
-     * @param processType
-     * @param runningModeControl
+     * @param processType the type of the process
+     * @param runningModeControl the process' running mode
      * @deprecated Here for core-model-test and subsystem-test backwards compatibility
      */
     @Deprecated
@@ -213,12 +219,12 @@ public class ExtensionRegistry {
      * @return map of subsystem names to information about the subsystem.
      */
     public Map<String, SubsystemInformation> getAvailableSubsystems(String moduleName) {
-        mergeUnnamedParsers();
         Map<String, SubsystemInformation> result = null;
         final ExtensionInfo info = extensions.get(moduleName);
         if (info != null) {
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (info) {
-                return Collections.unmodifiableMap(new HashMap<String, SubsystemInformation>(info.subsystems));
+                result = Collections.unmodifiableMap(new HashMap<String, SubsystemInformation>(info.subsystems));
             }
         }
         return result;
@@ -264,36 +270,11 @@ public class ExtensionRegistry {
         return getExtensionContext(moduleName, true);
     }
 
-
-    /**
-     * Gets the URIs (in string form) of any XML namespaces
-     * {@link ExtensionParsingContext#setSubsystemXmlMapping(String, XMLElementReader) registered by an extension without an accompanying subsystem name}
-     * that could not be clearly associated with a single subsystem. If an extension registers namespaces with no
-     * subsystem names but only has a single subsystem, the namespace can be clearly associated with that single
-     * subsystem and will not appear as part of the result of this method.
-     *
-     * @param moduleName the name of the extension's module. Cannot be {@code null}
-     * @return the namespace URIs, or an empty set if there are none. Will not return {@code null}
-     */
-    public Set<String> getUnnamedNamespaces(final String moduleName) {
-        mergeUnnamedParsers();
-        Set<String> result;
-        ExtensionInfo extension = extensions.get(moduleName);
-        if (extension != null) {
-            synchronized (extension) {
-                result = new HashSet<String>(extension.unnamedParsers);
-            }
-        } else {
-            result = Collections.emptySet();
-        }
-
-        return result;
-    }
-
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
         Set<ProfileParsingCompletionHandler> result = new HashSet<ProfileParsingCompletionHandler>();
 
         for (ExtensionInfo extensionInfo : extensions.values()) {
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (extensionInfo) {
                 if (extensionInfo.parsingCompletionHandler != null) {
                     result.add(extensionInfo.parsingCompletionHandler);
@@ -321,6 +302,7 @@ public class ExtensionRegistry {
         final ManagementResourceRegistration deploymentsReg = deploymentsRegistration;
         ExtensionInfo extension = extensions.remove(moduleName);
         if (extension != null) {
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (extension) {
                 Set<String> subsystemNames = extension.subsystems.keySet();
                 for (String subsystem : subsystemNames) {
@@ -344,11 +326,6 @@ public class ExtensionRegistry {
                         }
                     }
                 }
-                if (extension.xmlMapper != null) {
-                    for (String namespace : extension.unnamedParsers) {
-                        extension.xmlMapper.unregisterRootElement(new QName(namespace, SUBSYSTEM));
-                    }
-                }
             }
         }
     }
@@ -363,7 +340,6 @@ public class ExtensionRegistry {
             transformerRegistry = TransformerRegistry.Factory.create(this);
             extensions.clear();
             reverseMap.clear();
-            unnamedMerged = false;
         }
     }
 
@@ -405,30 +381,6 @@ public class ExtensionRegistry {
         }
     }
 
-    /**
-     * Check and see if any namespaces not associated with a subystem belong to extensions with only 1 subsystem.
-     * If yes, associate them with that subsystem.
-     */
-    private void mergeUnnamedParsers() {
-        synchronized (extensions) {  // we synchronize just to guard unnamedMerged
-            if (!unnamedMerged) {
-                for (ExtensionInfo extension : extensions.values()) {
-                    synchronized (extension) {
-                        if (extension.unnamedParsers.size() > 0 && extension.subsystems.size() == 1) {
-                            // Only 1 subsystem; therefore we can merge
-                            SubsystemInformationImpl info = SubsystemInformationImpl.class.cast(extension.subsystems.values().iterator().next());
-                            for (String unnamed : extension.unnamedParsers) {
-                                info.addParsingNamespace(unnamed);
-                            }
-                            extension.unnamedParsers.clear();
-                        }
-                    }
-                }
-                unnamedMerged = true;
-            }
-        }
-    }
-
     public TransformerRegistry getTransformerRegistry() {
         return transformerRegistry;
     }
@@ -451,22 +403,6 @@ public class ExtensionRegistry {
             return processType;
         }
 
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void setSubsystemXmlMapping(String namespaceUri, XMLElementReader<List<ModelNode>> reader) {
-            assert namespaceUri != null : "namespaceUri is null";
-            synchronized (extensions) { // we synchronize just to protect unnamedMerged
-                synchronized (extension) {
-                    if (extension.xmlMapper != null) {
-                        extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), reader);
-                    }
-                    extension.unnamedParsers.add(namespaceUri);
-                }
-                unnamedMerged = false;
-            }
-        }
-
         @Override
         public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader) {
             assert subsystemName != null : "subsystemName is null";
@@ -477,18 +413,6 @@ public class ExtensionRegistry {
                     extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), reader);
                 }
             }
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void setDeploymentXmlMapping(String namespaceUri, XMLElementReader<ModelNode> reader) {
-            // ignored
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void setDeploymentXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<ModelNode> reader) {
-            // ignored
         }
 
         @Override
@@ -716,7 +640,6 @@ public class ExtensionRegistry {
 
     public class ExtensionInfo {
         private final Map<String, SubsystemInformation> subsystems = new HashMap<String, SubsystemInformation>();
-        private final Set<String> unnamedParsers = new HashSet<String>();
         private final String extensionModuleName;
         private XMLMapper xmlMapper;
         private ProfileParsingCompletionHandler parsingCompletionHandler;
