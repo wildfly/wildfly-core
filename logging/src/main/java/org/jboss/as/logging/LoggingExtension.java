@@ -211,6 +211,9 @@ public class LoggingExtension implements Extension {
         final PeriodicHandlerResourceDefinition periodicHandlerResourceDefinition = new PeriodicHandlerResourceDefinition(resolvePathHandler, includeLegacyAttributes);
         registration.registerSubModel(periodicHandlerResourceDefinition);
 
+        final PeriodicSizeRotatingHandlerResourceDefinition periodicSizeRotatingHandlerResourceDefinition = new PeriodicSizeRotatingHandlerResourceDefinition(resolvePathHandler);
+        registration.registerSubModel(periodicSizeRotatingHandlerResourceDefinition);
+
         final SizeRotatingHandlerResourceDefinition sizeRotatingHandlerResourceDefinition = new SizeRotatingHandlerResourceDefinition(resolvePathHandler, includeLegacyAttributes);
         registration.registerSubModel(sizeRotatingHandlerResourceDefinition);
 
@@ -230,6 +233,7 @@ public class LoggingExtension implements Extension {
                     consoleHandlerResourceDefinition,
                     fileHandlerResourceDefinition,
                     periodicHandlerResourceDefinition,
+                    periodicSizeRotatingHandlerResourceDefinition,
                     sizeRotatingHandlerResourceDefinition,
                     customHandlerResourceDefinition,
                     SyslogHandlerResourceDefinition.INSTANCE,

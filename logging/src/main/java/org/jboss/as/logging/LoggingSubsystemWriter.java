@@ -54,6 +54,7 @@ import static org.jboss.as.logging.LoggerResourceDefinition.USE_PARENT_HANDLERS;
 import static org.jboss.as.logging.PatternFormatterResourceDefinition.PATTERN_FORMATTER;
 import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER;
 import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.SUFFIX;
+import static org.jboss.as.logging.PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER;
 import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME;
 import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME;
 import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
@@ -173,6 +174,16 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
+        if (model.hasDefined(PERIODIC_SIZE_ROTATING_FILE_HANDLER)) {
+            final ModelNode handlers = model.get(PERIODIC_SIZE_ROTATING_FILE_HANDLER);
+            for (Property handlerProp : handlers.asPropertyList()) {
+                final String name = handlerProp.getName();
+                final ModelNode handler = handlerProp.getValue();
+                if (handler.isDefined()) {
+                    writePeriodicSizeRotatingFileHandler(writer, handler, name);
+                }
+            }
+        }
         if (model.hasDefined(SIZE_ROTATING_FILE_HANDLER)) {
             final ModelNode handlers = model.get(SIZE_ROTATING_FILE_HANDLER);
 
@@ -265,6 +276,22 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         ENABLED.marshallAsAttribute(model, false, writer);
         writeCommonHandler(writer, model);
         FILE.marshallAsElement(model, writer);
+        SUFFIX.marshallAsElement(model, writer);
+        APPEND.marshallAsElement(model, writer);
+
+        writer.writeEndElement();
+    }
+
+    private void writePeriodicSizeRotatingFileHandler(final XMLExtendedStreamWriter writer, final ModelNode model, final String name) throws XMLStreamException {
+        writer.writeStartElement(Element.PERIODIC_SIZE_ROTATING_FILE_HANDLER.getLocalName());
+        writer.writeAttribute(HANDLER_NAME.getXmlName(), name);
+        AUTOFLUSH.marshallAsAttribute(model, writer);
+        ENABLED.marshallAsAttribute(model, false, writer);
+        ROTATE_ON_BOOT.marshallAsAttribute(model, false, writer);
+        writeCommonHandler(writer, model);
+        FILE.marshallAsElement(model, writer);
+        ROTATE_SIZE.marshallAsElement(model, writer);
+        MAX_BACKUP_INDEX.marshallAsElement(model, writer);
         SUFFIX.marshallAsElement(model, writer);
         APPEND.marshallAsElement(model, writer);
 
