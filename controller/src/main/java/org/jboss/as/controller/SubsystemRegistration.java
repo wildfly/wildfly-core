@@ -79,6 +79,19 @@ public interface SubsystemRegistration {
      * @param version the model version
      * @param resourceTransformer the subsystem resource transformer
      * @param operationTransformer the subsystem operation transformer
+     * @return the transformers registry
+     * @deprecated use {@link #registerModelTransformers(ModelVersionRange, ResourceTransformer, OperationTransformer, boolean)}
+     */
+    @Deprecated
+    TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer);
+
+
+    /**
+     * Register transformers for a given model version.
+     *
+     * @param version the model version
+     * @param resourceTransformer the subsystem resource transformer
+     * @param operationTransformer the subsystem operation transformer
      * @param placeholder whether or not the transformers are placeholders
      * @return the transformers registry
      */

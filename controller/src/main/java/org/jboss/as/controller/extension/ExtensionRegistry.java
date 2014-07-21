@@ -689,6 +689,12 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
+            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, false);
+        }
+
+
+        @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
             return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
         }
