@@ -49,17 +49,33 @@ public class ChainedTransformationTools {
     }
 
     /**
-     * Call when transforming a new model version delta. This will copy the {@link ResourceTransformationContext} instance, using the extra resolver
+     * Call when transforming a new model version delta for a resource. This will copy the {@link ResourceTransformationContext} instance, using the extra resolver
      * to resolve the children of the placeholder resource.
      *
      * @param context the context to copy. It should be at a chained placeholder
      * @param placeholderResolver the extra resolver to use to resolve the placeholder's children for the model version delta we are transforming
      * @return a new {@code ResourceTransformationContext} instance using the extra resolver
      */
-    public static ResourceTransformationContext nextInChain(ResourceTransformationContext context, PlaceholderResolver placeholderResolver) {
+    public static ResourceTransformationContext nextInChainResource(ResourceTransformationContext context, PlaceholderResolver placeholderResolver) {
         assert context instanceof ResourceTransformationContextImpl : "Wrong type of context";
         ResourceTransformationContextImpl ctx = (ResourceTransformationContextImpl)context;
         ResourceTransformationContext copy = ctx.copyAndReplaceOriginalModel(placeholderResolver);
+
+        return copy;
+    }
+
+    /**
+     * Call when transforming a new model version delta for an operation. This will copy the {@link ResourceTransformationContext} instance, using the extra resolver
+     * to resolve the children of the placeholder resource.
+     *
+     * @param context the context to copy. It should be at a chained placeholder
+     * @param placeholderResolver the extra resolver to use to resolve the placeholder's children for the model version delta we are transforming
+     * @return a new {@code ResourceTransformationContext} instance using the extra resolver
+     */
+    public static ResourceTransformationContext nextInChainOperation(ResourceTransformationContext context, PlaceholderResolver placeholderResolver) {
+        assert context instanceof ResourceTransformationContextImpl : "Wrong type of context";
+        ResourceTransformationContextImpl ctx = (ResourceTransformationContextImpl)context;
+        ResourceTransformationContext copy = ctx.copy(placeholderResolver);
 
         return copy;
     }

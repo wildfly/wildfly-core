@@ -87,7 +87,7 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
                 break;
             }
             ChainedPlaceholderResolver resolver = it.next().getValue();
-            currentCtx = ChainedTransformationTools.nextInChain(currentCtx, resolver);
+            currentCtx = ChainedTransformationTools.nextInChainOperation(currentCtx, resolver);
             PathAddress currentAddress = PathAddress.pathAddress(currentOp.require(OP_ADDR));
             PathAddress addr = ChainedTransformationTools.transformAddress(currentAddress, currentCtx.getTarget());
             currentOp.get(OP_ADDR).set(addr.toModelNode());
@@ -116,7 +116,7 @@ class ChainedTransformingDescription extends AbstractDescription implements Tran
         }
         while (it.hasNext()) {
             ChainedPlaceholderResolver resolver = it.next().getValue();
-            current = ChainedTransformationTools.nextInChain(current, resolver);
+            current = ChainedTransformationTools.nextInChainResource(current, resolver);
             try {
                 Resource currentResource = current.readResourceFromRoot(address);
                 resolver.getDescription().getResourceTransformer().transformResource(current, address, currentResource);

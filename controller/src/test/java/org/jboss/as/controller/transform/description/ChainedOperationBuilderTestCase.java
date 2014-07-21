@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
@@ -43,6 +44,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
@@ -838,6 +840,46 @@ public class ChainedOperationBuilderTestCase {
          */
     }
 
+
+    @Test
+    public void testReadResourceFromTransformer() throws Exception {
+        resourceModel.get("attr1").set("reject1");
+        //Note that when reading the resource from the chained transformers, the original model is used.
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(PATH, V4_0_0);
+        chainedBuilder.createBuilder(V4_0_0, V3_0_0)
+            .getAttributeBuilder()
+                .addRejectCheck(new SimpleRejectAttributeChecker("reject1"), "attr1");
+        chainedBuilder.createBuilder(V3_0_0, V2_0_0)
+            .getAttributeBuilder()
+                .addRejectCheck(new SimpleRejectAttributeChecker("reject2"), "attr1");
+        chainedBuilder.createBuilder(V2_0_0, V1_0_0)
+            .getAttributeBuilder()
+                .addRejectCheck(new SimpleRejectAttributeChecker("reject3"), "attr1");
+
+        TransformationDescription.Tools.register(chainedBuilder.build(V1_0_0, V2_0_0, V3_0_0).get(V1_0_0), transformersSubRegistration);
+
+        final PathAddress address = PathAddress.pathAddress(PATH);
+        ModelNode original = new ModelNode();
+        original.get(OP_ADDR).set(address.toModelNode());
+        original.get(OP).set(ADD);
+
+        TransformedOperation op = transformOperation(original);
+        Assert.assertTrue(op.rejectOperation(success()));
+
+        resourceModel.get("attr1").set("reject2");
+        op = transformOperation(original);
+        Assert.assertTrue(op.rejectOperation(success()));
+
+        resourceModel.get("attr1").set("reject3");
+        op = transformOperation(original);
+        Assert.assertTrue(op.rejectOperation(success()));
+
+        resourceModel.get("attr1").set("ok");
+        op = transformOperation(original);
+        Assert.assertFalse(op.rejectOperation(success()));
+        Assert.assertEquals(original, op.getTransformedOperation());
+    }
+
     private OperationTransformer.TransformedOperation transformOperation(final ModelNode operation) throws OperationFailedException {
         final TransformationTarget target = create(registry, ModelVersion.create(1));
         final TransformationContext context = createContext(target);
@@ -893,5 +935,38 @@ public class ChainedOperationBuilderTestCase {
         NewAttributeConverter(String newValue) {
             super(new ModelNode(), new ModelNode(newValue));
         }
+    }
+
+    private static class SimpleRejectAttributeChecker implements RejectAttributeChecker {
+        private final ModelNode value;
+        public SimpleRejectAttributeChecker(String value) {
+            this.value = new ModelNode(value);
+        }
+
+        @Override
+        public boolean rejectOperationParameter(PathAddress address, String attributeName, ModelNode attributeValue,
+                ModelNode operation, TransformationContext context) {
+            boolean relative = context.readResource(PathAddress.EMPTY_ADDRESS).getModel().get(attributeName).equals(value);
+            boolean absolute = context.readResourceFromRoot(address).getModel().get(attributeName).equals(value);
+            Assert.assertEquals(relative, absolute);
+            return relative;
+        }
+
+        @Override
+        public boolean rejectResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue,
+                TransformationContext context) {
+            return false;
+        }
+
+        @Override
+        public String getRejectionLogMessageId() {
+            return "Test123";
+        }
+
+        @Override
+        public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+            return "Failed!!!!";
+        }
+
     }
 }
