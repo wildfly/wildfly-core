@@ -102,7 +102,6 @@ public enum KeycloakConfig {
     }
 
     private boolean configFileExists(String fileName) {
-        System.out.println("configDir=" + configDir);
         if (configDir == null) return false;
         return new File(configDir, fileName).exists();
     }
