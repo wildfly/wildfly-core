@@ -48,7 +48,6 @@ import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
@@ -244,13 +243,11 @@ public class LoggingExtension implements Extension {
         registerTransformers(defs, chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0);
         registerTransformers(defs, chainedBuilder, KnownModelVersion.VERSION_1_2_0, KnownModelVersion.VERSION_1_1_0);
 
-        ModelVersion[] versions = new ModelVersion[] {
+
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{
                 KnownModelVersion.VERSION_1_1_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_2_0.getModelVersion(),
-                KnownModelVersion.VERSION_1_3_0.getModelVersion()};
-        for (Map.Entry<ModelVersion, TransformationDescription> entry : chainedBuilder.build(versions).entrySet()) {
-            TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
-        }
+                KnownModelVersion.VERSION_1_3_0.getModelVersion()});
     }
 
     private void registerTransformers(SubsystemDefinitions defs, ChainedTransformationDescriptionBuilder chainedBuilder, KnownModelVersion fromVersion, KnownModelVersion toVersion) {

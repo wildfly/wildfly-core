@@ -29,6 +29,7 @@ import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SubsystemRegistration;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -62,6 +63,17 @@ class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformati
         });
         return doBuild(allVersions);
     }
+
+
+    @Override
+    public void buildAndRegister(SubsystemRegistration registration, ModelVersion[]...chains) {
+        for (ModelVersion[] chain : chains) {
+            for (Map.Entry<ModelVersion, TransformationDescription> entry : build(chain).entrySet()) {
+                TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
+            }
+        }
+    }
+
 
     private Map<ModelVersion, TransformationDescription> doBuild(ModelVersion...versions) {
         final Map<ModelVersion, TransformationDescription> result = new HashMap<>();
