@@ -83,7 +83,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
                 ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, verificationHandler, auditLoggerInfo, authorizer, null);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, verificationHandler, null);
         }
 
         @Override
@@ -119,7 +119,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
                 ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, verificationHandler, auditLoggerInfo, authorizer, null);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, verificationHandler, null);
         }
 
         @Override
@@ -142,7 +142,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
                 ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, verificationHandler, auditLoggerInfo, authorizer, null);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, verificationHandler, null);
         }
 
         @Override
