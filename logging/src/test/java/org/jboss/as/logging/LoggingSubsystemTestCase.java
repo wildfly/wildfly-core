@@ -253,7 +253,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         Assert.assertTrue("main services did not boot", mainServices.isSuccessfulBoot());
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
-        final List<ModelNode> ops = builder.parseXmlResource("/expressions.xml");
+        final List<ModelNode> ops = builder.parseXmlResource("/expressions_1_2.xml");
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops,
                 new FailedOperationTransformationConfig()
                         .addFailedAttribute(SUBSYSTEM_ADDRESS,
