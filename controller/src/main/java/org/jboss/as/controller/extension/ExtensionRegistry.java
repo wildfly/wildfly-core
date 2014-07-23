@@ -111,7 +111,7 @@ public class ExtensionRegistry {
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
-    private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create(this);
+    private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
 
     /**
      * Constructor
@@ -337,7 +337,7 @@ public class ExtensionRegistry {
         synchronized (extensions) {    // we synchronize just to guard unnamedMerged
             profileRegistration = null;
             deploymentsRegistration = null;
-            transformerRegistry = TransformerRegistry.Factory.create(this);
+            transformerRegistry = TransformerRegistry.Factory.create();
             extensions.clear();
             reverseMap.clear();
         }

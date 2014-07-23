@@ -67,7 +67,7 @@ public class ChainedResourceBuilderTestCase {
 
     private Resource resourceRoot = Resource.Factory.create();
     private Resource toto;
-    private TransformerRegistry registry = TransformerRegistry.Factory.create(null);
+    private TransformerRegistry registry = TransformerRegistry.Factory.create();
     private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
     private TransformersSubRegistration transformersSubRegistration;
     private ModelNode resourceModel;
@@ -76,7 +76,7 @@ public class ChainedResourceBuilderTestCase {
     public void setUp() {
         // Cleanup
         resourceRoot = Resource.Factory.create();
-        registry = TransformerRegistry.Factory.create(null);
+        registry = TransformerRegistry.Factory.create();
         resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
         // test
         toto = Resource.Factory.create();
