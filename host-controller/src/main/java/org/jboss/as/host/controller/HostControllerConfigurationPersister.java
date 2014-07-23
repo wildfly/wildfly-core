@@ -219,20 +219,6 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         domainPersister.unregisterSubsystemWriter(name);
     }
 
-    @Override
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public void registerSubsystemDeploymentWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer) {
-        domainPersister.registerSubsystemDeploymentWriter(name, writer);
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public void unregisterSubsystemDeploymentWriter(String name) {
-        domainPersister.unregisterSubsystemDeploymentWriter(name);
-    }
-
     private ConfigurationFile getStandardDomainConfigurationFile() {
         final String defaultDomainConfig = WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_DEFAULT_CONFIG, "domain.xml");
         final String initialDomainConfig = environment.getInitialDomainConfig();
