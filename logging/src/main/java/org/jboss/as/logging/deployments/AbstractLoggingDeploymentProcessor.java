@@ -102,7 +102,7 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
     protected void registerLogContext(final DeploymentUnit deploymentUnit, final Module module, final LogContext logContext) {
         LoggingLogger.ROOT_LOGGER.tracef("Registering LogContext %s for deployment %s", logContext, deploymentUnit.getName());
         if (WildFlySecurityManager.isChecking()) {
-            WildFlySecurityManager.doChecked(new PrivilegedAction<Object>() {
+            WildFlySecurityManager.doUnchecked(new PrivilegedAction<Object>() {
                 @Override
                 public Object run() {
                     logContextSelector.registerLogContext(module.getClassLoader(), logContext);
@@ -120,7 +120,7 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
         final LogContext logContext = deploymentUnit.removeAttachment(LOG_CONTEXT_KEY);
         final boolean success;
         if (WildFlySecurityManager.isChecking()) {
-            success = WildFlySecurityManager.doChecked(new PrivilegedAction<Boolean>() {
+            success = WildFlySecurityManager.doUnchecked(new PrivilegedAction<Boolean>() {
                 @Override
                 public Boolean run() {
                     return logContextSelector.unregisterLogContext(module.getClassLoader(), logContext);
