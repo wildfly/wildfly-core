@@ -32,8 +32,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
@@ -161,30 +159,30 @@ public class DomainTransformers {
         for (ModelVersion version : versions) {
             TransformersSubRegistration domain = registry.getDomainRegistration(version);
             // Discard all operations to the newly introduced jsf extension
-            domain.registerSubResource(JSF_EXTENSION, IGNORED_EXTENSIONS);
+            domain.registerSubResource(JSF_EXTENSION, new IgnoreExtensionResourceTransformer("jsf"));
             JSFSubsystemTransformers.registerTransformers120(registry, domain);
         }
     }
-
-    private static final ResourceTransformer IGNORED_EXTENSIONS = new IgnoreExtensionResourceTransformer();
 
     /**
      * Special resource transformer automatically ignoring all subsystems registered by an extension.
      */
     private static class IgnoreExtensionResourceTransformer implements ResourceTransformer {
 
+        private final String[] subsystems;
+
+        private IgnoreExtensionResourceTransformer(String... subsystems) {
+            this.subsystems = subsystems;
+        }
+
         @Override
         public void transformResource(final ResourceTransformationContext context, final PathAddress address, final Resource resource) throws OperationFailedException {
             // we just ignore this resource  - so don't add it: context.addTransformedResource(...)
-            final PathElement element = address.getLastElement();
 
             final TransformationTarget target = context.getTarget();
-            final ExtensionRegistry registry = target.getExtensionRegistry();
 
-            final Map<String, SubsystemInformation> subsystems = registry.getAvailableSubsystems(element.getValue());
             if(subsystems != null) {
-                for(final Map.Entry<String, SubsystemInformation> subsystem : subsystems.entrySet()) {
-                    final String name = subsystem.getKey();
+                for(final String name : subsystems) {
                     target.addSubsystemVersion(name, IGNORED_SUBSYSTEMS);
                 }
             }
