@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.extension.ExtensionRegistry;
 
 /**
  * A potentially remote target requiring transformation.
@@ -109,13 +108,6 @@ public interface TransformationTarget {
      * @return the target type
      */
     TransformationTargetType getTargetType();
-
-    /**
-     * Get the extension registry.
-     *
-     * @return the extension registry
-     */
-    ExtensionRegistry getExtensionRegistry();
 
     /**
      * Get the name of the host we are talking to

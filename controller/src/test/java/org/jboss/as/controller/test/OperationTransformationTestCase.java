@@ -159,7 +159,7 @@ public class OperationTransformationTestCase {
                 return operation;
             }
         };
-        final TransformerRegistry transformers = TransformerRegistry.Factory.create(null);
+        final TransformerRegistry transformers = TransformerRegistry.Factory.create();
 
         final TransformersSubRegistration subsystem = transformers.registerSubsystemTransformers("test", ModelVersion.create(1), ResourceTransformer.DEFAULT);
         subsystem.registerOperationTransformer("test", transformer);
@@ -183,7 +183,7 @@ public class OperationTransformationTestCase {
         resource.registerChild(one, Resource.Factory.create());
         resource.registerChild(two, Resource.Factory.create());
 
-        final TransformerRegistry transformers = TransformerRegistry.Factory.create(null);
+        final TransformerRegistry transformers = TransformerRegistry.Factory.create();
 
         transformers.getDomainRegistration(ModelVersion.create(1, 2)).registerSubResource(one, true);
         transformers.getDomainRegistration(ModelVersion.create(1, 3)).registerSubResource(two, true);
@@ -211,7 +211,7 @@ public class OperationTransformationTestCase {
     public void testAddSubsystem() throws Exception {
 
         final ModelVersion subsystem = ModelVersion.create(1, 2);
-        final TransformerRegistry registry = TransformerRegistry.Factory.create(null);
+        final TransformerRegistry registry = TransformerRegistry.Factory.create();
         TransformersSubRegistration sub = registry.registerSubsystemTransformers("test", subsystem, ResourceTransformer.DISCARD);
         sub.registerOperationTransformer("test", OPERATION_TRANSFORMER);
 

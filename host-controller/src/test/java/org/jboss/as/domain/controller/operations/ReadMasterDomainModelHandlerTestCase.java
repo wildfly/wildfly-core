@@ -71,7 +71,7 @@ public class ReadMasterDomainModelHandlerTestCase {
     @Test
     public void testResourceTransformation() throws Exception {
         Resource resourceRoot = Resource.Factory.create();
-        TransformerRegistry registry = TransformerRegistry.Factory.create(null);
+        TransformerRegistry registry = TransformerRegistry.Factory.create();
         ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
 
         final Resource extension = Resource.Factory.create();

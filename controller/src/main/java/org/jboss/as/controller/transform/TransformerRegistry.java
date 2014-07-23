@@ -59,8 +59,6 @@ public final class TransformerRegistry {
         DISCARD_OPERATION.protect();
     }
 
-    private final ExtensionRegistry extensionRegistry;
-
     private static final PathElement HOST = PathElement.pathElement(ModelDescriptionConstants.HOST);
     private static final PathElement PROFILE = PathElement.pathElement(ModelDescriptionConstants.PROFILE);
     private static final PathElement SERVER = PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER);
@@ -68,16 +66,11 @@ public final class TransformerRegistry {
     private final GlobalTransformerRegistry domain = new GlobalTransformerRegistry();
     private final GlobalTransformerRegistry subsystem = new GlobalTransformerRegistry();
 
-    TransformerRegistry(final ExtensionRegistry extensionRegistry) {
-        this.extensionRegistry = extensionRegistry;
+    TransformerRegistry() {
         // Initialize the empty paths
         domain.createChildRegistry(PathAddress.pathAddress(PROFILE), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
         domain.createChildRegistry(PathAddress.pathAddress(HOST), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
         domain.createChildRegistry(PathAddress.pathAddress(HOST, SERVER), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
-    }
-
-    public ExtensionRegistry getExtensionRegistry() {
-        return extensionRegistry;
     }
 
     /**
@@ -256,11 +249,10 @@ public final class TransformerRegistry {
         /**
          * Create a new Transformer registry.
          *
-         * @param extensionRegistry the extension registry
          * @return the created transformer registry
          */
-        public static TransformerRegistry create(ExtensionRegistry extensionRegistry) {
-            return new TransformerRegistry(extensionRegistry);
+        public static TransformerRegistry create() {
+            return new TransformerRegistry();
         }
 
     }

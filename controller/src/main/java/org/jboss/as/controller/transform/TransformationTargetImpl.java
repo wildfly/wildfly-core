@@ -30,8 +30,6 @@ import java.util.Map;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.OperationTransformerRegistry;
 import org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver;
 
@@ -42,7 +40,6 @@ import org.jboss.as.controller.registry.OperationTransformerRegistry.Placeholder
 public class TransformationTargetImpl implements TransformationTarget {
 
     private final ModelVersion version;
-    private final ExtensionRegistry extensionRegistry;
     private final TransformerRegistry transformerRegistry;
     private final Map<String, ModelVersion> subsystemVersions = Collections.synchronizedMap(new HashMap<String, ModelVersion>());
     private final OperationTransformerRegistry registry;
@@ -57,7 +54,6 @@ public class TransformationTargetImpl implements TransformationTarget {
                                      final RuntimeIgnoreTransformation runtimeIgnoreTransformation, final PlaceholderResolver placeholderResolver) {
         this.version = version;
         this.transformerRegistry = transformerRegistry;
-        this.extensionRegistry = transformerRegistry.getExtensionRegistry();
         for (Map.Entry<PathAddress, ModelVersion> p : subsystemVersions.entrySet()) {
             final String name = p.getKey().getLastElement().getValue();
             this.subsystemVersions.put(name, p.getValue());
@@ -72,7 +68,6 @@ public class TransformationTargetImpl implements TransformationTarget {
     private TransformationTargetImpl(final TransformationTargetImpl target, final PlaceholderResolver placeholderResolver) {
         this.version = target.version;
         this.transformerRegistry = target.transformerRegistry;
-        this.extensionRegistry = target.extensionRegistry;
         this.subsystemVersions.putAll(target.subsystemVersions);
         this.registry = target.registry;
         this.type = target.type;
@@ -108,10 +103,6 @@ public class TransformationTargetImpl implements TransformationTarget {
     @Override
     public ModelVersion getSubsystemVersion(String subsystemName) {
         return subsystemVersions.get(subsystemName);
-    }
-
-    public SubsystemInformation getSubsystemInformation(String subsystemName) {
-        return extensionRegistry.getSubsystemInfo(subsystemName);
     }
 
     @Override
@@ -168,11 +159,6 @@ public class TransformationTargetImpl implements TransformationTarget {
     @Override
     public TransformationTargetType getTargetType() {
         return type;
-    }
-
-    @Override
-    public ExtensionRegistry getExtensionRegistry() {
-        return extensionRegistry;
     }
 
     @Override

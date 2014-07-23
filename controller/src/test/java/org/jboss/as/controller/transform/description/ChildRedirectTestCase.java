@@ -61,7 +61,7 @@ public class ChildRedirectTestCase {
     private static PathElement NEW_CHILD = PathElement.pathElement("new-child");
 
     private Resource resourceRoot = Resource.Factory.create();
-    private TransformerRegistry registry = TransformerRegistry.Factory.create(null);
+    private TransformerRegistry registry = TransformerRegistry.Factory.create();
     private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
     private TransformersSubRegistration transformersSubRegistration;
     //private ModelNode resourceModel;
@@ -70,7 +70,7 @@ public class ChildRedirectTestCase {
     public void setUp() {
         // Cleanup
         resourceRoot = Resource.Factory.create();
-        registry = TransformerRegistry.Factory.create(null);
+        registry = TransformerRegistry.Factory.create();
         resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
         // test
         final Resource toto = Resource.Factory.create();
