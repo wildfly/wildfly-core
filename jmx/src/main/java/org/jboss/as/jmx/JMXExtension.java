@@ -59,7 +59,7 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
-import org.jboss.as.controller.extension.ExtensionRegistry.ExtensionContextImpl;
+import org.jboss.as.controller.extension.ExtensionContextSupplement;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -124,9 +124,11 @@ public class JMXExtension implements Extension {
                 MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
         //This is ugly but for now we don't want to make the audit logger easily available to all extensions
-        ManagedAuditLogger auditLogger = (ManagedAuditLogger)((ExtensionContextImpl)context).getAuditLogger(false, true);
+        @SuppressWarnings("deprecation")
+        ManagedAuditLogger auditLogger = (ManagedAuditLogger)((ExtensionContextSupplement)context).getAuditLogger(false, true);
         //This is ugly but for now we don't want to make the authorizer easily available to all extensions
-        JmxAuthorizer authorizer = ((ExtensionContextImpl)context).getAuthorizer();
+        @SuppressWarnings("deprecation")
+        JmxAuthorizer authorizer = ((ExtensionContextSupplement)context).getAuthorizer();
 
         registration.registerSubsystemModel(JMXSubsystemRootResource.create(auditLogger, authorizer));
         registration.registerXMLElementWriter(writer);

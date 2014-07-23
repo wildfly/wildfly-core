@@ -94,8 +94,16 @@ import org.jboss.staxmapper.XMLMapper;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@SuppressWarnings("deprecation")
 public class ExtensionRegistry {
+
+    // Hack to restrict the extensions to which we expose ExtensionContextSupplement
+    private static final Set<String> legallySupplemented;
+    static {
+        Set<String> set = new HashSet<>(4);
+        set.add("org.jboss.as.jmx");
+        set.add("Test");  // used by shared subsystem test fixture TestModelControllerService
+        legallySupplemented = Collections.unmodifiableSet(set);
+    }
 
     private final ProcessType processType;
 
@@ -255,7 +263,10 @@ public class ExtensionRegistry {
      * @throws IllegalStateException if no {@link #setSubsystemParentResourceRegistrations(ManagementResourceRegistration, ManagementResourceRegistration)} profile resource registration has been set}
      */
     public ExtensionContext getExtensionContext(final String moduleName, boolean isMasterDomainController) {
-        return new ExtensionContextImpl(moduleName, pathManager, isMasterDomainController, auditLogger);
+        // Hack to restrict extra data to specified extension(s)
+        boolean allowSupplement = legallySupplemented.contains(moduleName);
+        ManagedAuditLogger al = allowSupplement ? auditLogger : null;
+        return new ExtensionContextImpl(moduleName, pathManager, isMasterDomainController, al);
     }
 
     /**
@@ -424,12 +435,13 @@ public class ExtensionRegistry {
         }
     }
 
-    public class ExtensionContextImpl implements ExtensionContext {
+    private class ExtensionContextImpl implements ExtensionContext, ExtensionContextSupplement {
 
         private final ExtensionInfo extension;
         private final PathManager pathManager;
         private final boolean registerTransformers;
         private final ManagedAuditLogger auditLogger;
+        private final boolean allowSupplement;
 
         private ExtensionContextImpl(String extensionName, PathManager pathManager, boolean registerTransformers, ManagedAuditLogger auditLogger) {
             assert pathManager != null || !processType.isServer() : "pathManager is null";
@@ -437,6 +449,7 @@ public class ExtensionRegistry {
             this.extension = getExtensionInfo(extensionName);
             this.registerTransformers = registerTransformers;
             this.auditLogger = auditLogger;
+            this.allowSupplement = auditLogger != null;
         }
 
         @Override
@@ -493,10 +506,16 @@ public class ExtensionRegistry {
             return registerTransformers;
         }
 
+        // ExtensionContextSupplement implementation
+
         /**
          * This method is only for internal use. We do NOT currently want to expose it on the ExtensionContext interface.
          */
+        @Override
         public AuditLogger getAuditLogger(boolean inheritConfiguration, boolean manualCommit) {
+            if (!allowSupplement) {
+                throw new UnsupportedOperationException();
+            }
             if (inheritConfiguration) {
                 return auditLogger;
             }
@@ -506,7 +525,11 @@ public class ExtensionRegistry {
         /**
          * This method is only for internal use. We do NOT currently want to expose it on the ExtensionContext interface.
          */
+        @Override
         public JmxAuthorizer getAuthorizer() {
+            if (!allowSupplement) {
+                throw new UnsupportedOperationException();
+            }
             return authorizer;
         }
     }
@@ -564,7 +587,7 @@ public class ExtensionRegistry {
         }
     }
 
-    public class SubsystemRegistrationImpl implements SubsystemRegistration {
+    private class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
         private final ModelVersion version;
 
@@ -638,7 +661,7 @@ public class ExtensionRegistry {
         }
     }
 
-    public class ExtensionInfo {
+    private class ExtensionInfo {
         private final Map<String, SubsystemInformation> subsystems = new HashMap<String, SubsystemInformation>();
         private final String extensionModuleName;
         private XMLMapper xmlMapper;

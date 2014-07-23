@@ -782,7 +782,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         extensionRegistry.setSubsystemParentResourceRegistrations(registration, null);
         JMXExtension extension = new JMXExtension();
-        extension.initialize(extensionRegistry.getExtensionContext("xxxx", false));
+        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", false));
 
         rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, Resource.Factory.create());
 
