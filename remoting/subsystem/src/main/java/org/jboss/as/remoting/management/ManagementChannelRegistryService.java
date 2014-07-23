@@ -35,8 +35,7 @@ import org.jboss.remoting3.Registration;
 import java.util.ArrayList;
 
 /**
- * A basic registry for opened management channels. Other services like the {@code ServerInventory}
- * can add a dependency in order to prevent that connections are closed too early in the shutdown process.
+ * A basic registry for opened management channels.
  *
  * @author Emanuel Muckenhuber
  */
@@ -45,6 +44,7 @@ public class ManagementChannelRegistryService implements Service<ManagementChann
     /** The service name. */
     public static final ServiceName SERVICE_NAME = RemotingServices.REMOTING_BASE.append("management", "channel", "registry");
     private final ArrayList<Registration> registrations = new ArrayList<Registration>();
+    private final ManagementRequestTracker trackerService = new ManagementRequestTracker();
 
     public static void addService(final ServiceTarget serviceTarget, final ServiceName endpointName) {
         serviceTarget.addService(SERVICE_NAME, new ManagementChannelRegistryService())
@@ -60,16 +60,21 @@ public class ManagementChannelRegistryService implements Service<ManagementChann
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        // nothing
+        trackerService.reset();
     }
 
     @Override
     public synchronized void stop(final StopContext context) {
+        this.trackerService.stop();
         final ArrayList<Registration> registrations = this.registrations;
         for(final Registration registration : registrations) {
             registration.close();
         }
         registrations.clear();
+    }
+
+    public ManagementRequestTracker getTrackerService() {
+        return trackerService;
     }
 
     public synchronized void register(final Registration registration) {

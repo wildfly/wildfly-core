@@ -25,6 +25,15 @@ import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGG
 import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
 import static org.xnio.SslClientAuthMode.REQUESTED;
 import static org.xnio.SslClientAuthMode.REQUIRED;
+
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
@@ -47,16 +56,6 @@ import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-import javax.net.ssl.SSLContext;
-
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
@@ -83,8 +82,8 @@ import org.xnio.StreamConnection;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
-import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.JsseXnioSsl;
+import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
 /**
@@ -166,7 +165,8 @@ public class ManagementHttpServer {
 
     public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
                                               ModelController modelController, SecurityRealm securityRealm, ControlledProcessStateService controlledProcessStateService,
-                                              ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler)
+                                              ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler,
+                                              ManagementHttpRequestProcessor managementHttpRequestProcessor)
 
             throws IOException {
 
@@ -181,7 +181,7 @@ public class ManagementHttpServer {
         }
 
         setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
-                secureRedirectPort, securityRealm, upgradeHandler);
+                secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor);
         return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, securityRealm);
     }
 
@@ -189,10 +189,11 @@ public class ManagementHttpServer {
     private static void setupOpenListener(HttpOpenListener listener, ModelController modelController, ConsoleMode consoleMode,
                                           String consoleSlot, ControlledProcessStateService controlledProcessStateService,
                                           int secureRedirectPort, SecurityRealm securityRealm,
-                                          final ChannelUpgradeHandler upgradeHandler) {
+                                          final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor) {
 
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
-        listener.setRootHandler(canonicalPathHandler);
+        ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
+        listener.setRootHandler(managementHttpRequestHandler);
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;

@@ -28,11 +28,12 @@ import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.INTERFAC
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
-import io.undertow.server.ListenerRegistry;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
+import io.undertow.server.ListenerRegistry;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -43,6 +44,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.domain.http.server.ConsoleMode;
+import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
@@ -51,12 +53,15 @@ import org.jboss.as.network.SocketBindingManagerImpl;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
+import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironmentService;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.mgmt.HttpManagementRequestsService;
 import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
+import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
@@ -225,13 +230,21 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             consoleMode = ConsoleMode.NO_CONSOLE;
         }
 
+        // Track active requests
+        final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
+        final ServiceController<?> requestProcessor = HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
+        if (newControllers != null) {
+            newControllers.add(requestProcessor);
+        }
+
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
         ServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, undertowService)
                 .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, undertowService.getModelControllerInjector())
                 .addDependency(SocketBindingManagerImpl.SOCKET_BINDING_MANAGER, SocketBindingManager.class, undertowService.getSocketBindingManagerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
-                .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry());
+                .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
+                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue());
 
         if (interfaceSvcName != null) {
             undertowBuilder.addDependency(interfaceSvcName, NetworkInterfaceBinding.class, undertowService.getInterfaceInjector())
@@ -258,6 +271,20 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             newControllers.add(controller);
         }
 
+        // Add service preventing the server from shutting down
+        final HttpShutdownService shutdownService = new HttpShutdownService();
+        final ServiceName shutdownName = UndertowHttpManagementService.SERVICE_NAME.append("shutdown");
+        final ServiceController<?> shutdown = serviceTarget.addService(shutdownName, shutdownService)
+                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue())
+                .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, shutdownService.getExecutorValue())
+                .addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry())
+                .addDependency(UndertowHttpManagementService.SERVICE_NAME)
+                .setInitialMode(ServiceController.Mode.ACTIVE)
+                .install();
+
+        if (newControllers != null) {
+            newControllers.add(shutdown);
+        }
 
         if(httpUpgrade) {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);

@@ -27,6 +27,8 @@ import org.jboss.remoting3.Channel;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Basic contract for initializing a {@code Channel.Receiver} for management channels.
+ *
  * @author Emanuel Muckenhuber
  */
 public interface ManagementChannelInitialization {
@@ -34,11 +36,15 @@ public interface ManagementChannelInitialization {
     /**
      * Initialize the management channel and start receiving request.
      *
+     * This returns a {@code ManagementChannelShutdownHandle} which can be used to coordinate a controlled shutdown
+     * of management channels allowing active operations to complete before shutting down.
+     *
      * @param channel opened channel
      * @return the channel handler
      */
     ManagementChannelShutdownHandle startReceiving(Channel channel);
 
+    // TODO this should be redone to rather use callbacks to signal when all operations completed
     public interface ManagementChannelShutdownHandle {
 
         /**

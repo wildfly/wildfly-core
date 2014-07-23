@@ -23,10 +23,11 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.AS_ROOT_LOGGER;
-import io.undertow.server.ListenerRegistry;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
+import io.undertow.server.ListenerRegistry;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -38,9 +39,14 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.http.server.ConsoleMode;
+import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
+import org.jboss.as.remoting.management.ManagementChannelRegistryService;
+import org.jboss.as.server.mgmt.HttpManagementRequestsService;
+import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
+import org.jboss.as.host.controller.HostControllerService;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.remoting.HttpListenerRegistryService;
@@ -136,6 +142,13 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             consoleMode = ConsoleMode.SLAVE_HC;
         }
 
+        // Track active requests
+        final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
+        final ServiceController<?> requestProcessor = HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
+        if (newControllers != null) {
+            newControllers.add(requestProcessor);
+        }
+
         final UndertowHttpManagementService service = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
         ServiceBuilder<?> builder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, service)
                 .addDependency(
@@ -147,6 +160,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(DomainModelControllerService.SERVICE_NAME, ModelController.class, service.getModelControllerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
+                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort);
 
@@ -161,6 +175,21 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
                 .install();
+
+        // Add service preventing the server from shutting down
+        final HttpShutdownService shutdownService = new HttpShutdownService();
+        final ServiceName shutdownName = UndertowHttpManagementService.SERVICE_NAME.append("shutdown");
+        final ServiceController<?> shutdown = serviceTarget.addService(shutdownName, shutdownService)
+                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue())
+                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, shutdownService.getExecutorValue())
+                .addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry())
+                .addDependency(UndertowHttpManagementService.SERVICE_NAME)
+                .setInitialMode(ServiceController.Mode.ACTIVE)
+                .install();
+
+        if (newControllers != null) {
+            newControllers.add(shutdown);
+        }
 
         if(httpUpgrade) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");

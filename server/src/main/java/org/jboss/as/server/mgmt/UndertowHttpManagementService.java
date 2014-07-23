@@ -33,6 +33,7 @@ import java.util.List;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.ConsoleMode;
+import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.http.server.ManagementHttpServer;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
@@ -79,6 +80,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
     private final InjectedValue<SecurityRealm> securityRealmServiceValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
+    private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private ManagementHttpServer serverManagement;
@@ -220,10 +222,13 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             }
         }
 
+        final ManagementHttpRequestProcessor requestProcessor = requestProcessorValue.getValue();
+
         try {
 
             serverManagement = ManagementHttpServer.create(bindAddress, secureBindAddress, 50, modelController,
-                    securityRealmService, controlledProcessStateService, consoleMode, consoleSlot, upgradeHandler);
+                    securityRealmService, controlledProcessStateService, consoleMode, consoleSlot, upgradeHandler,
+                    requestProcessor);
 
             serverManagement.start();
 
@@ -382,5 +387,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
     public InjectedValue<ListenerRegistry> getListenerRegistry() {
         return listenerRegistry;
+    }
+
+    public InjectedValue<ManagementHttpRequestProcessor> getRequestProcessorValue() {
+        return requestProcessorValue;
     }
 }

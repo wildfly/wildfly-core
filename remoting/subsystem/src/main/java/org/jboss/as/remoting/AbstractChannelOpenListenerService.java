@@ -31,6 +31,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
+import org.jboss.as.remoting.management.ManagementRequestTracker;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -80,6 +81,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
     private final OptionMap optionMap;
     private final Set<ManagementChannelInitialization.ManagementChannelShutdownHandle> handles = Collections.synchronizedSet(new HashSet<ManagementChannelInitialization.ManagementChannelShutdownHandle>());
 
+    private volatile ManagementRequestTracker trackerService;
     private volatile boolean closed = true;
 
     public AbstractChannelOpenListenerService(final String channelName, OptionMap optionMap) {
@@ -109,9 +111,11 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
         try {
             closed = false;
             log.debugf("Registering channel listener for %s", channelName);
+            final ManagementChannelRegistryService registry = this.registry.getValue();
             final Registration registration = endpointValue.getValue().registerService(channelName, this, optionMap);
             // Add to global registry
-            registry.getValue().register(registration);
+            registry.register(registration);
+            trackerService = registry.getTrackerService();
         } catch (Exception e) {
             throw RemotingLogger.ROOT_LOGGER.couldNotStartChanelListener(e);
         }
@@ -120,6 +124,8 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
     @Override
     public synchronized void stop(final StopContext context) {
         closed = true;
+        // Signal all mgmt services that we are shutting down
+        trackerService.prepareShutdown();
         // Copy off the set to avoid ConcurrentModificationException
         final Set<ManagementChannelInitialization.ManagementChannelShutdownHandle> handlesCopy = copyHandles();
         for (final ManagementChannelInitialization.ManagementChannelShutdownHandle handle : handlesCopy) {
@@ -137,6 +143,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
                             if (!interrupted && !handle.awaitCompletion(remaining, TimeUnit.MILLISECONDS)) {
                                 ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownTimedOut(CHANNEL_SHUTDOWN_TIMEOUT);
                             }
+                            trackerService.unregisterTracker(handle);
                         } catch (InterruptedException e) {
                             interrupted = true;
                             ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownFailed(e);
@@ -169,11 +176,13 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
             return;
         }
         final ManagementChannelInitialization.ManagementChannelShutdownHandle handle = handleChannelOpened(channel);
+        trackerService.registerTracker(handle);
         handles.add(handle);
         channel.addCloseHandler(new CloseHandler<Channel>() {
             public void handleClose(final Channel closed, final IOException exception) {
                 handles.remove(handle);
                 handle.shutdownNow();
+                trackerService.unregisterTracker(handle);
                 log.tracef("Handling close for %s", handle);
             }
         });
