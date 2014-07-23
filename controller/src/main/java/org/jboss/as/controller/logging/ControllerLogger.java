@@ -3207,4 +3207,13 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 357, value = "Notification of type %s is not described for the resource at the address %s")
     void notificationIsNotDescribed(String type, PathAddress source);
+
+    @Message(id = 358, value = "The resource was added at the address %s.")
+    String resourceWasAdded(PathAddress address);
+
+    @Message(id = 359, value = "The resource was removed at the address %s.")
+    String resourceWasRemoved(PathAddress address);
+
+    @Message(id = 360, value = "The attribute %s value has been changed from %s to %s.")
+    String attributeValueWritten(String attributeName, ModelNode currentValue, ModelNode newVal);
 }
