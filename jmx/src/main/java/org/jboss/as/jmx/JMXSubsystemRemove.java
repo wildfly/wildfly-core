@@ -22,11 +22,17 @@
 
 package org.jboss.as.jmx;
 
+import java.util.List;
+
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -69,5 +75,19 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
             }
         }
         return false;
+    }
+
+    @Override
+    protected void performRemove(OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        if (context.isNormalServer() && context.isResourceServiceRestartAllowed()) {
+            if (!requireNoChildResources() || resource.getChildTypes().isEmpty()) {
+                context.removeResource(PathAddress.EMPTY_ADDRESS);
+            } else {
+                List<PathElement> children = getChildren(resource);
+                throw ControllerLogger.ROOT_LOGGER.cannotRemoveResourceWithChildren(children);
+            }
+        } else
+            throw ControllerLogger.ROOT_LOGGER.cannotRemoveResourceWithoutResourceServiceRestartAllowed();
     }
 }

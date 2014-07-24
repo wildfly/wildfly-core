@@ -21,9 +21,11 @@
 */
 package org.jboss.as.subsystem.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
@@ -364,7 +366,10 @@ final class SubsystemTestDelegate {
         composite.get(OP).set(CompositeOperationHandler.NAME);
         composite.get(OP_ADDR).setEmptyList();
         composite.get("rollback-on-runtime-failure").set(true);
-
+        // JMX subsystem remove requires "allow-resource-service-restart"
+        if (mainSubsystemName == "jmx"){
+            composite.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
+        }
 
         for (ListIterator<PathAddress> iterator = addresses.listIterator(addresses.size()); iterator.hasPrevious(); ) {
             PathAddress cur = iterator.previous();
@@ -375,7 +380,6 @@ final class SubsystemTestDelegate {
                 composite.get("steps").add(remove);
             }
         }
-
 
         kernelServices.executeOperation(composite);
 

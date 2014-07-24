@@ -92,7 +92,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
         return context.isNormalServer();
     }
 
-    private List<PathElement> getChildren(Resource resource) {
+    protected List<PathElement> getChildren(Resource resource) {
         final List<PathElement> pes = new ArrayList<PathElement>();
         for (String childType : resource.getChildTypes()) {
             for (Resource.ResourceEntry entry : resource.getChildren(childType)) {
