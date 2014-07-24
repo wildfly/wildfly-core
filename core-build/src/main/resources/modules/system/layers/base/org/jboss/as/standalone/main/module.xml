@@ -43,7 +43,7 @@
         <module name="org.apache.xerces" services="import"/>
         <module name="org.codehaus.woodstox" services="import"/>        
         <module name="org.jboss.logmanager" services="import"/>
-        <module name="org.jboss.as.jmx" services="import"/>
+        <module name="org.jboss.as.jmx" services="import" optional="true"/>
         <module name="org.jboss.as.server" export="true"/>
         <module name="org.jboss.vfs" services="import"/>
     </dependencies>
