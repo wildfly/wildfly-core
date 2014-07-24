@@ -269,18 +269,6 @@ public class ExtensionRegistry {
         return new ExtensionContextImpl(moduleName, pathManager, isMasterDomainController, al);
     }
 
-    /**
-     * Calls {@link #getExtensionContext(String, boolean) with {@code true} for the {@code isMasterDomainControllerAttribute}
-     *
-     * @param moduleName the name of the extension's module. Cannot be {@code null}
-     * @return  the {@link ExtensionContext}.  Will not return {@code null}
-     * @deprecated Use {@link #getExtensionContext(String, boolean)}
-     */
-    @Deprecated
-    public ExtensionContext getExtensionContext(final String moduleName) {
-        return getExtensionContext(moduleName, true);
-    }
-
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
         Set<ProfileParsingCompletionHandler> result = new HashSet<ProfileParsingCompletionHandler>();
 

@@ -136,7 +136,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     /**
      * Allows extra initialization of the model and addition of extra subsystems
      *
-     * @param extensionRegistry allows installation of extra subsystem extensions, call {@link ExtensionRegistry#getExtensionContext(String)}
+     * @param extensionRegistry allows installation of extra subsystem extensions, call {@link ExtensionRegistry#getExtensionContext(String, boolean)}
      *                          and then {@code Extension.initialize(extensionContext)} for each extra extension you have
      * @param rootResource the root model resource which allows you to for example add child elements to the model
      * @param rootRegistration the root resource registration which allows you to for example add additional operations to the model
