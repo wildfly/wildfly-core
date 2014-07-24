@@ -426,7 +426,7 @@ public class CoreModelTestDelegate {
             this.type = type;
             this.processType = type == TestModelType.HOST || type == TestModelType.DOMAIN ? ProcessType.HOST_CONTROLLER : ProcessType.STANDALONE_SERVER;
             runningModeControl = type == TestModelType.HOST ? new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY) : new RunningModeControl(RunningMode.ADMIN_ONLY);
-            extensionRegistry = new ExtensionRegistry(processType, runningModeControl);
+            extensionRegistry = new ExtensionRegistry(processType, runningModeControl, null, null);
             testParser = TestParser.create(extensionRegistry, xmlMapper, type);
         }
 
