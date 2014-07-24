@@ -84,7 +84,7 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
     private static final String ADDR_FORMAT =
             "core-service=management/access=authorization/constraint=%s/type=%s/classification=%s";
     private static final ExpectedDef[] EXPECTED_DEFS = {
-        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL.getKey(), true, true, false),
+        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL.getKey(), true, false, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.CREDENTIAL.getKey(), false, true, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.EXTENSIONS.getKey(), true, false, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.getKey(), true, true, false),

@@ -61,23 +61,21 @@ public class ValidateOperationOperationTestCase extends ContainerResourceMgmtTes
     }
 
     @Test()
-    @Ignore("Needs to be revisited")
     public void testValidChildOperation() throws IOException, MgmtOperationException {
-        ModelNode op = ModelUtil.createOpNode("subsystem=jmx/remoting-connector=jmx", ADD);
+        ModelNode op = ModelUtil.createOpNode("subsystem=logging/logger=test", ADD);
         executeOperation(createValidateOperation(op));
     }
 
     @Test
     public void testInvalidChildOperation() throws IOException {
-        ModelNode op = ModelUtil.createOpNode("subsystem=jmx/remoting-connector=jmx", ADD);
+        ModelNode op = ModelUtil.createOpNode("subsystem=logging/logger=test", ADD);
         op.get("nonexistent").set("stuff");
         executeInvalidOperation(op);
     }
 
     @Test
-    @Ignore("Needs to be revisited")
     public void testValidInheritedOperation() throws IOException, MgmtOperationException {
-        ModelNode op = ModelUtil.createOpNode("subsystem=jmx/remoting-connector=jmx", READ_OPERATION_DESCRIPTION_OPERATION);
+        ModelNode op = ModelUtil.createOpNode("subsystem=logging/logger=test", READ_OPERATION_DESCRIPTION_OPERATION);
         op.get(NAME).set("Doesn't matter");
         executeOperation(createValidateOperation(op));
     }

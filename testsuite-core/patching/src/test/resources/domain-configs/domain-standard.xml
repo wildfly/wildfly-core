@@ -25,7 +25,6 @@
 <domain xmlns="urn:jboss:domain:3.0">
 
     <extensions>
-        <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.wildfly.extension.io"/>
@@ -97,9 +96,6 @@
             <subsystem xmlns="urn:jboss:domain:remoting:2.0">
                 <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:jmx:1.0">
-                <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
-            </subsystem>
         </profile>
         <profile name="other">
             <!-- include profile="default"/ -->
@@ -139,13 +135,10 @@
             <subsystem xmlns="urn:jboss:domain:remoting:2.0">
                 <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:jmx:1.0">
-                <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
-            </subsystem>
 
         </profile>
         <profile name="ignored">
-            <subsystem xmlns="urn:jboss:domain:jmx:1.0"/>
+            <subsystem xmlns="urn:jboss:domain:io:1.1"/>
         </profile>
         <profile name="minimal">
             <subsystem xmlns="urn:jboss:domain:logging:1.2">
