@@ -27,6 +27,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -47,6 +48,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
     private final boolean parallelBoot;
     private final boolean standalone;
     private final boolean slaveHC;
+    private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
      * Create the AbstractAddExtensionHandler
@@ -54,12 +56,15 @@ public class ExtensionAddHandler implements OperationStepHandler {
      * @param parallelBoot {@code true} is parallel initialization of extensions is in progress; {@code false} if not
      * @param slaveHC {@code true} if this handler will execute in a slave HostController
      */
-    public ExtensionAddHandler(final ExtensionRegistry extensionRegistry, final boolean parallelBoot, boolean standalone, boolean slaveHC) {
+    public ExtensionAddHandler(final ExtensionRegistry extensionRegistry, final boolean parallelBoot,
+                               boolean standalone, boolean slaveHC,
+                               final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         assert extensionRegistry != null : "extensionRegistry is null";
         this.extensionRegistry = extensionRegistry;
         this.parallelBoot = parallelBoot;
         this.slaveHC = slaveHC;
         this.standalone = standalone;
+        this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
     @Override
@@ -70,7 +75,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);
 
         if (!parallelBoot || !context.isBooting()) {
-            initializeExtension(moduleName);
+            initializeExtension(moduleName, rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context));
             if (slaveHC && !context.isBooting()) {
                 ModelNode subsystems = new ModelNode();
                 extensionRegistry.recordSubsystemVersions(moduleName, subsystems);
@@ -81,7 +86,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
         context.stepCompleted();
     }
 
-    void initializeExtension(String module) throws OperationFailedException {
+    void initializeExtension(String module, ManagementResourceRegistration rootRegistration) throws OperationFailedException {
         try {
             boolean unknownModule = false;
             for (Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
@@ -95,7 +100,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
                         // now that we know the registry was unaware of the module
                         unknownModule = true;
                     }
-                    extension.initialize(extensionRegistry.getExtensionContext(module, !standalone && !slaveHC));
+                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, !standalone && !slaveHC));
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                 }

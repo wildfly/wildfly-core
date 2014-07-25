@@ -43,6 +43,7 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionResourceDefinition;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.NamespaceRemoveHandler;
 import org.jboss.as.controller.operations.common.ProcessStateAttributeHandler;
@@ -200,6 +201,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
     private final DelegatingConfigurableAuthorizer authorizer;
     private final ManagedAuditLogger auditLogger;
+    private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     public ServerRootResourceDefinition(
             final ContentRepository contentRepository,
@@ -213,7 +215,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final PathManagerService pathManager,
             final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater,
             final DelegatingConfigurableAuthorizer authorizer,
-            final ManagedAuditLogger auditLogger) {
+            final ManagedAuditLogger auditLogger,
+            final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         super(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false));
         this.contentRepository = contentRepository;
         this.extensibleConfigurationPersister = extensibleConfigurationPersister;
@@ -229,6 +232,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         this.isDomain = serverEnvironment == null || serverEnvironment.getLaunchType() == LaunchType.DOMAIN;
         this.authorizer = authorizer;
+        this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
     @Override
@@ -443,12 +447,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         deployments.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement(SUBDEPLOYMENT), DeploymentAttributes.DEPLOYMENT_RESOLVER));
 
         // Extensions
-        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, parallelBoot, true, false));
-        if (extensionRegistry != null) {
-            //extension registry may be null during testing
-            extensionRegistry.setSubsystemParentResourceRegistrations(resourceRegistration, deployments);
-            extensionRegistry.setPathManager(pathManager);
-        }
+        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, parallelBoot, true, false, rootResourceRegistrationProvider));
+        extensionRegistry.setPathManager(pathManager);
 
         // Util
         resourceRegistration.registerOperationHandler(DeployerChainAddHandler.DEFINITION, DeployerChainAddHandler.INSTANCE, false);

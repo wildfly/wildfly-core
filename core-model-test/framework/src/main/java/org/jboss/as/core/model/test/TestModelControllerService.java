@@ -413,7 +413,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     pathManagerService,
                     null,
                     authorizer,
-                    AuditLogger.NO_OP_LOGGER));
+                    AuditLogger.NO_OP_LOGGER,
+                    getMutableRootResourceRegistrationProvider()));
         }
 
         @Override
@@ -508,11 +509,12 @@ class TestModelControllerService extends ModelTestModelControllerService {
             final LocalHostControllerInfoImpl info = createLocalHostControllerInfo(env);
             final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(info);
             final ExtensibleConfigurationPersister persister = new NullConfigurationPersister();
-            final HostFileRepository hostFIleRepository = createHostFileRepository();
+            final HostFileRepository hostFileRepository = createHostFileRepository();
             final DomainController domainController = new MockDomainController();
 
             DomainRootDefinition domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
-                    hostFIleRepository, true, info, extensionRegistry, null, pathManagerService, null, authorizer, null);
+                    hostFileRepository, true, info, extensionRegistry, null, pathManagerService, null, authorizer, null,
+                    getMutableRootResourceRegistrationProvider());
             domainDefinition.initialize(rootRegistration);
             rootResourceDefinition.setDelegate(domainDefinition);
 

@@ -236,11 +236,11 @@ final class SubsystemTestDelegate {
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
         ExtensionRegistry outputExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null);
-        outputExtensionRegistry.setSubsystemParentResourceRegistrations(MOCK_RESOURCE_REG, MOCK_RESOURCE_REG);
         outputExtensionRegistry.setWriterRegistry(persister);
 
+
         Extension extension = mainExtension.getClass().newInstance();
-        extension.initialize(outputExtensionRegistry.getExtensionContext("Test", false));
+        extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, false));
 
         ConfigurationPersister.PersistenceResource resource = persister.store(model, Collections.<PathAddress>emptySet());
         resource.commit();
@@ -970,6 +970,16 @@ final class SubsystemTestDelegate {
 
         @Override
         public ManagementResourceRegistration getSubModel(PathAddress address) {
+            if (address.size() == 0) {
+                return MOCK_RESOURCE_REG;
+            } else if (address.size() == 1) {
+                PathElement pe = address.getElement(0);
+                String key = pe.getKey();
+                if (pe.isWildcard()
+                        && (ModelDescriptionConstants.PROFILE.equals(key) || ModelDescriptionConstants.DEPLOYMENT.equals(key))) {
+                    return MOCK_RESOURCE_REG;
+                }
+            }
             return null;
         }
 

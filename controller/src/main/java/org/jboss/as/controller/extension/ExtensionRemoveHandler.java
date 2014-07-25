@@ -37,14 +37,17 @@ public class ExtensionRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final String OPERATION_NAME = REMOVE;
     private final ExtensionRegistry extensionRegistry;
+    private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
      * Create the ExtensionRemoveHandler
      *
      * @param extensionRegistry the registry for extensions
      */
-    public ExtensionRemoveHandler(final ExtensionRegistry extensionRegistry) {
+    public ExtensionRemoveHandler(final ExtensionRegistry extensionRegistry,
+                                  final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         this.extensionRegistry = extensionRegistry;
+        this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
     @Override
@@ -52,7 +55,8 @@ public class ExtensionRemoveHandler extends AbstractRemoveStepHandler {
         super.performRemove(context, operation, model);
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         String module = address.getLastElement().getValue();
-        extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module);
+        extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module,
+                rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context));
     }
 
     @Override

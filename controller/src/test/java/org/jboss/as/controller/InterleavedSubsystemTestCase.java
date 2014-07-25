@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionAddHandler;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
@@ -142,7 +143,7 @@ public class InterleavedSubsystemTestCase {
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(EXTENSION),
                     new NonResolvingResourceDescriptionResolver(),
-                    new FakeExtensionAddHandler(rootRegistration),
+                    new FakeExtensionAddHandler(rootRegistration, getMutableRootResourceRegistrationProvider()),
                     ReloadRequiredRemoveStepHandler.INSTANCE
             );
             rootRegistration.registerSubModel(subsystemResource);
@@ -156,8 +157,8 @@ public class InterleavedSubsystemTestCase {
 
         private final ManagementResourceRegistration rootRegistration;
 
-        private FakeExtensionAddHandler(ManagementResourceRegistration rootRegistration) {
-            super(new ExtensionRegistry(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null), false, false, false);
+        private FakeExtensionAddHandler(ManagementResourceRegistration rootRegistration, MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
+            super(new ExtensionRegistry(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null), false, false, false, rootResourceRegistrationProvider);
             this.rootRegistration = rootRegistration;
         }
 

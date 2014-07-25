@@ -35,6 +35,7 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -320,6 +321,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected void bootThreadDone() {
 
+    }
+
+    protected final MutableRootResourceRegistrationProvider getMutableRootResourceRegistrationProvider() {
+        return ModelControllerImpl.getMutableRootResourceRegistrationProvider();
     }
 
     public void stop(final StopContext context) {

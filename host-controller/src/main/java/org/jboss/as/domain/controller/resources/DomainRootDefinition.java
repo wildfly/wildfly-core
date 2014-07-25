@@ -52,6 +52,7 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionResourceDefinition;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.InterfaceAddHandler;
 import org.jboss.as.controller.operations.common.InterfaceRemoveHandler;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
@@ -188,6 +189,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
     private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
     private final DelegatingConfigurableAuthorizer authorizer;
     private final HostRegistrations hostRegistrations;
+    private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     public DomainRootDefinition(
             final DomainController domainController,
@@ -199,7 +201,8 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             final PathManagerService pathManager,
             final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry,
             final DelegatingConfigurableAuthorizer authorizer,
-            final HostRegistrations hostRegistrations) {
+            final HostRegistrations hostRegistrations,
+            final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         super(null, DomainResolver.getResolver(DOMAIN, false));
         this.domainController = domainController;
         this.isMaster = isMaster;
@@ -214,6 +217,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         this.runtimeIgnoreTransformationRegistry = runtimeIgnoreTransformationRegistry;
         this.authorizer = authorizer;
         this.hostRegistrations = hostRegistrations;
+        this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
     @Override
@@ -330,7 +334,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
                 PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS), new RolloutPlanValidator(), DomainResolver.getResolver(ROLLOUT_PLANS), DomainResolver.getResolver(ROLLOUT_PLAN)));
 
         // Extensions
-        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, true, false, !isMaster));
+        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, true, false, !isMaster, rootResourceRegistrationProvider));
 
 
         // Initialize the domain transformers

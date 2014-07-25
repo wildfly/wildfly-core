@@ -96,6 +96,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    ManagementResourceRegistration getRootResourceRegistrationForUpdate() {
+        throw readOnlyContext();
+    }
+
+    @Override
     public InputStream getAttachmentStream(int index) {
         throw readOnlyContext();
     }

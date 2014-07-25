@@ -803,9 +803,8 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), AuditLogger.NO_OP_LOGGER, getAuthorizer());
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
-        extensionRegistry.setSubsystemParentResourceRegistrations(registration, null);
         JMXExtension extension = new JMXExtension();
-        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", false));
+        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", rootRegistration, false));
 
         Resource coreManagementResource = Resource.Factory.create();
         rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, coreManagementResource);

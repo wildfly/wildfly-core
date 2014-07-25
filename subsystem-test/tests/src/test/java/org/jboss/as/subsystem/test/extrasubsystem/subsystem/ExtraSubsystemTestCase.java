@@ -202,7 +202,7 @@ public class ExtraSubsystemTestCase extends AbstractSubsystemTest {
         @Override
         public void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
                 ManagementResourceRegistration rootRegistration) {
-            dependency.initialize(extensionRegistry.getExtensionContext(DependencySubsystemExtension.EXTENSION_NAME, false));
+            dependency.initialize(extensionRegistry.getExtensionContext(DependencySubsystemExtension.EXTENSION_NAME, rootRegistration, false));
         }
 
     }

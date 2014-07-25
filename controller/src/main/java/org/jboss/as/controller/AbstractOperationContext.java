@@ -72,6 +72,7 @@ import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.InetAddressPrincipal;
@@ -377,6 +378,12 @@ abstract class AbstractOperationContext implements OperationContext {
      * @return {@code true} if no
      */
     abstract boolean isReadOnly();
+
+    /**
+     * Gets a reference to the mutable ManagementResourceRegistration for the resource tree root.
+     * @return the registration.
+     */
+    abstract ManagementResourceRegistration getRootResourceRegistrationForUpdate();
 
     /**
      * Gets whether the currently executing thread is allowed to control this operation context.

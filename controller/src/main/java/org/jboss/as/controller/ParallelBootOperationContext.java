@@ -325,6 +325,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    ManagementResourceRegistration getRootResourceRegistrationForUpdate() {
+        return primaryContext.getRootResourceRegistrationForUpdate();
+    }
+
+    @Override
     public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
         return primaryContext.resolveExpressions(node);
     }

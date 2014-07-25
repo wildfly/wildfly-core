@@ -92,7 +92,7 @@ public class ApplyRemoteMasterDomainModelHandlerTestCase extends AbstractOperati
     private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null);
     private final ApplyExtensionsHandler extensionHandler = new ApplyExtensionsHandler(extensionRegistry, HOST_INFO, new IgnoredDomainResourceRegistry(HOST_INFO)) {
         @Override
-        protected void initializeExtension(String module) {
+        protected void initializeExtension(String module, ManagementResourceRegistration rootResourceRegistration) {
             // nothing here
         }
     };

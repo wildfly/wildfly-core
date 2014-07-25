@@ -910,6 +910,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         return readOnly;
     }
 
+    @Override
+    ManagementResourceRegistration getRootResourceRegistrationForUpdate() {
+        return modelController.getRootRegistration();
+    }
+
     private static Resource requireChild(final Resource resource, final PathElement childPath, final PathAddress fullAddress) {
         if (resource.hasChild(childPath)) {
             return resource.requireChild(childPath);

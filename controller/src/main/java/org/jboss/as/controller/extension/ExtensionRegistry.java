@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.ArrayList;
@@ -39,10 +41,10 @@ import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
+import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -109,8 +111,6 @@ public class ExtensionRegistry {
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
-    private volatile ManagementResourceRegistration profileRegistration;
-    private volatile ManagementResourceRegistration deploymentsRegistration;
 
     private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<String, ExtensionInfo>();
     // subsystem -> extension
@@ -148,16 +148,6 @@ public class ExtensionRegistry {
         this(processType, runningModeControl, null, null);
     }
 
-
-    /**
-     * Gets the type of the current process.
-     *
-     * @return the current ProcessType.
-     */
-    public ProcessType getProcessType() {
-        return processType;
-    }
-
     /**
      * Sets the {@link SubsystemXmlWriterRegistry} to use for storing subsystem marshallers.
      *
@@ -175,36 +165,6 @@ public class ExtensionRegistry {
      */
     public void setPathManager(final PathManager pathManager) {
         this.pathManager = pathManager;
-    }
-
-    /**
-     * Sets the {@link ManagementResourceRegistration}s for the resource under which subsystem child resources
-     * should be registered.
-     *
-     * @param profileResourceRegistration the {@link ManagementResourceRegistration} for the resource under which
-     *                                    subsystem child resources should be registered. Cannot be {@code null}
-     * @param deploymentsResourceRegistration
-     *                                    the {@link ManagementResourceRegistration} for the deployments resource.
-     *                                    May be {@code null} if deployment resources are not supported
-     */
-    public void setSubsystemParentResourceRegistrations(ManagementResourceRegistration profileResourceRegistration,
-                                                        ManagementResourceRegistration deploymentsResourceRegistration) {
-        assert profileResourceRegistration != null : "profileResourceRegistration is null";
-        assert this.profileRegistration == null : "profileResourceRegistration is already set";
-        this.profileRegistration = profileResourceRegistration;
-
-        if (deploymentsResourceRegistration != null) {
-            assert this.deploymentsRegistration == null : "deploymentsResourceRegistration is already set";
-            PathAddress subdepAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBDEPLOYMENT));
-            final ManagementResourceRegistration subdeployments = deploymentsResourceRegistration.getSubModel(subdepAddress);
-            this.deploymentsRegistration = subdeployments == null ? deploymentsResourceRegistration
-                    : new DeploymentManagementResourceRegistration(deploymentsResourceRegistration, subdeployments);
-
-        }
-    }
-
-    public ManagementResourceRegistration getProfileRegistration() {
-        return profileRegistration;
     }
 
     public SubsystemInformation getSubsystemInfo(final String name) {
@@ -256,17 +216,24 @@ public class ExtensionRegistry {
      * a resource representing an {@link org.jboss.as.controller.Extension}.
      *
      * @param moduleName the name of the extension's module. Cannot be {@code null}
+     * @param rootRegistration the root management resource registration
      * @param isMasterDomainController set to {@code true} if we are the master domain controller, in which case transformers get registered
      *
      * @return  the {@link ExtensionContext}.  Will not return {@code null}
-     *
-     * @throws IllegalStateException if no {@link #setSubsystemParentResourceRegistrations(ManagementResourceRegistration, ManagementResourceRegistration)} profile resource registration has been set}
      */
-    public ExtensionContext getExtensionContext(final String moduleName, boolean isMasterDomainController) {
+    public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, boolean isMasterDomainController) {
+        // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
+        // doesn't add the profile mrr even in HC-based tests
+        ManagementResourceRegistration profileRegistration = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
+        if (profileRegistration == null) {
+            profileRegistration = rootRegistration;
+        }
+        ManagementResourceRegistration deploymentsRegistration = processType.isServer() ? rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT))) : null;
+
         // Hack to restrict extra data to specified extension(s)
         boolean allowSupplement = legallySupplemented.contains(moduleName);
         ManagedAuditLogger al = allowSupplement ? auditLogger : null;
-        return new ExtensionContextImpl(moduleName, pathManager, isMasterDomainController, al);
+        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, isMasterDomainController, al);
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
@@ -284,21 +251,21 @@ public class ExtensionRegistry {
     }
 
     /**
-     * Cleans up a module's subsystems from the resource registration model.
+     * Cleans up a extension module's subsystems from the resource registration model.
      *
      * @param rootResource the model root resource
      * @param moduleName   the name of the extension's module. Cannot be {@code null}
      * @throws IllegalStateException if the extension still has subsystems present in {@code rootResource} or its children
      */
-    public void removeExtension(Resource rootResource, String moduleName) throws IllegalStateException {
-
-        final ManagementResourceRegistration profileReg = profileRegistration;
+    public void removeExtension(Resource rootResource, String moduleName, ManagementResourceRegistration rootRegistration) throws IllegalStateException {
+        // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
+        // doesn't add the profile mrr even in HC-based tests
+        ManagementResourceRegistration profileReg = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
         if (profileReg == null) {
-            // we've been cleared and haven't re-initialized yet
-            return;
+            profileReg = rootRegistration;
         }
+        ManagementResourceRegistration deploymentsReg = processType.isServer() ? rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT))) : null;
 
-        final ManagementResourceRegistration deploymentsReg = deploymentsRegistration;
         ExtensionInfo extension = extensions.remove(moduleName);
         if (extension != null) {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
@@ -334,8 +301,6 @@ public class ExtensionRegistry {
      */
     public void clear() {
         synchronized (extensions) {    // we synchronize just to guard unnamedMerged
-            profileRegistration = null;
-            deploymentsRegistration = null;
             transformerRegistry = TransformerRegistry.Factory.create();
             extensions.clear();
             reverseMap.clear();
@@ -430,14 +395,28 @@ public class ExtensionRegistry {
         private final boolean registerTransformers;
         private final ManagedAuditLogger auditLogger;
         private final boolean allowSupplement;
+        private final ManagementResourceRegistration profileRegistration;
+        private final ManagementResourceRegistration deploymentsRegistration;
 
-        private ExtensionContextImpl(String extensionName, PathManager pathManager, boolean registerTransformers, ManagedAuditLogger auditLogger) {
+        private ExtensionContextImpl(String extensionName, ManagementResourceRegistration profileResourceRegistration,
+                                     ManagementResourceRegistration deploymentsResourceRegistration, PathManager pathManager,
+                                     boolean registerTransformers, ManagedAuditLogger auditLogger) {
             assert pathManager != null || !processType.isServer() : "pathManager is null";
             this.pathManager = pathManager;
             this.extension = getExtensionInfo(extensionName);
             this.registerTransformers = registerTransformers;
             this.auditLogger = auditLogger;
             this.allowSupplement = auditLogger != null;
+            this.profileRegistration = profileResourceRegistration;
+
+            if (deploymentsResourceRegistration != null) {
+                PathAddress subdepAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBDEPLOYMENT));
+                final ManagementResourceRegistration subdeployments = deploymentsResourceRegistration.getSubModel(subdepAddress);
+                this.deploymentsRegistration = subdeployments == null ? deploymentsResourceRegistration
+                        : new DeploymentManagementResourceRegistration(deploymentsResourceRegistration, subdeployments);
+            } else {
+                this.deploymentsRegistration = null;
+            }
         }
 
         @Override
@@ -463,7 +442,8 @@ public class ExtensionRegistry {
             if (deprecated){
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
-            return new SubsystemRegistrationImpl(name, majorVersion, minorVersion, microVersion);
+            return new SubsystemRegistrationImpl(name, majorVersion, minorVersion, microVersion,
+                    profileRegistration, deploymentsRegistration);
         }
 
         @Override
@@ -578,9 +558,16 @@ public class ExtensionRegistry {
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
         private final ModelVersion version;
+        private final ManagementResourceRegistration profileRegistration;
+        private final ManagementResourceRegistration deploymentsRegistration;
 
-        private SubsystemRegistrationImpl(String name, int major, int minor, int micro) {
+        private SubsystemRegistrationImpl(String name, int major, int minor, int micro,
+                                          ManagementResourceRegistration profileRegistration,
+                                          ManagementResourceRegistration deploymentsRegistration) {
+            assert profileRegistration != null;
             this.name = name;
+            this.profileRegistration = profileRegistration;
+            this.deploymentsRegistration = deploymentsRegistration;
             this.version = ModelVersion.create(major, minor, micro);
         }
 
@@ -588,14 +575,7 @@ public class ExtensionRegistry {
         public ManagementResourceRegistration registerSubsystemModel(ResourceDefinition resourceDefinition) {
             assert resourceDefinition != null : "resourceDefinition is null";
 
-            ManagementResourceRegistration profileReg = profileRegistration;
-            if (profileReg == null) {
-                // we've been cleared and haven't re-initialized. This would mean a management op is registering
-                // an extension at the same time we are shutting down or reloading. Unlikely.
-                // Just provide a fake reg to the op (whose work is being discarded anyway) so it can finish cleanly.
-                profileReg = getDummyRegistration();
-            }
-            return profileReg.registerSubModel(resourceDefinition);
+            return profileRegistration.registerSubModel(resourceDefinition);
         }
 
         @Override

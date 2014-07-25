@@ -73,7 +73,6 @@ class ProfileResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(DESCRIBE, ProfileDescribeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
 
-        extensionRegistry.setSubsystemParentResourceRegistrations(resourceRegistration, null);
     }
 
     @Override

@@ -37,6 +37,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
@@ -51,9 +52,12 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
     private final ExecutorService executor;
     private final List<ParsedBootOp> extensionAdds = new ArrayList<ParsedBootOp>();
     private ParsedBootOp ourOp;
+    private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
-    public ParallelExtensionAddHandler(ExecutorService executorService) {
+    public ParallelExtensionAddHandler(ExecutorService executorService,
+                                       MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         this.executor = executorService;
+        this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
     public void addParsedOp(final ParsedBootOp op, final ExtensionAddHandler handler) {
@@ -91,10 +95,11 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
 
                 long start = System.currentTimeMillis();
                 final Map<String, Future<OperationFailedException>> futures = new LinkedHashMap<String, Future<OperationFailedException>>();
+                final ManagementResourceRegistration rootResourceRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
                 for (ParsedBootOp op : extensionAdds) {
                     String module = op.address.getLastElement().getValue();
                     ExtensionAddHandler addHandler = ExtensionAddHandler.class.cast(op.handler);
-                    Future<OperationFailedException> future = executor.submit(new ExtensionInitializeTask(module, addHandler));
+                    Future<OperationFailedException> future = executor.submit(new ExtensionInitializeTask(module, addHandler, rootResourceRegistration));
                     futures.put(module, future);
                 }
 
@@ -126,17 +131,20 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
 
         private final String module;
         private final ExtensionAddHandler addHandler;
+        private final ManagementResourceRegistration rootResourceRegistration;
 
-        public ExtensionInitializeTask(String module, ExtensionAddHandler addHandler) {
+        public ExtensionInitializeTask(String module, ExtensionAddHandler addHandler,
+                                       ManagementResourceRegistration rootResourceRegistration) {
             this.module = module;
             this.addHandler = addHandler;
+            this.rootResourceRegistration = rootResourceRegistration;
         }
 
         @Override
         public OperationFailedException call() {
             OperationFailedException failure = null;
             try {
-                addHandler.initializeExtension(module);
+                addHandler.initializeExtension(module, rootResourceRegistration);
             } catch (OperationFailedException e) {
                 failure = e;
             }
