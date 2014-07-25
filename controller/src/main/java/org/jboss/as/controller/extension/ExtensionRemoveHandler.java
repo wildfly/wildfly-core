@@ -22,10 +22,11 @@ package org.jboss.as.controller.extension;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
-import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -33,10 +34,11 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ExtensionRemoveHandler extends AbstractRemoveStepHandler {
+public class ExtensionRemoveHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = REMOVE;
     private final ExtensionRegistry extensionRegistry;
+    private final boolean isMasterDomainController;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
@@ -45,27 +47,38 @@ public class ExtensionRemoveHandler extends AbstractRemoveStepHandler {
      * @param extensionRegistry the registry for extensions
      */
     public ExtensionRemoveHandler(final ExtensionRegistry extensionRegistry,
+                                  final boolean isMasterDomainController,
                                   final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         this.extensionRegistry = extensionRegistry;
+        this.isMasterDomainController = isMasterDomainController;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
-    @Override
-    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        super.performRemove(context, operation, model);
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        String module = address.getLastElement().getValue();
-        extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module,
-                rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context));
-    }
+        final String module = address.getLastElement().getValue();
 
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        context.reloadRequired();
-    }
+        context.removeResource(PathAddress.EMPTY_ADDRESS);
 
-    @Override
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        context.revertReloadRequired();
+        final ManagementResourceRegistration rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
+        extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module, rootRegistration);
+
+        if (context.isNormalServer()) {
+            context.addStep(new OperationStepHandler() {
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    context.reloadRequired();
+                    context.completeStep(OperationContext.RollbackHandler.REVERT_RELOAD_REQUIRED_ROLLBACK_HANDLER);
+                }
+            }, OperationContext.Stage.RUNTIME);
+        }
+
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                // Restore the extension to the ExtensionRegistry and the ManagementResourceRegistration tree
+                ExtensionAddHandler.initializeExtension(extensionRegistry, module, rootRegistration, isMasterDomainController);
+            }
+        });
     }
 }

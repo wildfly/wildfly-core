@@ -447,7 +447,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         deployments.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement(SUBDEPLOYMENT), DeploymentAttributes.DEPLOYMENT_RESOLVER));
 
         // Extensions
-        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, parallelBoot, true, false, rootResourceRegistrationProvider));
+        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, parallelBoot, false, rootResourceRegistrationProvider));
         extensionRegistry.setPathManager(pathManager);
 
         // Util

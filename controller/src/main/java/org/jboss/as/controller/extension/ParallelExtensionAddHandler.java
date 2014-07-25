@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -94,18 +95,18 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
                 long start = System.currentTimeMillis();
-                final Map<String, Future<OperationFailedException>> futures = new LinkedHashMap<String, Future<OperationFailedException>>();
+                final Map<String, Future<OperationFailedRuntimeException>> futures = new LinkedHashMap<String, Future<OperationFailedRuntimeException>>();
                 final ManagementResourceRegistration rootResourceRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
                 for (ParsedBootOp op : extensionAdds) {
                     String module = op.address.getLastElement().getValue();
                     ExtensionAddHandler addHandler = ExtensionAddHandler.class.cast(op.handler);
-                    Future<OperationFailedException> future = executor.submit(new ExtensionInitializeTask(module, addHandler, rootResourceRegistration));
+                    Future<OperationFailedRuntimeException> future = executor.submit(new ExtensionInitializeTask(module, addHandler, rootResourceRegistration));
                     futures.put(module, future);
                 }
 
-                for (Map.Entry<String, Future<OperationFailedException>> entry : futures.entrySet()) {
+                for (Map.Entry<String, Future<OperationFailedRuntimeException>> entry : futures.entrySet()) {
                     try {
-                        OperationFailedException ofe = entry.getValue().get();
+                        OperationFailedRuntimeException ofe = entry.getValue().get();
                         if (ofe != null) {
                             throw ofe;
                         }
@@ -127,7 +128,7 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
         };
     }
 
-    private static class ExtensionInitializeTask implements Callable<OperationFailedException> {
+    private static class ExtensionInitializeTask implements Callable<OperationFailedRuntimeException> {
 
         private final String module;
         private final ExtensionAddHandler addHandler;
@@ -141,11 +142,11 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
         }
 
         @Override
-        public OperationFailedException call() {
-            OperationFailedException failure = null;
+        public OperationFailedRuntimeException call() {
+            OperationFailedRuntimeException failure = null;
             try {
                 addHandler.initializeExtension(module, rootResourceRegistration);
-            } catch (OperationFailedException e) {
+            } catch (OperationFailedRuntimeException e) {
                 failure = e;
             }
             return failure;

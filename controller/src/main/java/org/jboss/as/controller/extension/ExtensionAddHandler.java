@@ -46,47 +46,64 @@ public class ExtensionAddHandler implements OperationStepHandler {
 
     private final ExtensionRegistry extensionRegistry;
     private final boolean parallelBoot;
-    private final boolean standalone;
-    private final boolean slaveHC;
+    private final boolean isMasterDomainController;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
      * Create the AbstractAddExtensionHandler
      * @param extensionRegistry registry for extensions
      * @param parallelBoot {@code true} is parallel initialization of extensions is in progress; {@code false} if not
-     * @param slaveHC {@code true} if this handler will execute in a slave HostController
+     * @param isMasterDomainController {@code true} if this handler will execute in a master HostController
+     * @param rootResourceRegistrationProvider provides access to the root {@code ManagementResourceRegistration}
      */
     public ExtensionAddHandler(final ExtensionRegistry extensionRegistry, final boolean parallelBoot,
-                               boolean standalone, boolean slaveHC,
+                               boolean isMasterDomainController,
                                final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         assert extensionRegistry != null : "extensionRegistry is null";
         this.extensionRegistry = extensionRegistry;
         this.parallelBoot = parallelBoot;
-        this.slaveHC = slaveHC;
-        this.standalone = standalone;
+        this.isMasterDomainController = isMasterDomainController;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final String moduleName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-        ExtensionResource resource = new ExtensionResource(moduleName, extensionRegistry);
+        final ExtensionResource resource = new ExtensionResource(moduleName, extensionRegistry);
 
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);
 
-        if (!parallelBoot || !context.isBooting()) {
-            initializeExtension(moduleName, rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context));
-            if (slaveHC && !context.isBooting()) {
+        final boolean install = !parallelBoot || !context.isBooting();
+        final ManagementResourceRegistration rootRegistration;
+        if (install) {
+            rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
+            initializeExtension(extensionRegistry, moduleName, rootRegistration, isMasterDomainController);
+            if (isMasterDomainController && !context.isBooting()) {
                 ModelNode subsystems = new ModelNode();
                 extensionRegistry.recordSubsystemVersions(moduleName, subsystems);
                 context.getResult().set(subsystems);
             }
+        } else {
+            rootRegistration = null;
         }
 
-        context.stepCompleted();
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                if (install) {
+                    extensionRegistry.removeExtension(resource, moduleName, rootRegistration);
+                }
+            }
+        });
     }
 
-    void initializeExtension(String module, ManagementResourceRegistration rootRegistration) throws OperationFailedException {
+    void initializeExtension(String module, ManagementResourceRegistration rootRegistration) {
+        initializeExtension(extensionRegistry, module, rootRegistration, isMasterDomainController);
+    }
+
+    static void initializeExtension(ExtensionRegistry extensionRegistry, String module,
+                                    ManagementResourceRegistration rootRegistration,
+                                    boolean isMasterDomainController) {
         try {
             boolean unknownModule = false;
             for (Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
@@ -100,7 +117,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
                         // now that we know the registry was unaware of the module
                         unknownModule = true;
                     }
-                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, !standalone && !slaveHC));
+                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, isMasterDomainController));
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                 }

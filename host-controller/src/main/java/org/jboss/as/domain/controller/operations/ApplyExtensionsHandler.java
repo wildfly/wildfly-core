@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -95,6 +96,7 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
         for(Resource.ResourceEntry entry : rootResource.getChildren(EXTENSION)) {
             rootResource.removeChild(entry.getPathElement());
         }
+        final Map<String, Resource> installedExtensions = new HashMap<>();
 
         for (final ModelNode resourceDescription : domainModel.asList()) {
             final PathAddress resourceAddress = PathAddress.pathAddress(resourceDescription.require(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_ADDRESS));
@@ -108,6 +110,7 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
                 if (!appliedExtensions.contains(module)) {
                     appliedExtensions.add(module);
                     initializeExtension(module, rootRegistration);
+                    installedExtensions.put(module, resource);
                 }
             } else {
                 continue;
@@ -145,7 +148,16 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
             }
         }
 
-        context.stepCompleted();
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                for (Map.Entry<String, Resource> entry : installedExtensions.entrySet()) {
+                    String module = entry.getKey();
+                    extensionRegistry.removeExtension(entry.getValue(), module, rootRegistration);
+                    appliedExtensions.remove(module);
+                }
+            }
+        });
     }
 
     private Resource getResource(PathAddress resourceAddress, Resource rootResource, OperationContext context) {
