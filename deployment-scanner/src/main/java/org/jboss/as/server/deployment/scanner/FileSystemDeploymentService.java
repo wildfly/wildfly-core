@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,6 +75,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
 
 /**
@@ -1146,11 +1148,19 @@ class FileSystemDeploymentService implements DeploymentScanner {
         protected ModelNode createContent() {
             final ModelNode content = new ModelNode();
             final ModelNode contentItem = content.get(0);
-            contentItem.get(PATH).set(path);
-            if (relativeTo != null) {
-                contentItem.get(RELATIVE_TO).set(relativeTo);
+            if (archive) {
+                try {
+                    contentItem.get(URL).set(deploymentFile.toURI().toURL().toString());
+                } catch (MalformedURLException ex) {
+                }
             }
-            contentItem.get(ARCHIVE).set(archive);
+            if (!contentItem.hasDefined(URL)) {
+                contentItem.get(ARCHIVE).set(archive);
+                contentItem.get(PATH).set(path);
+                if (relativeTo != null) {
+                    contentItem.get(RELATIVE_TO).set(relativeTo);
+                }
+            }
             return content;
         }
 
