@@ -17,6 +17,15 @@
 if( Test-Path env:JAVA_OPTS ) {
   $JAVA_OPTS = Get-Env JAVA_OPTS
   echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
+
+  # This is Powershell, so split the incoming string on a space.
+  $tmpArr = $JAVA_OPTS.split()
+  $JAVA_OPTS = @('')
+  foreach ($str in $tmpArr) {
+    if ($str -ne '') {
+	  $JAVA_OPTS += $str
+	}
+  }
   return
 }
 
