@@ -89,13 +89,13 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
 
     @Test
     public void testValidDcOperation() throws IOException, MgmtOperationException {
-        ModelNode op = ModelUtil.createOpNode("profile=default/subsystem=jmx/remoting-connector=jmx", ADD);
+        ModelNode op = ModelUtil.createOpNode("profile=default/subsystem=io/worker=test", ADD);
         executeOperation(createValidateOperation(op));
     }
 
     @Test
     public void testInvalidDcOperation() throws IOException {
-        ModelNode op = ModelUtil.createOpNode("profile=default/subsystem=jmx/remoting-connector=jmx", ADD);
+        ModelNode op = ModelUtil.createOpNode("profile=default/subsystem=io/worker=test", ADD);
         op.get("badata").set("junk");
         executeInvalidOperation(op);
     }
@@ -142,7 +142,7 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
     }
 
     private void testValidServerOperation(String host, String server) throws IOException, MgmtOperationException {
-        ModelNode op = ModelUtil.createOpNode("host=" + host + "/server=" + server + "/subsystem=jmx/remoting-connector=jmx", ADD);
+        ModelNode op = ModelUtil.createOpNode("host=" + host + "/server=" + server + "/subsystem=io/worker=test", ADD);
         executeOperation(createValidateOperation(op));
     }
 
@@ -157,7 +157,7 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
     }
 
     private void testInvalidServerOperation(String host, String server) throws IOException, MgmtOperationException {
-        ModelNode op = ModelUtil.createOpNode("host=" + host + "/server=" + server + "/subsystem=jmx/remoting-connector=jmx", ADD);
+        ModelNode op = ModelUtil.createOpNode("host=" + host + "/server=" + server + "/subsystem=io/worker=test", ADD);
         op.get("badata").set("junk");
         executeInvalidOperation(op);
     }

@@ -3,7 +3,6 @@
 <server xmlns="urn:jboss:domain:3.0">
     <extensions>
         <extension module="org.jboss.as.deployment-scanner"/>
-        <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.jboss.as.threads"/>
@@ -87,11 +86,6 @@
         <subsystem xmlns="urn:jboss:domain:io:1.0">
             <worker name="default" io-threads="3"/>
             <buffer-pool name="default" buffer-size="16384" buffers-per-slice="128"/>
-        </subsystem>
-        <subsystem xmlns="urn:jboss:domain:jmx:1.2">
-            <expose-resolved-model/>
-            <expose-expression-model/>
-            <remoting-connector/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:remoting:2.0">
             <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>

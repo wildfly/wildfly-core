@@ -25,7 +25,6 @@
 <domain xmlns="urn:jboss:domain:3.0">
 
     <extensions>
-        <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.wildfly.extension.io"/>
@@ -59,9 +58,6 @@
                 <worker name="default" />
                 <buffer-pool name="default" />
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:jmx:1.0">
-                <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
-            </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:2.0"/>
         </profile>
 
@@ -70,9 +66,6 @@
                 <worker name="default" />
                 <buffer-pool name="default" />
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:jmx:1.0">
-                <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
-            </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:2.0"/>
         </profile>
 
@@ -80,9 +73,6 @@
             <subsystem xmlns="urn:jboss:domain:io:1.1">
                 <worker name="default" />
                 <buffer-pool name="default" />
-            </subsystem>
-            <subsystem xmlns="urn:jboss:domain:jmx:1.0">
-                <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:2.0"/>
         </profile>
@@ -104,8 +94,6 @@
             <socket-binding name="http" port="8080"/>
             <socket-binding name="https" port="8443"/>
             <!-- include socket-binding-group="web-sockets"/-->
-            <socket-binding name="jmx-connector-registry" interface="management" port="1090"/>
-            <socket-binding name="jmx-connector-server" interface="management" port="1091"/>
             <socket-binding name="txn-recovery-environment" port="4712"/>
             <socket-binding name="txn-status-manager" port="4713"/>
         </socket-binding-group>
@@ -114,8 +102,6 @@
             <socket-binding name="http" port="8080"/>
             <socket-binding name="https" port="8443"/>
             <!-- include socket-binding-group="web-sockets"/-->
-            <socket-binding name="jmx-connector-registry" interface="management" port="1090"/>
-            <socket-binding name="jmx-connector-server" interface="management" port="1091"/>
             <socket-binding name="txn-recovery-environment" port="4712"/>
             <socket-binding name="txn-status-manager" port="4713"/>
         </socket-binding-group>
@@ -124,8 +110,6 @@
             <socket-binding name="http" port="8080"/>
             <socket-binding name="https" port="8443"/>
             <!-- include socket-binding-group="web-sockets"/-->
-            <socket-binding name="jmx-connector-registry" interface="management" port="1090"/>
-            <socket-binding name="jmx-connector-server" interface="management" port="1091"/>
             <socket-binding name="txn-recovery-environment" port="4712"/>
             <socket-binding name="txn-status-manager" port="4713"/>
         </socket-binding-group>

@@ -87,7 +87,7 @@ public class IgnoredResourcesTestCase {
         }
 
         // Modify the ignored profile
-        ModelNode mod = createOpNode("profile=ignored/subsystem=io", "add");
+        ModelNode mod = createOpNode("profile=ignored/subsystem=remoting", "add");
         executeOperation(mod, domainMasterLifecycleUtil.getDomainClient());
 
         // Resource still should not exist on slave
