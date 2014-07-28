@@ -32,16 +32,18 @@ import java.util.Map;
  */
 public enum Namespace {
     // must be first
+// must be first
     UNKNOWN(null),
 
     THREADS_1_0("urn:jboss:domain:threads:1.0"),
     THREADS_1_1("urn:jboss:domain:threads:1.1"),
+    THREADS_2_0("urn:jboss:domain:threads:2.0"),
     ;
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = THREADS_1_1;
+    public static final Namespace CURRENT = THREADS_2_0;
 
     private final String name;
 
