@@ -159,6 +159,7 @@
         <module>controller</module>
         <module>controller-client</module>
         <module>core-build</module>
+        <module>core-dist</module>
         <module>core-model-test</module>
         <module>core-security</module>
         <module>deployment-repository</module>
@@ -548,7 +549,12 @@
         <dependencies>
 
             <!-- Modules in this project -->
-
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-build</artifactId>
+                <type>pom</type>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-build</artifactId>
@@ -614,6 +620,13 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-domain-management</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-dist</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
             </dependency>
 
             <dependency>
