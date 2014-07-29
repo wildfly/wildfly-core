@@ -62,15 +62,9 @@ public class JvmXml {
 
     public static void parseJvm(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
             final Set<String> jvmNames, final boolean server) throws XMLStreamException {
-        switch (expectedNs) {
-            case DOMAIN_1_0:
-            case DOMAIN_1_1:
-            case DOMAIN_1_2:
-            case DOMAIN_1_3:
-            case DOMAIN_1_4:
-            case DOMAIN_1_5:
-            case DOMAIN_2_0:
-            case DOMAIN_2_1:
+        switch (expectedNs.getMajorVersion()) {
+            case 1:
+            case 2:
                 parseJvm_1_0(reader, parentAddress, expectedNs, updates, jvmNames, server);
                 break;
             default:

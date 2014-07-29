@@ -34,42 +34,59 @@ import javax.xml.XMLConstants;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public enum Namespace {
+
     // must be first
     UNKNOWN(null), NONE(null),
 
     // predefined standard
     XML_SCHEMA_INSTANCE("http://www.w3.org/2001/XMLSchema-instance"),
 
-    // domain versions, oldest to newest
-    DOMAIN_1_0("urn:jboss:domain:1.0"),
+    // domain versions, in numerical order
+    DOMAIN_1_0(1, "urn:jboss:domain:1.0"),
 
-    DOMAIN_1_1("urn:jboss:domain:1.1"),
+    DOMAIN_1_1(1, "urn:jboss:domain:1.1"),
 
-    DOMAIN_1_2("urn:jboss:domain:1.2"),
+    DOMAIN_1_2(1, "urn:jboss:domain:1.2"),
 
-    DOMAIN_1_3("urn:jboss:domain:1.3"),
+    DOMAIN_1_3(1, "urn:jboss:domain:1.3"),
 
-    DOMAIN_1_4("urn:jboss:domain:1.4"),
+    DOMAIN_1_4(1, "urn:jboss:domain:1.4"),
 
-    DOMAIN_1_5("urn:jboss:domain:1.5"),
+    DOMAIN_1_5(1, "urn:jboss:domain:1.5"),
 
-    DOMAIN_2_0("urn:jboss:domain:2.0"),
+    DOMAIN_1_6(1, "urn:jboss:domain:1.6"),
 
-    DOMAIN_2_1("urn:jboss:domain:2.1"),
+    DOMAIN_2_0(2, "urn:jboss:domain:2.0"),
 
-    DOMAIN_3_0("urn:jboss:domain:3.0");
+    DOMAIN_2_1(2, "urn:jboss:domain:2.1"),
 
+    DOMAIN_3_0(3, "urn:jboss:domain:3.0");
     /**
      * The current namespace version.
      */
     public static final Namespace CURRENT = DOMAIN_3_0;
 
-    public static final Namespace[] ALL_NAMESPACES = new Namespace[] {DOMAIN_1_0, DOMAIN_1_1, DOMAIN_1_2, DOMAIN_1_3, DOMAIN_1_4, DOMAIN_1_5, DOMAIN_2_0, DOMAIN_2_1, DOMAIN_3_0};
+    public static final Namespace[] ALL_NAMESPACES = new Namespace[] {DOMAIN_1_0, DOMAIN_1_1, DOMAIN_1_2, DOMAIN_1_3, DOMAIN_1_4, DOMAIN_1_5, DOMAIN_1_6, DOMAIN_2_0, DOMAIN_2_1, DOMAIN_3_0};
 
+    private final int majorVersion;
     private final String name;
 
     Namespace(final String name) {
+        this(-1, name);
+    }
+
+    Namespace(final int majorVersion, final String name) {
+        this.majorVersion = majorVersion;
         this.name = name;
+    }
+
+    /**
+     * Get the major version represented by this namespace.
+     *
+     * @return The major version.
+     */
+    public int getMajorVersion() {
+        return majorVersion;
     }
 
     /**

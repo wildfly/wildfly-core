@@ -447,16 +447,21 @@ public class StandaloneXml extends CommonXml {
 
         if (element == Element.VAULT) {
             switch (namespace) {
-                //Less that 1.4 does not end up here
+                // Less than 1.4 does not end up here
                 case DOMAIN_1_4:
-                case DOMAIN_1_5:
-                case DOMAIN_2_0:
-                case DOMAIN_2_1: {
+                case DOMAIN_1_5: {
                     parseVault_1_1(reader, address, namespace, list);
                     break;
                 }
                 default: {
-                    parseVault_3_0(reader, address, namespace, list);
+                    switch (namespace.getMajorVersion()) {
+                        case 2:
+                            parseVault_1_1(reader, address, namespace, list);
+                            break;
+                        default:
+                            parseVault_1_6_and_3_0(reader, address, namespace, list);
+                            break;
+                    }
                 }
             }
             element = nextElement(reader, namespace);
@@ -637,30 +642,24 @@ public class StandaloneXml extends CommonXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case NATIVE_INTERFACE: {
-                    switch (expectedNs) { // Will not be 1.0 as this method is called for 1.1 and above.
-                        case DOMAIN_1_1:
-                        case DOMAIN_1_2:
-                        case DOMAIN_1_3:
-                        case DOMAIN_1_4:
-                        case DOMAIN_1_5:
+                    switch (expectedNs.getMajorVersion()) {
+                        case 1: // Will not be 1.0 as this method is called for 1.1 and above.
                             parseManagementInterface1_1(reader, address, false, expectedNs, list);
                             break;
-                        default:
+                        default: // 2.0 and onwards.
                             parseManagementInterface2_0(reader, address, false, expectedNs, list);
+                            break;
                     }
                     break;
                 }
                 case HTTP_INTERFACE: {
-                    switch (expectedNs) { // Will not be 1.0 as this method is called for 1.1 and above.
-                        case DOMAIN_1_1:
-                        case DOMAIN_1_2:
-                        case DOMAIN_1_3:
-                        case DOMAIN_1_4:
-                        case DOMAIN_1_5:
+                    switch (expectedNs.getMajorVersion()) {
+                        case 1: // Will not be 1.0 as this method is called for 1.1 and above.
                             parseManagementInterface1_1(reader, address, true, expectedNs, list);
                             break;
                         default:
                             parseManagementInterface2_0(reader, address, true, expectedNs, list);
+                            break;
                     }
                     break;
                 }
