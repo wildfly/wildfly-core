@@ -178,7 +178,7 @@ case "$1" in
 		launched=0
 		until [ $count -gt $STARTUP_WAIT ]
 		do
-			grep 'JBAS015874:' "$JBOSS_CONSOLE_LOG" > /dev/null
+			grep 'WFLYSRV0025:' "$JBOSS_CONSOLE_LOG" > /dev/null
 			if [ $? -eq 0 ] ; then
 				launched=1
 				break
