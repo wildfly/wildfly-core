@@ -610,12 +610,6 @@ public class HostXml extends CommonXml {
                         }
                         break;
                     }
-                    case HTTP_UPGRADE_ENABLED: {
-                        if (http) {
-                            HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
-                        }
-                        break;
-                    }
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -1931,6 +1925,7 @@ public class HostXml extends CommonXml {
                             case DOMAIN_1_2:
                             case DOMAIN_1_3:
                             case DOMAIN_1_4:
+                            case DOMAIN_1_5:
                                 parseManagementInterface1_1(reader, address, false, expectedNs, list);
                                 break;
                             default:
@@ -1947,6 +1942,7 @@ public class HostXml extends CommonXml {
                             case DOMAIN_1_2:
                             case DOMAIN_1_3:
                             case DOMAIN_1_4:
+                            case DOMAIN_1_5:
                                 parseManagementInterface1_1(reader, address, true, expectedNs, list);
                                 break;
                             default:
