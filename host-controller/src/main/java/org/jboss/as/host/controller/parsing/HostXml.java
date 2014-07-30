@@ -1498,7 +1498,7 @@ public class HostXml extends CommonXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case JVM:
-                    JvmXml.parseJvm(reader, address, expectedNs, list, names);
+                    JvmXml.parseJvm(reader, address, expectedNs, list, names, false);
                     break;
                 default:
                     throw unexpectedElement(reader);

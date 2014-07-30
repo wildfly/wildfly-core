@@ -801,7 +801,7 @@ public class DomainXml extends CommonXml {
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case JVM: {
-                        JvmXml.parseJvm(reader, groupAddress, expectedNs, list, new HashSet<String>());
+                        JvmXml.parseJvm(reader, groupAddress, expectedNs, list, new HashSet<String>(), false);
                         break;
                     }
                     case SOCKET_BINDING_GROUP: {
