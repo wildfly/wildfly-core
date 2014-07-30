@@ -61,15 +61,25 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 public class JvmXml {
 
     public static void parseJvm(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
-            final Set<String> jvmNames) throws XMLStreamException {
-        parseJvm(reader, parentAddress, expectedNs, updates, jvmNames, false);
+            final Set<String> jvmNames, final boolean server) throws XMLStreamException {
+        switch (expectedNs) {
+            case DOMAIN_1_0:
+            case DOMAIN_1_1:
+            case DOMAIN_1_2:
+            case DOMAIN_1_3:
+            case DOMAIN_1_4:
+            case DOMAIN_1_5:
+            case DOMAIN_2_0:
+            case DOMAIN_2_1:
+                parseJvm_1_0(reader, parentAddress, expectedNs, updates, jvmNames, server);
+                break;
+            default:
+                parseJvm_3_0(reader, parentAddress, expectedNs, updates, jvmNames, server);
+                break;
+        }
     }
 
-    public static void parseJvm(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
-            final Set<String> jvmNames, final boolean server) throws XMLStreamException {
-
-        ModelNode addOp = Util.createAddOperation();
-
+    private static String parseJvmAttributes(XMLExtendedStreamReader reader, ModelNode addOp, Set<String> jvmNames, boolean server) throws XMLStreamException {
         // Handle attributes
         String name = null;
         Boolean debugEnabled = null;
@@ -140,6 +150,79 @@ public class JvmXml {
         if (debugEnabled != null && debugOptions == null && debugEnabled) {
             throw ParseUtils.missingRequired(reader, EnumSet.of(Attribute.DEBUG_OPTIONS));
         }
+
+        return name;
+    }
+    private static void parseJvm_1_0(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
+            final Set<String> jvmNames, final boolean server) throws XMLStreamException {
+
+        ModelNode addOp = Util.createAddOperation();
+
+        String name = parseJvmAttributes(reader, addOp, jvmNames, server);
+
+        final ModelNode address = parentAddress.clone();
+        address.add(ModelDescriptionConstants.JVM, name);
+        addOp.get(OP_ADDR).set(address);
+        updates.add(addOp);
+
+        // Handle elements
+        boolean hasJvmOptions = false;
+        boolean hasEnvironmentVariables = false;
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, expectedNs);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case HEAP: {
+                    parseHeap(reader, addOp);
+                    break;
+                }
+                case PERMGEN: {
+                    parsePermgen(reader, addOp);
+                    break;
+                }
+                case STACK: {
+                    parseStack(reader, addOp);
+                    break;
+                }
+                case AGENT_LIB: {
+                    parseAgentLib(reader, addOp);
+                    break;
+                }
+                case AGENT_PATH: {
+                    parseAgentPath(reader, addOp);
+                    break;
+                }
+                case JAVA_AGENT: {
+                    parseJavaagent(reader, addOp);
+                    break;
+                }
+                case ENVIRONMENT_VARIABLES: {
+                    if (hasEnvironmentVariables) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+                    parseEnvironmentVariables(reader, expectedNs, addOp);
+                    hasEnvironmentVariables = true;
+                    break;
+                }
+                case JVM_OPTIONS: {
+                    if (hasJvmOptions) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+                    parseJvmOptions(reader, expectedNs, addOp);
+                    hasJvmOptions = true;
+                    break;
+                }
+                default:
+                    throw unexpectedElement(reader);
+            }
+        }
+    }
+
+    private static void parseJvm_3_0(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
+            final Set<String> jvmNames, final boolean server) throws XMLStreamException {
+        ModelNode addOp = Util.createAddOperation();
+
+        String name = parseJvmAttributes(reader, addOp, jvmNames, server);
 
         final ModelNode address = parentAddress.clone();
         address.add(ModelDescriptionConstants.JVM, name);
