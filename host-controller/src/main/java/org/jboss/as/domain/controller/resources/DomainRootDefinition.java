@@ -86,8 +86,10 @@ import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResource
 import org.jboss.as.domain.controller.operations.ApplyRemoteMasterDomainModelHandler;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
+import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
 import org.jboss.as.domain.controller.operations.LocalHostNameOperationHandler;
 import org.jboss.as.domain.controller.operations.ProcessTypeHandler;
+import org.jboss.as.domain.controller.operations.ReadMasterDomainOperationsHandler;
 import org.jboss.as.domain.controller.operations.ResolveExpressionOnDomainHandler;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupAddHandler;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentFullReplaceHandler;
@@ -271,6 +273,9 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
 
             final SubsystemDescriptionDump dumper = new SubsystemDescriptionDump(extensionRegistry);
             resourceRegistration.registerOperationHandler(SubsystemDescriptionDump.DEFINITION, dumper);
+
+            resourceRegistration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, GenericModelDescribeOperationHandler.INSTANCE, true);
+            resourceRegistration.registerOperationHandler(ReadMasterDomainOperationsHandler.DEFINITION, ReadMasterDomainOperationsHandler.INSTANCE);
 
         } else {
             DeploymentUploadURLHandler.registerSlave(resourceRegistration);
