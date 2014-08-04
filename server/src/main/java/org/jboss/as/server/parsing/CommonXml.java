@@ -1209,6 +1209,12 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
         list.add(vault);
     }
 
+    /** @deprecated kept for compatibility purposes with AppClientXml */
+    @Deprecated
+    protected final void parseVault_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+        parseVault_1_6_and_3_0(reader, address, expectedNs, list);
+    }
+
     protected void parseVault_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         final int vaultAttribCount = reader.getAttributeCount();
 
