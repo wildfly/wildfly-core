@@ -1,6 +1,6 @@
-### -*- Power Shell file -*- ################################################
+#############################################################################
 #                                                                          ##
-#    JBoss Startup Script for starting the standalone server               ##
+#    WildFly Startup Script for starting the standalone server             ##
 #                                                                          ##
 #############################################################################
 
@@ -91,34 +91,13 @@ if($PRESERVE_JAVA_OPTS -ne 'true') {
   } elseif ($JAVA_OPTS_STRING.Contains('-d32')) {
     $JVM_OPTVERSION = '-d32'
   }
-
-  if(!$JAVA_OPTS_STRING.Contains('UseCompressedOops')) {
-    try {
-      Start-Job { java -XX:+UseCompressedOops -version } | Wait-Job | Receive-Job -ErrorAction Stop -ErrorVariable $ev
-    } catch {
-      if( $_.exception.message.indexOf('rror') -eq '-1') {
-        $JAVA_OPTS +=  '-XX:+UseCompressedOops'
-      }
-    }
-  }
-
-
-  if(!$JAVA_OPTS_STRING.Contains('TieredCompilation')) {
-    try {
-      Start-Job { java -XX:+TieredCompilation -version } | Wait-Job | Receive-Job -ErrorAction Stop -ErrorVariable $ev
-    } catch {
-      if( $_.exception.message.indexOf('rror') -eq '-1') {
-        $JAVA_OPTS += '-XX:+TieredCompilation'
-      }
-    }
-  }
 }
 
 
 # Display our environment
-echo "========================================================================="
+echo "================================================================================="
 echo ""
-echo "  JBoss Bootstrap Environment"
+echo "  WildFly Bootstrap Environment"
 echo ""
 echo "  JBOSS_HOME: $JBOSS_HOME"
 echo ""
@@ -130,18 +109,18 @@ echo "  JAVA_OPTS: $JAVA_OPTS"
 echo ""
 echo "  JBOSS_MODULEPATH: $JBOSS_MODULEPATH"
 echo ""
-echo "========================================================================="
+echo "================================================================================="
 echo ""
 
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
 
-  $PROG_ARGS = @('')
+  $PROG_ARGS = @()
   $PROG_ARGS += $JAVA_OPTS
   $PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/boot.log"
   $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties"
   $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
   $PROG_ARGS += "-jar"
-  $PROG_ARGS += "$JBOSS_HOME/jboss-modules.jar"
+  $PROG_ARGS += "$JBOSS_HOME\jboss-modules.jar"
   $PROG_ARGS += "-mp"
   $PROG_ARGS += "$JBOSS_MODULEPATH"
   $PROG_ARGS += "org.jboss.as.standalone"
