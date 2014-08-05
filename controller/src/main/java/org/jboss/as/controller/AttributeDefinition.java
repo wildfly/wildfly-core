@@ -39,6 +39,7 @@ import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -443,6 +444,39 @@ public abstract class AttributeDefinition {
         }
         ModelNode node = validateOperation(operationObject, true);
         model.get(name).set(node);
+    }
+
+    private ModelNode convertToExpectedType(final ModelNode node) {
+        if (node.getType() == type || node.getType() == ModelType.EXPRESSION || Util.isExpression(node.asString()) || !node.isDefined()) {
+            return node;
+        }
+        switch (type) {
+            case BIG_DECIMAL:
+                return new ModelNode(node.asBigDecimal());
+            case BIG_INTEGER:
+                return new ModelNode(node.asBigInteger());
+            case BOOLEAN:
+                return new ModelNode(node.asBoolean());
+            case BYTES:
+                return new ModelNode(node.asBytes());
+            case DOUBLE:
+                return new ModelNode(node.asDouble());
+            case INT:
+                return new ModelNode(node.asInt());
+            case LIST:
+                return new ModelNode().set(node.asList());
+            case LONG:
+                return new ModelNode(node.asLong());
+            case PROPERTY:
+                return new ModelNode().set(node.asProperty());
+            case TYPE:
+                return new ModelNode(node.asType());
+            case STRING:
+                return new ModelNode(node.asString());
+            case OBJECT:
+            default:
+                return node;
+        }
     }
 
     /**
@@ -907,8 +941,7 @@ public abstract class AttributeDefinition {
         } else {
             validator.validateParameter(name, node);
         }
-
-        return node;
+        return convertToExpectedType(node);
     }
 
     public AttributeMarshaller getAttributeMarshaller() {
