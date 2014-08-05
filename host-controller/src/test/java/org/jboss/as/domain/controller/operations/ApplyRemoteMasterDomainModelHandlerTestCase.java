@@ -83,11 +83,13 @@ import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author John Bailey
  */
+@Ignore
 public class ApplyRemoteMasterDomainModelHandlerTestCase extends AbstractOperationTestCase {
 
     private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);

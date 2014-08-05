@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -61,6 +60,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -134,7 +134,42 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
         this.authorizerConfiguration = authorizerConfiguration;
     }
 
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    @Override
+    public void execute(OperationContext context, ModelNode op) throws OperationFailedException {
+
+        // We get the model as a list of resources descriptions
+        final ModelNode domainModel = op.get(DOMAIN_MODEL);
+
+        final List<ModelNode> operations = domainModel.asList();
+        if (context.isBooting()) {
+            for (final ModelNode operation : operations) {
+
+                final String operationName = operation.require(OP).asString();
+                final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+                if (ignoredResourceRegistry.isResourceExcluded(address)) {
+                    continue;
+                }
+
+                final ImmutableManagementResourceRegistration rootRegistration = context.getRootResourceRegistration();
+                final OperationStepHandler stepHandler = rootRegistration.getOperationHandler(address, operationName);
+                if(stepHandler != null) {
+                    context.addStep(operation, stepHandler, OperationContext.Stage.MODEL);
+                } else {
+                    final ImmutableManagementResourceRegistration child = rootRegistration.getSubModel(address);
+                    if (child == null) {
+                        context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
+                    } else {
+                        context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
+                    }
+                }
+            }
+        } else {
+            throw new RuntimeException("failed to sync model");
+        }
+        context.stepCompleted();
+    }
+
+    public void oldExecute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
         // We get the model as a list of resources descriptions
         final ModelNode domainModel = operation.get(DOMAIN_MODEL);

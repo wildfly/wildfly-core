@@ -62,6 +62,7 @@ import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
+import org.jboss.as.domain.controller.operations.ReadMasterDomainOperationsHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
@@ -290,7 +291,8 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             // Remotely resolve the subsystem versions and create the transformation
             registrationContext.processSubsystems(transformers, extensions);
             // Now run the read-domain model operation
-            final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo.getHostName(), transformers, runtimeIgnoreTransformationRegistry);
+            // final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo.getHostName(), transformers, runtimeIgnoreTransformationRegistry);
+            final OperationStepHandler handler = ReadMasterDomainOperationsHandler.INSTANCE;
             context.addStep(READ_DOMAIN_MODEL.getOperation(), handler, OperationContext.Stage.MODEL);
         }
     }
