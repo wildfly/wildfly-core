@@ -1088,8 +1088,9 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
     private MBeanServerPlugin findDelegateForNewObject(ObjectName name) {
         if (name == null) {
-            throw JmxLogger.ROOT_LOGGER.objectNameCantBeNull();
+            return rootMBeanServer;
         }
+
         if (delegates.size() > 0) {
             for (MBeanServerPlugin delegate : delegates) {
                 if (delegate.accepts(name)) {
