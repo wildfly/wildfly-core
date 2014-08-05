@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
 
@@ -52,6 +53,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
+import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
@@ -290,6 +292,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             }
             // Remotely resolve the subsystem versions and create the transformation
             registrationContext.processSubsystems(transformers, extensions);
+            registrationContext.operationContext = context;
             // Now run the read-domain model operation
             // final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo.getHostName(), transformers, runtimeIgnoreTransformationRegistry);
             final OperationStepHandler handler = ReadMasterDomainOperationsHandler.INSTANCE;
@@ -309,6 +312,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         private volatile IOTask<?> task;
         private volatile boolean failed;
         private volatile Transformers transformers;
+        private volatile OperationContext operationContext;
         private ActiveOperation<Void, RegistrationContext> activeOperation;
         private final AtomicBoolean completed = new AtomicBoolean();
         private volatile DomainControllerRuntimeIgnoreTransformationEntry runtimeIgnoreTransformation;
@@ -355,7 +359,13 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 transaction.rollback();
             } else {
                 try {
-                    registerHost(transaction, result);
+                    final ModelNode transformed = new ModelNode();
+                    final TransformationTarget target = transformers.getTarget();
+                    for (final ModelNode operation : result.get(RESULT).asList()) {
+                        final OperationTransformer.TransformedOperation op = transformers.transformOperation(operationContext, operation);
+                        transformed.get(RESULT).add(op.getTransformedOperation());
+                    }
+                    registerHost(transaction, transformed);
                 } catch (SlaveRegistrationException e) {
                     failed(e.getErrorCode(), e.getErrorMessage());
                 } catch (Exception e) {
