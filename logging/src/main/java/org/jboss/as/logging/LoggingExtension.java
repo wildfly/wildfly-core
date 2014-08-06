@@ -245,7 +245,8 @@ public class LoggingExtension implements Extension {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
         //Current 3.0.0 to 1.3.0 (there are no transformers for 2.0.0 at present so we don't bother with that one for now)
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_3_0, defs);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_4_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_4_0, KnownModelVersion.VERSION_1_3_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_2_0, KnownModelVersion.VERSION_1_1_0, defs);
 
@@ -253,7 +254,9 @@ public class LoggingExtension implements Extension {
         chainedBuilder.buildAndRegister(registration, new ModelVersion[]{
                 KnownModelVersion.VERSION_1_1_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_2_0.getModelVersion(),
-                KnownModelVersion.VERSION_1_3_0.getModelVersion()});
+                KnownModelVersion.VERSION_1_3_0.getModelVersion(),
+                KnownModelVersion.VERSION_1_4_0.getModelVersion(),
+        });
     }
 
     private void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final KnownModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
