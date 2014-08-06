@@ -55,7 +55,7 @@ public class PluggableMBeanServerTestCase {
     @Test
     public void testNullObjectNameAndMBeanRegistration() throws Exception {
         assertNoMBean(NAME);
-        server.registerMBean(new TestBean(), null);
+        server.registerMBean(new TestBean(NAME), null);
         Assert.assertNotNull(server.getMBeanInfo(NAME));
         server.unregisterMBean(NAME);
         assertNoMBean(NAME);
@@ -72,6 +72,23 @@ public class PluggableMBeanServerTestCase {
         assertNoMBean(NAME);
     }
 
+    @Test
+    public void testReservedDomainMBeanRegistrationFails() throws Exception {
+        reservedDomainTest("org.jboss.as:bean=test-null");
+        reservedDomainTest("org.jboss.as.expr:bean=test-null");
+    }
+
+    private void reservedDomainTest(String name) throws Exception {
+        ObjectName objName = createName(name);
+        assertNoMBean(objName);
+        try {
+            server.registerMBean(new TestBean(objName), null);
+            Assert.fail("Should not have been able to register with name " + name);
+        } catch (RuntimeOperationsException expected) {
+        }
+        assertNoMBean(objName);
+    }
+
     private void assertNoMBean(ObjectName name) {
         try {
             server.getMBeanInfo(name);
@@ -86,7 +103,7 @@ public class PluggableMBeanServerTestCase {
 
     private static ObjectName createName(String s) {
         try {
-            return ObjectName.getInstance("org.jboss:bean=test-null");
+            return ObjectName.getInstance(s);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -98,9 +115,15 @@ public class PluggableMBeanServerTestCase {
 
     public static class TestBean implements TestBeanMBean, MBeanRegistration {
 
+        private final ObjectName objName;
+
+        public TestBean(ObjectName objName) {
+            this.objName = objName;
+        }
+
         @Override
         public ObjectName preRegister(MBeanServer server, ObjectName name) throws Exception {
-            return ObjectName.getInstance("org.jboss:bean=test-null");
+            return objName;
         }
 
         @Override
