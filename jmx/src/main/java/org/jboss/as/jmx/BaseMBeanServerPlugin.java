@@ -21,6 +21,8 @@
  */
 package org.jboss.as.jmx;
 
+import static org.jboss.as.jmx.logging.JmxLogger.ROOT_LOGGER;
+
 import java.io.ObjectInputStream;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -43,76 +45,76 @@ import org.jboss.as.server.jmx.MBeanServerPlugin;
 public abstract class BaseMBeanServerPlugin implements MBeanServerPlugin {
     public ObjectInstance createMBean(String className, ObjectName name, Object[] params, String[] signature)
             throws ReflectionException, InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException {
-        throw new NotCompliantMBeanException("You can't create mbeans under the reserved domain '" + name.getDomain() + "'");
+        throw ROOT_LOGGER.cannotCreateMBeansInReservedDomain(name.getDomain());
     }
 
     public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName, Object[] params,
             String[] signature) throws ReflectionException, InstanceAlreadyExistsException, MBeanException,
             NotCompliantMBeanException, InstanceNotFoundException {
-        throw new NotCompliantMBeanException("You can't create mbeans under the reserved domain '" + name.getDomain() + "'");
+        throw ROOT_LOGGER.cannotCreateMBeansInReservedDomain(name.getDomain());
     }
 
     public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName) throws ReflectionException,
             InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException, InstanceNotFoundException {
-        throw new NotCompliantMBeanException("You can't create mbeans under the reserved domain '" + name.getDomain() + "'");
+        throw ROOT_LOGGER.cannotCreateMBeansInReservedDomain(name.getDomain());
     }
 
     public ObjectInstance createMBean(String className, ObjectName name) throws ReflectionException,
             InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException {
-        throw new NotCompliantMBeanException("You can't create mbeans under the reserved domain '" + name.getDomain() + "'");
+        throw ROOT_LOGGER.cannotCreateMBeansInReservedDomain(name.getDomain());
     }
 
     @Deprecated
     public ObjectInputStream deserialize(ObjectName name, byte[] data) throws OperationsException {
-        throw new OperationsException("Don't know how to deserialize");
+        throw ROOT_LOGGER.dontKnowHowToDeserialize();
     }
 
     @Deprecated
     public ObjectInputStream deserialize(String className, byte[] data) throws OperationsException, ReflectionException {
-        throw new OperationsException("Don't know how to deserialize");
+        throw ROOT_LOGGER.dontKnowHowToDeserialize();
     }
 
     @Deprecated
     public ObjectInputStream deserialize(String className, ObjectName loaderName, byte[] data) throws OperationsException,
             ReflectionException {
-        throw new OperationsException("Don't know how to deserialize");
+        throw ROOT_LOGGER.dontKnowHowToDeserialize();
     }
 
     public ClassLoaderRepository getClassLoaderRepository() {
-        throw new UnsupportedOperationException("getClassLoaderRepository is not supported");
+        throw ROOT_LOGGER.unsupportedMethod("getClassLoaderRepository");
     }
 
     public String getDefaultDomain() {
-        throw new UnsupportedOperationException("getDefaultDomain is not supported");
+        throw ROOT_LOGGER.unsupportedMethod("getDefaultDomain");
     }
 
     public Object instantiate(String className, Object[] params, String[] signature) throws ReflectionException, MBeanException {
-        throw new UnsupportedOperationException("instantiate is not supported");
+        throw ROOT_LOGGER.unsupportedMethod("instantiate");
     }
 
     public Object instantiate(String className, ObjectName loaderName, Object[] params, String[] signature)
             throws ReflectionException, MBeanException, InstanceNotFoundException {
-        throw new UnsupportedOperationException("instantiate is not supported");
+        throw ROOT_LOGGER.unsupportedMethod("instantiate");
     }
 
     public Object instantiate(String className, ObjectName loaderName) throws ReflectionException, MBeanException,
             InstanceNotFoundException {
-        throw new UnsupportedOperationException("instantiate is not supported");
+        throw ROOT_LOGGER.unsupportedMethod("instantiate");
     }
 
     public Object instantiate(String className) throws ReflectionException, MBeanException {
-        throw new UnsupportedOperationException("instantiate is not supported");
+        throw ROOT_LOGGER.unsupportedMethod("instantiate");
     }
 
     public ObjectInstance registerMBean(Object object, ObjectName name) throws InstanceAlreadyExistsException,
             MBeanRegistrationException, NotCompliantMBeanException {
-        throw new MBeanRegistrationException(new RuntimeException("You can't register mbeans under the reserved domain '"
-                + name.getDomain() + "'"));
+        //The constructor for this needs an underlying exception
+        throw new MBeanRegistrationException(new RuntimeException(ROOT_LOGGER.cannotRegisterMBeansUnderReservedDomain(name.getDomain())));
     }
 
     public void unregisterMBean(ObjectName name) throws InstanceNotFoundException, MBeanRegistrationException {
-        throw new MBeanRegistrationException(new RuntimeException("You can't unregister mbeans under the reserved domain '"
-                + name.getDomain() + "'"));
+        //The constructor for this needs an underlying exception
+        throw new MBeanRegistrationException(new RuntimeException(ROOT_LOGGER.cannotUnregisterMBeansUnderReservedDomain(name.getDomain())));
     }
 
 }
