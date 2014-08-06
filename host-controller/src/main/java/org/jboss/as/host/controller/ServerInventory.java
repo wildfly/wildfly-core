@@ -24,6 +24,7 @@ package org.jboss.as.host.controller;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 import javax.security.auth.callback.CallbackHandler;
 
@@ -298,5 +299,27 @@ public interface ServerInventory {
      * @throws InterruptedException
      */
     void awaitServersState(Collection<String> serverNames, boolean started);
+
+    /**
+     * Suspends a server, allowing current requests to finish and blocking any new requests
+     * from starting.
+     *
+     * @param serverName The server name
+     */
+    void suspendServer(String serverName);
+
+    /**
+     * Resumes a server, allowing it to begin processing requests normally
+     * @param serverName The server name
+     */
+    void resumeServer(String serverName);
+
+    /**
+     * Waits for the given set of servers to suspend
+     * @param waitForServers The servers to wait for
+     * @param timeout The maximum amount of time to wait in milliseconds, with -1 meaning indefinitly
+     * @return <code>true</code> if all the servers suspended in time
+     */
+    boolean awaitServerSuspend(Set<String> waitForServers, int timeout);
 
 }

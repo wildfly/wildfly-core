@@ -111,7 +111,9 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
+import org.jboss.as.server.requestcontroller.GlobalRequestController;
 import org.jboss.as.server.services.security.AbstractVaultReader;
+import org.jboss.as.server.shutdown.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -266,6 +268,18 @@ public final class ServerService extends AbstractControllerService {
 
             final DeploymentOverlayIndexService deploymentOverlayIndexService = new DeploymentOverlayIndexService();
             context.getServiceTarget().addService(DeploymentOverlayIndexService.SERVICE_NAME, deploymentOverlayIndexService).install();
+
+            context.getServiceTarget().addService(SuspendController.SERVICE_NAME, new SuspendController()).install();
+
+            GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
+            context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)
+                    .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, gracefulShutdownService.getSuspendControllerInjectedValue())
+                    .install();
+
+            GlobalRequestController globalRequestController = new GlobalRequestController();
+            context.getServiceTarget().addService(GlobalRequestController.SERVICE_NAME, globalRequestController)
+                    .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, globalRequestController.getShutdownControllerInjectedValue())
+                    .install();
 
             // Activate module loader
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_SERVICE_MODULE_LOADER, new DeploymentUnitProcessor() {

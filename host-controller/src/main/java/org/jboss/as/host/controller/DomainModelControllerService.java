@@ -1009,6 +1009,21 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public void awaitServersState(Collection<String> serverNames, boolean started) {
             getServerInventory().awaitServersState(serverNames, started);
         }
+
+        @Override
+        public void suspendServer(String serverName) {
+            getServerInventory().suspendServer(serverName);
+        }
+
+        @Override
+        public void resumeServer(String serverName) {
+            getServerInventory().resumeServer(serverName);
+        }
+
+        @Override
+        public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
+            return getServerInventory().awaitServerSuspend(waitForServers, timeout);
+        }
     }
 
     private static <S> S service(final Class<S> service) {

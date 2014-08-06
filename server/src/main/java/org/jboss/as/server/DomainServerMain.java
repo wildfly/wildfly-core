@@ -125,30 +125,40 @@ public final class DomainServerMain {
             throw new IllegalStateException(); // not reached
         } finally {
         }
-        for (;;) try {
-            final String hostName = StreamUtils.readUTFZBytes(initialInput);
-            final int port = StreamUtils.readInt(initialInput);
-            final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
-            final byte[] asAuthKey = new byte[16];
-            StreamUtils.readFully(initialInput, asAuthKey);
+        for (;;) {
+            try {
+                final String hostName = StreamUtils.readUTFZBytes(initialInput);
+                final int port = StreamUtils.readInt(initialInput);
+                final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
+                final byte[] asAuthKey = new byte[16];
+                StreamUtils.readFully(initialInput, asAuthKey);
 
-            // Get the host-controller server client
-            final ServiceContainer container = containerFuture.get();
-            final HostControllerClient client = getRequiredService(container, HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
-            // Reconnect to the host-controller
-            client.reconnect(hostName, port, asAuthKey, managementSubsystemEndpoint);
+                // Get the host-controller server client
+                final ServiceContainer container = containerFuture.get();
+                final HostControllerClient client = getRequiredService(container, HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
+                // Reconnect to the host-controller
+                client.reconnect(hostName, port, asAuthKey, managementSubsystemEndpoint);
 
-        } catch (InterruptedIOException e) {
-            Thread.interrupted();
-            // ignore
-        } catch (EOFException e) {
-            // this means it's time to exit
-            break;
+            } catch (InterruptedIOException e) {
+                Thread.interrupted();
+                // ignore
+            } catch (EOFException e) {
+                // this means it's time to exit
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+                break;
+            }
+        }
+        //we may be attempting a graceful shutdown, in which case we need to wait
+        final ServiceContainer container;
+        try {
+            container = containerFuture.get();
+            final GracefulShutdownService client = getRequiredService(container, GracefulShutdownService.SERVICE_NAME, GracefulShutdownService.class);
+            client.awaitSuspend();
         } catch (Exception e) {
             e.printStackTrace();
-            break;
         }
-
         // Once the input stream is cut off, shut down
         System.exit(ExitCodes.NORMAL);
         throw new IllegalStateException(); // not reached

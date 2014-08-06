@@ -1199,4 +1199,7 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 152, value = "Server %s will be started with JVM launch command prefix '%s'")
     void serverLaunchCommandPrefix(String serverName, String launchCommandPrefix);
+
+    @Message(id = 153, value = "Channel closed")
+    IOException channelClosed();
 }

@@ -373,6 +373,8 @@ public class ModelDescriptionConstants {
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
     public static final String RELOAD_SERVERS = "reload-servers";
     public static final String RESTART_SERVERS = "restart-servers";
+    public static final String RESUME_SERVERS = "resume-servers";
+    public static final String RESUME = "resume";
     public static final String SERVER_LOGGER = "server-logger";
     public static final String SHUTDOWN = "shutdown";
     public static final String SOCKET_BINDING = "socket-binding";
@@ -397,12 +399,15 @@ public class ModelDescriptionConstants {
     public static final String SUBDEPLOYMENT = "subdeployment";
     public static final String SUBSYSTEM = "subsystem";
     public static final String SUCCESS = "success";
+    public static final String SUSPEND = "suspend";
+    public static final String SUSPEND_SERVERS = "suspend-servers";
     public static final String SYSLOG_FORMAT = "syslog-format";
     public static final String SYSLOG_HANDLER = "syslog-handler";
     public static final String SYSTEM_PROPERTY = "system-property";
     public static final String SYSTEM_PROPERTIES = "system-properties";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
     public static final String TCP = "tcp";
+    public static final String TIMEOUT = "timeout";
     public static final String TLS = "tls";
     public static final String TO_REPLACE = "to-replace";
     public static final String TRUNCATE = "truncate";
