@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # Use --debug to activate debug mode with an optional argument to specify the port.
-# Usage : standalone.bat --debug
-#         standalone.bat --debug 9797
+# Usage : standalone.sh --debug
+#         standalone.sh --debug 9797
 
 # By default debug mode is disable.
 DEBUG_MODE=false
