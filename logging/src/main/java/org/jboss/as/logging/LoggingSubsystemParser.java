@@ -143,8 +143,9 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                 case LOGGING_1_1:
                 case LOGGING_1_2:
                 case LOGGING_1_3:
+                case LOGGING_1_4:
                 case LOGGING_2_0:
-                case LOGGING_3_0:  {
+                case LOGGING_3_0:{
                     final Element element = Element.forName(reader.getLocalName());
                     switch (element) {
                         case ADD_LOGGING_API_DEPENDENCIES:{
@@ -157,7 +158,8 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                         }
                         case USE_DEPLOYMENT_LOGGING_CONFIG:{
                             if (namespace == Namespace.LOGGING_1_0 || namespace == Namespace.LOGGING_1_1 ||
-                                    namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3)
+                                    namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3 ||
+                                    namespace == Namespace.LOGGING_1_4)
                                 throw unexpectedElement(reader);
                             final String value = ParseUtils.readStringAttributeElement(reader, Attribute.VALUE.getLocalName());
                             LoggingRootResource.USE_DEPLOYMENT_LOGGING_CONFIG.parseAndSetParameter(value, subsystemAddOp, reader);
@@ -196,7 +198,7 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                         case PERIODIC_SIZE_ROTATING_FILE_HANDLER: {
                             if (namespace == Namespace.LOGGING_1_0 || namespace == Namespace.LOGGING_1_1 ||
                                     namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3 ||
-                                    namespace == Namespace.LOGGING_2_0)
+                                    namespace == Namespace.LOGGING_1_4 || namespace == Namespace.LOGGING_2_0)
                                 throw unexpectedElement(reader);
                             parsePeriodicSizeRotatingHandlerElement(reader, address, handlerOperations, handlerNames);
                             break;
