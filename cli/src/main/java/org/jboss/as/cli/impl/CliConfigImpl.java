@@ -480,7 +480,8 @@ class CliConfigImpl implements CliConfig {
                         if(expectedNs == Namespace.CLI_1_2) {
                             readSSLElement_1_1(reader, expectedNs, sslConfig);
                         } else {
-                            readSSLElement_2_0(reader, expectedNs, sslConfig);
+                            // Namespace.CLI_1_3
+                            readSSLElement_3_0(reader, expectedNs, sslConfig);
                         }
                         config.sslConfig = sslConfig;
                     } else if(localName.equals(SILENT)) {
