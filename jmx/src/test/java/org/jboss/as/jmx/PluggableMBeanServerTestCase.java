@@ -21,8 +21,6 @@
  */
 package org.jboss.as.jmx;
 
-import java.lang.management.ManagementFactory;
-
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.MBeanRegistration;
@@ -31,25 +29,52 @@ import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
-import org.jboss.as.jmx.model.ConfiguredDomains;
-import org.jboss.as.jmx.model.ModelControllerMBeanServerPlugin;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.server.ServerEnvironmentResourceDescription;
+import org.jboss.as.server.jmx.PluggableMBeanServer;
+import org.jboss.as.subsystem.test.AbstractSubsystemTest;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.as.subsystem.test.KernelServicesBuilder;
+import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class PluggableMBeanServerTestCase {
+public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
 
-    static final ObjectName NAME = createName("org.jboss:bean=test-null");
-    PluggableMBeanServerImpl server;
+    private static final String TYPE_STANDALONE = "STANDALONE";
+
+    private static final ObjectName NAME = createName("test.domain:bean=test-null");
+    private PluggableMBeanServer server;
+
+    public PluggableMBeanServerTestCase() {
+        super(JMXExtension.SUBSYSTEM_NAME, new JMXExtension());
+    }
 
     @Before
-    public void createServer() {
-        server = new PluggableMBeanServerImpl(ManagementFactory.getPlatformMBeanServer());
-        server.addPlugin(new ModelControllerMBeanServerPlugin(new ConfiguredDomains("jboss.as", "jboss.as.expr"), null, true, true));
+    public void createServer() throws Exception {
+        KernelServicesBuilder builder = createKernelServicesBuilder(new BaseAdditionalInitialization());
+        String subsystemXml =
+                "<subsystem xmlns=\"" + Namespace.CURRENT.getUriString() + "\">" +
+                "   <expose-resolved-model domain-name=\"jboss.as\" proper-property-format=\"false\"/>" +
+                "   <expose-expression-model domain-name=\"jboss.as.expr\"/>" +
+                "   <sensitivity non-core-mbeans=\"true\"/>" +
+                "</subsystem>";
+        builder.setSubsystemXml(subsystemXml);
+        KernelServices services = builder.build();
+
+        ServiceController<?> controller = services.getContainer().getRequiredService(MBeanServerService.SERVICE_NAME);
+        server = (PluggableMBeanServer)controller.getValue();
     }
 
     @Test
@@ -74,8 +99,8 @@ public class PluggableMBeanServerTestCase {
 
     @Test
     public void testReservedDomainMBeanRegistrationFails() throws Exception {
-        reservedDomainTest("org.jboss.as:bean=test-null");
-        reservedDomainTest("org.jboss.as.expr:bean=test-null");
+        reservedDomainTest("jboss.as:bean=test-null");
+        reservedDomainTest("jboss.as.expr:bean=test-null");
     }
 
     private void reservedDomainTest(String name) throws Exception {
@@ -147,4 +172,20 @@ public class PluggableMBeanServerTestCase {
     public static class TestBean2 implements TestBean2MBean {
 
     }
+
+    private static class BaseAdditionalInitialization extends AdditionalInitialization {
+
+        @Override
+        protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
+                                        ManagementResourceRegistration rootRegistration) {
+            rootRegistration.registerReadOnlyAttribute(ServerEnvironmentResourceDescription.LAUNCH_TYPE, new OperationStepHandler() {
+
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    context.getResult().set(TYPE_STANDALONE);
+                }
+            });
+        }
+    }
+
 }

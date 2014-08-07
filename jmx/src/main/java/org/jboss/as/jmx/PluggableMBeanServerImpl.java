@@ -79,6 +79,7 @@ import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
+import javax.management.RuntimeOperationsException;
 import javax.management.loading.ClassLoaderRepository;
 import javax.security.auth.Subject;
 
@@ -200,7 +201,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return delegate.createMBean(className, name, params, signature);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name, params, signature), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -229,7 +230,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return delegate.createMBean(className, name, loaderName, params, signature);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name, loaderName, params, signature), delegate);
+
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -257,7 +259,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return delegate.createMBean(className, name, loaderName);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name, loaderName), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -284,7 +286,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return delegate.createMBean(className, name);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -885,7 +887,11 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(REGISTER_MBEAN, readOnly, true);
             }
-            return delegate.registerMBean(object, name);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.registerMBean(object, name), delegate);
+        } catch (BadDomainInCalclulatedObjectNameException e) {
+            RuntimeOperationsException badDomainEx = JmxLogger.ROOT_LOGGER.badDomainInCalclulatedObjectNameException(e.name);
+            error = badDomainEx;
+            throw badDomainEx;
         } catch (Exception e) {
             error = e;
             if (e instanceof InstanceAlreadyExistsException) throw (InstanceAlreadyExistsException)e;
@@ -897,6 +903,29 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 new MBeanServerAuditLogRecordFormatter(this, error, readOnly).registerMBean(object, name);
             }
         }
+    }
+
+    private ObjectInstance checkNotAReservedDomainRegistrationIfObjectNameWasNull(ObjectName name, ObjectInstance createdInstance, MBeanServerPlugin usedDelegate) throws BadDomainInCalclulatedObjectNameException {
+        if (name == null && usedDelegate == rootMBeanServer) {
+            ObjectName registeredName = createdInstance.getObjectName();
+            MBeanServerPlugin shouldHaveUsedDelegate = null;
+            for (MBeanServerPlugin delegate : delegates) {
+                if (delegate.accepts(registeredName)) {
+                    shouldHaveUsedDelegate = delegate;
+                }
+            }
+            if (shouldHaveUsedDelegate != null) {
+                try {
+                    usedDelegate.unregisterMBean(registeredName);
+                } catch (InstanceNotFoundException e) {
+                    //This is ok, it just means someone unregistered it
+                } catch (MBeanRegistrationException e) {
+                    //Not the exception we want to propagate
+                }
+                throw new BadDomainInCalclulatedObjectNameException(registeredName);
+            }
+        }
+        return createdInstance;
     }
 
     @Override
@@ -1557,5 +1586,14 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         private void resetClassLoader(ClassLoader cl) {
             WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(cl);
         }
+    }
+
+    private static class BadDomainInCalclulatedObjectNameException extends Exception {
+        private final ObjectName name;
+
+        public BadDomainInCalclulatedObjectNameException(ObjectName name) {
+            this.name = name;
+        }
+
     }
 }

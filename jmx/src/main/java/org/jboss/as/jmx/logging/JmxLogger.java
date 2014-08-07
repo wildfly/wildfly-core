@@ -38,6 +38,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.ReflectionException;
+import javax.management.RuntimeOperationsException;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 
@@ -468,4 +469,7 @@ public interface JmxLogger extends BasicLogger {
 
     @Message(id = 45, value="You can't unregister mbeans under the reserved domain '%s'")
     String cannotUnregisterMBeansUnderReservedDomain(String domain);
+
+    @Message(id = 46, value="The calculated name '%s' is in a reserved JMX domain")
+    RuntimeOperationsException badDomainInCalclulatedObjectNameException(ObjectName name);
 }
