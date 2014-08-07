@@ -162,7 +162,6 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
 
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
 
-        System.setProperty("jboss.home.dir", env.getInstalledImage().getJbossHome().getAbsolutePath());
         bytesOs.reset();
         ctx.handle("patch inspect " + zippedOneOff.getAbsolutePath());
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID, true,

@@ -168,9 +168,8 @@ public class LocalPatchInfoPatchIdUnitTestCase extends AbstractTaskTestCase {
 
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
 
-        System.setProperty("jboss.home.dir", env.getInstalledImage().getJbossHome().getAbsolutePath());
         bytesOs.reset();
-        ctx.handle("patch info --patch-id=" + patchID);
+        ctx.handle("patch info --patch-id=" + patchID + " --distribution=" + env.getInstalledImage().getJbossHome());
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID, true,
                 productConfig.getProductName(), productConfig.getProductVersion(), patchIDDescr);
 
@@ -180,12 +179,12 @@ public class LocalPatchInfoPatchIdUnitTestCase extends AbstractTaskTestCase {
         element.put("Type", "layer");
         element.put("Description", oneOffElementDescr);
         bytesOs.reset();
-        ctx.handle("patch info --patch-id=" + patchID + " --verbose");
+        ctx.handle("patch info --patch-id=" + patchID + " --verbose" + " --distribution=" + env.getInstalledImage().getJbossHome());
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID, true,
                 productConfig.getProductName(), productConfig.getProductVersion(), patchIDDescr, Collections.singletonList(element));
 
         bytesOs.reset();
-        ctx.handle("patch info " + patchID2); // w/o argument name --patch-id
+        ctx.handle("patch info " + patchID2 + " --distribution=" + env.getInstalledImage().getJbossHome()); // w/o argument name --patch-id
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID2, false,
                 productConfig.getProductName(), productConfig.getProductVersion(), patchID2Descr);
 
@@ -194,7 +193,7 @@ public class LocalPatchInfoPatchIdUnitTestCase extends AbstractTaskTestCase {
         element.put("Type", "layer");
         element.put("Description", cpElementDescr);
         bytesOs.reset();
-        ctx.handle("patch info " + patchID2 + " --verbose"); // w/o argument name --patch-id
+        ctx.handle("patch info " + patchID2 + " --verbose" + " --distribution=" + env.getInstalledImage().getJbossHome()); // w/o argument name --patch-id
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID2, false,
                 productConfig.getProductName(), productConfig.getProductVersion(), patchID2Descr, Collections.singletonList(element));
     }
