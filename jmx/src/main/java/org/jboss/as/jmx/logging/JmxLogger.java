@@ -470,6 +470,10 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 45, value="You can't unregister mbeans under the reserved domain '%s'")
     String cannotUnregisterMBeansUnderReservedDomain(String domain);
 
-    @Message(id = 46, value="The calculated name '%s' is in a reserved JMX domain")
+    @Message(id = 46, value="The ObjectName coming from MBeanRegistration.preRegister() '%s' is in a reserved JMX domain")
     RuntimeOperationsException badDomainInCalclulatedObjectNameException(ObjectName name);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 47, value="An error happened unregistering the '%s' MBean registered in a reserved JMX domain")
+    void errorUnregisteringMBeanWithBadCalculatedName(@Cause Exception e, ObjectName name);
 }

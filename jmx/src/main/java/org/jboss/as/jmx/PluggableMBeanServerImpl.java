@@ -201,7 +201,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name, params, signature), delegate);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name, params, signature), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -230,7 +230,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name, loaderName, params, signature), delegate);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name, loaderName, params, signature), delegate);
 
         } catch (Exception e) {
             error = e;
@@ -259,7 +259,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name, loaderName), delegate);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name, loaderName), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -286,7 +286,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
             }
-            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.createMBean(className, name), delegate);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof ReflectionException) throw (ReflectionException)e;
@@ -887,11 +887,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(REGISTER_MBEAN, readOnly, true);
             }
-            return checkNotAReservedDomainRegistrationIfObjectNameWasNull(name, delegate.registerMBean(object, name), delegate);
-        } catch (BadDomainInCalclulatedObjectNameException e) {
-            RuntimeOperationsException badDomainEx = JmxLogger.ROOT_LOGGER.badDomainInCalclulatedObjectNameException(e.name);
-            error = badDomainEx;
-            throw badDomainEx;
+            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.registerMBean(object, name), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof InstanceAlreadyExistsException) throw (InstanceAlreadyExistsException)e;
@@ -905,26 +901,56 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         }
     }
 
-    private ObjectInstance checkNotAReservedDomainRegistrationIfObjectNameWasNull(ObjectName name, ObjectInstance createdInstance, MBeanServerPlugin usedDelegate) throws BadDomainInCalclulatedObjectNameException {
-        if (name == null && usedDelegate == rootMBeanServer) {
-            ObjectName registeredName = createdInstance.getObjectName();
-            MBeanServerPlugin shouldHaveUsedDelegate = null;
-            for (MBeanServerPlugin delegate : delegates) {
-                if (delegate.accepts(registeredName)) {
-                    shouldHaveUsedDelegate = delegate;
-                }
-            }
-            if (shouldHaveUsedDelegate != null) {
-                try {
-                    usedDelegate.unregisterMBean(registeredName);
-                } catch (InstanceNotFoundException e) {
-                    //This is ok, it just means someone unregistered it
-                } catch (MBeanRegistrationException e) {
-                    //Not the exception we want to propagate
-                }
-                throw new BadDomainInCalclulatedObjectNameException(registeredName);
+    /**
+     * This method gets called after {@code createMBean()} or {@code registerMBean()} has been called. Its intent is to make sure that an MBean with an ObjectName calculated by {@code MBeanRegistration.preRegister()}
+     * which gets registered in the {@code rootMBeanServer}  does not belong to one of the 'reserved' domains coming from the {@code MBeanServerPlugin} delegates.
+     * <p>
+     * If the bean does belong to one of the 'reserved' domains, an attempt is made to clean up the wrongly registered MBean by unregistering it before throwing a RuntimeOperationsException
+     *
+     * @param name the name used in the {@code createMBean()} or {@code registerMBean()} call ending up here
+     * @param createdInstance the {@code ObjectInstance} returned by the {@code createMBean()} or {@code registerMBean()} call ending up here
+     * @param usedDelegate The delegate used by the {@code createMBean()} or {@code registerMBean()} ending up here
+     * @return
+     * @throws RuntimeOperationsException if the {@code ObjectName} calculated by {@code MBeanRegistration.preRegister()} causes the MBean to get
+     * registered in a 'reserved' domain which should be handled by one of the {@code MBeanServerPlugin} delegates.
+     */
+    private ObjectInstance checkNotAReservedDomainRegistrationIfObjectNameWasChanged(ObjectName name, ObjectInstance createdInstance, MBeanServerPlugin usedDelegate) throws RuntimeOperationsException {
+        ObjectName registeredName = createdInstance.getObjectName();
+        if (registeredName.equals(name) || usedDelegate != rootMBeanServer) {
+            //MBeanRegistration.preRegister() did not change the name or we did not end up in the root MBeanServer (which should have been handled by the current delegates)
+            return createdInstance;
+        }
+
+        //Find the MBeanServerPlugin delegate which should have been used for the registered delegate
+        MBeanServerPlugin shouldHaveUsedDelegate = null;
+        for (MBeanServerPlugin delegate : delegates) {
+            if (delegate.accepts(registeredName)) {
+                shouldHaveUsedDelegate = delegate;
             }
         }
+
+        if (shouldHaveUsedDelegate != null) {
+            //We have a MBeanServer delegate which should have been used for registeredName's domain.
+            //We want to throw the badDomainInCalclulatedObjectNameException, but first we want to clean up the
+            //MBean registered in the rootMBeanServer, which should never have made it there
+            try {
+                //Attempt to unregister
+                usedDelegate.unregisterMBean(registeredName);
+            } catch (InstanceNotFoundException e) {
+                //The MBean we want to unregister could not be found. Someone else must have unregistered it, but who cares. The
+                //end result is that the MBean we want to get rid of does not exist, which is what we want.
+            } catch (MBeanRegistrationException e) {
+                //The only reason this would happen is a problem in a custom MBeanRegistration.preDeRegister() method.
+                //This could perhaps be handled better but there isn't really a lot we can do apart from log an error.
+                JmxLogger.ROOT_LOGGER.errorUnregisteringMBeanWithBadCalculatedName(e, registeredName);
+            } catch (RuntimeException e) {
+                //No idea why this would happen?
+                //This could perhaps be handled better but there isn't really a lot we can do apart from log an error.
+                JmxLogger.ROOT_LOGGER.errorUnregisteringMBeanWithBadCalculatedName(e, registeredName);
+            }
+            throw JmxLogger.ROOT_LOGGER.badDomainInCalclulatedObjectNameException(registeredName);
+        }
+
         return createdInstance;
     }
 
@@ -1586,14 +1612,5 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         private void resetClassLoader(ClassLoader cl) {
             WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(cl);
         }
-    }
-
-    private static class BadDomainInCalclulatedObjectNameException extends Exception {
-        private final ObjectName name;
-
-        public BadDomainInCalclulatedObjectNameException(ObjectName name) {
-            this.name = name;
-        }
-
     }
 }

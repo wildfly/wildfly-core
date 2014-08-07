@@ -99,15 +99,17 @@ public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testReservedDomainMBeanRegistrationFails() throws Exception {
-        reservedDomainTest("jboss.as:bean=test-null");
-        reservedDomainTest("jboss.as.expr:bean=test-null");
+        reservedDomainTest("jboss.as:bean=test-null", null);
+        reservedDomainTest("jboss.as.expr:bean=test-null", null);
+        reservedDomainTest("jboss.as:bean=test-null", NAME);
+        reservedDomainTest("jboss.as.expr:bean=test-null", NAME);
     }
 
-    private void reservedDomainTest(String name) throws Exception {
+    private void reservedDomainTest(String name, ObjectName originalObjectName) throws Exception {
         ObjectName objName = createName(name);
         assertNoMBean(objName);
         try {
-            server.registerMBean(new TestBean(objName), null);
+            server.registerMBean(new TestBean(objName), originalObjectName);
             Assert.fail("Should not have been able to register with name " + name);
         } catch (RuntimeOperationsException expected) {
         }
