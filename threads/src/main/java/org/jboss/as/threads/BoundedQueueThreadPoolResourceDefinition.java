@@ -104,4 +104,14 @@ public class BoundedQueueThreadPoolResourceDefinition extends SimpleResourceDefi
                 .addRejectCheck(KeepAliveTimeAttributeDefinition.TRANSFORMATION_CHECKER, PoolAttributeDefinitions.KEEPALIVE_TIME);
     }
 
+    public static void registerTransformers1_1(ResourceTransformationDescriptionBuilder parent) {
+        registerTransformers1_1(parent, CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL);
+        registerTransformers1_1(parent, CommonAttributes.BOUNDED_QUEUE_THREAD_POOL);
+    }
+
+    public static void registerTransformers1_1(ResourceTransformationDescriptionBuilder parent, String type) {
+        parent.addChildResource(PathElement.pathElement(type)).getAttributeBuilder()
+                .setValueConverter(KeepAliveTimeAttributeDefinition.TIME_UNIT_TRANSFORMER, CommonAttributes.KEEPALIVE_TIME);
+    }
+
 }

@@ -103,4 +103,16 @@ public class QueuelessThreadPoolResourceDefinition extends SimpleResourceDefinit
         .getAttributeBuilder()
             .addRejectCheck(KeepAliveTimeAttributeDefinition.TRANSFORMATION_CHECKER, PoolAttributeDefinitions.KEEPALIVE_TIME);
     }
+
+    public static void registerTransformers1_1(ResourceTransformationDescriptionBuilder parent) {
+        registerTransformers1_1(parent, CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL);
+        registerTransformers1_1(parent, CommonAttributes.QUEUELESS_THREAD_POOL);
+    }
+
+    public static void registerTransformers1_1(ResourceTransformationDescriptionBuilder parent, String type) {
+        parent.addChildResource(PathElement.pathElement(type))
+                .getAttributeBuilder()
+                .setValueConverter(KeepAliveTimeAttributeDefinition.TIME_UNIT_TRANSFORMER, CommonAttributes.KEEPALIVE_TIME);
+    }
+
 }

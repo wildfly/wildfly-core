@@ -187,12 +187,11 @@ class ThreadPoolManagementUtils {
             if (!keepaliveTime.hasDefined(TIME)) {
                 throw ThreadsLogger.ROOT_LOGGER.missingKeepAliveTime(TIME, KEEPALIVE_TIME);
             }
-            if (!keepaliveTime.hasDefined(UNIT)) {
-                throw ThreadsLogger.ROOT_LOGGER.missingKeepAliveUnit(UNIT, KEEPALIVE_TIME);
-            }
             long time = KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_TIME.resolveModelAttribute(context, keepaliveTime).asLong();
-            String unit = KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_UNIT.resolveModelAttribute(context, keepaliveTime).asString();
-            params.keepAliveTime = new TimeSpec(Enum.valueOf(TimeUnit.class, unit.toUpperCase()), time);
+            if (keepaliveTime.hasDefined(UNIT)) {
+                time = TimeUnit.valueOf(KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_UNIT.resolveModelAttribute(context, keepaliveTime).asString()).toMillis(time);
+            }
+            params.keepAliveTime = new TimeSpec(TimeUnit.MILLISECONDS, time);
         }
 
         return params;

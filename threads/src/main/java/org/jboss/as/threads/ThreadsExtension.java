@@ -34,8 +34,8 @@ import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
@@ -51,8 +51,8 @@ public class ThreadsExtension implements Extension {
 
     static final String RESOURCE_NAME = ThreadsExtension.class.getPackage().getName() + ".LocalDescriptions";
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
-    private static final int MANAGEMENT_API_MINOR_VERSION = 1;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 2;
+    private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
     public static ResourceDescriptionResolver getResourceDescriptionResolver(final String keyPrefix, boolean useUnprefixedChildTypes) {
@@ -76,33 +76,35 @@ public class ThreadsExtension implements Extension {
         subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         if (context.isRegisterTransformers()) {
-            registerTransformers1_0(registration);
+            registerTransformers(registration);
         }
     }
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_1.getUriString(), ThreadsParser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser.INSTANCE);
     }
 
     // Transformation
-
-    /**
-     * Register the transformers for older model versions.
-     *
-     * @param subsystem the subsystems registration
-     */
-    private static void registerTransformers1_0(final SubsystemRegistration subsystem) {
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
-        BoundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        QueuelessThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        ScheduledThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        UnboundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        ThreadFactoryResourceDefinition.registerTransformers1_0(builder);
-        TransformationDescription.Tools.register(builder.build(), subsystem, ModelVersion.create(1, 0, 0));
-
+    private void registerTransformers(SubsystemRegistration subsystem) {
+        final ModelVersion VERSION_1_0 = ModelVersion.create(1, 0, 0);
+        final ModelVersion VERSION_1_1 = ModelVersion.create(1, 1, 0);
+        final ModelVersion VERSION_2_0 = ModelVersion.create(2, 0, 0);
+        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(
+                subsystem.getSubsystemVersion());
+        ResourceTransformationDescriptionBuilder builder11 = chainedBuilder.createBuilder(VERSION_2_0, VERSION_1_1);
+        BoundedQueueThreadPoolResourceDefinition.registerTransformers1_1(builder11);
+        QueuelessThreadPoolResourceDefinition.registerTransformers1_1(builder11);
+        ScheduledThreadPoolResourceDefinition.registerTransformers1_1(builder11);
+        UnboundedQueueThreadPoolResourceDefinition.registerTransformers1_1(builder11);
+        ResourceTransformationDescriptionBuilder builder10 = chainedBuilder.createBuilder(VERSION_1_1, VERSION_1_0);
+        BoundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder10);
+        QueuelessThreadPoolResourceDefinition.registerTransformers1_0(builder10);
+        ScheduledThreadPoolResourceDefinition.registerTransformers1_0(builder10);
+        UnboundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder10);
+        ThreadFactoryResourceDefinition.registerTransformers1_0(builder10);
+        chainedBuilder.buildAndRegister(subsystem, new ModelVersion[]{VERSION_1_0, VERSION_1_1, VERSION_2_0});
     }
-
-
 }
