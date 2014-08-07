@@ -3216,4 +3216,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 360, value = "The attribute %s value has been changed from %s to %s.")
     String attributeValueWritten(String attributeName, ModelNode currentValue, ModelNode newVal);
+
+    @Message(id = 361, value = "Cannot remove resource without allow-resource-service-start setup")
+    OperationFailedException cannotRemoveResourceWithoutResourceServiceRestartAllowed();
 }

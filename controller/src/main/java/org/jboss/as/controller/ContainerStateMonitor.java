@@ -202,6 +202,16 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
             problems.clear();
         }
 
+        // add previous missing dependencies if they're still missing
+        if (!previousMissing.isEmpty()) {
+            for (ServiceName name : previousMissing)
+                if (!missingServices.entrySet().contains(name)) {
+                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    boolean unavailable = controller != null;
+                    missingServices.put(name, new MissingDependencyInfo(name, unavailable, missingDeps.get(name)));
+                }
+        }
+
         boolean needReport = !missingServices.isEmpty() || !currentFailedControllers.isEmpty() || !noLongerMissingServices.isEmpty();
         return needReport ? new ContainerStateChangeReport(missingServices, currentFailedControllers, noLongerMissingServices) : null;
     }
