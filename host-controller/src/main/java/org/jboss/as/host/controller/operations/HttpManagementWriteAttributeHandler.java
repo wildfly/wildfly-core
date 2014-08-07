@@ -26,7 +26,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -52,7 +51,8 @@ public class HttpManagementWriteAttributeHandler extends ReloadRequiredWriteAttr
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return context.getRunningMode() == RunningMode.NORMAL && !context.isBooting();
+        // running mode doesn't matter, as HTTP management is enabled even in ADMIN_ONLY
+        return !context.isBooting();
     }
 
 }

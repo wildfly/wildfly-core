@@ -19,15 +19,12 @@
 package org.jboss.as.controller.operations.common;
 
 
-import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.RunningMode;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -53,10 +50,5 @@ public abstract class AbstractSocketBindingGroupAddHandler extends AbstractAddSt
         model.get(NAME).set(name);
 
         SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.validateAndSet(operation, model);
-    }
-
-    @Override
-    protected boolean requiresRuntime(OperationContext context) {
-        return context.getRunningMode() == RunningMode.NORMAL && !context.isBooting();
     }
 }
