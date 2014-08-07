@@ -85,6 +85,7 @@ public class ParserUtil {
             return null;
         }
         final ParsingStateCallbackHandler callbackHandler = getCallbackHandler(handler);
+        handler.setFormat(OperationFormat.INSTANCE);
         return StateParser.parse(commandLine, callbackHandler, OperationRequestState.INSTANCE);
     }
 
