@@ -34,17 +34,20 @@ import javax.management.InstanceNotFoundException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.JMRuntimeException;
 import javax.management.MBeanException;
+import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-
+import javax.management.OperationsException;
 import javax.management.ReflectionException;
+import javax.management.RuntimeOperationsException;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelType;
 import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.msc.service.StartException;
@@ -451,4 +454,26 @@ public interface JmxLogger extends BasicLogger {
 
     @Message(id = 40, value = "Not authorized to invoke operation: '%s'")
     JMRuntimeException notAuthorizedToExecuteOperation(String operationName);
+
+    @Message(id = 41, value="You can't create mbeans under the reserved domain '%s'")
+    NotCompliantMBeanException cannotCreateMBeansInReservedDomain(String domain);
+
+    @Message(id = 42, value="Don't know how to deserialize")
+    OperationsException dontKnowHowToDeserialize();
+
+    @Message(id = 43, value="%s is not supported")
+    UnsupportedOperationException unsupportedMethod(String name);
+
+    @Message(id = 44, value="You can't register mbeans under the reserved domain '%s'")
+    String cannotRegisterMBeansUnderReservedDomain(String domain);
+
+    @Message(id = 45, value="You can't unregister mbeans under the reserved domain '%s'")
+    String cannotUnregisterMBeansUnderReservedDomain(String domain);
+
+    @Message(id = 46, value="The ObjectName coming from MBeanRegistration.preRegister() '%s' is in a reserved JMX domain")
+    RuntimeOperationsException badDomainInCalclulatedObjectNameException(ObjectName name);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 47, value="An error happened unregistering the '%s' MBean registered in a reserved JMX domain")
+    void errorUnregisteringMBeanWithBadCalculatedName(@Cause Exception e, ObjectName name);
 }
