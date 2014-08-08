@@ -18,16 +18,15 @@
  */
 package org.jboss.as.test.integration.domain.management.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
@@ -61,7 +61,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.sasl.util.UsernamePasswordHashUtil;
-import org.xnio.IoUtils;
+import org.wildfly.core.launcher.DomainCommandBuilder;
 
 /**
  * Utility for controlling the lifecycle of a domain.
@@ -128,146 +128,105 @@ public class DomainLifecycleUtil {
             // Create the connection - this will try to connect on the first request
             connection = clientConfiguration.createConnection(connectionURI, configuration.getCallbackHandler());
 
-            String jbossHomeDir = configuration.getJbossHome();
+            final DomainCommandBuilder commandBuilder;
+            final String jbossHome = configuration.getJbossHome();
+            if (configuration.getControllerJavaHome() == null) {
+                commandBuilder = DomainCommandBuilder.of(jbossHome);
+            } else {
+                commandBuilder = DomainCommandBuilder.of(jbossHome, configuration.getControllerJavaHome());
+            }
 
-            final List<String> additionalJavaOpts = new ArrayList<String>();
             final String jbossOptions = System.getProperty("jboss.options");
             if (jbossOptions != null) {
-                Collections.addAll(additionalJavaOpts, jbossOptions.split("\\s+"));
+                final String[] javaOpts = jbossOptions.split("\\s+");
+                commandBuilder.setHostControllerJavaOptions(javaOpts)
+                        .setProcessControllerJavaOptions(javaOpts);
             }
             if (configuration.getJavaVmArguments() != null) {
-                Collections.addAll(additionalJavaOpts, configuration.getJavaVmArguments().split("\\s+"));
+                final String[] javaOpts = configuration.getJavaVmArguments().split("\\s+");
+                commandBuilder.addHostControllerJavaOptions(javaOpts)
+                        .addProcessControllerJavaOptions(javaOpts);
             }
-            additionalJavaOpts.add("-Djboss.home.dir=" + jbossHomeDir);
 
-            File modulesJar = new File(jbossHomeDir + File.separatorChar + "jboss-modules.jar");
-            if (!modulesJar.exists())
-                throw new IllegalStateException("Cannot find: " + modulesJar);
+            // Set the Java Home for the servers
+            if (configuration.getJavaHome() != null) {
+                commandBuilder.setServerJavaHome(configuration.getJavaHome());
+            }
 
-            String javaHome = configuration.getJavaHome();
-            String java = (javaHome != null) ? javaHome + File.separatorChar + "bin" + File.separatorChar + "java" : "java";
+            if (configuration.getDomainDirectory() != null) {
+                commandBuilder.setBaseDirectory(configuration.getDomainDirectory());
+            }
 
-            String controllerJavaHome = configuration.getControllerJavaHome();
-            String controllerJava = (controllerJavaHome != null) ?
-                    controllerJavaHome + File.separatorChar + "bin" + File.separatorChar + "java" : "java";
-
-            File domainDir = configuration.getDomainDirectory() != null ? new File(configuration.getDomainDirectory()) : new File(new File(jbossHomeDir), "domain");
-            String domainPath = domainDir.getAbsolutePath();
-
-            final String modulePath;
             if (configuration.getModulePath() != null && !configuration.getModulePath().isEmpty()) {
-                modulePath = configuration.getModulePath();
-            } else {
-                modulePath = jbossHomeDir + File.separatorChar + "modules";
+                commandBuilder.setModuleDirs(configuration.getModulePath().split(Pattern.quote(File.pathSeparator)));
             }
+
+            final Path domainDir = commandBuilder.getBaseDirectory();
+            final Path configDir = commandBuilder.getConfigurationDirectory();
 
             if (configuration.getMgmtUsersFile() != null) {
-                copyConfigFile(new File(configuration.getMgmtUsersFile()), new File(configuration.getDomainDirectory(), "configuration"), null);
+                copyConfigFile(configuration.getMgmtUsersFile(), configDir, null);
             } else {
                 // No point backing up the file in a test scenario, just write what we need.
-                File usersFile = new File(domainPath + "/configuration/mgmt-users.properties");
-                FileOutputStream fos = new FileOutputStream(usersFile);
-                PrintWriter pw = new PrintWriter(fos, true);
-                pw.println("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray()));
-                pw.close();
-                fos.close();
+                final String text = "slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
+                createFile(configDir.resolve("mgmt-users.properties"), text);
             }
             if (configuration.getMgmtGroupsFile() != null) {
-                copyConfigFile(new File(configuration.getMgmtGroupsFile()), new File(configuration.getDomainDirectory(), "configuration"), null);
+                copyConfigFile(configuration.getMgmtGroupsFile(), configDir, null);
             } else {
                 // Put out empty mgmt-groups.properties.
-                File mgmtGroupsProps = new File(domainPath + "/configuration/mgmt-groups.properties");
-                FileOutputStream fos = new FileOutputStream(mgmtGroupsProps);
-                PrintWriter pw = new PrintWriter(fos, true);
-                pw.println("# Management groups");
-                pw.close();
-                fos.close();
+                createFile(configDir.resolve("mgmt-groups.properties"), "# Management groups");
             }
             // Put out empty application realm properties files so servers don't complain
-            File appUsersProps = new File(domainPath + "/configuration/application-users.properties");
-            FileOutputStream fos = new FileOutputStream(appUsersProps);
-            PrintWriter pw = new PrintWriter(fos, true);
-            pw.println("# Application users");
-            pw.close();
-            fos.close();
-            File appRolesProps = new File(domainPath + "/configuration/application-roles.properties");
-            fos = new FileOutputStream(appRolesProps);
-            pw = new PrintWriter(fos, true);
-            pw.println("# Application roles");
-            pw.close();
-            fos.close();
+            createFile(configDir.resolve("application-users.properties"), "# Application users");
+            createFile(configDir.resolve("application-roles.properties"), "# Application roles");
+            // Copy the logging.properties file
+            copyConfigFile(Paths.get(jbossHome, "domain", "configuration", "logging.properties"), configDir, null);
 
-            List<String> cmd = new ArrayList<String>();
-            cmd.add(controllerJava);
-            cmd.addAll(additionalJavaOpts);
-            TestSuiteEnvironment.getIpv6Args(cmd);
-            cmd.add("-Dorg.jboss.boot.log.file=" + domainPath + "/log/process-controller.log");
-            cmd.add("-Dlogging.configuration=file:" + jbossHomeDir + "/domain/configuration/logging.properties");
-            cmd.add("-jar");
-            cmd.add(modulesJar.getAbsolutePath());
-            cmd.add("-mp");
-            cmd.add(modulePath);
-            cmd.add("org.jboss.as.process-controller");
-            cmd.add("-jboss-home");
-            cmd.add(jbossHomeDir);
-            cmd.add("-jvm");
-            cmd.add(controllerJava);
-            cmd.add("--");
-            cmd.add("-Dorg.jboss.boot.log.file=" + domainPath + "/log/host-controller.log");
-            cmd.add("-Dlogging.configuration=file:" + jbossHomeDir + "/domain/configuration/logging.properties");
-            TestSuiteEnvironment.getIpv6Args(cmd);
-            cmd.addAll(additionalJavaOpts);
-            cmd.add("--");
-            cmd.add("-default-jvm");
-            cmd.add(java);
+            final List<String> ipv6Args = new ArrayList<>();
+            TestSuiteEnvironment.getIpv6Args(ipv6Args);
+            commandBuilder.addHostControllerJavaOptions(ipv6Args)
+                    .addProcessControllerJavaOptions(ipv6Args);
+
             if (configuration.getHostCommandLineProperties() != null) {
-                Collections.addAll(cmd, configuration.getHostCommandLineProperties().split("\\s+"));
+                commandBuilder.addHostControllerJavaOptions(configuration.getHostCommandLineProperties().split("\\s+"));
             }
             if (configuration.isAdminOnly()) {
-                cmd.add("--admin-only");
+                commandBuilder.setAdminOnly();
             }
             if (configuration.isBackupDC()) {
-                cmd.add("--backup");
+                commandBuilder.setBackup();
             }
             if (configuration.isCachedDC()) {
-                cmd.add("--cached-dc");
+                commandBuilder.setCachedDomainController();
             }
 
-            String domainDirectory = configuration.getDomainDirectory();
-            if (domainDirectory != null) {
-                cmd.add("-Djboss.domain.base.dir=" + domainDirectory);
-            } else {
-                domainDirectory = domainPath;
-            }
             if (configuration.getDomainConfigFile() != null) {
-                String prefix = configuration.isCachedDC() ? null : "testing-";
-                String name = copyConfigFile(new File(configuration.getDomainConfigFile()),
-                        new File(domainDirectory, "configuration"), prefix);
+                final String prefix = configuration.isCachedDC() ? null : "testing-";
+                final String name = copyConfigFile(configuration.getDomainConfigFile(), configDir, prefix);
                 if (configuration.isReadOnlyDomain()) {
-                    cmd.add("--read-only-domain-config=" + name);
+                    commandBuilder.setReadOnlyDomainConfiguration(name);
                 } else if (!configuration.isCachedDC()) {
-                    cmd.add("--domain-config=" + name);
+                    commandBuilder.setDomainConfiguration(name);
                 }
             }
             if (configuration.getHostConfigFile() != null) {
-                String name = copyConfigFile(new File(configuration.getHostConfigFile()), new File(domainDirectory, "configuration"));
+                final String name = copyConfigFile(configuration.getHostConfigFile(), configDir);
                 if (configuration.isReadOnlyHost()) {
-                    cmd.add("--read-only-host-config=" + name);
+                    commandBuilder.setReadOnlyHostConfiguration(name);
                 } else {
-                    cmd.add("--host-config=" + name);
+                    commandBuilder.setHostConfiguration(name);
                 }
             }
             if (configuration.getHostControllerManagementAddress() != null) {
-                cmd.add("--interprocess-hc-address");
-                cmd.add(configuration.getHostControllerManagementAddress());
-                cmd.add("--pc-address");
-                cmd.add(configuration.getHostControllerManagementAddress());
+                commandBuilder.setInterProcessHostControllerAddress(configuration.getHostControllerManagementAddress());
+                commandBuilder.setProcessControllerAddress(configuration.getHostControllerManagementAddress());
             }
             // the process working dir
-            final String workingDir = configuration.getDomainDirectory();
+            final String workingDir = domainDir.toString();
 
             // Start the process
-            final ProcessWrapper wrapper = new ProcessWrapper(configuration.getHostName(), cmd, Collections.<String, String>emptyMap(), workingDir);
+            final ProcessWrapper wrapper = new ProcessWrapper(configuration.getHostName(), commandBuilder, Collections.<String, String>emptyMap(), workingDir);
             wrapper.start();
             process = wrapper;
 
@@ -645,37 +604,36 @@ public class DomainLifecycleUtil {
         }
     }
 
-    private String copyConfigFile(File file, File dir) {
+    private static String copyConfigFile(final String file, final String dir) {
         return copyConfigFile(file, dir, "testing-");
     }
 
-    private String copyConfigFile(File file, File dir, String prefix) {
-        prefix = prefix == null ? "" : prefix;
-        File newFile = new File(dir, prefix + file.getName());
-        if (newFile.exists()) {
-            newFile.delete();
-        }
-        try {
-            InputStream in = new BufferedInputStream(new FileInputStream(file));
-            try {
-                OutputStream out = new BufferedOutputStream(new FileOutputStream(newFile));
-                try {
-                    int i = in.read();
-                    while (i != -1) {
-                        out.write(i);
-                        i = in.read();
-                    }
-                } finally {
-                    IoUtils.safeClose(out);
-                }
-            } finally {
-                IoUtils.safeClose(in);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return newFile.getName();
+    private static String copyConfigFile(final String file, final Path dir) {
+        return copyConfigFile(Paths.get(file), dir, "testing-");
     }
 
+    private static String copyConfigFile(final String file, final String dir, final String prefix) {
+        return copyConfigFile(Paths.get(file), Paths.get(dir), prefix);
+    }
+
+    private static String copyConfigFile(final String file, final Path dir, final String prefix) {
+        return copyConfigFile(Paths.get(file), dir, prefix);
+    }
+
+    private static String copyConfigFile(final Path file, final Path dir, final String prefix) {
+        final String p = prefix == null ? "" : prefix;
+        final Path to = dir.resolve(p + file.getFileName());
+        try {
+            return Files.copy(file, to, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING).getFileName().toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void createFile(final Path file, final String line) throws IOException {
+        try (final PrintWriter pw = new PrintWriter(Files.newBufferedWriter(file, StandardCharsets.UTF_8), true)) {
+            pw.println(line);
+        }
+    }
 
 }
