@@ -117,6 +117,9 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
 
         @Override
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            if (!resourceModel.hasDefined(attribute.getName())) {
+                return;
+            }
             resourceModel = resourceModel.get(attribute.getName());
             if (wrapElement) {
                 writer.writeStartElement(wrapperElement == null ? attribute.getName() : wrapperElement);
