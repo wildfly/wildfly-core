@@ -52,6 +52,10 @@ public class TargetResolver implements ModelNodeResolver<String> {
                 result = ConsoleHandler.Target.SYSTEM_OUT.name();
                 break;
             }
+            case CONSOLE: {
+                result = ConsoleHandler.Target.CONSOLE.name();
+                break;
+            }
             default:
                 result = null;
                 break;

@@ -187,6 +187,7 @@
                             <xs:restriction base="xs:token">
                                 <xs:enumeration value="System.out"/>
                                 <xs:enumeration value="System.err"/>
+                                <xs:enumeration value="console"/>
                             </xs:restriction>
                         </xs:simpleType>
                     </xs:attribute>
