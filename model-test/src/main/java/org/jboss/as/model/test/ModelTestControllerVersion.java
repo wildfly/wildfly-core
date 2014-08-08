@@ -33,13 +33,15 @@ public enum ModelTestControllerVersion {
 
     //WILDFLY RELEASES
     WILDFLY_8_0_0_FINAL ("8.0.0.Final", false, "8.0.0", false),
+    WILDFLY_8_1_0_FINAL ("8.1.0.Final", false, "8.0.0", false),
 
     //EAP releases
     EAP_6_0_0 ("7.1.2.Final-redhat-1", true, "7.1.2", false),
     EAP_6_0_1 ("7.1.3.Final-redhat-4", true, "7.1.2", false),
     EAP_6_1_0 ("7.2.0.Final-redhat-8", true, "7.2.0"),
     EAP_6_1_1 ("7.2.1.Final-redhat-10", true, "7.2.0"),
-    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, null),
+    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.2.0"),
+    EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.2.0"),
     ;
 
     private final String mavenGavVersion;
