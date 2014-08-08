@@ -57,7 +57,9 @@ class PeriodicSizeRotatingHandlerResourceDefinition extends AbstractFileHandlerD
         switch (modelVersion) {
             case VERSION_2_0_0: {
                 resourceBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
-                loggingProfileBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
+                if (loggingProfileBuilder != null) {
+                    loggingProfileBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
+                }
                 break;
             }
         }
