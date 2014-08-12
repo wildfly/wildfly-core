@@ -74,12 +74,12 @@ import org.jboss.as.controller.extension.ExtensionAddHandler;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.extension.ParallelExtensionAddHandler;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.notification.NotificationRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
@@ -712,7 +712,7 @@ class ModelControllerImpl implements ModelController {
     }
 
     @Override
-    public NotificationRegistry getNotificationRegistry() {
+    public NotificationHandlerRegistration getNotificationRegistry() {
         return notificationSupport.getNotificationRegistry();
     }
 

@@ -44,7 +44,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.notification.NotificationRegistry;
+import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalOperationImpl;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
@@ -460,7 +460,7 @@ public class TransactionalProtocolClientTestCase {
         }
 
         @Override
-        public NotificationRegistry getNotificationRegistry() {
+        public NotificationHandlerRegistration getNotificationRegistry() {
             throw new IllegalStateException();
         }
     }
