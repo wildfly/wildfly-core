@@ -35,7 +35,7 @@ public class KeycloakResourceDefinition extends SimpleResourceDefinition {
 
     public KeycloakResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.KEYCLOAK),
-                ControllerResolver.getResolver("core.management.security-realm.authentication.keycloak"),
+                ControllerResolver.getResolver("core", "management", "security-realm", "authentication", "keycloak"),
                 new SecurityRealmChildAddHandler(true, false, new AttributeDefinition[0]), new SecurityRealmChildRemoveHandler(true),
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
     }
