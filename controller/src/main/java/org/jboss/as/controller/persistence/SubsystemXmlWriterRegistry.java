@@ -43,28 +43,4 @@ public interface SubsystemXmlWriterRegistry {
      * @param name the name of the subsystem
      */
     void unregisterSubsystemWriter(String name);
-
-    /**
-     * Register the writer for the per-deployment configuration for the
-     * named subsystem.
-     *
-     * (TODO: round this out.)
-     *
-     * @param name the name of the subsystem
-     * @param writer the XML writer
-     *
-     * @deprecated currently not used and will be removed in a future release if not used.
-     */
-    @Deprecated
-    void registerSubsystemDeploymentWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer);
-
-    /**
-     * Unregisters the per-deployment XML configuration writer of the named subsystem.
-     *
-     * @param name the name of the subsystem
-     *
-     * @deprecated currently not used and will be removed in a future release if not used.
-     */
-    @Deprecated
-    void unregisterSubsystemDeploymentWriter(String name);
 }

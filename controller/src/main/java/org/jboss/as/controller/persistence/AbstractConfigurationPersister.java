@@ -41,12 +41,10 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
  *
  * @author Brian Stansberry
  */
-@SuppressWarnings("deprecation")
 public abstract class AbstractConfigurationPersister implements ExtensibleConfigurationPersister {
 
     private final XMLElementWriter<ModelMarshallingContext> rootDeparser;
     private final Map<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemWriters = new HashMap<String, XMLElementWriter<SubsystemMarshallingContext>>();
-    private final Map<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemDeploymentWriters = new HashMap<String, XMLElementWriter<SubsystemMarshallingContext>>();
 
     /**
      * Construct a new instance.
@@ -71,20 +69,6 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
         }
     }
 
-    @Override
-    public void registerSubsystemDeploymentWriter(String name, XMLElementWriter<SubsystemMarshallingContext> deparser) {
-        synchronized (subsystemDeploymentWriters) {
-            subsystemDeploymentWriters.put(name, deparser);
-        }
-    }
-
-    @Override
-    public void unregisterSubsystemDeploymentWriter(String name) {
-        synchronized (subsystemDeploymentWriters) {
-            subsystemDeploymentWriters.remove(name);
-        }
-    }
-
     /** {@inheritDoc} */
     @Override
     public void marshallAsXml(final ModelNode model, final OutputStream output) throws ConfigurationPersistenceException {
@@ -104,13 +88,6 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
                     public XMLElementWriter<SubsystemMarshallingContext> getSubsystemWriter(String extensionName) {
                         synchronized (subsystemWriters) {
                             return subsystemWriters.get(extensionName);
-                        }
-                    }
-
-                    @Override
-                    public XMLElementWriter<SubsystemMarshallingContext> getSubsystemDeploymentWriter(String extensionName) {
-                        synchronized (subsystemDeploymentWriters) {
-                            return subsystemDeploymentWriters.get(extensionName);
                         }
                     }
                 };

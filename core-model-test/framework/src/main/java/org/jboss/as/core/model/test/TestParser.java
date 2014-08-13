@@ -118,11 +118,6 @@ public class TestParser implements ModelTestParser {
                 }
 
                 @Override
-                public XMLElementWriter<SubsystemMarshallingContext> getSubsystemDeploymentWriter(String subsystemName) {
-                    return context.getSubsystemDeploymentWriter(subsystemName);
-                }
-
-                @Override
                 public ModelNode getModelNode() {
                     return context.getModelNode().get(ModelDescriptionConstants.HOST, "master");
                 }
@@ -141,11 +136,6 @@ public class TestParser implements ModelTestParser {
             @Override
             public XMLElementWriter<SubsystemMarshallingContext> getSubsystemWriter(String subsystemName) {
                 return context.getSubsystemWriter(subsystemName);
-            }
-
-            @Override
-            public XMLElementWriter<SubsystemMarshallingContext> getSubsystemDeploymentWriter(String subsystemName) {
-                return context.getSubsystemDeploymentWriter(subsystemName);
             }
 
             @Override
