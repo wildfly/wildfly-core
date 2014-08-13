@@ -48,14 +48,18 @@ class CountingRequestCountListener implements ServerActivityListener {
     @Override
     public void requestsComplete() {
         if (count.decrementAndGet() == 0) {
-            delegate.requestsComplete();
+            if(delegate != null) {
+                delegate.requestsComplete();
+            }
         }
     }
 
     @Override
     public void unPaused() {
         if (canceled.compareAndSet(false, true)) {
-            delegate.unPaused();
+            if(delegate != null) {
+                delegate.unPaused();
+            }
         }
     }
 }
