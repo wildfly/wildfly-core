@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<vdb name="loop" version="1">
+    <!-- VDB properties -->
+    <property name="UseConnectorMetadata" value="true" />
+    <!-- define a model fragment for each data source -->
+
+    <model name="loop1">
+        <source name="loop1" translator-name="capabilities-off-translator"/>
+ 	<metadata type="DDL"><![CDATA[
+                CREATE FOREIGN TABLE G1 (e1 string, e2 integer);
+        ]]> </metadata>
+    </model>
+ 
+    <!-- create translator instances that override default properties -->
+    <translator name="capabilities-off-translator" type="loopback" />
+	 <property  name="delegateName" value="jdbc-simple"/>
+    </translator>
+</vdb>
