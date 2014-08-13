@@ -22,10 +22,7 @@
 
 package org.jboss.as.controller;
 
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -95,82 +92,4 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
     public SimpleAttributeDefinition build() {
         return new SimpleAttributeDefinition(this);
     }
-
-    /*
-   ------------------------------------------------------------------------------------------------------
-   methods below are added just to binary maintain compatibility for legacy subsystem transformers tests
-    */
-    @Override
-    public SimpleAttributeDefinitionBuilder setXmlName(String xmlName) {
-        return super.setXmlName(xmlName);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setDefaultValue(ModelNode defaultValue) {
-        return super.setDefaultValue(defaultValue);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setValidator(ParameterValidator validator) {
-        return super.setValidator(validator);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setFlags(AttributeAccess.Flag... flags) {
-        return super.setFlags(flags);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setAlternatives(String... alternatives) {
-        return super.setAlternatives(alternatives);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setRequires(String... requires) {
-        return super.setRequires(requires);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setMeasurementUnit(MeasurementUnit unit) {
-        return super.setMeasurementUnit(unit);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setAllowExpression(boolean allowExpression) {
-        return super.setAllowExpression(allowExpression);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setAllowNull(boolean allowNull) {
-        return super.setAllowNull(allowNull);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setStorageRuntime() {
-        return super.setStorageRuntime();
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setRestartAllServices() {
-        return super.setRestartAllServices();
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder setCorrector(final ParameterCorrector corrector) {
-        return super.setCorrector(corrector);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder addFlag(final AttributeAccess.Flag flag) {
-        return super.addFlag(flag);
-    }
-
-    @Override
-    public SimpleAttributeDefinitionBuilder addAlternatives(String...alternatives) {
-        return super.addAlternatives(alternatives);
-    }
-    /*
-    ---------------------------------------------------------------------------------
-    end methods that are here only for binary compatibilty
-     */
 }

@@ -30,14 +30,12 @@ import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.MapValidator;
 import org.jboss.as.controller.operations.validation.NillableOrExpressionParameterValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -53,56 +51,6 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 public abstract class MapAttributeDefinition extends AttributeDefinition {
 
     private final ParameterValidator elementValidator;
-
-    @SuppressWarnings("deprecation")
-    public MapAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
-        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, null, elementValidator,
-                null, null, null, false, null, null, (Boolean) null, null);
-    }
-
-    /** @deprecated use a {@link org.jboss.as.controller.AbstractAttributeDefinitionBuilder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public MapAttributeDefinition(final String name, final String xmlName, final boolean allowNull,
-                                  final int minSize, final int maxSize, final ParameterValidator elementValidator) {
-        this(name, xmlName, allowNull, false, minSize, maxSize, null, elementValidator, null, null, null,
-                false, null, null, (Boolean) null, null);
-    }
-
-    /** @deprecated use a {@link org.jboss.as.controller.AbstractAttributeDefinitionBuilder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public MapAttributeDefinition(final String name, final String xmlName, final boolean allowNull,
-                                  final int minSize, final int maxSize, final ParameterValidator elementValidator,
-                                  final String[] alternatives, final String[] requires, final AttributeAccess.Flag... flags) {
-        this(name, xmlName, allowNull, false, minSize, maxSize, null, elementValidator, alternatives, requires, null,
-                false, null, null, null, null, flags);
-    }
-
-    /** @deprecated use a {@link org.jboss.as.controller.AbstractAttributeDefinitionBuilder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected MapAttributeDefinition(final String name, final String xmlName, final boolean allowNull, boolean allowExpression,
-            final int minSize, final int maxSize, final ParameterCorrector corrector, final ParameterValidator elementValidator,
-            final String[] alternatives, final String[] requires, final AttributeMarshaller attributeMarshaller, final boolean resourceOnly, final DeprecationData deprecated,
-            final AccessConstraintDefinition[] accessConstraints, final AttributeAccess.Flag... flags) {
-        this(name, xmlName, allowNull, allowExpression, minSize, maxSize, corrector, elementValidator,
-                alternatives, requires, attributeMarshaller, resourceOnly, deprecated, accessConstraints, null, null, flags);
-    }
-
-    @Deprecated
-    protected MapAttributeDefinition(final String name, final String xmlName, final boolean allowNull, boolean allowExpression,
-                                     final int minSize, final int maxSize, final ParameterCorrector corrector, final ParameterValidator elementValidator,
-                                     final String[] alternatives, final String[] requires, final AttributeMarshaller attributeMarshaller,
-                                     final boolean resourceOnly, final DeprecationData deprecated,
-                                     final AccessConstraintDefinition[] accessConstraints,
-                                     final Boolean nullSignificant,
-                                     final AttributeParser parser,
-                                     final AttributeAccess.Flag... flags) {
-        super(name, xmlName, null, ModelType.OBJECT, allowNull, allowExpression, null, corrector, new MapValidator(elementValidator, allowNull, minSize, maxSize), false,
-                alternatives, requires, attributeMarshaller, resourceOnly, deprecated, accessConstraints, nullSignificant, parser, flags);
-        this.elementValidator = elementValidator;
-    }
 
     protected MapAttributeDefinition(Builder<? extends Builder, ? extends MapAttributeDefinition> builder) {
         super(builder);

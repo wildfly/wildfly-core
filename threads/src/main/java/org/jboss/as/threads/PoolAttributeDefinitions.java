@@ -25,7 +25,6 @@ package org.jboss.as.threads;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
@@ -72,8 +71,10 @@ public interface PoolAttributeDefinitions {
             .setAllowExpression(true)
             .build();
 
-    SimpleAttributeDefinition PRIORITY = new SimpleAttributeDefinition(CommonAttributes.PRIORITY, CommonAttributes.PRIORITY, null,
-            ModelType.INT, true, true, MeasurementUnit.NONE, new IntRangeValidator(Thread.MIN_PRIORITY, Thread.MAX_PRIORITY, true, true));
+    SimpleAttributeDefinition PRIORITY = new SimpleAttributeDefinitionBuilder(CommonAttributes.PRIORITY, ModelType.INT, true)
+            .setValidator(new IntRangeValidator(Thread.MIN_PRIORITY, Thread.MAX_PRIORITY, true, true))
+            .setAllowExpression(true)
+            .build();
 
     // Metrics
 

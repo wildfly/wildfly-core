@@ -32,13 +32,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
@@ -46,6 +44,7 @@ import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -53,6 +52,7 @@ import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.InterfaceAddHandler;
 import org.jboss.as.controller.operations.common.InterfaceCriteriaWriteHandler;
 import org.jboss.as.controller.operations.common.InterfaceRemoveHandler;
@@ -90,7 +90,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false).setAllowNull(true).setRestartAllServices()
             .setValidator(new ModelTypeValidator(ModelType.BOOLEAN, true, false))
             .addAlternatives(OTHERS).addAlternatives(ModelDescriptionConstants.ANY_ADDRESS, ModelDescriptionConstants.ANY_IPV6_ADDRESS)
-            .setDeprecated(ModelVersion.create(2,0,0))
+            .setDeprecated(ModelVersion.create(2, 0, 0))
             .build();
     /**
      * All other attribute names.
@@ -100,7 +100,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false).setAllowNull(true).setRestartAllServices()
             .setValidator(new ModelTypeValidator(ModelType.BOOLEAN, true, false))
             .addAlternatives(OTHERS).addAlternatives(ModelDescriptionConstants.ANY_ADDRESS, ModelDescriptionConstants.ANY_IPV4_ADDRESS)
-            .setDeprecated(ModelVersion.create(2,0,0))
+            .setDeprecated(ModelVersion.create(2, 0, 0))
             .build();
     public static final AttributeDefinition INET_ADDRESS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INET_ADDRESS, ModelType.STRING)
             .setAllowExpression(true).setAllowNull(true).addAlternatives(ALTERNATIVES_ANY).setRestartAllServices()
@@ -210,8 +210,8 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
      * @return
      */
     public static boolean isOperationDefined(final ModelNode operation) {
-        for(final AttributeDefinition def : ROOT_ATTRIBUTES) {
-            if(operation.hasDefined(def.getName())) {
+        for (final AttributeDefinition def : ROOT_ATTRIBUTES) {
+            if (operation.hasDefined(def.getName())) {
                 return true;
             }
         }
@@ -244,7 +244,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
                 true, false, MeasurementUnit.NONE,
                 (ParameterCorrector) null, createNestedParamValidator(), true,
                 ALTERNATIVES_ANY, (String[]) null, (AttributeMarshaller) null,
-                false, null, null, (Boolean) null,  null,
+                false, null, null, (Boolean) null, null,
                 AttributeAccess.Flag.RESTART_ALL_SERVICES) {
 
             @Override
@@ -315,7 +315,9 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
      */
     @Deprecated
     private static ListAttributeDefinition wrapAsList(final AttributeDefinition def) {
-        final ListAttributeDefinition list = new ListAttributeDefinition(def.getName(), true, def.getValidator()) {
+        final ListAttributeDefinition list = new ListAttributeDefinition(new SimpleListAttributeDefinition.Builder(def.getName(), def)
+                .setElementValidator(def.getValidator())) {
+
 
             @Override
             public ModelNode getNoTextDescription(boolean forOperation) {
