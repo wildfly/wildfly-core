@@ -385,4 +385,15 @@ public interface DeploymentScannerLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 34, value = "Failed synchronizing status of deployment %s.")
     void failedStatusSynchronization(@Cause Throwable cause, String deploymentName);
+
+    /**
+     * Logs an informational message indicating scan found an invalid XML file which means either is incompletly copied or just wrong.
+     *
+     * @param name the name of the file.
+     * @param lineNumber
+     * @param columnNumber
+     */
+    @LogMessage(level = INFO)
+    @Message(id = 35, value = "Scan found %s which is not well-formed at lineNumber: %s, columnNumber: %s. Either the file was incompletely copied at the time of the scanning or it is just wrong.")
+    void invalidXmlFileFound(String name, int lineNumber, int columnNumber);
 }

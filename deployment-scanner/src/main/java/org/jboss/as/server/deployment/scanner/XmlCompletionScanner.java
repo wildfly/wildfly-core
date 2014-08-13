@@ -43,7 +43,7 @@ public class XmlCompletionScanner {
 
 
     public static boolean isCompleteDocument(final File file) throws IOException {
-        ErrorHandler handler = new ErrorHandler();
+        ErrorHandler handler = new ErrorHandler(file.getName());
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setValidating(false);
@@ -61,11 +61,26 @@ public class XmlCompletionScanner {
     private static class ErrorHandler extends DefaultHandler {
 
         private boolean error = false;
+        private final String fileName;
+
+        public ErrorHandler(String fileName) {
+            this.fileName = fileName;
+        }
 
         @Override
         public void error(final SAXParseException e) throws SAXException {
-            error = true;
+            traceError(e);
         }
 
+        @Override
+        public void fatalError(SAXParseException e) throws SAXException {
+            traceError(e);
+            throw(e);
+        }
+
+        private void traceError(SAXParseException e) {
+            error = true;
+            DeploymentScannerLogger.ROOT_LOGGER.invalidXmlFileFound(fileName, e.getLineNumber(), e.getColumnNumber());
+        }
     }
 }
