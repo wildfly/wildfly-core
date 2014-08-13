@@ -154,8 +154,10 @@ public final class DomainServerMain {
         final ServiceContainer container;
         try {
             container = containerFuture.get();
-            final GracefulShutdownService client = getRequiredService(container, GracefulShutdownService.SERVICE_NAME, GracefulShutdownService.class);
-            client.awaitSuspend();
+            ServiceController<?> controller = container.getService(GracefulShutdownService.SERVICE_NAME);
+            if(controller != null) {
+                ((GracefulShutdownService)controller.getValue()).awaitSuspend();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

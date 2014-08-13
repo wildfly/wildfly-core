@@ -36,7 +36,7 @@ public class TestUndertowService implements Service<TestUndertowService> {
     @Override
     public void start(StartContext context) throws StartException {        //add graceful shutdown support
         final SuspendResumeHandler suspendResumeHandler = new SuspendResumeHandler();
-        final ControlPoint controlPoint = requestControllerInjectedValue.getValue().getEntryPoint("test", "test");
+        final ControlPoint controlPoint = requestControllerInjectedValue.getValue().getControlPoint("test", "test");
         HttpHandler shutdown = new HttpHandler() {
             @Override
             public void handleRequest(HttpServerExchange exchange) throws Exception {

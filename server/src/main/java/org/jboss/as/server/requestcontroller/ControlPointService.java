@@ -32,15 +32,15 @@ import org.jboss.msc.value.InjectedValue;
 /**
  * @author Stuart Douglas
  */
-public class EntryPointService implements Service<ControlPoint>{
+public class ControlPointService implements Service<ControlPoint>{
 
-    private static final ServiceName SERVICE_NAME = GlobalRequestController.SERVICE_NAME.append("entry-point");
+    private static final ServiceName SERVICE_NAME = GlobalRequestController.SERVICE_NAME.append("control-point");
     private final String deployment;
     private final String entryPoint;
     private volatile ControlPoint value;
     private final InjectedValue<GlobalRequestController> globalRequestControllerInjectedValue = new InjectedValue<>();
 
-    EntryPointService(String deployment, String entryPoint) {
+    ControlPointService(String deployment, String entryPoint) {
         this.deployment = deployment;
         this.entryPoint = entryPoint;
     }
@@ -50,7 +50,7 @@ public class EntryPointService implements Service<ControlPoint>{
     }
 
     public static void install(final ServiceTarget target, final String deployment, final String entryPoint) {
-        EntryPointService service = new EntryPointService(deployment, entryPoint);
+        ControlPointService service = new ControlPointService(deployment, entryPoint);
         target.addService(serviceName(deployment, entryPoint), service)
                 .addDependency(GlobalRequestController.SERVICE_NAME, GlobalRequestController.class, service.globalRequestControllerInjectedValue)
                 .install();
@@ -58,12 +58,12 @@ public class EntryPointService implements Service<ControlPoint>{
 
     @Override
     public void start(StartContext startContext) throws StartException {
-        value = globalRequestControllerInjectedValue.getValue().getEntryPoint(deployment, entryPoint);
+        value = globalRequestControllerInjectedValue.getValue().getControlPoint(deployment, entryPoint);
     }
 
     @Override
     public void stop(StopContext stopContext) {
-        globalRequestControllerInjectedValue.getValue().removeEntryPoint(value);
+        globalRequestControllerInjectedValue.getValue().removeControlPoint(value);
         value = null;
     }
 

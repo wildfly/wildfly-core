@@ -65,7 +65,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
 
     private volatile boolean paused = false;
 
-    private final Map<EntryPointIdentifier, ControlPoint> entryPoints = new HashMap<>();
+    private final Map<ControlPointIdentifier, ControlPoint> entryPoints = new HashMap<>();
 
     private final InjectedValue<SuspendController> shutdownControllerInjectedValue = new InjectedValue<>();
 
@@ -115,7 +115,9 @@ public class GlobalRequestController implements Service<GlobalRequestController>
         final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
             if (ep.getDeployment().equals(deployment)) {
-                eps.add(ep);
+                if(!ep.isPaused()) {
+                    eps.add(ep);
+                }
             }
         }
         CountingRequestCountListener realListener = new CountingRequestCountListener(eps.size(), listener);
@@ -130,7 +132,6 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      * @param deployment The deployment to resume
      */
     public synchronized void resumeDeployment(final String deployment) {
-        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
             if (ep.getDeployment().equals(deployment)) {
                 ep.resume();
@@ -141,14 +142,21 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     /**
      * Pauses a given entry point. This can be used to stop all requests though a given mechanism, e.g. all web requests
      *
-     * @param entryPoint The entry point
+     * @param controlPoint The control point
      * @param listener   The listener
      */
-    public synchronized void pauseEntryPoint(final String entryPoint, ServerActivityListener listener) {
+    public synchronized void pauseControlPoint(final String controlPoint, ServerActivityListener listener) {
         final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getEntryPoint().equals(entryPoint)) {
-                eps.add(ep);
+            if (ep.getEntryPoint().equals(controlPoint)) {
+                if(!ep.isPaused()) {
+                    eps.add(ep);
+                }
+            }
+        }
+        if(eps.isEmpty()) {
+            if(listener != null) {
+                listener.requestsComplete();
             }
         }
         CountingRequestCountListener realListener = new CountingRequestCountListener(eps.size(), listener);
@@ -162,7 +170,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      *
      * @param entryPoint The entry point
      */
-    public synchronized void resumeEntryPoint(final String entryPoint) {
+    public synchronized void resumeControlPoint(final String entryPoint) {
         final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
             if (ep.getEntryPoint().equals(entryPoint)) {
@@ -223,15 +231,15 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     /**
      * Gets an entry point for the given deployment . If one does not exist it will be created.
      *
-     * Entry points are reference counted. If this method is called n times then {@link #removeEntryPoint(ControlPoint)}
+     * Entry points are reference counted. If this method is called n times then {@link #removeControlPoint(ControlPoint)}
      * must also be called n times to clean up the entry points.
      *
      * @param deploymentName The top level deployment name
      * @param entryPointName The entry point name
      * @return The entry point
      */
-    public synchronized ControlPoint getEntryPoint(final String deploymentName, final String entryPointName) {
-        EntryPointIdentifier id = new EntryPointIdentifier(deploymentName, entryPointName);
+    public synchronized ControlPoint getControlPoint(final String deploymentName, final String entryPointName) {
+        ControlPointIdentifier id = new ControlPointIdentifier(deploymentName, entryPointName);
         ControlPoint ep = entryPoints.get(id);
         if (ep == null) {
             ep = new ControlPoint(this, deploymentName, entryPointName);
@@ -246,9 +254,9 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      *
      * @param controlPoint The entry point
      */
-    public synchronized void removeEntryPoint(ControlPoint controlPoint) {
+    public synchronized void removeControlPoint(ControlPoint controlPoint) {
         if (controlPoint.decreaseReferenceCount() == 0) {
-            EntryPointIdentifier id = new EntryPointIdentifier(controlPoint.getDeployment(), controlPoint.getEntryPoint());
+            ControlPointIdentifier id = new ControlPointIdentifier(controlPoint.getDeployment(), controlPoint.getEntryPoint());
             entryPoints.remove(id);
         }
     }
@@ -298,10 +306,10 @@ public class GlobalRequestController implements Service<GlobalRequestController>
         return shutdownControllerInjectedValue;
     }
 
-    private static final class EntryPointIdentifier {
+    private static final class ControlPointIdentifier {
         private final String deployment, name;
 
-        private EntryPointIdentifier(String deployment, String name) {
+        private ControlPointIdentifier(String deployment, String name) {
             this.deployment = deployment;
             this.name = name;
         }
@@ -311,7 +319,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            EntryPointIdentifier that = (EntryPointIdentifier) o;
+            ControlPointIdentifier that = (ControlPointIdentifier) o;
 
             if (deployment != null ? !deployment.equals(that.deployment) : that.deployment != null) return false;
             if (name != null ? !name.equals(that.name) : that.name != null) return false;
@@ -324,6 +332,11 @@ public class GlobalRequestController implements Service<GlobalRequestController>
             int result = deployment != null ? deployment.hashCode() : 0;
             result = 31 * result + (name != null ? name.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return super.toString();
         }
     }
 }
