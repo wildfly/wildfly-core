@@ -268,6 +268,36 @@ public class StateParser {
         }
 
         @Override
+        public boolean replaceSpecialChars() {
+            if(location == 0) {
+                return false;
+            }
+            if(input.charAt(location - 1) != '\\') {
+                return false;
+            }
+            switch(ch) {
+                case 'n':
+                    ch = '\n';
+                    break;
+                case 't':
+                    ch = '\t';
+                    break;
+                case 'b':
+                    ch = '\b';
+                    break;
+                case 'r':
+                    ch = '\r';
+                    break;
+                case 'f':
+                    ch = '\f';
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
+
+        @Override
         public boolean isStrict() {
             return strict;
         }

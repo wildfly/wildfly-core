@@ -145,4 +145,16 @@ public interface ParsingContext {
      * @throws CommandFormatException
      */
     void resolveExpression(boolean systemProperty, boolean exceptionIfNotResolved) throws UnresolvedExpressionException;
+
+    /**
+     * This method is called after a backslash character is met.
+     * In case the backslash and the following character (if any) are recognized
+     * as a special character (e.g. \t, \b, \n, \r, \f), they are replaced
+     * with the special character they signify.
+     * Otherwise, the method returns w/o any effects on the input sequence.
+     *
+     * @return  true if the character was recognized as a special one and was
+     * replaced, false otherwise
+     */
+    boolean replaceSpecialChars();
 }

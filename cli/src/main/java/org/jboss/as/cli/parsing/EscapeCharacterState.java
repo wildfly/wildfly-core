@@ -42,10 +42,13 @@ public final class EscapeCharacterState extends BaseParsingState {
      */
     public static final EscapeCharacterState KEEP_ESCAPE = new EscapeCharacterState(true);
 
-    private static final CharacterHandler HANDLER = new CharacterHandler() {
+    private final CharacterHandler handler = new CharacterHandler() {
         @Override
         public void handle(ParsingContext ctx)
                 throws CommandFormatException {
+            if(!keepEscape) {
+                ctx.replaceSpecialChars();
+            }
             ctx.getCallbackHandler().character(ctx);
             ctx.leaveState();
         }
@@ -71,6 +74,6 @@ public final class EscapeCharacterState extends BaseParsingState {
 
     @Override
     public CharacterHandler getHandler(char ch) {
-        return HANDLER;
+        return handler;
     }
 }
