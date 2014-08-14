@@ -52,6 +52,14 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
 
     private final ParameterValidator elementValidator;
 
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    public MapAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
+        super(name, name, null, ModelType.OBJECT, allowNull, false, null, null, new MapValidator(elementValidator, allowNull, 0, Integer.MAX_VALUE), false,
+                null, null, null, false, null, null, null, null);
+        this.elementValidator = elementValidator;
+    }
+
     protected MapAttributeDefinition(Builder<? extends Builder, ? extends MapAttributeDefinition> builder) {
         super(builder);
         this.elementValidator = builder.getElementValidator();
