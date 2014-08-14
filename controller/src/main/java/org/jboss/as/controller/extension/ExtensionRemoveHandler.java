@@ -64,15 +64,6 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
         final ManagementResourceRegistration rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
         extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module, rootRegistration);
 
-        if (context.isNormalServer()) {
-            context.addStep(new OperationStepHandler() {
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    context.reloadRequired();
-                    context.completeStep(OperationContext.RollbackHandler.REVERT_RELOAD_REQUIRED_ROLLBACK_HANDLER);
-                }
-            }, OperationContext.Stage.RUNTIME);
-        }
-
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
