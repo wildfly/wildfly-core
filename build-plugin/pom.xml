@@ -40,10 +40,10 @@
     <properties>
         <version.org.apache.maven.maven-plugin>2.2.1</version.org.apache.maven.maven-plugin>
         <version.org.apache.maven.maven-core>3.0.5</version.org.apache.maven.maven-core>
-        <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>2.1</version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
-        <version.org.apache.maven.plugin-tools>3.2</version.org.apache.maven.plugin-tools>
-        <version.org.codehaus.plexus.plexus-utils>3.0.10</version.org.codehaus.plexus.plexus-utils>
-        <version.org.eclipse.aether>0.9.0.M4</version.org.eclipse.aether>
+        <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.2.0</version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
+        <version.org.apache.maven.plugin-tools>3.3</version.org.apache.maven.plugin-tools>
+        <version.org.codehaus.plexus.plexus-utils>3.0.17</version.org.codehaus.plexus.plexus-utils>
+        <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
         <version.org.sonatype.aether>1.13.1</version.org.sonatype.aether>
         <version.org.junit>4.11</version.org.junit>
     </properties>
@@ -172,7 +172,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.2</version>
+                <version>3.3</version>
                 <configuration>
                     <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
