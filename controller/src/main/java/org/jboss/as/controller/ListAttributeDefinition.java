@@ -30,12 +30,14 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.NillableOrExpressionParameterValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -48,6 +50,34 @@ import org.jboss.dmr.ModelType;
 public abstract class ListAttributeDefinition extends AttributeDefinition {
 
     private final ParameterValidator elementValidator;
+
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
+        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null,false, null,
+                null, null, null, (AttributeAccess.Flag[]) null);
+    }
+
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator,
+                                   final AttributeAccess.Flag... flags) {
+        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null,false, null, null, null, null, flags);
+    }
+
+    private ListAttributeDefinition(final String name, final String xmlName, final boolean allowNull, final boolean allowExpressions,
+                                      final int minSize, final int maxSize, final ParameterValidator elementValidator,
+                                      final String[] alternatives, final String[] requires, final AttributeMarshaller attributeMarshaller,
+                                      final boolean resourceOnly,  final DeprecationData deprecated,
+                                      final AccessConstraintDefinition[] accessConstraints,
+                                      final Boolean niSignificant,
+                                      final AttributeParser parser,
+                                      final AttributeAccess.Flag... flags) {
+        super(name, xmlName, null, ModelType.LIST, allowNull, allowExpressions, null, null,
+                new ListValidator(elementValidator, allowNull, minSize, maxSize), allowNull, alternatives, requires,
+                attributeMarshaller, resourceOnly, deprecated, accessConstraints, niSignificant, parser, flags);
+        this.elementValidator = elementValidator;
+    }
 
     protected ListAttributeDefinition(ListAttributeDefinition.Builder<?, ?> builder) {
         super(builder);
