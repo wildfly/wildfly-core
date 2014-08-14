@@ -26,6 +26,7 @@ import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -101,7 +102,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
             public String getProductName() {
                 return null;
             }
-        }));
+        }, null, new ResourceDefinition[0]));
 
 
         pathManagerService.addPathManagerResources(rootResource);
