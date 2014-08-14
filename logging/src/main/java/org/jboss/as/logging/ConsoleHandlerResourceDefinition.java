@@ -28,6 +28,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker.SimpleRejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.resolvers.TargetResolver;
 import org.jboss.dmr.ModelNode;
@@ -67,6 +68,14 @@ class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition {
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, TARGET)
                         .end()
                         .discardOperations();
+                break;
+            }
+            case VERSION_2_0_0: {
+                resourceBuilder
+                        .getAttributeBuilder()
+                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, TARGET)
+                        .addRejectCheck(new SimpleRejectAttributeChecker(new ModelNode(Target.CONSOLE.toString())), TARGET)
+                        .end();
                 break;
             }
         }

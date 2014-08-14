@@ -31,34 +31,40 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
 */
 public enum Target {
 
-    SYSTEM_OUT,
-    SYSTEM_ERR,;
+    CONSOLE {
+        @Override
+        public String toString() {
+            return "console";
+        }
+    },
+    SYSTEM_OUT {
+        @Override
+        public String toString() {
+            return "System.out";
+        }
+    },
+    SYSTEM_ERR {
+        @Override
+        public String toString() {
+            return "System.err";
+        }
+    },;
 
     public static Target fromString(String value) {
         if (value.equalsIgnoreCase("System.out")) {
             return SYSTEM_OUT;
         } else if (value.equalsIgnoreCase("System.err")) {
             return SYSTEM_ERR;
+        } else if ("console".equalsIgnoreCase(value)) {
+            return CONSOLE;
         } else if (value.equalsIgnoreCase(ConsoleHandler.Target.SYSTEM_OUT.name())) {
             return SYSTEM_OUT;
         } else if (value.equalsIgnoreCase(ConsoleHandler.Target.SYSTEM_ERR.name())) {
             return SYSTEM_ERR;
+        } else if (value.equalsIgnoreCase(ConsoleHandler.Target.CONSOLE.name())) {
+            return CONSOLE;
         } else {
             return null;
-        }
-    }
-
-    public String toString() {
-        switch (this) {
-            case SYSTEM_OUT: {
-                return "System.out";
-            }
-            case SYSTEM_ERR: {
-                return "System.err";
-            }
-            default: {
-                throw new IllegalStateException();
-            }
         }
     }
 }

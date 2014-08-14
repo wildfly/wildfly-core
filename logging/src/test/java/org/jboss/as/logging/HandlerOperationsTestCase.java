@@ -337,7 +337,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         // Write each attribute and check the value
         testWriteCommonAttributes(kernelServices, address);
         testWrite(kernelServices, address, CommonAttributes.AUTOFLUSH, false);
-        testWrite(kernelServices, address, ConsoleHandlerResourceDefinition.TARGET, "System.err");
+        for (Target target : Target.values()) {
+            testWrite(kernelServices, address, ConsoleHandlerResourceDefinition.TARGET, target.toString());
+        }
 
         // Undefine attributes
         testUndefineCommonAttributes(kernelServices, address);

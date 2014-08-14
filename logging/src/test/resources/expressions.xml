@@ -39,6 +39,7 @@
         <formatter>
             <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}"/>
         </formatter>
+        <target name="${test.console.target:System.out}"/>
     </console-handler>
 
     <file-handler name="anotherFile" enabled="${test.file.enabled:false}" autoflush="${test.autoflush:true}">
