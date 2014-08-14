@@ -325,6 +325,7 @@ public enum Phase {
     // should be after all components are known
     public static final int PARSE_EJB_INJECTION_ANNOTATION              = 0x4000;
     public static final int PARSE_JACORB                                = 0x4100;
+    public static final int PARSE_JDKORB                                = 0x4180;
     public static final int PARSE_TRANSACTION_ROLLBACK_ACTION           = 0x4200;
     public static final int PARSE_EAR_MESSAGE_DESTINATIONS              = 0x4400;
     public static final int PARSE_DSXML_DEPLOYMENT                      = 0x4500;
@@ -366,6 +367,7 @@ public enum Phase {
     public static final int DEPENDENCIES_XTS                            = 0x1110;
     public static final int DEPENDENCIES_JDK                            = 0x1200;
     public static final int DEPENDENCIES_JACORB                         = 0x1300;
+    public static final int DEPENDENCIES_JDKORB                         = 0x1380;
     public static final int DEPENDENCIES_JMS                            = 0x1400;
     public static final int DEPENDENCIES_CMP                            = 0x1500;
     public static final int DEPENDENCIES_JAXR                           = 0x1600;
