@@ -32,22 +32,19 @@ import static org.jboss.as.remoting.CommonAttributes.STRENGTH;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ListAttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -56,7 +53,6 @@ import org.xnio.sasl.SaslQop;
 import org.xnio.sasl.SaslStrength;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class SaslResource extends SimpleResourceDefinition {
@@ -64,9 +60,21 @@ public class SaslResource extends SimpleResourceDefinition {
 
     static final SaslResource INSTANCE = new SaslResource();
 
-    static final AttributeDefinition INCLUDE_MECHANISMS_ATTRIBUTE = new SaslListAttributeDefinition(Element.INCLUDE_MECHANISMS, INCLUDE_MECHANISMS, true);
-    static final AttributeDefinition QOP_ATTRIBUTE = new SaslListAttributeDefinition(Element.QOP, QOP, true, QopParameterValidation.INSTANCE);
-    static final AttributeDefinition STRENGTH_ATTRIBUTE = new SaslListAttributeDefinition(Element.STRENGTH, STRENGTH, true, StrengthParameterValidation.INSTANCE);
+    static final AttributeDefinition INCLUDE_MECHANISMS_ATTRIBUTE = new StringListAttributeDefinition.Builder(INCLUDE_MECHANISMS)
+            .setAllowNull(true)
+            .setAttributeMarshaller(new SaslAttributeMarshaller(Element.INCLUDE_MECHANISMS))
+            .build();
+
+    static final AttributeDefinition QOP_ATTRIBUTE = new StringListAttributeDefinition.Builder(QOP)
+            .setAllowNull(true)
+            .setAttributeMarshaller(new SaslAttributeMarshaller(Element.QOP))
+            .setElementValidator(QopParameterValidation.INSTANCE)
+            .build();
+    static final AttributeDefinition STRENGTH_ATTRIBUTE = new StringListAttributeDefinition.Builder(STRENGTH)
+            .setAllowNull(true)
+            .setAttributeMarshaller(new SaslAttributeMarshaller(Element.STRENGTH))
+            .setElementValidator(StrengthParameterValidation.INSTANCE)
+            .build();
     static final SimpleAttributeDefinition SERVER_AUTH_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(SERVER_AUTH, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
             .setAllowNull(true)
@@ -109,37 +117,17 @@ public class SaslResource extends SimpleResourceDefinition {
         return accessConstraints;
     }
 
-    private static class SaslListAttributeDefinition extends ListAttributeDefinition {
-        final Element element;
+    private static class SaslAttributeMarshaller extends AttributeMarshaller {
+        private final Element element;
 
-        SaslListAttributeDefinition(Element element, String name, boolean allowNull) {
-            this(element, name, allowNull, new StringLengthValidator(1));
-        }
-
-        SaslListAttributeDefinition(Element element, String name, boolean allowNull, ParameterValidator validator) {
-            super(name, allowNull, validator);
+        SaslAttributeMarshaller(Element element) {
             this.element = element;
         }
 
         @Override
-        protected void addValueTypeDescription(ModelNode node, ResourceBundle bundle) {
-            setValueType(node);
-        }
-
-        @Override
-        protected void addAttributeValueTypeDescription(ModelNode node, ResourceDescriptionResolver resolver, Locale locale, ResourceBundle bundle) {
-            setValueType(node);
-        }
-
-        @Override
-        protected void addOperationParameterValueTypeDescription(ModelNode node, String operationName, ResourceDescriptionResolver resolver, Locale locale, ResourceBundle bundle) {
-            setValueType(node);
-        }
-
-        @Override
-        public void marshallAsElement(ModelNode resourceModel,boolean marshalDefault, XMLStreamWriter writer) throws XMLStreamException {
-            if (resourceModel.hasDefined(getName())) {
-                List<ModelNode> list = resourceModel.get(getName()).asList();
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            if (resourceModel.hasDefined(attribute.getName())) {
+                List<ModelNode> list = resourceModel.get(attribute.getName()).asList();
                 if (list.size() > 0) {
                     writer.writeEmptyElement(element.getLocalName());
                     StringBuilder sb = new StringBuilder();
@@ -154,9 +142,6 @@ public class SaslResource extends SimpleResourceDefinition {
             }
         }
 
-        private void setValueType(ModelNode node) {
-            node.get(ModelDescriptionConstants.VALUE_TYPE).set(ModelType.STRING);
-        }
     }
 
     private abstract static class SaslEnumValidator extends StringLengthValidator implements AllowedValuesValidator {
@@ -178,6 +163,7 @@ public class SaslResource extends SimpleResourceDefinition {
 
     private static class QopParameterValidation extends SaslEnumValidator implements AllowedValuesValidator {
         static final QopParameterValidation INSTANCE = new QopParameterValidation();
+
         public QopParameterValidation() {
             super(SaslQop.values(), false);
         }
@@ -185,6 +171,7 @@ public class SaslResource extends SimpleResourceDefinition {
 
     private static class StrengthParameterValidation extends SaslEnumValidator implements AllowedValuesValidator {
         static final StrengthParameterValidation INSTANCE = new StrengthParameterValidation();
+
         public StrengthParameterValidation() {
             super(SaslStrength.values(), true);
         }

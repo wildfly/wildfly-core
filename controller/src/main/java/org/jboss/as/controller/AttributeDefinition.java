@@ -89,38 +89,6 @@ public abstract class AttributeDefinition {
     //
     // All other use cases should use the constructor that takes a builder
 
-    @Deprecated
-    protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                               final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                               final ParameterValidator validator, final String[] alternatives, final String[] requires,
-                               final AttributeAccess.Flag... flags) {
-        this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit,
-                null, validator, true, alternatives, requires, null, false, null, null, null, AttributeParser.SIMPLE, flags);
-    }
-
-    @Deprecated
-    protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-            final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-            final ParameterCorrector valueCorrector, final ParameterValidator validator,
-            boolean validateNull, final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-            boolean resourceOnly, DeprecationData deprecationData, final AttributeAccess.Flag... flags) {
-        this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector, validator,
-                validateNull, alternatives, requires, attributeMarshaller, resourceOnly, deprecationData,
-                null, null, AttributeParser.SIMPLE, flags);
-    }
-
-    @Deprecated
-    protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                                  final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                  final ParameterCorrector valueCorrector, final ParameterValidator validator,
-                                  boolean validateNull, final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-                                  boolean resourceOnly, DeprecationData deprecationData, final AccessConstraintDefinition[] accessConstraints,
-                                  final AttributeAccess.Flag... flags) {
-        this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector, validator,
-                validateNull, alternatives, requires, attributeMarshaller, resourceOnly, deprecationData,
-                accessConstraints, null, AttributeParser.SIMPLE, flags);
-    }
-
     protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
         this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
                 toCopy.isAllowNull(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),

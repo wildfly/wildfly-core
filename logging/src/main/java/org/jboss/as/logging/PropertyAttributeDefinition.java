@@ -23,15 +23,9 @@
 package org.jboss.as.logging;
 
 import org.jboss.as.controller.AbstractAttributeDefinitionBuilder;
-import org.jboss.as.controller.AttributeMarshaller;
-import org.jboss.as.controller.DeprecationData;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -43,19 +37,6 @@ import org.jboss.logmanager.config.PropertyConfigurable;
 public class PropertyAttributeDefinition extends SimpleAttributeDefinition implements ConfigurationProperty<String> {
     private final ModelNodeResolver<String> resolver;
     private final String propertyName;
-
-    /** @deprecated Use {@link Builder} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public PropertyAttributeDefinition(final String name, final String xmlName, final String propertyName, final ModelNodeResolver<String> resolver, final ModelNode defaultValue, final ModelType type,
-                                       final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit, final ParameterCorrector corrector,
-                                       final ParameterValidator validator, final boolean validateNull, final String[] alternatives, final String[] requires,
-                                       final AttributeMarshaller attributeMarshaller, final boolean resourceOnly, final DeprecationData deprecationData, final Flag... flags) {
-        super(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, corrector, validator, validateNull, alternatives, requires, attributeMarshaller,
-                resourceOnly, deprecationData, null, null, null, flags);
-        this.propertyName = propertyName;
-        this.resolver = resolver;
-    }
 
     private PropertyAttributeDefinition(final Builder builder) {
         super(builder);

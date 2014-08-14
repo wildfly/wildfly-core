@@ -28,10 +28,8 @@ import java.util.ResourceBundle;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -43,37 +41,6 @@ import org.jboss.dmr.ModelNode;
  */
 public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     private final AttributeDefinition valueType;
-
-    /**
-     * @deprecated use a {@link org.jboss.as.controller.SimpleListAttributeDefinition.Builder builder}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected SimpleListAttributeDefinition(final String name, final String xmlName, final AttributeDefinition valueType,
-                                            final boolean allowNull, final int minSize, final int maxSize,
-                                            final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-                                            final boolean resourceOnly, final DeprecationData deprecated,
-                                            final AccessConstraintDefinition[] accessConstraints, final AttributeAccess.Flag... flags) {
-        this(name, xmlName, valueType, allowNull, minSize, maxSize, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecated, accessConstraints, null, null, flags);
-    }
-
-    /**
-     * @deprecated use a {@link org.jboss.as.controller.SimpleListAttributeDefinition.Builder builder}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected SimpleListAttributeDefinition(final String name, final String xmlName, final AttributeDefinition valueType,
-                                            final boolean allowNull, final int minSize, final int maxSize,
-                                            final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-                                            final boolean resourceOnly, final DeprecationData deprecated,
-                                            final AccessConstraintDefinition[] accessConstraints, final Boolean nullSignificant,
-                                            final AttributeParser parser,
-                                            final AttributeAccess.Flag... flags) {
-        super(name, xmlName, allowNull, false, minSize, maxSize, valueType.getValidator(), alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecated, accessConstraints, nullSignificant, parser, flags);
-        this.valueType = valueType;
-    }
 
     protected SimpleListAttributeDefinition(final ListAttributeDefinition.Builder builder, AttributeDefinition valueType) {
         super(builder);

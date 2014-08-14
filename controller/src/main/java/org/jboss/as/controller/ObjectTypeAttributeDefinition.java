@@ -31,14 +31,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -54,52 +52,6 @@ import org.jboss.dmr.ModelType;
 public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
     private final AttributeDefinition[] valueTypes;
     private final String suffix;
-
-    /** @deprecated use a {@link org.jboss.as.controller.ObjectTypeAttributeDefinition.Builder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected ObjectTypeAttributeDefinition(final String name, final AttributeDefinition[] valueTypes, final boolean allowNull,
-                                            final ParameterCorrector corrector) {
-        this(name, name, null, valueTypes, allowNull, new ObjectTypeValidator(allowNull, valueTypes), corrector, null, null,
-                null, false, null, null, (Boolean) null, null, (AttributeAccess.Flag[]) null);
-    }
-
-    /** @deprecated use a {@link org.jboss.as.controller.ObjectTypeAttributeDefinition.Builder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected ObjectTypeAttributeDefinition(final String name, final String xmlName, final String suffix, final AttributeDefinition[] valueTypes, final boolean allowNull,
-            final ParameterValidator validator, final ParameterCorrector corrector, final String[] alternatives, final String[] requires,
-            final AttributeMarshaller attributeMarshaller, final boolean resourceOnly, final DeprecationData deprecated,
-            final AttributeAccess.Flag... flags) {
-        this(name, xmlName, suffix, valueTypes, allowNull, validator, corrector, alternatives, requires, attributeMarshaller,
-                resourceOnly, deprecated, null, null, null, flags);
-    }
-
-    /** @deprecated use a {@link org.jboss.as.controller.ObjectTypeAttributeDefinition.Builder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected ObjectTypeAttributeDefinition(final String name, final String xmlName, final String suffix, final AttributeDefinition[] valueTypes, final boolean allowNull,
-                                            final ParameterValidator validator, final ParameterCorrector corrector, final String[] alternatives, final String[] requires,
-                                            final AttributeMarshaller attributeMarshaller, final boolean resourceOnly, final DeprecationData deprecated,
-                                            final AccessConstraintDefinition[] accessConstraints, final AttributeAccess.Flag... flags) {
-        this(name, xmlName, suffix, valueTypes, allowNull, validator, corrector, alternatives, requires, attributeMarshaller,
-                resourceOnly, deprecated, accessConstraints, null, null, flags);
-    }
-
-    /** @deprecated use a {@link org.jboss.as.controller.ObjectTypeAttributeDefinition.Builder builder}*/
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected ObjectTypeAttributeDefinition(final String name, final String xmlName, final String suffix, final AttributeDefinition[] valueTypes, final boolean allowNull,
-                                            final ParameterValidator validator, final ParameterCorrector corrector, final String[] alternatives, final String[] requires,
-                                            final AttributeMarshaller attributeMarshaller, final boolean resourceOnly, final DeprecationData deprecated,
-                                            final AccessConstraintDefinition[] accessConstraints,
-                                            final Boolean nullSignificant, final AttributeParser parser, final AttributeAccess.Flag... flags) {
-        super(name, xmlName, null, ModelType.OBJECT, allowNull, false, null, corrector, validator, false, alternatives,
-                requires, getAttributeMarshaller(attributeMarshaller, valueTypes), resourceOnly, deprecated,
-                accessConstraints, nullSignificant, parser, flags);
-        this.valueTypes = valueTypes;
-        this.suffix = suffix == null ? "" : suffix;
-    }
 
     protected ObjectTypeAttributeDefinition(Builder builder) {
         this(builder, builder.suffix, builder.valueTypes);

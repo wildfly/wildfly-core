@@ -25,12 +25,9 @@ package org.jboss.as.controller;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -43,38 +40,6 @@ import org.jboss.dmr.ModelType;
  */
 public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     private final ModelType valueType;
-
-    /**
-     * @deprecated use a {@link org.jboss.as.controller.PrimitiveListAttributeDefinition.Builder Builder}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected PrimitiveListAttributeDefinition(final String name, final String xmlName, final boolean allowNull, final boolean allowExpressions, final ModelType valueType, final int minSize, final int maxSize,
-            final String[] alternatives, final String[] requires, ParameterValidator elementValidator, final AttributeMarshaller attributeMarshaller,
-            final boolean resourceOnly, final DeprecationData deprecated, final AccessConstraintDefinition[] accessConstraints, final AttributeAccess.Flag... flags) {
-        this(name, xmlName, allowNull, allowExpressions, valueType, minSize, maxSize, elementValidator, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecated, accessConstraints, null, null, flags);
-    }
-
-    /**
-     * @deprecated use a {@link org.jboss.as.controller.PrimitiveListAttributeDefinition.Builder Builder}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected PrimitiveListAttributeDefinition(final String name, final String xmlName, final boolean allowNull,
-                                               final boolean allowExpressions, final ModelType valueType,
-                                               final int minSize, final int maxSize,final ParameterValidator elementValidator,
-                                               final String[] alternatives, final String[] requires,
-                                               final AttributeMarshaller attributeMarshaller,
-                                               final boolean resourceOnly, final DeprecationData deprecated,
-                                               final AccessConstraintDefinition[] accessConstraints,
-                                               final Boolean nullSignificant,
-                                               final AttributeParser parser,
-                                               final AttributeAccess.Flag... flags) {
-        super(name, xmlName, allowNull, allowExpressions, minSize, maxSize, elementValidator, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecated, accessConstraints, nullSignificant, parser,flags);
-        this.valueType = valueType;
-    }
 
     protected PrimitiveListAttributeDefinition(final ListAttributeDefinition.Builder builder, ModelType valueType) {
         super(builder);
