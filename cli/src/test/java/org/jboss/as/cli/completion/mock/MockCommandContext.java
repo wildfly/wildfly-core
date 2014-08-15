@@ -37,10 +37,7 @@ import org.jboss.as.cli.CommandLineRedirection;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.batch.BatchedCommand;
-<<<<<<< HEAD
-=======
 import org.jboss.as.cli.impl.ConnectionInfoBean;
->>>>>>> added simple javabean to hold values instead of properties
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;

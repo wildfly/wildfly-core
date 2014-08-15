@@ -242,13 +242,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private CliShutdownHook.Handler shutdownHook;
 
-<<<<<<< HEAD
     /** command line handling redirection */
     private CommandLineRedirectionRegistration redirection;
-=======
+
     /** this object saves information to be used in ConnectionInfoHandler */
     private final ConnectionInfoBean connInfoBean = new ConnectionInfoBean();
->>>>>>> added simple javabean to hold values instead of properties
 
     /**
      * Version mode - only used when --version is called from the command line.
