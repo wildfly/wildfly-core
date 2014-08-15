@@ -1,0 +1,15 @@
+SYNOPSIS
+
+   connection-info
+
+DESCRIPTION
+
+  Prints information about the current connection to the server. The
+  information is username and date and hour since the user is logged in.
+  If it is an SSL connection it also prints the server certificate as:
+  subject, issuer, validity, SHA1 and MD5 fingerprint.
+
+
+ARGUMENTS
+
+  n/a

@@ -242,8 +242,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private CliShutdownHook.Handler shutdownHook;
 
+<<<<<<< HEAD
     /** command line handling redirection */
     private CommandLineRedirectionRegistration redirection;
+=======
+    /** this object saves information to be used in ConnectionInfoHandler */
+    private final ConnectionInfoBean connInfoBean = new ConnectionInfoBean();
+>>>>>>> added simple javabean to hold values instead of properties
 
     /**
      * Version mode - only used when --version is called from the command line.
@@ -839,7 +844,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         do {
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
-                set("disableLocalAuth", disableLocalAuth);
+                connInfoBean.setDisableLocalAuth(disableLocalAuth);
                 if (log.isDebugEnabled()) {
                     log.debug("connecting to " + address.getHost() + ':' + address.getPort() + " as " + username);
                 }
@@ -848,7 +853,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 retry = false;
                 tryConnection(tempClient, address);
                 initNewClient(tempClient, address);
-                set("logged_since", new Date());
+                connInfoBean.setLoggedSince(new Date());
+                set("connection_info", connInfoBean);
             } catch (RedirectException re) {
                 try {
                     URI location = new URI(re.getLocation());
@@ -1441,7 +1447,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             throw new SaslException("No username supplied.");
                         }
                     }
-                    set("username", username);
+                    connInfoBean.setUsername(username);
                     ncb.setName(username);
                 } else if (current instanceof PasswordCallback && digest == null) {
                     // If a digest had been set support for PasswordCallback is disabled.
@@ -1617,7 +1623,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 retry = false;
                 try {
                     getDelegate().checkServerTrusted(chain, authType);
-                    set("server_certificate", chain);
+                    connInfoBean.setServerCertificates(chain);
                 } catch (CertificateException ce) {
                     if (retry == false) {
                         timeoutHandler.suspendAndExecute(new Runnable() {

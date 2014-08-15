@@ -23,6 +23,8 @@ package org.jboss.as.cli.completion.mock;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliEventListener;
@@ -35,6 +37,10 @@ import org.jboss.as.cli.CommandLineRedirection;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.batch.BatchedCommand;
+<<<<<<< HEAD
+=======
+import org.jboss.as.cli.impl.ConnectionInfoBean;
+>>>>>>> added simple javabean to hold values instead of properties
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -67,8 +73,15 @@ public class MockCommandContext implements CommandContext {
 
     private File curDir = new File("");
     private boolean resolveParameterValues;
+    private Map<String, Object> map = new HashMap<String, Object>();
 
     private boolean silent;
+
+    public MockCommandContext() {
+        ConnectionInfoBean connInfo =  new ConnectionInfoBean();
+        connInfo.setUsername("test");
+        set("connection_info", connInfo);
+    }
 
     public void parseCommandLine(String buffer) throws CommandFormatException {
         try {
@@ -121,8 +134,7 @@ public class MockCommandContext implements CommandContext {
      */
     @Override
     public void set(String key, Object value) {
-        // TODO Auto-generated method stub
-
+        map.put(key, value);
     }
 
     /* (non-Javadoc)
@@ -130,8 +142,7 @@ public class MockCommandContext implements CommandContext {
      */
     @Override
     public Object get(String key) {
-        // TODO Auto-generated method stub
-        return null;
+        return map.get(key);
     }
 
     /* (non-Javadoc)

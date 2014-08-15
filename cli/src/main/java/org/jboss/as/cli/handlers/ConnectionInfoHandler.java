@@ -24,62 +24,50 @@ package org.jboss.as.cli.handlers;
 
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.cli.CommandArgument;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
-import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.impl.ConnectionInfoBean;
 import org.jboss.as.cli.util.FingerprintGenerator;
+import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.client.ModelControllerClient;
 
 /**
  *
  * @author Claudio Miranda
  */
-public class ConnectionInfoHandler implements CommandHandler {
+public class ConnectionInfoHandler extends CommandHandlerWithHelp {
 
-    public static final ConnectionInfoHandler INSTANCE = new ConnectionInfoHandler();
-
-    /* (non-Javadoc)
-     * @see org.jboss.as.cli.CommandHandler#isAvailable(org.jboss.as.cli.CommandContext)
-     */
-    @Override
-    public boolean isAvailable(CommandContext ctx) {
-        return true;
+    public ConnectionInfoHandler() {
+        this("connection-info");
     }
 
-    /* (non-Javadoc)
-     * @see org.jboss.as.cli.CommandHandler#isBatchMode()
-     */
-    @Override
-    public boolean isBatchMode(CommandContext ctx) {
-        return true;
+    public ConnectionInfoHandler(String command) {
+        super(command);
     }
+
 
     /* (non-Javadoc)
      * @see org.jboss.as.cli.CommandHandler#handle(org.jboss.as.cli.CommandContext)
      */
     @Override
-    public void handle(CommandContext ctx) throws CommandFormatException {
-        final StringBuilder buf = new StringBuilder();
+    protected void doHandle(CommandContext ctx) throws CommandLineException {
         final ModelControllerClient client = ctx.getModelControllerClient();
         if(client == null) {
-            buf.append("<connect to the controller and re-run the connection-info command to see the connection information>\n");
+            ctx.printLine("<connect to the controller and re-run the connection-info command to see the connection information>\n");
         } else {
 
-            boolean disableLocalAuth = (boolean) ctx.get("disableLocalAuth");
+            ConnectionInfoBean connInfo = (ConnectionInfoBean) ctx.get("connection_info");
+            boolean disableLocalAuth = connInfo.isDisableLocalAuth();
             String username = "Local connection authenticated as SuperUser";
             if (disableLocalAuth)
-                username = (String) ctx.get("username");
-            Date _loggedSince = (Date) ctx.get("logged_since");
-            buf.append("Username     - ").append(username).append('\n');
-            buf.append("Logged since - ").append(_loggedSince).append('\n');
-            X509Certificate[] lastChain = (X509Certificate[]) ctx.get("server_certificate");
+                username = connInfo.getUsername();
+            SimpleTable st = new SimpleTable(2);
+            st.addLine(new String[]{"Username", username});
+            st.addLine(new String[]{"Logged since", connInfo.getLoggedSince().toString()});
+            X509Certificate[] lastChain = connInfo.getServerCertificates();
             boolean sslConn = lastChain != null;
             if (sslConn) {
                 try {
@@ -87,44 +75,24 @@ public class ConnectionInfoHandler implements CommandHandler {
                         if (current instanceof X509Certificate) {
                             X509Certificate x509Current = (X509Certificate) current;
                             Map<String, String> fingerprints = FingerprintGenerator.generateFingerprints(x509Current);
-                            buf.append("Subject      - " + x509Current.getSubjectX500Principal().getName()).append("\n");
-                            buf.append("Issuer       - " + x509Current.getIssuerDN().getName()).append("\n");
-                            buf.append("Valid From   - " + x509Current.getNotBefore()).append("\n");
-                            buf.append("Valid To     - " + x509Current.getNotAfter()).append("\n");
+                            st.addLine(new String[] {"Subject", x509Current.getSubjectX500Principal().getName()});
+                            st.addLine(new String[] {"Issuer", x509Current.getIssuerDN().getName()});
+                            st.addLine(new String[] {"Valid from", x509Current.getNotBefore().toString()});
+                            st.addLine(new String[] {"Valid to", x509Current.getNotAfter().toString()});
                             for (String alg : fingerprints.keySet()) {
-                                String algName = String.format("%-13s", alg);
-                                buf.append(algName + "- " + fingerprints.get(alg)).append("\n");
+                                st.addLine(new String[] {alg, fingerprints.get(alg)});
                             }
-                            buf.append("");
                         }
                     }
                 } catch (CommandLineException cle) {
                     throw new CommandFormatException("Error trying to generate server certificate fingerprint.", cle);
                 }
             } else {
-                buf.append("Not an SSL connection.");
+                st.addLine(new String[] {"Not an SSL connection.", ""});
             }
+            ctx.printLine(st.toString());
         }
-        ctx.printLine(buf.toString());
     }
 
-    @Override
-    public CommandArgument getArgument(CommandContext ctx, String name) {
-        return null;
-    }
 
-    @Override
-    public boolean hasArgument(CommandContext ctx, String name) {
-        return false;
-    }
-
-    @Override
-    public boolean hasArgument(CommandContext ctx, int index) {
-        return false;
-    }
-
-    @Override
-    public List<CommandArgument> getArguments(CommandContext ctx) {
-        return Collections.emptyList();
-    }
 }
