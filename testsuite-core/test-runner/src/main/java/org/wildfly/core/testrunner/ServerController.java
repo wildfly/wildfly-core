@@ -1,41 +1,45 @@
 package org.wildfly.core.testrunner;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
  */
 public class ServerController {
 
-    private static volatile boolean started = false;
+    private static final AtomicBoolean started = new AtomicBoolean(false);
     private static volatile Server server;
 
-
     public void start() {
-        if (!started) {
-            started = true;
+        if (started.compareAndSet(false, true)) {
             server = new Server();
-            server.start();
+            try {
+                server.start();
+            } catch (final Throwable t) {
+                // failed to start
+                server = null;
+                started.set(false);
+                throw t;
+            }
         }
     }
-
-    //public void start(String containerQualifier, Map<String, String> config);
 
     public void stop() {
         if (server != null) {
-            server.stop();
-            server = null;
-            started = false;
+            try {
+                server.stop();
+            } finally {
+                server = null;
+                started.set(false);
+            }
         }
     }
 
-    //public void kill(String containerQualifier);
-
     public boolean isStarted() {
-        return server != null;
+        return (server != null);
     }
-
 
     public ManagementClient getClient() {
         return server.getClient();
     }
-
 }
