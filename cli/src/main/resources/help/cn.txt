@@ -1,23 +1,32 @@
 SYNOPSIS
 
-   cn [node_path]
-   cd [node_path]
+   cn [node_path [--no-validation]]
+   cd [node_path [--no-validation]]
 
 DESCRIPTION
 
     Changes the current node path to the argument.
     The current node path is used as the address for operation requests that
-    don't contains the address part. If an operation request does include the
+    don't contain the address part. If an operation request does include the
     address, the included address is considered relative to the current node
-    path. The current node path may end on a node-type. In that case, to execute
-    an operation specifying a node-name would be sufficient
+    path. The current node path may end on a node-type. In that case,
+    to execute an operation specifying a node-name would be sufficient
     (e.g. logging:read-resource).
 
 ARGUMENTS
 
- node_path      - the new value for the current node path following the format
-                  [node-type [=node-name (,node-type[=node-name])*]].
-				
+ node_path       - the new value for the current node path following the format
+                   [node-type [=node-name (,node-type[=node-name])*]].
+
+ --no-validation - normally (when --no-validation is not present on the line),
+                   before switching to the node_path, the node_path is
+                   validated to make sure that it actually exists.
+                   In some cases, like batches, the validation may get
+                   in the way because the target address might not yet exist.
+                   If --no-validation is present the current context address
+                   will be set to the node_path without validating it. 
+
+
 The following navigation signs are supported in the node-path:
  /      - the root node (e.g. 'cd /' or 'cd /some=thing');
  ..     - parent node (e.g. 'cd ..');
