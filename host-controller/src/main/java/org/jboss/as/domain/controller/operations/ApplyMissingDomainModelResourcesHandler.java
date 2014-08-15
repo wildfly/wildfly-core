@@ -27,7 +27,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.OperationContext;
@@ -38,6 +40,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.extension.ExtensionResource;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
@@ -110,8 +113,7 @@ public class ApplyMissingDomainModelResourcesHandler implements OperationStepHan
      * @return the operation
      */
     public static ModelNode createPulledMissingDataOperation(ModelNode missingResources) {
-        ModelNode applyMissingResourcesOp = createPiggyBackedMissingDataOperation(missingResources);
-        return applyMissingResourcesOp;
+        return createPiggyBackedMissingDataOperation(missingResources);
     }
 
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
@@ -119,8 +121,10 @@ public class ApplyMissingDomainModelResourcesHandler implements OperationStepHan
         // We get the model as a list of resources descriptions
         final ModelNode domainModel = operation.get(DOMAIN_MODEL);
         final Resource rootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+        final ManagementResourceRegistration rootRegistration = context.getResourceRegistrationForUpdate();
 
         final List<ModelNode> nonExtensions = new ArrayList<>();
+        final Map<String, Resource> installedExtensions = new HashMap<>();
 
         for (ModelNode resourceDescription : domainModel.asList()) {
             PathAddress resourceAddress = PathAddress.pathAddress(resourceDescription.require(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_ADDRESS));
@@ -131,8 +135,11 @@ public class ApplyMissingDomainModelResourcesHandler implements OperationStepHan
                 //Apply the extensions first
                 PathElement extensionElement = resourceAddress.getElement(0);
                 if (!rootResource.hasChild(extensionElement)) {
-                    initializeExtension(extensionElement.getValue());
-                    getResource(resourceAddress, rootResource, context).writeModel(resourceDescription.get(DOMAIN_MODEL));
+                    String moduleName = extensionElement.getValue();
+                    initializeExtension(moduleName, rootRegistration);
+                    Resource extensionResource = getResource(resourceAddress, rootResource, context);
+                    extensionResource.writeModel(resourceDescription.get(DOMAIN_MODEL));
+                    installedExtensions.put(moduleName, extensionResource);
                 }
             } else {
                 nonExtensions.add(resourceDescription);
@@ -148,10 +155,17 @@ public class ApplyMissingDomainModelResourcesHandler implements OperationStepHan
 
         //We don't need to restart the servers here, that should be handled by the ServerOperationResolver
 
-        context.stepCompleted();
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                for (Map.Entry<String, Resource> entry : installedExtensions.entrySet()) {
+                    domainController.getExtensionRegistry().removeExtension(entry.getValue(), entry.getKey(), rootRegistration);
+                }
+            }
+        });
     }
 
-    protected Resource getResource(PathAddress resourceAddress, Resource rootResource, OperationContext context) {
+    private Resource getResource(PathAddress resourceAddress, Resource rootResource, OperationContext context) {
         if(resourceAddress.size() == 0) {
             return rootResource;
         }
@@ -174,13 +188,13 @@ public class ApplyMissingDomainModelResourcesHandler implements OperationStepHan
     }
 
 
-    protected void initializeExtension(String module) throws OperationFailedException {
+    private void initializeExtension(String module, ManagementResourceRegistration rootRegistration) throws OperationFailedException {
         try {
             for (final Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
                 ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
                 try {
                     extension.initializeParsers(domainController.getExtensionRegistry().getExtensionParsingContext(module, null));
-                    extension.initialize(domainController.getExtensionRegistry().getExtensionContext(module, false));
+                    extension.initialize(domainController.getExtensionRegistry().getExtensionContext(module, rootRegistration, false));
                 } finally {
                     SecurityActions.setThreadContextClassLoader(oldTccl);
                 }

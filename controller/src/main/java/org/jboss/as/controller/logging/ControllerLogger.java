@@ -3052,7 +3052,7 @@ public interface ControllerLogger extends BasicLogger {
     String unsupportedLegacyExtension(String extensionName);
 
     @Message(id = 310, value = "Extension module %s not found")
-    OperationFailedException extensionModuleNotFound(@Cause ModuleNotFoundException cause, String module);
+    OperationFailedRuntimeException extensionModuleNotFound(@Cause ModuleNotFoundException cause, String module);
 
     @Message(id = 311, value = "Failed to load Extension module %s")
     RuntimeException extensionModuleLoadingFailure(@Cause ModuleLoadException cause, String module);

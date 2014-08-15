@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -45,10 +46,11 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionResource;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.coordination.DomainServerUtils;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
@@ -64,7 +66,6 @@ import org.jboss.modules.ModuleLoadException;
  */
 public class ApplyExtensionsHandler implements OperationStepHandler {
 
-    static final String APPLY_MISSING = "apply-missing";
     public static final String OPERATION_NAME = "resolve-subsystems";
 
     private final Set<String> appliedExtensions = new HashSet<String>();
@@ -90,10 +91,12 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
         final ModelNode domainModel = operation.get(DOMAIN_MODEL);
         final ModelNode startRoot = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS));
 
+        final ManagementResourceRegistration rootRegistration = context.getResourceRegistrationForUpdate();
         final Resource rootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         for(Resource.ResourceEntry entry : rootResource.getChildren(EXTENSION)) {
             rootResource.removeChild(entry.getPathElement());
         }
+        final Map<String, Resource> installedExtensions = new HashMap<>();
 
         for (final ModelNode resourceDescription : domainModel.asList()) {
             final PathAddress resourceAddress = PathAddress.pathAddress(resourceDescription.require(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_ADDRESS));
@@ -106,7 +109,8 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
                 final String module = resourceAddress.getElement(0).getValue();
                 if (!appliedExtensions.contains(module)) {
                     appliedExtensions.add(module);
-                    initializeExtension(module);
+                    initializeExtension(module, rootRegistration);
+                    installedExtensions.put(module, resource);
                 }
             } else {
                 continue;
@@ -144,7 +148,16 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
             }
         }
 
-        context.stepCompleted();
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                for (Map.Entry<String, Resource> entry : installedExtensions.entrySet()) {
+                    String module = entry.getKey();
+                    extensionRegistry.removeExtension(entry.getValue(), module, rootRegistration);
+                    appliedExtensions.remove(module);
+                }
+            }
+        });
     }
 
     private Resource getResource(PathAddress resourceAddress, Resource rootResource, OperationContext context) {
@@ -174,13 +187,13 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
         return temp;
     }
 
-    protected void initializeExtension(String module) throws OperationFailedException {
+    protected void initializeExtension(String module, ManagementResourceRegistration rootRegistration) throws OperationFailedException {
         try {
             for (final Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
                 ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
                 try {
                     extension.initializeParsers(extensionRegistry.getExtensionParsingContext(module, null));
-                    extension.initialize(extensionRegistry.getExtensionContext(module, false));
+                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, false));
                 } finally {
                     SecurityActions.setThreadContextClassLoader(oldTccl);
                 }

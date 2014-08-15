@@ -248,7 +248,8 @@ public final class ServerService extends AbstractControllerService {
                             }
                         },
                         authorizer,
-                        super.getAuditLogger()));
+                        super.getAuditLogger(),
+                        getMutableRootResourceRegistrationProvider()));
         super.start(context);
     }
 

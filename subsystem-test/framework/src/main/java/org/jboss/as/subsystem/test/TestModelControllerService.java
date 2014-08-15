@@ -85,13 +85,12 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     protected void initExtraModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
         rootResource.getModel().get(SUBSYSTEM);
 
-        ManagementResourceRegistration deployments = rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
+        rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
 
         //Hack to be able to access the registry for the jmx facade
 
         rootRegistration.registerOperationHandler(RootResourceHack.DEFINITION, RootResourceHack.INSTANCE);
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
-        extensionRegistry.setSubsystemParentResourceRegistrations(rootRegistration, deployments);
         controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);
         additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
@@ -100,7 +99,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
 
     @Override
     protected void preBoot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) {
-        mainExtension.initialize(extensionRegistry.getExtensionContext("Test", registerTransformers));
+        mainExtension.initialize(extensionRegistry.getExtensionContext("Test", getRootRegistration(), registerTransformers));
     }
 
     protected void postBoot() {

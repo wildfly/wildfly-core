@@ -41,7 +41,6 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -50,10 +49,13 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
 public class SubsystemDescriptionDump implements OperationStepHandler {
+
     private final ExtensionRegistry extensionRegistry;
     protected static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinition("path", ModelType.STRING, false);
     public static final String OPERATION_NAME = "subsystem-description-dump";
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinition(OPERATION_NAME, new NonResolvingResourceDescriptionResolver(), OperationEntry.EntryType.PRIVATE, EnumSet.of(OperationEntry.Flag.READ_ONLY), PATH);
+
+
     public SubsystemDescriptionDump(final ExtensionRegistry extensionRegistry) {
         this.extensionRegistry = extensionRegistry;
     }
@@ -61,15 +63,17 @@ public class SubsystemDescriptionDump implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         String path = PATH.resolveModelAttribute(context, operation).asString();
-        dumpManagementResourceRegistration(extensionRegistry, path);
+        PathAddress profileAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.PROFILE));
+        ImmutableManagementResourceRegistration profileRegistration = context.getResourceRegistration().getSubModel(profileAddress);
+        dumpManagementResourceRegistration(profileRegistration, extensionRegistry, path);
         context.stepCompleted();
     }
 
-    public static void dumpManagementResourceRegistration(final ExtensionRegistry registry, final String path) throws OperationFailedException{
-        ManagementResourceRegistration profile = registry.getProfileRegistration();
+    public static void dumpManagementResourceRegistration(final ImmutableManagementResourceRegistration profileRegistration,
+                                                          final ExtensionRegistry registry, final String path) throws OperationFailedException{
         try {
-            for (PathElement pe : profile.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
-                ManagementResourceRegistration registration = profile.getSubModel(PathAddress.pathAddress(pe));
+            for (PathElement pe : profileRegistration.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+                ImmutableManagementResourceRegistration registration = profileRegistration.getSubModel(PathAddress.pathAddress(pe));
                 String subsystem = pe.getValue();
                 SubsystemInformation info = registry.getSubsystemInfo(subsystem);
                 ModelNode desc = readFullModelDescription(PathAddress.pathAddress(pe), registration);

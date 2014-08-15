@@ -71,6 +71,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.extension.ExtensionAddHandler;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.extension.ParallelExtensionAddHandler;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationRegistry;
@@ -405,7 +406,7 @@ class ModelControllerImpl implements ModelController {
         List<ParsedBootOp> postExtensionOps = null;
         boolean invalid = false;
         boolean sawExtensionAdd = false;
-        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService);
+        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, getMutableRootResourceRegistrationProvider());
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
                 ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit) : null;
         boolean registeredParallelSubsystemHandler = false;
@@ -741,6 +742,10 @@ class ModelControllerImpl implements ModelController {
         return auditLogger;
     }
 
+    static MutableRootResourceRegistrationProvider getMutableRootResourceRegistrationProvider() {
+        return MutableRootResourceRegistrationProviderImpl.INSTANCE;
+    }
+
     private class DefaultPrepareStepHandler implements OperationStepHandler {
 
         @Override
@@ -972,6 +977,16 @@ class ModelControllerImpl implements ModelController {
                 result.add(context.getActiveOperationResource());
             }
             return result;
+        }
+    }
+
+    private static class MutableRootResourceRegistrationProviderImpl implements MutableRootResourceRegistrationProvider {
+        private static final MutableRootResourceRegistrationProvider INSTANCE = new MutableRootResourceRegistrationProviderImpl();
+
+        @Override
+        public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
+            assert context instanceof AbstractOperationContext;
+            return ((AbstractOperationContext) context).getRootResourceRegistrationForUpdate();
         }
     }
 
