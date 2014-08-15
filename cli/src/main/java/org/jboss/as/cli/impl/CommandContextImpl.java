@@ -247,7 +247,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private CommandLineRedirectionRegistration redirection;
 
     /** this object saves information to be used in ConnectionInfoHandler */
-    private final ConnectionInfoBean connInfoBean = new ConnectionInfoBean();
+    private ConnectionInfoBean connInfoBean;
 
     /**
      * Version mode - only used when --version is called from the command line.
@@ -843,6 +843,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         do {
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
+                connInfoBean = new ConnectionInfoBean();
                 connInfoBean.setDisableLocalAuth(disableLocalAuth);
                 if (log.isDebugEnabled()) {
                     log.debug("connecting to " + address.getHost() + ':' + address.getPort() + " as " + username);
@@ -1033,6 +1034,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             this.currentAddress = null;
             domainMode = false;
             notifyListeners(CliEvent.DISCONNECTED);
+            connInfoBean = null;
         }
         promptConnectPart = null;
     }

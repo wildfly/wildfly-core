@@ -211,7 +211,7 @@ public class MockCommandContext implements CommandContext {
 
     @Override
     public void disconnectController() {
-        throw new UnsupportedOperationException();
+        connInfo = null;
     }
 
     @Override

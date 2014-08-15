@@ -21,7 +21,7 @@
  */
 package org.jboss.as.cli.completion.operation.test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import org.jboss.as.cli.ConnectionInfo;
 import org.jboss.as.cli.completion.mock.MockCommandContext;
@@ -44,6 +44,13 @@ public class ConnectionInfoHandlerTestCase {
         // if the username is populated, it is connected to the server.
         ConnectionInfo connInfo = ctx.getConnectionInfo();
         assertNotNull(connInfo.getUsername());
+    }
+
+    @Test
+    public void testDisconnected() {
+        ctx.disconnectController();
+        ConnectionInfo connInfo = ctx.getConnectionInfo();
+        assertNull(connInfo);
     }
 
 }
