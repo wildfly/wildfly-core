@@ -1052,4 +1052,8 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 212, value = "Resuming server")
     void resumingServer();
+
+    @LogMessage(level = ERROR)
+    @Message(id = 213, value = "Failed to reconnect to host controller on attempt %d")
+    void hostControllerReconnectFailed(int attempt, @Cause IOException e);
 }
