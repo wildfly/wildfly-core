@@ -18,7 +18,7 @@ import org.junit.runners.model.InitializationError;
  */
 public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
-    private ServerController controller = new ServerController();
+    private final ServerController controller = new ServerController();
     private final boolean automaticServerControl;
 
     /**
