@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.cli.impl;
+package org.jboss.as.cli.completion.mock;
 
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -31,14 +31,14 @@ import org.jboss.as.cli.ConnectionInfo;
  * @author Claudio Miranda
  *
  */
-public class ConnectionInfoBean implements ConnectionInfo {
+public class ConnectionInfoBeanMock implements ConnectionInfo {
 
     private boolean disableLocalAuth;
     private String username;
     private Date loggedSince;
     private X509Certificate[] serverCertificates;
 
-    ConnectionInfoBean() {}
+    ConnectionInfoBeanMock() {}
 
     public boolean isDisableLocalAuth() {
         return disableLocalAuth;

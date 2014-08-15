@@ -29,7 +29,7 @@ import java.util.Map;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.cli.impl.ConnectionInfoBean;
+import org.jboss.as.cli.ConnectionInfo;
 import org.jboss.as.cli.util.FingerprintGenerator;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -50,7 +50,7 @@ public class ConnectionInfoHandler extends CommandHandlerWithHelp {
 
 
     /* (non-Javadoc)
-     * @see org.jboss.as.cli.CommandHandler#handle(org.jboss.as.cli.CommandContext)
+     * @see org.jboss.as.cli.CommandHandler#doHandle(org.jboss.as.cli.CommandContext)
      */
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
@@ -59,7 +59,7 @@ public class ConnectionInfoHandler extends CommandHandlerWithHelp {
             ctx.printLine("<connect to the controller and re-run the connection-info command to see the connection information>\n");
         } else {
 
-            ConnectionInfoBean connInfo = (ConnectionInfoBean) ctx.get("connection_info");
+            ConnectionInfo connInfo = ctx.getConnectionInfo();
             boolean disableLocalAuth = connInfo.isDisableLocalAuth();
             String username = "Local connection authenticated as SuperUser";
             if (disableLocalAuth)

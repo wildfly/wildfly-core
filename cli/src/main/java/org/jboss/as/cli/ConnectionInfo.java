@@ -19,57 +19,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.cli.impl;
+package org.jboss.as.cli;
 
 import java.security.cert.X509Certificate;
 import java.util.Date;
-
-import org.jboss.as.cli.ConnectionInfo;
-
 /**
+ *
+ * Retain information about the current connection to the server, the information is
+ * username, date and hour since logged in. If an SSL connection exposes the server certificate.
  *
  * @author Claudio Miranda
  *
  */
-public class ConnectionInfoBean implements ConnectionInfo {
+public interface ConnectionInfo {
 
-    private boolean disableLocalAuth;
-    private String username;
-    private Date loggedSince;
-    private X509Certificate[] serverCertificates;
-
-    ConnectionInfoBean() {}
-
-    public boolean isDisableLocalAuth() {
-        return disableLocalAuth;
-    }
-
-    void setDisableLocalAuth(boolean disableLocalAuth) {
-        this.disableLocalAuth = disableLocalAuth;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Date getLoggedSince() {
-        return loggedSince;
-    }
-
-    void setLoggedSince(Date loggedSince) {
-        this.loggedSince = loggedSince;
-    }
-
-    public X509Certificate[] getServerCertificates() {
-        return serverCertificates;
-    }
-
-    void setServerCertificates(X509Certificate[] serverCertificates) {
-        this.serverCertificates = serverCertificates;
-    }
+    /**
+     * @return true if disabled the local authentication mechanism
+     */
+    boolean isDisableLocalAuth() ;
+    String getUsername();
+    Date getLoggedSince() ;
+    X509Certificate[] getServerCertificates() ;
 
 }

@@ -34,10 +34,10 @@ import org.jboss.as.cli.CommandHistory;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
+import org.jboss.as.cli.ConnectionInfo;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.batch.BatchedCommand;
-import org.jboss.as.cli.impl.ConnectionInfoBean;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -73,9 +73,9 @@ public class MockCommandContext implements CommandContext {
     private Map<String, Object> map = new HashMap<String, Object>();
 
     private boolean silent;
+    private ConnectionInfoBeanMock connInfo =  new ConnectionInfoBeanMock();
 
     public MockCommandContext() {
-        ConnectionInfoBean connInfo =  new ConnectionInfoBean();
         connInfo.setUsername("test");
         set("connection_info", connInfo);
     }
@@ -408,5 +408,10 @@ public class MockCommandContext implements CommandContext {
     @Override
     public void registerRedirection(CommandLineRedirection redirection) throws CommandLineException {
         throw new CommandLineException("Redirection isn't supported by this impl");
+    }
+
+    @Override
+    public ConnectionInfo getConnectionInfo() {
+        return connInfo;
     }
 }
