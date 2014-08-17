@@ -1,11 +1,11 @@
 ### -*- Power Shell file -*- ################################################
 #                                                                          ##
-#    JBoss Startup Script for starting the standalone server               ##
+#    WildFly Startup Script for starting the standalone server               ##
 #                                                                          ##
 #############################################################################
 
 $PROGNAME=$MyInvocation.MyCommand.Name
-$RESOLVED_JBOSS_HOME = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.Parent.FullName
+$RESOLVED_WILDFLY_HOME = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.Parent.FullName
 
 
 # A collection of functions that are used by the other scripts
@@ -35,14 +35,14 @@ Function Get-String {
 # Setup JBOSS_HOME
 if( Test-Path env:JBOSS_HOME) {
   $SANITIZED_JBOSS_HOME = (Get-Item env:JBOSS_HOME).FullName
-  if( $SANITIZED_JBOSS_HOME -ne $RESOLVED_JBOSS_HOME) {
+  if( $SANITIZED_JBOSS_HOME -ne $RESOLVED_WILDFLY_HOME) {
     echo "WARNING JBOSS_HOME may be pointing to a different installation - unpredictable results may occur."
     echo ""
   }
   $JBOSS_HOME=$SANITIZED_JBOSS_HOME
 } else {
     # get the full path (without any relative bits)
-    $JBOSS_HOME=$RESOLVED_JBOSS_HOME
+    $JBOSS_HOME=$RESOLVED_WILDFLY_HOME
 }
 
 
@@ -91,34 +91,13 @@ if($PRESERVE_JAVA_OPTS -ne 'true') {
   } elseif ($JAVA_OPTS_STRING.Contains('-d32')) {
     $JVM_OPTVERSION = '-d32'
   }
-
-  if(!$JAVA_OPTS_STRING.Contains('UseCompressedOops')) {
-    try {
-      Start-Job { java -XX:+UseCompressedOops -version } | Wait-Job | Receive-Job -ErrorAction Stop -ErrorVariable $ev
-    } catch {
-      if( $_.exception.message.indexOf('rror') -eq '-1') {
-        $JAVA_OPTS +=  '-XX:+UseCompressedOops'
-      }
-    }
-  }
-
-
-  if(!$JAVA_OPTS_STRING.Contains('TieredCompilation')) {
-    try {
-      Start-Job { java -XX:+TieredCompilation -version } | Wait-Job | Receive-Job -ErrorAction Stop -ErrorVariable $ev
-    } catch {
-      if( $_.exception.message.indexOf('rror') -eq '-1') {
-        $JAVA_OPTS += '-XX:+TieredCompilation'
-      }
-    }
-  }
 }
 
 
 # Display our environment
-echo "========================================================================="
+echo "============================================================================================="
 echo ""
-echo "  JBoss Bootstrap Environment"
+echo "  WildFly bootstrap Environment"
 echo ""
 echo "  JBOSS_HOME: $JBOSS_HOME"
 echo ""
@@ -130,7 +109,7 @@ echo "  JAVA_OPTS: $JAVA_OPTS"
 echo ""
 echo "  JBOSS_MODULEPATH: $JBOSS_MODULEPATH"
 echo ""
-echo "========================================================================="
+echo "============================================================================================="
 echo ""
 
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
@@ -144,8 +123,6 @@ $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
   $PROG_ARGS += "$JBOSS_HOME/jboss-modules.jar"
   $PROG_ARGS += "-mp"
   $PROG_ARGS += "$JBOSS_MODULEPATH"
-  $PROG_ARGS += "-jaxpmodule"
-  $PROG_ARGS += "javax.xml.jaxp-provider"
   $PROG_ARGS += "org.jboss.as.standalone"
   $PROG_ARGS += $ARGS
 
