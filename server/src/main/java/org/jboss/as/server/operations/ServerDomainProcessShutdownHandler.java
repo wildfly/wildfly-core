@@ -37,7 +37,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.DomainServerCommunicationServices;
 import org.jboss.as.server.GracefulShutdownService;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
-import org.jboss.as.server.shutdown.SuspendController;
+import org.jboss.as.server.requestcontroller.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;

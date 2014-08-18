@@ -1,8 +1,9 @@
-package org.jboss.as.server.shutdown;
+package org.jboss.as.server.requestcontroller;
 
 /**
  *
  * Listener that is invoked to notify on success or failure of the
+ * suspend operation.
  *
  * @author Stuart Douglas
  */

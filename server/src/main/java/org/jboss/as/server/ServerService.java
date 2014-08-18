@@ -113,7 +113,7 @@ import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.requestcontroller.GlobalRequestController;
 import org.jboss.as.server.services.security.AbstractVaultReader;
-import org.jboss.as.server.shutdown.SuspendController;
+import org.jboss.as.server.requestcontroller.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;

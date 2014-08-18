@@ -1,0 +1,15 @@
+package org.jboss.as.server.requestcontroller;
+
+/**
+ * Callback interface that subsystems and other entry points can use to let the
+ * suspend controller know that all requests have finished.
+ *
+ * @author Stuart Douglas
+ */
+public interface ServerActivityCallback {
+
+    /**
+     * Method that is invoked when the relevant entry point is done suspended
+     */
+    void done();
+}
