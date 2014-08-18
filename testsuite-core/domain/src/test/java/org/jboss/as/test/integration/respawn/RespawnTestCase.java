@@ -142,6 +142,9 @@ public class RespawnTestCase {
         pw.println("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray()));
         pw.close();
         fos.close();
+
+        String localRepo = System.getProperty("settings.localRepository");
+
         final String address = System.getProperty("jboss.test.host.master.address", "127.0.0.1");
 
         List<String> args = new ArrayList<String>();
@@ -150,6 +153,9 @@ public class RespawnTestCase {
         args.add("-jvm");
         args.add(processUtil.getJavaCommand());
         args.add("--");
+        if(localRepo != null) {
+            args.add("-Dlocal.maven.repo.path=" + localRepo);
+        }
         args.add("-Dorg.jboss.boot.log.file=" + masterDirPath + "/log/host-controller.log");
         args.add("-Dlogging.configuration=file:" + jbossHome + "/domain/configuration/logging.properties");
         args.add("-Djboss.test.host.master.address=" + address);
@@ -164,6 +170,9 @@ public class RespawnTestCase {
         args.add("--domain-config=" + domainXml.getName());
         args.add("-Djboss.test.host.master.address=" + address);
         args.add("-Djboss.domain.base.dir=" + masterDir.getAbsolutePath());
+        if(localRepo != null) {
+            args.add("-Dlocal.maven.repo.path=" + localRepo);
+        }
         args.add("--interprocess-hc-address");
         args.add(address);
         args.add("--pc-address");

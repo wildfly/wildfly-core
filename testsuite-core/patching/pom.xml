@@ -119,6 +119,10 @@
                         <cleanup.tmp>${cleanup.tmp}</cleanup.tmp>
                         <management.address>${node0}</management.address>
                         <node0>${node0}</node0>
+                        <jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.memory.args}</jvm.args>
+                        <!-- TODO: domain and standalone use different system properties, investigate if this is deliberate or not-->
+                        <server.jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.memory.args}</server.jvm.args>
+                        <local.maven.repo.path>${settings.localRepository}</local.maven.repo.path>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
