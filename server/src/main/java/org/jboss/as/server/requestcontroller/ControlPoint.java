@@ -21,19 +21,17 @@
  */
 package org.jboss.as.server.requestcontroller;
 
-import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.shutdown.ServerActivityListener;
-
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.jboss.as.server.logging.ServerLogger;
 
 /**
  * A representation of an entry point into the application server, represented as both a deployment
  * name and an entry point name.
- *
+ * <p/>
  * This should only be created using the top level name, as it does not generally make sense to shut
  * down individual parts of a deployment.
- *
+ * <p/>
  * Note that requests are tracked at two levels, both at the entry point level and the request controller level.
  * This allows for individual deployments/interfaces to be gracefully suspended, and also allows for the global
  * request controller to limit the total number of active requests.
@@ -43,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 public class ControlPoint {
 
     private static final AtomicIntegerFieldUpdater<ControlPoint> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(ControlPoint.class, "activeRequestCount");
-    private static final AtomicReferenceFieldUpdater<ControlPoint, ServerActivityListener> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(ControlPoint.class, ServerActivityListener.class, "listener");
+    private static final AtomicReferenceFieldUpdater<ControlPoint, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(ControlPoint.class, ServerActivityCallback.class, "listener");
 
     private final GlobalRequestController controller;
     private final String deployment;
@@ -61,7 +59,7 @@ public class ControlPoint {
     private volatile boolean paused = false;
 
     @SuppressWarnings("unused")
-    private volatile ServerActivityListener listener = null;
+    private volatile ServerActivityCallback listener = null;
 
     /**
      * The number of services that are using this entry point.
@@ -88,15 +86,15 @@ public class ControlPoint {
      *
      * @param requestCountListener The listener to invoke
      */
-    public void pause(ServerActivityListener requestCountListener) {
-        if(paused) {
+    public void pause(ServerActivityCallback requestCountListener) {
+        if (paused) {
             throw ServerLogger.ROOT_LOGGER.serverAlreadyPaused();
         }
         this.paused = true;
         listenerUpdater.set(this, requestCountListener);
         if (activeRequestCountUpdater.get(this) == 0) {
-            if(listenerUpdater.compareAndSet(this, requestCountListener, null)) {
-                requestCountListener.requestsComplete();
+            if (listenerUpdater.compareAndSet(this, requestCountListener, null)) {
+                requestCountListener.done();
             }
         }
     }
@@ -104,13 +102,11 @@ public class ControlPoint {
     /**
      * Cancel the pause operation
      */
-     public void resume() {
+    public void resume() {
         this.paused = false;
-         ServerActivityListener listener = listenerUpdater.get(this);
-        if(listener != null) {
-            if(listenerUpdater.compareAndSet(this, listener, null)) {
-                listener.unPaused();
-            }
+        ServerActivityCallback listener = listenerUpdater.get(this);
+        if (listener != null) {
+            listenerUpdater.compareAndSet(this, listener, null);
         }
     }
 
@@ -118,18 +114,17 @@ public class ControlPoint {
     /**
      * All tasks entering the system via this entry point must call this method. If it returns REJECTED then the
      * task cannot be run, and its failure should be signaled back to the originator.
-     *
+     * <p/>
      * If it returns {@code RUN} then the task should proceed as normal, and the {@link #requestComplete()} method
      * must be called once the task is complete, usually via a try/finally construct.
-     *
      */
-    public  RunResult beginRequest() throws Exception {
-        if(paused) {
+    public RunResult beginRequest() throws Exception {
+        if (paused) {
             return RunResult.REJECTED;
         }
         activeRequestCountUpdater.incrementAndGet(this);
         RunResult runResult = controller.beginRequest();
-        if(runResult == RunResult.REJECTED) {
+        if (runResult == RunResult.REJECTED) {
             decreaseRequestCount();
         }
         return runResult;
@@ -137,9 +132,8 @@ public class ControlPoint {
 
     /**
      * Method that should be invoked once (and only once) to signify that a request has finished.
-     *
+     * <p/>
      * This cannot be done automatically when the handleRequest method completes, as some
-     *
      */
     public void requestComplete() {
         decreaseRequestCount();
@@ -148,11 +142,11 @@ public class ControlPoint {
 
     private void decreaseRequestCount() {
         int result = activeRequestCountUpdater.decrementAndGet(this);
-        if(paused && result == 0) {
-            ServerActivityListener listener = listenerUpdater.get(this);
-            if(listener != null) {
-                if(listenerUpdater.compareAndSet(this, listener, null)) {
-                    listener.requestsComplete();
+        if (paused && result == 0) {
+            ServerActivityCallback listener = listenerUpdater.get(this);
+            if (listener != null) {
+                if (listenerUpdater.compareAndSet(this, listener, null)) {
+                    listener.done();
                 }
             }
         }

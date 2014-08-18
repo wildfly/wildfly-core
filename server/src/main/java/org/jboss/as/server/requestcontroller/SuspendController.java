@@ -1,4 +1,4 @@
-package org.jboss.as.server.shutdown;
+package org.jboss.as.server.requestcontroller;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
@@ -40,22 +40,16 @@ public class SuspendController implements Service<SuspendController> {
 
     private int outstandingCount;
 
-    private final ServerActivityListener listener = new ServerActivityListener() {
+    private final ServerActivityCallback listener = new ServerActivityCallback() {
         @Override
-        public void requestsComplete() {
+        public void done() {
             activityPaused();
-        }
-
-        @Override
-        public void unPaused() {
-            activityResumed();
         }
     };
 
-
     public synchronized void suspend(long timeoutMillis) {
         ServerLogger.ROOT_LOGGER.suspendingServer();
-        state = State.PAUSING;
+        state = State.PRE_SUSPEND;
         //we iterate a copy, in case a listener tries to register a new listener
         for(OperationListener listener: new ArrayList<>(operationListeners)) {
             listener.suspendStarted();
@@ -64,8 +58,18 @@ public class SuspendController implements Service<SuspendController> {
         if (outstandingCount == 0) {
             handlePause();
         } else {
+            CountingRequestCountCallback cb = new CountingRequestCountCallback(outstandingCount, new ServerActivityCallback() {
+                @Override
+                public void done() {
+                    state = State.SUSPENDING;
+                    for (ServerActivity activity : activities) {
+                        activity.suspened(SuspendController.this.listener);
+                    }
+                }
+            });
+
             for (ServerActivity activity : activities) {
-                activity.pause(this.listener);
+                activity.preSuspend(cb);
             }
             timer = new Timer();
             if (timeoutMillis > 0) {
@@ -120,8 +124,8 @@ public class SuspendController implements Service<SuspendController> {
     }
 
     private void handlePause() {
-        state = State.PAUSED;
         if (outstandingCount == 0) {
+            state = State.SUSPENDED;
             if (timer != null) {
                 timer.cancel();
                 timer = null;
@@ -130,16 +134,6 @@ public class SuspendController implements Service<SuspendController> {
             for(OperationListener listener: new ArrayList<>(operationListeners)) {
                 listener.complete();
             }
-        }
-    }
-
-    private synchronized void activityResumed() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-        for(OperationListener listener: new ArrayList<>(operationListeners)) {
-            listener.cancelled();
         }
     }
 
@@ -169,7 +163,8 @@ public class SuspendController implements Service<SuspendController> {
 
     public static enum State {
         RUNNING,
-        PAUSING,
-        PAUSED
+        PRE_SUSPEND,
+        SUSPENDING,
+        SUSPENDED
     }
 }

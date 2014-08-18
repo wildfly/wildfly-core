@@ -21,9 +21,6 @@
  */
 package org.jboss.as.server.requestcontroller;
 
-import org.jboss.as.server.shutdown.ServerActivityListener;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -32,34 +29,24 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Stuart Douglas
  */
-class CountingRequestCountListener implements ServerActivityListener {
+class CountingRequestCountCallback implements ServerActivityCallback {
 
     private final AtomicInteger count;
 
-    private final ServerActivityListener delegate;
+    private final ServerActivityCallback delegate;
 
-    private final AtomicBoolean canceled = new AtomicBoolean(false);
-
-    CountingRequestCountListener(int count, ServerActivityListener delegate) {
+    CountingRequestCountCallback(int count, ServerActivityCallback delegate) {
         this.count = new AtomicInteger(count);
         this.delegate = delegate;
     }
 
     @Override
-    public void requestsComplete() {
+    public void done() {
         if (count.decrementAndGet() == 0) {
             if(delegate != null) {
-                delegate.requestsComplete();
+                delegate.done();
             }
         }
     }
 
-    @Override
-    public void unPaused() {
-        if (canceled.compareAndSet(false, true)) {
-            if(delegate != null) {
-                delegate.unPaused();
-            }
-        }
-    }
 }

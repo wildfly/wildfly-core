@@ -21,9 +21,6 @@
  */
 package org.jboss.as.server.requestcontroller;
 
-import org.jboss.as.server.shutdown.ServerActivity;
-import org.jboss.as.server.shutdown.ServerActivityListener;
-import org.jboss.as.server.shutdown.SuspendController;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -57,7 +54,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "global-request-controller");
 
     private static final AtomicIntegerFieldUpdater<GlobalRequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(GlobalRequestController.class, "activeRequestCount");
-    private static final AtomicReferenceFieldUpdater<GlobalRequestController, ServerActivityListener> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(GlobalRequestController.class, ServerActivityListener.class, "listener");
+    private static final AtomicReferenceFieldUpdater<GlobalRequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(GlobalRequestController.class, ServerActivityCallback.class, "listener");
 
     private volatile int maxRequestCount = 0;
 
@@ -70,7 +67,12 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     private final InjectedValue<SuspendController> shutdownControllerInjectedValue = new InjectedValue<>();
 
     @SuppressWarnings("unused")
-    private volatile ServerActivityListener listener = null;
+    private volatile ServerActivityCallback listener = null;
+
+    @Override
+    public void preSuspend(ServerActivityCallback listener) {
+        listener.done();
+    }
 
     /**
      * Pause the controller. All existing requests will have a chance to finish, and once all requests are
@@ -80,13 +82,13 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      *
      * @param requestCountListener The listener that will be notified when all requests are done
      */
-    public synchronized void pause(ServerActivityListener requestCountListener) {
+    public synchronized void suspened(ServerActivityCallback requestCountListener) {
         this.paused = true;
         listenerUpdater.set(this, requestCountListener);
 
         if (activeRequestCountUpdater.get(this) == 0) {
             if (listenerUpdater.compareAndSet(this, requestCountListener, null)) {
-                requestCountListener.requestsComplete();
+                requestCountListener.done();
             }
         }
     }
@@ -97,11 +99,9 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     @Override
     public synchronized void resume() {
         this.paused = false;
-        ServerActivityListener listener = listenerUpdater.get(this);
+        ServerActivityCallback listener = listenerUpdater.get(this);
         if (listener != null) {
-            if (listenerUpdater.compareAndSet(this, listener, null)) {
-                listener.unPaused();
-            }
+            listenerUpdater.compareAndSet(this, listener, null);
         }
     }
 
@@ -111,7 +111,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      * @param deployment The deployment to pause
      * @param listener The listener that will be notified when the pause is complete
      */
-    public synchronized void pauseDeployment(final String deployment, ServerActivityListener listener) {
+    public synchronized void pauseDeployment(final String deployment, ServerActivityCallback listener) {
         final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
             if (ep.getDeployment().equals(deployment)) {
@@ -120,7 +120,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
                 }
             }
         }
-        CountingRequestCountListener realListener = new CountingRequestCountListener(eps.size(), listener);
+        CountingRequestCountCallback realListener = new CountingRequestCountCallback(eps.size(), listener);
         for (ControlPoint ep : eps) {
             ep.pause(realListener);
         }
@@ -145,7 +145,7 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      * @param controlPoint The control point
      * @param listener   The listener
      */
-    public synchronized void pauseControlPoint(final String controlPoint, ServerActivityListener listener) {
+    public synchronized void pauseControlPoint(final String controlPoint, ServerActivityCallback listener) {
         final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
             if (ep.getEntryPoint().equals(controlPoint)) {
@@ -156,10 +156,10 @@ public class GlobalRequestController implements Service<GlobalRequestController>
         }
         if(eps.isEmpty()) {
             if(listener != null) {
-                listener.requestsComplete();
+                listener.done();
             }
         }
-        CountingRequestCountListener realListener = new CountingRequestCountListener(eps.size(), listener);
+        CountingRequestCountCallback realListener = new CountingRequestCountCallback(eps.size(), listener);
         for (ControlPoint ep : eps) {
             ep.pause(realListener);
         }
@@ -218,10 +218,10 @@ public class GlobalRequestController implements Service<GlobalRequestController>
         int result = activeRequestCountUpdater.decrementAndGet(this);
         if (paused) {
             if (paused && result == 0) {
-                ServerActivityListener listener = listenerUpdater.get(this);
+                ServerActivityCallback listener = listenerUpdater.get(this);
                 if (listener != null) {
                     if (listenerUpdater.compareAndSet(this, listener, null)) {
-                        listener.requestsComplete();
+                        listener.done();
                     }
                 }
             }
