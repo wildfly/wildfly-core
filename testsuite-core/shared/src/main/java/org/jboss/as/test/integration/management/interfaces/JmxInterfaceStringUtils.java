@@ -22,6 +22,7 @@
 
 package org.jboss.as.test.integration.management.interfaces;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,7 +71,7 @@ final class JmxInterfaceStringUtils {
         Matcher matcher = pattern.matcher(str);
         StringBuffer result = new StringBuffer();
         while (matcher.find()) {
-            String upperCaseLetter = matcher.group(1).toUpperCase();
+            String upperCaseLetter = matcher.group(1).toUpperCase(Locale.ENGLISH);
             matcher.appendReplacement(result, upperCaseLetter);
         }
         matcher.appendTail(result);

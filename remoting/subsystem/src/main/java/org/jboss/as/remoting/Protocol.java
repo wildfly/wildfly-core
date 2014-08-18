@@ -1,6 +1,7 @@
 package org.jboss.as.remoting;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
@@ -28,7 +29,7 @@ public enum Protocol {
 
     public static Protocol forName(String localName) {
         final Protocol value = localName != null ? MAP.get(localName.toLowerCase()) : null;
-        return value == null ? Protocol.valueOf(localName.toUpperCase()) : value;
+        return value == null ? Protocol.valueOf(localName.toUpperCase(Locale.ENGLISH)) : value;
     }
 
     private final String localName;

@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -59,7 +60,7 @@ public class PermissionsCoverageTestUtil {
 
         @Override
         public String toString() {
-            return name.toUpperCase();
+            return name.toUpperCase(Locale.ENGLISH);
         }
     }
 
