@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
@@ -141,7 +142,7 @@ public class PasswordCheckUtil {
      */
     private void initDefaultStrength(Properties props) {
         try {
-            this.acceptable = PasswordStrength.valueOf(props.getProperty(_PROPERTY_STRENGTH).toUpperCase());
+            this.acceptable = PasswordStrength.valueOf(props.getProperty(_PROPERTY_STRENGTH).toUpperCase(Locale.ENGLISH));
         } catch (Exception e) {
             // log
         }

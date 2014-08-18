@@ -443,7 +443,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                     if (nodeDescription.hasDefined(ATTRIBUTES)) {
                         for (Property attrProp : nodeDescription.require(ATTRIBUTES).asPropertyList()) {
                             ModelNode attributeResult = new ModelNode();
-                            Storage storage = Storage.valueOf(attrProp.getValue().get(STORAGE).asString().toUpperCase());
+                            Storage storage = Storage.valueOf(attrProp.getValue().get(STORAGE).asString().toUpperCase(Locale.ENGLISH));
                             addAttributeAuthorizationResults(attributeResult, attrProp.getName(), authResp, storage == Storage.RUNTIME);
                             if (attributeResult.isDefined()) {
                                 attributes.get(attrProp.getName()).set(attributeResult);
@@ -817,7 +817,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
 
         public static AccessControl forName(String localName) {
             final AccessControl value = localName != null ? MAP.get(localName.toLowerCase()) : null;
-            return value == null ? AccessControl.valueOf(localName.toUpperCase()) : value;
+            return value == null ? AccessControl.valueOf(localName.toUpperCase(Locale.ENGLISH)) : value;
         }
 
         private final String localName;
