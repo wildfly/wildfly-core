@@ -766,11 +766,8 @@ public class ManagementXml {
                         case DOMAIN_1_2:
                             parseSecurityRealm_1_1(reader, address, expectedNs, list);
                             break;
-                        case DOMAIN_1_3:
-                            parseSecurityRealm_1_3(reader, address, expectedNs, list);
-                            break;
                         default:
-                            parseSecurityRealm_1_4(reader, address, expectedNs, list);
+                            parseSecurityRealm_1_3(reader, address, expectedNs, list);
                             break;
                     }
                     break;
@@ -874,54 +871,11 @@ public class ManagementXml {
                     parseServerIdentities(reader, expectedNs, realmAddress, list);
                     break;
                 case AUTHENTICATION: {
-                    parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
-                    break;
-                }
-                case AUTHORIZATION:
                     switch (expectedNs) {
                         case DOMAIN_1_3:
                         case DOMAIN_1_4:
-                            parseAuthorization_1_3(reader, expectedNs, realmAddress, list);
-                            break;
-                        default:
-                            parseAuthorization_1_5_and_2_0(reader, expectedNs, add, list);
-                    }
-                    break;
-                default: {
-                    throw unexpectedElement(reader);
-                }
-            }
-        }
-    }
-
-    private static void parseSecurityRealm_1_4(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list)
-            throws XMLStreamException {
-        requireSingleAttribute(reader, Attribute.NAME.getLocalName());
-        // After double checking the name of the only attribute we can retrieve it.
-        final String realmName = reader.getAttributeValue(0);
-
-        final ModelNode realmAddress = address.clone();
-        realmAddress.add(SECURITY_REALM, realmName);
-        final ModelNode add = new ModelNode();
-        add.get(OP_ADDR).set(realmAddress);
-        add.get(OP).set(ADD);
-        list.add(add);
-
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
-
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case PLUG_INS:
-                    parsePlugIns(reader, expectedNs, realmAddress, list);
-                    break;
-                case SERVER_IDENTITIES:
-                    parseServerIdentities(reader, expectedNs, realmAddress, list);
-                    break;
-                case AUTHENTICATION: {
-                    switch (expectedNs) {
-                        case DOMAIN_1_4:
                         case DOMAIN_1_5:
+                        case DOMAIN_1_6:
                         case DOMAIN_2_0:
                         case DOMAIN_2_1:
                             parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
@@ -934,6 +888,7 @@ public class ManagementXml {
                 }
                 case AUTHORIZATION:
                     switch (expectedNs) {
+                        case DOMAIN_1_3:
                         case DOMAIN_1_4:
                             parseAuthorization_1_3(reader, expectedNs, realmAddress, list);
                             break;
