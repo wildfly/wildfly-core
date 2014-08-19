@@ -22,11 +22,13 @@
 
 package org.jboss.as.controller;
 
-import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * Base class for {@link OperationStepHandler} implementations that add managed resource and also perform runtime
@@ -47,15 +49,52 @@ import java.util.List;
  */
 public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHandler {
 
+    /**
+     * {@inheritDoc}
+     */
     protected AbstractBoottimeAddStepHandler() {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected AbstractBoottimeAddStepHandler(Collection<AttributeDefinition> attributes) {
         super(attributes);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    protected AbstractBoottimeAddStepHandler(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes) {
+        super(capability, attributes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected AbstractBoottimeAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
+        super(capabilities, attributes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected AbstractBoottimeAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
+        super(capability, attributes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     protected AbstractBoottimeAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected AbstractBoottimeAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
+        super(capabilities, attributes);
     }
 
     /**

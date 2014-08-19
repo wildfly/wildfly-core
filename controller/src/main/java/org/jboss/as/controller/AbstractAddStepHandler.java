@@ -27,7 +27,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -38,33 +40,87 @@ import org.jboss.msc.service.ServiceController;
  * @author John Bailey
  */
 public class AbstractAddStepHandler implements OperationStepHandler {
-    protected Collection<? extends AttributeDefinition> attributes;
 
-    public AbstractAddStepHandler(){ //default constructor to preserve backward compatibility
+    static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
+    private static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
 
-    }
+    private final Set<RuntimeCapability> capabilities;
+    protected final Collection<? extends AttributeDefinition> attributes;
 
-    public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
-        this.attributes = attributes;
+    /**
+     * Constructs an add handler.
+     */
+    public AbstractAddStepHandler() { //default constructor to preserve backward compatibility
+        this.attributes = NULL_ATTRIBUTES;
+        this.capabilities = NULL_CAPABILITIES;
     }
 
     /**
-     * Constructs add handler
+     * Constructs an add handler
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     */
+    public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
+        this(NULL_CAPABILITIES, attributes );
+    }
+
+    /**
+     * Constructs an add handler
+     * @param capability capability to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     *                     {@code null} is allowed
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     */
+    public AbstractAddStepHandler(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes) {
+        this(capability == null ? NULL_CAPABILITIES : Collections.singleton(capability), attributes );
+    }
+
+    /**
+     * Constructs an add handler.
      *
-     * @param attributes for which model will be populated
+     * @param capabilities capabilities to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     *                     {@code null} is allowed
+     * @param attributes   attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     */
+    public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
+        this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
+        this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
+    }
+
+    /**
+     * Constructs an add handler
+     *
+     * @param capability capability to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     *                     {@code null} is allowed
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     */
+    public AbstractAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
+        this(capability == null ? NULL_CAPABILITIES : Collections.singleton(capability), attributes);
+    }
+
+    /**
+     * Constructs an add handler
+     *
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
     public AbstractAddStepHandler(AttributeDefinition... attributes) {
-        if (attributes.length > 0) {
-            this.attributes = Arrays.asList(attributes);
-        } else {
-            this.attributes = Collections.emptySet();
-        }
+        this(NULL_CAPABILITIES, attributes);
+    }
+
+    /**
+     * Constructs an add handler
+     *
+     * @param capabilities capabilities to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     *                     {@code null} is allowed
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     */
+    public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
+        this(capabilities, attributes.length > 0 ? Arrays.asList(attributes) : NULL_ATTRIBUTES);
     }
 
     /** {@inheritDoc */
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final Resource resource = createResource(context);
         populateModel(context, operation, resource);
+        recordCapabilitiesAndRequirements(context, operation, resource);
         final ModelNode model = resource.getModel();
 
         if (requiresRuntime(context)) {
@@ -137,10 +193,31 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @throws OperationFailedException if {@code operation} is invalid or populating the model otherwise fails
      */
     protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        if (attributes != null) {
-            for (AttributeDefinition attr : attributes) {
-                attr.validateAndSet(operation, model);
-            }
+        for (AttributeDefinition attr : attributes) {
+            attr.validateAndSet(operation, model);
+        }
+    }
+
+    /**
+     * Record any new {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} that are available as
+     * a result of this operation, as well as any requirements for other capabilities that now exist. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     * <p>
+     * Any changes made by this method will automatically be discarded if the operation rolls back.
+     * </p>
+     * <p>
+     * This default implementation registers any capabilities provided to the constructor.
+     * </p>
+     *
+     * @param context the context. Will not be {@code null}
+     * @param operation the operation that is executing Will not be {@code null}
+     * @param resource the resource that has been added. Will reflect any updates made by
+     * {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}. Will
+     *                 not be {@code null}
+     */
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        for (RuntimeCapability capability : capabilities) {
+            context.registerCapability(capability, null);
         }
     }
 

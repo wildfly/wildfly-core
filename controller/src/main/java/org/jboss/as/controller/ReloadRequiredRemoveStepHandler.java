@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -33,6 +34,20 @@ public class ReloadRequiredRemoveStepHandler extends AbstractRemoveStepHandler {
 
     public static final ReloadRequiredRemoveStepHandler INSTANCE = new ReloadRequiredRemoveStepHandler();
 
+    /**
+     * Creates a new {@code ReloadRequiredRemoveStepHandler} that will
+     * {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource) deregister}
+     * a list of capabilities as part of execution.
+     *
+     * @param unavailableCapabilities capabilities to deregister
+     */
+    public ReloadRequiredRemoveStepHandler(RuntimeCapability... unavailableCapabilities) {
+        super(unavailableCapabilities);
+    }
+
+    /**
+     * Creates a new {@code ReloadRequiredRemoveStepHandler}
+     */
     public ReloadRequiredRemoveStepHandler() {
     }
 
