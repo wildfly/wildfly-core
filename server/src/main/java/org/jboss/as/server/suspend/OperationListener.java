@@ -1,4 +1,4 @@
-package org.jboss.as.server.requestcontroller;
+package org.jboss.as.server.suspend;
 
 /**
  *

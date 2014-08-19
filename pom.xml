@@ -179,6 +179,7 @@
         <module>process-controller</module>
         <module>protocol</module>
         <module>remoting</module>
+        <module>request-controller</module>
         <module>server</module>
         <module>subsystem-test</module>
         <module>system-jmx</module>
@@ -747,6 +748,12 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-remoting</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-request-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

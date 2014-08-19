@@ -24,7 +24,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 
-import org.jboss.as.server.requestcontroller.GlobalRequestController;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
@@ -311,10 +310,6 @@ public class DeploymentHandlerUtil {
                 public void execute(OperationContext context, ModelNode operation) {
                     final ServiceRegistry registry = context.getServiceRegistry(true);
 
-                    //we immediatly pause all requests to the deployment
-                    ServiceController<GlobalRequestController> shutdownController = (ServiceController<GlobalRequestController>) registry.getRequiredService(GlobalRequestController.SERVICE_NAME);
-                    shutdownController.getValue().pauseDeployment(deploymentUnitName, null);
-
                     final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
 
                     context.removeService(deploymentUnitServiceName);
@@ -324,7 +319,6 @@ public class DeploymentHandlerUtil {
                         @Override
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                             if(resultAction == OperationContext.ResultAction.ROLLBACK) {
-                                ServiceController<GlobalRequestController> shutdownController = (ServiceController<GlobalRequestController>) registry.getRequiredService(GlobalRequestController.SERVICE_NAME);
 
                                 final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
                                 final String name = model.require(NAME).asString();
@@ -332,7 +326,7 @@ public class DeploymentHandlerUtil {
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(model.require(CONTENT));
                                 final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
                                 doDeploy(context, runtimeName, name, verificationHandler, deployment, registration, mutableRegistration, vaultReader, contents);
-                                shutdownController.getValue().resumeDeployment(deploymentUnitName);
+
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, getFormattedFailureDescription(context));
                                 } else {

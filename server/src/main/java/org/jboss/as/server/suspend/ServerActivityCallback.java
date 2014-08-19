@@ -1,4 +1,4 @@
-package org.jboss.as.server.requestcontroller;
+package org.jboss.as.server.suspend;
 
 /**
  * Callback interface that subsystems and other entry points can use to let the
