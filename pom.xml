@@ -154,7 +154,6 @@
     </properties>
 
     <modules>
-        <module>build-plugin</module>
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
@@ -529,11 +528,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>xml-maven-plugin</artifactId>
                     <version>${version.xml.plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-build-plugin</artifactId>
-                    <version>${project.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.build</groupId>
