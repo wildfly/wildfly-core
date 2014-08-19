@@ -39,37 +39,6 @@
             <includes>
                 <include>${server.output.dir.prefix}-core-${project.version}/**</include>
             </includes>
-            <excludes>
-                <exclude>**/*.sh</exclude>
-                <exclude>${server.output.dir.prefix}-core-${project.version}/domain/tmp/auth</exclude>
-                <exclude>${server.output.dir.prefix}-core-${project.version}/standalone/tmp/auth</exclude>
-                <exclude>**/*-users.properties</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>target</directory>
-            <outputDirectory/>
-            <includes>
-                <include>${server.output.dir.prefix}-core-${project.version}/**/*.sh</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-         <fileSet>
-            <directory>target</directory>
-            <outputDirectory/>
-            <includes>
-                <include>${server.output.dir.prefix}-core-${project.version}/**/*-users.properties</include>
-            </includes>
-            <fileMode>0600</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>target</directory>
-            <outputDirectory/>
-            <includes>
-                <include>${server.output.dir.prefix}-core-${project.version}/domain/tmp/auth</include>
-                <include>${server.output.dir.prefix}-core-${project.version}/standalone/tmp/auth</include>
-            </includes>
-            <directoryMode>0700</directoryMode>
         </fileSet>
     </fileSets>
 </assembly>
