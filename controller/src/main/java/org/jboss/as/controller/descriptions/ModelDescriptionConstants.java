@@ -199,6 +199,7 @@ public class ModelDescriptionConstants {
     public static final String ITERATIVE = "iterative";
     public static final String JSON_FORMATTER = "json-formatter";
     public static final String JVM = "jvm";
+    public static final String KEYCLOAK = "keycloak";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
     public static final String LOCAL = "local";

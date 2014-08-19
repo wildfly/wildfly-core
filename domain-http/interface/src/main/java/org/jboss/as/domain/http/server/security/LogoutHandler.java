@@ -179,7 +179,7 @@ public class LogoutHandler implements HttpHandler {
         }
     }
 
-    private String portPortion(final String scheme, final int port) {
+    public static String portPortion(final String scheme, final int port) {
         if (port == -1 || "http".equals(scheme) && port == 80 || "https".equals(scheme) && port == 443) {
             return "";
         }

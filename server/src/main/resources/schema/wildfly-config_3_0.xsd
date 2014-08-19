@@ -728,6 +728,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:choice minOccurs="0">
+                <xs:element name="keycloak" type="keycloakAuthenticationType" minOccurs="0" />
                 <xs:element name="jaas" type="jaasAuthenticationType" minOccurs="0" />
                 <xs:element name="ldap" type="ldapAuthenticationType" minOccurs="0" />
                 <xs:element name="properties" type="propertiesAuthenticationType" minOccurs="0" />
@@ -735,6 +736,14 @@
                 <xs:element name="plug-in" type="plug-inAuthType" minOccurs="0" />
             </xs:choice>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="keycloakAuthenticationType">
+        <xs:annotation>
+            <xs:documentation>
+                Use a Keycloak authentication server for authentication.
+            </xs:documentation>
+        </xs:annotation>
     </xs:complexType>
 
     <xs:complexType name="jaasAuthenticationType">

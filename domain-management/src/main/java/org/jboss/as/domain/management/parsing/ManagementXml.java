@@ -41,6 +41,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KEYCLOAK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
@@ -870,7 +871,19 @@ public class ManagementXml {
                     parseServerIdentities(reader, expectedNs, realmAddress, list);
                     break;
                 case AUTHENTICATION: {
-                    parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
+                    switch (expectedNs) {
+                        case DOMAIN_1_3:
+                        case DOMAIN_1_4:
+                        case DOMAIN_1_5:
+                        case DOMAIN_1_6:
+                        case DOMAIN_2_0:
+                        case DOMAIN_2_1:
+                            parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
+                            break;
+                        default:
+                            parseAuthentication_3_0(reader, expectedNs, realmAddress, list);
+                    }
+
                     break;
                 }
                 case AUTHORIZATION:
@@ -1391,6 +1404,137 @@ public class ManagementXml {
                 }
             }
         }
+    }
+
+    private static void parseAuthentication_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+
+        // Only one truststore can be defined.
+        boolean trustStoreFound = false;
+        // Only one local can be defined.
+        boolean localFound = false;
+        // Only one of ldap, properties or users can be defined.
+        boolean usernamePasswordFound = false;
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, expectedNs);
+            final Element element = Element.forName(reader.getLocalName());
+
+            switch (element) {
+                case JAAS: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    switch (expectedNs) {
+                        case DOMAIN_1_3:
+                        case DOMAIN_1_4:
+                        case DOMAIN_1_5:
+                        case DOMAIN_2_0:
+                        case DOMAIN_2_1:
+                            parseJaasAuthentication_1_1(reader, realmAddress, list);
+                            break;
+                        default:
+                            parseJaasAuthentication_1_6_and_3_0(reader, realmAddress, list);
+                            break;
+                    }
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case LDAP: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    // This method is specific to version 1.3 of the schema and beyond - no need to
+                    // consider namespaces before this point.
+                    switch (expectedNs) {
+                        case DOMAIN_1_3:
+                            parseLdapAuthentication_1_1(reader, expectedNs, realmAddress, list);
+                            break;
+                        case DOMAIN_1_4:
+                        case DOMAIN_1_5:
+                            parseLdapAuthentication_1_4(reader, expectedNs, realmAddress, list);
+                            break;
+                        default:
+                            parseLdapAuthentication_2_0(reader, expectedNs, realmAddress, list);
+                            break;
+                    }
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case PROPERTIES: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parsePropertiesAuthentication_1_1(reader, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case TRUSTSTORE: {
+                    if (trustStoreFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseTruststore(reader, expectedNs, realmAddress, list);
+                    trustStoreFound = true;
+                    break;
+                }
+                case USERS: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseUsersAuthentication(reader, expectedNs, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case PLUG_IN: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    ModelNode parentAddress = realmAddress.clone().add(AUTHENTICATION);
+                    parsePlugIn_Authentication(reader, expectedNs, parentAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case LOCAL: {
+                    if (localFound) {
+                        throw unexpectedElement(reader);
+                    }
+
+                    switch (expectedNs) {
+                        case DOMAIN_1_3:
+                        case DOMAIN_1_4:
+                        case DOMAIN_1_5:
+                        case DOMAIN_2_0:
+                            parseLocalAuthentication_1_3(reader, expectedNs, realmAddress, list);
+                            break;
+                        default:
+                            parseLocalAuthentication_2_1(reader, expectedNs, realmAddress, list);
+                    }
+
+                    localFound = true;
+                    break;
+                }
+                case KEYCLOAK: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseKeycloakAuthentication_3_0(reader, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
+
+    private static void parseKeycloakAuthentication_3_0(final XMLExtendedStreamReader reader,
+            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+        ModelNode addr = realmAddress.clone().add(AUTHENTICATION, KEYCLOAK);
+        ModelNode keycloak = Util.getEmptyOperation(ADD, addr);
+        list.add(keycloak);
+
+        requireNoContent(reader);
     }
 
     private static void parseJaasAuthentication_1_1(final XMLExtendedStreamReader reader,

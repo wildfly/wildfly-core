@@ -44,6 +44,7 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH
 import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JAAS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JKS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYCLOAK;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYSTORE_PATH;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PASSWORD;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PLUG_IN;
@@ -162,6 +163,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 addPropertiesAuthenticationService(context, authentication.require(PROPERTIES), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
             } else if (authentication.hasDefined(USERS)) {
                 addUsersService(context, authentication.require(USERS), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+            } else if (authentication.has(KEYCLOAK)) {
+                addKeycloakService(context, authentication.require(KEYCLOAK), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
             }
         }
         if (authorization != null) {
@@ -350,6 +353,20 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         }
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName, false);
+    }
+
+    private void addKeycloakService(OperationContext context, ModelNode model, String realmName, ServiceTarget serviceTarget,
+            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+        ServiceName keycloakServiceName = KeycloakCallbackHandlerService.ServiceUtil.createServiceName(realmName);
+
+        KeycloakCallbackHandlerService keycloakCallbackHandler = new KeycloakCallbackHandlerService();
+        ServiceBuilder<?> keycloakBuilder = serviceTarget.addService(keycloakServiceName, keycloakCallbackHandler);
+        final ServiceController<?> serviceController = keycloakBuilder.setInitialMode(ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(serviceController);
+        }
+
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, keycloakServiceName, false);
     }
 
     private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,

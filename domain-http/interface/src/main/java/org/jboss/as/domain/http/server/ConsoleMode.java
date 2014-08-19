@@ -41,6 +41,26 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 import static io.undertow.predicate.Predicates.not;
 import static io.undertow.predicate.Predicates.path;
 import static io.undertow.predicate.Predicates.suffixes;
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMode;
+import io.undertow.security.handlers.AuthenticationCallHandler;
+import io.undertow.security.handlers.AuthenticationConstraintHandler;
+import io.undertow.security.handlers.AuthenticationMechanismsHandler;
+import io.undertow.security.handlers.SecurityInitialHandler;
+import io.undertow.security.impl.CachedAuthenticatedSessionMechanism;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.session.SessionAttachmentHandler;
+import java.util.ArrayList;
+import java.util.List;
+import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
+import org.jboss.as.domain.http.server.security.RealmIdentityManager;
+import org.jboss.as.domain.http.server.security.keycloak.KeycloakConfig;
+import org.jboss.as.domain.http.server.security.keycloak.KeycloakAuthenticationMechanism;
+import org.jboss.as.domain.management.AuthMechanism;
+import org.jboss.as.domain.management.SecurityRealm;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.undertow.UndertowAuthenticatedActionsHandler;
+import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 
 /**
@@ -55,8 +75,8 @@ public enum ConsoleMode {
      */
     CONSOLE {
         @Override
-        ResourceHandlerDefinition createConsoleHandler(String slot) throws ModuleLoadException {
-            return ConsoleHandler.createConsoleHandler(slot);
+        ResourceHandlerDefinition createConsoleHandler(String slot, SecurityRealm securityRealm) throws ModuleLoadException {
+            return ConsoleHandler.createConsoleHandler(slot, securityRealm);
         }
 
         @Override
@@ -69,7 +89,7 @@ public enum ConsoleMode {
      */
     SLAVE_HC {
         @Override
-        ResourceHandlerDefinition createConsoleHandler(String slot) throws ModuleLoadException {
+        ResourceHandlerDefinition createConsoleHandler(String slot, SecurityRealm securityRealm) throws ModuleLoadException {
             return DisabledConsoleHandler.createNoConsoleForSlave(slot);
         }
 
@@ -83,7 +103,7 @@ public enum ConsoleMode {
      */
     ADMIN_ONLY {
         @Override
-        ResourceHandlerDefinition createConsoleHandler(String slot) throws ModuleLoadException {
+        ResourceHandlerDefinition createConsoleHandler(String slot, SecurityRealm securityRealm) throws ModuleLoadException {
             return DisabledConsoleHandler.createNoConsoleForAdminMode(slot);
         }
 
@@ -97,7 +117,7 @@ public enum ConsoleMode {
      */
     NO_CONSOLE {
         @Override
-        ResourceHandlerDefinition createConsoleHandler(String slot) throws ModuleLoadException {
+        ResourceHandlerDefinition createConsoleHandler(String slot, SecurityRealm securityRealm) throws ModuleLoadException {
             return null;
         }
 
@@ -112,7 +132,7 @@ public enum ConsoleMode {
      *
      * @return the console handler, may be {@code null}
      */
-    ResourceHandlerDefinition createConsoleHandler(String slot) throws ModuleLoadException {
+    ResourceHandlerDefinition createConsoleHandler(String slot, SecurityRealm securityRealm) throws ModuleLoadException {
         throw new IllegalStateException("Not overridden for " + this);
     }
 
@@ -129,17 +149,17 @@ public enum ConsoleMode {
      *
      * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
      */
-    static class ConsoleHandler {
+    public static class ConsoleHandler {
 
         private static final String NOCACHE_JS = ".nocache.js";
         private static final String INDEX_HTML = "index.html";
         private static final String APP_HTML = "App.html";
 
         private static final String CONSOLE_MODULE = "org.jboss.as.console";
-        private static final String CONTEXT = "/console";
+        public static final String CONTEXT = "/console";
         private static final String DEFAULT_RESOURCE = "/" + INDEX_HTML;
 
-        static ResourceHandlerDefinition createConsoleHandler(String skin) throws ModuleLoadException {
+        static ResourceHandlerDefinition createConsoleHandler(String skin, SecurityRealm securityRealm) throws ModuleLoadException {
             final ClassPathResourceManager resource = new ClassPathResourceManager(findConsoleClassLoader(Module.getCallerModuleLoader(), skin), "");
             final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler()
                     .setCacheTime(60 * 60 * 24 * 31)
@@ -150,8 +170,29 @@ public enum ConsoleMode {
 
             //we also need to setup the default resource redirect
             PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(CONTEXT + DEFAULT_RESOURCE), handler);
-            return new ResourceHandlerDefinition(CONTEXT, DEFAULT_RESOURCE, predicateHandler);
+            if (ManagementHttpServer.usingKeycloak(securityRealm)) {
+                return new ResourceHandlerDefinition(CONTEXT, DEFAULT_RESOURCE, secureConsoleAccessWithKeycloak(predicateHandler, securityRealm));
+            } else {
+                return new ResourceHandlerDefinition(CONTEXT, DEFAULT_RESOURCE, predicateHandler);
+            }
+        }
 
+        //TODO: Refactor this.  Lots of common code between this and ManagementHttpServer.secureConsoleAccess.
+        static SecurityInitialHandler secureConsoleAccessWithKeycloak(HttpHandler current, SecurityRealm securityRealm) {
+            KeycloakDeployment webConsoleDeployment = KeycloakConfig.WEB_CONSOLE.deployment();
+            UndertowUserSessionManagement userSessionManagement = KeycloakConfig.keycloakSessionManagement();
+
+            List<AuthenticationMechanism> authMechanisms = new ArrayList<AuthenticationMechanism>();
+            authMechanisms.add(new AuthenticationMechanismWrapper(new CachedAuthenticatedSessionMechanism(), null));
+            authMechanisms.add(new AuthenticationMechanismWrapper(new KeycloakAuthenticationMechanism(webConsoleDeployment, userSessionManagement), AuthMechanism.KEYCLOAK));
+
+            current = new AuthenticationCallHandler(current);
+            current = new AuthenticationConstraintHandler(current);
+            current = new AuthenticationMechanismsHandler(current, authMechanisms);
+            current = new UndertowAuthenticatedActionsHandler(KeycloakConfig.WEB_CONSOLE.context(), current);
+            current = new SessionAttachmentHandler(current, KeycloakConfig.sessionManager(), KeycloakConfig.sessionConfig());
+
+            return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, new RealmIdentityManager(securityRealm), current);
         }
 
         static ClassLoader findConsoleClassLoader(ModuleLoader moduleLoader, String consoleSkin) throws ModuleLoadException {
