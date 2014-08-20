@@ -305,8 +305,16 @@ public enum Phase {
     public static final int PARSE_CDI_BEAN_DEFINING_ANNOTATIONS         = 0x2A80;
     public static final int PARSE_WELD_DEPLOYMENT                       = 0x2B00;
     public static final int PARSE_WELD_IMPLICIT_DEPLOYMENT_DETECTION    = 0x2C00;
+    // TODO remove after no usage by wfly
     public static final int PARSE_DATA_SOURCE_DEFINITION_ANNOTATION     = 0x2D00;
+    // TODO remove after no usage by wfly
     public static final int PARSE_MAIL_SESSION_DEFINITION_ANNOTATION    = 0x2D01;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_ADMINISTERED_OBJECT       = 0x2D00;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_CONNECTION_FACTORY        = 0x2D01;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_DATA_SOURCE               = 0x2D02;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_JMS_DESTINATION           = 0x2D03;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_JMS_CONNECTION_FACTORY    = 0x2D04;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_MAIL_SESSION              = 0x2D05;
     public static final int PARSE_EJB_CONTEXT_BINDING                   = 0x2E00;
     public static final int PARSE_EJB_TIMERSERVICE_BINDING              = 0x2E01;
     public static final int PARSE_PERSISTENCE_UNIT                      = 0x2F00;
@@ -449,6 +457,7 @@ public enum Phase {
     public static final int POST_MODULE_WELD_PORTABLE_EXTENSIONS        = 0x0E00;
     public static final int POST_MODULE_XTS_PORTABLE_EXTENSIONS         = 0x0E10;
     public static final int POST_MODULE_JMS_CDI_EXTENSIONS              = 0x0F00;
+    // TODO remove after no usage by wfly
     public static final int POST_MODULE_JMS_DEFINITION_DEPLOYMENT       = 0x0F80;
     // should come before ejb jndi bindings processor
     public static final int POST_MODULE_EJB_IMPLICIT_NO_INTERFACE_VIEW  = 0x1000;
@@ -459,8 +468,16 @@ public enum Phase {
     public static final int POST_MODULE_ENV_ENTRY                       = 0x1400;
     public static final int POST_MODULE_EJB_REF                         = 0x1500;
     public static final int POST_MODULE_PERSISTENCE_REF                 = 0x1600;
+    // TODO remove after no usage by wfly
     public static final int POST_MODULE_DATASOURCE_REF                  = 0x1700;
+    // TODO remove after no usage by wfly
     public static final int POST_MODULE_MAIL_SESSION_REF                = 0x1701;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_ADMINISTERED_OBJECT        = 0x1700;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_CONNECTION_FACTORY         = 0x1701;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_DATA_SOURCE                = 0x1702;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_JMS_DESTINATION            = 0x1703;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_JMS_CONNECTION_FACTORY     = 0x1704;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_MAIL_SESSION               = 0x1705;
     public static final int POST_MODULE_WS_REF_DESCRIPTOR               = 0x1800;
     public static final int POST_MODULE_WS_REF_ANNOTATION               = 0x1801;
     public static final int POST_MODULE_WS_VERIFICATION                 = 0x1880;
@@ -507,7 +524,9 @@ public enum Phase {
     public static final int INSTALL_RESOLVER_MODULE                     = 0x0600;
     public static final int INSTALL_RA_NATIVE                           = 0x0800;
     public static final int INSTALL_RA_DEPLOYMENT                       = 0x0801;
+    // TODO remove after no usage by wfly
     public static final int INSTALL_CONNECTION_FACTORY_DEFINITION_ANNOTATION = 0x0802;
+    // TODO remove after no usage by wfly
     public static final int INSTALL_ADMIN_OBJECT_DEFINITION_ANNOTATION  = 0x0803;
     public static final int INSTALL_SERVICE_DEPLOYMENT                  = 0x0900;
     public static final int INSTALL_POJO_DEPLOYMENT                     = 0x0A00;
