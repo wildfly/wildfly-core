@@ -122,6 +122,7 @@
         <version.org.picketbox>4.0.21.Beta3</version.org.picketbox>
         <version.org.slf4j>1.7.7.jbossorg-1</version.org.slf4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
+        <version.org.wildfly.build-tools>1.0.0.Alpha1</version.org.wildfly.build-tools>
         <version.org.wildfly.legacy.test>1.0.0.Alpha2</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.manager>1.0.0.Final</version.org.wildfly.security.manager>
         <version.org.wildfly.checkstyle-config>1.0.0.Final</version.org.wildfly.checkstyle-config>
@@ -153,12 +154,12 @@
     </properties>
 
     <modules>
-        <module>build-plugin</module>
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
         <module>core-build</module>
         <module>core-dist</module>
+        <module>core-feature-pack</module>
         <module>core-model-test</module>
         <module>core-security</module>
         <module>deployment-repository</module>
@@ -529,9 +530,14 @@
                     <version>${version.xml.plugin}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-build-plugin</artifactId>
-                    <version>${project.version}</version>
+                    <groupId>org.wildfly.build</groupId>
+                    <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
+                    <version>${version.org.wildfly.build-tools}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.wildfly.build</groupId>
+                    <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                    <version>${version.org.wildfly.build-tools}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -549,6 +555,18 @@
         <dependencies>
 
             <!-- Modules in this project -->
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack</artifactId>
+                <type>pom</type>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack</artifactId>
+                <type>zip</type>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-build</artifactId>
