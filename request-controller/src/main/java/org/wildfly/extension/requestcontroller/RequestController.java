@@ -19,24 +19,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.server.requestcontroller;
+package org.wildfly.extension.requestcontroller;
 
+import org.jboss.as.server.suspend.CountingRequestCountCallback;
+import org.jboss.as.server.suspend.ServerActivity;
+import org.jboss.as.server.suspend.ServerActivityCallback;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.extension.requestcontroller.logging.RequestControllerLogger;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
-import static org.jboss.as.server.requestcontroller.RunResult.REJECTED;
-import static org.jboss.as.server.requestcontroller.RunResult.RUN;
 
 /**
  * A controller that manages the active requests that are running in the container.
@@ -49,14 +57,14 @@ import static org.jboss.as.server.requestcontroller.RunResult.RUN;
  *
  * @author Stuart Douglas
  */
-public class GlobalRequestController implements Service<GlobalRequestController>, ServerActivity {
+public class RequestController implements Service<RequestController>, ServerActivity {
 
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "global-request-controller");
 
-    private static final AtomicIntegerFieldUpdater<GlobalRequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(GlobalRequestController.class, "activeRequestCount");
-    private static final AtomicReferenceFieldUpdater<GlobalRequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(GlobalRequestController.class, ServerActivityCallback.class, "listener");
+    private static final AtomicIntegerFieldUpdater<RequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(RequestController.class, "activeRequestCount");
+    private static final AtomicReferenceFieldUpdater<RequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, ServerActivityCallback.class, "listener");
 
-    private volatile int maxRequestCount = 0;
+    private volatile int maxRequestCount = -1;
 
     private volatile int activeRequestCount = 0;
 
@@ -73,6 +81,10 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     public void preSuspend(ServerActivityCallback listener) {
         listener.done();
     }
+
+    private Timer timer;
+
+    private final Deque<QueuedTask> taskQueue = new LinkedBlockingDeque<>();
 
     /**
      * Pause the controller. All existing requests will have a chance to finish, and once all requests are
@@ -102,6 +114,9 @@ public class GlobalRequestController implements Service<GlobalRequestController>
         ServerActivityCallback listener = listenerUpdater.get(this);
         if (listener != null) {
             listenerUpdater.compareAndSet(this, listener, null);
+        }
+        while (!taskQueue.isEmpty() && (activeRequestCount < maxRequestCount || maxRequestCount < 0)) {
+            runQueuedTask(false);
         }
     }
 
@@ -171,7 +186,6 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      * @param entryPoint The entry point
      */
     public synchronized void resumeControlPoint(final String entryPoint) {
-        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
         for (ControlPoint ep : entryPoints.values()) {
             if (ep.getEntryPoint().equals(entryPoint)) {
                 ep.resume();
@@ -205,16 +219,21 @@ public class GlobalRequestController implements Service<GlobalRequestController>
             //matter if it has already been invoked
             if(paused) {
                 requestComplete();
-                return REJECTED;
+                return RunResult.REJECTED;
             }
-            return RUN;
+            return RunResult.RUN;
         } else {
-            return REJECTED;
+            return RunResult.REJECTED;
         }
     }
 
 
     void requestComplete() {
+        runQueuedTask(true);
+    }
+
+    private void decrementRequestCount() {
+
         int result = activeRequestCountUpdater.decrementAndGet(this);
         if (paused) {
             if (paused && result == 0) {
@@ -229,14 +248,15 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     }
 
     /**
-     * Gets an entry point for the given deployment . If one does not exist it will be created.
+     * Gets an entry point for the given deployment. If one does not exist it will be created. If the request controller is disabled
+     * this will return null.
      *
      * Entry points are reference counted. If this method is called n times then {@link #removeControlPoint(ControlPoint)}
      * must also be called n times to clean up the entry points.
      *
      * @param deploymentName The top level deployment name
      * @param entryPointName The entry point name
-     * @return The entry point
+     * @return The entry point, or null if the request controller is disabled
      */
     public synchronized ControlPoint getControlPoint(final String deploymentName, final String entryPointName) {
         ControlPointIdentifier id = new ControlPointIdentifier(deploymentName, entryPointName);
@@ -278,6 +298,9 @@ public class GlobalRequestController implements Service<GlobalRequestController>
      */
     public void setMaxRequestCount(int maxRequestCount) {
         this.maxRequestCount = maxRequestCount;
+        while (!taskQueue.isEmpty() && (activeRequestCount < maxRequestCount || maxRequestCount < 0)) {
+            runQueuedTask(false);
+        }
     }
 
     /**
@@ -290,20 +313,73 @@ public class GlobalRequestController implements Service<GlobalRequestController>
     @Override
     public void start(StartContext startContext) throws StartException {
         shutdownControllerInjectedValue.getValue().registerActivity(this);
+        timer = new Timer();
     }
 
     @Override
     public void stop(StopContext stopContext) {
         shutdownControllerInjectedValue.getValue().unRegisterActivity(this);
+        timer.cancel();
+        timer = null;
+        while (!taskQueue.isEmpty()) {
+            QueuedTask t = taskQueue.poll();
+            if(t != null) {
+                t.run();
+            }
+        }
     }
 
     @Override
-    public GlobalRequestController getValue() throws IllegalStateException, IllegalArgumentException {
+    public RequestController getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
     }
 
     public InjectedValue<SuspendController> getShutdownControllerInjectedValue() {
         return shutdownControllerInjectedValue;
+    }
+
+    public int getActiveRequestCount() {
+        return activeRequestCount;
+    }
+
+    void queueTask(ControlPoint controlPoint, Runnable task, Executor taskExecutor, long timeout, Runnable timeoutTask, boolean rejectOnSuspend) {
+        if(paused) {
+            if(rejectOnSuspend) {
+                taskExecutor.execute(timeoutTask);
+                return;
+            }
+        }
+        QueuedTask queuedTask = new QueuedTask(taskExecutor, task, timeoutTask, controlPoint);
+        taskQueue.add(queuedTask);
+        runQueuedTask(false);
+        if(queuedTask.isQueued()) {
+            if(timeout > 0) {
+                timer.schedule(queuedTask, timeout);
+            }
+        }
+    }
+
+    /**
+     * Runs a queued task, if the queue is not already empty.
+     *
+     * Note that this will decrement the request count if there are no queued tasks to be run
+     *
+     * @param hasPermit If the caller has already called {@link #beginRequest()}
+     */
+    private void runQueuedTask(boolean hasPermit) {
+        if(!hasPermit) {
+            if(beginRequest() == RunResult.REJECTED) {
+                return;
+            }
+        }
+        QueuedTask task = taskQueue.poll();
+        if(task != null) {
+            if(!task.runRequest()) {
+                decrementRequestCount();
+            }
+        } else {
+            decrementRequestCount();
+        }
     }
 
     private static final class ControlPointIdentifier {
@@ -339,4 +415,64 @@ public class GlobalRequestController implements Service<GlobalRequestController>
             return super.toString();
         }
     }
+
+
+    private static final class QueuedTask extends TimerTask {
+
+        private final Executor executor;
+        private final Runnable task;
+        private final Runnable cancelTask;
+        private final ControlPoint controlPoint;
+
+        //0 == queued
+        //1 == run
+        //2 == cancelled
+        private final AtomicInteger state = new AtomicInteger(0);
+
+        private QueuedTask(Executor executor, Runnable task, Runnable cancelTask, ControlPoint controlPoint) {
+            this.executor = executor;
+            this.task = task;
+            this.cancelTask = cancelTask;
+            this.controlPoint = controlPoint;
+        }
+
+        @Override
+        public void run() {
+            if(state.compareAndSet(0, 2)) {
+                if(cancelTask != null) {
+                    try {
+                        executor.execute(cancelTask);
+                    } catch (Exception e) {
+                        //should only happen if the server is shutting down
+                        RequestControllerLogger.ROOT_LOGGER.failedToCancelTask(cancelTask, e);
+                    }
+                }
+            }
+        }
+
+        public boolean runRequest() {
+            if(state.compareAndSet(0, 1)) {
+                cancel();
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            controlPoint.beginExistingRequest();
+                            task.run();
+                        } finally {
+                            controlPoint.requestComplete();
+                        }
+                    }
+                });
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        boolean isQueued() {
+            return state.get() == 0;
+        }
+    }
+
 }

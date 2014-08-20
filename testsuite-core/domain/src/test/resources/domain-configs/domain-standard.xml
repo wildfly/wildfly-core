@@ -29,6 +29,7 @@
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.request-controller"/>
     </extensions>
 
     <system-properties>
@@ -100,6 +101,8 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.0">
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
+            <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
+            </subsystem>
         </profile>
         <profile name="other">
             <!-- include profile="default"/ -->
@@ -143,6 +146,8 @@
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
 
+            <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
+            </subsystem>
         </profile>
         <profile name="ignored">
             <subsystem xmlns="urn:jboss:domain:jmx:1.0"/>

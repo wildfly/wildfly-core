@@ -66,7 +66,7 @@ public class SuspendResumeTestCase {
         JavaArchive war = ShrinkWrap.create(JavaArchive.class, WEB_SUSPEND_JAR);
         war.addPackage(SuspendResumeHandler.class.getPackage());
         war.addAsServiceProvider(ServiceActivator.class, TestSuspendServiceActivator.class);
-        war.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
+        war.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
         helper.deploy(WEB_SUSPEND_JAR, war.as(ZipExporter.class).exportAsInputStream());
 
     }
@@ -125,5 +125,4 @@ public class SuspendResumeTestCase {
 
 
     }
-
 }

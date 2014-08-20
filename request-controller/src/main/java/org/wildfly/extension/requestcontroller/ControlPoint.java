@@ -19,11 +19,13 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.server.requestcontroller;
+package org.wildfly.extension.requestcontroller;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.suspend.ServerActivityCallback;
+import java.util.concurrent.Executor;
 
 /**
  * A representation of an entry point into the application server, represented as both a deployment
@@ -43,7 +45,7 @@ public class ControlPoint {
     private static final AtomicIntegerFieldUpdater<ControlPoint> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(ControlPoint.class, "activeRequestCount");
     private static final AtomicReferenceFieldUpdater<ControlPoint, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(ControlPoint.class, ServerActivityCallback.class, "listener");
 
-    private final GlobalRequestController controller;
+    private final RequestController controller;
     private final String deployment;
     private final String entryPoint;
 
@@ -67,7 +69,7 @@ public class ControlPoint {
      */
     private int referenceCount = 0;
 
-    ControlPoint(GlobalRequestController controller, String deployment, String entryPoint) {
+    ControlPoint(RequestController controller, String deployment, String entryPoint) {
         this.controller = controller;
         this.deployment = deployment;
         this.entryPoint = entryPoint;
@@ -131,6 +133,13 @@ public class ControlPoint {
     }
 
     /**
+     * Called when a queued task is executed.
+     */
+    void beginExistingRequest() {
+        activeRequestCountUpdater.incrementAndGet(this);
+    }
+
+    /**
      * Method that should be invoked once (and only once) to signify that a request has finished.
      * <p/>
      * This cannot be done automatically when the handleRequest method completes, as some
@@ -150,6 +159,28 @@ public class ControlPoint {
                 }
             }
         }
+    }
+
+    /**
+     * Queues a task to run when the request controller allows it. There are two use cases for this:
+     * <p/>
+     * - This allows for requests to be queued instead of dropped when the request limit has been hit
+     * - Timed jobs that are supposed to execute while the container is suspended can be queued to execute
+     * when it resumes
+     * <p/>
+     * Note that the task will be run withing the context of a {@link #beginRequest()} call, if the task
+     * is executed there is no need to invoke on the control point again.
+     *
+     *
+     *
+     * @param task            The task to run
+     * @param timeout         The timeout in milliseconds, if this is larger than zero the task will be timed out after
+     *                        this much time has elapsed
+     * @param timeoutTask     The task that is run on timeout
+     * @param rejectOnSuspend If the task should be rejected if the container is suspended, if this happens the timeout task is invoked immediately
+     */
+    public void queueTask(Runnable task, Executor taskExecutor, long timeout, Runnable timeoutTask, boolean rejectOnSuspend) {
+        controller.queueTask(this, task, taskExecutor, timeout, timeoutTask, rejectOnSuspend);
     }
 
     public boolean isPaused() {

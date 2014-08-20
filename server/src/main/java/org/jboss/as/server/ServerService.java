@@ -111,9 +111,8 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.as.server.requestcontroller.GlobalRequestController;
 import org.jboss.as.server.services.security.AbstractVaultReader;
-import org.jboss.as.server.requestcontroller.SuspendController;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -275,11 +274,6 @@ public final class ServerService extends AbstractControllerService {
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
             context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)
                     .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, gracefulShutdownService.getSuspendControllerInjectedValue())
-                    .install();
-
-            GlobalRequestController globalRequestController = new GlobalRequestController();
-            context.getServiceTarget().addService(GlobalRequestController.SERVICE_NAME, globalRequestController)
-                    .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, globalRequestController.getShutdownControllerInjectedValue())
                     .install();
 
             // Activate module loader

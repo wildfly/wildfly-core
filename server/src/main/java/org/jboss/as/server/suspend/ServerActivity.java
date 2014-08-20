@@ -1,4 +1,4 @@
-package org.jboss.as.server.requestcontroller;
+package org.jboss.as.server.suspend;
 
 /**
  * A server activity that may have to finish before the server can shut down gracefully.

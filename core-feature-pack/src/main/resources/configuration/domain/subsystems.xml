@@ -4,5 +4,6 @@
    <subsystems name="default">
       <subsystem>logging.xml</subsystem>
       <subsystem>jmx.xml</subsystem>
+      <subsystem>request-controller.xml</subsystem>
    </subsystems>
 </config>

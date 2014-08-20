@@ -1,8 +1,8 @@
 package org.jboss.as.server;
 
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.requestcontroller.OperationListener;
-import org.jboss.as.server.requestcontroller.SuspendController;
+import org.jboss.as.server.suspend.OperationListener;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;

@@ -1,4 +1,4 @@
-package org.jboss.as.server.requestcontroller;
+package org.jboss.as.server.suspend;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
@@ -17,7 +17,7 @@ import java.util.TimerTask;
  * servers operations.
  * <p/>
  * <p/>
- * In most cases this work is delegated to the {@link org.jboss.as.server.requestcontroller.GlobalRequestController},
+ * In most cases this work is delegated to the {@link org.jboss.as.server.suspend.GlobalRequestController},
  * however for workflows that do no correspond directly to a request model a {@link ServerActivity} instance
  * can be registered directly with this controller.
  *

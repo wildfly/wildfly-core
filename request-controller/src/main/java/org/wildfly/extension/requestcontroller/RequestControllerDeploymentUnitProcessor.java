@@ -19,34 +19,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.server.requestcontroller;
+package org.wildfly.extension.requestcontroller;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import org.jboss.as.server.deployment.DeploymentPhaseContext;
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
+import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 
 /**
- * RequestCountListener that till n notification have been received before notifying
- * its delegate.
- *
  * @author Stuart Douglas
  */
-class CountingRequestCountCallback implements ServerActivityCallback {
-
-    private final AtomicInteger count;
-
-    private final ServerActivityCallback delegate;
-
-    CountingRequestCountCallback(int count, ServerActivityCallback delegate) {
-        this.count = new AtomicInteger(count);
-        this.delegate = delegate;
+public class RequestControllerDeploymentUnitProcessor implements DeploymentUnitProcessor {
+    @Override
+    public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+        RequestControllerActivationMarker.mark(phaseContext.getDeploymentUnit());
     }
 
     @Override
-    public void done() {
-        if (count.decrementAndGet() == 0) {
-            if(delegate != null) {
-                delegate.done();
-            }
-        }
-    }
+    public void undeploy(DeploymentUnit context) {
 
+    }
 }

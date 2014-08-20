@@ -2,9 +2,9 @@ package org.wildfly.test.suspendresumeendpoint;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.as.network.SocketBindingManager;
-import org.jboss.as.server.requestcontroller.ControlPoint;
-import org.jboss.as.server.requestcontroller.GlobalRequestController;
-import org.jboss.as.server.requestcontroller.RunResult;
+import org.wildfly.extension.requestcontroller.ControlPoint;
+import org.wildfly.extension.requestcontroller.RequestController;
+import org.wildfly.extension.requestcontroller.RunResult;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -30,16 +30,25 @@ public class TestUndertowService implements Service<TestUndertowService> {
     public static final String SKIP_GRACEFUL = "skip-graceful";
 
     private volatile Undertow undertow;
-    private final InjectedValue<GlobalRequestController> requestControllerInjectedValue = new InjectedValue<>();
+    private final InjectedValue<RequestController> requestControllerInjectedValue = new InjectedValue<>();
     private final InjectedValue<SocketBindingManager> socketBindingManagerInjectedValue = new InjectedValue<>();
 
     @Override
     public void start(StartContext context) throws StartException {        //add graceful shutdown support
         final SuspendResumeHandler suspendResumeHandler = new SuspendResumeHandler();
         final ControlPoint controlPoint = requestControllerInjectedValue.getValue().getControlPoint("test", "test");
+
+        final ExchangeCompletionListener exchangeCompletionListener = new ExchangeCompletionListener() {
+            @Override
+            public void exchangeEvent(HttpServerExchange exchange, NextListener nextListener) {
+                controlPoint.requestComplete();
+                nextListener.proceed();
+            }
+        };
+
         HttpHandler shutdown = new HttpHandler() {
             @Override
-            public void handleRequest(HttpServerExchange exchange) throws Exception {
+            public void handleRequest(final HttpServerExchange exchange) throws Exception {
                 if(exchange.isInIoThread()) {
                     exchange.dispatch(this);
                     return;
@@ -55,18 +64,29 @@ public class TestUndertowService implements Service<TestUndertowService> {
                 System.out.println("Attempting " + count + " " + exchange);
                 RunResult result = controlPoint.beginRequest();
                 if (result == RunResult.REJECTED) {
-                    System.out.println("Rejected " + count + " " + exchange);
-                    exchange.setResponseCode(503);
+                    exchange.dispatch(new Runnable() {
+                        @Override
+                        public void run() {
+                            controlPoint.queueTask(new Runnable() {
+                                @Override
+                                public void run() {
+                                    exchange.addExchangeCompleteListener(exchangeCompletionListener);
+                                    exchange.dispatch(suspendResumeHandler);
+                                }
+                            }, exchange.getIoThread(), 1000, new Runnable() {
+                                @Override
+                                public void run() {
+                                    System.out.println("Rejected " + count + " " + exchange);
+                                    exchange.setResponseCode(503);
+                                    exchange.endExchange();
+                                }
+                            }, true);
+                        }
+                    });
+
                     return;
                 }
-                exchange.addExchangeCompleteListener(new ExchangeCompletionListener() {
-                    @Override
-                    public void exchangeEvent(HttpServerExchange exchange, NextListener nextListener) {
-                        System.out.println("Completed " + count + " " + exchange);
-                        controlPoint.requestComplete();
-                        nextListener.proceed();
-                    }
-                });
+                exchange.addExchangeCompleteListener(exchangeCompletionListener);
                 suspendResumeHandler.handleRequest(exchange);
             }
         };
@@ -85,7 +105,7 @@ public class TestUndertowService implements Service<TestUndertowService> {
         return this;
     }
 
-    public InjectedValue<GlobalRequestController> getRequestControllerInjectedValue() {
+    public InjectedValue<RequestController> getRequestControllerInjectedValue() {
         return requestControllerInjectedValue;
     }
 
