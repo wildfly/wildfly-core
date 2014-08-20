@@ -22,6 +22,7 @@
 package org.jboss.as.cli.handlers;
 
 
+import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -30,9 +31,11 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.ConnectionInfo;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.util.FingerprintGenerator;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.dmr.ModelNode;
 
 /**
  *
@@ -60,10 +63,34 @@ public class ConnectionInfoHandler extends CommandHandlerWithHelp {
         } else {
 
             ConnectionInfo connInfo = ctx.getConnectionInfo();
-            boolean disableLocalAuth = connInfo.isDisableLocalAuth();
-            String username = "Local connection authenticated as SuperUser";
-            if (disableLocalAuth)
-                username = connInfo.getUsername();
+            String username = null;
+
+            final ModelNode req = new ModelNode();
+            req.get(Util.OPERATION).set("whoami");
+            req.get(Util.ADDRESS).setEmptyList();
+            req.get("verbose").set(true);
+
+            try {
+                final ModelNode response = client.execute(req);
+                if(Util.isSuccess(response)) {
+                    if(response.hasDefined(Util.RESULT)) {
+                        final ModelNode result = response.get(Util.RESULT);
+                        if(result.hasDefined("identity")) {
+                            username = result.get("identity").get("username").asString();
+                        }
+                        if(result.hasDefined("mapped-roles")) {
+                            username = username + ", authenticated as " + result.get("mapped-roles").asString();
+                        }
+                    } else {
+                        username = "result was not available.";
+                    }
+                } else {
+                    System.out.println(Util.getFailureDescription(response));
+                }
+            } catch (IOException e) {
+                throw new CommandFormatException("Failed to get the AS release info: " + e.getLocalizedMessage());
+            }
+
             SimpleTable st = new SimpleTable(2);
             st.addLine(new String[]{"Username", username});
             st.addLine(new String[]{"Logged since", connInfo.getLoggedSince().toString()});

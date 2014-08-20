@@ -849,9 +849,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(address, cbh,
                         disableLocalAuth, sslContext, connectionTimeout, this, timeoutHandler);
                 retry = false;
+                connInfoBean = new ConnectionInfoBean();
                 tryConnection(tempClient, address);
                 initNewClient(tempClient, address);
-                connInfoBean = new ConnectionInfoBean();
                 connInfoBean.setDisableLocalAuth(disableLocalAuth);
                 connInfoBean.setLoggedSince(new Date());
             } catch (RedirectException re) {
