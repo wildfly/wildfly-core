@@ -34,11 +34,15 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
+
 
 /**
  * {@link org.jboss.as.controller.OperationStepHandler} querying the child types of a given node.
@@ -49,6 +53,7 @@ import org.jboss.dmr.ModelType;
 public class ReadChildrenTypesHandler implements OperationStepHandler {
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_TYPES_OPERATION, ControllerResolver.getResolver("global"))
+            .setParameters(INCLUDE_ALIASES)
             .setReadOnly()
             .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
@@ -63,11 +68,16 @@ public class ReadChildrenTypesHandler implements OperationStepHandler {
         if (registry == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(PathAddress.pathAddress(operation.get(OP_ADDR))));
         }
+        final boolean aliases = INCLUDE_ALIASES.resolveModelAttribute(context, operation).asBoolean(false);
         Set<String> childTypes = new TreeSet<String>(registry.getChildNames(PathAddress.EMPTY_ADDRESS));
         final ModelNode result = context.getResult();
         result.setEmptyList();
         for (final String key : childTypes) {
-            result.add(key);
+            PathAddress relativeAddr = PathAddress.pathAddress(PathElement.pathElement(key));
+            ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
+            if (aliases || (childReg == null || !childReg.isAlias())) {
+                result.add(key);
+            }
         }
         context.stepCompleted();
     }
