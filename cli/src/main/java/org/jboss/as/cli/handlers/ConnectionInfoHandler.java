@@ -73,13 +73,20 @@ public class ConnectionInfoHandler extends CommandHandlerWithHelp {
             try {
                 final ModelNode response = client.execute(req);
                 if(Util.isSuccess(response)) {
-                    if(response.hasDefined(Util.RESULT)) {
+                    if (response.hasDefined(Util.RESULT)) {
                         final ModelNode result = response.get(Util.RESULT);
                         if(result.hasDefined("identity")) {
                             username = result.get("identity").get("username").asString();
                         }
-                        if(result.hasDefined("mapped-roles")) {
-                            username = username + ", authenticated as " + result.get("mapped-roles").asString();
+                        if (result.hasDefined("mapped-roles")) {
+                            String strRoles = result.get("mapped-roles").asString();
+                            String grantedStr = "granted role";
+                            // a comma is contained in the string if there is more than one role
+                            if (strRoles.indexOf(',') > 0)
+                                grantedStr = "granted roles";
+                            username = username + ", "+ grantedStr + " " + strRoles;
+                        } else {
+                            username = username + " has no role associated.";
                         }
                     } else {
                         username = "result was not available.";
