@@ -40,6 +40,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
@@ -62,6 +64,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -1673,6 +1676,20 @@ public class FileSystemDeploymentServiceUnitTestCase {
         Assert.assertTrue(removed.exists());
         Assert.assertTrue(nestedRemoved.exists());
         Assert.assertEquals(0, sc.deployed.size());
+    }
+    
+    
+    /** WFCORE-64 */
+    @Test
+    public void testForcedUndeployment() throws Exception {
+        MockServerController sc = new MockServerController("foo.war", "failure.ear");
+        TesteeSet ts = createTestee(sc);
+        ts.controller.externallyDeployed.add("foo.war");
+        ts.controller.addCompositeSuccessResponse(1);
+        assertThat(ts.controller.deployed.size() , is(2));
+        ts.testee.scan(true, new DefaultDeploymentOperations(sc), true);
+        assertThat(ts.controller.deployed.size() , is(1)); //Only non persistent deployments should be undeployed.
+        assertThat(ts.controller.deployed.keySet(), hasItems("foo.war"));
     }
 
     @Test

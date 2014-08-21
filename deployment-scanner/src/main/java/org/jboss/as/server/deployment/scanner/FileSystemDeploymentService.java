@@ -423,8 +423,10 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 }
 
                 if (forcedUndeployScan) {
-                    for (Map.Entry<String, Boolean> toUndeploy : scanContext.registeredDeployments.entrySet()) {
-                        scannerTasks.add(new UndeployTask(toUndeploy.getKey(), deploymentDir, scanContext.scanStartTime, true));
+                    Set<String> scannedDeployments = new HashSet<String>(scanContext.registeredDeployments.keySet());
+                    scannedDeployments.removeAll(scanContext.persistentDeployments);
+                    for (String toUndeploy : scannedDeployments) {
+                        scannerTasks.add(new UndeployTask(toUndeploy, deploymentDir, scanContext.scanStartTime, true));
                     }
                 }
                 // Process the tasks
