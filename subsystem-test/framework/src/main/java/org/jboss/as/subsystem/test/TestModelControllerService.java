@@ -32,6 +32,7 @@ import java.util.Properties;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.Extension;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -82,7 +83,22 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     }
 
     @Override
+    protected void initExtraModel(ManagementModel managementModel) {
+        Resource rootResource = managementModel.getRootResource();
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
+        initExtraModelInternal(rootResource, rootRegistration);
+        additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration,
+                managementModel.getCapabilityRegistry());
+    }
+
+    /** @deprecated only for legacy version support */
+    @Override
     protected void initExtraModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
+        initExtraModelInternal(rootResource, rootRegistration);
+        additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
+    }
+
+    private void initExtraModelInternal(Resource rootResource, ManagementResourceRegistration rootRegistration) {
         rootResource.getModel().get(SUBSYSTEM);
 
         rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
@@ -93,8 +109,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
         controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);
-        additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
-
     }
 
     @Override

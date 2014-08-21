@@ -1,9 +1,17 @@
 package org.jboss.as.subsystem.test;
 
 import java.io.Serializable;
+import java.util.Locale;
+import java.util.Map;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -45,6 +53,10 @@ public class AdditionalInitialization extends AdditionalParsers {
         }
     }
 
+    /**
+     * An {@code AdditionalInitialization} whose {@link #getRunningMode() running mode} is
+     * {@link org.jboss.as.controller.RunningMode#ADMIN_ONLY}
+     */
     public static class ManagementAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
 
@@ -52,6 +64,96 @@ public class AdditionalInitialization extends AdditionalParsers {
         protected RunningMode getRunningMode() {
             return RunningMode.ADMIN_ONLY;
         }
+    }
+
+    /**
+     * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization} with
+     * the given {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} registered, making it
+     * possible for subsystems under test to require them. No runtime API will be available, but that should not
+     * be needed for a {@link org.jboss.as.controller.RunningMode#ADMIN_ONLY} test.
+     *
+     * @param capabilities the capabilities
+     * @return the additional initialization
+     */
+    public static AdditionalInitialization withCapabilities(final String... capabilities) {
+        return new ManagementAdditionalInitialization() {
+
+            @Override
+            protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+                super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+                registerCapabilities(capabilityRegistry, capabilities);
+            }
+        };
+    }
+
+    /**
+     * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization} with
+     * the given {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} registered, making it
+     * possible for subsystems under test to require them. Any runtime API provided in the {@code capabilities}
+     * parameter will be available.
+     *
+     * @param capabilities the capabilities; key is the name of the capability, value is its runtime API
+     * @return the additional initialization
+     */
+    public static AdditionalInitialization withCapabilities(final Map<String, Object> capabilities) {
+        return new AdditionalInitialization() {
+
+            @Override
+            protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+                super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+                registerCapabilities(capabilityRegistry, capabilities);
+            }
+        };
+    }
+
+    /**
+     * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability RuntimeCapability<Void>}
+     * for each of the given capability names. They will be registered against {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * and with the root resource and no specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
+     *
+     * @param capabilityRegistry registry to use
+     * @param capabilities names of the capabilities.
+     */
+    public static void registerCapabilities(RuntimeCapabilityRegistry capabilityRegistry, String... capabilities) {
+        for (final String capabilityName : capabilities) {
+            RuntimeCapability<Void> capability = new RuntimeCapability<Void>(capabilityName, null) {
+                @Override
+                public String getDescription(Locale locale) {
+                    return capabilityName;
+                }
+            };
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+                    new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+        }
+    }
+
+    /**
+     * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability} with the
+     * specified {@link org.jboss.as.controller.capability.RuntimeCapability#getRuntimeAPI() runtime API}
+     * for each of the given capability names. They will be registered against {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * and with the root resource and no specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
+     *
+     * @param capabilityRegistry registry to use
+     * @param capabilities map of names of capabilities to their runtime API implementation.
+     */
+    public static void registerCapabilities(RuntimeCapabilityRegistry capabilityRegistry, final Map<String, Object> capabilities) {
+        for (Map.Entry<String, Object> entry : capabilities.entrySet()) {
+            final String capabilityName = entry.getKey();
+            RuntimeCapability<?> capability = createCapability(capabilityName, entry.getValue());
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+                    new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+        }
+    }
+
+    private static <T> RuntimeCapability<T> createCapability(final String capabilityName, final T api) {
+        return new RuntimeCapability<T>(capabilityName, api) {
+            @Override
+            public String getDescription(Locale locale) {
+                return capabilityName;
+            }
+        };
     }
 
     /**
@@ -136,11 +238,31 @@ public class AdditionalInitialization extends AdditionalParsers {
     /**
      * Allows extra initialization of the model and addition of extra subsystems
      *
-     * @param extensionRegistry allows installation of extra subsystem extensions, call {@link ExtensionRegistry#getExtensionContext(String, boolean)}
+     * @param extensionRegistry allows installation of extra subsystem extensions, call
+     *                          {@link ExtensionRegistry#getExtensionContext(String, org.jboss.as.controller.registry.ManagementResourceRegistration, boolean)}
      *                          and then {@code Extension.initialize(extensionContext)} for each extra extension you have
      * @param rootResource the root model resource which allows you to for example add child elements to the model
      * @param rootRegistration the root resource registration which allows you to for example add additional operations to the model
+     * @param capabilityRegistry registry for capabilities and requirements exposed by the extra subsystems
      */
+    @SuppressWarnings("deprecation")
+    protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration,
+                                                    RuntimeCapabilityRegistry capabilityRegistry) {
+        initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
+    }
+
+    /**
+     * Allows extra initialization of the model and addition of extra subsystems
+     *
+     * @param extensionRegistry allows installation of extra subsystem extensions, call
+     *                          {@link ExtensionRegistry#getExtensionContext(String, org.jboss.as.controller.registry.ManagementResourceRegistration, boolean)}
+     *                          and then {@code Extension.initialize(extensionContext)} for each extra extension you have
+     * @param rootResource the root model resource which allows you to for example add child elements to the model
+     * @param rootRegistration the root resource registration which allows you to for example add additional operations to the model
+     *
+     * @deprecated override {@link #initializeExtraSubystemsAndModel(org.jboss.as.controller.extension.ExtensionRegistry, org.jboss.as.controller.registry.Resource, org.jboss.as.controller.registry.ManagementResourceRegistration, org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry)}
+     */
+    @Deprecated
     protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration) {
     }
 

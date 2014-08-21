@@ -51,6 +51,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -1115,8 +1116,8 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
-                                        ManagementResourceRegistration rootRegistration) {
-            super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
+                                        ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+            super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
 
             Resource coreManagement = Resource.Factory.create();
             rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, coreManagement);
@@ -1135,8 +1136,8 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
-                                        ManagementResourceRegistration rootRegistration) {
-            super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
+                                        ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+            super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
 
             Resource coreManagement = Resource.Factory.create();
             rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, coreManagement);
