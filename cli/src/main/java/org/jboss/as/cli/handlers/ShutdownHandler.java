@@ -95,6 +95,15 @@ public class ShutdownHandler extends BaseOperationCommand {
         final CLIModelControllerClient cliClient = (CLIModelControllerClient) client;
 
         final ModelNode op = this.buildRequestWithoutHeaders(ctx);
+
+        boolean disconnect = true;
+        final String restartValue = restart.getValue(ctx.getParsedCommandLine());
+        if (Util.TRUE.equals(restartValue) ||
+                ctx.isDomainMode() &&
+                !isMaster(ctx.getModelControllerClient(), host.getValue(ctx.getParsedCommandLine()))) {
+            disconnect = false;
+        }
+
         try {
             final ModelNode response = cliClient.execute(op, true);
             if(!Util.isSuccess(response)) {
@@ -108,8 +117,7 @@ public class ShutdownHandler extends BaseOperationCommand {
             }
         }
 
-        final String restartValue = restart.getValue(ctx.getParsedCommandLine());
-        if (restartValue == null || !Util.TRUE.equals(restartValue)) {
+        if (disconnect) {
             ctx.disconnectController();
         } else {
             // if I try to reconnect immediately, it'll hang for 5 sec
@@ -146,8 +154,48 @@ public class ShutdownHandler extends BaseOperationCommand {
             op.get(Util.ADDRESS).setEmptyList();
         }
         op.get(Util.OPERATION).set(Util.SHUTDOWN);
-        setBooleanArgument(args, op, restart, "restart");
+        setBooleanArgument(args, op, restart, Util.RESTART);
         return op;
+    }
+
+    protected boolean isMaster(ModelControllerClient client, String host) throws CommandLineException {
+        ModelNode request = new ModelNode();
+        request.get(Util.ADDRESS).setEmptyList();
+        request.get(Util.OPERATION).set(Util.READ_ATTRIBUTE);
+        request.get(Util.NAME).set(Util.LOCAL_HOST_NAME);
+        ModelNode response;
+        try {
+            response = client.execute(request);
+        } catch (IOException e) {
+            throw new CommandLineException("Failed to read attribute " + Util.LOCAL_HOST_NAME, e);
+        }
+        if(!Util.isSuccess(response)) {
+            throw new CommandLineException("Failed to read attribute " + Util.LOCAL_HOST_NAME
+                    + ": " + Util.getFailureDescription(response));
+        }
+        ModelNode result = response.get(Util.RESULT);
+        if(!result.isDefined()) {
+            throw new CommandLineException("The result is not defined for attribute " + Util.LOCAL_HOST_NAME + ": " + result);
+        }
+
+        request = new ModelNode();
+        request.get(Util.ADDRESS).add(Util.HOST, result.asString());
+        request.get(Util.OPERATION).set(Util.READ_ATTRIBUTE);
+        request.get(Util.NAME).set(Util.MASTER);
+        try {
+            response = client.execute(request);
+        } catch (IOException e) {
+            throw new CommandLineException("Failed to read attribute " + Util.MASTER + " of host " + result.asString(), e);
+        }
+        if(!Util.isSuccess(response)) {
+            throw new CommandLineException("Failed to read attribute " + Util.MASTER + " of host " + result.asString()
+                    + ": " + Util.getFailureDescription(response));
+        }
+        result = response.get(Util.RESULT);
+        if(!result.isDefined()) {
+            throw new CommandLineException("The result is not defined for attribute " + Util.MASTER + " of host " + result.asString() + ": " + result);
+        }
+        return result.asBoolean();
     }
 
     protected void setBooleanArgument(final ParsedCommandLine args, final ModelNode op, ArgumentWithValue arg, String paramName)

@@ -99,7 +99,9 @@ public class Util {
     public static final String INCLUDE_RUNTIME = "include-runtime";
     public static final String INPUT_STREAM_INDEX = "input-stream-index";
     public static final String INSTALLED_DRIVERS_LIST = "installed-drivers-list";
+    public static final String LOCAL_HOST_NAME = "local-host-name";
     public static final String MANAGEMENT_CLIENT_CONTENT = "management-client-content";
+    public static final String MASTER = "master";
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";
     public static final String MAX_FAILURE_PERCENTAGE = "max-failure-percentage";
     public static final String MAX_OCCURS = "max-occurs";
@@ -137,6 +139,7 @@ public class Util {
     public static final String REQUEST_PROPERTIES = "request-properties";
     public static final String REQUIRED = "required";
     public static final String RESPONSE_HEADERS = "response-headers";
+    public static final String RESTART = "restart";
     public static final String RESTART_REQUIRED = "restart-required";
     public static final String RESULT = "result";
     public static final String ROLLED_BACK = "rolled-back";
