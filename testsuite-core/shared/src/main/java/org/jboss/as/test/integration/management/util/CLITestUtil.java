@@ -41,8 +41,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 public class CLITestUtil {
 
     private static final String JBOSS_CLI_CONFIG = "jboss.cli.config";
-    private static final String JREADLINE_TERMINAL = "jreadline.terminal";
-    private static final String JREADLINE_TEST_TERMINAL = "org.jboss.jreadline.terminal.TestTerminal";
 
     private static final String serverAddr = TestSuiteEnvironment.getServerAddress();
     private static final int serverPort = TestSuiteEnvironment.getServerPort();
@@ -54,12 +52,15 @@ public class CLITestUtil {
 
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
             throws CliInitializationException {
+        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
+        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, null, null, in, out);
     }
 
     public static CommandContext getCommandContext(OutputStream out) throws CliInitializationException {
-        SecurityActions.setSystemProperty(JREADLINE_TERMINAL, JREADLINE_TEST_TERMINAL);
+        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
+        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), null, null, null, out);
     }
