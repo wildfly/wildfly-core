@@ -476,4 +476,16 @@ public interface JmxLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 47, value="An error happened unregistering the '%s' MBean registered in a reserved JMX domain")
     void errorUnregisteringMBeanWithBadCalculatedName(@Cause Exception e, ObjectName name);
+
+    @Message(id = 48, value = "Add notification listener using ObjectName %s is not supported")
+    UnsupportedOperationException addNotificationListerWithObjectNameNotSupported(ObjectName listener);
+
+    @Message(id = 49, value = "Remove notification listener using ObjectName %s is not supported")
+    UnsupportedOperationException removeNotificationListerWithObjectNameNotSupported(ObjectName listener);
+
+    @Message(id = 50, value = "Add notification listener using ObjectName %s is not supported")
+    UnsupportedOperationException addNotificationListenerNotAllowed(ObjectName name);
+
+    @Message(id = 51, value = "Remove notification listener using ObjectName %s is not supported")
+    UnsupportedOperationException removeNotificationListenerNotAllowed(ObjectName name);
 }
