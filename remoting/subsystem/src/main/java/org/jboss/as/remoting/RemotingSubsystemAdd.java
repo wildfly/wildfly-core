@@ -22,19 +22,19 @@
 
 package org.jboss.as.remoting;
 
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.remoting3.Endpoint;
-import org.wildfly.extension.io.IOServices;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
@@ -52,7 +52,7 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
     static final OperationContext.AttachmentKey<Boolean> RUNTIME_KEY = OperationContext.AttachmentKey.create(Boolean.class);
 
     private RemotingSubsystemAdd() {
-        super(RemotingSubsystemRootResource.ATTRIBUTES);
+        super(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY, RemotingSubsystemRootResource.ATTRIBUTES);
     }
 
     @Override
@@ -91,10 +91,13 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
                 return;
             }
         }
-        final ServiceBuilder<Endpoint> builder = serviceTarget.addService(RemotingServices.SUBSYSTEM_ENDPOINT, endpointService)
-                .addDependency(IOServices.WORKER.append(workerName), XnioWorker.class, endpointService.getWorker());
 
-        builder.install();
+        final String ioCapability = RuntimeCapability.buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, workerName);
+        final ServiceName workerService = context.getCapabilityServiceName(ioCapability, XnioWorker.class);
+
+        serviceTarget.addService(RemotingServices.SUBSYSTEM_ENDPOINT, endpointService)
+                .addDependency(workerService, XnioWorker.class, endpointService.getWorker())
+                .install();
     }
 
     private boolean areWorkerAttributesSet(final OperationContext context, final ModelNode model) throws OperationFailedException {

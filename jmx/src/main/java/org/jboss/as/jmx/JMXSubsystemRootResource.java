@@ -28,6 +28,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 
 import java.util.List;
 
+import javax.management.MBeanServer;
+
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
@@ -42,6 +44,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
@@ -69,6 +72,9 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL)
             .setXmlName(CommonAttributes.NON_CORE_MBEANS)
             .setDefaultValue(new ModelNode(false)).build();
+
+    static final RuntimeCapability<Void> JMX_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.extension.jmx", MBeanServer.class).build();
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

@@ -1565,8 +1565,10 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
-                                                        ManagementResourceRegistration rootRegistration) {
+                                                        ManagementResourceRegistration rootRegistration,
+                                                        RuntimeCapabilityRegistry capabilityRegistry) {
             rootRegistration.registerOperationHandler(ResolveExpressionHandler.DEFINITION, ResolveExpressionHandler.INSTANCE);
+            AdditionalInitialization.registerCapabilities(capabilityRegistry, RemotingConnectorResource.REMOTING_CAPABILITY);
         }
 
         @Override

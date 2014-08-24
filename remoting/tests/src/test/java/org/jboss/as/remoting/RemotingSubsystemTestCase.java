@@ -21,12 +21,20 @@
 */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
+import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL_INITIALIZATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.AbsolutePathService;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
@@ -42,6 +50,7 @@ import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
 import org.xnio.OptionMap;
 import org.xnio.Options;
+import org.xnio.XnioWorker;
 
 /**
  * @author Tomaz Cerar
@@ -50,6 +59,11 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     public RemotingSubsystemTestCase() {
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return DEFAULT_ADDITIONAL_INITIALIZATION;
     }
 
     /**
@@ -131,6 +145,17 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
                 target.addService(IOServices.WORKER.append("default-remoting"), new WorkerService(OptionMap.builder().set(Options.WORKER_IO_THREADS, 2).getMap()))
                         .setInitialMode(ServiceController.Mode.ACTIVE)
                         .install();
+            }
+
+            @Override
+            protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+                super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+                Map<String, Class> capabilities = new HashMap<>();
+                capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+                        RemotingEndpointResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
+                capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+                        "default-remoting"), XnioWorker.class);
+                AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);
             }
         };
     }

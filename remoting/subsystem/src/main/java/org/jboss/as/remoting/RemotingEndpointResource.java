@@ -21,8 +21,12 @@
 */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.RemotingSubsystemRootResource.IO_WORKER_CAPABILITY;
+import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
+
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -49,6 +53,7 @@ public class RemotingEndpointResource extends PersistentResourceDefinition {
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
             .setDefaultValue(new ModelNode("default"))
+            .setCapabilityReference(IO_WORKER_CAPABILITY, REMOTING_ENDPOINT_CAPABILITY.getName(), false)
             .build();
 
 
@@ -77,11 +82,11 @@ public class RemotingEndpointResource extends PersistentResourceDefinition {
     static final RemotingEndpointResource INSTANCE = new RemotingEndpointResource();
 
     public static final java.util.List<OptionAttributeDefinition> OPTIONS = Arrays.asList(SEND_BUFFER_SIZE, RECEIVE_BUFFER_SIZE, BUFFER_REGION_SIZE, TRANSMIT_WINDOW_SIZE, RECEIVE_WINDOW_SIZE,
-            MAX_OUTBOUND_CHANNELS, MAX_INBOUND_CHANNELS, AUTHORIZE_ID, AUTHORIZE_ID, AUTH_REALM, AUTHENTICATION_RETRIES, MAX_OUTBOUND_MESSAGES,
+            MAX_OUTBOUND_CHANNELS, MAX_INBOUND_CHANNELS, AUTHORIZE_ID, AUTH_REALM, AUTHENTICATION_RETRIES, MAX_OUTBOUND_MESSAGES,
             MAX_INBOUND_MESSAGES, HEARTBEAT_INTERVAL, MAX_INBOUND_MESSAGE_SIZE, MAX_OUTBOUND_MESSAGE_SIZE, SERVER_NAME, SASL_PROTOCOL);
 
     static {
-        ATTRIBUTES = new LinkedHashSet<AttributeDefinition>(Arrays.asList(WORKER));
+        ATTRIBUTES = new LinkedHashSet<AttributeDefinition>(Collections.singletonList(WORKER));
         ATTRIBUTES.addAll(OPTIONS);
     }
 
@@ -100,6 +105,5 @@ public class RemotingEndpointResource extends PersistentResourceDefinition {
         super.registerAddOperation(resourceRegistration, new RemotingEndpointAdd(), OperationEntry.Flag.RESTART_NONE);
         super.registerRemoveOperation(resourceRegistration, ReloadRequiredRemoveStepHandler.INSTANCE, OperationEntry.Flag.RESTART_NONE);
     }
-
 
 }

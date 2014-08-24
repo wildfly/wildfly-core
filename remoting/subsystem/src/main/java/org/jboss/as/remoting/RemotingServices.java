@@ -45,8 +45,8 @@ public class RemotingServices {
     /** The name of the remoting service */
     public static final ServiceName REMOTING_BASE = ServiceName.JBOSS.append("remoting");
 
-    /** The name of the endpoint service installed by the remoting subsystem */
-    public static final ServiceName SUBSYSTEM_ENDPOINT = REMOTING_BASE.append("endpoint", "subsystem");
+    /** The name of the endpoint service installed by the remoting subsystem.  */
+    public static final ServiceName SUBSYSTEM_ENDPOINT = RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getCapabilityServiceName(Endpoint.class);//REMOTING_BASE.append("endpoint", "subsystem");
 
     /** The base name of the connector services */
     private static final ServiceName CONNECTOR_BASE = REMOTING_BASE.append("connector");

@@ -25,10 +25,7 @@ import java.io.IOException;
 
 import javax.management.MBeanServer;
 
-import org.jboss.as.remoting.RemotingServices;
-import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -90,15 +87,14 @@ public class RemotingConnectorService implements Service<RemotingConnectorServer
         return server;
     }
 
-    public static void addService(final ServiceTarget target, final boolean useManagementEndpoint, final String resolvedDomain, final String expressionsDomain) {
+    static void addService(final ServiceTarget target,
+                           final ServiceName remotingCapability,
+                           final String resolvedDomain,
+                           final String expressionsDomain) {
         final RemotingConnectorService service = new RemotingConnectorService(resolvedDomain, expressionsDomain);
-        final ServiceBuilder<RemotingConnectorServer> builder = target.addService(SERVICE_NAME, service);
-        builder.addDependency(MBeanServerService.SERVICE_NAME, MBeanServer.class, service.mBeanServer);
-        if(useManagementEndpoint) {
-            builder.addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpoint);
-        } else {
-            builder.addDependency(RemotingServices.SUBSYSTEM_ENDPOINT, Endpoint.class, service.endpoint);
-        }
-        builder.install();
+        target.addService(SERVICE_NAME, service)
+                .addDependency(MBeanServerService.SERVICE_NAME, MBeanServer.class, service.mBeanServer)
+                .addDependency(remotingCapability, Endpoint.class, service.endpoint)
+                .install();
     }
 }

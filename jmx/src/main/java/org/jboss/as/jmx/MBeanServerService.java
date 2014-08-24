@@ -54,7 +54,7 @@ import org.jboss.msc.value.InjectedValue;
  * @author Kabir Khan
  */
 public class MBeanServerService implements Service<PluggableMBeanServer> {
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("mbean", "server");
+    public static final ServiceName SERVICE_NAME = JMXSubsystemRootResource.JMX_CAPABILITY.getCapabilityServiceName(MBeanServer.class);
 
     private static final ServiceName DOMAIN_CONTROLLER_NAME = ServiceName.JBOSS.append("host", "controller", "model", "controller");
 

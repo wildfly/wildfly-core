@@ -84,6 +84,18 @@ public class RemotingEndpointAdd extends AbstractAddStepHandler {
     }
 
     @Override
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+
+        if (!context.isBooting()) {
+            // During boot WorkerThreadPoolVsEndpointHandler registered a requirement for the default xnio worker
+            // We no longer require that as we have new configuration.
+            RemotingEndpointResource.WORKER.removeCapabilityRequirements(context, new ModelNode()); // use an undefined value and WORKER will use its default
+        }
+
+        super.recordCapabilitiesAndRequirements(context, operation, resource);
+    }
+
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         if (context.getAttachment(RemotingSubsystemAdd.RUNTIME_KEY) == null) {
             // We're not running in the same op set as RemotingSubsystemAdd

@@ -32,6 +32,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.registry.OperationEntry;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
@@ -48,7 +49,9 @@ class IORootDefinition extends PersistentResourceDefinition {
         super(IOExtension.SUBSYSTEM_PATH,
                 IOExtension.getResolver(),
                 IOSubsystemAdd.INSTANCE,
-                ReloadRequiredRemoveStepHandler.INSTANCE);
+                ReloadRequiredRemoveStepHandler.INSTANCE,
+                OperationEntry.Flag.RESTART_NONE,
+                OperationEntry.Flag.RESTART_ALL_SERVICES);
     }
 
     @Override

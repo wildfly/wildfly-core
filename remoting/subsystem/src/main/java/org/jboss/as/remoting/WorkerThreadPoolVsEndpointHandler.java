@@ -85,6 +85,9 @@ class WorkerThreadPoolVsEndpointHandler implements OperationStepHandler {
             // User didn't configure either worker-thread-pool or endpoint. Add a default endpoint resource so
             // users can read the default config attribute values
             context.addResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH), Resource.Factory.create());
+
+            // Record the requirement of the default xnio worker
+            RemotingEndpointResource.WORKER.addCapabilityRequirements(context, new ModelNode()); // use an undefined node to WORKER will use its default value
         }
     }
 }
