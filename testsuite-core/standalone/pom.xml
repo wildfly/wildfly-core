@@ -25,7 +25,10 @@
     <properties>
         <jbossas.ts.integ.dir>${basedir}/..</jbossas.ts.integ.dir>
         <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
-        <jbossas.project.dir>${jbossas.ts.dir}/..</jbossas.project.dir>
+        <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
+        <!-- TODO this is pointing to the dist, not the maven based one for now,
+             because otherwise some of the CLI tests will fail due to the CLI stuff missing in the maven repo -->
+        <jboss.dist>${jbossas.project.dir}/core-dist/target/${server.output.dir.prefix}-core-${wildfly.core.release.version}</jboss.dist>
     </properties>
 
     <dependencies>
@@ -56,6 +59,10 @@
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
                     <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
+
+                    <environmentVariables>
+                        <JBOSS_HOME>${jboss.dist}</JBOSS_HOME>
+                    </environmentVariables>
 
                     <systemPropertyVariables>
                         <jboss.options>${surefire.system.args}</jboss.options>

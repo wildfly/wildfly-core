@@ -3,8 +3,8 @@ package org.jboss.as.test.shared;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.wildfly.test.api.Authentication;
 
