@@ -56,9 +56,13 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
     public Channel getChannel() throws IOException {
         final Channel channel = this.channel;
         if(channel == null && state != State.OPEN) {
-            throw ProtocolLogger.ROOT_LOGGER.channelClosed();
+            throw channelClosed();
         }
         return channel;
+    }
+
+    protected static IOException channelClosed() {
+        return ProtocolLogger.ROOT_LOGGER.channelClosed();
     }
 
     @Override
