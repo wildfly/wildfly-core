@@ -50,7 +50,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.ManagedServerOperationsFactory;
 import org.jboss.as.host.controller.ServerInventory;
-import org.jboss.as.protocol.logging.ProtocolLogger;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -353,7 +353,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             try {
                 writeResponse(channel, (ManagementRequestHeader) header, error);
             } catch(IOException ioe) {
-                ProtocolLogger.ROOT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
+                HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
             }
         }
     }
@@ -375,7 +375,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             try {
                 writeResponse(channel, (ManagementRequestHeader) header, param);
             } catch(IOException ioe) {
-                ProtocolLogger.ROOT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
+                HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
             }
         }
     }
