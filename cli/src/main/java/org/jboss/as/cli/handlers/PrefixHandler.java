@@ -27,8 +27,9 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ArgumentWithValue;
-import org.jboss.as.cli.operation.OperationRequestCompleter;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.operation.OperationRequestAddress;
+import org.jboss.as.cli.operation.OperationRequestCompleter;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.dmr.ModelNode;
@@ -40,6 +41,7 @@ import org.jboss.dmr.ModelNode;
 public class PrefixHandler extends CommandHandlerWithHelp {
 
     private final ArgumentWithValue nodePath;
+    private final ArgumentWithoutValue noValidation = new ArgumentWithoutValue(this, "--no-validation");
 
     public PrefixHandler() {
         this("cn");
@@ -64,7 +66,9 @@ public class PrefixHandler extends CommandHandlerWithHelp {
 
         final OperationRequestAddress tmp = new DefaultOperationRequestAddress(prefix);
         ctx.getCommandLineParser().parse(ctx.getArgumentsString(), new DefaultCallbackHandler(tmp));
-        assertValid(ctx, tmp);
+        if(!noValidation.isPresent(ctx.getParsedCommandLine())) {
+            assertValid(ctx, tmp);
+        }
 
         if(tmp.isEmpty()) {
             prefix.reset();
