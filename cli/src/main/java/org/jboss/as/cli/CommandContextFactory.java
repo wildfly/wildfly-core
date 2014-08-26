@@ -23,6 +23,8 @@ package org.jboss.as.cli;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.jboss.as.cli.impl.Terminal;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -54,7 +56,13 @@ public abstract class CommandContextFactory {
 
     public abstract CommandContext newCommandContext(String username, char[] password) throws CliInitializationException;
 
+    public abstract CommandContext newCommandContext(String controller, String username, char[] password, Terminal terminal)
+            throws CliInitializationException;
+
     public abstract CommandContext newCommandContext(String controller, String username, char[] password) throws CliInitializationException;
+
+    public abstract CommandContext newCommandContext(String controller, String username, char[] password,
+                                                     boolean initConsole, int connectionTimeout, Terminal terminal) throws CliInitializationException;
 
     public abstract CommandContext newCommandContext(String controller, String username, char[] password, boolean initConsole,
             final int connectionTimeout) throws CliInitializationException;

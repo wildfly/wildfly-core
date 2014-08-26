@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
@@ -66,7 +67,12 @@ import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import javax.security.sasl.SaslException;
 
+import org.jboss.aesh.console.AeshConsoleCallback;
+import org.jboss.aesh.console.ConsoleCallback;
+import org.jboss.aesh.console.ConsoleOperation;
 import org.jboss.aesh.console.settings.Settings;
+import org.jboss.aesh.console.settings.SettingsBuilder;
+import org.jboss.aesh.terminal.TestTerminal;
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliEvent;
 import org.jboss.as.cli.CliEventListener;
@@ -287,7 +293,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      */
     CommandContextImpl(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, final int connectionTimeout)
             throws CliInitializationException {
+        this(defaultController, username, password, disableLocalAuth, initConsole, connectionTimeout, null);
 
+    }
+    CommandContextImpl(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, final int connectionTimeout,
+                       Terminal terminal)
+            throws CliInitializationException {
         config = CliConfigImpl.load(this);
         addressResolver = ControllerAddressResolver.newInstance(config, defaultController);
 
@@ -307,7 +318,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         if (initConsole) {
             cmdCompleter = new CommandCompleter(cmdRegistry);
-            initBasicConsole(null, null);
+            initBasicConsole(null, null, terminal);
             console.addCompleter(cmdCompleter);
             this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
         } else {
@@ -342,7 +353,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         initJaasConfig();
 
         cmdCompleter = new CommandCompleter(cmdRegistry);
-        initBasicConsole(consoleInput, consoleOutput);
+        initBasicConsole(consoleInput, consoleOutput, null);
         console.addCompleter(cmdCompleter);
         this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
 
@@ -355,28 +366,60 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             @Override
             public void shutdown() {
                 if (CommandContextImpl.this.console != null) {
-                    CommandContextImpl.this.console.interrupt();
+                    //CommandContextImpl.this.console.interrupt();
                 }
                 terminateSession();
             }};
         CliShutdownHook.add(shutdownHook);
     }
 
-    protected void initBasicConsole(InputStream consoleInput, OutputStream consoleOutput) throws CliInitializationException {
-        copyConfigSettingsToConsole(consoleInput, consoleOutput);
-        this.console = Console.Factory.getConsole(this);
+    protected void initBasicConsole(InputStream consoleInput, OutputStream consoleOutput,
+                                    Terminal terminal) throws CliInitializationException {
+        Settings settings = createSettings(consoleInput, consoleOutput, terminal);
+        this.console = Console.Factory.getConsole(this, settings);
+        console.setCallback(initCallback());
     }
 
-    private void copyConfigSettingsToConsole(InputStream consoleInput, OutputStream consoleOutput) {
-        if(consoleInput != null)
-            Settings.getInstance().setInputStream(consoleInput);
-        if(consoleOutput != null)
-            Settings.getInstance().setStdOut(consoleOutput);
+    private ConsoleCallback initCallback() {
+        return new AeshConsoleCallback() {
+            @Override
+            public int execute(ConsoleOperation output) throws InterruptedException {
+                if(cmdCompleter == null) {
+                    throw new IllegalStateException("The console hasn't been initialized at construction time.");
+                }
 
-        Settings.getInstance().setHistoryDisabled(!config.isHistoryEnabled());
-        Settings.getInstance().setHistoryFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
-        Settings.getInstance().setHistorySize(config.getHistoryMaxSize());
-        Settings.getInstance().setEnablePipelineAndRedirectionParser(false);
+                if(output.getBuffer() == null)
+                    terminateSession();
+                else {
+                    handleSafe(output.getBuffer().trim());
+                    if (client == null && !terminate) {
+                        printLine("You are disconnected at the moment. Type 'connect' to connect to the server or"
+                                + " 'help' for the list of supported commands.");
+                    }
+                    if(!terminate)
+                        console.setPrompt(getPrompt());
+                }
+
+                return 0;
+            }
+        };
+    }
+
+    private Settings createSettings(InputStream consoleInput, OutputStream consoleOutput, Terminal terminal) {
+        SettingsBuilder builder = new SettingsBuilder();
+        if(consoleInput != null)
+            builder.inputStream(consoleInput);
+        if(consoleOutput != null)
+            builder.outputStream(new PrintStream(consoleOutput));
+        if(terminal != null && terminal == Terminal.TEST)
+            builder.terminal(new TestTerminal());
+
+        builder.disableHistory(!config.isHistoryEnabled())
+                .historyFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()))
+                .historySize(config.getHistoryMaxSize())
+                .parseOperators(false);
+
+        return builder.create();
     }
 
     private void initCommands() {
@@ -696,6 +739,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if(!terminate) {
             terminate = true;
             disconnectController();
+            if(console != null)
+                console.stop();
             if (shutdownHook != null) {
                 CliShutdownHook.remove(shutdownHook);
             }
@@ -750,25 +795,15 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private String readLine(String prompt, boolean password, boolean disableHistory) throws CommandLineException {
         if (console == null) {
-            initBasicConsole(null, null);
+            initBasicConsole(null, null, null);
         }
 
-        boolean useHistory = console.isUseHistory();
-        if (useHistory && disableHistory) {
-            console.setUseHistory(false);
+        if (password) {
+            return console.readLine(prompt, (char) 0x00);
+        } else {
+            return console.readLine(prompt);
         }
-        try {
-            if (password) {
-                return console.readLine(prompt, (char) 0x00);
-            } else {
-                return console.readLine(prompt);
-            }
 
-        } finally {
-            if (disableHistory && useHistory) {
-                console.setUseHistory(true);
-            }
-        }
     }
 
     @Override
@@ -1135,7 +1170,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     public CommandHistory getHistory() {
         if(console == null) {
             try {
-                initBasicConsole(null, null);
+                initBasicConsole(null, null, null);
             } catch (CliInitializationException e) {
                 throw new IllegalStateException("Failed to initialize console.", e);
             }
@@ -1261,27 +1296,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void interact() {
-        if(cmdCompleter == null) {
-            throw new IllegalStateException("The console hasn't been initialized at construction time.");
-        }
-
-        if (this.client == null) {
+        if(!console.running()) {
+            console.start();
             printLine("You are disconnected at the moment. Type 'connect' to connect to the server or"
                     + " 'help' for the list of supported commands.");
-        }
-
-        try {
-            while (!isTerminated()) {
-                final String line = console.readLine(getPrompt());
-                if (line == null) {
-                    terminateSession();
-                } else {
-                    handleSafe(line.trim());
-                }
-            }
-            printLine("");
-        } catch (Throwable t) {
-            t.printStackTrace();
+            console.setPrompt(getPrompt());
         }
     }
 
@@ -1337,7 +1356,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     public int getTerminalWidth() {
         if(console == null) {
             try {
-                this.initBasicConsole(null, null);
+                this.initBasicConsole(null, null, null);
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 80;
@@ -1350,7 +1369,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     public int getTerminalHeight() {
         if(console == null) {
             try {
-                this.initBasicConsole(null, null);
+                this.initBasicConsole(null, null, null);
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 24;
@@ -1469,18 +1488,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     NameCallback ncb = (NameCallback) current;
                     if (username == null) {
                         showRealm();
-                        final boolean completionEnabled = console.isCompletionEnabled();
-                        if(completionEnabled) {
-                            console.setCompletionEnabled(false);
-                        }
                         try {
                             username = readLine("Username: ", false, true);
                         } catch (CommandLineException e) {
                             throw new IOException("Failed to read username.", e);
-                        } finally {
-                            if (completionEnabled) {
-                                console.setCompletionEnabled(true);
-                            }
                         }
                         if (username == null || username.length() == 0) {
                             throw new SaslException("No username supplied.");
@@ -1493,19 +1504,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     PasswordCallback pcb = (PasswordCallback) current;
                     if (password == null) {
                         showRealm();
-                        final boolean completionEnabled = console.isCompletionEnabled();
-                        if(completionEnabled) {
-                            console.setCompletionEnabled(false);
-                        }
                         String temp;
                         try {
                             temp = readLine("Password: ", true, false);
                         } catch (CommandLineException e) {
                             throw new IOException("Failed to read password.", e);
-                        } finally {
-                            if (completionEnabled) {
-                                console.setCompletionEnabled(true);
-                            }
                         }
                         if (temp != null) {
                             password = temp.toCharArray();
