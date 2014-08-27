@@ -412,7 +412,7 @@
                                         <artifactId>
                                             maven-checkstyle-plugin
                                         </artifactId>
-                                        <versionRange>[2.5,)</versionRange>
+                                        <versionRange>[2.0.0,)</versionRange>
                                         <goals>
                                             <goal>checkstyle</goal>
                                         </goals>
@@ -520,6 +520,46 @@
                                     <action>
                                         <ignore></ignore>
                                     </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                	<pluginExecutionFilter>
+                                		<groupId>
+                                			org.wildfly.build
+                                		</groupId>
+                                		<artifactId>
+                                			wildfly-server-provisioning-maven-plugin
+                                		</artifactId>
+                                		<versionRange>
+                                			[1.0.0.Alpha2,)
+                                		</versionRange>
+                                		<goals>
+                                			<goal>build</goal>
+                                		</goals>
+                                	</pluginExecutionFilter>
+                                	<action>
+                                		<ignore></ignore>
+                                	</action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                	<pluginExecutionFilter>
+                                		<groupId>
+                                			org.codehaus.mojo
+                                		</groupId>
+                                		<artifactId>
+                                			buildnumber-maven-plugin
+                                		</artifactId>
+                                		<versionRange>
+                                			[1.3,)
+                                		</versionRange>
+                                		<goals>
+                                			<goal>
+                                				create-timestamp
+                                			</goal>
+                                		</goals>
+                                	</pluginExecutionFilter>
+                                	<action>
+                                		<ignore></ignore>
+                                	</action>
                                 </pluginExecution>
                             </pluginExecutions>
                         </lifecycleMappingMetadata>
