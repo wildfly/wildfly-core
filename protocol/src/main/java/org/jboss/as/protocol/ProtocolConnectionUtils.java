@@ -135,9 +135,8 @@ public class ProtocolConnectionUtils {
             }
         }
         builder.set(Options.SASL_PROPERTIES, Sequence.of(tempProperties));
-        builder.set(Options.SSL_ENABLED, true);
-        builder.set(Options.SSL_STARTTLS, true);
-
+        builder.set(Options.SSL_ENABLED, configuration.isSslEnabled());
+        builder.set(Options.SSL_STARTTLS, configuration.isUseStartTLS());
         return builder.getMap();
     }
 

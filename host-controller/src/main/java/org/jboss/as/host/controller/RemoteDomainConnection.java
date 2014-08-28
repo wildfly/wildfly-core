@@ -61,6 +61,7 @@ import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementPingRequest;
 import org.jboss.as.protocol.mgmt.ManagementPongRequestHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
@@ -213,6 +214,8 @@ class RemoteDomainConnection extends FutureManagementChannel {
         config.setCallbackHandler(callbackHandler);
         config.setSslContext(sslContext);
         config.setUri(uri);
+        config.setSslEnabled(Protocol.HTTP_REMOTING != Protocol.forName(uri.getScheme()));
+        config.setUseStartTLS(Protocol.HTTPS_REMOTING != Protocol.forName(uri.getScheme()));
         // Connect
         return ProtocolConnectionUtils.connectSync(config);
     }

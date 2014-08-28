@@ -49,6 +49,8 @@ public class ProtocolConnectionConfiguration {
     private SSLContext sslContext;
     private String clientBindAddress;
     private ProtocolTimeoutHandler timeoutHandler;
+    private boolean sslEnabled = true;
+    private boolean useStartTLS = true;
 
     protected ProtocolConnectionConfiguration() {
         // TODO AS7-6223 propagate clientBindAddress configuration up to end user level and get rid of this system property
@@ -137,6 +139,22 @@ public class ProtocolConnectionConfiguration {
 
     public void setTimeoutHandler(ProtocolTimeoutHandler timeoutHandler) {
         this.timeoutHandler = timeoutHandler;
+    }
+
+    public boolean isSslEnabled() {
+        return sslEnabled;
+    }
+
+    public void setSslEnabled(boolean sslEnabled) {
+        this.sslEnabled = sslEnabled;
+    }
+
+    public boolean isUseStartTLS() {
+        return useStartTLS;
+    }
+
+    public void setUseStartTLS(boolean useStartTLS) {
+        this.useStartTLS = useStartTLS;
     }
 
     public ProtocolConnectionConfiguration copy() {

@@ -62,4 +62,11 @@ public interface DiscoveryOption {
      * @return the port number
      */
     int getRemoteDomainControllerPort();
+
+    /**
+     *  Gets the protocol to communicate with the domain controller.
+     *
+     * @return the protocol to use.
+     */
+    String getRemoteDomainControllerProtocol();
 }

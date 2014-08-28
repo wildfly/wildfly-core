@@ -242,9 +242,10 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
            try {
                // Determine the remote DC host and port to use
                discoveryOption.discover();
-               String host = discoveryOption.getRemoteDomainControllerHost();
+               String host = NetworkUtils.formatPossibleIpv6Address(discoveryOption.getRemoteDomainControllerHost());
                int port = discoveryOption.getRemoteDomainControllerPort();
-               masterURI = new URI("remote://" + NetworkUtils.formatPossibleIpv6Address(host) + ":" + port);
+               String protocol = discoveryOption.getRemoteDomainControllerProtocol();
+               masterURI = new URI(protocol, null, host, port, null, null, null);
                connection.setUri(masterURI);
                while (!connected) {
                    try {

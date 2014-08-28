@@ -1368,6 +1368,10 @@ public class HostXml extends CommonXml {
                         RemoteDomainControllerAddHandler.PORT.parseAndSetParameter(value, update, reader);
                         break;
                     }
+                    case PROTOCOL: {
+                        RemoteDomainControllerAddHandler.PROTOCOL.parseAndSetParameter(value, update, reader);
+                        break;
+                    }
                     case SECURITY_REALM: {
                         RemoteDomainControllerAddHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
                         break;
@@ -1522,6 +1526,10 @@ public class HostXml extends CommonXml {
             }
             case PORT: {
                 StaticDiscoveryResourceDefinition.PORT.parseAndSetParameter(value, addOp, reader);
+                break;
+            }
+            case PROTOCOL: {
+                StaticDiscoveryResourceDefinition.PROTOCOL.parseAndSetParameter(value, addOp, reader);
                 break;
             }
             default:
@@ -1924,6 +1932,7 @@ public class HostXml extends CommonXml {
             final ModelNode remote = modelNode.get(REMOTE);
             RemoteDomainControllerAddHandler.HOST.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.PORT.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.PROTOCOL.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.SECURITY_REALM.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.USERNAME.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.marshallAsAttribute(remote, writer);
@@ -1980,6 +1989,7 @@ public class HostXml extends CommonXml {
                     writeAttribute(writer, Attribute.NAME, optionName);
                     StaticDiscoveryResourceDefinition.HOST.marshallAsAttribute(staticDiscoveryOption, writer);
                     StaticDiscoveryResourceDefinition.PORT.marshallAsAttribute(staticDiscoveryOption, writer);
+                    StaticDiscoveryResourceDefinition.PROTOCOL.marshallAsAttribute(staticDiscoveryOption, writer);
                     writer.writeEndElement();
                     break;
                 }
@@ -2058,13 +2068,13 @@ public class HostXml extends CommonXml {
                                               final List<ModelNode> list) throws XMLStreamException {
 
             requireNoAttributes(reader);
-            Set<Element> required = EnumSet.of(Element.NATIVE_INTERFACE);
+            boolean interfaceDefined = false;
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
                 requireNamespace(reader, expectedNs);
                 final Element element = Element.forName(reader.getLocalName());
-                required.remove(element);
                 switch (element) {
                     case NATIVE_INTERFACE: {
+                        interfaceDefined = true;
                         switch (expectedNs) {
                             case DOMAIN_1_0:
                                 parseNativeManagementInterface1_0(reader, address, list);
@@ -2081,6 +2091,7 @@ public class HostXml extends CommonXml {
                         break;
                     }
                     case HTTP_INTERFACE: {
+                        interfaceDefined = true;
                         switch (expectedNs) {
                             case DOMAIN_1_0:
                                 parseHttpManagementInterface1_0(reader, address, list);
@@ -2103,8 +2114,8 @@ public class HostXml extends CommonXml {
                 }
             }
 
-            if (!required.isEmpty()) {
-                throw missingRequiredElement(reader, required);
+            if (!interfaceDefined) {
+                throw missingRequiredElement(reader, EnumSet.of(Element.NATIVE_INTERFACE, Element.HTTP_INTERFACE));
             }
         }
 

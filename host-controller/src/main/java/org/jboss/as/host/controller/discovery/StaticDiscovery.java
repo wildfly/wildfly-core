@@ -30,6 +30,8 @@ import java.util.Map;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
+
 /**
  * Handle domain controller discovery via static (i.e., hard-wired) configuration.
  *
@@ -43,6 +45,9 @@ public class StaticDiscovery implements DiscoveryOption {
     // The port number of the domain controller
     private final int remoteDcPort;
 
+    // The port number of the domain controller
+    private final String remoteDcProtocol;
+
     /**
      * Create the StaticDiscovery option.
      *
@@ -54,6 +59,9 @@ public class StaticDiscovery implements DiscoveryOption {
 
         ModelNode portNode = properties.get(PORT);
         remoteDcPort = (portNode == null || !portNode.isDefined()) ? -1 : portNode.asInt();
+
+        ModelNode protocolNode = properties.get(PROTOCOL);
+        remoteDcProtocol = (protocolNode == null || !protocolNode.isDefined()) ? "remote" : protocolNode.asString();
     }
 
     @Override
@@ -69,6 +77,8 @@ public class StaticDiscovery implements DiscoveryOption {
                 .validateParameter(StaticDiscoveryResourceDefinition.HOST.getName(), new ModelNode(remoteDcHost));
             StaticDiscoveryResourceDefinition.PORT.getValidator()
                 .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(remoteDcPort));
+            StaticDiscoveryResourceDefinition.PROTOCOL.getValidator()
+                .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(remoteDcProtocol));
         } catch (OperationFailedException e) {
             throw new IllegalStateException(e.getFailureDescription().asString());
         }
@@ -87,6 +97,11 @@ public class StaticDiscovery implements DiscoveryOption {
     @Override
     public int getRemoteDomainControllerPort() {
         return remoteDcPort;
+    }
+
+    @Override
+    public String getRemoteDomainControllerProtocol() {
+        return remoteDcProtocol;
     }
 
     @Override

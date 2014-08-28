@@ -45,6 +45,7 @@ import org.jboss.as.host.controller.discovery.S3Util.GetResponse;
 import org.jboss.as.host.controller.discovery.S3Util.ListAllMyBucketsResponse;
 import org.jboss.as.host.controller.discovery.S3Util.PreSignedUrlParser;
 import org.jboss.as.host.controller.discovery.S3Util.S3Object;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -79,6 +80,7 @@ public class S3Discovery implements DiscoveryOption {
     private AWSAuthConnection conn = null;
     private String remoteDcHost;
     private int remoteDcPort;
+    private String remoteDcProtocol;
 
     /**
      * Create the S3Discovery option.
@@ -124,6 +126,8 @@ public class S3Discovery implements DiscoveryOption {
             // Validate and set the host and port
             String host = data.getHost();
             int port = data.getPort();
+            //TODO change to be able to configure protocol
+            String protocol = Protocol.REMOTE.name();
             try {
                 // Use the static discovery AD's. They don't allow undefined.
                 StaticDiscoveryResourceDefinition.HOST.getValidator()
@@ -131,11 +135,14 @@ public class S3Discovery implements DiscoveryOption {
                             host == null? new ModelNode() : new ModelNode(host));
                 StaticDiscoveryResourceDefinition.PORT.getValidator()
                     .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(port));
+                StaticDiscoveryResourceDefinition.PROTOCOL.getValidator()
+                    .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(protocol));
             } catch (OperationFailedException e) {
                 throw new IllegalStateException(e.getFailureDescription().asString());
             }
             setRemoteDomainControllerHost(host);
             setRemoteDomainControllerPort(port);
+            setRemoteDomainControllerProtocol(protocol);
         } else {
             throw HostControllerLogger.ROOT_LOGGER.failedMarshallingDomainControllerData();
         }
@@ -155,6 +162,11 @@ public class S3Discovery implements DiscoveryOption {
     @Override
     public int getRemoteDomainControllerPort() {
         return remoteDcPort;
+    }
+
+    @Override
+    public String getRemoteDomainControllerProtocol() {
+        return remoteDcProtocol;
     }
 
     @Override
@@ -330,5 +342,9 @@ public class S3Discovery implements DiscoveryOption {
 
     private void setRemoteDomainControllerPort(int port) {
         remoteDcPort = port;
+    }
+
+    private void setRemoteDomainControllerProtocol(String protocol) {
+        remoteDcProtocol = protocol;
     }
 }

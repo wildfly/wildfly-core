@@ -30,6 +30,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -38,6 +39,8 @@ import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.StaticDiscoveryAddHandler;
 import org.jboss.as.host.controller.operations.StaticDiscoveryRemoveHandler;
+import org.jboss.as.remoting.Protocol;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -57,7 +60,13 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
         .setValidator(new IntRangeValidator(1, 65535, false, true))
         .build();
 
-    public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {HOST, PORT};
+    public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
+        .setAllowExpression(true)
+        .setValidator(new EnumValidator(Protocol.class, true, true))
+        .setDefaultValue(new ModelNode(Protocol.REMOTE.name()))
+        .build();
+
+    public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {HOST, PORT, PROTOCOL};
 
     public StaticDiscoveryResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
         super(PathElement.pathElement(STATIC_DISCOVERY), HostResolver.getResolver(STATIC_DISCOVERY),
