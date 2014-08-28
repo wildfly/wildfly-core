@@ -180,4 +180,39 @@ public class MiscStringContentTestCase extends BaseStateParserTest {
         assertEquals(0, child.children.size());
         assertEquals("({[]})", child.buffer.toString());
     }
+
+    @Test
+    public void testNewLineChar() throws Exception {
+        parse("a\\nb");
+        assertNotNull(result);
+        assertEquals("a\nb", result.valueAsString.toString());
+    }
+
+    @Test
+    public void testTabChar() throws Exception {
+        parse("a\\tb");
+        assertNotNull(result);
+        assertEquals("a\tb", result.valueAsString.toString());
+    }
+
+    @Test
+    public void testBackspaceChar() throws Exception {
+        parse("a\\bb");
+        assertNotNull(result);
+        assertEquals("a\bb", result.valueAsString.toString());
+    }
+
+    @Test
+    public void testCarriageReturnChar() throws Exception {
+        parse("a\\rb");
+        assertNotNull(result);
+        assertEquals("a\rb", result.valueAsString.toString());
+    }
+
+    @Test
+    public void testFormfeedChar() throws Exception {
+        parse("a\\fb");
+        assertNotNull(result);
+        assertEquals("a\fb", result.valueAsString.toString());
+    }
 }
