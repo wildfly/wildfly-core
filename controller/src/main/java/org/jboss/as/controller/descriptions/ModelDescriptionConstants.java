@@ -142,9 +142,10 @@ public class ModelDescriptionConstants {
     public static final String EXECUTION_STATUS = "execution-status";
     public static final String EXPRESSIONS_ALLOWED = "expressions-allowed";
     public static final String EXTENSION = "extension";
-    public static final String FAILED = "failed";
     public static final String FACILITY = "facility";
-    public static final String FAILURES = "failures";
+    public static final String FAILED = "failed";
+    public static final String FAILED_OPERATION = "failed-operation";
+    public static final String FAILED_SERVICES = "failed-services";
     public static final String FAILURE_COUNT = "failure-count";
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FILE = "file";
@@ -230,10 +231,10 @@ public class ModelDescriptionConstants {
     public static final String MAX_OCCURS = "max-occurs";
     public static final String MAX_THREADS = "max-threads";
     public static final String MESSAGE_TRANSFER = "message-transfer";
-    public static final String MISSING_DEPS = "missing-deps";
     public static final String MIN = "min";
     public static final String MIN_LENGTH = "min-length";
     public static final String MIN_OCCURS = "min-occurs";
+    public static final String MISSING_TRANSITIVE_DEPENDENCY_PROBLEMS = "missing-transitive-dependency-problems";
     public static final String MODEL_DESCRIPTION = "model-description";
     public static final String MODULE = "module";
     public static final String MODULE_LOADING = "module-loading";
@@ -273,6 +274,7 @@ public class ModelDescriptionConstants {
     public static final String PLATFORM_MBEAN = "platform-mbean";
     public static final String PORT = "port";
     public static final String PORT_OFFSET = "port-offset";
+    public static final String POSSIBLE_CAUSES = "possible-causes";
     public static final String PREFER_ORIGINAL_CONNECTION = "prefer-original-connection";
     public static final String PRINCIPAL_ATTRIBUTE = "principal-attribute";
     public static final String PRINCIPAL_TO_GROUP = "principal-to-group";
@@ -370,6 +372,8 @@ public class ModelDescriptionConstants {
     public static final String SERVER_IDENTITY = "server-identity";
     public static final String SERVER_OPERATIONS = "server-operations";
     public static final String SERVICE = "service";
+    public static final String SERVICES_MISSING_DEPENDENCIES = "services-missing-dependencies";
+    public static final String SERVICES_MISSING_TRANSITIVE_DEPENDENCIES = "services-missing-transitive-dependencies";
     public static final String SERVICE_CONTAINER = "service-container";
     public static final String SINCE = "since";
     public static final String SOURCE_NETWORK = "source-network";

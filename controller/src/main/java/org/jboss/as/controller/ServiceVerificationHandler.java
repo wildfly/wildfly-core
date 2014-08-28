@@ -22,6 +22,12 @@
 
 package org.jboss.as.controller;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.AbstractServiceListener;
@@ -31,12 +37,6 @@ import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * Tracks the status of a service installed by an {@link OperationStepHandler}, recording a failure desription
@@ -91,11 +91,11 @@ public final class ServiceVerificationHandler extends AbstractServiceListener<Ob
                     }
 
                     StringBuilder missing = new StringBuilder();
-                    for(Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
+                    for (Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
                         ServiceName missingSvc = i.next();
                         trackedServices.add(missingSvc);
                         missing.append(missingSvc.getCanonicalName());
-                        if(i.hasNext()) {
+                        if (i.hasNext()) {
                             missing.append(", ");
                         }
                     }
@@ -190,6 +190,27 @@ public final class ServiceVerificationHandler extends AbstractServiceListener<Ob
                 result.addAll(controller.getImmediateUnavailableDependencies());
             }
         }
-        return  result;
+        return result;
+    }
+
+    static ModelNode extractFailedServicesDescription(ModelNode failureDescription) {
+        return extractIfPresent(ControllerLogger.ROOT_LOGGER.failedServices(), failureDescription);
+    }
+
+    static ModelNode extractMissingServicesDescription(ModelNode failureDescription) {
+        return extractIfPresent(ControllerLogger.ROOT_LOGGER.servicesMissingDependencies(), failureDescription);
+    }
+
+    static ModelNode extractTransitiveDependencyProblemDescription(ModelNode failureDescription) {
+        return extractIfPresent(ControllerLogger.ROOT_LOGGER.missingTransitiveDependencyProblem(), failureDescription);
+    }
+
+    private static ModelNode extractIfPresent(String key, ModelNode modelNode) {
+        ModelNode result = null;
+        if (modelNode.hasDefined(key)) {
+            result = modelNode.get(key);
+        }
+        return result;
+
     }
 }
