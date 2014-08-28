@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -41,6 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_UPDATE_SKIPPED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.net.InetAddress;
 import java.security.Principal;
@@ -701,7 +701,8 @@ abstract class AbstractOperationContext implements OperationContext {
                         MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
                                 step.response.get(FAILURE_DESCRIPTION));
                     }
-                    completeStepInternal();
+
+                    stepCompleted();
                 } else {
                     // Handler threw OCE after calling completeStep()
                     // Throw it on and let standard error handling deal with it
