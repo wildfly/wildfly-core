@@ -75,6 +75,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.global.ReadAttributeHandler;
 import org.jboss.as.controller.operations.global.WriteAttributeHandler;
@@ -642,6 +643,8 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
 
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
+
+        GlobalNotifications.registerGlobalNotifications(registration, processType);
 
         ManagementResourceRegistration coreResourceRegistration = registration.registerSubModel(new CoreResourceDefinition());
         registration.registerAlias(getAliasedModelElement(),

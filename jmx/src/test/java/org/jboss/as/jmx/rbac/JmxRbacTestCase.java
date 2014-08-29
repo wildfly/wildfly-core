@@ -60,6 +60,7 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -535,6 +536,8 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         };
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
         registration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
+
+        GlobalNotifications.registerGlobalNotifications(registration, processType);
 
         registration.registerReadOnlyAttribute(LAUNCH_TYPE, new OperationStepHandler() {
 

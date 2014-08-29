@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -104,6 +105,7 @@ public class WildcardUnitTestCase extends AbstractControllerTestBase {
                 }
             });
 
+            GlobalNotifications.registerGlobalNotifications(root, processType);
 
 
             final ManagementResourceRegistration hosts = root.registerSubModel(new SimpleResourceDefinition(host, new NonResolvingResourceDescriptionResolver()));
