@@ -101,7 +101,8 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    public void testReadResourceRecursiveDepth() throws IOException {
+    public void testReadResourceRecursiveDepthRecursiveUndefined() throws IOException {
+        // WFCORE-76
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_RESOURCE_OPERATION);
         operation.get(OP_ADDR).setEmptyList();
@@ -111,8 +112,82 @@ public class BasicOperationsUnitTestCase {
         Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
         Assert.assertTrue(result.hasDefined(RESULT));
 
-        final ModelNode web = result.get(RESULT, SUBSYSTEM, "logging");
-        Assert.assertTrue(web.hasDefined("logger"));
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
+        Assert.assertTrue(logging.hasDefined("logger"));
+        final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
+        Assert.assertFalse(rootLogger.hasDefined("ROOT"));
+    }
+
+    @Test
+    public void testReadResourceRecursiveDepthRecursiveTrue() throws IOException {
+        // WFCORE-76
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(RECURSIVE).set(true);
+        operation.get(RECURSIVE_DEPTH).set(1);
+
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        Assert.assertTrue(result.hasDefined(RESULT));
+
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
+        Assert.assertTrue(logging.hasDefined("logger"));
+        final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
+        Assert.assertFalse(rootLogger.hasDefined("ROOT"));
+    }
+
+    @Test
+    public void testReadResourceRecursiveDepthGt1RecursiveTrue() throws IOException {
+        // WFCORE-76
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(RECURSIVE).set(true);
+        operation.get(RECURSIVE_DEPTH).set(2);
+
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        Assert.assertTrue(result.hasDefined(RESULT));
+
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
+        Assert.assertTrue(logging.hasDefined("logger"));
+        final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
+        Assert.assertTrue(rootLogger.hasDefined("ROOT"));
+    }
+
+    @Test
+    public void testReadResourceRecursiveDepthRecursiveFalse() throws IOException {
+        // WFCORE-76
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(RECURSIVE).set(false);
+        operation.get(RECURSIVE_DEPTH).set(1);
+
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        Assert.assertTrue(result.hasDefined(RESULT));
+
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
+        Assert.assertFalse(logging.hasDefined("logger"));
+    }
+
+    @Test
+    public void testReadResourceNoRecursiveDepthRecursiveTrue() throws IOException {
+        // WFCORE-76
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(RECURSIVE).set(true);
+        operation.get(RECURSIVE_DEPTH).set(0);
+
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        Assert.assertTrue(result.hasDefined(RESULT));
+
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
+        Assert.assertFalse(logging.hasDefined("logger"));
     }
 
     @Test
