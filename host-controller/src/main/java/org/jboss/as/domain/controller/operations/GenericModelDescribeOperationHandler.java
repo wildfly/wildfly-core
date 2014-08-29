@@ -25,6 +25,7 @@ package org.jboss.as.domain.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
@@ -147,7 +148,8 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
 
         final Set<String> children;
         if (address.size() == 0) {
-            List<String> s = Arrays.asList(SERVER_GROUP, PROFILE, SYSTEM_PROPERTY, PATH, INTERFACE, SOCKET_BINDING_GROUP, DEPLOYMENT, DEPLOYMENT_OVERLAY, MANAGEMENT_CLIENT_CONTENT, CORE_SERVICE);
+            // TODO where to get the proper ordering !?
+            List<String> s = Arrays.asList(SERVER_GROUP, PROFILE, SYSTEM_PROPERTY, PATH, INTERFACE, SOCKET_BINDING_GROUP, DEPLOYMENT, DEPLOYMENT_OVERLAY, MANAGEMENT_CLIENT_CONTENT, CORE_SERVICE, EXTENSION);
             children = new LinkedHashSet<>(s);
         } else {
             children = resource.getChildTypes();
@@ -202,9 +204,10 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
             return;
         }
 
-        if (address.size() != 0) {
+        if (address.size() == 0) {
+            result.setEmptyList();
+        } else {
             final ModelNode model = resource.getModel();
-
             final OperationStepHandler addHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD);
             if (addHandler != null) {
 
@@ -224,13 +227,14 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                     }
                 }
 
+                // Allow the profile describe handler to process profile includes
                 processMore(context, operation, resource, address, includeResults);
                 if (!skipLocalAdd) {
                     result.add(add);
                 }
 
             } else {
-
+                // Create write attribute operations
                 final Set<String> attributes = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
                 for (final String attribute : attributes) {
                     if (!model.hasDefined(attribute)) {
@@ -248,7 +252,6 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                         writeAttribute.get(VALUE).set(model.get(attribute));
                         result.add(writeAttribute);
                     }
-
                 }
             }
         }

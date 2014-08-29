@@ -135,41 +135,7 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
     }
 
     @Override
-    public void execute(OperationContext context, ModelNode op) throws OperationFailedException {
-
-        // We get the model as a list of resources descriptions
-        final ModelNode domainModel = op.get(DOMAIN_MODEL);
-
-        final List<ModelNode> operations = domainModel.asList();
-        if (context.isBooting()) {
-            for (final ModelNode operation : operations) {
-
-                final String operationName = operation.require(OP).asString();
-                final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-                if (ignoredResourceRegistry.isResourceExcluded(address)) {
-                    continue;
-                }
-
-                final ImmutableManagementResourceRegistration rootRegistration = context.getRootResourceRegistration();
-                final OperationStepHandler stepHandler = rootRegistration.getOperationHandler(address, operationName);
-                if(stepHandler != null) {
-                    context.addStep(operation, stepHandler, OperationContext.Stage.MODEL);
-                } else {
-                    final ImmutableManagementResourceRegistration child = rootRegistration.getSubModel(address);
-                    if (child == null) {
-                        context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
-                    } else {
-                        context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
-                    }
-                }
-            }
-        } else {
-            throw new RuntimeException("failed to sync model");
-        }
-        context.stepCompleted();
-    }
-
-    public void oldExecute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         // We get the model as a list of resources descriptions
         final ModelNode domainModel = operation.get(DOMAIN_MODEL);

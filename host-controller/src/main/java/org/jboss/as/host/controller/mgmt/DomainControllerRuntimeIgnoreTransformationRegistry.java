@@ -122,6 +122,10 @@ public class DomainControllerRuntimeIgnoreTransformationRegistry {
      * @return the modified operation
      */
     public ModelNode piggyBackMissingInformationOnHeader(final OperationContext context, final TransformingProxyController transformingProxyController, final String hostName, final ModelNode operation) throws OperationFailedException {
+        if (true) {
+            // Just skip this for now
+            return operation;
+        }
         NewSlaveInformation info = getAttachment(context, false);
         if (info == null) {
             return operation;

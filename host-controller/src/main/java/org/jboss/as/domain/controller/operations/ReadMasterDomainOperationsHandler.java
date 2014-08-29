@@ -24,9 +24,12 @@ package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.util.List;
+import java.util.Collection;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -37,8 +40,9 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -47,8 +51,7 @@ import org.jboss.dmr.ModelType;
  */
 public class ReadMasterDomainOperationsHandler implements OperationStepHandler {
 
-    private static final PathAddressFilter FILTER = new PathAddressFilter(true);
-    public static final OperationStepHandler INSTANCE = new ReadMasterDomainOperationsHandler();
+    private static final PathAddressFilter DEFAULT_FILTER = new PathAddressFilter(true);
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("model-operations", ControllerResolver.getResolver(SUBSYSTEM))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
             .setReplyType(ModelType.LIST)
@@ -56,25 +59,85 @@ public class ReadMasterDomainOperationsHandler implements OperationStepHandler {
             .setPrivateEntry()
             .build();
 
+    private final boolean ignoreUnused;
+    private final ExtensionRegistry extensionRegistry;
+    private final Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> serverConfigs;
+
     static {
-        FILTER.addReject(PathAddress.pathAddress(PathElement.pathElement(EXTENSION)));
-        FILTER.addReject(PathAddress.pathAddress(PathElement.pathElement(HOST)));
+        DEFAULT_FILTER.addReject(PathAddress.pathAddress(PathElement.pathElement(HOST)));
     }
 
-    ReadMasterDomainOperationsHandler() {
-        //
+    public ReadMasterDomainOperationsHandler(boolean ignoreUnused, Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> serverConfigs, ExtensionRegistry extensionRegistry) {
+        this.ignoreUnused = ignoreUnused;
+        this.serverConfigs = serverConfigs;
+        this.extensionRegistry = extensionRegistry;
     }
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
-        context.attach(PathAddressFilter.KEY, FILTER);
-        context.addStep(operation, GenericModelDescribeOperationHandler.INSTANCE, OperationContext.Stage.MODEL);
+
+        final PathAddressFilter filter;
+        if (ignoreUnused) {
+            final ExcludeFilter excludeFilter = new ExcludeFilter(true);
+
+            // Get the root resource
+            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
+            for (final IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo serverConfig : serverConfigs) {
+                ReadOperationsHandlerUtils.processServerConfig(context, root, excludeFilter.context, serverConfig, extensionRegistry);
+            }
+
+            filter = excludeFilter;
+        } else {
+            filter = DEFAULT_FILTER;
+        }
+
+        context.attach(PathAddressFilter.KEY, filter);
+        context.addStep(operation, GenericModelDescribeOperationHandler.INSTANCE, OperationContext.Stage.MODEL, true);
         context.stepCompleted();
     }
 
-    static List<ModelNode> transformOperations(final Transformers transformers, final DomainControllerRuntimeIgnoreTransformationRegistry ignoredDomainResourceRegistry) {
-        return null;
+
+    static class ExcludeFilter extends PathAddressFilter {
+
+        private final ReadOperationsHandlerUtils.ResolutionContext context;
+
+        ExcludeFilter(boolean accept) {
+            super(accept);
+            this.context = new ReadOperationsHandlerUtils.ResolutionContext();
+        }
+
+        @Override
+        boolean accepts(PathAddress address) {
+            if (address.size() >= 1) {
+                final PathElement first = address.getElement(0);
+                final String key = first.getKey();
+                switch (key) {
+                    case EXTENSION:
+                        if (!context.getExtensions().contains(first.getValue())) {
+                            return false;
+                        }
+                        break;
+                    case PROFILE:
+                        if (!context.getProfiles().contains(first.getValue())) {
+                            return false;
+                        }
+                        break;
+                    case SERVER_GROUP:
+                        if (!context.getServerGroups().contains(first.getValue())) {
+                            return false;
+                        }
+                        break;
+                    case SOCKET_BINDING_GROUP:
+                        if (!context.getSocketBindings().contains(first.getValue())) {
+                            return false;
+                        }
+                        break;
+                }
+            }
+            return DEFAULT_FILTER.accepts(address);
+        }
     }
+
 
 }

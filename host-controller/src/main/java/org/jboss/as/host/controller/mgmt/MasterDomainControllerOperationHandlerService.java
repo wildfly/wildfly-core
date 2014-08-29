@@ -124,10 +124,11 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
             final OperationStepHandler handler;
             final String operationName = operationNode.require(OP).asString();
             if (operationName.equals(PullDownDataForServerConfigOnSlaveHandler.OPERATION_NAME)) {
-                handler = new PullDownDataForServerConfigOnSlaveHandler(
-                        SlaveChannelAttachments.getHostName(context.getChannel()),
-                        SlaveChannelAttachments.getTransformers(context.getChannel()),
-                        runtimeIgnoreTransformationRegistry);
+//                handler = new PullDownDataForServerConfigOnSlaveHandler(
+//                        SlaveChannelAttachments.getHostName(context.getChannel()),
+//                        SlaveChannelAttachments.getTransformers(context.getChannel()),
+//                        runtimeIgnoreTransformationRegistry);
+                handler = new PullDownDataForServerConfigOnSlaveHandler(domainController.getExtensionRegistry());
             } else {
                 throw HostControllerLogger.ROOT_LOGGER.cannotExecuteTransactionalOperationFromSlave(operationName);
             }

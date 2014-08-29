@@ -23,6 +23,7 @@
  */
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -37,11 +38,12 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
@@ -54,18 +56,75 @@ public class PullDownDataForServerConfigOnSlaveHandler implements OperationStepH
 
     public static String OPERATION_NAME = "slave-server-config-change";
 
-    protected final String host;
-    protected final Transformers transformers;
-    protected final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
+    protected String host;
+    protected Transformers transformers;
+    protected DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
 
-    public PullDownDataForServerConfigOnSlaveHandler(final String host, final Transformers transformers, DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
-        this.host = host;
-        this.transformers = transformers;
-        this.runtimeIgnoreTransformationRegistry = runtimeIgnoreTransformationRegistry;
+    private final ExtensionRegistry extensionRegistry;
+
+    public PullDownDataForServerConfigOnSlaveHandler(final ExtensionRegistry extensionRegistry) {
+        this.extensionRegistry = extensionRegistry;
     }
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        context.acquireControllerLock();
+
+        final ServerConfigInfo serverConfig = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(operation.require(SERVER));
+
+        final IncludeFilter includeFilter = new IncludeFilter();
+        final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
+        ReadOperationsHandlerUtils.processServerConfig(context, root, includeFilter.context, serverConfig, extensionRegistry);
+
+        context.attach(PathAddressFilter.KEY, includeFilter);
+        context.addStep(operation, GenericModelDescribeOperationHandler.INSTANCE, OperationContext.Stage.MODEL, true);
+        context.stepCompleted();
+    }
+
+    static class IncludeFilter extends PathAddressFilter {
+
+        private final ReadOperationsHandlerUtils.ResolutionContext context;
+
+        IncludeFilter() {
+            super(false);
+            this.context = new ReadOperationsHandlerUtils.ResolutionContext();
+        }
+
+        @Override
+        boolean accepts(PathAddress address) {
+            if (address.size() == 0) {
+                return true;
+            } else if (address.size() >= 1) {
+                final PathElement first = address.getElement(0);
+                final String key = first.getKey();
+                switch (key) {
+                    case EXTENSION:
+                        if (context.getExtensions().contains(first.getValue())) {
+                            return true;
+                        }
+                        break;
+                    case PROFILE:
+                        if (context.getProfiles().contains(first.getValue())) {
+                            return true;
+                        }
+                        break;
+                    case SERVER_GROUP:
+                        if (context.getServerGroups().contains(first.getValue())) {
+                            return true;
+                        }
+                        break;
+                    case SOCKET_BINDING_GROUP:
+                        if (context.getSocketBindings().contains(first.getValue())) {
+                            return true;
+                        }
+                        break;
+                }
+            }
+            return false;
+        }
+    }
+
+    public void executeOld(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
 
         final ServerConfigInfo serverInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(operation.require(SERVER));

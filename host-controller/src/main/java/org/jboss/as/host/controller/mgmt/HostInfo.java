@@ -221,7 +221,7 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
         return false;
     }
 
-    Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> getServerConfigInfos() {
+    public Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> getServerConfigInfos() {
             return serverConfigInfos.values();
     }
 

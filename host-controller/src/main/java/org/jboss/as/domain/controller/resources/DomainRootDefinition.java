@@ -82,8 +82,6 @@ import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
-import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
-import org.jboss.as.domain.controller.operations.ApplyRemoteMasterDomainModelHandler;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
@@ -283,11 +281,11 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             final ApplyExtensionsHandler aexh = new ApplyExtensionsHandler(extensionRegistry, hostControllerInfo, ignoredDomainResourceRegistry);
             resourceRegistration.registerOperationHandler(ApplyExtensionsHandler.DEFINITION, aexh);
 
-            ApplyRemoteMasterDomainModelHandler armdmh = new ApplyRemoteMasterDomainModelHandler(domainController, environment, fileRepository,
-                    contentRepo, hostControllerInfo, ignoredDomainResourceRegistry, authorizer.getWritableAuthorizerConfiguration());
-            resourceRegistration.registerOperationHandler(ApplyRemoteMasterDomainModelHandler.DEFINITION, armdmh);
-            ApplyMissingDomainModelResourcesHandler amdmrh = new ApplyMissingDomainModelResourcesHandler(domainController, environment, hostControllerInfo, ignoredDomainResourceRegistry);
-            resourceRegistration.registerOperationHandler(ApplyMissingDomainModelResourcesHandler.DEFINITION, amdmrh);
+//            ApplyRemoteMasterDomainModelHandler armdmh = new ApplyRemoteMasterDomainModelHandler(domainController, environment, fileRepository,
+//                    contentRepo, hostControllerInfo, ignoredDomainResourceRegistry, authorizer.getWritableAuthorizerConfiguration());
+//            resourceRegistration.registerOperationHandler(ApplyRemoteMasterDomainModelHandler.DEFINITION, armdmh);
+//            ApplyMissingDomainModelResourcesHandler amdmrh = new ApplyMissingDomainModelResourcesHandler(domainController, environment, hostControllerInfo, ignoredDomainResourceRegistry);
+//            resourceRegistration.registerOperationHandler(ApplyMissingDomainModelResourcesHandler.DEFINITION, amdmrh);
         }
         resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, isMaster ? new DeploymentFullReplaceHandler(contentRepo) : new DeploymentFullReplaceHandler(fileRepository));
 

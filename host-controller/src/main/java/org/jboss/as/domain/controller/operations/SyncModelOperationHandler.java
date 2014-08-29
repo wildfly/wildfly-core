@@ -49,14 +49,16 @@ import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
+ * Internal {@code OperationStepHandler} which synchronizes the model based on a comparison of local and remote operations.
+ *
  * @author Emanuel Muckenhuber
  */
-public class SyncMasterDomainDomainHandler implements OperationStepHandler {
+class SyncModelOperationHandler implements OperationStepHandler {
 
     private final List<ModelNode> localOperations;
     private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
 
-    public SyncMasterDomainDomainHandler(List<ModelNode> localOperations, IgnoredDomainResourceRegistry ignoredResourceRegistry) {
+    public SyncModelOperationHandler(List<ModelNode> localOperations, IgnoredDomainResourceRegistry ignoredResourceRegistry) {
         this.localOperations = localOperations;
         this.ignoredResourceRegistry = ignoredResourceRegistry;
     }
@@ -71,10 +73,8 @@ public class SyncMasterDomainDomainHandler implements OperationStepHandler {
         }
     }
 
-
     public void internalExecute(OperationContext context, ModelNode original) throws OperationFailedException {
 
-        assert !context.isBooting();
         final List<ModelNode> remoteOperations = original.require(DOMAIN_MODEL).asList();
 
         final Node currentRoot = new Node(null, PathAddress.EMPTY_ADDRESS);
@@ -88,7 +88,8 @@ public class SyncMasterDomainDomainHandler implements OperationStepHandler {
         operations.setEmptyList();
 
         // Compare the nodes
-        compare(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
+        processAttributes(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
+        processChildren(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
 
         for (final ModelNode operation : operations.asList()) {
 
@@ -162,22 +163,27 @@ public class SyncMasterDomainDomainHandler implements OperationStepHandler {
                 // Process the children
                 processChildren(current, remote, operations, registration);
             }
+
+
         } else if (current == null && remote != null) {
-            // Just add all the operations
+            // Just add all the remote operations
             if (remote.add != null) {
                 operations.add(remote.add);
             }
             for (final ModelNode operation : remote.attributes.values()) {
                 operations.add(operation);
             }
-        } else if (current != null && remote == null) {
+            //
+            for (final Node child : remote.children.values()) {
+                compare(null, child, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));
+            }
 
+        } else if (current != null && remote == null) {
             // Remove the children first
             for (final Node child : current.children.values()) {
                 compare(child, null, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));
             }
-
-            //
+            // Add the remove operation
             final ModelNode op = Operations.createRemoveOperation(current.address.toModelNode());
             operations.add(op);
 
@@ -212,14 +218,13 @@ public class SyncMasterDomainDomainHandler implements OperationStepHandler {
     void processChildren(final Node current, final Node remote, ModelNode operations, final ImmutableManagementResourceRegistration registration) {
         for (final Node child : remote.children.values()) {
             final Node currentChild = current.children.remove(child.element);
-            compare(currentChild, current, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));
+            compare(currentChild, child, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));
         }
 
         for (final Node currentChild : current.children.values()) {
-            compare(current, null, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)));
+            compare(currentChild, null, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)));
         }
     }
-
 
     void process(Node rootNode, final List<ModelNode> operations) {
 
@@ -259,25 +264,39 @@ public class SyncMasterDomainDomainHandler implements OperationStepHandler {
         }
 
         Node getOrCreate(final PathElement element, final Iterator<PathElement> i, PathAddress current) {
+
             if (i.hasNext()) {
                 final PathElement next = i.next();
                 final PathAddress addr = current.append(next);
                 Node node = children.get(next);
                 if (node == null) {
                     node = new Node(next, addr);
-                    children.put(element, node);
+                    children.put(next, node);
                 }
                 return node.getOrCreate(next, i, addr);
             } else if (element == null) {
                 throw new IllegalStateException();
             } else {
-                Node node = children.get(element);
-                if (node == null) {
-                    node = new Node(element, current);
-                    children.put(element, node);
+                if (address.equals(current)) {
+                    return this;
+                } else {
+                    throw new IllegalStateException(current.toString());
                 }
-                return node;
             }
+        }
+
+        void toString(StringBuilder builder, int depth) {
+            for (int i = 0; i < depth; i++) {
+                builder.append(" ");
+            }
+            builder.append("Node: {").append(address).append("\n");
+            for (Node child : children.values()) {
+                child.toString(builder, depth + 1);
+            }
+            for (int i = 0; i < depth; i++) {
+                builder.append(" ");
+            }
+            builder.append("}\n");
         }
 
     }
