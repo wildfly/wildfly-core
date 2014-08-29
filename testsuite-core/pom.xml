@@ -408,7 +408,7 @@
                 </property>
             </activation>
             <properties>
-                <jvm.args.ip>-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true</jvm.args.ip>
+                <jvm.args.ip>-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true -Dipv6</jvm.args.ip>
 
                 <!-- Override IPv4 defaults from the top. -->
                 <node0>::1</node0>
