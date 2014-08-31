@@ -201,7 +201,7 @@ public class OutboundSocketBinding {
      *
      * @return
      */
-    Integer getAbsoluteSourcePort() {
+    public Integer getAbsoluteSourcePort() {
         if (this.sourcePort == null) {
             return null;
         }
