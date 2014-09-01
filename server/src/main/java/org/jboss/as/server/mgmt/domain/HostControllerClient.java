@@ -40,8 +40,8 @@ import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext;
 import org.jboss.as.repository.RemoteFileRequestAndHandler;
-import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -93,13 +93,19 @@ public class HostControllerClient implements Closeable {
         final URI uri = new URI("remote://" + host + ":" + port);
         // In case the server is out of sync after the reconnect, set reload required
         final boolean mgmtEndpointChanged = this.managementSubsystemEndpoint != mgmtSubsystemEndpoint;
-        if(! connection.reConnect(uri, authKey) || mgmtEndpointChanged) {
-            // It would be nicer if we'd have direct access to the ControlledProcessState
-            final ModelNode operation = new ModelNode();
-            operation.get(ModelDescriptionConstants.OP).set(ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION);
-            operation.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
-            controller.execute(operation, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, OperationAttachments.EMPTY);
-        }
+        connection.asyncReconnect(uri, authKey, new HostControllerConnection.ReconnectCallback() {
+
+            @Override
+            public void reconnected(boolean inSync) {
+                if (!inSync || mgmtEndpointChanged) {
+                    final ModelNode operation = new ModelNode();
+                    operation.get(ModelDescriptionConstants.OP).set(ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION);
+                    operation.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
+                    controller.execute(operation, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, OperationAttachments.EMPTY);
+                }
+            }
+
+        });
     }
     /**
      * Get the remote file repository.

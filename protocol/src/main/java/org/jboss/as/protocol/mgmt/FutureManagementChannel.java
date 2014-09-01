@@ -45,7 +45,7 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
     private volatile Channel channel;
     private volatile State state = State.OPEN;
 
-    static enum State {
+    public static enum State {
         OPEN,
         CLOSING,
         CLOSED,
@@ -75,6 +75,10 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
             StreamUtils.safeClose(channel);
             lock.notifyAll();
         }
+    }
+
+    public State getState() {
+        return this.state;
     }
 
     /**

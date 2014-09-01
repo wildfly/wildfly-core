@@ -1052,4 +1052,9 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 212, value = "Resuming server")
     void resumingServer();
+
+    @LogMessage(level = WARN)
+    @Message(id = 213, value = "Failed to connect to host-controller, retrying.")
+    void failedToConnectToHostController();
+
 }
