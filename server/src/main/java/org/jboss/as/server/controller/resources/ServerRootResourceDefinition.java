@@ -238,7 +238,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         GlobalOperationHandlers.registerGlobalOperations(resourceRegistration, ProcessType.STANDALONE_SERVER);
-        GlobalNotifications.registerGlobalNotifications(resourceRegistration, ProcessType.STANDALONE_SERVER);
 
         if (serverEnvironment != null) {
             resourceRegistration.registerOperationHandler(ValidateOperationHandler.DEFINITION, ValidateOperationHandler.INSTANCE);
@@ -365,6 +364,11 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadOnlyAttribute(HOST, null);
             resourceRegistration.registerReadOnlyAttribute(SERVER_GROUP, null);
         }
+    }
+
+    @Override
+    public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
+        GlobalNotifications.registerGlobalNotifications(resourceRegistration, ProcessType.STANDALONE_SERVER);
     }
 
     @Override
