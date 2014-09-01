@@ -21,6 +21,10 @@
  */
 package org.jboss.as.cli.impl;
 
+import static java.security.AccessController.doPrivileged;
+
+import javax.net.ssl.SSLContext;
+import javax.security.auth.callback.CallbackHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,9 +34,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.ControllerAddress;
@@ -45,21 +46,18 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.RemotingOptions;
 import org.jboss.remoting3.remote.HttpUpgradeConnectionProviderFactory;
 import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.xnio.OptionMap;
 import org.xnio.Options;
-
-import static java.security.AccessController.doPrivileged;
 
 /**
  * @author Alexey Loubyansky
@@ -67,8 +65,7 @@ import static java.security.AccessController.doPrivileged;
  */
 public class CLIModelControllerClient extends AbstractModelControllerClient {
 
-    private static final OptionMap DEFAULT_OPTIONS = OptionMap.create(RemotingOptions.TRANSMIT_WINDOW_SIZE, ProtocolChannelClient.Configuration.DEFAULT_WINDOW_SIZE,
-            RemotingOptions.RECEIVE_WINDOW_SIZE, ProtocolChannelClient.Configuration.DEFAULT_WINDOW_SIZE);
+    private static final OptionMap DEFAULT_OPTIONS = OptionMap.EMPTY;
 
     private static final ThreadPoolExecutor executorService;
     private static final Endpoint endpoint;

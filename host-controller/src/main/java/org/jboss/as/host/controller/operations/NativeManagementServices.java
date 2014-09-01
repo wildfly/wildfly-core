@@ -5,7 +5,6 @@ import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerService;
 import org.jboss.as.host.controller.jmx.RemotingConnectorService;
 import org.jboss.as.host.controller.mgmt.ServerToHostOperationHandlerFactoryService;
-import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -24,10 +23,8 @@ import org.xnio.Options;
 public class NativeManagementServices {
 
     private static final int heartbeatInterval = 15000;
-    private static final int WINDOW_SIZE = ProtocolChannelClient.Configuration.WINDOW_SIZE;
 
-    private static final OptionMap SERVICE_OPTIONS = OptionMap.create(RemotingOptions.TRANSMIT_WINDOW_SIZE, WINDOW_SIZE,
-                                                        RemotingOptions.RECEIVE_WINDOW_SIZE, WINDOW_SIZE);
+    private static final OptionMap SERVICE_OPTIONS = OptionMap.EMPTY;
 
     public static final OptionMap CONNECTION_OPTIONS = OptionMap.create(RemotingOptions.HEARTBEAT_INTERVAL, heartbeatInterval,
                                                         Options.READ_TIMEOUT, 45000);

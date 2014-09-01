@@ -29,7 +29,6 @@ import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.network.NetworkUtils;
-import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.remoting.EndpointConfigFactory;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
@@ -43,7 +42,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 
@@ -54,7 +52,7 @@ import org.xnio.OptionMap;
  */
 public class DomainServerCommunicationServices  implements ServiceActivator, Serializable {
 
-    private static final OptionMap DEFAULTS = OptionMap.create(RemotingOptions.RECEIVE_WINDOW_SIZE, ProtocolChannelClient.Configuration.WINDOW_SIZE);
+    private static final OptionMap DEFAULTS = OptionMap.EMPTY;
 
     private static final long serialVersionUID = 1593964083902839384L;
 

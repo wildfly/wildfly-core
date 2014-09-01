@@ -27,7 +27,6 @@ import java.net.URISyntaxException;
 
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.protocol.ProtocolChannelClient;
-import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 
 /**
@@ -38,8 +37,7 @@ import org.xnio.OptionMap;
  */
 class ProtocolConfigurationFactory {
 
-    private static final OptionMap DEFAULT_OPTIONS = OptionMap.create(RemotingOptions.TRANSMIT_WINDOW_SIZE, ProtocolChannelClient.Configuration.DEFAULT_WINDOW_SIZE,
-            RemotingOptions.RECEIVE_WINDOW_SIZE, ProtocolChannelClient.Configuration.DEFAULT_WINDOW_SIZE);
+    private static final OptionMap DEFAULT_OPTIONS = OptionMap.EMPTY;
 
     static ProtocolChannelClient.Configuration create(final ModelControllerClientConfiguration client) throws URISyntaxException {
         final ProtocolChannelClient.Configuration configuration = new ProtocolChannelClient.Configuration();

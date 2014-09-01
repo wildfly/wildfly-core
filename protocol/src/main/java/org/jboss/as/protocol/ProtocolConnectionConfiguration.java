@@ -22,12 +22,11 @@
 
 package org.jboss.as.protocol;
 
+import javax.net.ssl.SSLContext;
+import javax.security.auth.callback.CallbackHandler;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
-
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Endpoint;
@@ -37,8 +36,6 @@ import org.xnio.OptionMap;
  * @author Emanuel Muckenhuber
  */
 public class ProtocolConnectionConfiguration {
-
-    public static final int DEFAULT_WINDOW_SIZE = 0x8000;
 
     private static final long DEFAULT_CONNECT_TIMEOUT = 5000;
     private static final String JBOSS_CLIENT_SOCKET_BIND_ADDRESS = "jboss.management.client_socket_bind_address";
