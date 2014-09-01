@@ -249,6 +249,8 @@ public class HTTPSManagementInterfaceTestCase {
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
         } catch (SSLHandshakeException e) {
             // OK
+        } finally {
+            httpClientUntrusted.close();
         }
 
         String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
