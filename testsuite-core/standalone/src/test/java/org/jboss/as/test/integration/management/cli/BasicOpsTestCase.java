@@ -19,50 +19,51 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.test.integration.management.cli;
 
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandContextFactory;
-import org.jboss.as.cli.CommandLineException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.jboss.as.test.integration.management.util.CLIWrapper;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  *
- * @author Alexey Loubyansky
+ * @author Dominik Pospisil <dpospisi@redhat.com>
  */
 @RunWith(WildflyTestRunner.class)
-public class CDTestCase {
+public class BasicOpsTestCase {
 
-    private CommandContext ctx;
+    @Test
+    public void testConnect() throws Exception {
+        CLIWrapper cli = new CLIWrapper(false);
 
-    @Before
-    public void setup() throws Exception {
-        ctx = CommandContextFactory.getInstance().newCommandContext();
-        ctx.connectController();
-    }
+        assertFalse(cli.isConnected());
+        cli.sendLine("connect " + TestSuiteEnvironment.getServerAddress() + ":" + TestSuiteEnvironment.getServerPort());
+        assertTrue(cli.isConnected());
 
-    @After
-    public void cleanup() throws Exception {
-        if(ctx != null) {
-            ctx.terminateSession();
-        }
+        cli.quit();
     }
 
     @Test
-    public void main() throws Exception {
-        ctx.handle("cd /core-service=management");
-        try {
-            ctx.handle("cd /this-cant-exist=never");
-            Assert.fail("The path should not have passed validation");
-        } catch(CommandLineException e) {
-            // expected
-        }
-        ctx.handle("cd /this-cant-exist=never --no-validation");
+    public void testLs() throws Exception {
+        CLIWrapper cli = new CLIWrapper(true);
+        cli.sendLine("ls");
+        String ls = cli.readOutput();
+
+        assertTrue(ls.contains("subsystem"));
+        assertTrue(ls.contains("interface"));
+        assertTrue(ls.contains("extension"));
+        assertTrue(ls.contains("subsystem"));
+        assertTrue(ls.contains("core-service"));
+        assertTrue(ls.contains("system-property"));
+        assertTrue(ls.contains("socket-binding-group"));
+        assertTrue(ls.contains("deployment"));
+        assertTrue(ls.contains("path"));
+
+        cli.quit();
     }
 }
