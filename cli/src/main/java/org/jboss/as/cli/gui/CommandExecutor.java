@@ -40,6 +40,18 @@ public class CommandExecutor {
         this.cliGuiCtx = cliGuiCtx;
         this.cmdCtx = cliGuiCtx.getCommmandContext();
         this.client = cmdCtx.getModelControllerClient();
+        Runtime.getRuntime().addShutdownHook(new Thread(new ClientCloserShutdownHook()));
+    }
+
+    private class ClientCloserShutdownHook implements Runnable {
+        @Override
+        public void run() {
+            try {
+                CommandExecutor.this.client.close();
+            } catch (IOException ioe) {
+                // Do nothing.  The close() method has given its best shot.
+            }
+        }
     }
 
     /**

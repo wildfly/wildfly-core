@@ -256,7 +256,7 @@ public class CliLauncher {
             t.printStackTrace();
             exitCode = 1;
         } finally {
-            if(cmdCtx != null) {
+            if((cmdCtx != null) && !gui) {
                 cmdCtx.terminateSession();
                 if(cmdCtx.getExitCode() != 0) {
                     exitCode = cmdCtx.getExitCode();
