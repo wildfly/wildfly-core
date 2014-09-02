@@ -458,4 +458,11 @@ public interface CommandContext {
      *  one has already been registered
      */
     void registerRedirection(CommandLineRedirection redirection) throws CommandLineException;
+
+    /**
+     *  The ConnectionInfo bean is set after the connection is established to the server.
+     *
+     *  @return information about the current connection to the server.
+     */
+    ConnectionInfo getConnectionInfo() ;
 }

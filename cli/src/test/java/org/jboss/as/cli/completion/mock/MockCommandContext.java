@@ -23,6 +23,8 @@ package org.jboss.as.cli.completion.mock;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliEventListener;
@@ -32,6 +34,7 @@ import org.jboss.as.cli.CommandHistory;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
+import org.jboss.as.cli.ConnectionInfo;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.batch.BatchedCommand;
@@ -67,8 +70,15 @@ public class MockCommandContext implements CommandContext {
 
     private File curDir = new File("");
     private boolean resolveParameterValues;
+    private Map<String, Object> map = new HashMap<String, Object>();
 
     private boolean silent;
+    private ConnectionInfoBeanMock connInfo =  new ConnectionInfoBeanMock();
+
+    public MockCommandContext() {
+        connInfo.setUsername("test");
+        set("connection_info", connInfo);
+    }
 
     public void parseCommandLine(String buffer) throws CommandFormatException {
         try {
@@ -121,8 +131,7 @@ public class MockCommandContext implements CommandContext {
      */
     @Override
     public void set(String key, Object value) {
-        // TODO Auto-generated method stub
-
+        map.put(key, value);
     }
 
     /* (non-Javadoc)
@@ -130,8 +139,7 @@ public class MockCommandContext implements CommandContext {
      */
     @Override
     public Object get(String key) {
-        // TODO Auto-generated method stub
-        return null;
+        return map.get(key);
     }
 
     /* (non-Javadoc)
@@ -203,7 +211,7 @@ public class MockCommandContext implements CommandContext {
 
     @Override
     public void disconnectController() {
-        throw new UnsupportedOperationException();
+        connInfo = null;
     }
 
     @Override
@@ -400,5 +408,10 @@ public class MockCommandContext implements CommandContext {
     @Override
     public void registerRedirection(CommandLineRedirection redirection) throws CommandLineException {
         throw new CommandLineException("Redirection isn't supported by this impl");
+    }
+
+    @Override
+    public ConnectionInfo getConnectionInfo() {
+        return connInfo;
     }
 }

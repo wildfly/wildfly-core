@@ -33,13 +33,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -79,6 +79,7 @@ import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
 import org.jboss.as.cli.CommandRegistry;
+import org.jboss.as.cli.ConnectionInfo;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.ControllerAddressResolver;
 import org.jboss.as.cli.OperationCommand;
@@ -93,6 +94,7 @@ import org.jboss.as.cli.handlers.ArchiveHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
 import org.jboss.as.cli.handlers.ConnectHandler;
+import org.jboss.as.cli.handlers.ConnectionInfoHandler;
 import org.jboss.as.cli.handlers.DeployHandler;
 import org.jboss.as.cli.handlers.DeploymentInfoHandler;
 import org.jboss.as.cli.handlers.DeploymentOverlayHandler;
@@ -150,6 +152,7 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestParser;
 import org.jboss.as.cli.operation.impl.DefaultPrefixFormatter;
 import org.jboss.as.cli.operation.impl.RolloutPlanCompleter;
 import org.jboss.as.cli.parsing.operation.OperationFormat;
+import org.jboss.as.cli.util.FingerprintGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.GeneralTimeoutHandler;
 import org.jboss.as.protocol.StreamUtils;
@@ -157,7 +160,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.util.HexConverter;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.http.RedirectException;
 
@@ -243,6 +245,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     /** command line handling redirection */
     private CommandLineRedirectionRegistration redirection;
+
+    /** this object saves information to be used in ConnectionInfoHandler */
+    private ConnectionInfoBean connInfoBean;
 
     /**
      * Version mode - only used when --version is called from the command line.
@@ -382,6 +387,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new ReloadHandler(this), "reload");
         cmdRegistry.registerHandler(new ShutdownHandler(this), "shutdown");
         cmdRegistry.registerHandler(new VersionHandler(), "version");
+        cmdRegistry.registerHandler(new ConnectionInfoHandler(), "connection-info");
 
         // variables
         cmdRegistry.registerHandler(new SetVariableHandler(), "set");
@@ -843,8 +849,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(address, cbh,
                         disableLocalAuth, sslContext, connectionTimeout, this, timeoutHandler);
                 retry = false;
+                connInfoBean = new ConnectionInfoBean();
                 tryConnection(tempClient, address);
                 initNewClient(tempClient, address);
+                connInfoBean.setDisableLocalAuth(disableLocalAuth);
+                connInfoBean.setLoggedSince(new Date());
             } catch (RedirectException re) {
                 try {
                     URI location = new URI(re.getLocation());
@@ -937,7 +946,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         for (Certificate current : lastChain) {
             if (current instanceof X509Certificate) {
                 X509Certificate x509Current = (X509Certificate) current;
-                Map<String, String> fingerprints = generateFingerprints(x509Current);
+                Map<String, String> fingerprints = FingerprintGenerator.generateFingerprints(x509Current);
                 printLine("Subject    - " + x509Current.getSubjectX500Principal().getName());
                 printLine("Issuer     - " + x509Current.getIssuerDN().getName());
                 printLine("Valid From - " + x509Current.getNotBefore());
@@ -972,40 +981,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 }
             }
         }
-    }
-
-    private static final String[] FINGERPRINT_ALGORITHMS = new String[] { "MD5", "SHA1" };
-
-    private Map<String, String> generateFingerprints(final X509Certificate cert) throws CommandLineException  {
-        Map<String, String> fingerprints = new HashMap<String, String>(FINGERPRINT_ALGORITHMS.length);
-        for (String current : FINGERPRINT_ALGORITHMS) {
-            try {
-                fingerprints.put(current, generateFingerPrint(current, cert.getEncoded()));
-            } catch (GeneralSecurityException e) {
-                throw new CommandLineException("Unable to generate fingerprint", e);
-            }
-        }
-
-        return fingerprints;
-    }
-
-    private String generateFingerPrint(final String algorithm, final byte[] cert) throws GeneralSecurityException {
-        StringBuilder sb = new StringBuilder();
-
-        MessageDigest md = MessageDigest.getInstance(algorithm);
-        byte[] digested = md.digest(cert);
-        String hex = HexConverter.convertToHexString(digested);
-        boolean started = false;
-        for (int i = 0; i < hex.length() - 1; i += 2) {
-            if (started) {
-                sb.append(":");
-            } else {
-                started = true;
-            }
-            sb.append(hex.substring(i, i + 2));
-        }
-
-        return sb.toString();
     }
 
     /**
@@ -1059,6 +1034,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             this.currentAddress = null;
             domainMode = false;
             notifyListeners(CliEvent.DISCONNECTED);
+            connInfoBean = null;
         }
         promptConnectPart = null;
     }
@@ -1471,6 +1447,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             throw new SaslException("No username supplied.");
                         }
                     }
+                    connInfoBean.setUsername(username);
                     ncb.setName(username);
                 } else if (current instanceof PasswordCallback && digest == null) {
                     // If a digest had been set support for PasswordCallback is disabled.
@@ -1646,6 +1623,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 retry = false;
                 try {
                     getDelegate().checkServerTrusted(chain, authType);
+                    connInfoBean.setServerCertificates(chain);
                 } catch (CertificateException ce) {
                     if (retry == false) {
                         timeoutHandler.suspendAndExecute(new Runnable() {
@@ -1754,5 +1732,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 throw new CommandLineException("The redirection is not registered any more.");
             }
         }
+    }
+
+    public ConnectionInfo getConnectionInfo() {
+        return connInfoBean;
     }
 }
