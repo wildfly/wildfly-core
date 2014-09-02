@@ -88,7 +88,7 @@
 
         <!-- Used to provide an absolute location for the distribution under test. -->
         <!-- This value is overridden in modules with the correct relative pathname. -->
-        <jboss.dist>${project.basedir}/../${wildfly.core.build.output.dir}</jboss.dist>
+        <jboss.dist>${project.basedir}/target/wildfly-core</jboss.dist>
         <jboss.home>${jboss.dist}</jboss.home>
 
         <!-- Used to provide an absolute location for the XSLT scripts. -->

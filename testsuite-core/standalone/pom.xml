@@ -26,9 +26,7 @@
         <jbossas.ts.integ.dir>${basedir}/..</jbossas.ts.integ.dir>
         <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
         <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
-        <!-- TODO this is pointing to the dist, not the maven based one for now,
-             because otherwise some of the CLI tests will fail due to the CLI stuff missing in the maven repo -->
-        <jboss.dist>${jbossas.project.dir}/core-dist/target/${server.output.dir.prefix}-core-${wildfly.core.release.version}</jboss.dist>
+        <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
     </properties>
 
     <dependencies>
@@ -61,13 +59,13 @@
                     <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
 
                     <environmentVariables>
-                        <JBOSS_HOME>${jboss.dist}</JBOSS_HOME>
+                        <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
                     </environmentVariables>
 
                     <systemPropertyVariables>
                         <jboss.options>${surefire.system.args}</jboss.options>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
+                        <jboss.home>${wildfly.home}</jboss.home>
                         <jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
                 </configuration>
@@ -81,7 +79,7 @@
                         <goals>
                             <goal>build</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>process-test-resources</phase>
                         <configuration>
                             <config-file>server-provisioning.xml</config-file>
                             <server-name>wildfly-core</server-name>
