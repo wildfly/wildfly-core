@@ -98,11 +98,14 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      *
      * @return the builder
      *
-     * @throws java.lang.IllegalArgumentException if the path is invalid or {@code null}
+     * @throws java.lang.IllegalArgumentException if the path is {@code null}
      */
     public T addModuleDir(final String moduleDir) {
+        if (moduleDir == null) {
+            throw LauncherMessages.MESSAGES.nullParam("moduleDir");
+        }
         // Validate the path
-        final Path path = validateAndNormalizeDir(moduleDir, false);
+        final Path path = Paths.get(moduleDir).normalize();
         modulesDirs.add(path.toString());
         return getThis();
     }
