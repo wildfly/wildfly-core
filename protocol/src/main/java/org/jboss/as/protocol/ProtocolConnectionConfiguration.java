@@ -169,6 +169,13 @@ public class ProtocolConnectionConfiguration {
         final ProtocolConnectionConfiguration configuration = new ProtocolConnectionConfiguration();
         configuration.setEndpoint(endpoint);
         configuration.setUri(uri);
+        if("http-remoting".equals(uri.getScheme())) {
+            configuration.setSslEnabled(false);
+            configuration.setUseStartTLS(false);
+        } else if ("https-remoting".equals(uri.getScheme())) {
+            configuration.setSslEnabled(true);
+            configuration.setUseStartTLS(false);
+        }
         configuration.setOptionMap(options);
         return configuration;
     }
@@ -184,6 +191,8 @@ public class ProtocolConnectionConfiguration {
         configuration.sslContext = old.sslContext;
         configuration.clientBindAddress = old.clientBindAddress;
         configuration.timeoutHandler = old.timeoutHandler;
+        configuration.sslEnabled = old.sslEnabled;
+        configuration.useStartTLS = old.useStartTLS;
         return configuration;
     }
 

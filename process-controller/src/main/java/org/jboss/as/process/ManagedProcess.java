@@ -169,11 +169,12 @@ final class ManagedProcess {
         }
     }
 
-    public void reconnect(String hostName, int port, boolean managementSubsystemEndpoint, byte[] asAuthKey) {
+    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, byte[] asAuthKey) {
         assert holdsLock(lock); // Call under lock
         try {
             // WFLY-2697 All writing is in Base64
             Base64OutputStream base64 = getBase64OutputStream(stdin);
+            StreamUtils.writeUTFZBytes(base64, scheme);
             StreamUtils.writeUTFZBytes(base64, hostName);
             StreamUtils.writeInt(base64, port);
             StreamUtils.writeBoolean(base64, managementSubsystemEndpoint);

@@ -27,7 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -89,7 +89,7 @@ public class ServerInventoryImpl implements ServerInventory {
 
     private final HostControllerEnvironment environment;
     private final ProcessControllerClient processControllerClient;
-    private final InetSocketAddress managementAddress;
+    private final URI managementURI;
     private final DomainController domainController;
     private final ExtensionRegistry extensionRegistry;
 
@@ -102,11 +102,11 @@ public class ServerInventoryImpl implements ServerInventory {
 
     private final Object shutdownCondition = new Object();
 
-    ServerInventoryImpl(final DomainController domainController, final HostControllerEnvironment environment, final InetSocketAddress managementAddress,
+    ServerInventoryImpl(final DomainController domainController, final HostControllerEnvironment environment, final URI managementURI,
                         final ProcessControllerClient processControllerClient, final ExtensionRegistry extensionRegistry) {
         this.domainController = domainController;
         this.environment = environment;
-        this.managementAddress = managementAddress;
+        this.managementURI = managementURI;
         this.processControllerClient = processControllerClient;
         this.extensionRegistry = extensionRegistry;
     }
@@ -620,7 +620,7 @@ public class ServerInventoryImpl implements ServerInventory {
         //We don't need any transformation between host and server
         final TransformationTarget target = TransformationTargetImpl.create(extensionRegistry.getTransformerRegistry(),
                 modelVersion, subsystems, null, TransformationTarget.TransformationTargetType.SERVER, null);
-        return new ManagedServer(hostControllerName, serverName, authKey, processControllerClient, managementAddress, target);
+        return new ManagedServer(hostControllerName, serverName, authKey, processControllerClient, managementURI, target);
     }
 
     private ManagedServerBootCmdFactory createBootFactory(final String serverName, final ModelNode domainModel) {

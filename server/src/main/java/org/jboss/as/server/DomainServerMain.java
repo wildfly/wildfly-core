@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.Arrays;
+import org.jboss.as.network.NetworkUtils;
 
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.protocol.StreamUtils;
@@ -127,17 +129,20 @@ public final class DomainServerMain {
         }
         for (;;) {
             try {
+                final String scheme = StreamUtils.readUTFZBytes(initialInput);
+//                String scheme = "remote";
                 final String hostName = StreamUtils.readUTFZBytes(initialInput);
                 final int port = StreamUtils.readInt(initialInput);
                 final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
                 final byte[] asAuthKey = new byte[16];
                 StreamUtils.readFully(initialInput, asAuthKey);
+                URI hostControllerUri = new URI(scheme, null, NetworkUtils.formatPossibleIpv6Address(hostName), port, null, null, null);
 
                 // Get the host-controller server client
                 final ServiceContainer container = containerFuture.get();
                 final HostControllerClient client = getRequiredService(container, HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                 // Reconnect to the host-controller
-                client.reconnect(hostName, port, asAuthKey, managementSubsystemEndpoint);
+                client.reconnect(hostControllerUri, asAuthKey, managementSubsystemEndpoint);
 
             } catch (InterruptedIOException e) {
                 Thread.interrupted();

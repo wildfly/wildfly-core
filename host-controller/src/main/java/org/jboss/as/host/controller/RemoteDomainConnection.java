@@ -47,7 +47,6 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolConnectionManager;
@@ -265,9 +264,10 @@ class RemoteDomainConnection extends FutureManagementChannel {
                         URI masterURI = null;
                         try {
                             discoveryOption.discover();
+                            String scheme = discoveryOption.getRemoteDomainControllerProtocol();
                             String host = discoveryOption.getRemoteDomainControllerHost();
                             int port = discoveryOption.getRemoteDomainControllerPort();
-                            masterURI = new URI("remote://" + NetworkUtils.formatPossibleIpv6Address(host) + ":" + port);
+                            masterURI = new URI(scheme, null, host, port, null, null, null);
                             setUri(masterURI);
                             HostControllerLogger.ROOT_LOGGER.debugf("trying to reconnect to remote host-controller at %s", masterURI);
                             try {

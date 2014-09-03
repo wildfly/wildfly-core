@@ -51,6 +51,7 @@ class DiscoveryService implements Service<Void> {
     private final InjectedValue<ExecutorService> executorService = new InjectedValue<ExecutorService>();
     private final List<DiscoveryOption> discoveryOptions;
     private final int port;
+    private final String protocol;
     private final boolean isMasterDomainController;
 
     /**
@@ -60,15 +61,16 @@ class DiscoveryService implements Service<Void> {
      * @param port the port number of the domain controller
      * @param isMasterDomainController whether or not the local host controller is the master
      */
-    private DiscoveryService(List<DiscoveryOption> discoveryOptions, int port, boolean isMasterDomainController) {
+    private DiscoveryService(List<DiscoveryOption> discoveryOptions, int port, String protocol, boolean isMasterDomainController) {
         this.discoveryOptions = discoveryOptions;
         this.port = port;
+        this.protocol = protocol;
         this.isMasterDomainController = isMasterDomainController;
     }
 
     static void install(final ServiceTarget serviceTarget, final List<DiscoveryOption> discoveryOptions,
-                        final String interfaceBinding, final int port, final boolean isMasterDomainController) {
-        final DiscoveryService discovery = new DiscoveryService(discoveryOptions, port, isMasterDomainController);
+                        final String interfaceBinding, final int port, final String protocol, final boolean isMasterDomainController) {
+        final DiscoveryService discovery = new DiscoveryService(discoveryOptions, port, protocol, isMasterDomainController);
         serviceTarget.addService(DiscoveryService.SERVICE_NAME, discovery)
             .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, discovery.executorService)
             .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceBinding), NetworkInterfaceBinding.class, discovery.interfaceBinding)

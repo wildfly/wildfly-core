@@ -151,6 +151,10 @@ import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
+import static org.jboss.as.remoting.Protocol.HTTPS_REMOTING;
+import static org.jboss.as.remoting.Protocol.HTTP_REMOTING;
+import static org.jboss.as.remoting.Protocol.REMOTE;
+
 /**
  * Creates the service that acts as the {@link org.jboss.as.controller.ModelController} for a Host Controller process.
  *
@@ -542,15 +546,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
             if (ok) {
 
                 // Now we know our management interface configuration. Install the server inventory
-                Future<ServerInventory> inventoryFuture = ServerInventoryService.install(serviceTarget, this, runningModeControl, environment,
-                            extensionRegistry, hostControllerInfo.getNativeManagementInterface(), hostControllerInfo.getNativeManagementPort());
+                Future<ServerInventory> inventoryFuture = installServerInventory(serviceTarget);
 
                 // Now we know our discovery configuration.
                 List<DiscoveryOption> discoveryOptions = hostControllerInfo.getRemoteDomainControllerDiscoveryOptions();
                 if (hostControllerInfo.isMasterDomainController() && (discoveryOptions != null)) {
                     // Install the discovery service
-                    DiscoveryService.install(serviceTarget, discoveryOptions, hostControllerInfo.getNativeManagementInterface(),
-                            hostControllerInfo.getNativeManagementPort(), hostControllerInfo.isMasterDomainController());
+                    installDiscoveryService(serviceTarget, discoveryOptions);
                 }
 
                 // Run the initialization
@@ -683,6 +685,36 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 ROOT_LOGGER.unsuccessfulBoot();
                 System.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
             }
+        }
+    }
+
+    private Future<ServerInventory> installServerInventory(final ServiceTarget serviceTarget) {
+        if (hostControllerInfo.getNativeManagementInterface() != null && !hostControllerInfo.getNativeManagementInterface().isEmpty()
+                && hostControllerInfo.getNativeManagementPort() > 0) {
+            return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
+                    hostControllerInfo.getNativeManagementInterface(), hostControllerInfo.getNativeManagementPort(), REMOTE.toString());
+        }
+        if (hostControllerInfo.getHttpManagementSecureInterface() != null && !hostControllerInfo.getHttpManagementSecureInterface().isEmpty()
+                && hostControllerInfo.getHttpManagementSecurePort() > 0) {
+            return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
+                    hostControllerInfo.getHttpManagementSecureInterface(), hostControllerInfo.getHttpManagementSecurePort(), HTTPS_REMOTING.toString());
+        }
+        return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
+                hostControllerInfo.getHttpManagementInterface(), hostControllerInfo.getHttpManagementPort(), HTTP_REMOTING.toString());
+    }
+
+    private void installDiscoveryService(final ServiceTarget serviceTarget, List<DiscoveryOption> discoveryOptions) {
+        if (hostControllerInfo.getNativeManagementInterface() != null && !hostControllerInfo.getNativeManagementInterface().isEmpty()
+                && hostControllerInfo.getNativeManagementPort() > 0) {
+            DiscoveryService.install(serviceTarget, discoveryOptions, hostControllerInfo.getNativeManagementInterface(),
+                    hostControllerInfo.getNativeManagementPort(), REMOTE.toString(), hostControllerInfo.isMasterDomainController());
+        } else if (hostControllerInfo.getHttpManagementSecureInterface() != null && !hostControllerInfo.getHttpManagementSecureInterface().isEmpty()
+                && hostControllerInfo.getHttpManagementSecurePort() > 0) {
+            DiscoveryService.install(serviceTarget, discoveryOptions, hostControllerInfo.getHttpManagementSecureInterface(),
+                    hostControllerInfo.getHttpManagementSecurePort(), HTTPS_REMOTING.toString(), hostControllerInfo.isMasterDomainController());
+        } else {
+            DiscoveryService.install(serviceTarget, discoveryOptions, hostControllerInfo.getHttpManagementInterface(),
+                    hostControllerInfo.getHttpManagementPort(), HTTP_REMOTING.toString(), hostControllerInfo.isMasterDomainController());
         }
     }
 
