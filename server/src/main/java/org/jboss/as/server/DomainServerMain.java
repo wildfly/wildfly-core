@@ -32,6 +32,7 @@ import java.util.Arrays;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.HostControllerClient;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.logmanager.Level;
@@ -54,6 +55,7 @@ import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * The main entry point for domain-managed server instances.
@@ -61,6 +63,7 @@ import org.jboss.threads.AsyncFuture;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class DomainServerMain {
+    private static final int MAX_RECONNECTION_ATTEMPTS = Integer.parseInt(WildFlySecurityManager.getPropertyPrivileged("jboss.as.domain.reconnection.attempts", "2"));
 
     private DomainServerMain() {
     }
@@ -137,8 +140,13 @@ public final class DomainServerMain {
                 final ServiceContainer container = containerFuture.get();
                 final HostControllerClient client = getRequiredService(container, HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                 // Reconnect to the host-controller
-                client.reconnect(hostName, port, asAuthKey, managementSubsystemEndpoint);
-
+                for (int attempts = 1; MAX_RECONNECTION_ATTEMPTS < 1 || attempts <= MAX_RECONNECTION_ATTEMPTS; attempts++) {
+                    try {
+                      client.reconnect(hostName, port, asAuthKey, managementSubsystemEndpoint);
+                    } catch (IOException e) {
+                        ServerLogger.AS_ROOT_LOGGER.hostControllerReconnectFailed(attempts, e);
+                    }
+                }
             } catch (InterruptedIOException e) {
                 Thread.interrupted();
                 // ignore
