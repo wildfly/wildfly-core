@@ -23,8 +23,6 @@
 package org.jboss.as.controller;
 
 import static java.security.AccessController.doPrivileged;
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
@@ -42,6 +40,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
 import java.security.AccessControlContext;
@@ -77,13 +77,13 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
+import org.jboss.as.controller.registry.DelegatingResource;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.registry.ResourceProvider;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
@@ -110,10 +110,9 @@ class ModelControllerImpl implements ModelController {
 
     private final ServiceRegistry serviceRegistry;
     private final ServiceTarget serviceTarget;
-    private final ManagementResourceRegistration rootRegistration;
     private final ModelControllerLock controllerLock = new ModelControllerLock();
     private final ContainerStateMonitor stateMonitor;
-    private final RootResource model = new RootResource();
+    private final AtomicReference<ManagementModelImpl> managementModel = new AtomicReference<>();
     private final ConfigurationPersister persister;
     private final ProcessType processType;
     private final RunningModeControl runningModeControl;
@@ -133,7 +132,8 @@ class ModelControllerImpl implements ModelController {
     private final HostServerGroupTracker hostServerGroupTracker;
     private final Resource.ResourceEntry modelControllerResource;
 
-    ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget, final ManagementResourceRegistration rootRegistration,
+    ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
+                        final ManagementResourceRegistration rootRegistration,
                         final ContainerStateMonitor stateMonitor, final ConfigurationPersister persister,
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
@@ -141,7 +141,8 @@ class ModelControllerImpl implements ModelController {
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport) {
         this.serviceRegistry = serviceRegistry;
         this.serviceTarget = serviceTarget;
-        this.rootRegistration = rootRegistration;
+        ManagementModelImpl mmi = new ManagementModelImpl(rootRegistration, Resource.Factory.create());
+        mmi.publish();
         this.stateMonitor = stateMonitor;
         this.persister = persister;
         this.processType = processType;
@@ -282,7 +283,7 @@ class ModelControllerImpl implements ModelController {
             final Integer operationID = new Random(new SecureRandom().nextLong()).nextInt();
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
-                    contextFlags, handler, attachments, model, originalResultTxControl, processState, auditLogger,
+                    contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
                     bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
@@ -336,7 +337,7 @@ class ModelControllerImpl implements ModelController {
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
         final OperationContextImpl context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
-                contextFlags, handler, null, model, control, processState, auditLogger, bootingFlag.get(),
+                contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
                 hostServerGroupTracker, null, null, notificationSupport);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
@@ -356,12 +357,14 @@ class ModelControllerImpl implements ModelController {
             // Success. Now any extension handlers are registered. Continue with remaining ops
             final OperationContextImpl postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
-                    contextFlags, handler, null, model, control, processState, auditLogger, bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport);
+                    contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
+                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
                     // The extension should have registered the handler now
-                    parsedOp = new ParsedBootOp(parsedOp, rootRegistration.getOperationHandler(parsedOp.address, parsedOp.operationName));
+                    parsedOp = new ParsedBootOp(parsedOp,
+                            managementModel.get().getRootResourceRegistration().getOperationHandler(parsedOp.address, parsedOp.operationName));
                 }
                 if (parsedOp.handler == null) {
                     logNoHandler(parsedOp);
@@ -406,6 +409,7 @@ class ModelControllerImpl implements ModelController {
         List<ParsedBootOp> postExtensionOps = null;
         boolean invalid = false;
         boolean sawExtensionAdd = false;
+        ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
         ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, getMutableRootResourceRegistrationProvider());
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
                 ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit) : null;
@@ -482,16 +486,12 @@ class ModelControllerImpl implements ModelController {
         bootingFlag.set(false);
     }
 
-    public Resource getRootResource() {
-        return model;
+    ManagementModel getManagementModel() {
+        return managementModel.get();
     }
 
-    public Resource.ResourceEntry getModelControllerResource() {
+    Resource.ResourceEntry getModelControllerResource() {
         return modelControllerResource;
-    }
-
-    ManagementResourceRegistration getRootRegistration() {
-        return rootRegistration;
     }
 
     public ModelControllerClient createClient(final Executor executor) {
@@ -610,8 +610,9 @@ class ModelControllerImpl implements ModelController {
         };
     }
 
-    ConfigurationPersister.PersistenceResource writeModel(final Resource resource, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
-        final ModelNode newModel = Resource.Tools.readModel(resource);
+    ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
+        ControllerLogger.MGMT_OP_LOGGER.tracef("persisting %s from %s", model.rootResource, model);
+        final ModelNode newModel = Resource.Tools.readModel(model.rootResource);
         final ConfigurationPersister.PersistenceResource delegate = persister.store(newModel, affectedAddresses);
         return new ConfigurationPersister.PersistenceResource() {
 
@@ -622,7 +623,7 @@ class ModelControllerImpl implements ModelController {
                 if (hostServerGroupTracker != null) {
                     hostServerGroupTracker.invalidate();
                 }
-                model.set(resource);
+                model.publish();
                 delegate.commit();
             }
 
@@ -729,7 +730,7 @@ class ModelControllerImpl implements ModelController {
     }
 
     private void logNoHandler(ParsedBootOp parsedOp) {
-        ImmutableManagementResourceRegistration child = rootRegistration.getSubModel(parsedOp.address);
+        ImmutableManagementResourceRegistration child = managementModel.get().getRootResourceRegistration().getSubModel(parsedOp.address);
         if (child == null) {
             ROOT_LOGGER.error(ROOT_LOGGER.noSuchResourceType(parsedOp.address));
         } else {
@@ -760,7 +761,7 @@ class ModelControllerImpl implements ModelController {
                 context.addStep(stepHandler, OperationContext.Stage.MODEL);
             } else {
 
-                ImmutableManagementResourceRegistration child = rootRegistration.getSubModel(address);
+                ImmutableManagementResourceRegistration child = managementModel.get().getRootResourceRegistration().getSubModel(address);
                 if (child == null) {
                     context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
                 } else {
@@ -772,6 +773,7 @@ class ModelControllerImpl implements ModelController {
     }
 
     private OperationStepHandler resolveOperationHandler(final PathAddress address, final String operationName) {
+        ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
         OperationStepHandler result = rootRegistration.getOperationHandler(address, operationName);
         if (result == null && address.size() > 0) {
             // For wildcard elements, check specific registrations where the same OSH is used
@@ -803,99 +805,6 @@ class ModelControllerImpl implements ModelController {
             }
         }
         return result;
-    }
-
-    /**
-     * The root resource, maintains a read-only reference to the current model. All write operations have to performed
-     * after acquiring the write lock on a clone of the underlying model.
-     */
-    private final class RootResource extends ResourceProvider.ResourceProviderRegistry implements Resource {
-
-        private final AtomicReference<Resource> modelReference = new AtomicReference<Resource>(Resource.Factory.create());
-
-        /**
-         * Publishes the new version of the model to any handlers that have a reference to this object.
-         * Thereafter any calls to the methods of this object will delegate to the new version.
-         * TODO handlers with a local variable reference to children of this resource will see the old model.
-         */
-        void set(Resource resource){
-            modelReference.set(resource);
-        }
-
-        @SuppressWarnings({"CloneDoesntCallSuperClone"})
-        @Override
-        public Resource clone() {
-            return getDelegate().clone();
-        }
-
-        public Resource getChild(PathElement element) {
-            return getDelegate().getChild(element);
-        }
-
-        public Set<Resource.ResourceEntry> getChildren(String childType) {
-            return getDelegate().getChildren(childType);
-        }
-
-        public Set<String> getChildrenNames(String childType) {
-            return getDelegate().getChildrenNames(childType);
-        }
-
-        public Set<String> getChildTypes() {
-            return getDelegate().getChildTypes();
-        }
-
-        public ModelNode getModel() {
-            return getDelegate().getModel();
-        }
-
-        public boolean hasChild(PathElement element) {
-            return getDelegate().hasChild(element);
-        }
-
-        public boolean hasChildren(String childType) {
-            return getDelegate().hasChildren(childType);
-        }
-
-        public boolean isModelDefined() {
-            return getDelegate().isModelDefined();
-        }
-
-        public boolean isProxy() {
-            return getDelegate().isProxy();
-        }
-
-        public boolean isRuntime() {
-            return getDelegate().isRuntime();
-        }
-
-        public Resource navigate(PathAddress address) {
-            return getDelegate().navigate(address);
-        }
-
-        public void registerChild(PathElement address, Resource resource) {
-            getDelegate().registerChild(address, resource);
-        }
-
-        public Resource removeChild(PathElement address) {
-            return getDelegate().removeChild(address);
-        }
-
-        public Resource requireChild(PathElement element) {
-            return getDelegate().requireChild(element);
-        }
-
-        public void writeModel(ModelNode newModel) {
-            getDelegate().writeModel(newModel);
-        }
-
-        private Resource getDelegate() {
-            return this.modelReference.get();
-        }
-
-        @Override
-        protected void registerResourceProvider(String type, ResourceProvider provider) {
-            ResourceProvider.Tool.addResourceProvider(type, provider, getDelegate());
-        }
     }
 
     private static final class BootOperations {
@@ -987,6 +896,132 @@ class ModelControllerImpl implements ModelController {
         public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
             assert context instanceof AbstractOperationContext;
             return ((AbstractOperationContext) context).getRootResourceRegistrationForUpdate();
+        }
+    }
+
+    final class ManagementModelImpl implements ManagementModel {
+        // The root MRR
+        private final ManagementResourceRegistration resourceRegistration;
+        // The possibly unpublished root Resource
+        private final Resource rootResource;
+        // The root MRR we expose
+        private final ManagementResourceRegistration delegatingResourceRegistration;
+        // The root Resource we expose
+        private final Resource delegatingResource;
+        private volatile boolean published;
+
+        ManagementModelImpl(final ManagementResourceRegistration resourceRegistration,
+                            final Resource rootResource) {
+            this.resourceRegistration = resourceRegistration;
+            this.rootResource = rootResource;
+
+            // What we expose depends on the state of our 'published' field. If 'true' we've been published
+            // to the ModelController, and from then on callers should get whatever the MC has as current.
+            // If 'false' we haven't been published; we are a local copy created by some OperationContext,
+            // so callers should see our local members
+
+            // TODO use this if we ever actually support cloning the MRR
+//            this.delegatingResourceRegistration = new DelegatingManagementResourceRegistration(new DelegatingManagementResourceRegistration.RegistrationDelegateProvider() {
+//                @Override
+//                public ManagementResourceRegistration getDelegateRegistration() {
+//                    ManagementResourceRegistration result;
+//                    if (published) {
+//                        result = ModelControllerImpl.this.managementModel.get().resourceRegistration;
+//                    } else {
+//                        result = resourceRegistration;
+//                    }
+//                    return result;
+//                }
+//            });
+            this.delegatingResourceRegistration = resourceRegistration;
+            this.delegatingResource = new DelegatingResource(new DelegatingResource.ResourceDelegateProvider() {
+                @Override
+                public Resource getDelegateResource() {
+                    Resource result;
+                    if (published) {
+                        result = ModelControllerImpl.this.managementModel.get().rootResource;
+                    } else {
+                        result = rootResource;
+                    }
+                    return result;
+                }
+            });
+        }
+
+        @Override
+        public ManagementResourceRegistration getRootResourceRegistration() {
+            return delegatingResourceRegistration;
+        }
+
+        @Override
+        public Resource getRootResource() {
+            return delegatingResource;
+        }
+
+        /**
+         * Creates a new {@code ManagementModelImpl} that uses a clone of this one's root {@link ManagementResourceRegistration}.
+         * The caller can safely modify that {@code ManagementResourceRegistration} without changes being exposed
+         * to other callers. Use {@link org.jboss.as.controller.ModelControllerImpl#writeModel(org.jboss.as.controller.ModelControllerImpl.ManagementModelImpl, java.util.Set)}
+         * to publish changes.
+         *
+         * @return the new {@code ManagementModelImpl}. Will not return {@code null}
+         */
+        /* TODO enable this if we ever support actually cloning the MRR
+        ManagementModelImpl cloneRootResourceRegistration() {
+            ManagementResourceRegistration mrr;
+            Resource currentResource;
+            if (published) {
+                // This is the first clone since this was published. Use the current stuff as the basis
+                // to ensure that the clone is based on the latest even if we are not the latest.
+                ManagementModelImpl currentPublished = ModelControllerImpl.this.managementModel.get();
+                mrr = currentPublished.resourceRegistration;
+                currentResource = currentPublished.rootResource;
+            } else {
+                // We've already been cloned, which means the thread calling this has the controller lock
+                // and our stuff hasn't been superceded by another thread. So use our stuff
+                mrr = resourceRegistration;
+                currentResource = rootResource;
+            }
+            ManagementResourceRegistration clone = mrr.clone();
+            ManagementModelImpl result = new ManagementModelImpl(clone, currentResource);
+            ControllerLogger.MGMT_OP_LOGGER.tracef("cloned to %s to create %s and %s", mrr, clone, result);
+            return result;
+        }
+        */
+
+        /**
+         * Creates a new {@code ManagementModelImpl} that uses a clone of this one's root {@link Resource}.
+         * The caller can safely modify that {@code Resource} without changes being exposed
+         * to other callers. Use {@link org.jboss.as.controller.ModelControllerImpl#writeModel(org.jboss.as.controller.ModelControllerImpl.ManagementModelImpl, java.util.Set)}
+         * to publish changes.
+         *
+         * @return the new {@code ManagementModelImpl}. Will not return {@code null}
+         */
+        ManagementModelImpl cloneRootResource() {
+            ManagementResourceRegistration mrr;
+            Resource currentResource;
+            if (published) {
+                // This is the first clone since this was published. Use the current stuff as the basis
+                // to ensure that the clone is based on the latest even if we are not the latest.
+                ManagementModelImpl currentPublished = ModelControllerImpl.this.managementModel.get();
+                mrr = currentPublished.resourceRegistration;
+                currentResource = currentPublished.rootResource;
+            } else {
+                // We've already been cloned, which means the thread calling this has the controller lock
+                // and our stuff hasn't been superceded by another thread. So use our stuff
+                mrr = resourceRegistration;
+                currentResource = rootResource;
+            }
+            Resource clone = currentResource.clone();
+            ManagementModelImpl result = new ManagementModelImpl(mrr, clone);
+            ControllerLogger.MGMT_OP_LOGGER.tracef("cloned to %s to create %s and %s", currentResource, clone, result);
+            return result;
+        }
+
+        private void publish() {
+            ModelControllerImpl.this.managementModel.set(this);
+            ControllerLogger.MGMT_OP_LOGGER.tracef("published %s", this);
+            published = true;
         }
     }
 

@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
@@ -375,7 +376,8 @@ public final class ServerService extends AbstractControllerService {
     }
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
+    protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+        Resource rootResource = managementModel.getRootResource();
         // TODO maybe make creating of empty nodes part of the MNR description
         Resource managementResource = Resource.Factory.create(); // TODO - Can we get a Resource direct from CoreManagementResourceDefinition?
         managementResource.registerChild(PathElement.pathElement(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.MANAGEMENT_OPERATIONS), modelControllerResource);
@@ -393,12 +395,12 @@ public final class ServerService extends AbstractControllerService {
     }
 
     @Override
-    protected void performControllerInitialization(ServiceTarget target, Resource rootResource, ManagementResourceRegistration rootRegistration) {
+    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
         final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
         final Iterator<ModelControllerServiceInitialization> iterator = sl.iterator();
         while(iterator.hasNext()) {
             final ModelControllerServiceInitialization init = iterator.next();
-            init.initializeStandalone(target, rootRegistration, rootResource);
+            init.initializeStandalone(target, managementModel);
         }
     }
 

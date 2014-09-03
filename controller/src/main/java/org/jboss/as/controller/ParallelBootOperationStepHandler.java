@@ -33,8 +33,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -345,7 +345,8 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             ParallelBootOperationContext operationContext = null;
             try {
                 operationContext = new ParallelBootOperationContext(transactionControl, processState,
-                        primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(), controller.getRootResource());
+                        primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(),
+                        controller.getManagementModel().getRootResource());
                 for (ParsedBootOp op : bootOperations) {
                     final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
                     operationContext.addStep(op.response, op.operation, osh, executionStage);

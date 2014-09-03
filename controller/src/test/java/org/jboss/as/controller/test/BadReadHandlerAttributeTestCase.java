@@ -21,9 +21,17 @@
  */
 package org.jboss.as.controller.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
+import static org.junit.Assert.assertThat;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -39,13 +47,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
-import static org.junit.Assert.assertThat;
 
 /**
  * Test to verify if https://issues.jboss.org/browse/AS7-1960 is an issue
@@ -80,8 +81,8 @@ public class BadReadHandlerAttributeTestCase extends AbstractControllerTestBase 
         assertThat(result.has(BAD_ATTRIBUTE.getName()), is(true));
         assertThat(result.get(BAD_ATTRIBUTE.getName()).isDefined(), is(true));
         assertThat(result.get(BAD_ATTRIBUTE.getName()).asString(), is("bad"));
-        
-        
+
+
          createdResource = null;
         op = Util.createAddOperation(PathAddress.pathAddress("test", "wrong"));
         op.get(BASIC_ATTRIBUTE.getName()).set("cool");
@@ -96,7 +97,7 @@ public class BadReadHandlerAttributeTestCase extends AbstractControllerTestBase 
         assertThat(createdResource.get(BASIC_ATTRIBUTE.getName()).isDefined(), is(true));
         assertThat(createdResource.get(BASIC_ATTRIBUTE.getName()).asString(), is("cool"));
         assertThat(createdResource.has(BAD_ATTRIBUTE.getName()), is(false));
-        
+
         createdResource = null;
         op = Util.createAddOperation(PathAddress.pathAddress("test", "notthere"));
         op.get(BASIC_ATTRIBUTE.getName()).set("cool");
@@ -114,7 +115,8 @@ public class BadReadHandlerAttributeTestCase extends AbstractControllerTestBase 
     }
 
     @Override
-    protected void initModel(Resource rootResource, ManagementResourceRegistration registration) {
+    protected void initModel(ManagementModel managementModel) {
+        ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
         GlobalNotifications.registerGlobalNotifications(registration, processType);
         registration.registerSubModel(new TestResource());

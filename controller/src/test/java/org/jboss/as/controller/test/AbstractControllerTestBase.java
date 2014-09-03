@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -60,7 +61,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 
 /**
@@ -69,7 +69,7 @@ import org.junit.Before;
 public abstract class AbstractControllerTestBase {
 
 
-    protected abstract void initModel(final Resource rootResource, final ManagementResourceRegistration registration);
+    protected abstract void initModel(ManagementModel managementModel);
 
     private ServiceContainer container;
     private ModelController controller;
@@ -194,9 +194,9 @@ public abstract class AbstractControllerTestBase {
             return super.boot(bootOperations, rollbackOnRuntimeFailure);
         }
 
-        protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
+        protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
             try {
-                AbstractControllerTestBase.this.initModel(rootResource, rootRegistration);
+                AbstractControllerTestBase.this.initModel(managementModel);
             } catch (Exception e) {
                 e.printStackTrace();
             }

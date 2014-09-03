@@ -136,7 +136,8 @@ public class InterleavedSubsystemTestCase {
         }
 
         @Override
-        protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
+        protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+            ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
             GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
 
             GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);

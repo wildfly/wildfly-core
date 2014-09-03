@@ -602,8 +602,8 @@ public class ModelControllerImplUnitTestCase {
     static class ModelControllerService extends TestModelControllerService {
 
         @Override
-        protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
-
+        protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+            ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
             rootRegistration.registerOperationHandler(getOD("setup"), new ModelControllerImplUnitTestCase.SetupHandler(),true);
             rootRegistration.registerOperationHandler(getOD("composite"), CompositeOperationHandler.INSTANCE,true);
             rootRegistration.registerOperationHandler(getOD("good"), new ModelControllerImplUnitTestCase.ModelStageGoodHandler(),true);
