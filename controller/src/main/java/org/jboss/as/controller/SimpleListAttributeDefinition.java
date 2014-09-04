@@ -31,8 +31,12 @@ import javax.xml.stream.XMLStreamWriter;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
+ * {@link org.jboss.as.controller.AttributeDefinition} for attributes that represent lists with
+ * simple element types (i.e. not {@link org.jboss.dmr.ModelType#LIST} or {@link org.jboss.dmr.ModelType#OBJECT}.
+ *
  * Date: 13.10.2011
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -45,6 +49,8 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     protected SimpleListAttributeDefinition(final ListAttributeDefinition.Builder builder, AttributeDefinition valueType) {
         super(builder);
         this.valueType = valueType;
+        // This class is not appropriate for lists with complex elements. Use ObjectListAttributeDefinition
+        assert valueType.getType() != ModelType.OBJECT && valueType.getType() != ModelType.LIST;
     }
 
 

@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -41,6 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_UPDATE_SKIPPED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.net.InetAddress;
 import java.security.Principal;
@@ -132,6 +132,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private final List<ModelNode> controllerOperations = new ArrayList<ModelNode>(2);
     private boolean auditLogged;
     private final AuditLogger auditLogger;
+    private final ModelControllerImpl controller;
 
     enum ContextFlag {
         ROLLBACK_ON_FAIL, ALLOW_RESOURCE_SERVICE_RESTART,
@@ -142,7 +143,8 @@ abstract class AbstractOperationContext implements OperationContext {
                              final ControlledProcessState processState,
                              final boolean booting,
                              final AuditLogger auditLogger,
-                             final NotificationSupport notificationSupport) {
+                             final NotificationSupport notificationSupport,
+                             final ModelControllerImpl controller) {
         this.processType = processType;
         this.runningMode = runningMode;
         this.transactionControl = transactionControl;
@@ -151,6 +153,7 @@ abstract class AbstractOperationContext implements OperationContext {
         this.auditLogger = auditLogger;
         this.notificationSupport = notificationSupport;
         this.notifications = new ConcurrentLinkedQueue<Notification>();
+        this.controller = controller;
         steps = new EnumMap<Stage, Deque<Step>>(Stage.class);
         for (Stage stage : Stage.values()) {
             if (booting && stage == Stage.VERIFY) {
@@ -625,6 +628,12 @@ abstract class AbstractOperationContext implements OperationContext {
         }
     }
 
+    private void addBootFailureDescription() {
+        if (isBooting() && activeStep != null && activeStep.response.hasDefined(FAILURE_DESCRIPTION)) {
+            controller.addFailureDescription(activeStep.operation, activeStep.response.get(FAILURE_DESCRIPTION).clone());
+        }
+    }
+
     private boolean canContinueProcessing() {
 
         // Cancellation is detected via interruption.
@@ -643,7 +652,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 activeStep.response.get(ROLLED_BACK).set(true);
             }
             resultAction = ResultAction.ROLLBACK;
-        } else if (activeStep != null && activeStep.response.hasDefined(FAILURE_DESCRIPTION)
+        } else if (activeStep != null && activeStep.hasFailed()
                 && (isRollbackOnRuntimeFailure() || currentStage == Stage.MODEL)) {
             activeStep.response.get(OUTCOME).set(FAILED);
             activeStep.response.get(ROLLED_BACK).set(true);
@@ -663,7 +672,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 try {
                     step.handler.execute(this, step.operation);
                     // AS7-6046
-                    if (isErrorLoggingNecessary() && step.response.hasDefined(FAILURE_DESCRIPTION)) {
+                    if (isErrorLoggingNecessary() && step.hasFailed()) {
                         MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
                                 step.response.get(FAILURE_DESCRIPTION));
                     }
@@ -692,7 +701,8 @@ abstract class AbstractOperationContext implements OperationContext {
                         MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
                                 step.response.get(FAILURE_DESCRIPTION));
                     }
-                    completeStepInternal();
+
+                    stepCompleted();
                 } else {
                     // Handler threw OCE after calling completeStep()
                     // Throw it on and let standard error handling deal with it
@@ -714,7 +724,7 @@ abstract class AbstractOperationContext implements OperationContext {
             // completeStep()?
             if (currentStage != Stage.DONE) {
                 // It failed before, so consider the operation a failure.
-                if (!step.response.hasDefined(FAILURE_DESCRIPTION)) {
+                if (!step.hasFailed()) {
                     // If the failure is an OperationClientException we just want its localized message, no class name
                     String cause = t instanceof OperationClientException ? t.getLocalizedMessage() : t.toString();
                     if (cause == null) {
@@ -732,6 +742,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 report(MessageSeverity.WARN, ControllerLogger.ROOT_LOGGER.stepHandlerFailed(step.handler));
             }
         } finally {
+            addBootFailureDescription();
             // Make sure non-recursive steps finalize
             finishStep(step);
         }
@@ -975,6 +986,10 @@ abstract class AbstractOperationContext implements OperationContext {
             response.get(OUTCOME);
         }
 
+        private boolean hasFailed() {
+            return this.response.hasDefined(FAILURE_DESCRIPTION);
+        }
+
         /**
          * Perform any rollback needed to reverse this step (if this context is
          * rolling back), and release any locks taken by this step.
@@ -1037,7 +1052,7 @@ abstract class AbstractOperationContext implements OperationContext {
                     // fixing the context state and treating
                     // the overall operation as a failure.
                     currentStage = Stage.DONE;
-                    if (!response.hasDefined(FAILURE_DESCRIPTION)) {
+                    if (!hasFailed()) {
                         response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationHandlerFailedToComplete());
                     }
                     response.get(OUTCOME).set(cancelled ? CANCELLED : FAILED);
@@ -1047,7 +1062,7 @@ abstract class AbstractOperationContext implements OperationContext {
                     response.get(OUTCOME).set(cancelled ? CANCELLED : FAILED);
                     response.get(ROLLED_BACK).set(true);
                 } else {
-                    response.get(OUTCOME).set(response.hasDefined(FAILURE_DESCRIPTION) ? FAILED : SUCCESS);
+                    response.get(OUTCOME).set(hasFailed() ? FAILED : SUCCESS);
                 }
 
             } finally {

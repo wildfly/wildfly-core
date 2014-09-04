@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
@@ -202,6 +203,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final DelegatingConfigurableAuthorizer authorizer;
     private final ManagedAuditLogger auditLogger;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
+    private final BootErrorCollector bootErrorCollector;
 
     public ServerRootResourceDefinition(
             final ContentRepository contentRepository,
@@ -216,7 +218,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater,
             final DelegatingConfigurableAuthorizer authorizer,
             final ManagedAuditLogger auditLogger,
-            final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
+            final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
+            final BootErrorCollector bootErrorCollector) {
         super(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false));
         this.contentRepository = contentRepository;
         this.extensibleConfigurationPersister = extensibleConfigurationPersister;
@@ -233,6 +236,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         this.isDomain = serverEnvironment == null || serverEnvironment.getLaunchType() == LaunchType.DOMAIN;
         this.authorizer = authorizer;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
+        this.bootErrorCollector = bootErrorCollector;
     }
 
     @Override
@@ -405,9 +409,9 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         };
         final ResourceDefinition managementDefinition;
         if (isDomain) {
-            managementDefinition = CoreManagementResourceDefinition.forDomainServer(authorizer, auditLogger, pathManager, environmentReader);
+            managementDefinition = CoreManagementResourceDefinition.forDomainServer(authorizer, auditLogger, pathManager, environmentReader, bootErrorCollector);
         } else {
-            managementDefinition = CoreManagementResourceDefinition.forStandaloneServer(authorizer, auditLogger, pathManager, environmentReader,
+            managementDefinition = CoreManagementResourceDefinition.forStandaloneServer(authorizer, auditLogger, pathManager, environmentReader, bootErrorCollector,
                     NativeManagementResourceDefinition.INSTANCE, NativeRemotingManagementResourceDefinition.INSTANCE,
                     HttpManagementResourceDefinition.INSTANCE);
         }

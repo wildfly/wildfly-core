@@ -153,14 +153,13 @@ public final class ServerService extends AbstractControllerService {
 
     /**
      * Construct a new instance.
-     *
      * @param configuration the bootstrap configuration
      * @param prepareStep the prepare step to use
      */
     private ServerService(final Bootstrap.Configuration configuration, final ControlledProcessState processState,
-                  final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final DelegatingResourceDefinition rootResourceDefinition,
-                  final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
-                  final DelegatingConfigurableAuthorizer authorizer) {
+                          final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final DelegatingResourceDefinition rootResourceDefinition,
+                          final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
+                          final DelegatingConfigurableAuthorizer authorizer) {
         super(getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer);
         this.configuration = configuration;
@@ -190,8 +189,7 @@ public final class ServerService extends AbstractControllerService {
 
     /**
      * Add this service to the given service target.
-     *
-     * @param serviceTarget the service target
+     *  @param serviceTarget the service target
      * @param configuration the bootstrap configuration
      */
     public static void addService(final ServiceTarget serviceTarget, final Bootstrap.Configuration configuration,
@@ -249,7 +247,8 @@ public final class ServerService extends AbstractControllerService {
                         },
                         authorizer,
                         super.getAuditLogger(),
-                        getMutableRootResourceRegistrationProvider()));
+                        getMutableRootResourceRegistrationProvider(),
+                        super.getBootErrorCollector()));
         super.start(context);
     }
 

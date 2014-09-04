@@ -115,6 +115,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private volatile ModelControllerImpl controller;
     private ConfigurationPersister configurationPersister;
     private final ManagedAuditLogger auditLogger;
+    private final BootErrorCollector bootErrorCollector;
 
     /**
      * Construct a new instance.
@@ -224,8 +225,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.expressionResolver = expressionResolver;
         this.auditLogger = auditLogger;
         this.authorizer = authorizer;
+        this.bootErrorCollector = new BootErrorCollector();
     }
 
+    @Override
     public void start(final StartContext context) throws StartException {
 
         if (configurationPersister == null) {
@@ -246,7 +249,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
-                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport);
+                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport, bootErrorCollector);
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -410,5 +413,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return auditLogger;
     }
 
+    protected BootErrorCollector getBootErrorCollector() {
+        return bootErrorCollector;
+    }
 }
 
