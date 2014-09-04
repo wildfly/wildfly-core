@@ -36,6 +36,7 @@ import java.util.List;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexWriter;
 import org.jboss.jandex.Indexer;
+import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ByteArrayAsset;
@@ -49,6 +50,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
  */
 public class TestModule {
 
+    private static final Logger log  = Logger.getLogger(TestModule.class);
 
     private final String moduleName;
     private final File moduleXml;
@@ -76,8 +78,8 @@ public class TestModule {
     /**
      * <p>Creates a new module with the given name and module dependencies. The module.xml will be generated</p>
      *
-     * @param moduleName The name of the module.
-     * @param moduleXml The module definition file.
+     * @param moduleName    The name of the module.
+     * @param dependencies  The module dependencies
      */
     public TestModule(String moduleName, String...dependencies) {
         this.moduleName = moduleName;
@@ -222,7 +224,7 @@ public class TestModule {
             }
 
             if (!file.delete()) {
-                throw new RuntimeException("Could not delete [" + file.getPath() + ".");
+                log.error("Could not delete [" + file.getPath() + ".");
             }
         } else {
             throw new IllegalStateException("Module [" + this.moduleName + "] does not exists.");
