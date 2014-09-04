@@ -36,7 +36,7 @@ import java.net.UnknownHostException;
  * An outbound socket binding represents the client end of a socket. It represents binding from a local "host"
  * to a remote "host". In some special cases the remote host can itself be the same local host.
  * Unlike the {@link SocketBinding} which represents a {@link java.net.ServerSocket} that opens a socket for "listening",
- * the {@link OutboundSocketBinding} represents a {@link Socket} which "connects" to a remote/local host
+ * the {@link OutboundSocketBinding} represents a {@link Socket} which "connects" to a remote/local host.
  *
  * @author Jaikiran Pai
  */
@@ -53,8 +53,8 @@ public class OutboundSocketBinding {
     private final int destinationPort;
 
     /**
-     * The destination address is lazily resolved whenever a request is made {@link #getResolvedDestinationAddress()} ()}
-     * or for {@link #connect()}
+     * The destination address is lazily resolved whenever a request is made {@link #getResolvedDestinationAddress()}
+     * or for {@link #connect()}.
      */
     private InetAddress resolvedDestinationAddress;
 
@@ -96,7 +96,7 @@ public class OutboundSocketBinding {
     }
 
     /**
-     * Creates an outbound socket binding
+     * Creates an outbound socket binding.
      *
      * @param name                   Name of the outbound socket binding
      * @param socketBindingManager   The socket binding manager
@@ -117,9 +117,9 @@ public class OutboundSocketBinding {
 
     /**
      * Creates a {@link Socket} represented by this {@link OutboundSocketBinding} and connects to the
-     * destination
+     * destination.
      *
-     * @return
+     * @return the created and connected socket
      * @throws IOException
      */
     public Socket connect() throws IOException {
@@ -134,6 +134,8 @@ public class OutboundSocketBinding {
 
     /**
      * Returns the <em>unresolved</em> destination address of this outbound socket binding.
+     *
+     * @return the unresolved destination address
      */
     public String getUnresolvedDestinationAddress() {
         return this.unresolvedDestinationAddress;
@@ -155,19 +157,28 @@ public class OutboundSocketBinding {
     }
 
     /**
-    * @deprecated use {@link #getResolvedDestinationAddress()} instead to get the resolved destination address
-    * or {@link #getUnresolvedDestinationAddress()} to get the unresolved destination address.
-    */
+     * @deprecated Use {@link #getResolvedDestinationAddress()} instead to get the resolved destination address
+     * or {@link #getUnresolvedDestinationAddress()} to get the unresolved destination address.
+     */
     @Deprecated
     public synchronized InetAddress getDestinationAddress() throws UnknownHostException {
         return getResolvedDestinationAddress();
     }
 
-
+    /**
+     * Returns the destination port number.
+     *
+     * @return destination port number
+     */
     public int getDestinationPort() {
         return this.destinationPort;
     }
 
+    /**
+     * Returns whether the source port is fixed, i.e. not accounting for port offset.
+     *
+     * @return true if the port number is fixed, false otherwise
+     */
     public boolean isFixedSourcePort() {
         return this.fixedSourcePort;
     }
@@ -175,31 +186,31 @@ public class OutboundSocketBinding {
     /**
      * Returns the source address of this outbound socket binding. If no explicit source address is specified
      * for this binding, then this method returns the address of the default interface that's configured
-     * for the socket binding group
+     * for the socket binding group.
      *
-     * @return
+     * @return source address of this outbound socket binding
      */
     public InetAddress getSourceAddress() {
         return this.sourceNetworkInterface != null ? this.sourceNetworkInterface.getAddress() : this.socketBindingManager.getDefaultInterfaceAddress();
     }
 
     /**
-     * The source port for this outbound socket binding. Note that this isn't the "absolute" port if the
+     * Returns the source port for this outbound socket binding. Note that this isn't the "absolute" port if the
      * this outbound socket binding has a port offset. To get the absolute source port, use the {@link #getAbsoluteSourcePort()}
-     * method
+     * method.
      *
-     * @return
+     * @return the source port for this outbound socket binding
      */
     public Integer getSourcePort() {
         return this.sourcePort;
     }
 
     /**
-     * The absolute source port for this outbound socket binding. The absolute source port is the same as {@link #getSourcePort()}
+     * Returns the absolute source port for this outbound socket binding. The absolute source port is the same as {@link #getSourcePort()}
      * if the outbound socket binding is marked for "fixed source port". Else, it is the sum of {@link #getSourcePort()}
-     * and the port offset configured on the {@link SocketBindingManager}
+     * and the port offset configured on the {@link SocketBindingManager}.
      *
-     * @return
+     * @return the absolute source port accounting for port offset/fixation
      */
     public Integer getAbsoluteSourcePort() {
         if (this.sourcePort == null) {
@@ -213,7 +224,7 @@ public class OutboundSocketBinding {
     }
 
     /**
-     * Closes the outbound socket binding connection
+     * Closes the outbound socket binding connection.
      *
      * @throws IOException
      */
@@ -226,9 +237,9 @@ public class OutboundSocketBinding {
     }
 
     /**
-     * Returns true if a socket connection has been established by this outbound socket binding. Else returns false
+     * Returns true if a socket connection has been established by this outbound socket binding, false otherwise.
      *
-     * @return
+     * @return true if a socket connection has been established by this outbound socket binding, false otherwise
      */
     public boolean isConnected() {
         return this.socketBindingManager.getNamedRegistry().getManagedBinding(this.name) != null;
