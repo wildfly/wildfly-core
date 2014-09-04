@@ -28,12 +28,14 @@ import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.INTERFAC
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.addValidatingHandler;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -43,6 +45,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -85,11 +88,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        ModelNode model = resource.getModel();
         for (AttributeDefinition definition : HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS) {
             validateAndSet(definition, operation, model);
         }
+        addValidatingHandler(context, operation);
     }
 
     @Override

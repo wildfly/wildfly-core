@@ -24,12 +24,20 @@ package org.jboss.as.server.mgmt;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.logging.ServerLogger.ROOT_LOGGER;
 
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -37,15 +45,16 @@ import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
 import org.jboss.as.server.operations.HttpManagementRemoveHandler;
-import org.jboss.as.server.operations.HttpManagementWriteAttributeHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -57,6 +66,8 @@ import org.jboss.dmr.ModelType;
 public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     private static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
+
+    private static final OperationStepHandler VALIDATING_HANDLER = new HttpManagementValidatingHandler();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
                 .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
@@ -125,8 +136,9 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        OperationStepHandler writeAttributeHandler = new WriteAttributeHandler(ATTRIBUTE_DEFINITIONS);
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, HttpManagementWriteAttributeHandler.INSTANCE);
+            resourceRegistration.registerReadWriteAttribute(attr, null, writeAttributeHandler);
         }
     }
 
@@ -134,4 +146,51 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
     }
+
+    public static void addValidatingHandler(OperationContext operationContext, ModelNode fromOperation) {
+        ModelNode operation = Util.createOperation("validate-http-interface", PathAddress.pathAddress(fromOperation.require(OP_ADDR)));
+
+        operationContext.addStep(operation, VALIDATING_HANDLER, Stage.MODEL);
+    }
+
+    private static class WriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+
+        private WriteAttributeHandler(AttributeDefinition[] attributes) {
+            super(attributes);
+        }
+
+        @Override
+        protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName,
+                ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
+            super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+            addValidatingHandler(context, operation);
+        }
+
+    }
+
+    private static class HttpManagementValidatingHandler implements OperationStepHandler {
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+            if (model.hasDefined(INTERFACE.getName())
+                    && (model.hasDefined(SOCKET_BINDING.getName())
+                    || model.hasDefined(SECURE_SOCKET_BINDING.getName())
+            )) {
+                throw ROOT_LOGGER.illegalCombinationOfHttpManagementInterfaceConfigurations(
+                        INTERFACE.getName(),
+                        SOCKET_BINDING.getName(),
+                        SECURE_SOCKET_BINDING.getName());
+            }
+
+            if (model.hasDefined(SECURITY_REALM.getName()) == false
+                    && (model.hasDefined(SECURE_SOCKET_BINDING.getName()) || model.hasDefined(HTTPS_PORT.getName()))) {
+                throw ROOT_LOGGER.noSecurityRealmForSsl();
+            }
+
+            context.stepCompleted();
+        }
+
+    }
+
 }

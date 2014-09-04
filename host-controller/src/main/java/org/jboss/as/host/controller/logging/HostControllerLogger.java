@@ -1202,4 +1202,7 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 153, value = "Channel closed")
     IOException channelClosed();
+
+    @Message( id = 154, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
+    OperationFailedException noSecurityRealmForSsl();
 }
