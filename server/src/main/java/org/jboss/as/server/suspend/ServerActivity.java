@@ -21,7 +21,7 @@ public interface ServerActivity {
      * no new requests should be allowed to proceeed
      * @param listener The listener to invoke when suspend is done.
      */
-    void suspened(ServerActivityCallback listener);
+    void suspended(ServerActivityCallback listener);
 
     /**
      * Invoked if the suspend or pre-suspened is cancelled

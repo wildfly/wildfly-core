@@ -63,7 +63,7 @@ public class SuspendController implements Service<SuspendController> {
                 public void done() {
                     state = State.SUSPENDING;
                     for (ServerActivity activity : activities) {
-                        activity.suspened(SuspendController.this.listener);
+                        activity.suspended(SuspendController.this.listener);
                     }
                 }
             });
