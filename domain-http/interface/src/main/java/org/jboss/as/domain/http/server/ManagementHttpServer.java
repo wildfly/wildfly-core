@@ -27,6 +27,7 @@ import static org.xnio.SslClientAuthMode.REQUESTED;
 import static org.xnio.SslClientAuthMode.REQUIRED;
 
 import javax.net.ssl.SSLContext;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
+
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
@@ -70,6 +72,7 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.jboss.msc.service.StartException;
 import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
 import org.xnio.ChannelListener;
@@ -78,6 +81,7 @@ import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
 import org.xnio.StreamConnection;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
@@ -99,13 +103,16 @@ public class ManagementHttpServer {
     private volatile XnioWorker worker;
     private volatile AcceptingChannel<StreamConnection> normalServer;
     private volatile AcceptingChannel<SslConnection> secureServer;
-    private final SecurityRealm securityRealm;
+    private final SSLContext sslContext;
+    private final SslClientAuthMode sslClientAuthMode;
 
-    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SecurityRealm securityRealm) {
+
+    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext, SslClientAuthMode sslClientAuthMode) {
         this.openListener = openListener;
         this.httpAddress = httpAddress;
         this.secureAddress = secureAddress;
-        this.securityRealm = securityRealm;
+        this.sslContext = sslContext;
+        this.sslClientAuthMode = sslClientAuthMode;
     }
 
 
@@ -136,16 +143,8 @@ public class ManagementHttpServer {
                 normalServer.resumeAccepts();
             }
             if (secureAddress != null) {
-                SSLContext sslContext = securityRealm.getSSLContext();
-                Set<AuthMechanism> supportedMechanisms = securityRealm.getSupportedAuthenticationMechanisms();
-                if (supportedMechanisms.contains(AuthMechanism.CLIENT_CERT)) {
-                    if (supportedMechanisms.contains(AuthMechanism.DIGEST)
-                            || supportedMechanisms.contains(AuthMechanism.PLAIN)) {
-                        // Username / Password auth is possible so don't mandate a client certificate.
-                        serverOptionsBuilder.set(SSL_CLIENT_AUTH_MODE, REQUESTED);
-                    } else {
-                        serverOptionsBuilder.set(SSL_CLIENT_AUTH_MODE, REQUIRED);
-                    }
+                if (sslClientAuthMode != null) {
+                    serverOptionsBuilder.set(SSL_CLIENT_AUTH_MODE, sslClientAuthMode);
                 }
                 OptionMap secureOptions = serverOptionsBuilder.getMap();
                 XnioSsl xnioSsl = new JsseXnioSsl(worker.getXnio(), secureOptions, sslContext);
@@ -166,9 +165,26 @@ public class ManagementHttpServer {
     public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
                                               ModelController modelController, SecurityRealm securityRealm, ControlledProcessStateService controlledProcessStateService,
                                               ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler,
-                                              ManagementHttpRequestProcessor managementHttpRequestProcessor)
+                                              ManagementHttpRequestProcessor managementHttpRequestProcessor) throws IOException, StartException {
 
-            throws IOException {
+        SSLContext sslContext = null;
+        SslClientAuthMode sslClientAuthMode = null;
+        if (secureBindAddress != null) {
+            sslContext = securityRealm.getSSLContext();
+            if (sslContext == null) {
+                throw ROOT_LOGGER.sslRequestedNoSslContext();
+            }
+            Set<AuthMechanism> supportedMechanisms = securityRealm.getSupportedAuthenticationMechanisms();
+            if (supportedMechanisms.contains(AuthMechanism.CLIENT_CERT)) {
+                if (supportedMechanisms.contains(AuthMechanism.DIGEST)
+                        || supportedMechanisms.contains(AuthMechanism.PLAIN)) {
+                    // Username / Password auth is possible so don't mandate a client certificate.
+                    sslClientAuthMode = REQUESTED;
+                } else {
+                    sslClientAuthMode = REQUIRED;
+                }
+            }
+        }
 
         HttpOpenListener openListener = new HttpOpenListener(new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096), 4096);
 
@@ -182,7 +198,7 @@ public class ManagementHttpServer {
 
         setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
                 secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor);
-        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, securityRealm);
+        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode);
     }
 
 
