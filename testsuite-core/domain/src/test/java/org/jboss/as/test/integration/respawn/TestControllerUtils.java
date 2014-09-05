@@ -19,6 +19,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jboss.remoting3.remote.HttpUpgradeConnectionProviderFactory;
+import org.xnio.Options;
 
 import static org.jboss.as.network.NetworkUtils.formatPossibleIpv6Address;
 
@@ -37,12 +39,17 @@ class TestControllerUtils implements Closeable {
     }
 
     static TestControllerUtils create(String host, int port, CallbackHandler callbackHandler) throws IOException, URISyntaxException {
-        return create(new URI("remote://" + formatPossibleIpv6Address(host) +  ":" + port), callbackHandler);
+        return create("remote",host, port, callbackHandler);
     }
 
+    static TestControllerUtils create(String scheme, String host, int port, CallbackHandler callbackHandler) throws IOException, URISyntaxException {
+        return create(new URI(scheme, null, formatPossibleIpv6Address(host), port, null, null, null), callbackHandler);
+    }
     static TestControllerUtils create(URI uri, CallbackHandler callbackHandler) throws IOException {
         final Endpoint endpoint = Remoting.createEndpoint(ENDPOINT_NAME, OptionMap.EMPTY);
         endpoint.addConnectionProvider("remote", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
+        endpoint.addConnectionProvider("http-remoting", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
+        endpoint.addConnectionProvider("https-remoting", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
         final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, uri);
         configuration.setCallbackHandler(callbackHandler);
         return new TestControllerUtils(endpoint, configuration, createDefaultExecutor());

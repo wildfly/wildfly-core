@@ -62,7 +62,7 @@ import org.junit.Test;
  */
 public class DomainControllerMigrationTestCase {
 
-    private static final Logger log = Logger.getLogger(DomainControllerMigrationTestCase.class);
+    private static final Logger log = Logger.getLogger(DomainControllerMigrationTestCase.class.getName());
 
     private static String[] SERVERS = new String[] {"failover-one", "failover-two", "failover-three"};
     private static String[] HOSTS = new String[] {"failover-h1", "failover-h2", "failover-h3"};
@@ -201,7 +201,7 @@ public class DomainControllerMigrationTestCase {
 
         log.info("Reloading failover-h2 to act as the domain controller.");
         hostUtils[1].executeAwaitConnectionClosed(restartOp);
-
+        log.info("Waiting for Host Controller to be ready");
         waitUntilHostControllerReady(hostUtils[1]);
 
         // Read the first system property. This proves we are using the config provided via failover-h1
