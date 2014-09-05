@@ -1,7 +1,6 @@
 package org.jboss.as.subsystem.test;
 
 import java.io.Serializable;
-import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.as.controller.PathAddress;
@@ -116,12 +115,7 @@ public class AdditionalInitialization extends AdditionalParsers {
      */
     public static void registerCapabilities(RuntimeCapabilityRegistry capabilityRegistry, String... capabilities) {
         for (final String capabilityName : capabilities) {
-            RuntimeCapability<Void> capability = new RuntimeCapability<Void>(capabilityName, null) {
-                @Override
-                public String getDescription(Locale locale) {
-                    return capabilityName;
-                }
-            };
+            RuntimeCapability<Void> capability = new RuntimeCapability<Void>(capabilityName, null);
             capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
                     new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
@@ -148,12 +142,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     }
 
     private static <T> RuntimeCapability<T> createCapability(final String capabilityName, final T api) {
-        return new RuntimeCapability<T>(capabilityName, api) {
-            @Override
-            public String getDescription(Locale locale) {
-                return capabilityName;
-            }
-        };
+        return new RuntimeCapability<T>(capabilityName, api);
     }
 
     /**

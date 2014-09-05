@@ -24,7 +24,6 @@ package org.jboss.as.controller.capability;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -38,6 +37,12 @@ public abstract class AbstractCapability {
     private final Set<String> requirements;
     private final Set<String> optionalRequirements;
 
+    /**
+     * Creates a new capability
+     * @param name the name of the capability. Cannot be {@code null}
+     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
+     * @param optionalRequirements names of other capabilities upon which this capability has an optional requirement. May be {@code null}
+     */
     protected AbstractCapability(final String name, final Set<String> requirements, final Set<String> optionalRequirements) {
         assert name != null;
         this.name = name;
@@ -53,6 +58,11 @@ public abstract class AbstractCapability {
         }
     }
 
+    /**
+     * Creates a new capability
+     * @param name the name of the capability. Cannot be {@code null}
+     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
+     */
     protected AbstractCapability(final String name, final String... requirements) {
         assert name != null;
         this.name = name;
@@ -93,15 +103,15 @@ public abstract class AbstractCapability {
         return optionalRequirements;
     }
 
-    /**
-     * Gets an internationalized text description of the capability.
-     *
-     * @param locale the locale to use. Cannot be {@code null}
-     * @return the text description, or {@code null} if there is no text description
-     *
-     * @throws java.lang.IllegalArgumentException if {@code locale} is {@code null}
-     */
-    public abstract String getDescription(Locale locale);
+//    /**
+//     * Gets an internationalized text description of the capability.
+//     *
+//     * @param locale the locale to use. Cannot be {@code null}
+//     * @return the text description, or {@code null} if there is no text description
+//     *
+//     * @throws java.lang.IllegalArgumentException if {@code locale} is {@code null}
+//     */
+//    public abstract String getDescription(Locale locale);
 
     /**
      * {@inheritDoc}

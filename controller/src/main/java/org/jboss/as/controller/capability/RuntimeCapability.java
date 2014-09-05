@@ -31,20 +31,39 @@ import java.util.Set;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public abstract class RuntimeCapability<T> extends AbstractCapability  {
+public class RuntimeCapability<T> extends AbstractCapability  {
 
     private final T runtimeAPI;
 
-    protected RuntimeCapability(String name, T runtimeAPI, Set<String> requirements, Set<String> optionalRequirements) {
+    /**
+     * Creates a new capability
+     * @param name the name of the capability. Cannot be {@code null}
+     * @param runtimeAPI implementation of the API exposed by this capability to other capabilities. May be {@code null}
+     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
+     * @param optionalRequirements names of other capabilities upon which this capability has an optional requirement. May be {@code null}
+     */
+    public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements, Set<String> optionalRequirements) {
         super(name, requirements, optionalRequirements);
         this.runtimeAPI = runtimeAPI;
     }
 
-    protected RuntimeCapability(String name, T runtimeAPI, Set<String> requirements) {
+    /**
+     * Creates a new capability
+     * @param name the name of the capability. Cannot be {@code null}
+     * @param runtimeAPI implementation of the API exposed by this capability to other capabilities. May be {@code null}
+     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
+     */
+    public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements) {
         this(name, runtimeAPI, requirements, null);
     }
 
-    protected RuntimeCapability(String name, T runtimeAPI, String... requirements) {
+    /**
+     * Creates a new capability
+     * @param name the name of the capability. Cannot be {@code null}
+     * @param runtimeAPI implementation of the API exposed by this capability to other capabilities. May be {@code null}
+     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
+     */
+    public RuntimeCapability(String name, T runtimeAPI, String... requirements) {
         super(name, requirements);
         this.runtimeAPI = runtimeAPI;
     }
