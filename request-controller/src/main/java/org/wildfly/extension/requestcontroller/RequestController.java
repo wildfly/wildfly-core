@@ -94,7 +94,7 @@ public class RequestController implements Service<RequestController>, ServerActi
      *
      * @param requestCountListener The listener that will be notified when all requests are done
      */
-    public synchronized void suspened(ServerActivityCallback requestCountListener) {
+    public synchronized void suspended(ServerActivityCallback requestCountListener) {
         this.paused = true;
         listenerUpdater.set(this, requestCountListener);
 
