@@ -119,6 +119,8 @@ public class ModelDescriptionConstants {
     public static final String DIRECTORY = "directory";
     public static final String DIRECTORY_GROUPING = "directory-grouping";
     public static final String DISABLE = "disable";
+    public static final String DISABLED_TIME = "disabled-time";
+    public static final String DISABLED_TIMESTAMP = "disabled-timestamp";
     public static final String DISABLED_DUE_TO_FAILURE = "disabled-due-to-failure";
     public static final String DISCOVERY_OPTION = "discovery-option";
     public static final String DISCOVERY_OPTIONS = "discovery-options";
@@ -131,6 +133,8 @@ public class ModelDescriptionConstants {
     public static final String DUMP_SERVICES = "dump-services";
     public static final String ENABLE = "enable";
     public static final String ENABLED = "enabled";
+    public static final String ENABLED_TIME = "enabled-time";
+    public static final String ENABLED_TIMESTAMP = "enabled-timestamp";
     public static final String ENTIRE_RESOURCE = "entire-resource";
     public static final String EXECUTE = "execute";
     public static final String EXCEPTIONS = "exceptions";

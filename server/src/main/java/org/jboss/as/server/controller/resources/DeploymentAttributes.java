@@ -71,6 +71,7 @@ public class DeploymentAttributes {
     public static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING, false)
         .setValidator(new StringLengthValidator(1, false))
         .build();
+
     public static final AttributeDefinition TO_REPLACE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TO_REPLACE, NAME).build();
 
     //For use in resources
@@ -109,6 +110,22 @@ public class DeploymentAttributes {
     public static final AttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.STATUS, ModelType.STRING, false)
         .setValidator(new EnumValidator<AbstractDeploymentUnitService.DeploymentStatus>(AbstractDeploymentUnitService.DeploymentStatus.class, false))
         .build();
+
+    public static final SimpleAttributeDefinition ENABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIME, ModelType.LONG, false)
+            .setValidator(new StringLengthValidator(1, false))
+            .build();
+
+    public static final SimpleAttributeDefinition ENABLED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIMESTAMP, ModelType.STRING, false)
+            .setValidator(new StringLengthValidator(1, false))
+            .build();
+
+    public static final SimpleAttributeDefinition DISABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DISABLED_TIME, ModelType.LONG, false)
+            .setValidator(new StringLengthValidator(1, false))
+            .build();
+
+    public static final SimpleAttributeDefinition DISABLED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DISABLED_TIMESTAMP, ModelType.STRING, false)
+            .setValidator(new StringLengthValidator(1, false))
+            .build();
 
     //Managed content value attributes
     public static final SimpleAttributeDefinition CONTENT_INPUT_STREAM_INDEX =
@@ -177,7 +194,7 @@ public class DeploymentAttributes {
 
 
     /** Attributes for server deployment resource */
-    public static final AttributeDefinition[] SERVER_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, CONTENT_RESOURCE, ENABLED, PERSISTENT, STATUS};
+    public static final AttributeDefinition[] SERVER_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, CONTENT_RESOURCE, ENABLED, PERSISTENT, STATUS, ENABLED_TIME, ENABLED_TIMESTAMP, DISABLED_TIME, DISABLED_TIMESTAMP};
 
     /** Attributes for server deployment add */
     public static final AttributeDefinition[] SERVER_ADD_ATTRIBUTES = new AttributeDefinition[] { RUNTIME_NAME_NILLABLE, CONTENT_ALL, ENABLED};// 'hide' the persistent attribute from users

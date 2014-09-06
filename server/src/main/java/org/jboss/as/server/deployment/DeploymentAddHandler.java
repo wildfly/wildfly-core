@@ -134,6 +134,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
         if (ENABLED.resolveModelAttribute(context, newModel).asBoolean() && context.isNormalServer()) {
             DeploymentHandlerUtil.deploy(context, runtimeName, name, vaultReader, contentItem);
+            DeploymentUtils.enableAttribute(newModel);
         }
 
         if (contentItem.getHash() != null) {

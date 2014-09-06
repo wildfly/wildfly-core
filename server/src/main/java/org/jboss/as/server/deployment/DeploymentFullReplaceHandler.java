@@ -47,8 +47,8 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentRepository;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 
@@ -149,6 +149,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         // Do the runtime part if the deployment is enabled
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
             DeploymentHandlerUtil.replace(context, deploymentModel, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
+            DeploymentUtils.enableAttribute(deploymentModel);
         }
 
         context.completeStep(new OperationContext.ResultHandler() {

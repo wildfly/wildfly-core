@@ -59,6 +59,7 @@ public class DeploymentDeployHandler implements OperationStepHandler {
         final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(CONTENT_ALL.resolveModelAttribute(context, model));
         DeploymentHandlerUtil.deploy(context, runtimeName, name, vaultReader, contents);
+        DeploymentUtils.enableAttribute(model);
 
         context.stepCompleted();
     }
