@@ -22,14 +22,38 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
-import java.io.IOException;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -190,6 +214,69 @@ public class IgnoredResourcesTestCase {
         }
     }
 
+    @Test
+    public void testServerGroupIgnored() throws Exception {
+
+        final ModelNode op = createOpNode(null, "read-children-names");
+        op.get("child-type").set("server-group");
+
+        final ModelNode result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        for (ModelNode profile : result.asList()) {
+            if ("minimal".equals(profile.asString())) {
+                Assert.fail("found server-group 'minimal'");
+            }
+        }
+
+    }
+
+    @Test
+    public void testDeploymentIgnored() throws Exception {
+
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        archive.add(new StringAsset("test"), "test");
+        final InputStream is = archive.as(ZipExporter.class).exportAsInputStream();
+        try {
+            final ModelNode composite = new ModelNode();
+            composite.get(OP).set(COMPOSITE);
+            composite.get(OP_ADDR).setEmptyList();
+
+            final ModelNode steps = composite.get(STEPS);
+
+            final ModelNode add = steps.add();
+            add.get(OP).set(ADD);
+            add.get(OP_ADDR).add(DEPLOYMENT, "test.jar");
+            add.get(CONTENT).add().get(INPUT_STREAM_INDEX).set(0);
+
+            final ModelNode sAdd = steps.add();
+            sAdd.get(OP).set(ADD);
+            sAdd.get(OP_ADDR).add(SERVER_GROUP, "minimal").add(DEPLOYMENT, "test.jar");
+
+            final Operation operation = OperationBuilder.create(composite).addInputStream(is).build();
+
+            final ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(operation);
+            Assert.assertEquals(result.asString(), result.get(OUTCOME).asString(), SUCCESS);
+
+            final ModelNode ra = new ModelNode();
+            ra.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            ra.get(OP_ADDR).add(DEPLOYMENT, "test.jar");
+            ra.get(NAME).set(CONTENT);
+
+            final ModelNode r = DomainTestUtils.executeForResult(ra, domainMasterLifecycleUtil.getDomainClient());
+            final byte[] hash = r.get(0).get(HASH).asBytes();
+
+            Assert.assertTrue(exists(domainMasterLifecycleUtil, hash));
+            Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
+
+        } finally {
+            if (is != null) try {
+                is.close();
+            } catch (IOException e) {
+                // ignored
+            }
+        }
+
+    }
+
     private static ModelNode createOpNode(String address, String operation) {
         ModelNode op = new ModelNode();
 
@@ -208,5 +295,28 @@ public class IgnoredResourcesTestCase {
 
     private ModelNode executeOperation(final ModelNode op, final ModelControllerClient modelControllerClient) throws IOException, MgmtOperationException {
         return DomainTestUtils.executeForResult(op, modelControllerClient);
+    }
+
+    static boolean exists(final DomainLifecycleUtil util, final byte[] hash) {
+
+        final File home = new File(util.getConfiguration().getDomainDirectory());
+        // Domain contents
+        final File data = new File(home, "data");
+        final File contents = new File(data, "content");
+        return exists(contents, hash);
+    }
+
+    static boolean exists(final File root, final byte[] hash) {
+
+        final String sha1 = HashUtil.bytesToHexString(hash);
+        final String partA = sha1.substring(0,2);
+        final String partB = sha1.substring(2);
+
+        final File da = new File(root, partA);
+        final File db = new File(da, partB);
+        final File content = new File(db, "content");
+
+        return content.exists();
+
     }
 }
