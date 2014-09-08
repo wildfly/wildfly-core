@@ -41,7 +41,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -463,7 +462,7 @@ public interface OperationContext extends ExpressionResolver {
      * @return the service target
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
      */
-    ServiceTarget getServiceTarget() throws UnsupportedOperationException;
+    CapabilitiesServiceTarget getServiceTarget() throws UnsupportedOperationException;
 
     /**
      * Acquire the controlling {@link ModelController}'s exclusive lock. Holding this lock prevent other operations

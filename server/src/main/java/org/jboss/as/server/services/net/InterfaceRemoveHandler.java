@@ -43,11 +43,5 @@ public class InterfaceRemoveHandler extends org.jboss.as.controller.operations.c
     protected InterfaceRemoveHandler() {
     }
 
-    @Override
-    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        super.recordCapabilitiesAndRequirements(context, operation, resource);
-        context.deregisterCapability(InterfaceResourceDefinition.INTERFACE_CAPABILITY.getDynamicName(context.getCurrentAddressValue()));
-    }
-
 
 }

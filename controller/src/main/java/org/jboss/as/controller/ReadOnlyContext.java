@@ -45,7 +45,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -184,7 +183,7 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
-    public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+    public CapabilitiesServiceTarget getServiceTarget() throws UnsupportedOperationException {
         return primaryContext.getServiceTarget();
     }
 
