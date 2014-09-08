@@ -52,8 +52,6 @@ public class ArgumentValueState extends DefaultParsingState {
                     case '$':
                         ctx.enterState(ExpressionValueState.INSTANCE);
                         break;
-                    case '{':
-                        break;
                     case '`':
                         ctx.enterState(BackQuotesState.QUOTES_INCLUDED);
                         break;
@@ -61,15 +59,36 @@ public class ArgumentValueState extends DefaultParsingState {
                         ctx.getCallbackHandler().character(ctx);
                 }
             }});
-        setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_ON);
-        enterState('=', NameValueSeparatorState.INSTANCE);
+        setDefaultHandler(new CharacterHandler(){
+            @Override
+            public void handle(ParsingContext ctx) throws CommandFormatException {
+                final char c = ctx.getCharacter();
+                if((c == '}' || c == ']') && ctx.isLookingFor(c)) {
+                    ctx.leaveState();
+                } else {
+                    if(c == '=' && !ctx.isDeactivated(c)) {
+                        ctx.enterState(NameValueSeparatorState.INSTANCE);
+                    } else {
+                        WordCharacterHandler.IGNORE_LB_ESCAPE_ON.handle(ctx);
+                    }
+                }
+            }});
+
         enterState(',', ListItemSeparatorState.INSTANCE);
-        enterState('[', new ListState(this));
         enterState('"', QuotesState.QUOTES_INCLUDED);
         enterState('`', BackQuotesState.QUOTES_INCLUDED);
-        leaveState(']');
-        enterState('{', this);
-        leaveState('}');
         enterState('$', ExpressionValueState.INSTANCE);
+
+        setReturnHandler(new CharacterHandler() {
+            @Override
+            public void handle(ParsingContext ctx) throws CommandFormatException {
+                if(ctx.isEndOfContent()) {
+                    return;
+                }
+                final char c = ctx.getCharacter();
+                if(c == ',') {
+                    ctx.leaveState();
+                }
+            }});
     }
 }
