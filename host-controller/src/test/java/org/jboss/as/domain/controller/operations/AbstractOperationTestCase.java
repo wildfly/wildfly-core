@@ -56,7 +56,7 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
-import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -92,94 +92,18 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
-import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public abstract class AbstractOperationTestCase {
-    static final LocalHostControllerInfo HOST_INFO = new LocalHostControllerInfo() {
-        @Override
-        public String getLocalHostName() {
-            return "localhost";
-        }
-
-        @Override
-        public boolean isMasterDomainController() {
-            return false;
-        }
-
-        @Override
-        public String getNativeManagementInterface() {
-            return null;
-        }
-
-        @Override
-        public int getNativeManagementPort() {
-            return 0;
-        }
-
-        @Override
-        public String getHttpManagementInterface() {
-            return null;
-        }
-
-        @Override
-        public int getHttpManagementPort() {
-            return 0;
-        }
-
-        @Override
-        public String getHttpManagementSecureInterface() {
-            return null;
-        }
-
-        @Override
-        public int getHttpManagementSecurePort() {
-            return 0;
-        }
-
-        @Override
-        public String getRemoteDomainControllerUsername() {
-            return null;
-        }
-
-        @Override
-        public List<DiscoveryOption> getRemoteDomainControllerDiscoveryOptions() {
-            return null;
-        }
-
-        @Override
-        public ControlledProcessState.State getProcessState() {
-            return null;
-        }
-
-        @Override
-        public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
-            return false;
-        }
-
-        @Override
-        public boolean isBackupDc() {
-            return false;
-        }
-
-        @Override
-        public boolean isUsingCachedDc() {
-            return false;
-        }
-
-    };
-
     MockOperationContext getOperationContext() {
         return getOperationContext(false);
     }
@@ -469,8 +393,12 @@ public abstract class AbstractOperationTestCase {
         public void removeService(ServiceController<?> controller) throws UnsupportedOperationException {
         }
 
+        public CapabilityServiceTarget getServiceTarget() throws UnsupportedOperationException {
+            return null;
+        }
+
         @Override
-        public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
             return null;
         }
 

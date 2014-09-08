@@ -61,7 +61,7 @@ class AggregateProviderAddHandler extends AbstractAddStepHandler {
 
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         final AttributeDefinition ad = AggregateProviderDefinition.PROVIDER_NAMES;
-        ad.addCapabilityRequirements(context, resource.getModel().get(ad.getName()));
+        ad.addCapabilityRequirements(context, resource, resource.getModel().get(ad.getName()));
     }
 
     static void modifyRegistrationModel(OperationContext context, ModelNode op) throws OperationFailedException {

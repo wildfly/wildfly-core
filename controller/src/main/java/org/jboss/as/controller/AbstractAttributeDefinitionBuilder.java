@@ -697,8 +697,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *                             represented by the attribute's value
      * @param dependentCapability  the capability that depends on {@code referencedCapability}
      * @return the builder
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability, RuntimeCapability<?> dependentCapability) {
         return setCapabilityReference(referencedCapability, dependentCapability.getName(), dependentCapability.isDynamicallyNamed());
@@ -714,17 +714,67 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * constructed using the parameters passed to this method.
      * <p>
      * <strong>NOTE:</strong> This method of recording capability references is only suitable for use in attributes
-     * only used in resources that themselves expose a single capability. When the capability requirement
-     * is registered, the dependent capability will be that capability.
+     * only used in resources that themselves expose a single capability.
+     * If your resource exposes more than single you should use {@link #setCapabilityReference(RuntimeCapability, String, AttributeDefinition...)} variant
+     * When the capability requirement is registered, the dependent capability will be that capability.
      *
      * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
      *                             represented by the attribute's value
      * @return the builder
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability) {
         referenceRecorder = new CapabilityReferenceRecorder.ContextDependencyRecorder(referencedCapability);
+        return (BUILDER) this;
+    }
+
+    /**
+     * Records that this attribute's value represents a reference to an instance of a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
+     * <p>
+     * This method is a convenience method equivalent to calling * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
+     * passing in a {@link CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder}
+     * constructed using the parameters passed to this method.
+     * <p>
+     * <strong>NOTE:</strong> This method of recording capability references is only suitable for use in attributes
+     * only used in resources that themselves expose a single capability.
+     * If your resource exposes more than single capability, you should use {@link #setCapabilityReference(RuntimeCapability, String, AttributeDefinition...)}
+     * When the capability requirement
+     * is registered, the dependent capability will be that capability.
+     *
+     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
+     *                             represented by the attribute's value
+     *  @param dependantAttributes attribute from same resource that will be used to derive multiple dynamic parts for the dependant capability
+     * @return the builder
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     */
+    public BUILDER setCapabilityReference(String referencedCapability, AttributeDefinition ... dependantAttributes) {
+        referenceRecorder = new CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder(referencedCapability, dependantAttributes);
+        return (BUILDER) this;
+    }
+
+    /**
+     * Records that this attribute's value represents a reference to an instance of a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
+     * <p>
+     * This method is a convenience method equivalent to calling {@link #setCapabilityReference(CapabilityReferenceRecorder)}
+     * passing in a {@link CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder}
+     * constructed using the parameters passed to this method.
+     * <p>
+     * When the capability requirement is registered, the dependent capability will be that capability.
+     *
+     * @param capability requirement capability
+     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
+     *                             represented by the attribute's value
+     * @param dependantAttributes attributes on resource which will be used for registering capability reference, can be multiple.
+     * @return the builder
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     */
+    public BUILDER setCapabilityReference(RuntimeCapability capability, String referencedCapability, AttributeDefinition ... dependantAttributes) {
+        referenceRecorder = new CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder(capability, referencedCapability, dependantAttributes);
         return (BUILDER) this;
     }
 
@@ -744,8 +794,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *                             portion of which comes from the name of the resource with which
      *                             the attribute is associated
      * @return the builder
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
         referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
@@ -760,8 +810,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param referenceRecorder recorder to handle adding and removing capability requirements. May be {@code null}
      * @return the builder
      *
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(CapabilityReferenceRecorder referenceRecorder) {
         this.referenceRecorder = referenceRecorder;

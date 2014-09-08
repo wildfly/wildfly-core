@@ -45,7 +45,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -193,7 +192,12 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+    public CapabilityServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        return getCapabilityServiceTarget();
+    }
+
+    @Override
+    public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
         acquireControllerLock();
         return primaryContext.getServiceTarget(activeStep);
     }
@@ -398,13 +402,13 @@ class ParallelBootOperationContext extends AbstractOperationContext {
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityName, Class<?> type) {
-        return primaryContext.getCapabilityServiceName(capabilityName, type, activeStep);
+        return primaryContext.getCapabilityServiceName(capabilityName, type, activeStep.address);
     }
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
         return primaryContext.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart),
-                serviceType, activeStep);
+                serviceType, activeStep.address);
     }
 
     @Override

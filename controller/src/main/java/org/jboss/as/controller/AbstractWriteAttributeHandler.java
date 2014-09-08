@@ -186,8 +186,9 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
      */
     protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition,
                                                      ModelNode newValue, ModelNode oldValue) {
-        attributeDefinition.removeCapabilityRequirements(context, oldValue);
-        attributeDefinition.addCapabilityRequirements(context, newValue);
+        Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        attributeDefinition.removeCapabilityRequirements(context, resource, oldValue);
+        attributeDefinition.addCapabilityRequirements(context, resource, newValue);
     }
 
     /**

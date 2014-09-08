@@ -145,9 +145,9 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final ModelControllerImpl modelController;
     private final OperationHeaders operationHeaders;
     private final OperationMessageHandler messageHandler;
-    private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<ServiceName, ServiceController<?>>();
+    private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<>();
     // protected by "realRemovingControllers"
-    private final Map<ServiceName, Step> removalSteps = new HashMap<ServiceName, Step>();
+    private final Map<ServiceName, Step> removalSteps = new HashMap<>();
     private final OperationAttachments attachments;
     /** Tracks the addresses associated with writes to the model.
      * We use a map with dummy values just to take advantage of ConcurrentHashMap  */
@@ -228,7 +228,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.modelController = modelController;
         this.messageHandler = messageHandler;
         this.attachments = attachments;
-        this.affectsModel = booting ? new ConcurrentHashMap<PathAddress, Object>(16 * 16) : new HashMap<PathAddress, Object>(1);
+        this.affectsModel = booting ? new ConcurrentHashMap<>(16 * 16) : new HashMap<>(1);
         this.operationHeaders = operationHeaders;
         this.hostServerGroupTracker = hostServerGroupTracker;
         this.activeOperationResource = new ActiveOperationResource();
@@ -710,7 +710,11 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        return getCapabilityServiceTarget();
+    }
 
+    @Override
+    public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
         return getServiceTarget(activeStep);
     }
 
@@ -723,7 +727,7 @@ final class OperationContextImpl extends AbstractOperationContext {
      *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
      * @return the service target
      */
-    ServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
+    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
 
         readOnly = false;
 
@@ -744,12 +748,17 @@ final class OperationContextImpl extends AbstractOperationContext {
                     public <X> ServiceController<X> installService(ServiceBuilder<X> realBuilder) {
                         return OperationContextImpl.this.installService(realBuilder, name, targetActiveStep);
                     }
+
+                    @Override
+                    public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, PathAddress address) {
+                        return OperationContextImpl.this.getCapabilityServiceName(capabilityName, serviceType, address);
+                    }
                 };
                 return new ContextServiceBuilder<T>(delegate, csi);
             }
         };
         ServiceTarget delegate = targetActiveStep.getScopedServiceTarget(modelController.getServiceTarget());
-        ContextServiceTarget cst = new ContextServiceTarget(delegate, supplier);
+        ContextServiceTarget cst = new ContextServiceTarget(delegate, supplier, targetActiveStep.address);
         synchronized (serviceTargets) {  // synchronized because this can be called concurrently by ParallelBootOperationContext
             serviceTargets.add(cst);
         }
@@ -1098,7 +1107,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (element.isMultiTarget()) {
                 throw ControllerLogger.ROOT_LOGGER.cannotRemove("*");
             }
-            if (! i.hasNext()) {
+            if (!i.hasNext()) {
                 model = model.removeChild(element);
             } else {
                 model = requireChild(model, element, address);
@@ -1526,7 +1535,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (dependent == null) {
             // WFCORE-900 we're currently forgiving of this, but only for runtime-only requirements
             assert runtimeOnly;
-            CapabilityScope context = createCapabilityContext(step);
+            CapabilityScope context = createCapabilityContext(step.address);
             return registry.hasCapability(required, context);
         }
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
@@ -1550,7 +1559,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (getProcessType().isServer()) {
                 msg += "\n" + ControllerLogger.ROOT_LOGGER.formattedCapabilityName(required);
             } else {
-                msg = "\n" + ControllerLogger.ROOT_LOGGER.formattedCapabilityId(required, createCapabilityContext(step).getName());
+                msg = "\n" + ControllerLogger.ROOT_LOGGER.formattedCapabilityId(required, createCapabilityContext(step.address).getName());
             }
             throw new OperationFailedException(msg);
         }
@@ -1579,7 +1588,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
-        CapabilityScope context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step.address);
         RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context, step.address);
         if (capReg != null) {
             RuntimeCapability capability = capReg.getCapability();
@@ -1614,24 +1623,24 @@ final class OperationContextImpl extends AbstractOperationContext {
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType, Step step) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        CapabilityScope context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step.address);
         return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, context, apiType);
     }
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
-        return getCapabilityServiceName(capabilityName, serviceType, activeStep);
+        return getCapabilityServiceName(capabilityName, serviceType, activeStep.address);
     }
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
-        return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart), serviceType, activeStep);
+        return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart), serviceType, activeStep.address);
     }
 
-    ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, Step step) {
+    ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        CapabilityScope context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(address);
         try {
             return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, context, serviceType);
         } catch (IllegalStateException ignored) {
@@ -1827,7 +1836,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 hostServerGroupEffect = HostServerGroupTracker.HostServerGroupEffect.forServer(opId.address, serverGroup, host);
             } else {
                 hostServerGroupEffect =
-                    hostServerGroupTracker.getHostServerGroupEffects(opId.address, operation, managementModel.getRootResource());
+                                    hostServerGroupTracker.getHostServerGroupEffects(opId.address, operation, managementModel.getRootResource());
             }
             targetResource = TargetResource.forDomain(opId.address, mrr, resource, hostServerGroupEffect, hostServerGroupEffect);
         } else {
@@ -1950,19 +1959,19 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private RuntimeRequirementRegistration createRequirementRegistration(String required, String dependent,
                                                                          boolean runtimeOnly, Step step, String attribute) {
-        CapabilityScope context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step.address);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeRequirementRegistration(required, dependent, context, rp, runtimeOnly);
     }
 
     private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability capability, Step step, String attribute) {
-        CapabilityScope context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step.address);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeCapabilityRegistration(capability, context, rp);
     }
 
-    private CapabilityScope createCapabilityContext(Step step) {
-        return CapabilityScope.Factory.create(getProcessType(), step.address);
+    private CapabilityScope createCapabilityContext(PathAddress address) {
+        return CapabilityScope.Factory.create(getProcessType(), address);
     }
 
     private <T> ServiceController<T> installService(ServiceBuilder<T> builder, ServiceName name, Step step)
@@ -2018,15 +2027,17 @@ final class OperationContextImpl extends AbstractOperationContext {
      * Service target that delegates to another target for most calls, but during execution of the
      * management op that created it does management specific integration and limits the available API.
      */
-    private static class ContextServiceTarget implements ServiceTarget {
+    private static class ContextServiceTarget implements CapabilityServiceTarget {
 
         private final ServiceTarget delegate;
         private final Set<ContextServiceBuilder> builders = new HashSet<>();
         private volatile ContextServiceBuilderSupplier builderSupplier;
+        private final PathAddress targetAddress;
 
-        ContextServiceTarget(final ServiceTarget delegate, final ContextServiceBuilderSupplier builderSupplier) {
+        ContextServiceTarget(final ServiceTarget delegate, final ContextServiceBuilderSupplier builderSupplier, final PathAddress targetAddress) {
             this.delegate = delegate;
             this.builderSupplier = builderSupplier;
+            this.targetAddress = targetAddress;
         }
 
         /**
@@ -2060,8 +2071,17 @@ final class OperationContextImpl extends AbstractOperationContext {
             return csb;
         }
 
-        public <T> ServiceBuilder<T> addService(final ServiceName name, final Service<T> service) {
-            return addServiceValue(name, new ImmediateValue<Service<T>>(service));
+        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
+            return new CapabilityServiceBuilderImpl<>(addServiceValue(name, new ImmediateValue<>(service)), targetAddress);
+        }
+
+        @Override
+        public <T> CapabilityServiceBuilder<T> addCapability(final RuntimeCapability<?> capability, final Service<T> service) throws IllegalArgumentException {
+            if (capability.isDynamicallyNamed()){
+                return addService(capability.getCapabilityServiceName(targetAddress), service);
+            }else{
+                return addService(capability.getCapabilityServiceName(), service);
+            }
         }
 
         public ServiceTarget addMonitor(final StabilityMonitor monitor) {
@@ -2154,17 +2174,19 @@ final class OperationContextImpl extends AbstractOperationContext {
     /** Integration between ContextServiceBuilder and the OperationContext that created it*/
     private interface ContextServiceInstaller {
         <T> ServiceController<T> installService(ServiceBuilder<T> realBuilder);
+        ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address);
     }
 
     /**
      * Service builder that integrates service installation work with overall execution of a management op.
      */
-    private static class ContextServiceBuilder<T> implements ServiceBuilder<T> {
+    private static class ContextServiceBuilder<T> extends DelegatingServiceBuilder<T> {
 
         private final ServiceBuilder<T> realBuilder;
         private volatile ContextServiceInstaller serviceInstaller;
 
         ContextServiceBuilder(final ServiceBuilder<T> realBuilder, final ContextServiceInstaller serviceInstaller) {
+            super(realBuilder);
             this.realBuilder = realBuilder;
             this.serviceInstaller = serviceInstaller;
         }
@@ -2177,114 +2199,12 @@ final class OperationContextImpl extends AbstractOperationContext {
             this.serviceInstaller = null;
         }
 
-        public ServiceBuilder<T> addAliases(final ServiceName... aliases) {
-            realBuilder.addAliases(aliases);
-            return this;
-        }
-
-        public ServiceBuilder<T> setInitialMode(final ServiceController.Mode mode) {
-            realBuilder.setInitialMode(mode);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final ServiceName... dependencies) {
-            realBuilder.addDependencies(dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final DependencyType dependencyType, final ServiceName... dependencies) {
-            realBuilder.addDependencies(dependencyType, dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final Iterable<ServiceName> dependencies) {
-            realBuilder.addDependencies(dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final DependencyType dependencyType, final Iterable<ServiceName> dependencies) {
-            realBuilder.addDependencies(dependencyType, dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final ServiceName dependency) {
-            realBuilder.addDependency(dependency);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final DependencyType dependencyType, final ServiceName dependency) {
-            realBuilder.addDependency(dependencyType, dependency);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final ServiceName dependency, final Injector<Object> target) {
-            realBuilder.addDependency(dependency, target);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final DependencyType dependencyType, final ServiceName dependency, final Injector<Object> target) {
-            realBuilder.addDependency(dependencyType, dependency, target);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addDependency(final ServiceName dependency, final Class<I> type, final Injector<I> target) {
-            realBuilder.addDependency(dependency, type, target);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addDependency(final DependencyType dependencyType, final ServiceName dependency, final Class<I> type, final Injector<I> target) {
-            realBuilder.addDependency(dependencyType, dependency, type, target);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addInjection(final Injector<? super I> target, final I value) {
-            realBuilder.addInjection(target, value);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addInjectionValue(final Injector<? super I> target, final Value<I> value) {
-            realBuilder.addInjectionValue(target, value);
-            return this;
-        }
-
-        public ServiceBuilder<T> addInjection(final Injector<? super T> target) {
-            realBuilder.addInjection(target);
-            return this;
-        }
-
-        public ServiceBuilder<T> addMonitor(StabilityMonitor monitor) {
-            realBuilder.addMonitor(monitor);
-            return this;
-        }
-
-        public ServiceBuilder<T> addMonitors(StabilityMonitor... monitors) {
-            realBuilder.addMonitors(monitors);
-            return this;
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceBuilder<T> addListener(final ServiceListener<? super T> listener) {
-            realBuilder.addListener(listener);
-            return this;
-        }
-
-        @SafeVarargs
-        @SuppressWarnings("deprecation")
-        public final ServiceBuilder<T> addListener(final ServiceListener<? super T>... listeners) {
-            realBuilder.addListener(listeners);
-            return this;
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceBuilder<T> addListener(final Collection<? extends ServiceListener<? super T>> listeners) {
-            realBuilder.addListener(listeners);
-            return this;
-        }
-
         public ServiceController<T> install() throws ServiceRegistryException, IllegalStateException {
-
             ContextServiceInstaller installer = this.serviceInstaller;
             return installer == null ? realBuilder.install() : installer.installService(realBuilder);
+        }
+        ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address){
+            return this.serviceInstaller.getCapabilityServiceName(capabilityName, serviceType, address);
         }
     }
 
@@ -2399,7 +2319,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         public boolean compareAndSetMode(Mode expected,
-                org.jboss.msc.service.ServiceController.Mode newMode) {
+                                         org.jboss.msc.service.ServiceController.Mode newMode) {
             checkModeTransition(newMode);
             boolean changed = controller.compareAndSetMode(expected, newMode);
             if (changed) {
@@ -2692,6 +2612,49 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart) {
             return getCapabilityServiceName(capabilityBaseName).append(dynamicPart);
+        }
+    }
+
+
+    private static class CapabilityServiceBuilderImpl<T> extends DelegatingServiceBuilder<T> implements CapabilityServiceBuilder<T> {
+        private final PathAddress targetAddress;
+        CapabilityServiceBuilderImpl(ServiceBuilder<T> delegate, PathAddress targetAddress) {
+            super(delegate);
+            this.targetAddress = targetAddress;
+        }
+
+        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityBaseName, Class<I> serviceType, Injector<I> target, String... referenceNames) {
+            String capabilityName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, referenceNames);
+            final ServiceName serviceName = getCapabilityServiceName(capabilityName, serviceType);
+            addDependency(serviceName, serviceType, target);
+            return this;
+        }
+
+        @Override
+        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target) {
+            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
+            addDependency(serviceName, type, target);
+            return this;
+        }
+
+        @Override
+        public CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode) {
+            super.setInitialMode(mode);
+            return this;
+        }
+
+        @Override
+        public <I> CapabilityServiceBuilder<T> addDependency(ServiceName dependency, Class<I> type, Injector<I> target){
+            super.addDependency(dependency, type, target);
+            return this;
+        }
+
+        private ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
+            return getCapabilityServiceName(capabilityName, serviceType, targetAddress);
+        }
+
+        private ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address) {
+            return ((ContextServiceBuilder<T>)getDelegate()).getCapabilityServiceName(capabilityName, serviceType, address);
         }
     }
 

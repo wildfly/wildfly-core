@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -52,6 +51,7 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -1007,16 +1007,31 @@ public abstract class AttributeDefinition {
      * <p>
      * This is a no-op in this base class. Subclasses that support attribute types that can represent
      * capability references should override this method.
-     *
      * @param context the operation context
      * @param attributeValue the value of the attribute described by this object
+     * @deprecated use @{link {@link #addCapabilityRequirements(OperationContext, Resource, ModelNode)}} variant
      */
+    @Deprecated
     public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        addCapabilityRequirements(context, null, attributeValue);
+    }
+    /**
+     * Based on the given attribute value, add capability requirements. If this definition
+     * is for an attribute whose value is or contains a reference to the name of some capability,
+     * this method should record the addition of a requirement for the capability.
+     * <p>
+     * This is a no-op in this base class. Subclasses that support attribute types that can represent
+     * capability references should override this method.
+     *  @param context the operation context
+     * @param resource
+     * @param attributeValue the value of the attribute described by this object
+     */
+    public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
         if (referenceRecorder != null) {
             // We can't process expressions
             if (attributeValue.getType() != ModelType.EXPRESSION) {
                 ModelNode value = attributeValue.isDefined() ? attributeValue : (defaultValue != null) ? defaultValue : new ModelNode();
-                referenceRecorder.addCapabilityRequirements(context, name, value.isDefined() ? value.asString() : null);
+                referenceRecorder.addCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
             }
         }
     }
@@ -1029,15 +1044,33 @@ public abstract class AttributeDefinition {
      * This is a no-op in this base class. Subclasses that support attribute types that can represent
      * capability references should override this method.
      *
+     * @param context        the operation context
+     * @param attributeValue the value of the attribute described by this object
+     * @deprecated use {@link #removeCapabilityRequirements(OperationContext, Resource, ModelNode)} variant
+     */
+    @Deprecated
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        removeCapabilityRequirements(context, null, attributeValue);
+    }
+
+    /**
+     * Based on the given attribute value, remove capability requirements. If this definition
+     * is for an attribute whose value is or contains a reference to the name of some capability,
+     * this method should record the removal of a requirement for the capability.
+     * <p>
+     * This is a no-op in this base class. Subclasses that support attribute types that can represent
+     * capability references should override this method.
      * @param context the operation context
+     * @param resource resource from which capability requirement is to be removed from, <code>null</code> is legal value
+     *                 in case that {@link CapabilityReferenceRecorder} doesn't require it.
      * @param attributeValue the value of the attribute described by this object
      */
-    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+    public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
         if (referenceRecorder != null) {
             // We can't process expressions
             if (attributeValue.getType() != ModelType.EXPRESSION) {
                 ModelNode value = attributeValue.isDefined() ? attributeValue : (defaultValue != null) ? defaultValue : new ModelNode();
-                referenceRecorder.removeCapabilityRequirements(context, name, value.isDefined() ? value.asString() : null);
+                referenceRecorder.removeCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
             }
         }
     }

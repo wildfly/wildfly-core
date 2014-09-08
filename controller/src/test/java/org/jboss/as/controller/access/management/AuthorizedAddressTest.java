@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -324,6 +325,11 @@ public class AuthorizedAddressTest {
 
         @Override
         public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

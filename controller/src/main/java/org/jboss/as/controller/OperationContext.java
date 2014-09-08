@@ -482,6 +482,16 @@ public interface OperationContext extends ExpressionResolver {
     ServiceTarget getServiceTarget() throws UnsupportedOperationException;
 
     /**
+     * Get the service target.  If the step is not a runtime operation handler step, an exception will be thrown.  The
+     * returned service target is limited such that only the service add methods are supported.  If a service added
+     * to this target was removed by a prior operation step, the install will wait until the removal completes.
+     *
+     * @return the service target
+     * @throws UnsupportedOperationException if the calling step is not a runtime operation step
+     */
+    CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException;
+
+    /**
      * Acquire the controlling {@link ModelController}'s exclusive lock. Holding this lock prevent other operations
      * from mutating the model, the {@link ManagementResourceRegistration management resource registry} or the runtime
      * service registry until the lock is released. The lock is automatically released when the

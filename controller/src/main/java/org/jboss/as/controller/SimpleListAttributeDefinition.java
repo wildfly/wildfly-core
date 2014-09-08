@@ -27,6 +27,7 @@ import java.util.ResourceBundle;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -70,19 +71,19 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     }
 
     @Override
-    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+    public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
         if (attributeValue.isDefined()) {
             for (ModelNode element : attributeValue.asList()) {
-                valueType.addCapabilityRequirements(context, element);
+                valueType.addCapabilityRequirements(context, resource, element);
             }
         }
     }
 
     @Override
-    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+    public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
         if (attributeValue.isDefined()) {
             for (ModelNode element : attributeValue.asList()) {
-                valueType.removeCapabilityRequirements(context, element);
+                valueType.removeCapabilityRequirements(context, resource, element);
             }
         }
     }

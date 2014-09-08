@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -60,16 +61,16 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
     }
 
     @Override
-    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        handleCapabilityRequirements(context, attributeValue, false);
+    public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, resource, attributeValue, false);
     }
 
     @Override
-    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        handleCapabilityRequirements(context, attributeValue, true);
+    public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, resource, attributeValue, true);
     }
 
-    private void handleCapabilityRequirements(OperationContext context, ModelNode attributeValue, boolean remove) {
+    private void handleCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue, boolean remove) {
         if (referenceRecorder != null && attributeValue.isDefined()) {
             List<ModelNode> valueList = attributeValue.asList();
             String[] attributeValues = new String[valueList.size()];
@@ -81,9 +82,9 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
                 attributeValues[position++] = current.asString();
             }
             if (remove) {
-                referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValues);
+                referenceRecorder.removeCapabilityRequirements(context, resource, getName(), attributeValues);
             } else {
-                referenceRecorder.addCapabilityRequirements(context, getName(), attributeValues);
+                referenceRecorder.addCapabilityRequirements(context, resource, getName(), attributeValues);
             }
         }
     }

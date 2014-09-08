@@ -50,7 +50,6 @@ import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.OptionMap;
 import org.xnio.Options;
-import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -203,8 +202,7 @@ class WorkerAdd extends AbstractAddStepHandler {
         registerMax(context, name, options);
 
         final WorkerService workerService = new WorkerService(options);
-        ServiceName serviceName = IO_WORKER_RUNTIME_CAPABILITY.getCapabilityServiceName(name, XnioWorker.class);
-        context.getServiceTarget().addService(serviceName, workerService)
+        context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY, workerService)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
     }

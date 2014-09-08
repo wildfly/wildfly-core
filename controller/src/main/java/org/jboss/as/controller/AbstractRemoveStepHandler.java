@@ -186,7 +186,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
 
         for (RuntimeCapability capability : capabilitySet) {
             if (capability.isDynamicallyNamed()) {
-                context.deregisterCapability(capability.getDynamicName(context.getCurrentAddressValue()));
+                context.deregisterCapability(capability.getDynamicName(context.getCurrentAddress()));
             } else {
                 context.deregisterCapability(capability.getName());
             }
@@ -198,7 +198,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
             if (aa != null) {
                 AttributeDefinition ad = aa.getAttributeDefinition();
                 if (ad != null && (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements())) {
-                    ad.removeCapabilityRequirements(context, model.get(ad.getName()));
+                    ad.removeCapabilityRequirements(context, resource, model.get(ad.getName()));
                 }
             }
         }
