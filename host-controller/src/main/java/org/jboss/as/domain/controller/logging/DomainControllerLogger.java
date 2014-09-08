@@ -722,4 +722,5 @@ public interface DomainControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 71, value = "Interrupted awaiting host prepared response(s) -- cancelling updates for hosts %s")
     void interruptedAwaitingHostPreparedResponse(Set<String> hosts);
+
 }

@@ -87,4 +87,7 @@ public interface HttpServerLogger extends BasicLogger {
 
     @Message(id = 10, value = "Invalid Credential Type '%s'")
     IllegalArgumentException invalidCredentialType(String value);
+
+    @Message(id = 12, value = "A secure socket has been defined for the HTTP interface, however the referenced security realm is not supplying a SSLContext.")
+    IllegalArgumentException sslRequestedNoSslContext();
 }

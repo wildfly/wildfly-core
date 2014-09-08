@@ -1057,4 +1057,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 213, value = "Failed to connect to host-controller, retrying.")
     void failedToConnectToHostController();
 
+    @Message( id = 214, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
+    OperationFailedException noSecurityRealmForSsl();
+
 }
