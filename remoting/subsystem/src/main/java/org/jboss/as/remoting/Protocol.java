@@ -28,8 +28,8 @@ public enum Protocol {
     }
 
     public static Protocol forName(String localName) {
-        final Protocol value = localName != null ? MAP.get(localName.toLowerCase()) : null;
-        return value == null ? Protocol.valueOf(localName.toUpperCase(Locale.ENGLISH)) : value;
+        final Protocol value = localName != null ? MAP.get(localName.toLowerCase(Locale.ENGLISH)) : null;
+        return value == null && localName != null ? Protocol.valueOf(localName.toUpperCase(Locale.ENGLISH)) : value;
     }
 
     private final String localName;
