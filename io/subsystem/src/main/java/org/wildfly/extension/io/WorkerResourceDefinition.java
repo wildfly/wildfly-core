@@ -66,10 +66,8 @@ import org.xnio.management.XnioWorkerMXBean;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
-    static final String IO_WORKER_RUNTIME_CAPABILITY_NAME = "org.wildfly.io.worker";
     static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
-            RuntimeCapability.Builder.of(IO_WORKER_RUNTIME_CAPABILITY_NAME, true, XnioWorker.class)
-                    .build();
+            RuntimeCapability.Builder.of(IOServices.IO_WORKER_CAPABILITY_NAME, true, XnioWorker.class).build();
 
     static final OptionAttributeDefinition WORKER_TASK_MAX_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_MAX_THREADS, Options.WORKER_TASK_MAX_THREADS)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)

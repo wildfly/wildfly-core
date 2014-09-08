@@ -29,7 +29,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -78,8 +77,8 @@ public class RemotingEndpointAdd extends AbstractAddStepHandler {
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.populateModel(context, operation, resource);
 
-        PathAddress pa = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
-        context.addStep(Util.createOperation("validate-endpoint", pa.subAddress(0, pa.size() - 1)),
+        PathAddress pa = context.getCurrentAddress();
+        context.addStep(Util.createOperation("validate-endpoint", pa.getParent()),
                 WorkerThreadPoolVsEndpointHandler.INSTANCE, OperationContext.Stage.MODEL);
     }
 
