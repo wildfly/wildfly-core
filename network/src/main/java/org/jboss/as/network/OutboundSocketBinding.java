@@ -133,6 +133,15 @@ public class OutboundSocketBinding {
     }
 
     /**
+     * Returns the name of this outbound socket binding. Can be used in log statements to make the log statement usable.
+     *
+     * @return the name of this outbound socket binding
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
      * Returns the <em>unresolved</em> destination address of this outbound socket binding.
      *
      * @return the unresolved destination address
