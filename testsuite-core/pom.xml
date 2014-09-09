@@ -422,7 +422,7 @@
                 <mcast1>ff01::2</mcast1>
                 <mcast2>ff01::3</mcast2>
                 <mcast3>ff01::4</mcast3>
-
+                <management.address>${node0}</management.address>
             </properties>
         </profile>
         <!-- Ugly workaround for MANTRUN-172 :/   See Wildfly-3993. -->
