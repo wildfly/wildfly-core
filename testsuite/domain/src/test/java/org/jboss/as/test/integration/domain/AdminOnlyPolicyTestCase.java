@@ -118,6 +118,12 @@ public class AdminOnlyPolicyTestCase {
         executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
+
+        ModelNode remove = Util.createRemoveOperation(pa);
+        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
+
+        // This should have pulled down the 'other' profile
+        validateProfiles("default");
     }
 
     @Test

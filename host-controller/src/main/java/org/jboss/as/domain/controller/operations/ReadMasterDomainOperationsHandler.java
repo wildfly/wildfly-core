@@ -51,6 +51,8 @@ import org.jboss.dmr.ModelType;
  */
 public class ReadMasterDomainOperationsHandler implements OperationStepHandler {
 
+    public static final String OPERATION_NAME = "read-master-domain-operations";
+
     private static final PathAddressFilter DEFAULT_FILTER = new PathAddressFilter(true);
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("model-operations", ControllerResolver.getResolver(SUBSYSTEM))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)

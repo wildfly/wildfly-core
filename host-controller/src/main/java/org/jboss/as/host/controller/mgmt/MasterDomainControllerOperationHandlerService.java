@@ -44,6 +44,7 @@ import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.operations.PullDownDataForServerConfigOnSlaveHandler;
+import org.jboss.as.domain.controller.operations.ReadMasterDomainOperationsHandler;
 import org.jboss.as.domain.controller.operations.coordination.DomainControllerLockIdUtils;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
@@ -129,6 +130,9 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 //                        SlaveChannelAttachments.getTransformers(context.getChannel()),
 //                        runtimeIgnoreTransformationRegistry);
                 handler = new PullDownDataForServerConfigOnSlaveHandler(domainController.getExtensionRegistry());
+            } else if (operationName.equals(ReadMasterDomainOperationsHandler.OPERATION_NAME)) {
+                final HostInfo info = HostInfo.fromModelNode(operation.get("host-info"));
+                handler = new ReadMasterDomainOperationsHandler(info.isIgnoreUnaffectedConfig(), info.getServerConfigInfos(), domainController.getExtensionRegistry());
             } else {
                 throw HostControllerLogger.ROOT_LOGGER.cannotExecuteTransactionalOperationFromSlave(operationName);
             }

@@ -64,7 +64,6 @@ import org.jboss.as.domain.controller.HostConnectionInfo;
 import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
-import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainOperationsHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
@@ -96,7 +95,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
 
     static {
         ModelNode mn = new ModelNode();
-        mn.get(ModelDescriptionConstants.OP).set(ReadMasterDomainModelHandler.OPERATION_NAME);
+        mn.get(ModelDescriptionConstants.OP).set(ReadMasterDomainOperationsHandler.OPERATION_NAME);
         mn.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
         mn.protect();
         READ_DOMAIN_MODEL = OperationBuilder.create(mn).build();

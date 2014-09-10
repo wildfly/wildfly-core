@@ -48,10 +48,8 @@ public class SyncDomainModelOperationHandler implements OperationStepHandler {
     private final ExtensionRegistry extensionRegistry;
     private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
     private final Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> serverConfigs;
-    private final HostInfo hostInfo;
 
     public SyncDomainModelOperationHandler(HostInfo hostInfo, ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredResourceRegistry) {
-        this.hostInfo = hostInfo;
         this.ignoreUnused = hostInfo.isIgnoreUnaffectedConfig();
         this.extensionRegistry = extensionRegistry;
         this.ignoredResourceRegistry = ignoredResourceRegistry;
@@ -66,7 +64,7 @@ public class SyncDomainModelOperationHandler implements OperationStepHandler {
         readOp.get(OP).set(ReadMasterDomainModelHandler.OPERATION_NAME);
         readOp.get(OP_ADDR).setEmptyList();
 
-        final ReadMasterDomainOperationsHandler h = new ReadMasterDomainOperationsHandler(ignoreUnused, hostInfo.getServerConfigInfos(), extensionRegistry);
+        final ReadMasterDomainOperationsHandler h = new ReadMasterDomainOperationsHandler(ignoreUnused, serverConfigs, extensionRegistry);
         final ModelNode localOperations = new ModelNode();
 
         context.addStep(localOperations, readOp, h, OperationContext.Stage.MODEL);
