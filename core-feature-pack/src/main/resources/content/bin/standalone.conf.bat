@@ -64,4 +64,7 @@ rem set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_shmem,address=jboss,s
 rem # Use JBoss Modules lockless mode
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.lockless=true"
 
+rem # Uncomment this to add various Jboss Modules options
+rem set "MODULE_OPTS=%MODULE_OPTS% -secmgr"
+
 :JAVA_OPTS_SET
