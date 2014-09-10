@@ -304,6 +304,7 @@ while true; do
          \"-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/server.log\" \
          \"-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties\" \
          -jar \"$JBOSS_HOME/jboss-modules.jar\" \
+         "$MODULE_OPTS" \
          -mp \"${JBOSS_MODULEPATH}\" \
          org.jboss.as.standalone \
          -Djboss.home.dir=\"$JBOSS_HOME\" \
@@ -316,6 +317,7 @@ while true; do
          \"-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/server.log\" \
          \"-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties\" \
          -jar \"$JBOSS_HOME/jboss-modules.jar\" \
+         "$MODULE_OPTS" \
          -mp \"${JBOSS_MODULEPATH}\" \
          org.jboss.as.standalone \
          -Djboss.home.dir=\"$JBOSS_HOME\" \

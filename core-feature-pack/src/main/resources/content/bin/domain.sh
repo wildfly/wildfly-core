@@ -206,6 +206,7 @@ while true; do
          org.jboss.as.process-controller \
          -jboss-home \"$JBOSS_HOME\" \
          -jvm \"$JAVA_FROM_JVM\" \
+         "$MODULE_OPTS" \
          -mp \"${JBOSS_MODULEPATH}\" \
          -- \
          \"-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/host-controller.log\" \
@@ -225,6 +226,7 @@ while true; do
          org.jboss.as.process-controller \
          -jboss-home \"$JBOSS_HOME\" \
          -jvm \"$JAVA_FROM_JVM\" \
+         "$MODULE_OPTS" \
          -mp \"${JBOSS_MODULEPATH}\" \
          -- \
          \"-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/host-controller.log\" \

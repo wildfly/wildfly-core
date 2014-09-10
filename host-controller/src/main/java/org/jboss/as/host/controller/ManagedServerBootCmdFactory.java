@@ -262,6 +262,14 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         command.add(getAbsolutePath(environment.getHomeDir(), "jboss-modules.jar"));
         command.add("-mp");
         command.add(environment.getModulePath());
+        if (System.getSecurityManager() != null && !environment.getHostSystemProperties().containsKey("java.security.manager")){
+            //The standard supported security manager mechanism in EAP 6.3 is -Djava.security.manager
+            //If -Djava.security.manager was not used and we have a security manager that means that one of the jboss modules
+            //options -secmgr or -secmgrmodule were used, in which case we propagate -secmgr
+
+            //TODO this does not take into account that -secmgrmodule could have been used, there is currently no way to determine that
+            command.add("-secmgr");
+        }
         command.add("org.jboss.as.server");
 
         return command;
