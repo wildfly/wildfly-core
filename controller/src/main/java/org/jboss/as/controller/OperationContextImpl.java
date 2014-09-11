@@ -31,12 +31,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCLUSIVE_RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTION_STATUS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL_SIGNIFICANT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
@@ -51,6 +53,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -72,6 +75,13 @@ import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
+import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -153,6 +163,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     /** Tracks whether any steps have gotten write access to the management resource registration*/
     private volatile boolean affectsResourceRegistration;
+    /** Tracks whether any steps have modify the capability registry */
+    private volatile boolean affectsCapabilityRegistry;
 
     private volatile ModelControllerImpl.ManagementModelImpl managementModel;
 
@@ -169,6 +181,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     private Step containerMonitorStep;
     private volatile Boolean requiresModelUpdateAuthorization;
     private volatile boolean readOnly = true;
+
+    /** Associates a requirement for a capability with the step that added it */
+    private final ConcurrentMap<CapabilityId, Set<Step>> addedRequirements = new ConcurrentHashMap<>();
+    /** Associates a removed capability with the step that removed it */
+    private final ConcurrentMap<CapabilityId, Step> removedCapabilities = new ConcurrentHashMap<>();
 
     /**
      * Cache of resource descriptions generated during operation execution. Primarily intended for
@@ -225,6 +242,89 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     public int getAttachmentStreamCount() {
         return attachments == null ? 0 : attachments.getInputStreams().size();
+    }
+
+    @Override
+    boolean stageCompleted(Stage stage) {
+        return (stage != Stage.MODEL || validateCapabilities());
+    }
+
+    private boolean validateCapabilities() {
+        // Validate that all required capabilities are available and fail any steps that broke this
+        Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = managementModel.validateCapabilityRegistry();
+        boolean ok = missing.size() == 0;
+        if (!ok) {
+            // Whether we care about context depends on whether we are a server
+            boolean ignoreContext = getProcessType().isServer();
+
+            Map<Step, Set<CapabilityId>> missingForStep = new HashMap<>();
+            for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : missing.entrySet()) {
+                CapabilityId required = entry.getKey();
+                // See if any step removed this capability
+                Step guilty = findCapabilityRemovalStep(required, ignoreContext);
+                if (guilty != null) {
+                    // Change the response for the step to mark as failed
+                    StringBuilder msg = new StringBuilder();
+                    if (ignoreContext) {
+                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapability(required.getName()));
+                    } else {
+                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getContext().getName()));
+                    }
+                    for (RuntimeRequirementRegistration reg : entry.getValue()) {
+                        RegistrationPoint rp = reg.getRegistrationPoint();
+                        if (rp.getAttribute() == null) {
+                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointSimple(reg.getDependentName(), rp.getAddress().toCLIStyleString()));
+                        } else {
+                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointFull(reg.getDependentName(), rp.getAttribute(), rp.getAddress().toCLIStyleString()));
+                        }
+                    }
+                    guilty.response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                } else {
+                    // Problem wasn't a capability removal.
+                    // See what step(s) added this requirement
+                    Set<Step> bereft = addedRequirements.get(required);
+                    assert bereft != null && bereft.size() > 0;
+                    for (Step step : bereft) {
+                        Set<CapabilityId> set = missingForStep.get(step);
+                        if (set == null) {
+                            set = new HashSet<>();
+                            missingForStep.put(step, set);
+                        }
+                       set.add(required);
+                    }
+                }
+            }
+            // Change the response for all steps that added an unfulfilled requirement
+            for (Map.Entry<Step, Set<CapabilityId>> entry : missingForStep.entrySet()) {
+                ModelNode response = entry.getKey().response;
+                if (!response.hasDefined(FAILURE_DESCRIPTION)) {
+                    StringBuilder msg = new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
+                    for (CapabilityId id : entry.getValue()) {
+                        if (ignoreContext) {
+                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName()));
+                        } else {
+                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getContext().getName()));
+                        }
+                    }
+                    response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                }
+            }
+        }
+        return ok;
+
+    }
+
+    private Step findCapabilityRemovalStep(CapabilityId missingRequirement, boolean ignoreContext) {
+        Step result = removedCapabilities.get(missingRequirement);
+        if (result == null && !ignoreContext) {
+            for (Map.Entry<CapabilityId, Step> entry : removedCapabilities.entrySet()) {
+                if (entry.getKey().canSatisfyRequirements(missingRequirement)) {
+                    result = entry.getValue();
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -298,56 +398,52 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private ManagementResourceRegistration getMutableResourceRegistration(PathAddress absoluteAddress) {
-        assert isControllingThread();
 
         readOnly = false;
 
-        final PathAddress address = activeStep.address;
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        //if (currentStage != Stage.MODEL) {
-        //    throw MESSAGES.stageAlreadyComplete(Stage.MODEL);
-        //}
+        assert isControllingThread();
+        // Don't require model as some handlers do runtime registration due to needing to see
+        // what's exposed by a runtime service
+        //checkStageModel(currentStage);
+        assertNotComplete(currentStage);
+
         authorize(false, READ_WRITE_CONFIG);
         ensureLocalManagementResourceRegistration();
         ManagementResourceRegistration mrr =  managementModel.getRootResourceRegistration();
         ManagementResourceRegistration delegate = absoluteAddress == null ? mrr : mrr.getSubModel(absoluteAddress);
-        return new DescriptionCachingResourceRegistration(delegate, address);
+        return new DescriptionCachingResourceRegistration(delegate, absoluteAddress);
 
     }
 
     @Override
     public ImmutableManagementResourceRegistration getResourceRegistration() {
-        final PathAddress address = activeStep.address;
         assert isControllingThread();
-        Stage currentStage = this.currentStage;
-        if (currentStage == null || currentStage == Stage.DONE) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
+        assertNotComplete(currentStage);
         authorize(false, Collections.<ActionEffect>emptySet());
+        final PathAddress address = activeStep.address;
         ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration().getSubModel(address);
         return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, address);
     }
 
     @Override
     public ImmutableManagementResourceRegistration getRootResourceRegistration() {
+        assert isControllingThread();
+        assertNotComplete(currentStage);
         ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration();
         return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, PathAddress.EMPTY_ADDRESS);
     }
 
     public ServiceRegistry getServiceRegistry(final boolean modify) throws UnsupportedOperationException {
-        assert isControllingThread();
 
         if (modify) {
             readOnly = false;
         }
 
+        assert isControllingThread();
+
         Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
+        assertNotComplete(currentStage);
+        // TODO why do we allow Stage.MODEL?
         if (! (!modify || currentStage == Stage.RUNTIME || currentStage == Stage.MODEL || currentStage == Stage.VERIFY || isRollingBack())) {
             throw ControllerLogger.ROOT_LOGGER.serviceRegistryRuntimeOperationsOnly();
         }
@@ -359,15 +455,12 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     public ServiceController<?> removeService(final ServiceName name) throws UnsupportedOperationException {
-        assert isControllingThread();
 
         readOnly = false;
 
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        if (currentStage != Stage.RUNTIME && currentStage != Stage.VERIFY && !isRollingBack()) {
+        assert isControllingThread();
+
+        if (!isRuntimeChangeAllowed(currentStage)) {
             throw ControllerLogger.ROOT_LOGGER.serviceRemovalRuntimeOperationsOnly();
         }
         authorize(false, WRITE_RUNTIME);
@@ -405,15 +498,12 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     public void removeService(final ServiceController<?> controller) throws UnsupportedOperationException {
-        assert isControllingThread();
 
         readOnly = false;
 
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        if (currentStage != Stage.RUNTIME && currentStage != Stage.VERIFY && !isRollingBack()) {
+        assert isControllingThread();
+
+        if (!isRuntimeChangeAllowed(currentStage)) {
             throw ControllerLogger.ROOT_LOGGER.serviceRemovalRuntimeOperationsOnly();
         }
         authorize(false, WRITE_RUNTIME);
@@ -454,15 +544,12 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
-        assert isControllingThread();
 
         readOnly = false;
 
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        if (currentStage != Stage.RUNTIME && currentStage != Stage.VERIFY && !isRollingBack()) {
+        assert isControllingThread();
+
+        if (!isRuntimeChangeAllowed(currentStage)) {
             throw ControllerLogger.ROOT_LOGGER.serviceTargetRuntimeOperationsOnly();
         }
         ensureWriteLockForRuntime();
@@ -567,10 +654,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     public Resource readResourceFromRoot(final PathAddress address, final boolean recursive) {
         assert isControllingThread();
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
+        assertNotComplete(currentStage);
         //Clone the operation to preserve all the headers
         ModelNode operation = activeStep.operation.clone();
         operation.get(OP).set(ReadResourceHandler.DEFINITION.getName());
@@ -624,18 +708,13 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     public Resource readResourceForUpdate(PathAddress requestAddress) {
-        assert isControllingThread();
 
         readOnly = false;
 
+        assert isControllingThread();
+        assertStageModel(currentStage);
+
         final PathAddress address = activeStep.address.append(requestAddress);
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        if (currentStage != Stage.MODEL) {
-            throw ControllerLogger.ROOT_LOGGER.stageAlreadyComplete(Stage.MODEL);
-        }
 
         // WFLY-3017 See if this write means a persistent config change
         // For speed, we assume all calls during boot relate to persistent config
@@ -692,18 +771,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public void addResource(PathAddress relativeAddress, Resource toAdd) {
-        assert isControllingThread();
 
         readOnly = false;
 
+        assert isControllingThread();
+        assertStageModel(currentStage);
+
         final PathAddress absoluteAddress = activeStep.address.append(relativeAddress);
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        if (currentStage != Stage.MODEL) {
-            throw ControllerLogger.ROOT_LOGGER.stageAlreadyComplete(Stage.MODEL);
-        }
         if (absoluteAddress.size() == 0) {
             throw ControllerLogger.ROOT_LOGGER.duplicateResourceAddress(absoluteAddress);
         }
@@ -759,18 +833,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public Resource removeResource(final PathAddress requestAddress) {
-        assert isControllingThread();
 
         readOnly = false;
 
+        assert isControllingThread();
+        assertStageModel(currentStage);
+
         final PathAddress address = activeStep.address.append(requestAddress);
-        Stage currentStage = this.currentStage;
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-        if (currentStage != Stage.MODEL) {
-            throw ControllerLogger.ROOT_LOGGER.stageAlreadyComplete(Stage.MODEL);
-        }
 
         // WFLY-3017 See if this write means a persistent config change
         // For speed, we assume all calls during boot relate to persistent config
@@ -1128,6 +1197,146 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
+    @Override
+    public void registerCapability(RuntimeCapability capability, String attribute) {
+        registerCapability(capability, activeStep, attribute);
+    }
+
+    void registerCapability(RuntimeCapability capability, Step step, String attribute) {
+        assert isControllingThread();
+        assertStageModel(currentStage);
+        ensureLocalCapabilityRegistry();
+        RuntimeCapabilityRegistration registration = createCapabilityRegistration(capability, step, attribute);
+        managementModel.getCapabilityRegistry().registerCapability(registration);
+        for (String required : capability.getRequirements()) {
+            recordRequirement(required, registration.getCapabilityContext(), step);
+        }
+    }
+
+    @Override
+    public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+        registerAdditionalCapabilityRequirement(required, dependent, activeStep, attribute);
+    }
+
+    void registerAdditionalCapabilityRequirement(String required, String dependent, Step step, String attribute) {
+        assert isControllingThread();
+        assertStageModel(currentStage);
+        ensureLocalCapabilityRegistry();
+        RuntimeRequirementRegistration requirementRegistration = createRequirementRegistration(required, dependent, step, attribute);
+        managementModel.getCapabilityRegistry().registerAdditionalCapabilityRequirement(requirementRegistration);
+        recordRequirement(required, requirementRegistration.getDependentContext(), step);
+    }
+
+    private void recordRequirement(String required, CapabilityContext context, Step step) {
+        CapabilityId id = new CapabilityId(required, context);
+        Set<Step> dependents = addedRequirements.get(id);
+        if (dependents == null) {
+            dependents = new HashSet<>();
+            Set<Step> existing = addedRequirements.putIfAbsent(id, dependents);
+            if (existing != null) {
+                dependents = existing;
+            }
+        }
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (dependents) {
+            dependents.add(step);
+        }
+    }
+
+    @Override
+    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
+        return requestOptionalCapability(required, dependent, activeStep, attribute);
+    }
+
+    boolean requestOptionalCapability(String required, String dependent, Step step, String attribute) {
+        assert isControllingThread();
+        assertCapabilitiesAvailable(currentStage);
+        ensureLocalCapabilityRegistry();
+        RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
+        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, step, attribute);
+        CapabilityContext context = registration.getDependentContext();
+        if (registry.hasCapability(required, context)) {
+            registry.registerAdditionalCapabilityRequirement(registration);
+            recordRequirement(required, context, step);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
+        requireOptionalCapability(required, dependent, activeStep, attribute);
+    }
+
+    void requireOptionalCapability(String required, String dependent, Step step, String attribute) throws OperationFailedException {
+        if (!requestOptionalCapability(required, dependent, step, attribute)) {
+            String msg = ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing();
+            if (getProcessType().isServer()) {
+                msg += "\n" + ControllerLogger.ROOT_LOGGER.formattedCapabilityName(required);
+            } else {
+                msg = "\n" + ControllerLogger.ROOT_LOGGER.formattedCapabilityId(required, createCapabilityContext(step).getName());
+            }
+            throw new OperationFailedException(msg);
+        }
+    }
+
+    @Override
+    public void deregisterCapabilityRequirement(String required, String dependent) {
+        removeCapabilityRequirement(required, dependent, activeStep);
+    }
+
+    void removeCapabilityRequirement(String required, String dependent, Step step) {
+        assert isControllingThread();
+        assertStageModel(currentStage);
+        ensureLocalCapabilityRegistry();
+        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, step, null);
+        managementModel.getCapabilityRegistry().removeCapabilityRequirement(registration);
+        removeRequirement(required, registration.getDependentContext(), step);
+    }
+
+    @Override
+    public void deregisterCapability(String capability) {
+        removeCapability(capability, activeStep);
+    }
+
+    void removeCapability(String capabilityName, Step step) {
+        assert isControllingThread();
+        assertStageModel(currentStage);
+        ensureLocalCapabilityRegistry();
+        CapabilityContext context = createCapabilityContext(step);
+        RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context);
+        if (capReg != null) {
+            RuntimeCapability capability = capReg.getCapability();
+            for (String required : capability.getRequirements()) {
+                removeRequirement(required, context, step);
+            }
+            removedCapabilities.put(capReg.getCapabilityId(), step);
+        }
+    }
+
+    private void removeRequirement(String required, CapabilityContext context, Step step) {
+        CapabilityId id = new CapabilityId(required, context);
+        Set<Step> dependents = addedRequirements.get(id);
+        if (dependents != null) {
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (dependents) {
+                dependents.remove(step);
+            }
+        }
+    }
+
+    @Override
+    public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+        return getCapabilityRuntimeAPI(capabilityName, apiType, activeStep);
+    }
+
+    <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType, Step step) {
+        assert isControllingThread();
+        assertCapabilitiesAvailable(currentStage);
+        CapabilityContext context = createCapabilityContext(step);
+        return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, context, apiType);
+    }
+
     private void rejectUserDomainServerUpdates() {
         if (isModelUpdateRejectionRequired()) {
             ModelNode op = activeStep.operation;
@@ -1365,6 +1574,60 @@ final class OperationContextImpl extends AbstractOperationContext {
             //managementModel = managementModel.cloneRootResourceRegistration();
             affectsResourceRegistration = true;
         }
+    }
+
+    private void ensureLocalCapabilityRegistry() {
+        if (!affectsCapabilityRegistry) {
+            takeWriteLock();
+            managementModel = managementModel.cloneCapabilityRegistry();
+            affectsCapabilityRegistry = true;
+        }
+    }
+
+    private boolean isRuntimeChangeAllowed(final Stage currentStage) {
+        assertNotComplete(currentStage);
+        return currentStage == Stage.RUNTIME || currentStage == Stage.VERIFY || isRollingBack();
+    }
+
+    private static void assertNotComplete(final Stage currentStage) {
+        if (currentStage == null) {
+            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
+        }
+    }
+
+    private static void assertStageModel(final Stage currentStage) {
+        assertNotComplete(currentStage);
+        if (currentStage != Stage.MODEL) {
+            throw ControllerLogger.ROOT_LOGGER.stageAlreadyComplete(Stage.MODEL);
+        }
+    }
+
+    private static void assertCapabilitiesAvailable(final Stage currentStage) {
+        assertNotComplete(currentStage);
+        if (currentStage == Stage.MODEL) {
+            throw ControllerLogger.ROOT_LOGGER.capabilitiesNotAvailable(currentStage, Stage.RUNTIME);
+        }
+    }
+
+    private RuntimeRequirementRegistration createRequirementRegistration(String required, String dependent, Step step, String attribute) {
+        CapabilityContext context = createCapabilityContext(step);
+        RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
+        return new RuntimeRequirementRegistration(required, dependent, context, rp);
+    }
+
+    private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability capability, Step step, String attribute) {
+        CapabilityContext context = createCapabilityContext(step);
+        RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
+        return new RuntimeCapabilityRegistration(capability, context, rp);
+    }
+
+    private CapabilityContext createCapabilityContext(Step step) {
+        CapabilityContext context = CapabilityContext.GLOBAL;
+        PathElement pe = getProcessType().isServer() || step.address.size() == 0 ? null : step.address.getElement(0);
+        if (pe != null && pe.getKey().equals(PROFILE)) {
+            context = new ProfileCapabilityContext(pe.getValue());
+        }
+        return context;
     }
 
     class ContextServiceTarget implements ServiceTarget {
@@ -2049,5 +2312,32 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private static class BooleanHolder {
         private boolean done = false;
+    }
+
+    private static class ProfileCapabilityContext implements CapabilityContext {
+        private final String profileName;
+
+        private ProfileCapabilityContext(String profileName) {
+            this.profileName = profileName;
+        }
+
+        @Override
+        public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
+            // Currently this is a simple match of profile name, but once profile includes are
+            // once again supported we need to account for those
+            return dependentContext instanceof ProfileCapabilityContext
+                    && profileName.equals(((ProfileCapabilityContext) dependentContext).profileName);
+        }
+
+        @Override
+        public String getName() {
+            return "profile=" + profileName;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "{" + getName() + "}";
+        }
+
     }
 }

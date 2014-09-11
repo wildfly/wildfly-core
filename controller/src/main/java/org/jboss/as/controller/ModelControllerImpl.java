@@ -50,8 +50,10 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,6 +68,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.DelegatingRuntimeCapabilityRegistry;
+import org.jboss.as.controller.capability.registry.RequirementRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
+import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -145,7 +154,8 @@ class ModelControllerImpl implements ModelController {
         assert serviceTarget != null;
         this.serviceTarget = serviceTarget;
         assert rootRegistration != null;
-        ManagementModelImpl mmi = new ManagementModelImpl(rootRegistration, Resource.Factory.create());
+        ManagementModelImpl mmi = new ManagementModelImpl(rootRegistration, Resource.Factory.create(),
+                new CapabilityRegistryImpl(processType.isServer()));
         mmi.publish();
         assert stateMonitor != null;
         this.stateMonitor = stateMonitor;
@@ -929,13 +939,18 @@ class ModelControllerImpl implements ModelController {
         private final ManagementResourceRegistration delegatingResourceRegistration;
         // The root Resource we expose
         private final Resource delegatingResource;
+        // The capability registry
+        private final CapabilityRegistryImpl capabilityRegistry;
+        // The capability registry we expose
+        private final RuntimeCapabilityRegistry delegatingCapabilityRegistry;
         private volatile boolean published;
 
         ManagementModelImpl(final ManagementResourceRegistration resourceRegistration,
-                            final Resource rootResource) {
+                            final Resource rootResource,
+                            final CapabilityRegistryImpl capabilityRegistry) {
             this.resourceRegistration = resourceRegistration;
             this.rootResource = rootResource;
-
+            this.capabilityRegistry = capabilityRegistry;
             // What we expose depends on the state of our 'published' field. If 'true' we've been published
             // to the ModelController, and from then on callers should get whatever the MC has as current.
             // If 'false' we haven't been published; we are a local copy created by some OperationContext,
@@ -967,6 +982,18 @@ class ModelControllerImpl implements ModelController {
                     return result;
                 }
             });
+            this.delegatingCapabilityRegistry = new DelegatingRuntimeCapabilityRegistry(new DelegatingRuntimeCapabilityRegistry.CapabilityRegistryDelegateProvider() {
+                @Override
+                public RuntimeCapabilityRegistry getDelegateCapabilityRegistry() {
+                    RuntimeCapabilityRegistry result;
+                    if (published) {
+                        result = ModelControllerImpl.this.managementModel.get().capabilityRegistry;
+                    } else {
+                        result = capabilityRegistry;
+                    }
+                    return result;
+                }
+            });
         }
 
         @Override
@@ -977,6 +1004,11 @@ class ModelControllerImpl implements ModelController {
         @Override
         public Resource getRootResource() {
             return delegatingResource;
+        }
+
+        @Override
+        public RuntimeCapabilityRegistry getCapabilityRegistry() {
+            return delegatingCapabilityRegistry;
         }
 
         /**
@@ -991,6 +1023,7 @@ class ModelControllerImpl implements ModelController {
         ManagementModelImpl cloneRootResourceRegistration() {
             ManagementResourceRegistration mrr;
             Resource currentResource;
+            CapabilityRegistryImpl currentCaps;
             if (published) {
                 // This is the first clone since this was published. Use the current stuff as the basis
                 // to ensure that the clone is based on the latest even if we are not the latest.
@@ -1004,7 +1037,7 @@ class ModelControllerImpl implements ModelController {
                 currentResource = rootResource;
             }
             ManagementResourceRegistration clone = mrr.clone();
-            ManagementModelImpl result = new ManagementModelImpl(clone, currentResource);
+            ManagementModelImpl result = new ManagementModelImpl(clone, currentResource, currentCaps);
             ControllerLogger.MGMT_OP_LOGGER.tracef("cloned to %s to create %s and %s", mrr, clone, result);
             return result;
         }
@@ -1021,28 +1054,243 @@ class ModelControllerImpl implements ModelController {
         ManagementModelImpl cloneRootResource() {
             ManagementResourceRegistration mrr;
             Resource currentResource;
+            CapabilityRegistryImpl currentCaps;
             if (published) {
                 // This is the first clone since this was published. Use the current stuff as the basis
                 // to ensure that the clone is based on the latest even if we are not the latest.
                 ManagementModelImpl currentPublished = ModelControllerImpl.this.managementModel.get();
                 mrr = currentPublished.resourceRegistration;
                 currentResource = currentPublished.rootResource;
+                currentCaps = currentPublished.capabilityRegistry;
             } else {
                 // We've already been cloned, which means the thread calling this has the controller lock
                 // and our stuff hasn't been superceded by another thread. So use our stuff
                 mrr = resourceRegistration;
                 currentResource = rootResource;
+                currentCaps = capabilityRegistry;
             }
             Resource clone = currentResource.clone();
-            ManagementModelImpl result = new ManagementModelImpl(mrr, clone);
+            ManagementModelImpl result = new ManagementModelImpl(mrr, clone, currentCaps);
             ControllerLogger.MGMT_OP_LOGGER.tracef("cloned to %s to create %s and %s", currentResource, clone, result);
             return result;
+        }
+
+        ManagementModelImpl cloneCapabilityRegistry() {
+            ManagementResourceRegistration mrr;
+            Resource currentResource;
+            CapabilityRegistryImpl currentCaps;
+            if (published) {
+                // This is the first clone since this was published. Use the current stuff as the basis
+                // to ensure that the clone is based on the latest even if we are not the latest.
+                ManagementModelImpl currentPublished = ModelControllerImpl.this.managementModel.get();
+                mrr = currentPublished.resourceRegistration;
+                currentResource = currentPublished.rootResource;
+                currentCaps = currentPublished.capabilityRegistry;
+            } else {
+                // We've already been cloned, which means the thread calling this has the controller lock
+                // and our stuff hasn't been superceded by another thread. So use our stuff
+                mrr = resourceRegistration;
+                currentResource = rootResource;
+                currentCaps = capabilityRegistry;
+            }
+            CapabilityRegistryImpl clone = currentCaps.copy();
+            ManagementModelImpl result = new ManagementModelImpl(mrr, currentResource, clone);
+            ControllerLogger.MGMT_OP_LOGGER.tracef("cloned to %s to create %s and %s", currentCaps, clone, result);
+            return result;
+        }
+
+        /**
+         * Compares the registered requirements to the registered capabilities, returning any missing requirements.
+         *
+         * Cannot be called while other threads may be adding or removing capabilities
+         *
+         * @return a map whose keys are missing capabilities and whose values are the names of other capabilities
+         *         that require that capability. Will not return {@code null} but may be empty
+         */
+        Map<CapabilityId, Set<RuntimeRequirementRegistration>> validateCapabilityRegistry() {
+            if (!published) {
+                return capabilityRegistry.getMissingRequirements();
+            } else {
+                // we're unmodified so nothing to validate
+                return Collections.emptyMap();
+            }
         }
 
         private void publish() {
             ModelControllerImpl.this.managementModel.set(this);
             ControllerLogger.MGMT_OP_LOGGER.tracef("published %s", this);
             published = true;
+        }
+    }
+
+    /** Capability registry implementation. */
+    static class CapabilityRegistryImpl implements RuntimeCapabilityRegistry {
+
+        private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
+        private final Map<CapabilityId, Set<RuntimeRequirementRegistration>> requirements = new HashMap<>();
+        private final boolean forServer;
+        private final Map<CapabilityContext, Set<CapabilityContext>> satisfiedByMap;
+
+        CapabilityRegistryImpl(boolean forServer) {
+            this.forServer =  forServer;
+            satisfiedByMap = forServer ? null : new HashMap<CapabilityContext, Set<CapabilityContext>>();
+        }
+
+        @Override
+        public synchronized void registerCapability(RuntimeCapabilityRegistration capabilityRegistration) {
+
+            CapabilityId capabilityId = capabilityRegistration.getCapabilityId();
+            if (capabilities.containsKey(capabilityId)) {
+                throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
+                        capabilityId.getContext().getName());
+            }
+
+            capabilities.put(capabilityId, capabilityRegistration);
+            for (String req : capabilityRegistration.getCapability().getRequirements()) {
+                registerRequirement(new RuntimeRequirementRegistration(req, capabilityRegistration));
+            }
+
+            if (!forServer) {
+                CapabilityContext capContext = capabilityRegistration.getCapabilityContext();
+                if (!satisfiedByMap.containsKey(capContext)) {
+                    Set<CapabilityContext> satisfiesUs = new HashSet<>();
+                    satisfiedByMap.put(capContext, satisfiesUs);
+                    for (Map.Entry<CapabilityContext, Set<CapabilityContext>> entry : satisfiedByMap.entrySet()) {
+                        if (entry.getKey().canSatisfyRequirements(capContext)) {
+                            satisfiesUs.add(entry.getKey());
+                        }
+                        if (capContext.canSatisfyRequirements(entry.getKey())) {
+                            entry.getValue().add(capContext);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public synchronized void registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement) {
+            registerRequirement(requirement);
+        }
+
+        private void registerRequirement(RuntimeRequirementRegistration requirement) {
+            CapabilityId dependentId = requirement.getDependentId();
+            if (!capabilities.containsKey(dependentId)) {
+                throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
+                        dependentId.getContext().getName());
+            }
+            Set<RuntimeRequirementRegistration> dependents = requirements.get(dependentId);
+            if (dependents == null) {
+                dependents = new HashSet<>();
+                requirements.put(dependentId, dependents);
+            }
+            dependents.add(requirement);
+        }
+
+        @Override
+        public synchronized void removeCapabilityRequirement(RequirementRegistration requirementRegistration) {
+            removeRequirement(requirementRegistration);
+        }
+
+        @Override
+        public synchronized RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context) {
+            CapabilityId capabilityId = new CapabilityId(capabilityName, context);
+            RuntimeCapabilityRegistration removed = capabilities.remove(capabilityId);
+            if (removed != null) {
+                for (String req : removed.getCapability().getRequirements()) {
+                    removeRequirement(new RuntimeRequirementRegistration(req, removed));
+                }
+                for (String req : removed.getCapability().getOptionalRequirements()) {
+                    removeRequirement(new RuntimeRequirementRegistration(req, removed));
+                }
+            }
+            return removed;
+        }
+
+        private synchronized void removeRequirement(RequirementRegistration requirementRegistration) {
+            Set<RuntimeRequirementRegistration> dependents = requirements.get(requirementRegistration.getDependentId());
+            if (dependents != null) {
+                // RequirementRegistration is a valid key for RuntimeRequirementRegistration
+                //noinspection SuspiciousMethodCalls
+                dependents.remove(requirementRegistration);
+                if (dependents.size() == 0) {
+                    requirements.remove(requirementRegistration.getDependentId());
+                }
+            }
+        }
+
+        @Override
+        public synchronized boolean hasCapability(String capabilityName, CapabilityContext capabilityContext) {
+            return findSatisfactoryCapability(capabilityName, capabilityContext) != null;
+        }
+
+        @Override
+        public synchronized  <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext capabilityContext, Class<T> apiType) {
+            CapabilityId capabilityId = findSatisfactoryCapability(capabilityName, capabilityContext);
+            if (capabilityId == null) {
+                if (forServer) {
+                    throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
+                } else {
+                    throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
+                }
+            }
+            RuntimeCapabilityRegistration reg = capabilities.get(capabilityId);
+            Object api = reg.getCapability().getRuntimeAPI();
+            if (api == null) {
+                throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
+            }
+            return apiType.cast(api);
+        }
+
+        synchronized CapabilityRegistryImpl copy() {
+            CapabilityRegistryImpl result = new CapabilityRegistryImpl(forServer);
+            result.capabilities.putAll(this.capabilities);
+            for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : this.requirements.entrySet()) {
+                result.requirements.put(entry.getKey(), new HashSet<>(entry.getValue()));
+            }
+            if (!forServer) {
+                result.satisfiedByMap.putAll(this.satisfiedByMap);
+            }
+            return result;
+        }
+
+        synchronized Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {
+            Map<CapabilityId, Set<RuntimeRequirementRegistration>> result = new HashMap<>();
+            for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
+                CapabilityContext dependentContext = entry.getKey().getContext();
+                for (RuntimeRequirementRegistration req : entry.getValue()) {
+                    CapabilityId satisfiesId = findSatisfactoryCapability(req.getRequiredName(), dependentContext);
+                    if (satisfiesId == null) {
+                        CapabilityId basicId = new CapabilityId(req.getRequiredName(), dependentContext);
+                        Set<RuntimeRequirementRegistration> set = result.get(basicId);
+                        if (set == null) {
+                            set = new HashSet<>();
+                            result.put(basicId, set);
+                        }
+                        set.add(req);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private CapabilityId findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext) {
+
+            // Check for a simple match
+            CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
+            if (capabilities.containsKey(requestedId)) {
+                return requestedId;
+            }
+
+            if (!forServer) {
+                // Try other contexts that satisfy the requested one
+                for (CapabilityContext satisfies : satisfiedByMap.get(capabilityContext)) {
+                    CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
+                    if (capabilities.containsKey(satisfiesId)) {
+                        return satisfiesId;
+                    }
+                }
+            }
+            return null;
         }
     }
 

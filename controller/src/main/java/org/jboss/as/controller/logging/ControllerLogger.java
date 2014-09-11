@@ -52,6 +52,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller._private.OperationCancellationException;
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.notification.Notification;
@@ -3216,4 +3217,43 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 360, value = "The attribute %s value has been changed from %s to %s.")
     String attributeValueWritten(String attributeName, ModelNode currentValue, ModelNode newVal);
+
+    @Message(id = 361, value = "Capabilities cannot be queried in stage '%s'; they are not available until stage '%s'.")
+    IllegalStateException capabilitiesNotAvailable(OperationContext.Stage currentStage, OperationContext.Stage runtime);
+
+    @Message(id = 362, value = "Capability '%s' is already registered.")
+    IllegalStateException capabilityAlreadyRegistered(RuntimeCapability capability);
+
+    @Message(id = 363, value = "Capability '%s' is already registered in context '%s.")
+    IllegalStateException capabilityAlreadyRegisteredInContext(String capability, String context);
+
+    @Message(id = 364, value = "Capability '%s' is unknown.")
+    IllegalStateException unknownCapability(String capability);
+
+    @Message(id = 365, value = "Capability '%s' is unknown in context '%s'.")
+    IllegalStateException unknownCapabilityInContext(String capability, String context);
+
+    @Message(id = 366, value = "Capability '%s' does not expose a runtime API.")
+    IllegalArgumentException capabilityDoesNotExposeRuntimeAPI(String capabilityName);
+
+    @Message(id = 367, value = "Cannot remove capability '%s' as it is required by other capabilities:")
+    String cannotRemoveRequiredCapability(String capability);
+
+    @Message(id = 368, value = "Cannot remove capability '%s' from context '%s' as it is required by other capabilities:")
+    String cannotRemoveRequiredCapabilityInContext(String capability, String context);
+
+    @Message(id = 369, value = "capability '%s' requires it for address '%s'")
+    String requirementPointSimple(String capability, String requestingAddress);
+
+    @Message(id = 370, value = "capability '%s' requires it for attribute '%s' at address '%s'")
+    String requirementPointFull(String capability, String attribute, String requestingAddress);
+
+    @Message(id = 371, value = "Required capabilities are not available:")
+    String requiredCapabilityMissing();
+
+    @Message(id = 372, value = "    %s")
+    String formattedCapabilityName(String capability);
+
+    @Message(id = 373, value = "    %s in context '%s'")
+    String formattedCapabilityId(String capability, String context);
 }

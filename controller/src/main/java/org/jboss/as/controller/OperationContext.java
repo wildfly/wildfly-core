@@ -30,6 +30,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -695,6 +696,139 @@ public interface OperationContext extends ExpressionResolver {
      * @return the call environment
      */
     Environment getCallEnvironment();
+
+    /**
+     * Registers a capability with the system. Any {@link org.jboss.as.controller.capability.RuntimeCapability#getRequirements() requirements}
+     * associated with the capability will be recorded as requirements.
+     *
+     * @param capability  the capability. Cannot be {@code null}
+     * @param attribute the name of the attribute that triggered this registration, or {@code null} if no single
+     *                  attribute was responsible
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void registerCapability(RuntimeCapability capability, String attribute);
+
+    /**
+     * Registers an additional hard requirement a capability has beyond what it was aware of when {@code capability}
+     * was passed to {@link #registerCapability(org.jboss.as.controller.capability.RuntimeCapability, String)}. Used for cases
+     * where a capability optionally depends on another capability, and whether or not that requirement is needed is
+     * not known when the capability is first registered.
+     * <p>
+     * This method should be used in preference to {@link #requestOptionalCapability(String, String, String)}
+     * when, based on its own configuration, the caller knows in {@link org.jboss.as.controller.OperationContext.Stage#MODEL}
+     * that the optional capability is actually required in the current process.
+     * </p>
+     *
+     * @param required the name of the required capability. Cannot be {@code null}
+     * @param dependent the name of the capability that requires the other capability. Cannot be {@code null}
+     * @param attribute the name of the attribute that triggered this requirement, or {@code null} if no single
+     *                  attribute was responsible
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     *                                         or if {@code capability} is not registered
+     */
+    void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute);
+
+    /**
+     * Requests that one of a capability's optional requirements hereafter be treated as required, until the process is
+     * stopped or reloaded. This request will only be granted if the required capability is already present.
+     * <p>
+     * This method should be used in preference to {@link #registerAdditionalCapabilityRequirement(String, String, String)}
+     * when the caller's own configuration doesn't impose a hard requirement for the {@code required} capability, but,
+     * if it is present it will be used. Once the caller declares an intent to use the capability by invoking this
+     * method and getting a {@code true} response, thereafter the system is aware that {@code dependent} is actually
+     * using {@code required} so thereafter it treats that as a hard requirement.
+     * </p>
+     *
+     * @param required the name of the required capability. Cannot be {@code null}
+     * @param dependent the name of the capability that requires the other capability. Cannot be {@code null}
+     * @param attribute the name of the attribute that triggered this requirement, or {@code null} if no single
+     *                  attribute was responsible
+     * @return {@code true} if the requested capability is present; {@code false} if not. If {@code true}, hereafter
+     *         {@code dependent}'s requirement for {@code required} will not be treated as optional.
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     */
+    boolean requestOptionalCapability(String required, String dependent, String attribute);
+
+    /**
+     * Requests that one of a capability's optional requirements hereafter be treated as required, until the process is
+     * stopped or reloaded. This request will only be granted if the required capability is already present; otherwise
+     * an {@link org.jboss.as.controller.OperationFailedException} will be thrown.
+     * <p>
+     * This method should be used in preference to {@link #registerAdditionalCapabilityRequirement(String, String, String)}
+     * only if the caller is not sure whether the capability is required until {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}.
+     * <strong>Not knowing whether a capability is required until stage RUNTIME is an anti-pattern, so use of this
+     * method is strongly discouraged.</strong> It only exists to avoid the need to break backward compatibility by removing
+     * support for expressions from certain attributes.
+     * </p>
+     *
+     * @param required the name of the required capability. Cannot be {@code null}
+     * @param dependent the name of the capability that requires the other capability. Cannot be {@code null}
+     * @param attribute the name of the attribute that triggered this requirement, or {@code null} if no single
+     *                  attribute was responsible
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     * @throws org.jboss.as.controller.OperationFailedException if the requested capability is not available
+     */
+    void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException;
+
+    /**
+     * Record that a previously registered requirement for a capability will no longer exist.
+     * <p>
+     * <strong>Semantics with "reload-required" and "restart-required":</strong>
+     * Deregistering a capability requirement does not obligate the caller to cease using a
+     * {@link #getCapabilityRuntimeAPI(String, Class) previously obtained} reference to that
+     * capability's {@link org.jboss.as.controller.capability.RuntimeCapability#getRuntimeAPI() runtime API}. But, if
+     * the caller will not cease using the capability, it must put the process in {@link #reloadRequired() reload-required}
+     * or {@link #restartRequired() restart-required} state. This will reflect the fact that the model says the
+     * capability is not required, but in the runtime it still is.
+     * </p>
+     *
+     * @param required the name of the no longer required capability
+     * @param dependent the name of the capability that no longer has the requirement
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void deregisterCapabilityRequirement(String required, String dependent);
+
+    /**
+     * Record that a previously registered capability will no longer be available. Invoking this operation will also
+     * automatically {@link #deregisterCapabilityRequirement(String, String) deregister any requirements} that are
+     * associated with this capability, including optional ones.
+     * <p><strong>Semantics with "reload-required" and "restart-required":</strong>
+     * Deregistering a capability does not eliminate the obligation to other capabilities that have
+     * previously depended upon it to support them by providing expected runtime services. It does require that those other
+     * capabilities also {@link #deregisterCapabilityRequirement(String, String) deregister their requirements} as
+     * part of the same operation. Requiring that they do so ensures that the management model is consistent.
+     * However, those other capabilities may simply put the process in {@code reload-required}
+     * or {@code restart-required} state and then continue to use the existing services. So, an operation that invokes
+     * this method should also always put the process into {@code reload-required} or {@code restart-required} state.
+     * This will reflect the fact that the model says the capability is not present, but in the runtime it still is.
+     * </p>
+     *
+     * @param capabilityName the name of the capability
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void deregisterCapability(String capabilityName);
+
+    /**
+     * Gets the runtime API associated with a given capability, if there is one.
+     * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @param apiType class of the java type that exposes the API. Cannot be {@code null}
+     * @param <T> the java type that exposes the API
+     * @return the runtime API. Will not return {@code null}
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
+     * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
+     */
+    <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType);
 
     /**
      * The stage at which a step should apply.

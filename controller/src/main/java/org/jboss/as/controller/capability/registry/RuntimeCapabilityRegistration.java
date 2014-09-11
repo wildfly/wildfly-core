@@ -20,39 +20,27 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller;
+package org.jboss.as.controller.capability.registry;
 
-import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.capability.RuntimeCapability;
 
 /**
-* Encapsulates the elements of a management model.
-*
-* @author Brian Stansberry (c) 2014 Red Hat Inc.
-*/
-public interface ManagementModel {
+ * Registration information for a {@link org.jboss.as.controller.capability.RuntimeCapability}. As a runtime capability is
+ * associated with an actual management model, the registration exposes the {@link #getRegistrationPoint() point in the model}
+ * that triggered the registration.
+ *
+ * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ */
+public class RuntimeCapabilityRegistration extends CapabilityRegistration<RuntimeCapability> {
 
-    /**
-     * Gets the registration of resource, attribute and operation definitions and
-     * operation handlers.
-     *
-     * @return the resource registration. Will not be {@code null}
-     */
-    ManagementResourceRegistration getRootResourceRegistration();
+    private final RegistrationPoint registrationPoint;
 
-    /**
-     * Gets the root resource of the concrete configuration model.
-     *
-     * @return the resource. Will not be {@code null}
-     */
-    Resource getRootResource();
+    public RuntimeCapabilityRegistration(RuntimeCapability capability, CapabilityContext context, RegistrationPoint registrationPoint) {
+        super(capability, context);
+        this.registrationPoint = registrationPoint;
+    }
 
-    /**
-     * Gets the registry of capabilities and their requirements.
-     *
-     * @return the registry. Will not be {@code null}
-     */
-    RuntimeCapabilityRegistry getCapabilityRegistry();
-
+    public RegistrationPoint getRegistrationPoint() {
+        return registrationPoint;
+    }
 }

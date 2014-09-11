@@ -79,6 +79,7 @@ import javax.management.remote.JMXServiceURL;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -1609,8 +1610,8 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
-                                                        ManagementResourceRegistration rootRegistration) {
-            super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
+                                                        ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+            super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
             extension.initialize(extensionRegistry.getExtensionContext("additional", rootRegistration, false));
         }
 

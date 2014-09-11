@@ -56,11 +56,11 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.NotificationDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.NoopOperationStepHandler;
+import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -70,16 +70,18 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
-import org.jboss.as.controller.access.Environment;
-import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
+import org.jboss.as.controller.access.Environment;
+import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -584,14 +586,47 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public Caller getCaller() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public Environment getCallEnvironment() {
-            //TODO implement getCallEnvironment
             throw null;
+        }
+
+        @Override
+        public void registerCapability(RuntimeCapability capability, String attribute) {
+            // no-op
+        }
+
+        @Override
+        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+            // no-op;
+        }
+
+        @Override
+        public boolean requestOptionalCapability(String required, String dependent, String attribute) {
+            return false;
+        }
+
+        @Override
+        public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
+            // no-op;
+        }
+
+        @Override
+        public void deregisterCapabilityRequirement(String required, String dependent) {
+            // no-op;
+        }
+
+        @Override
+        public void deregisterCapability(String capabilityName) {
+            // no-op;
+        }
+
+        @Override
+        public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+            return null;
         }
 
         @Override

@@ -340,6 +340,17 @@ abstract class AbstractOperationContext implements OperationContext {
     }
 
     /**
+     * Notification that all steps in a stage have been executed.
+     * <p>This default implementation always returns {@code true}.</p>
+     * @param stage the stage that is completed. Will not be {@code null}
+     *
+     * @return {@code true} if execution should proceed to the next stage; {@code false} if execution should halt
+     */
+    boolean stageCompleted(Stage stage) {
+        return true;
+    }
+
+    /**
      * If appropriate for this implementation, block waiting for the
      * {@link ModelControllerImpl#awaitContainerStability(long, java.util.concurrent.TimeUnit, boolean)} method to return,
      * ensuring that the controller's MSC ServiceContainer is settled and it is safe to proceed to service status verification.
@@ -477,7 +488,18 @@ abstract class AbstractOperationContext implements OperationContext {
         do {
             step = steps.get(currentStage).pollFirst();
             if (step == null) {
-                // No steps remain in this stage; proceed to the next stage.
+                // No steps remain in this stage; give subclasses a chance to check status
+                // and approve moving to the next stage
+                if (!stageCompleted(currentStage)) {
+                    // Can't continue
+                    resultAction = ResultAction.ROLLBACK;
+                    if (activeStep != null) { // won't be null; this is just a guard against later changes
+                        // kick off the result handler callbacks
+                        activeStep.finalizeStep(null);
+                    }
+                    return;
+                }
+                // Proceed to the next stage
                 if (currentStage.hasNext()) {
                     currentStage = currentStage.next();
                     if (currentStage == Stage.VERIFY) {

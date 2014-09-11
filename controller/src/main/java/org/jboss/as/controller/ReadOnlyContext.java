@@ -28,6 +28,7 @@ import java.util.Set;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
@@ -329,6 +330,41 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     Resource getModel() {
         return primaryContext.getModel();
+    }
+
+    @Override
+    public void registerCapability(RuntimeCapability capability, String attribute) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public void requireOptionalCapability(String required, String dependent, String attribute) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public void deregisterCapabilityRequirement(String required, String dependent) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public void deregisterCapability(String capability) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+        throw readOnlyContext();
     }
 
 }
