@@ -197,10 +197,23 @@ public class OutboundSocketBinding {
      * for this binding, then this method returns the address of the default interface that's configured
      * for the socket binding group.
      *
-     * @return source address of this outbound socket binding
+     * @return source address of this outbound socket binding if specified,
+     *         default interface of the socket binding manager otherwise
      */
     public InetAddress getSourceAddress() {
         return this.sourceNetworkInterface != null ? this.sourceNetworkInterface.getAddress() : this.socketBindingManager.getDefaultInterfaceAddress();
+    }
+
+    /**
+     * Returns the source address of this outbound socket binding if one is configured. If no explicit source address
+     * is specified for this binding, then this method returns {@code null}. Use {@link org.jboss.as.network.OutboundSocketBinding#getSourceAddress()}
+     * instead to obtain the default interface of the socket binding manager if none is specified for this binding.
+     *
+     * @return source address of this outbound socket binding if specified,
+     *         {@code null} otherwise
+     */
+    public InetAddress getOptionalSourceAddress() {
+        return sourceNetworkInterface != null ? sourceNetworkInterface.getAddress() : null;
     }
 
     /**
@@ -270,7 +283,7 @@ public class OutboundSocketBinding {
     }
 
     private SocketAddress getOptionalSourceSocketAddress() {
-        final InetAddress sourceAddress = this.getSourceAddress();
+        final InetAddress sourceAddress = this.getOptionalSourceAddress();
         final Integer absoluteSourcePort = this.getAbsoluteSourcePort();
         if (sourceAddress == null && absoluteSourcePort == null) {
             return null;
