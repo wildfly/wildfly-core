@@ -22,8 +22,12 @@
 
 package org.jboss.as.controller;
 
+import static org.junit.Assert.fail;
+
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
@@ -82,4 +86,57 @@ public class SimpleListAttributeDefinitionUnitTestCase {
         }
 
     }
+
+    @Test
+    public void testBuilderCopyPreservesListValidator() throws OperationFailedException {
+
+        // List can contain at most 2 items. The value of the item can not null
+        ParameterValidator pv = new ModelTypeValidator(ModelType.PROPERTY, false, true);
+        ListValidator lv = new ListValidator(pv, false, 1, 2);
+
+        AttributeDefinition ad = SimpleAttributeDefinitionBuilder.create("x", ModelType.PROPERTY).build();
+        SimpleListAttributeDefinition original = SimpleListAttributeDefinition.Builder.of("test", ad)
+                .setListValidator(lv)
+                .build();
+        SimpleListAttributeDefinition copy = new SimpleListAttributeDefinition.Builder(original).build();
+
+        ModelNode validValue = new ModelNode();
+        validValue.add("foo", "bar");
+
+        // too many elements
+        ModelNode invalidValue = new ModelNode();
+        invalidValue.add("foo", "bar");
+        invalidValue.add("foo2", "baz");
+        invalidValue.add("foo3", "bat");
+
+        // undefined is not a valid element value
+        ModelNode invalidValue2 = new ModelNode();
+        invalidValue2.add(new ModelNode());
+
+        // the original and copy attribute definition must validate the same way
+        validateOperation(original, validValue, true);
+        validateOperation(copy, validValue, true);
+
+        validateOperation(original, invalidValue, false);
+        validateOperation(copy, invalidValue, false);
+
+        validateOperation(original, invalidValue2, false);
+        validateOperation(copy, invalidValue2, false);
+    }
+
+    private void validateOperation(AttributeDefinition attributeDefinition, ModelNode value, boolean expectSuccess) throws OperationFailedException {
+        ModelNode operation = new ModelNode();
+        operation.get("test").set(value);
+
+        if (expectSuccess) {
+            attributeDefinition.validateOperation(operation);
+        } else {
+            try {
+                attributeDefinition.validateOperation(operation);
+                fail("operation must fail with invalid value " + value);
+            } catch (OperationFailedException e) {
+            }
+        }
+    }
+
 }

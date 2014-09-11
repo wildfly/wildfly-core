@@ -130,7 +130,6 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
         public Builder(final SimpleListAttributeDefinition basis) {
             super(basis);
             valueType = basis.getValueType();
-            setElementValidator(valueType.getValidator());
         }
 
         public static Builder of(final String name, final AttributeDefinition valueType) {
