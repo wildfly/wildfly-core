@@ -272,7 +272,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                         msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getContext().getName()));
                     }
                     for (RuntimeRequirementRegistration reg : entry.getValue()) {
-                        RegistrationPoint rp = reg.getRegistrationPoint();
+                        RegistrationPoint rp = reg.getOldestRegistrationPoint();
                         if (rp.getAttribute() == null) {
                             msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointSimple(reg.getDependentName(), rp.getAddress().toCLIStyleString()));
                         } else {
@@ -1337,7 +1337,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
         CapabilityContext context = createCapabilityContext(step);
-        RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context);
+        RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context, step.address);
         if (capReg != null) {
             RuntimeCapability capability = capReg.getCapability();
             for (String required : capability.getRequirements()) {

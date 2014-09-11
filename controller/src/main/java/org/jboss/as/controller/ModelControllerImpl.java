@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,7 +75,7 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.DelegatingRuntimeCapabilityRegistry;
-import org.jboss.as.controller.capability.registry.RequirementRegistration;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
@@ -1187,7 +1188,7 @@ class ModelControllerImpl implements ModelController {
     static class CapabilityRegistryImpl implements RuntimeCapabilityRegistry {
 
         private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
-        private final Map<CapabilityId, Set<RuntimeRequirementRegistration>> requirements = new HashMap<>();
+        private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
         private final boolean forServer;
         private final Map<CapabilityContext, Set<CapabilityContext>> satisfiedByMap;
 
@@ -1200,19 +1201,31 @@ class ModelControllerImpl implements ModelController {
         public synchronized void registerCapability(RuntimeCapabilityRegistration capabilityRegistration) {
 
             CapabilityId capabilityId = capabilityRegistration.getCapabilityId();
-            if (capabilities.containsKey(capabilityId)) {
-                throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
-                        capabilityId.getContext().getName());
+            RegistrationPoint rp = capabilityRegistration.getOldestRegistrationPoint();
+            RuntimeCapabilityRegistration currentRegistration = capabilities.get(capabilityId);
+            if (currentRegistration != null) {
+                // The actual capability must be the same, and we must not already have a registration
+                // from this resource
+                if (!Objects.equals(capabilityRegistration.getCapability(), currentRegistration.getCapability())
+                        || !currentRegistration.addRegistrationPoint(rp)) {
+                    throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
+                            capabilityId.getContext().getName());
+                }
+                // else it was ok, and we just recorded the additional registration point
+            } else {
+                capabilities.put(capabilityId, capabilityRegistration);
             }
 
-            capabilities.put(capabilityId, capabilityRegistration);
+            // Add any hard requirements
             for (String req : capabilityRegistration.getCapability().getRequirements()) {
-                registerRequirement(new RuntimeRequirementRegistration(req, capabilityRegistration));
+                registerRequirement(new RuntimeRequirementRegistration(req, capabilityId.getName(),
+                        capabilityId.getContext(), rp));
             }
 
             if (!forServer) {
-                CapabilityContext capContext = capabilityRegistration.getCapabilityContext();
+                CapabilityContext capContext = capabilityId.getContext();
                 if (!satisfiedByMap.containsKey(capContext)) {
+                    // Figure out who we can satisfy and who satisfies us
                     Set<CapabilityContext> satisfiesUs = new HashSet<>();
                     satisfiedByMap.put(capContext, satisfiesUs);
                     for (Map.Entry<CapabilityContext, Set<CapabilityContext>> entry : satisfiedByMap.entrySet()) {
@@ -1238,42 +1251,59 @@ class ModelControllerImpl implements ModelController {
                 throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
                         dependentId.getContext().getName());
             }
-            Set<RuntimeRequirementRegistration> dependents = requirements.get(dependentId);
+            Map<String, RuntimeRequirementRegistration> dependents = requirements.get(dependentId);
             if (dependents == null) {
-                dependents = new HashSet<>();
+                dependents = new HashMap<>();
                 requirements.put(dependentId, dependents);
             }
-            dependents.add(requirement);
+            RuntimeRequirementRegistration existing = dependents.get(requirement.getRequiredName());
+            if (existing == null) {
+                dependents.put(requirement.getRequiredName(), requirement);
+            } else {
+                existing.addRegistrationPoint(requirement.getOldestRegistrationPoint());
+            }
         }
 
         @Override
-        public synchronized void removeCapabilityRequirement(RequirementRegistration requirementRegistration) {
+        public synchronized void removeCapabilityRequirement(RuntimeRequirementRegistration requirementRegistration) {
             removeRequirement(requirementRegistration);
         }
 
         @Override
-        public synchronized RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context) {
+        public synchronized RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context,
+                                                                           PathAddress registrationPoint) {
             CapabilityId capabilityId = new CapabilityId(capabilityName, context);
-            RuntimeCapabilityRegistration removed = capabilities.remove(capabilityId);
-            if (removed != null) {
-                for (String req : removed.getCapability().getRequirements()) {
-                    removeRequirement(new RuntimeRequirementRegistration(req, removed));
-                }
-                for (String req : removed.getCapability().getOptionalRequirements()) {
-                    removeRequirement(new RuntimeRequirementRegistration(req, removed));
+            RuntimeCapabilityRegistration removed = null;
+            RuntimeCapabilityRegistration candidate = capabilities.get(capabilityId);
+            if (candidate != null) {
+                RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
+                if (candidate.removeRegistrationPoint(rp)) {
+                    for (String req : candidate.getCapability().getRequirements()) {
+                        removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp));
+                    }
+                    for (String req : candidate.getCapability().getOptionalRequirements()) {
+                        removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp));
+                    }
+                    if (candidate.getRegistrationPointCount() == 0) {
+                        removed = capabilities.remove(capabilityId);
+                    }
                 }
             }
             return removed;
         }
 
-        private synchronized void removeRequirement(RequirementRegistration requirementRegistration) {
-            Set<RuntimeRequirementRegistration> dependents = requirements.get(requirementRegistration.getDependentId());
+        private synchronized void removeRequirement(RuntimeRequirementRegistration requirementRegistration) {
+            Map<String, RuntimeRequirementRegistration> dependents = requirements.get(requirementRegistration.getDependentId());
             if (dependents != null) {
-                // RequirementRegistration is a valid key for RuntimeRequirementRegistration
-                //noinspection SuspiciousMethodCalls
-                dependents.remove(requirementRegistration);
-                if (dependents.size() == 0) {
-                    requirements.remove(requirementRegistration.getDependentId());
+                RuntimeRequirementRegistration rrr = dependents.get(requirementRegistration.getRequiredName());
+                if (rrr != null) {
+                    rrr.removeRegistrationPoint(requirementRegistration.getOldestRegistrationPoint());
+                    if (rrr.getRegistrationPointCount() == 0) {
+                        dependents.remove(requirementRegistration.getRequiredName());
+                    }
+                    if (dependents.size() == 0) {
+                        requirements.remove(requirementRegistration.getDependentId());
+                    }
                 }
             }
         }
@@ -1304,8 +1334,12 @@ class ModelControllerImpl implements ModelController {
         synchronized CapabilityRegistryImpl copy() {
             CapabilityRegistryImpl result = new CapabilityRegistryImpl(forServer);
             result.capabilities.putAll(this.capabilities);
-            for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : this.requirements.entrySet()) {
-                result.requirements.put(entry.getKey(), new HashSet<>(entry.getValue()));
+            for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : this.requirements.entrySet()) {
+                Map<String, RuntimeRequirementRegistration> mapCopy = new HashMap<>();
+                for (Map.Entry<String, RuntimeRequirementRegistration> innerEntry : entry.getValue().entrySet()) {
+                    mapCopy.put(innerEntry.getKey(), new RuntimeRequirementRegistration(innerEntry.getValue()));
+                }
+                result.requirements.put(entry.getKey(), mapCopy);
             }
             if (!forServer) {
                 result.satisfiedByMap.putAll(this.satisfiedByMap);
@@ -1315,9 +1349,9 @@ class ModelControllerImpl implements ModelController {
 
         synchronized Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {
             Map<CapabilityId, Set<RuntimeRequirementRegistration>> result = new HashMap<>();
-            for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
+            for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
                 CapabilityContext dependentContext = entry.getKey().getContext();
-                for (RuntimeRequirementRegistration req : entry.getValue()) {
+                for (RuntimeRequirementRegistration req : entry.getValue().values()) {
                     CapabilityId satisfiesId = findSatisfactoryCapability(req.getRequiredName(), dependentContext);
                     if (satisfiesId == null) {
                         CapabilityId basicId = new CapabilityId(req.getRequiredName(), dependentContext);

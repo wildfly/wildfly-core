@@ -22,30 +22,72 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+
 /**
  * Registration information for requirement for a {@link org.jboss.as.controller.capability.RuntimeCapability}. As a runtime
- * requirement is associated with an actual management model, the registration exposes the {@link #getRegistrationPoint() point in the model}
+ * requirement is associated with an actual management model, the registration exposes the {@link #getOldestRegistrationPoint() point in the model}
  * that triggered the requirement.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
 public class RuntimeRequirementRegistration extends RequirementRegistration {
 
-    private final RegistrationPoint registrationPoint;
+    private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
 
     public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
                                           RegistrationPoint registrationPoint) {
         super(requiredName, dependentName, dependentContext);
-        this.registrationPoint = registrationPoint;
+        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
     }
 
-    public RuntimeRequirementRegistration(String requiredName, RuntimeCapabilityRegistration dependent) {
-        super(requiredName, dependent.getCapabilityId());
-        this.registrationPoint =  dependent.getRegistrationPoint();
+    public RuntimeRequirementRegistration(RuntimeRequirementRegistration toCopy) {
+        super(toCopy.getRequiredName(), toCopy.getDependentId());
+        this.registrationPoints.putAll(toCopy.registrationPoints);
     }
 
-    public RegistrationPoint getRegistrationPoint() {
-        return registrationPoint;
+    /**
+     * Gets the registration point that been associated with the registration for the longest period.
+     * @return the initial registration point, or {@code null} if there are no longer any registration points
+     */
+    public synchronized RegistrationPoint getOldestRegistrationPoint() {
+        return registrationPoints.size() == 0 ? null : registrationPoints.values().iterator().next();
     }
 
+    /**
+     * Get all registration points associated with this registration.
+     *
+     * @return all registration points. Will not be {@code null} but may be empty
+     */
+    public synchronized Set<RegistrationPoint> getRegistrationPoints() {
+        return Collections.unmodifiableSet(new HashSet<>(registrationPoints.values()));
+    }
+
+    public synchronized boolean addRegistrationPoint(RegistrationPoint toAdd) {
+        PathAddress addedAddress = toAdd.getAddress();
+        if (registrationPoints.containsKey(addedAddress)) {
+            return false;
+        }
+        registrationPoints.put(addedAddress, toAdd);
+        return true;
+    }
+
+    public synchronized boolean removeRegistrationPoint(RegistrationPoint toAdd) {
+        PathAddress addedAddress = toAdd.getAddress();
+        if (!registrationPoints.containsKey(addedAddress)) {
+            return false;
+        }
+        registrationPoints.remove(addedAddress);
+        return true;
+    }
+
+    public synchronized int getRegistrationPointCount() {
+        return registrationPoints.size();
+    }
 }

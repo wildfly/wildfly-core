@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import org.jboss.as.controller.PathAddress;
+
 /**
  * Registry of {@link org.jboss.as.controller.capability.AbstractCapability capabilities} available in the system.
  *
@@ -60,17 +62,19 @@ public interface CapabilityRegistry<C extends CapabilityRegistration, R extends 
      *
      * @see #registerAdditionalCapabilityRequirement(org.jboss.as.controller.capability.registry.RequirementRegistration)
      */
-    void removeCapabilityRequirement(RequirementRegistration requirement);
+    void removeCapabilityRequirement(R requirement);
 
     /**
-     * Remove a previously registered capability.
+     * Remove a previously registered capability if all registration points for it have been removed.
      *
      *
      * @param capabilityName the name of the capability. Cannot be {@code null}
      * @param context the context in which the capability is registered. Cannot be {@code null}
-     * @return the capability that was removed, or {@code null} if no matching capability was registered
+     * @param registrationPoint the specific registration point that is being removed
+     * @return the capability that was removed, or {@code null} if no matching capability was registered or other
+     *         registration points for the capability still exist
      */
-    C removeCapability(String capabilityName, CapabilityContext context);
+    C removeCapability(String capabilityName, CapabilityContext context, PathAddress registrationPoint);
 
     /**
      * Gets whether a capability with the given name is registered.
