@@ -370,12 +370,13 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         final ManagementResourceRegistration jvms = hostRegistration.registerSubModel(JvmResourceDefinition.GLOBAL);
 
         //Paths
-        hostRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManager));
+        hostRegistration.registerSubModel(PathResourceDefinition.createResolvableSpecified(pathManager));
 
         //interface
         ManagementResourceRegistration interfaces = hostRegistration.registerSubModel(new InterfaceDefinition(
                 new HostSpecifiedInterfaceAddHandler(),
                 new HostSpecifiedInterfaceRemoveHandler(),
+                true,
                 true
         ));
         interfaces.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);

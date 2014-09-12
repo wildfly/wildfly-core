@@ -122,7 +122,7 @@ public class ReadChildrenResourcesHandler implements OperationStepHandler {
                 // not an override
                 overrideHandler = null;
             }
-            OperationStepHandler rrHandler = new ReadResourceHandler(filteredData, overrideHandler);
+            OperationStepHandler rrHandler = new ReadResourceHandler(filteredData, overrideHandler, false);
             final ModelNode rrRsp = new ModelNode();
             resources.put(childPath, rrRsp);
             context.addStep(rrRsp, readResOp, rrHandler, OperationContext.Stage.MODEL, true);

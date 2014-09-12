@@ -126,7 +126,7 @@ public class WriteAttributeHandler implements OperationStepHandler {
 
                 final ModelNode readAttributeOperation = Util.createOperation(READ_ATTRIBUTE_OPERATION, address);
                 readAttributeOperation.get(NAME.getName()).set(attributeName);
-                ReadAttributeHandler readAttributeHandler = new ReadAttributeHandler(null, null);
+                ReadAttributeHandler readAttributeHandler = new ReadAttributeHandler(null, null, false);
 
                 // create 2 model nodes to store the result of the read-attribute operations
                 // before and after writing the value

@@ -3256,4 +3256,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 373, value = "    %s in context '%s'")
     String formattedCapabilityId(String capability, String context);
+
+    @Message(id = 374, value = "Unable to resolve expressions at this location.")
+    OperationFailedException unableToResolveExpressions();
 }

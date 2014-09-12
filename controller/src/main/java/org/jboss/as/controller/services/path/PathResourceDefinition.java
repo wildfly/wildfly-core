@@ -86,26 +86,43 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     protected final PathManagerService pathManager;
     private final boolean specified;
     private final boolean services;
+    private final boolean resolvable;
 
-    private PathResourceDefinition(PathManagerService pathManager, ResourceDescriptionResolver resolver, PathAddHandler addHandler, PathRemoveHandler removeHandler, boolean specified, boolean services) {
+    private PathResourceDefinition(PathManagerService pathManager, ResourceDescriptionResolver resolver, PathAddHandler addHandler, PathRemoveHandler removeHandler, boolean specified, boolean services, boolean resolvable) {
         super(PATH_ADDRESS, resolver, addHandler, removeHandler);
         this.pathManager = pathManager;
         this.specified = specified;
         this.services = services;
+        this.resolvable = resolvable;
     }
 
+    public static PathResourceDefinition createResolvableSpecified(PathManagerService pathManager){
+        return new SpecifiedPathResourceDefinition(pathManager, true);
+    }
     public static PathResourceDefinition createSpecified(PathManagerService pathManager) {
-        return new SpecifiedPathResourceDefinition(pathManager);
+        return new SpecifiedPathResourceDefinition(pathManager, false);
     }
 
     public static PathResourceDefinition createNamed(PathManagerService pathManager) {
-        return new NamedPathResourceDefinition(pathManager);
+        return new NamedPathResourceDefinition(pathManager, false);
     }
 
     public static PathResourceDefinition createSpecifiedNoServices(PathManagerService pathManager) {
-        return new SpecifiedNoServicesPathResourceDefinition(pathManager);
+        return new SpecifiedNoServicesPathResourceDefinition(pathManager, false);
     }
 
+    @Override
+    public void registerOperations(ManagementResourceRegistration interfaces) {
+        super.registerOperations(interfaces);
+        if( resolvable ) {
+            interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_DEFINITION,
+                    org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_INSTANCE, true);
+            interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_DEFINITION,
+                    org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_INSTANCE, true);
+        }
+    }
+
+    @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO, services));
@@ -115,35 +132,38 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     }
 
     private static class SpecifiedPathResourceDefinition extends PathResourceDefinition {
-        SpecifiedPathResourceDefinition(PathManagerService pathManager){
+        SpecifiedPathResourceDefinition(PathManagerService pathManager, boolean resolvable){
             super(pathManager,
                     ControllerResolver.getResolver(SPECIFIED_PATH_RESOURCE_PREFIX),
                     PathAddHandler.createSpecifiedInstance(pathManager),
                     PathRemoveHandler.createSpecifiedInstance(pathManager),
                     true,
-                    true);
+                    true,
+                    resolvable);
         }
     }
 
     private static class NamedPathResourceDefinition extends PathResourceDefinition {
-        NamedPathResourceDefinition(PathManagerService pathManager){
+        NamedPathResourceDefinition(PathManagerService pathManager, boolean resolvable){
             super(pathManager,
                     ControllerResolver.getResolver(NAMED_PATH_RESOURCE_PREFIX),
                     PathAddHandler.createNamedInstance(pathManager),
                     PathRemoveHandler.createNamedInstance(pathManager),
                     false,
-                    false);
+                    false,
+                    resolvable);
         }
     }
 
     private static class SpecifiedNoServicesPathResourceDefinition extends PathResourceDefinition {
-        SpecifiedNoServicesPathResourceDefinition(PathManagerService pathManager){
+        SpecifiedNoServicesPathResourceDefinition(PathManagerService pathManager, boolean resolvable){
             super(pathManager,
                     ControllerResolver.getResolver(SPECIFIED_PATH_RESOURCE_PREFIX),
                     PathAddHandler.createSpecifiedNoServicesInstance(pathManager),
                     PathRemoveHandler.createSpecifiedNoServicesInstance(pathManager),
                     true,
-                    false);
+                    false,
+                    resolvable);
         }
     }
 }

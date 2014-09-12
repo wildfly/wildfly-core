@@ -99,6 +99,20 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
     public static final OperationStepHandler INSTANCE = new ReadResourceHandler();
 
+    private static final SimpleAttributeDefinition RESOLVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESOLVE_EXPRESSIONS, ModelType.BOOLEAN)
+            .setAllowNull(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    public static final OperationDefinition RESOLVE_DEFINITION = new SimpleOperationDefinitionBuilder(READ_RESOURCE_OPERATION, ControllerResolver.getResolver("global"))
+            .setParameters(RESOLVE, RECURSIVE, RECURSIVE_DEPTH, PROXIES, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, ATTRIBUTES_ONLY, INCLUDE_ALIASES)
+            .setReadOnly()
+            .setRuntimeOnly()
+            .setReplyType(ModelType.OBJECT)
+            .build();
+
+    public static final OperationStepHandler RESOLVE_INSTANCE = new ReadResourceHandler(true);
+
     private final ParametersValidator validator = new ParametersValidator() {
 
         @Override
@@ -115,18 +129,29 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE_DEPTH);
                 }
             }
+            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
+                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
+                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
+                }
+            }
         }
     };
 
     private final OperationStepHandler overrideHandler;
+    private final boolean resolvable;
 
     public ReadResourceHandler() {
-        this(null, null);
+        this(null, null, false);
     }
 
-    ReadResourceHandler(final FilteredData filteredData, OperationStepHandler overrideHandler) {
+    public ReadResourceHandler(boolean resolvable){
+        this(null,null,resolvable);
+    }
+
+    ReadResourceHandler(final FilteredData filteredData, OperationStepHandler overrideHandler, boolean resolvable) {
         super(filteredData);
         this.overrideHandler = overrideHandler;
+        this.resolvable = resolvable;
     }
 
 
@@ -173,6 +198,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         final boolean aliases = operation.get(ModelDescriptionConstants.INCLUDE_ALIASES).asBoolean(false);
         final boolean defaults = operation.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).asBoolean(true);
         final boolean attributesOnly = operation.get(ModelDescriptionConstants.ATTRIBUTES_ONLY).asBoolean(false);
+        final boolean resolve = RESOLVE.resolveModelAttribute(context, operation).asBoolean();
 
         // Child types with no actual children
         final Set<String> nonExistentChildTypes = new HashSet<String>();
@@ -248,7 +274,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                                 // not an override
                                 overrideHandler = null;
                             }
-                            OperationStepHandler rrHandler = new ReadResourceHandler(localFilteredData, overrideHandler);
+                            OperationStepHandler rrHandler = new ReadResourceHandler(localFilteredData, overrideHandler, resolvable);
 
                             context.addStep(rrRsp, rrOp, rrHandler, OperationContext.Stage.MODEL, true);
                         }
@@ -284,7 +310,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
                 Map<String, ModelNode> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
 
-                addReadAttributeStep(context, address, defaults, localFilteredData, registry, attributeName, responseMap);
+                addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, attributeName, responseMap);
 
             }
         }
@@ -295,7 +321,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             for (String key : model.keys()) {
                 // Skip children and attributes already handled
                 if (!otherAttributes.containsKey(key) && !childrenByType.containsKey(key) && !metrics.containsKey(key)) {
-                    addReadAttributeStep(context, address, defaults, localFilteredData, registry, key, otherAttributes);
+                    addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, key, otherAttributes);
                 }
             }
         }
@@ -315,7 +341,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                             !metrics.containsKey(key) &&
                             nodeDescription.get(ATTRIBUTES).hasDefined(key) &&
                             nodeDescription.get(ATTRIBUTES, key).hasDefined(DEFAULT)) {
-                        addReadAttributeStep(context, address, defaults, localFilteredData, registry, key, otherAttributes);
+                        addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, key, otherAttributes);
                     }
                 }
             }
@@ -324,7 +350,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         context.stepCompleted();
     }
 
-    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, FilteredData localFilteredData, ImmutableManagementResourceRegistration registry, String attributeName, Map<String, ModelNode> responseMap) {
+    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData, ImmutableManagementResourceRegistration registry, String attributeName, Map<String, ModelNode> responseMap) {
         // See if there was an override registered for the standard :read-attribute handling (unlikely!!!)
         OperationStepHandler overrideHandler = registry.getOperationHandler(PathAddress.EMPTY_ADDRESS, READ_ATTRIBUTE_OPERATION);
         if (overrideHandler != null && overrideHandler == ReadAttributeHandler.INSTANCE) {
@@ -332,10 +358,11 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             overrideHandler = null;
         }
 
-        OperationStepHandler readAttributeHandler = new ReadAttributeHandler(localFilteredData, overrideHandler);
+        OperationStepHandler readAttributeHandler = new ReadAttributeHandler(localFilteredData, overrideHandler, (resolve && resolvable));
 
         final ModelNode attributeOperation = Util.getReadAttributeOperation(address, attributeName);
         attributeOperation.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).set(defaults);
+        attributeOperation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).set(resolve);
 
         final ModelNode attrResponse = new ModelNode();
         responseMap.put(attributeName, attrResponse);
