@@ -124,9 +124,9 @@ public class ProductConfig implements Serializable {
 
     public String getPrettyVersionString() {
         if (name != null)
-           return String.format("JBoss %s %s (WildFly %s)", name, version, Version.AS_VERSION);
+           return String.format("%s %s (WildFly Core %s)", name, version, Version.AS_VERSION);
 
-        return String.format("WildFly %s \"%s\"", Version.AS_VERSION, Version.AS_RELEASE_CODENAME);
+        return String.format("WildFly Core %s \"%s\"", Version.AS_VERSION, Version.AS_RELEASE_CODENAME);
     }
 
     public String resolveVersion() {
