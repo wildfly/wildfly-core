@@ -189,13 +189,15 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
 
     private final boolean updateRuntime;
     private final List<AccessConstraintDefinition> sensitivity;
+    private final boolean resolvable;
 
-    public InterfaceDefinition(InterfaceAddHandler addHandler, InterfaceRemoveHandler removeHandler, boolean updateRuntime) {
+    public InterfaceDefinition(InterfaceAddHandler addHandler, InterfaceRemoveHandler removeHandler, boolean updateRuntime, boolean resolvable) {
         super(PathElement.pathElement(INTERFACE),
                 ControllerResolver.getResolver(INTERFACE),
                 addHandler,
                 removeHandler);
         this.updateRuntime = updateRuntime;
+        this.resolvable = resolvable;
         this.sensitivity = SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG.wrapAsList();
     }
 
@@ -221,6 +223,12 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration interfaces) {
         super.registerOperations(interfaces);
+        if(resolvable) {
+            interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_DEFINITION,
+                    org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_INSTANCE, true);
+            interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_DEFINITION,
+                    org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_INSTANCE, true);
+        }
     }
 
     @Override

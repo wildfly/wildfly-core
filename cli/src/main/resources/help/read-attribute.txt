@@ -12,23 +12,28 @@ DESCRIPTION
 
 ARGUMENTS
 
- --help              - prints this message.
+ --help                - prints this message.
  
- --node              - (optional) the node path of the managed resource
-                       to which the target attribute belongs.
-                       If not present, the current node path (indicated in the
-                       prompt) is assumed.
+ --node                - (optional) the node path of the managed resource
+                         to which the target attribute belongs.
+                         If not present, the current node path (indicated in the
+                         prompt) is assumed.
                 
- <attribute_name>    - (required) the name of the target attribute.
+ <attribute_name>      - (required) the name of the target attribute.
  
- --include-defaults  - (optional) boolean to enable/disable default reading.
-                       In case it is set to false only the values set by user
-                       are returned. Attributes that were not explicitly
-                       initialized, will appear as not having any value.
+ --include-defaults    - (optional) boolean to enable/disable default reading.
+                         In case it is set to false only the values set by user
+                         are returned. Attributes that were not explicitly
+                         initialized, will appear as not having any value.
  
- --verbose (-v)      - will print all the available meta information about the
-                       attribute in addition to the attribute value.
+ --verbose (-v)        - will print all the available meta information about the
+                         attribute in addition to the attribute value.
 
- --headers           - a list of operation headers separated by a semicolon.
-                       For the list of supported headers, please, refer to the
-                       domain management documentation or use tab-completion.
+ --headers             - a list of operation headers separated by a semicolon.
+                         For the list of supported headers, please, refer to the
+                         domain management documentation or use tab-completion.
+
+ --resolve-expressions - Resolves the expressions in the returned attributes to
+                         their values on the server. In domain mode the argument
+                         is only available at /host=*/path=*, /host=*/interface=*,
+                         and host=*/server=* locations in the configuration.

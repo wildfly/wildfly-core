@@ -432,7 +432,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceDefinition(
                 SpecifiedInterfaceAddHandler.INSTANCE,
                 SpecifiedInterfaceRemoveHandler.INSTANCE,
-                true
+                true,
+                false
         ));
         interfaces.registerReadOnlyAttribute(NetworkInterfaceRuntimeHandler.RESOLVED_ADDRESS, NetworkInterfaceRuntimeHandler.INSTANCE);
         interfaces.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);

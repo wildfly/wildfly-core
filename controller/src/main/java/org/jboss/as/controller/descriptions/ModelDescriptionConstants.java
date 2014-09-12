@@ -324,6 +324,7 @@ public class ModelDescriptionConstants {
     public static final String REQUEST_PROPERTIES = "request-properties";
     public static final String REQUIRED = "required";
     public static final String REQUIRES = "requires";
+    public static final String RESOLVE_EXPRESSIONS = "resolve-expressions";
     public static final String RESOURCE_ADDED_NOTIFICATION = "resource-added";
     public static final String RESOURCE_REMOVED_NOTIFICATION = "resource-removed";
     public static final String RESPONSE = "response";
