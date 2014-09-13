@@ -3,8 +3,8 @@ package org.jboss.as.test.shared;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
-
 import org.apache.commons.lang.StringUtils;
+
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.wildfly.test.api.Authentication;
 
@@ -12,6 +12,7 @@ import org.wildfly.test.api.Authentication;
  * Class that allows for non arquillian tests to access the current server address and port, and other testsuite environment
  * properties.
  * <p/>
+ * This should only be used for tests that do not have access to the {@link org.jboss.as.arquillian.container.ManagementClient}
  *
  * @author Stuart Douglas
  */
@@ -64,14 +65,14 @@ public class TestSuiteEnvironment {
      * @return The server port for node0
      */
     public static int getServerPort() {
-        return Integer.getInteger("management.port", 9990);
+        return Integer.getInteger("as.managementPort", 9990);
     }
 
     /**
      * @return The server address of node0
      */
     public static String getServerAddress() {
-        return formatPossibleIpv6Address(System.getProperty("management.address", "localhost"));
+        return formatPossibleIpv6Address(System.getProperty("node0", "localhost"));
     }
 
     /**

@@ -104,7 +104,7 @@ public class ServerManagementTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getSimpleName(),
+        testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getName(),
                 "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml"));
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
