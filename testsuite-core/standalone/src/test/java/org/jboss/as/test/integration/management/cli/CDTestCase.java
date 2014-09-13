@@ -19,12 +19,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.jboss.as.test.integration.management.cli;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.test.integration.management.util.CLITestUtil;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -34,30 +37,32 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class CdTestCase {
+public class CDTestCase {
 
-    @Test
-    public void testValidAddress() throws Exception {
-        final CommandContext ctx = CLITestUtil.getCommandContext();
-        try {
-            ctx.connectController();
-            ctx.handle("cd subsystem=logging");
-        } finally {
+    private CommandContext ctx;
+
+    @Before
+    public void setup() throws Exception {
+        ctx = CommandContextFactory.getInstance().newCommandContext();
+        ctx.connectController();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        if(ctx != null) {
             ctx.terminateSession();
         }
     }
 
     @Test
-    public void testInvalidAddress() throws Exception {
-        final CommandContext ctx = CLITestUtil.getCommandContext();
+    public void main() throws Exception {
+        ctx.handle("cd /core-service=management");
         try {
-            ctx.connectController();
-            ctx.handle("cd subsystem=subsystem");
-            Assert.fail("Can't cd into a non-existing nodepath.");
+            ctx.handle("cd /this-cant-exist=never");
+            Assert.fail("The path should not have passed validation");
         } catch(CommandLineException e) {
             // expected
-        } finally {
-            ctx.terminateSession();
         }
+        ctx.handle("cd /this-cant-exist=never --no-validation");
     }
 }

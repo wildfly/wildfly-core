@@ -25,8 +25,7 @@
     <properties>
         <jbossas.ts.integ.dir>${basedir}/..</jbossas.ts.integ.dir>
         <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
-        <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
-        <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
+        <jbossas.project.dir>${jbossas.ts.dir}/..</jbossas.project.dir>
     </properties>
 
     <dependencies>
@@ -58,14 +57,10 @@
                     <!-- System properties to forked surefire JVM which runs clients. -->
                     <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
 
-                    <environmentVariables>
-                        <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
-                    </environmentVariables>
-
                     <systemPropertyVariables>
                         <jboss.options>${surefire.system.args}</jboss.options>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <jboss.home>${wildfly.home}</jboss.home>
+                        <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                         <jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
                 </configuration>
@@ -79,7 +74,7 @@
                         <goals>
                             <goal>build</goal>
                         </goals>
-                        <phase>process-test-resources</phase>
+                        <phase>compile</phase>
                         <configuration>
                             <config-file>server-provisioning.xml</config-file>
                             <server-name>wildfly-core</server-name>

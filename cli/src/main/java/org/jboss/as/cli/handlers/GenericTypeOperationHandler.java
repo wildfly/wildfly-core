@@ -345,7 +345,8 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
                                 } else if(prop.getName().endsWith("properties")) { // TODO this is bad but can't rely on proper descriptions
                                     valueConverter = ArgumentValueConverter.PROPERTIES;
                                 } else if(ModelType.LIST == propType) {
-                                    if(asType(prop.getProperty(Util.VALUE_TYPE)) == ModelType.PROPERTY) {
+                                    final ModelNode valueType = prop.getProperty(Util.VALUE_TYPE);
+                                    if(valueType != null && valueType.asType() == ModelType.PROPERTY) {
                                         valueConverter = ArgumentValueConverter.PROPERTIES;
                                     } else {
                                         valueConverter = ArgumentValueConverter.LIST;
@@ -407,7 +408,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
                             } else if(prop.getName().endsWith("properties")) { // TODO this is bad but can't rely on proper descriptions
                                 valueConverter = ArgumentValueConverter.PROPERTIES;
                             } else if(ModelType.LIST == type) {
-                                if(propDescr.hasDefined(Util.VALUE_TYPE) && asType(propDescr.get(Util.VALUE_TYPE)) == ModelType.PROPERTY) {
+                                if(propDescr.hasDefined(Util.VALUE_TYPE) && propDescr.get(Util.VALUE_TYPE).asType() == ModelType.PROPERTY) {
                                     valueConverter = ArgumentValueConverter.PROPERTIES;
                                 } else {
                                     valueConverter = ArgumentValueConverter.LIST;
@@ -420,18 +421,6 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
                 }
             }
             return opHandler;
-        }
-    }
-
-    protected ModelType asType(ModelNode type) {
-        if(type == null) {
-            return null;
-        }
-        try {
-            return type.asType();
-        } catch(IllegalArgumentException e) {
-            // the value type is a structure
-            return null;
         }
     }
 
