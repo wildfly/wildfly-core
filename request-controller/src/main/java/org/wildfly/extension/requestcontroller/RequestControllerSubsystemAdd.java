@@ -25,8 +25,8 @@
 package org.wildfly.extension.requestcontroller;
 
 import java.util.List;
+
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
@@ -48,18 +48,8 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
     private final RequestController requestController;
 
     RequestControllerSubsystemAdd(RequestController requestController) {
+        super(RequestControllerRootDefinition.ATTRIBUTES);
         this.requestController = requestController;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-
-        for (AttributeDefinition attr : RequestControllerRootDefinition.ATTRIBUTES) {
-            attr.validateAndSet(operation, model);
-        }
     }
 
     /**
@@ -75,14 +65,8 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
             protected void execute(DeploymentProcessorTarget processorTarget) {
 
                 processorTarget.addDeploymentProcessor(RequestControllerExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_GLOBAL_REQUEST_CONTROLLER, new RequestControllerDeploymentUnitProcessor());
- }
+            }
         }, OperationContext.Stage.RUNTIME);
-
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        super.performRuntime(context, operation, model, verificationHandler, newControllers);
 
         int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, model).asInt();
         requestController.setMaxRequestCount(maxRequests);
