@@ -22,10 +22,8 @@
 
 package org.jboss.as.controller;
 
-import java.util.List;
-
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * A handler for the {@code add} operation that only manipulates the model.  The original expected use is for
@@ -37,28 +35,13 @@ import org.jboss.msc.service.ServiceController;
  */
 public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
 
-    private final AttributeDefinition[] attributes;
-
     /**
      * Creates a new {@code ModelOnlyStepHandler} that stores the given attributes to the model.
      *
      * @param attributes the attributes
      */
     public ModelOnlyAddStepHandler(AttributeDefinition... attributes) {
-        this.attributes = attributes;
-    }
-
-    /**
-     * Call {@link AttributeDefinition#validateAndSet(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)} for each
-     * attribute provided to the constructor
-     *
-     * {@inheritDoc}
-     */
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        for (AttributeDefinition ad : attributes) {
-            ad.validateAndSet(operation, model);
-        }
+        super(attributes);
     }
 
     /**
@@ -72,22 +55,12 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
     }
 
     /**
-     * Returns {@code false}.
-     *
-     * {@inheritDoc}
-     */
-    @Override
-    protected final boolean requiresRuntimeVerification() {
-        return false;
-    }
-
-    /**
      * Throws {@link UnsupportedOperationException}.
      *
      * {@inheritDoc}
      */
     @Override
-    protected final void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected final void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         throw new UnsupportedOperationException();
     }
 
@@ -97,7 +70,7 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
      * {@inheritDoc}
      */
     @Override
-    protected final void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+    protected final void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         throw new UnsupportedOperationException();
     }
 }

@@ -352,7 +352,7 @@ public class CompositeOperationHandlerUnitTestCase {
         ModelNode step2 = getOperation("missing-service", "attr2", 1);
         ModelNode result = controller.execute(getCompositeOperation(null, step1, step2), null, null, null);
 //        System.out.println(result);
-        Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
+        Assert.assertEquals(result.toString(), FAILED, result.get(OUTCOME).asString());
         assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
 
         assertTrue(sharedState.get());

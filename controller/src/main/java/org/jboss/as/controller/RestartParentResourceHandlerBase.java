@@ -70,9 +70,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                         parentModel = getModel(context, address);
                         if (parentModel != null && context.markResourceRestarted(address, this)) {
                             removeServices(context, serviceName, parentModel);
-                            final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                            recreateParentService(context, address, parentModel, verificationHandler);
-                            context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
+                            recreateParentService(context, address, parentModel);
                             servicesRestarted = true;
                         }
                     } // else  No parent service, nothing to do
@@ -148,15 +146,42 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
 
     /**
      * Recreate the parent service(s) using the given model.
+     * <p>
+     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
+     * {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode, ServiceVerificationHandler)}
+     * method. It then does nothing with the objects referenced by the {@code verificationHandler} parameter passed to
+     * that method. Subclasses that overrode that method are encouraged to instead override this one.
+     * <strong>Subclasses that override this method should not call{@code super.recreateParentService(...)}.</strong>
      *
      * @param context the operation context
      * @param parentAddress the address of the parent resource
      * @param parentModel the current configuration model for the parent resource and its children
-     * @param verificationHandler handler for verifying newly installed services
      *
      * @throws OperationFailedException if there is a problem installing the services
      */
-    protected abstract void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel, ServiceVerificationHandler verificationHandler) throws OperationFailedException;
+    @SuppressWarnings("deprecation")
+    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException{
+        recreateParentService(context, parentAddress, parentModel, ServiceVerificationHandler.INSTANCE);
+    }
+
+    /**
+     * <strong>Deprecated</strong>. Override {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode)}
+     * instead.
+     *
+     * @param context the operation context
+     * @param parentAddress the address of the parent resource
+     * @param parentModel the current configuration model for the parent resource and its children
+     * @param verificationHandler does nothing; ignored
+     *
+     * @throws OperationFailedException if there is a problem installing the services
+     *
+     * @deprecated override {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel, ServiceVerificationHandler verificationHandler) throws OperationFailedException{
+        // no-op
+    }
 
     /**
      * Gets the name of the parent service.

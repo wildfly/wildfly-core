@@ -121,23 +121,16 @@ public class AbstractAddStepHandler implements OperationStepHandler {
         final Resource resource = createResource(context);
         populateModel(context, operation, resource);
         recordCapabilitiesAndRequirements(context, operation, resource);
-        final ModelNode model = resource.getModel();
 
         if (requiresRuntime(context)) {
             context.addStep(new OperationStepHandler() {
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                    final List<ServiceController<?>> controllers = new ArrayList<ServiceController<?>>();
-                    final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                    performRuntime(context, operation, model, verificationHandler, controllers);
-
-                    if(requiresRuntimeVerification()) {
-                        context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
-                    }
+                    performRuntime(context, operation, resource);
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
-                            rollbackRuntime(context, operation, model, controllers);
+                            rollbackRuntime(context, operation, resource);
                         }
                     });
                 }
@@ -148,7 +141,11 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
     /**
      * Create the {@link Resource} that the {@link AbstractAddStepHandler#execute(OperationContext, ModelNode)}
-     * method operates on.
+     * method operates on. This method is invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     * <p>
+     * This default implementation uses the {@link org.jboss.as.controller.OperationContext#createResource(PathAddress)
+     * default resource creation facility exposed by the context}. Subclasses wishing to create a custom resource
+     * type can override this method.
      *
      * @param context the operation context
      */
@@ -158,9 +155,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
     /**
      * Populate the given resource in the persistent configuration model based on the values in the given operation.
+     * This method isinvoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
      * <p>
-     * This default implementation simply calls {@link #populateModel(ModelNode, Resource)}.
-     * </p>
+     * This default implementation simply calls {@link #populateModel(ModelNode, org.jboss.as.controller.registry.Resource)}.
      *
      * @param context the operation context
      * @param operation the operation
@@ -174,6 +171,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
     /**
      * Populate the given resource in the persistent configuration model based on the values in the given operation.
+     * This method is invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     * <p>
+     * This default implementation simply calls {@link #populateModel(ModelNode, org.jboss.dmr.ModelNode)}.
      *
      * @param operation the operation
      * @param resource the resource that corresponds to the address of {@code operation}
@@ -186,6 +186,10 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
     /**
      * Populate the given node in the persistent configuration model based on the values in the given operation.
+     * This method is invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     * <p>
+     * This default implementation invokes {@link org.jboss.as.controller.AttributeDefinition#validateAndSet(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}
+     * on any attributes passed to the constructor.
      *
      * @param operation the operation
      * @param model persistent configuration model node that corresponds to the address of {@code operation}
@@ -222,9 +226,11 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     }
 
     /**
-     * Gets whether {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}}
-     * should be called. This default implementation always returns {@code true}. Subclasses that perform no runtime
-     * update could override and return {@code false}.
+     * Gets whether a {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME} step should be added to call
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}}.
+     * This default implementation always returns {@code true}. Subclasses that perform no runtime
+     * update could override and return {@code false}. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
      *
      * @param context operation context
      * @return {@code true} if {@code performRuntime} should be invoked; {@code false} otherwise.
@@ -234,60 +240,133 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     }
 
     /**
-     * Gets whether the {@link ServiceVerificationHandler} parameter passed to
-     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
-     * should be added to the operation context as a step.
-     * <p>
-     * This default implementation always returns {@code true}.
-     * </p>
+     * <strong>Deprecated</strong>. Has no effect unless a subclass somehow makes use of it.
      *
-     * @return  {@code true} if the service verification step should be added; {@code false} if it's not necessary.
+     * @return  {@code true}
+     *
+     * @deprecated has no effect
      */
+    @Deprecated
     protected boolean requiresRuntimeVerification() {
         return true;
     }
 
     /**
      * Make any runtime changes necessary to effect the changes indicated by the given {@code operation}. Executes
-     * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code model}
-     * parameter will reflect any changes made in that method.
+     * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
+     * parameter will reflect any changes made in that method. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}. Subclasses that wish to make
+     * changes to runtime services should override either this method or the
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)} variant. Override
+     * this one if you wish to make use of the {@code resource} parameter beyond simply
+     * {@link org.jboss.as.controller.registry.Resource#getModel() accessing its model property}.
      * <p>
-     * This default implementation does nothing.
+     * This default implementation simply calls the
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)} variant.
+     * <strong>Subclasses that override this method should not call {@code super.performRuntime(...)}.</strong>
      * </p>
      *
      * @param context  the operation context
      * @param operation the operation being executed
-     * @param model persistent configuration model node that corresponds to the address of {@code operation}
-     * @param verificationHandler step handler that can be added as a listener to any new services installed in order to
-     *                            validate the services installed correctly during the
-     *                            {@link OperationContext.Stage#VERIFY VERIFY stage}
-     * @param newControllers holder for the {@link ServiceController} for any new services installed by the method. The
-     *                       method should add the {@code ServiceController} for any new services to this list. If the
-     *                       overall operation needs to be rolled back, the list will be used in
-     *                       {@link #rollbackRuntime(OperationContext, ModelNode, ModelNode, java.util.List)}  to automatically removed
-     *                       the newly added services
+     * @param resource persistent configuration resource that corresponds to the address of {@code operation}
+     *
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
+        performRuntime(context, operation, resource.getModel());
+    }
+
+    /**
+     * Make any runtime changes necessary to effect the changes indicated by the given {@code operation}. Executes
+     * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
+     * parameter will reflect any changes made in that method. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}. Subclasses that wish to make
+     * changes to runtime services should override this method or the
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)} variant.
+     * <p>
+     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
+     * method. It then does nothing with the objects referenced by the {@code verificationHandler} and
+     * {@code controllers} parameters passed to that method. Subclasses that overrode that method are encouraged to
+     * instead override this one or the {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * variant. <strong>Subclasses that override this method should not call{@code super.performRuntime(...)}.</strong>
+     *
+     * @param context  the operation context
+     * @param operation the operation being executed
+     * @param model persistent configuration resource that corresponds to the address of {@code operation}
+     *
+     * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
+     */
+    @SuppressWarnings("deprecation")
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        performRuntime(context, operation, model, ServiceVerificationHandler.INSTANCE, new ArrayList<ServiceController<?>>());
+
+        // Don't bother adding the SVH, as it does nothing.
+        // Just invoke requiresRuntimeVerification() on the extremely remote chance some subclass
+        // is somehow expecting the call
+        requiresRuntimeVerification();
+    }
+
+    /**
+     * <strong>Deprecated</strong>. Subclasses should instead override
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * or {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}.
+     * <p>
+     * This default implementation does nothing.
+     *
+     * @param context  the operation context
+     * @param operation the operation being executed
+     * @param model persistent configuration model node that corresponds to the address of {@code operation}
+     * @param verificationHandler not used; service verification is performed automatically
+     * @param newControllers not used; removal of added services during rollback is performed automatically.
+     * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
+     *
+     * @deprecated instead override one of the non-deprecated overloaded variants
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
                                   final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
     }
 
     /**
-     * Rollback runtime changes made in {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}.
+     * Rollback runtime changes made in {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.
+     * Any services that were added in {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME} will be automatically removed after this
+     * method executes. Called from the {@link org.jboss.as.controller.OperationContext.ResultHandler} or
+     * {@link org.jboss.as.controller.OperationContext.RollbackHandler} passed to {@code OperationContext.completeStep(...)}.
      * <p>
-     * This default implementation removes all services in the given list of {@code controllers}. The contents of
-     * {@code controllers} is the same as what was in the {@code newControllers} parameter passed to {@code performRuntime()}
-     * when that method returned.
+     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
+     * {@link #rollbackRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, java.util.List)}
+     * variant, passing in an empty list for the {@code controllers} parameter. Subclasses that overrode that method are
+     * encouraged to instead override this one. <strong>Subclasses that override this method should not call
+     * {@code super.rollbackRuntime(...).}</strong>
+     *
+     * @param context the operation context
+     * @param operation the operation being executed
+     * @param resource persistent configuration model node that corresponds to the address of {@code operation}
+     */
+    @SuppressWarnings("deprecation")
+    protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
+        rollbackRuntime(context, operation, resource.getModel(), new ArrayList<ServiceController<?>>(0));
+    }
+
+    /**
+     * <strong>Deprecated</strong>. Subclasses wishing for custom rollback behavior should instead override
+     * {@link #rollbackRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.
+     * <p>
+     * This default implementation does nothing. <strong>Subclasses that override this method should not call
+     * {@code super.performRuntime(...)}.</strong>
+     * </p>
      * </p>
      * @param context the operation context
      * @param operation the operation being executed
      * @param model persistent configuration model node that corresponds to the address of {@code operation}
-     * @param controllers  holder for the {@link ServiceController} for any new services installed by
-     *                     {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
+     * @param controllers  will always be an empty list
+     *
+     * @deprecated instead override {@link #rollbackRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
+    @Deprecated
     protected void rollbackRuntime(OperationContext context, final ModelNode operation, final ModelNode model, List<ServiceController<?>> controllers) {
-        for(ServiceController<?> controller : controllers) {
-            context.removeService(controller.getName());
-        }
+        // no-op
     }
 }

@@ -292,11 +292,7 @@ public class OperationTimeoutUnitTestCase {
                                                 : (stop ? BlockingService.STOP : BlockingService.NEITHER);
 
                     final ServiceName svcName = ServiceName.JBOSS.append("bad-service");
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                    context.getServiceTarget().addService(svcName, bad)
-                            .addListener(verificationHandler)
-                            .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
+                    context.getServiceTarget().addService(svcName, bad).install();
 
                     try {
                         bad.startLatch.await(20, TimeUnit.SECONDS);

@@ -18,19 +18,12 @@
  */
 package org.jboss.as.server.services.net;
 
-import java.util.List;
-
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
 import org.jboss.as.controller.operations.common.InterfaceAddHandler;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.Mode;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * Handler for adding a fully specified interface.
@@ -50,15 +43,10 @@ public class SpecifiedInterfaceAddHandler extends InterfaceAddHandler {
         return context.getProcessType().isServer();
     }
 
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers, String name, ParsedInterfaceCriteria criteria) {
-        final ServiceTarget target = context.getServiceTarget();
-        ServiceBuilder<NetworkInterfaceBinding> builder = target.addService(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(name), createInterfaceService(name, criteria));
-        newControllers.add(builder.setInitialMode(Mode.ON_DEMAND)
-                .install());
-    }
-
-    protected boolean requiresRuntimeVerification() {
-        return false;
+    @Override
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, String name, ParsedInterfaceCriteria criteria) {
+        context.getServiceTarget().addService(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(name), createInterfaceService(name, criteria))
+            .install();
     }
 
     /**

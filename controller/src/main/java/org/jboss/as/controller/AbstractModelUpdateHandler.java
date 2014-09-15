@@ -24,10 +24,6 @@ package org.jboss.as.controller;
 
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Base class for {@link OperationStepHandler} implementations for updating an existing managed resource.
@@ -40,22 +36,16 @@ public abstract class AbstractModelUpdateHandler implements OperationStepHandler
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         updateModel(operation, resource);
-        final ModelNode model = resource.getModel();
 
         if (requiresRuntime(context)) {
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final List<ServiceController<?>> controllers = new ArrayList<ServiceController<?>>();
-                    final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                    performRuntime(context, operation, model, verificationHandler, controllers);
+                    performRuntime(context, operation, resource);
 
-                    if(requiresRuntimeVerification()) {
-                        context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
-                    }
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
-                            rollbackRuntime(context, operation, model, controllers);
+                            rollbackRuntime(context, operation, resource);
                         }
                     });
                 }
@@ -87,7 +77,7 @@ public abstract class AbstractModelUpdateHandler implements OperationStepHandler
     protected abstract void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException;
 
     /**
-     * Gets whether {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}}
+     * Gets whether {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}}
      * should be called.
      *
      * @param context operation context
@@ -95,20 +85,6 @@ public abstract class AbstractModelUpdateHandler implements OperationStepHandler
      */
     protected boolean requiresRuntime(OperationContext context) {
         return context.isNormalServer();
-    }
-
-    /**
-     * Gets whether the {@link ServiceVerificationHandler} parameter passed to
-     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
-     * should be added to the operation context as a step.
-     * <p>
-     * This default implementation always returns {@code true}.
-     * </p>
-     *
-     * @return  {@code true} if the service verification step should be added; {@code false} if it's not necessary.
-     */
-    protected boolean requiresRuntimeVerification() {
-        return true;
     }
 
     /**
@@ -121,23 +97,14 @@ public abstract class AbstractModelUpdateHandler implements OperationStepHandler
      *
      * @param context  the operation context
      * @param operation the operation being executed
-     * @param model persistent configuration model node that corresponds to the address of {@code operation}
-     * @param verificationHandler step handler that can be added as a listener to any new services installed in order to
-     *                            validate the services installed correctly during the
-     *                            {@link OperationContext.Stage#VERIFY VERIFY stage}
-     * @param newControllers holder for the {@link ServiceController} for any new services installed by the method. The
-     *                       method should add the {@code ServiceController} for any new services to this list. If the
-     *                       overall operation needs to be rolled back, the list will be used in
-     *                       {@link #rollbackRuntime(OperationContext, ModelNode, ModelNode, java.util.List)}  to automatically removed
-     *                       the newly added services
+     * @param resource the resource that corresponds to the address of {@code operation}
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
     }
 
     /**
-     * Rollback runtime changes made in {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}.
+     * Rollback runtime changes made in {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.
      * <p>
      * This default implementation removes all services in the given list of {@code controllers}. The contents of
      * {@code controllers} is the same as what was in the {@code newControllers} parameter passed to {@code performRuntime()}
@@ -145,14 +112,10 @@ public abstract class AbstractModelUpdateHandler implements OperationStepHandler
      * </p>
      * @param context the operation context
      * @param operation the operation being executed
-     * @param model persistent configuration model node that corresponds to the address of {@code operation}
-     * @param controllers  holder for the {@link ServiceController} for any new services installed by
-     *                     {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
+     * @param resource the resource that corresponds to the address of {@code operation}
      */
-    protected void rollbackRuntime(OperationContext context, final ModelNode operation, final ModelNode model, List<ServiceController<?>> controllers) {
-        for(ServiceController<?> controller : controllers) {
-            context.removeService(controller.getName());
-        }
+    protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
+
     }
 
 }

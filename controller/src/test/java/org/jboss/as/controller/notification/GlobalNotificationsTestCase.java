@@ -43,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -56,15 +55,14 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.junit.Test;
 
 /**
@@ -117,9 +115,9 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
                     }
 
                     @Override
-                    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+                    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
                         runtimeAttributeValue = MY_RUNTIME_ATTRIBUTE.resolveModelAttribute(context, operation).asLong();
-                        boolean fail = FAIL_ADD_OPERATION.resolveModelAttribute(context, model).asBoolean();
+                        boolean fail = FAIL_ADD_OPERATION.resolveModelAttribute(context, resource.getModel()).asBoolean();
                         if (fail) {
                             throw new OperationFailedException("add operation failed");
                         }

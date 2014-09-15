@@ -25,30 +25,6 @@
  */
 package org.jboss.as.controller;
 
-import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.operations.global.GlobalNotifications;
-import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -76,6 +52,30 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.GlobalNotifications;
+import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceContainer;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
+import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Unit tests of {@link ModelControllerImpl}.
@@ -815,11 +815,7 @@ public class ModelControllerImplUnitTestCase {
 
                     context.getResult().set(current);
                     final ServiceName svcName =  ServiceName.JBOSS.append("good-service");
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                    context.getServiceTarget().addService(svcName, Service.NULL)
-                            .addListener(verificationHandler)
-                            .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
+                    context.getServiceTarget().addService(svcName, Service.NULL).install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -852,12 +848,9 @@ public class ModelControllerImplUnitTestCase {
                     context.getResult().set(current);
 
                     final ServiceName svcName = ServiceName.JBOSS.append("missing-service");
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
                     context.getServiceTarget().addService(svcName, Service.NULL)
                             .addDependency(ServiceName.JBOSS.append("missing"))
-                            .addListener(verificationHandler)
                             .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -907,11 +900,8 @@ public class ModelControllerImplUnitTestCase {
 
                     };
                     final ServiceName svcName = ServiceName.JBOSS.append("bad-service");
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
                     context.getServiceTarget().addService(svcName, bad)
-                            .addListener(verificationHandler)
                             .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -1018,17 +1008,13 @@ public class ModelControllerImplUnitTestCase {
                 public void execute(final OperationContext context, ModelNode operation) {
 
                     context.getResult().set(current);
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
                     final ServiceName dependedSvcName = ServiceName.JBOSS.append("depended-service");
                     context.getServiceTarget().addService(dependedSvcName, Service.NULL)
-                            .addListener(verificationHandler)
                             .install();
                     final ServiceName dependentSvcName = ServiceName.JBOSS.append("dependent-service");
                     context.getServiceTarget().addService(dependentSvcName, Service.NULL)
                             .addDependencies(dependedSvcName)
-                            .addListener(verificationHandler)
                             .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override

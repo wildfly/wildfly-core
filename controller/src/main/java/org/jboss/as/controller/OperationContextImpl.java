@@ -143,7 +143,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final ModelControllerImpl modelController;
     private final EnumSet<ContextFlag> contextFlags;
     private final OperationMessageHandler messageHandler;
-    private final ServiceTarget serviceTarget;
     private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<ServiceName, ServiceController<?>>();
     // protected by "realRemovingControllers"
     private final Map<ServiceName, Step> removalSteps = new HashMap<ServiceName, Step>();
@@ -226,7 +225,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.attachments = attachments;
         this.affectsModel = booting ? new ConcurrentHashMap<PathAddress, Object>(16 * 16) : new HashMap<PathAddress, Object>(1);
         this.contextFlags = contextFlags;
-        this.serviceTarget = new ContextServiceTarget(modelController);
         this.hostServerGroupTracker = hostServerGroupTracker;
         this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
@@ -433,8 +431,22 @@ final class OperationContextImpl extends AbstractOperationContext {
         return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, PathAddress.EMPTY_ADDRESS);
     }
 
+    @Override
     public ServiceRegistry getServiceRegistry(final boolean modify) throws UnsupportedOperationException {
+        return getServiceRegistry(modify, this.activeStep);
+    }
 
+    /**
+     * Gets a service registry that will ensure
+     * {@link org.jboss.msc.service.ServiceController#setMode(org.jboss.msc.service.ServiceController.Mode) changes to the mode}
+     * of registered services will result in subsequent verification of service stability.
+     *
+     * @param modify {@code true} if the caller intends to modify state
+     * @param registryActiveStep the {@link org.jboss.as.controller.AbstractOperationContext.Step} that encapsulates
+     *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
+     * @return the service registry
+     */
+    ServiceRegistry getServiceRegistry(final boolean modify, final Step registryActiveStep) {
         if (modify) {
             readOnly = false;
         }
@@ -451,7 +463,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (modify) {
             ensureWriteLockForRuntime();
         }
-        return new OperationContextServiceRegistry(modelController.getServiceRegistry());
+        return new OperationContextServiceRegistry(modelController.getServiceRegistry(), registryActiveStep);
     }
 
     public ServiceController<?> removeService(final ServiceName name) throws UnsupportedOperationException {
@@ -543,7 +555,22 @@ final class OperationContextImpl extends AbstractOperationContext {
         });
     }
 
+    @Override
     public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+
+        return getServiceTarget(activeStep);
+    }
+
+    /**
+     * Gets a service target that will ensure that any
+     * {@link org.jboss.msc.service.ServiceTarget#addService(org.jboss.msc.service.ServiceName, org.jboss.msc.service.Service)
+     * added services} will be tracked for subsequent verification of service stability.
+     *
+     * @param targetActiveStep the {@link org.jboss.as.controller.AbstractOperationContext.Step} that encapsulates
+     *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
+     * @return the service target
+     */
+    ServiceTarget getServiceTarget(Step targetActiveStep) throws UnsupportedOperationException {
 
         readOnly = false;
 
@@ -553,8 +580,9 @@ final class OperationContextImpl extends AbstractOperationContext {
             throw ControllerLogger.ROOT_LOGGER.serviceTargetRuntimeOperationsOnly();
         }
         ensureWriteLockForRuntime();
-        return serviceTarget;
+        return new ContextServiceTarget(targetActiveStep);
     }
+
 
     Resource.ResourceEntry getActiveOperationResource() {
         return activeOperationResource;
@@ -1632,15 +1660,17 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     class ContextServiceTarget implements ServiceTarget {
 
-        private final ModelControllerImpl modelController;
+        private final Step targetActiveStep;
+        private final ServiceTarget delegate;
 
-        ContextServiceTarget(final ModelControllerImpl modelController) {
-            this.modelController = modelController;
+        ContextServiceTarget(final Step targetActiveStep) {
+            this.targetActiveStep = targetActiveStep;
+            this.delegate = targetActiveStep.getScopedServiceTarget(modelController.getServiceTarget());
         }
 
         public <T> ServiceBuilder<T> addServiceValue(final ServiceName name, final Value<? extends Service<T>> value) {
-            final ServiceBuilder<T> realBuilder = modelController.getServiceTarget().addServiceValue(name, value);
-            return new ContextServiceBuilder<T>(realBuilder, name);
+            final ServiceBuilder<T> realBuilder = delegate.addServiceValue(name, value);
+            return new ContextServiceBuilder<T>(realBuilder, name, targetActiveStep);
         }
 
         public <T> ServiceBuilder<T> addService(final ServiceName name, final Service<T> service) {
@@ -1722,10 +1752,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         private final ServiceBuilder<T> realBuilder;
         private final ServiceName name;
+        private final Step targetActiveStep;
 
-        ContextServiceBuilder(final ServiceBuilder<T> realBuilder, final ServiceName name) {
+
+        ContextServiceBuilder(final ServiceBuilder<T> realBuilder, final ServiceName name, final Step targetActiveStep) {
             this.realBuilder = realBuilder;
             this.name = name;
+            this.targetActiveStep = targetActiveStep;
         }
 
         public ServiceBuilder<T> addAliases(final ServiceName... aliases) {
@@ -1833,6 +1866,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         public ServiceController<T> install() throws ServiceRegistryException, IllegalStateException {
+
             synchronized (realRemovingControllers) {
                 boolean intr = false;
                 try {
@@ -1863,7 +1897,9 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // for any ill effect
                     removalSteps.remove(name);
 
-                    return realBuilder.install();
+                    ServiceController<T> controller = realBuilder.install();
+                    targetActiveStep.serviceAdded(controller);
+                    return controller;
                 } finally {
                     if (intr) {
                         Thread.currentThread().interrupt();
@@ -1933,15 +1969,17 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private class OperationContextServiceRegistry implements ServiceRegistry {
         private final ServiceRegistry registry;
+        private final Step registryActiveStep;
 
-        public OperationContextServiceRegistry(ServiceRegistry registry) {
+        public OperationContextServiceRegistry(ServiceRegistry registry, Step registryActiveStep) {
             this.registry = registry;
+            this.registryActiveStep = registryActiveStep;
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public ServiceController<?> getRequiredService(ServiceName serviceName) throws ServiceNotFoundException {
-            return new OperationContextServiceController(registry.getRequiredService(serviceName));
+            return new OperationContextServiceController(registry.getRequiredService(serviceName), registryActiveStep);
         }
 
         @Override
@@ -1951,7 +1989,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (controller == null) {
                 return null;
             }
-            return new OperationContextServiceController(controller);
+            return new OperationContextServiceController(controller, registryActiveStep);
         }
 
         @Override
@@ -1962,9 +2000,11 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private class OperationContextServiceController<S> implements ServiceController<S> {
         private final ServiceController<S> controller;
+        private final Step registryActiveStep;
 
-        public OperationContextServiceController(ServiceController<S> controller) {
+        public OperationContextServiceController(ServiceController<S> controller, Step registryActiveStep) {
             this.controller = controller;
+            this.registryActiveStep = registryActiveStep;
         }
 
         public ServiceController<?> getParent() {
@@ -1982,12 +2022,17 @@ final class OperationContextImpl extends AbstractOperationContext {
         public boolean compareAndSetMode(Mode expected,
                 org.jboss.msc.service.ServiceController.Mode newMode) {
             checkModeTransition(newMode);
-            return controller.compareAndSetMode(expected, newMode);
+            boolean changed = controller.compareAndSetMode(expected, newMode);
+            if (changed) {
+                registryActiveStep.serviceModeChanged(controller);
+            }
+            return changed;
         }
 
         public void setMode(Mode mode) {
             checkModeTransition(mode);
             controller.setMode(mode);
+            registryActiveStep.serviceModeChanged(controller);
         }
 
         private void checkModeTransition(Mode mode) {
