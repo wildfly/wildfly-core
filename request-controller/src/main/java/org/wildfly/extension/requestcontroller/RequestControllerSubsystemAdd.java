@@ -24,18 +24,15 @@
 
 package org.wildfly.extension.requestcontroller;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 
 /**
@@ -56,8 +53,7 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
      * {@inheritDoc}
      */
     @Override
-    public void performBoottime(OperationContext context, ModelNode operation, final ModelNode model,
-                                ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    public void performBoottime(OperationContext context, ModelNode operation, final Resource resource)
             throws OperationFailedException {
 
         context.addStep(new AbstractDeploymentChainStep() {
@@ -68,13 +64,12 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
             }
         }, OperationContext.Stage.RUNTIME);
 
-        int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, model).asInt();
+        int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, resource.getModel()).asInt();
         requestController.setMaxRequestCount(maxRequests);
 
         context.getServiceTarget().addService(RequestController.SERVICE_NAME, requestController)
                 .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, requestController.getShutdownControllerInjectedValue())
                 .install();
-
 
     }
 }
