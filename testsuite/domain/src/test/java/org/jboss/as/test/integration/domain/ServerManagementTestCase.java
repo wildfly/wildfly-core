@@ -38,6 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
@@ -114,6 +115,33 @@ public class ServerManagementTestCase {
         testSupport = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
+    }
+
+    @Test
+    public void testCloneProfile() throws Exception {
+        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+
+        final ModelNode composite = new ModelNode();
+        composite.get(OP).set(COMPOSITE);
+        composite.get(OP_ADDR).setEmptyList();
+
+        final ModelNode steps = composite.get(STEPS);
+
+        final ModelNode op = steps.add();
+        op.get(OP).set("clone");
+        op.get(OP_ADDR).add("profile", "default");
+        op.get("to-profile").set("test");
+
+        final ModelNode rr = steps.add();
+        rr.get(OP).set(READ_RESOURCE_OPERATION);
+        rr.get(OP_ADDR).add("profile", "test");
+        rr.get(RECURSIVE).set(true);
+
+        executeForResult(client, composite);
+
+        final ModelNode master = executeForResult(domainMasterLifecycleUtil.getDomainClient(), rr);
+        final ModelNode slave = executeForResult(domainSlaveLifecycleUtil.getDomainClient(), rr);
+        Assert.assertEquals(master, slave);
     }
 
     @Test

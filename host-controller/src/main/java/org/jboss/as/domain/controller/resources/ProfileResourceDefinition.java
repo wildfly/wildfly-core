@@ -37,6 +37,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
 import org.jboss.as.domain.controller.operations.ProfileAddHandler;
+import org.jboss.as.domain.controller.operations.ProfileCloneHandler;
 import org.jboss.as.domain.controller.operations.ProfileDescribeHandler;
 import org.jboss.as.domain.controller.operations.ProfileModelDescribeHandler;
 import org.jboss.as.domain.controller.operations.ProfileRemoveHandler;
@@ -73,6 +74,7 @@ class ProfileResourceDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(DESCRIBE, ProfileDescribeHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ProfileCloneHandler.DEFINITION, ProfileCloneHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, ProfileModelDescribeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
 
