@@ -21,16 +21,12 @@
  */
 package org.jboss.as.threads;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.threads.ThreadPoolManagementUtils.QueuelessThreadPoolParameters;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -61,6 +57,7 @@ public class QueuelessThreadPoolAdd extends AbstractAddStepHandler {
 
     public QueuelessThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
                                   HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase) {
+        super(blocking ? BLOCKING_ATTRIBUTES : NON_BLOCKING_ATTRIBUTES);
         this.blocking = blocking;
         this.threadFactoryResolver = threadFactoryResolver;
         this.handoffExecutorResolver = handoffExecutorResolver;
@@ -68,16 +65,7 @@ public class QueuelessThreadPoolAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        AttributeDefinition[] attributes = blocking ? BLOCKING_ATTRIBUTES : NON_BLOCKING_ATTRIBUTES;
-        for(final AttributeDefinition attribute : attributes) {
-            attribute.validateAndSet(operation, model);
-        }
-    }
-
-    @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         final QueuelessThreadPoolParameters params = ThreadPoolManagementUtils.parseQueuelessThreadPoolParameters(context, operation, model, blocking);
 
@@ -86,7 +74,7 @@ public class QueuelessThreadPoolAdd extends AbstractAddStepHandler {
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), serviceNameBase,
                 params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
                 params.getHandoffExecutor(), handoffExecutorResolver, blocking ?  null : service.getHandoffExecutorInjector(),
-                context.getServiceTarget(), newControllers, verificationHandler);
+                context.getServiceTarget());
     }
 
     boolean isBlocking() {

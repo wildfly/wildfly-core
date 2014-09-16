@@ -22,12 +22,7 @@
 
 package org.jboss.as.threads;
 
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
-
 import org.jboss.as.controller.OperationContext;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -51,22 +46,15 @@ public interface HandoffExecutorResolver {
      * @param threadPoolName the name of the thread pool
      * @param threadPoolServiceName the full name of the {@link org.jboss.msc.service.Service} that provides the thread pool
      * @param serviceTarget service target that is installing the thread pool service; can be used to install
-     *                      a {@link ThreadFactoryService}
-     * @param newControllers a list of {@link ServiceController}s that the {@code serviceTarget} is installing. If
-     *                       the implementation adds a new service controller, it should add it to this list. May
-     *                       be {@code null}
-     * @param newServiceListeners {@link ServiceListener}s that should be added to any newly created service. May be
-     *                            {@code null}
-     *
+     *                      a {@link org.jboss.as.threads.ThreadFactoryService}
      * @return the {@link ServiceName} of the executor service the thread pool should use. May be {@link null}
      */
     ServiceName resolveHandoffExecutor(String handoffExecutorName, String threadPoolName, ServiceName threadPoolServiceName,
-                                       ServiceTarget serviceTarget, List<ServiceController<?>> newControllers,
-                                       ServiceListener<? super ThreadFactory>... newServiceListeners);
+                                       ServiceTarget serviceTarget);
 
     /**
      * Releases the handoff executor, doing any necessary cleanup, such as removing a default executor that
-     * was installed by {@link #resolveHandoffExecutor(String, String, ServiceName, ServiceTarget, List, ServiceListener[])}.
+     * was installed by {@link #resolveHandoffExecutor(String, String, org.jboss.msc.service.ServiceName, org.jboss.msc.service.ServiceTarget)}.
      *
      * @param handoffExecutorName the simple name of the thread factory. Typically a reference value from
      *                          the thread pool resource's configuration. Can be {@code null} in which case a
@@ -93,14 +81,14 @@ public interface HandoffExecutorResolver {
     abstract class AbstractThreadFactoryResolver implements HandoffExecutorResolver {
 
         @Override
-        public ServiceName resolveHandoffExecutor(String handoffExecutorName, String threadPoolName, ServiceName threadPoolServiceName, ServiceTarget serviceTarget, List<ServiceController<?>> newControllers, ServiceListener<? super ThreadFactory>... newServiceListeners) {
+        public ServiceName resolveHandoffExecutor(String handoffExecutorName, String threadPoolName, ServiceName threadPoolServiceName, ServiceTarget serviceTarget) {
             ServiceName threadFactoryServiceName = null;
 
             if (handoffExecutorName != null) {
                 threadFactoryServiceName = resolveNamedHandoffExecutor(handoffExecutorName, threadPoolName, threadPoolServiceName);
             } else {
                 // Create a default
-                threadFactoryServiceName = resolveDefaultHandoffExecutor(threadPoolName, threadPoolServiceName, serviceTarget, newControllers, newServiceListeners);
+                threadFactoryServiceName = resolveDefaultHandoffExecutor(threadPoolName, threadPoolServiceName, serviceTarget);
             }
             return threadFactoryServiceName;
         }
@@ -150,23 +138,16 @@ public interface HandoffExecutorResolver {
          * @param threadPoolName the name of the thread pool
          * @param threadPoolServiceName the full name of the {@link org.jboss.msc.service.Service} that provides the thread pool
          * @param serviceTarget service target that is installing the thread pool service; can be used to install
-         *                      a {@link ThreadFactoryService}
-         * @param newControllers a list of {@link ServiceController}s that the {@code serviceTarget} is installing. If
-         *                       the implementation adds a new service controller, it should add it to this list. May
-         *                       be {@code null}
-         * @param newServiceListeners {@link ServiceListener}s that should be added to any newly created service. May be
-         *                            {@code null}
-         *
+         *                      a {@link org.jboss.as.threads.ThreadFactoryService}
          * @return the {@link ServiceName} of the {@link ThreadFactoryService} the thread pool should use. May be {@code null}
          */
         protected ServiceName resolveDefaultHandoffExecutor(String threadPoolName, ServiceName threadPoolServiceName,
-                                                            ServiceTarget serviceTarget, List<ServiceController<?>> newControllers,
-                                                            ServiceListener<? super ThreadFactory>... newServiceListeners) {
+                                                            ServiceTarget serviceTarget) {
             return null;
         }
 
         /**
-         * Removes any default thread factory installed in {@link #resolveDefaultHandoffExecutor(String, ServiceName, ServiceTarget, List, ServiceListener[])}.
+         * Removes any default thread factory installed in {@link #resolveDefaultHandoffExecutor(String, org.jboss.msc.service.ServiceName, org.jboss.msc.service.ServiceTarget)}.
          * This default implementation does nothing, but any subclass that installs a default service should override this
          * method to remove it.
          *

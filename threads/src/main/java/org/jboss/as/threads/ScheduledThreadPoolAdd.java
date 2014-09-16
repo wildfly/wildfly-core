@@ -21,16 +21,12 @@
  */
 package org.jboss.as.threads;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.threads.ThreadPoolManagementUtils.BaseThreadPoolParameters;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -50,21 +46,13 @@ public class ScheduledThreadPoolAdd extends AbstractAddStepHandler {
     private final ServiceName serviceNameBase;
 
     public ScheduledThreadPoolAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
+        super(ATTRIBUTES);
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;
     }
 
-
     @Override
-    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        for(final AttributeDefinition attribute : ATTRIBUTES) {
-            attribute.validateAndSet(operation, model);
-        }
-    }
-
-    @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         final BaseThreadPoolParameters params = ThreadPoolManagementUtils.parseScheduledThreadPoolParameters(context, operation, model);
 
@@ -72,7 +60,7 @@ public class ScheduledThreadPoolAdd extends AbstractAddStepHandler {
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), serviceNameBase,
                 params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
-                context.getServiceTarget(), newControllers, verificationHandler);
+                context.getServiceTarget());
     }
 
     ServiceName getServiceNameBase() {

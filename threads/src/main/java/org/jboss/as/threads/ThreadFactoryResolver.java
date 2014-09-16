@@ -22,13 +22,7 @@
 
 package org.jboss.as.threads;
 
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
-
 import org.jboss.as.controller.OperationContext;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -52,23 +46,16 @@ public interface ThreadFactoryResolver {
      * @param threadPoolName the name of the thread pool
      * @param threadPoolServiceName the full name of the {@link org.jboss.msc.service.Service} that provides the thread pool
      * @param serviceTarget service target that is installing the thread pool service; can be used to install
-     *                      a {@link ThreadFactoryService}
-     * @param newControllers a list of {@link ServiceController}s that the {@code serviceTarget} is installing. If
-     *                       the implementation adds a new service controller, it should add it to this list. May
-     *                       be {@code null}
-     * @param newServiceListeners {@link ServiceListener}s that should be added to any newly created service. May be
-     *                            {@code null}
-     *
+     *                      a {@link org.jboss.as.threads.ThreadFactoryService}
      * @return the {@link ServiceName} of the {@link ThreadFactoryService} the thread pool should use. Cannot be
      *         {@code null}
      */
     ServiceName resolveThreadFactory(String threadFactoryName, String threadPoolName, ServiceName threadPoolServiceName,
-                                     ServiceTarget serviceTarget, List<ServiceController<?>> newControllers,
-                                     ServiceListener<? super ThreadFactory>... newServiceListeners);
+                                     ServiceTarget serviceTarget);
 
     /**
      * Releases the thread factory, doing any necessary cleanup, such as removing a default thread factory that
-     * was installed by {@link #resolveThreadFactory(String, String, ServiceName, ServiceTarget, List, ServiceListener[])}.
+     * was installed by {@link #resolveThreadFactory(String, String, org.jboss.msc.service.ServiceName, org.jboss.msc.service.ServiceTarget)}.
      *
      * @param threadFactoryName the simple name of the thread factory. Typically a reference value from
      *                          the thread pool resource's configuration. Can be {@code null} in which case a
@@ -89,14 +76,14 @@ public interface ThreadFactoryResolver {
     abstract class AbstractThreadFactoryResolver implements ThreadFactoryResolver {
 
         @Override
-        public ServiceName resolveThreadFactory(String threadFactoryName, String threadPoolName, ServiceName threadPoolServiceName, ServiceTarget serviceTarget, List<ServiceController<?>> newControllers, ServiceListener<? super ThreadFactory>... newServiceListeners) {
+        public ServiceName resolveThreadFactory(String threadFactoryName, String threadPoolName, ServiceName threadPoolServiceName, ServiceTarget serviceTarget) {
             ServiceName threadFactoryServiceName;
 
             if (threadFactoryName != null) {
                 threadFactoryServiceName = resolveNamedThreadFactory(threadFactoryName, threadPoolName, threadPoolServiceName);
             } else {
                 // Create a default
-                threadFactoryServiceName = resolveDefaultThreadFactory(threadPoolName, threadPoolServiceName, serviceTarget, newControllers, newServiceListeners);
+                threadFactoryServiceName = resolveDefaultThreadFactory(threadPoolName, threadPoolServiceName, serviceTarget);
             }
             return threadFactoryServiceName;
         }
@@ -132,7 +119,7 @@ public interface ThreadFactoryResolver {
          * @param threadPoolName    the simple name of the related thread pool
          * @param threadPoolServiceName the full service name of the thread pool
          * @param context  the context of the current operation; can be used to perform any necessary
-     *                {@link OperationContext#removeService(ServiceName) service removals}
+         *                {@link OperationContext#removeService(ServiceName) service removals}
          */
         protected void releaseNamedThreadFactory(String threadFactoryName, String threadPoolName, ServiceName threadPoolServiceName,
                               OperationContext context) {
@@ -145,33 +132,17 @@ public interface ThreadFactoryResolver {
          * @param threadPoolName the name of the thread pool
          * @param threadPoolServiceName the full name of the {@link org.jboss.msc.service.Service} that provides the thread pool
          * @param serviceTarget service target that is installing the thread pool service; can be used to install
-         *                      a {@link ThreadFactoryService}
-         * @param newControllers a list of {@link ServiceController}s that the {@code serviceTarget} is installing. If
-         *                       the implementation adds a new service controller, it should add it to this list. May
-         *                       be {@code null}
-         * @param newServiceListeners {@link ServiceListener}s that should be added to any newly created service. May be
-         *                            {@code null}
-         *
+         *                      a {@link org.jboss.as.threads.ThreadFactoryService}
          * @return the {@link ServiceName} of the {@link ThreadFactoryService} the thread pool should use. Cannot be
          *         {@code null}
          */
         private ServiceName resolveDefaultThreadFactory(String threadPoolName, ServiceName threadPoolServiceName,
-                                     ServiceTarget serviceTarget, List<ServiceController<?>> newControllers,
-                                     ServiceListener<? super ThreadFactory>... newServiceListeners) {
+                                                        ServiceTarget serviceTarget) {
             final ServiceName threadFactoryServiceName = threadPoolServiceName.append("thread-factory");
             final ThreadFactoryService service = new ThreadFactoryService();
             service.setThreadGroupName(getThreadGroupName(threadPoolName));
             service.setNamePattern("%G - %t");
-            ServiceBuilder<ThreadFactory> builder = serviceTarget.addService(threadFactoryServiceName, service);
-            if (newServiceListeners != null && newServiceListeners.length > 0) {
-                for (ServiceListener<? super ThreadFactory> listener : newServiceListeners) {
-                    builder.addListener(listener);
-                }
-            }
-            ServiceController<?> sc = builder.install();
-            if (newControllers != null) {
-                newControllers.add(sc);
-            }
+            serviceTarget.addService(threadFactoryServiceName, service).install();
             return threadFactoryServiceName;
         }
 
@@ -180,7 +151,7 @@ public interface ThreadFactoryResolver {
         }
 
         /**
-         * Removes any default thread factory installed in {@link #resolveDefaultThreadFactory(String, ServiceName, ServiceTarget, List, ServiceListener[])}.
+         * Removes any default thread factory installed in {@link #resolveDefaultThreadFactory(String, org.jboss.msc.service.ServiceName, org.jboss.msc.service.ServiceTarget)}.
          *
          * @param threadPoolServiceName the full name of the {@link org.jboss.msc.service.Service} that provides the thread pool
          * @param context the context of the current operation; can be used to perform any necessary
