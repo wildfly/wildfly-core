@@ -102,6 +102,7 @@ public class PropertiesFileLoader {
 
         propertiesFile = new File(file);
         try {
+            propertiesFile.createNewFile();
             getProperties();
         } catch (IOException ioe) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToLoadProperties(ioe);
