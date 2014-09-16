@@ -29,10 +29,8 @@ import static org.jboss.as.controller.services.path.PathResourceDefinition.READ_
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager.Event;
@@ -86,16 +84,14 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
 
         final PathEventContextImpl pathEventContext = pathManager.checkRestartRequired(context, pathName, Event.UPDATED);
         if (pathEventContext.isInstallServices()) {
-            final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-            context.addStep(verificationHandler, Stage.VERIFY);
             if (attributeName.equals(PATH)) {
                 String pathVal = resolvedValue.asString();
                 pathManager.changePath(pathName, pathVal);
-                pathManager.changePathServices(context, pathName, pathVal, verificationHandler);
+                pathManager.changePathServices(context, pathName, pathVal);
             } else if (attributeName.equals(RELATIVE_TO)) {
                 String relToVal = resolvedValue.isDefined() ?  resolvedValue.asString() : null;
                 pathManager.changeRelativePath( pathName, relToVal, true);
-                pathManager.changeRelativePathServices(context, pathName, relToVal, verificationHandler);
+                pathManager.changeRelativePathServices(context, pathName, relToVal);
             }
         }
 
@@ -113,7 +109,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
         if (pathEventContext.isInstallServices()) {
             if (attributeName.equals(PATH)) {
                 pathManager.changePath(pathName, backup.getPath());
-                pathManager.changePathServices(context, pathName, valueToRestore.asString(), null);
+                pathManager.changePathServices(context, pathName, valueToRestore.asString());
             } else if (attributeName.equals(RELATIVE_TO)) {
                 try {
                     pathManager.changeRelativePath(pathName, backup.getRelativeTo(), false);
@@ -121,7 +117,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
                     //Should not happen since false passed in for the 'check' parameter
                     throw new RuntimeException(e);
                 }
-                pathManager.changeRelativePathServices(context, pathName, valueToRestore.isDefined() ?  valueToRestore.asString() : null, null);
+                pathManager.changeRelativePathServices(context, pathName, valueToRestore.isDefined() ?  valueToRestore.asString() : null);
             }
         } else {
             pathEventContext.revert();

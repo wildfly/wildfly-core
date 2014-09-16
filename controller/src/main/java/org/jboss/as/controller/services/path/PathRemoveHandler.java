@@ -103,9 +103,9 @@ public class PathRemoveHandler implements OperationStepHandler {
                                     pathManager.addPathEntry(name, path, relativeTo, false);
                                     final ServiceTarget target = context.getServiceTarget();
                                     if (relativeTo == null) {
-                                        pathManager.addAbsolutePathService(target, name, path, null);
+                                        pathManager.addAbsolutePathService(target, name, path);
                                     } else {
-                                        pathManager.addRelativePathService(target, name, path, false, relativeTo, null);
+                                        pathManager.addRelativePathService(target, name, path, false, relativeTo);
                                     }
                                 } else {
                                     context.revertRestartRequired();
