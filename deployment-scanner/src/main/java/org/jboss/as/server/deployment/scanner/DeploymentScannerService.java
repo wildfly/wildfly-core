@@ -23,7 +23,6 @@
 package org.jboss.as.server.deployment.scanner;
 
 import java.io.File;
-import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +32,8 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -51,7 +48,6 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class DeploymentScannerService implements Service<DeploymentScanner> {
 
-    private static final int DEFAULT_INTERVAL = 5000;
     private long interval;
     private TimeUnit unit = TimeUnit.MILLISECONDS;
     private boolean enabled;
@@ -86,44 +82,39 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      * @param path              the path
      * @param scanInterval      the scan interval
      * @param scanEnabled       scan enabled
-     * @param rollbackOnRuntimeFailure rollback on runtime failures
      * @param deploymentTimeout the deployment timeout
+     * @param rollbackOnRuntimeFailure rollback on runtime failures
      * @param bootTimeService   the deployment scanner used in the boot time scan
-     * @return
+     * @return the controller for the deployment scanner service
      */
     public static ServiceController<DeploymentScanner> addService(final ServiceTarget serviceTarget, final String name, final String relativeTo, final String path,
-                                                                  final Integer scanInterval, TimeUnit unit, final Boolean autoDeployZip,
-                                                                  final Boolean autoDeployExploded, final Boolean autoDeployXml, final Boolean scanEnabled, final Long deploymentTimeout, Boolean rollbackOnRuntimeFailure,
-                                                                  final List<ServiceController<?>> newControllers, final FileSystemDeploymentService bootTimeService, final ScheduledExecutorService scheduledExecutorService,
-                                                                  final ServiceListener<Object>... listeners) {
+                                                                  final int scanInterval, TimeUnit unit, final boolean autoDeployZip,
+                                                                  final boolean autoDeployExploded, final boolean autoDeployXml, final boolean scanEnabled, final long deploymentTimeout, boolean rollbackOnRuntimeFailure,
+                                                                  final FileSystemDeploymentService bootTimeService, final ScheduledExecutorService scheduledExecutorService) {
         final DeploymentScannerService service = new DeploymentScannerService(relativeTo, path, scanInterval, unit, autoDeployZip,
                 autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
         final ServiceName serviceName = getServiceName(name);
 
-        ServiceBuilder<DeploymentScanner> builder = serviceTarget.addService(serviceName, service)
+        return serviceTarget.addService(serviceName, service)
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
                 .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.controllerValue)
                 .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS)
-                .addInjection(service.scheduledExecutorValue, scheduledExecutorService);
-        builder.addListener(listeners);
-        ServiceController<DeploymentScanner> svc = builder.setInitialMode(Mode.ACTIVE).install();
-        if (newControllers != null) {
-            newControllers.add(svc);
-        }
-        return svc;
+                .addInjection(service.scheduledExecutorValue, scheduledExecutorService)
+                .setInitialMode(Mode.ACTIVE)
+                .install();
     }
 
-    DeploymentScannerService(final String relativeTo, final String path, final Integer interval, final TimeUnit unit, final Boolean autoDeployZipped,
-                             final Boolean autoDeployExploded, final Boolean autoDeployXml, final Boolean enabled, final Long deploymentTimeout,
-                             final Boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService) {
+    private DeploymentScannerService(final String relativeTo, final String path, final int interval, final TimeUnit unit, final boolean autoDeployZipped,
+                             final boolean autoDeployExploded, final boolean autoDeployXml, final boolean enabled, final long deploymentTimeout,
+                             final boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService) {
         this.relativeTo = relativeTo;
         this.path = path;
-        this.interval = interval == null ? DEFAULT_INTERVAL : interval.longValue();
+        this.interval = interval;
         this.unit = unit;
-        this.autoDeployZipped = autoDeployZipped == null ? true : autoDeployZipped.booleanValue();
-        this.autoDeployExploded = autoDeployExploded == null ? false : autoDeployExploded.booleanValue();
-        this.autoDeployXml = autoDeployXml == null ? true : autoDeployXml.booleanValue();
-        this.enabled = enabled == null ? true : enabled.booleanValue();
+        this.autoDeployZipped = autoDeployZipped;
+        this.autoDeployExploded = autoDeployExploded;
+        this.autoDeployXml = autoDeployXml;
+        this.enabled = enabled;
         this.rollbackOnRuntimeFailure = rollbackOnRuntimeFailure;
         this.deploymentTimeout = deploymentTimeout;
         this.scanner = bootTimeService;
