@@ -45,7 +45,6 @@ import org.jboss.as.host.controller.discovery.S3Util.GetResponse;
 import org.jboss.as.host.controller.discovery.S3Util.ListAllMyBucketsResponse;
 import org.jboss.as.host.controller.discovery.S3Util.PreSignedUrlParser;
 import org.jboss.as.host.controller.discovery.S3Util.S3Object;
-import org.jboss.as.remoting.Protocol;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -108,10 +107,10 @@ public class S3Discovery implements DiscoveryOption {
     }
 
     @Override
-    public void allowDiscovery(String host, int port) {
+    public void allowDiscovery(String protocol, String host, int port) {
         try {
             // Write the domain controller data to an S3 file
-            writeToFile(new DomainControllerData(host, port), MASTER);
+            writeToFile(new DomainControllerData(protocol, host, port), MASTER);
         } catch (Exception e) {
             ROOT_LOGGER.cannotWriteDomainControllerData(e);
         }
@@ -126,8 +125,7 @@ public class S3Discovery implements DiscoveryOption {
             // Validate and set the host and port
             String host = data.getHost();
             int port = data.getPort();
-            //TODO change to be able to configure protocol
-            String protocol = Protocol.REMOTE.name();
+            String protocol = data.getProtocol();
             try {
                 // Use the static discovery AD's. They don't allow undefined.
                 StaticDiscoveryResourceDefinition.HOST.getValidator()

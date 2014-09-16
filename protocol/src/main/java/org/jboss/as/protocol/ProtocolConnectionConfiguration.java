@@ -75,6 +75,13 @@ public class ProtocolConnectionConfiguration {
 
     public void setUri(URI uri) {
         this.uri = uri;
+        if("http-remoting".equals(uri.getScheme())) {
+            this.sslEnabled = false;
+            this.useStartTLS = false;
+        } else if ("https-remoting".equals(uri.getScheme())) {
+             this.sslEnabled = true;
+            this.useStartTLS = false;
+        }
     }
 
     public Endpoint getEndpoint() {
@@ -145,16 +152,8 @@ public class ProtocolConnectionConfiguration {
         return sslEnabled;
     }
 
-    public void setSslEnabled(boolean sslEnabled) {
-        this.sslEnabled = sslEnabled;
-    }
-
     public boolean isUseStartTLS() {
         return useStartTLS;
-    }
-
-    public void setUseStartTLS(boolean useStartTLS) {
-        this.useStartTLS = useStartTLS;
     }
 
     public ProtocolConnectionConfiguration copy() {
@@ -169,13 +168,6 @@ public class ProtocolConnectionConfiguration {
         final ProtocolConnectionConfiguration configuration = new ProtocolConnectionConfiguration();
         configuration.setEndpoint(endpoint);
         configuration.setUri(uri);
-        if("http-remoting".equals(uri.getScheme())) {
-            configuration.setSslEnabled(false);
-            configuration.setUseStartTLS(false);
-        } else if ("https-remoting".equals(uri.getScheme())) {
-            configuration.setSslEnabled(true);
-            configuration.setUseStartTLS(false);
-        }
         configuration.setOptionMap(options);
         return configuration;
     }

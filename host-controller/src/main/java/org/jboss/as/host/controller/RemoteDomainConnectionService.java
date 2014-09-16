@@ -91,7 +91,6 @@ import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
 import org.jboss.as.host.controller.mgmt.DomainRemoteFileRequestAndHandler;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.HostInfo;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
@@ -242,7 +241,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
            try {
                // Determine the remote DC host and port to use
                discoveryOption.discover();
-               String host = NetworkUtils.formatPossibleIpv6Address(discoveryOption.getRemoteDomainControllerHost());
+               String host = discoveryOption.getRemoteDomainControllerHost();
                int port = discoveryOption.getRemoteDomainControllerPort();
                String protocol = discoveryOption.getRemoteDomainControllerProtocol();
                masterURI = new URI(protocol, null, host, port, null, null, null);

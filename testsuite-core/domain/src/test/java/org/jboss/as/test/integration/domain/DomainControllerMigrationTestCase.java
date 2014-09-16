@@ -41,6 +41,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainControllerClientConfig;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -221,7 +222,7 @@ public class DomainControllerMigrationTestCase {
         // Reconfigure failover-h3 to point to the new domain controller
         ModelNode changeMasterOp = new ModelNode();
         changeMasterOp.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, HOSTS[2]);
-        changeMasterOp.get(ModelDescriptionConstants.OP).set("write-remote-domain-controller");
+        changeMasterOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
         changeMasterOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.slave.address}");
         changeMasterOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
         changeMasterOp.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");

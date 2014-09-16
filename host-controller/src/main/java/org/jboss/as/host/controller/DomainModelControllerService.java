@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -38,6 +39,8 @@ import static org.jboss.as.domain.controller.HostConnectionInfo.Event;
 import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
+import static org.jboss.as.remoting.Protocol.HTTPS_REMOTING;
+import static org.jboss.as.remoting.Protocol.HTTP_REMOTING;
 
 import java.io.File;
 import java.io.IOException;
@@ -150,10 +153,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.manager.action.GetAccessControlContextAction;
-
-import static org.jboss.as.remoting.Protocol.HTTPS_REMOTING;
-import static org.jboss.as.remoting.Protocol.HTTP_REMOTING;
-import static org.jboss.as.remoting.Protocol.REMOTE;
 
 /**
  * Creates the service that acts as the {@link org.jboss.as.controller.ModelController} for a Host Controller process.

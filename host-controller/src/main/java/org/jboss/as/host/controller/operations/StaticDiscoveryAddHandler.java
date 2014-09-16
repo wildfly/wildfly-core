@@ -22,12 +22,7 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -35,6 +30,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.discovery.StaticDiscovery;
 import org.jboss.as.host.controller.discovery.StaticDiscoveryResourceDefinition;
+import org.jboss.as.network.NetworkUtils;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -84,12 +80,11 @@ public class StaticDiscoveryAddHandler extends AbstractDiscoveryOptionAddHandler
             ModelNode model) throws OperationFailedException {
         ModelNode hostNode = StaticDiscoveryResourceDefinition.HOST.resolveModelAttribute(context, model);
         ModelNode portNode = StaticDiscoveryResourceDefinition.PORT.resolveModelAttribute(context, model);
-
-        // Create a StaticDiscovery option and add it to the host controller info
-        Map<String, ModelNode> properties = new HashMap<String, ModelNode>();
-        properties.put(HOST, hostNode);
-        properties.put(PORT, portNode);
-        StaticDiscovery staticDiscoveryOption = new StaticDiscovery(properties);
+        ModelNode protocolNode = RemoteDomainControllerAddHandler.PROTOCOL.resolveModelAttribute(context, model);
+        String remoteDcHost = (!hostNode.isDefined()) ? null : NetworkUtils.formatPossibleIpv6Address(hostNode.asString());
+        int remoteDcPort = (!portNode.isDefined()) ? -1 : portNode.asInt();
+        String remoteDcProtocol = protocolNode.asString();
+        StaticDiscovery staticDiscoveryOption = new StaticDiscovery(remoteDcProtocol, remoteDcHost, remoteDcPort);
         hostControllerInfo.addRemoteDomainControllerDiscoveryOption(staticDiscoveryOption);
     }
 }

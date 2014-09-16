@@ -89,7 +89,7 @@ class DiscoveryService implements Service<Void> {
                         // of the provided discovery options.
                         String host = interfaceBinding.getValue().getAddress().getHostAddress();
                         for (DiscoveryOption discoveryOption : discoveryOptions) {
-                            discoveryOption.allowDiscovery(host, port);
+                            discoveryOption.allowDiscovery(protocol, host, port);
                         }
                     }
                     context.complete();

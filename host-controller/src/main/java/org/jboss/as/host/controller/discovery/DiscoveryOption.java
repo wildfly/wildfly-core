@@ -33,10 +33,11 @@ public interface DiscoveryOption {
      *  Allow a domain controller's host name and port number to be discovered.
      *  This method is intended to be called by the domain controller.
      *
+     *  @param protocol the protocol of the domain controller
      *  @param host the host name of the domain controller
      *  @param port the port number of the domain controller
      */
-    void allowDiscovery(String host, int port);
+    void allowDiscovery(String protocol, String host, int port);
 
     /**
      *  Determine the host name and port of the remote domain controller.

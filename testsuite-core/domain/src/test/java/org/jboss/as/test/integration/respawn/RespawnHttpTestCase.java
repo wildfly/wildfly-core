@@ -73,6 +73,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
+import org.jboss.as.remoting.Protocol;
+
 /**
  * RespawnTestCase
  *
@@ -101,7 +103,7 @@ public class RespawnHttpTestCase {
     public static void createProcessController() throws IOException, URISyntaxException, NoSuchAlgorithmException {
 
         // Setup client
-        utils = TestControllerUtils.create("http-remoting", DomainTestSupport.masterAddress, HC_PORT, getCallbackHandler());
+        utils = TestControllerUtils.create(Protocol.HTTP_REMOTING.toString(), DomainTestSupport.masterAddress, HC_PORT, getCallbackHandler());
         client = new TestControllerClient(utils.getConfiguration(), utils.getExecutor());
 
         final String testName = RespawnHttpTestCase.class.getSimpleName();

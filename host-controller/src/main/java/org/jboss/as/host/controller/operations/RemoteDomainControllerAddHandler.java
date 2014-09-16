@@ -24,9 +24,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.dmr.ModelType.STRING;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -83,7 +80,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setAllowNull(true)
             .setAllowExpression(true)
             .setValidator(new EnumValidator(Protocol.class, true, true))
-            .setDefaultValue(new ModelNode(Protocol.REMOTE.name()))
+            .setDefaultValue(Protocol.REMOTE.toModelNode())
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
@@ -191,12 +188,10 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
         ModelNode portNode = RemoteDomainControllerAddHandler.PORT.resolveModelAttribute(context, remoteDC);
         ModelNode protocolNode = RemoteDomainControllerAddHandler.PROTOCOL.resolveModelAttribute(context, remoteDC);
         if (hostNode.isDefined() && portNode.isDefined()) {
-            // Create a StaticDiscovery option and add it to the host controller info
-            Map<String, ModelNode> properties = new HashMap<String, ModelNode>();
-            properties.put(ModelDescriptionConstants.HOST, hostNode);
-            properties.put(ModelDescriptionConstants.PORT, portNode);
-            properties.put(ModelDescriptionConstants.PROTOCOL, protocolNode);
-            StaticDiscovery staticDiscoveryOption = new StaticDiscovery(properties);
+            String host =  hostNode.asString();
+            int port = portNode.asInt();
+            String protocol = protocolNode.asString();
+            StaticDiscovery staticDiscoveryOption = new StaticDiscovery(protocol, host, port);
             hostControllerInfo.addRemoteDomainControllerDiscoveryOption(staticDiscoveryOption);
         }
         ModelNode usernameNode = USERNAME.resolveModelAttribute(context, remoteDC);

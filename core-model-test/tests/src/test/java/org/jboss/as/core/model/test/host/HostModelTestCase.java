@@ -74,12 +74,7 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     private void doRemoteHostXml(String hostXmlFile) throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
                 .setXmlResource(hostXmlFile)
-                .setModelInitializer(MODEL_SANITIZER, new ModelWriteSanitizer() {
-            @Override
-            public ModelNode sanitize(ModelNode model) {
-                return model;
-            }
-        })
+                .setModelInitializer(MODEL_SANITIZER, null)
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
         String xml = kernelServices.getPersistedSubsystemXml();

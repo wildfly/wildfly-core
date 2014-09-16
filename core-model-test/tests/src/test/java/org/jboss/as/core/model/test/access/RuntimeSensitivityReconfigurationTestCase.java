@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -47,6 +48,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
@@ -59,9 +61,6 @@ import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.dmr.ModelNode;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
@@ -254,7 +253,7 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
 
     protected static void assertDenied(ModelNode operationResult) {
         assertEquals(FAILED, operationResult.get(OUTCOME).asString());
-        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains(ControllerLogger.ROOT_LOGGER.permissionDenied()));
+        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains(ControllerLogger.ACCESS_LOGGER.permissionDenied()));
     }
 
     protected static void assertNoAccessInterface(ModelNode operationResult, String name) {

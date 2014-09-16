@@ -22,15 +22,11 @@
 
 package org.jboss.as.host.controller.discovery;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
+import io.undertow.util.NetworkUtils;
 
-import java.util.Map;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
 
 /**
  * Handle domain controller discovery via static (i.e., hard-wired) configuration.
@@ -48,24 +44,14 @@ public class StaticDiscovery implements DiscoveryOption {
     // The port number of the domain controller
     private final String remoteDcProtocol;
 
-    /**
-     * Create the StaticDiscovery option.
-     *
-     * @param properties map of properties needed to statically discover the domain controller
-     */
-    public StaticDiscovery(Map<String, ModelNode> properties) {
-        ModelNode hostNode = properties.get(HOST);
-        remoteDcHost = (hostNode == null || !hostNode.isDefined()) ? null : hostNode.asString();
-
-        ModelNode portNode = properties.get(PORT);
-        remoteDcPort = (portNode == null || !portNode.isDefined()) ? -1 : portNode.asInt();
-
-        ModelNode protocolNode = properties.get(PROTOCOL);
-        remoteDcProtocol = (protocolNode == null || !protocolNode.isDefined()) ? "remote" : protocolNode.asString();
+    public StaticDiscovery(String protocol, String host, int port) {
+        remoteDcHost = NetworkUtils.formatPossibleIpv6Address(host);
+        remoteDcPort = port;
+        remoteDcProtocol = protocol;
     }
 
     @Override
-    public void allowDiscovery(String host, int port) {
+    public void allowDiscovery(String protocol, String host, int port) {
         // no-op
     }
 
@@ -106,6 +92,6 @@ public class StaticDiscovery implements DiscoveryOption {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{host=" + remoteDcHost + ",port=" + remoteDcPort + '}';
+        return getClass().getSimpleName() + "{protocol=" + remoteDcProtocol + ",host=" + remoteDcHost + ",port=" + remoteDcPort + '}';
     }
 }
