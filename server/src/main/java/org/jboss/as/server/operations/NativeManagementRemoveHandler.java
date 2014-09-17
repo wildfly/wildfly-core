@@ -76,6 +76,6 @@ public class NativeManagementRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        NativeManagementAddHandler.INSTANCE.performRuntime(context, operation, model, null, null);
+        NativeManagementAddHandler.INSTANCE.performRuntime(context, operation, model);
     }
 }

@@ -25,14 +25,11 @@ package org.jboss.as.server.services.net;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.net.UnknownHostException;
-import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.network.SocketBinding;
@@ -51,29 +48,23 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
 
     static final LocalDestinationOutboundSocketBindingAddHandler INSTANCE = new LocalDestinationOutboundSocketBindingAddHandler();
 
-    @Override
-    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        for (SimpleAttributeDefinition ad : LocalDestinationOutboundSocketBindingResourceDefinition.ATTRIBUTES) {
-            ad.validateAndSet(operation, model);
-        }
+    private LocalDestinationOutboundSocketBindingAddHandler() {
+        super(LocalDestinationOutboundSocketBindingResourceDefinition.ATTRIBUTES);
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> serviceControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String outboundSocketName = address.getLastElement().getValue();
-        final ServiceController<OutboundSocketBinding> outboundSocketBindingServiceController;
         try {
-            outboundSocketBindingServiceController = installOutboundSocketBindingService(context, model, outboundSocketName);
+            installOutboundSocketBindingService(context, model, outboundSocketName);
         } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            throw new OperationFailedException(e.toString());
         }
-        serviceControllers.add(outboundSocketBindingServiceController);
     }
 
-    public static ServiceController<OutboundSocketBinding> installOutboundSocketBindingService(final OperationContext context, final ModelNode model,
+    public static void installOutboundSocketBindingService(final OperationContext context, final ModelNode model,
                                                                                                final String outboundSocketName) throws OperationFailedException, UnknownHostException {
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
@@ -84,9 +75,8 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         // (optional) source port
         final ModelNode sourcePortModelNode = OutboundSocketBindingResourceDefinition.SOURCE_PORT.resolveModelAttribute(context, model);
         final Integer sourcePort = sourcePortModelNode.isDefined() ? sourcePortModelNode.asInt() : null;
-        // (optional) fixedSourcePort
-        final ModelNode fixedSourcePortModelNode = OutboundSocketBindingResourceDefinition.FIXED_SOURCE_PORT.resolveModelAttribute(context, model);
-        final boolean fixedSourcePort = fixedSourcePortModelNode.isDefined() ? fixedSourcePortModelNode.asBoolean() : false;
+        // (optional but defaulted) fixedSourcePort
+        final boolean fixedSourcePort = OutboundSocketBindingResourceDefinition.FIXED_SOURCE_PORT.resolveModelAttribute(context, model).asBoolean();
 
         // create the service
         final LocalDestinationOutboundSocketBindingService outboundSocketBindingService = new LocalDestinationOutboundSocketBindingService(outboundSocketName, sourcePort, fixedSourcePort);
@@ -100,6 +90,6 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         // add a dependency on the socket binding manager
         serviceBuilder.addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, outboundSocketBindingService.getSocketBindingManagerInjector());
         // install the service
-        return serviceBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND).install();
+        serviceBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND).install();
     }
 }

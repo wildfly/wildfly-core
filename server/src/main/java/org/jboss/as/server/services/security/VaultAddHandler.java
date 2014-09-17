@@ -19,19 +19,17 @@
 package org.jboss.as.server.services.security;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
-import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.operations.SystemPropertyDeferredProcessor;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler for the Vault
@@ -68,7 +66,7 @@ public class VaultAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
         ModelNode codeNode = VaultResourceDefinition.CODE.resolveModelAttribute(context, model);
         ModelNode moduleNode = VaultResourceDefinition.MODULE.resolveModelAttribute(context, model);
@@ -98,7 +96,7 @@ public class VaultAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         vaultReader.destroyVault();
     }
 }

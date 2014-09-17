@@ -1,15 +1,11 @@
 package org.jboss.as.server.operations;
 
-import java.util.List;
-
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.Services;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
@@ -28,7 +24,7 @@ class NativeManagementServices {
 
     static synchronized void installRemotingServicesIfNotInstalled(final ServiceTarget serviceTarget,
                                                                    final String hostName,
-                                                                   final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers, final ServiceRegistry serviceContainer) {
+                                                                   final ServiceRegistry serviceContainer) {
 
         if (serviceContainer.getService(ManagementRemotingServices.MANAGEMENT_ENDPOINT) == null) {
 

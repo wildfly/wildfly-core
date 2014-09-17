@@ -29,13 +29,11 @@ import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURI
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.RemotingServices;
@@ -44,7 +42,6 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -74,15 +71,14 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                                  ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
         final ServiceName endpointName = ManagementRemotingServices.MANAGEMENT_ENDPOINT;
         final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
-        NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, verificationHandler, newControllers, context.getServiceRegistry(false));
-        installNativeManagementConnector(context, model, endpointName, serviceTarget, verificationHandler, newControllers);
+        NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
+        installNativeManagementConnector(context, model, endpointName, serviceTarget);
     }
 
     // TODO move this kind of logic into AttributeDefinition itself
@@ -131,9 +127,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         return result;
     }
 
-    static void installNativeManagementConnector(final OperationContext context, final ModelNode model, final ServiceName endpointName, final ServiceTarget serviceTarget,
-                                                 final ServiceVerificationHandler verificationHandler,
-                                                 final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    static void installNativeManagementConnector(final OperationContext context, final ModelNode model, final ServiceName endpointName, final ServiceTarget serviceTarget) throws OperationFailedException {
 
         ServiceName socketBindingServiceName = null;
         ServiceName interfaceSvcName = null;

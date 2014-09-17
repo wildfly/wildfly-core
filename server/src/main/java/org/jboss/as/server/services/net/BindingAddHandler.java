@@ -18,16 +18,21 @@
  */
 package org.jboss.as.server.services.net;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_MAPPINGS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTINATION_ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTINATION_PORT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOURCE_NETWORK;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.SocketBindingAddHandler;
 import org.jboss.as.controller.operations.validation.MaskedAddressValidator;
 import org.jboss.as.controller.registry.Resource;
@@ -38,15 +43,8 @@ import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceTarget;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_MAPPINGS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTINATION_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTINATION_PORT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOURCE_NETWORK;
 
 /**
  * Handler for the server socket-binding resource's add operation.
@@ -82,15 +80,15 @@ public class BindingAddHandler extends SocketBindingAddHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
         PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         String name = address.getLastElement().getValue();
 
         try {
-            newControllers.add(installBindingService(context, model, name, verificationHandler));
+            installBindingService(context, model, name);
         } catch (UnknownHostException e) {
-            throw new OperationFailedException(new ModelNode().set(e.getLocalizedMessage()));
+            throw new OperationFailedException(e.toString());
         }
 
     }
@@ -100,12 +98,7 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         return true;
     }
 
-    @Override
-    protected boolean requiresRuntimeVerification() {
-        return false;
-    }
-
-    public static ServiceController<SocketBinding> installBindingService(OperationContext context, ModelNode config, String name, final ServiceVerificationHandler verificationHandler)
+    public static void installBindingService(OperationContext context, ModelNode config, String name)
             throws UnknownHostException, OperationFailedException {
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
@@ -125,10 +118,7 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         if (intf != null) {
             builder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(intf), NetworkInterfaceBinding.class, service.getInterfaceBinding());
         }
-        if(verificationHandler != null) {
-            builder.addListener(verificationHandler);
-        }
-        return builder.addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, service.getSocketBindings())
+        builder.addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, service.getSocketBindings())
                 .setInitialMode(Mode.ON_DEMAND)
                 .install();
     }

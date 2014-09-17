@@ -77,7 +77,7 @@ public class BindingRemoveHandler extends SocketBindingRemoveHandler {
             context.revertReloadRequired();
         } else {
             try {
-                BindingAddHandler.installBindingService(context, model, name, null);
+                BindingAddHandler.installBindingService(context, model, name);
             }catch (UnknownHostException e) {
                 throw new OperationFailedException(new ModelNode().set(e.toString()));
             }
