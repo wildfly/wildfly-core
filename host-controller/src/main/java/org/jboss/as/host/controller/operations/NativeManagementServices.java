@@ -1,8 +1,5 @@
 package org.jboss.as.host.controller.operations;
 
-import java.util.List;
-
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerService;
@@ -12,7 +9,6 @@ import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
@@ -37,10 +33,11 @@ public class NativeManagementServices {
                                                         Options.READ_TIMEOUT, 45000);
 
     static synchronized void installRemotingServicesIfNotInstalled(final ServiceTarget serviceTarget,
-                    final String hostName,
-                    final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers, final ServiceRegistry serviceContainer, boolean onDemand) {
+                                                                   final String hostName,
+                                                                   final ServiceRegistry serviceContainer,
+                                                                   final boolean onDemand) {
 
-        if(serviceContainer.getService(ManagementRemotingServices.MANAGEMENT_ENDPOINT) == null) {
+        if (serviceContainer.getService(ManagementRemotingServices.MANAGEMENT_ENDPOINT) == null) {
 
             ManagementChannelRegistryService.addService(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT);
 
@@ -57,7 +54,7 @@ public class NativeManagementServices {
                     DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.MANAGEMENT_CHANNEL,
                     HostControllerService.HC_EXECUTOR_SERVICE_NAME);
 
-            RemotingConnectorService.addService(serviceTarget, verificationHandler);
+            RemotingConnectorService.addService(serviceTarget);
 
         }
     }

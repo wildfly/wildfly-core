@@ -25,11 +25,9 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.AS_ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.addValidatingHandler;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -37,15 +35,11 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
-import org.jboss.as.remoting.management.ManagementChannelRegistryService;
-import org.jboss.as.server.mgmt.HttpManagementRequestsService;
-import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
@@ -54,7 +48,10 @@ import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
+import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.server.mgmt.HttpManagementRequestsService;
+import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
@@ -98,19 +95,17 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
         populateHostControllerInfo(hostControllerInfo, context, model);
         // DomainModelControllerService requires this service
         final boolean onDemand = context.isBooting();
         boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, verificationHandler, onDemand, httpUpgrade, context.getServiceRegistry(false), newControllers);
+        installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, onDemand, httpUpgrade, context.getServiceRegistry(false));
     }
 
     @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
-
-        super.rollbackRuntime(context, operation, model, controllers);
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
 
         HttpManagementRemoveHandler.clearHostControllerInfo(hostControllerInfo);
     }
@@ -128,8 +123,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     public static void installHttpManagementServices(final RunningMode runningMode, final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo,
-                                               final HostControllerEnvironment environment,
-                                               final ServiceVerificationHandler verificationHandler, boolean onDemand, boolean httpUpgrade, final ServiceRegistry serviceRegistry, final List<ServiceController<?>> newControllers) {
+                                                     final HostControllerEnvironment environment,
+                                                     boolean onDemand, boolean httpUpgrade, final ServiceRegistry serviceRegistry) {
 
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
         int port = hostControllerInfo.getHttpManagementPort();
@@ -148,10 +143,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
         // Track active requests
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
-        final ServiceController<?> requestProcessor = HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
-        if (newControllers != null) {
-            newControllers.add(requestProcessor);
-        }
+        HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
         final UndertowHttpManagementService service = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
         ServiceBuilder<?> builder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, service)
@@ -173,9 +165,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         } else {
             AS_ROOT_LOGGER.noSecurityRealmDefined();
         }
-        if (verificationHandler != null) {
-            builder.addListener(verificationHandler);
-        }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
                 .install();
@@ -191,16 +180,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
 
-        if (newControllers != null) {
-            newControllers.add(shutdown);
-        }
-
-        if(httpUpgrade) {
+        if (httpUpgrade) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
             ManagementRemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
 
-            NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), verificationHandler, null, serviceRegistry,onDemand);
+            NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), serviceRegistry,onDemand);
             final String httpConnectorName;
             if (port > -1 || securePort < 0) {
                 httpConnectorName = ManagementRemotingServices.HTTP_CONNECTOR;

@@ -27,17 +27,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.POR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.discovery.StaticDiscovery;
 import org.jboss.as.host.controller.discovery.StaticDiscoveryResourceDefinition;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler for the static discovery option resource's add operation.
@@ -63,19 +61,12 @@ public class StaticDiscoveryAddHandler extends AbstractDiscoveryOptionAddHandler
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler,
-                                  final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         if (context.isBooting()) {
             populateHostControllerInfo(hostControllerInfo, context, model);
         } else {
             context.reloadRequired();
         }
-    }
-
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        // no-op
     }
 
     @Override

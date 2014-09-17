@@ -68,7 +68,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         HttpManagementAddHandler.populateHostControllerInfo(hostControllerInfo, context, model);
         boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        HttpManagementAddHandler.installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, null, false, httpUpgrade, context.getServiceRegistry(false), null);
+        HttpManagementAddHandler.installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, false, httpUpgrade, context.getServiceRegistry(false));
     }
 
     static void clearHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo) {

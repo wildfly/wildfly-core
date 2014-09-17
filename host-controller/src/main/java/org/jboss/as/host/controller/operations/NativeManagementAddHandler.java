@@ -22,20 +22,15 @@
 
 package org.jboss.as.host.controller.operations;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -52,14 +47,8 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
 
 
     public NativeManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo) {
+        super(NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
-    }
-
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-
-        for (AttributeDefinition attr : NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS) {
-            attr.validateAndSet(operation, model);
-        }
     }
 
     @Override
@@ -68,17 +57,15 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler,
-                                  final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         populateHostControllerInfo(hostControllerInfo, context, model);
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
         final boolean onDemand = context.isBooting();
-        NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), verificationHandler, newControllers, context.getServiceRegistry(false), onDemand);
+        NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(false), onDemand);
 
-        installNativeManagementServices(serviceTarget, hostControllerInfo, verificationHandler, newControllers, onDemand);
+        installNativeManagementServices(serviceTarget, hostControllerInfo);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -89,10 +76,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         hostControllerInfo.setNativeManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
     }
 
-    public static void installNativeManagementServices(final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo,
-                                                       final ServiceVerificationHandler verificationHandler,
-                                                       final List<ServiceController<?>> newControllers,
-                                                       final boolean onDemand) {
+    public static void installNativeManagementServices(final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo) {
 
         String nativeSecurityRealm = hostControllerInfo.getNativeManagementSecurityRealm();
 
