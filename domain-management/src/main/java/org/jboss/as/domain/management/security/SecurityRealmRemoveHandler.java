@@ -92,7 +92,7 @@ public class SecurityRealmRemoveHandler implements OperationStepHandler {
 
     protected void recoverServices(OperationContext context, final String realmName, ModelNode model) {
         try {
-            SecurityRealmAddHandler.INSTANCE.installServices(context, realmName, model, null, null);
+            SecurityRealmAddHandler.INSTANCE.installServices(context, realmName, model);
         } catch (OperationFailedException e) {
             throw ControllerLogger.ROOT_LOGGER.failedToRecoverServices(e);
         }

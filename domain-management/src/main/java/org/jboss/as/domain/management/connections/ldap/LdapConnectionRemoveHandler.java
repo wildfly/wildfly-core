@@ -90,7 +90,7 @@ public class LdapConnectionRemoveHandler extends AbstractRemoveStepHandler {
             // We didn't remove it, we just set reloadRequired
             context.revertReloadRequired();
         } else {
-            addHandler.performRuntime(context, operation, model, null, null);
+            addHandler.performRuntime(context, operation, model);
         }
     }
 }

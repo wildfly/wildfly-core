@@ -64,7 +64,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
@@ -119,8 +118,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
-    protected void installServices(final OperationContext context, final String realmName, final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers)
+    protected void installServices(final OperationContext context, final String realmName, final ModelNode model)
             throws OperationFailedException {
         final ModelNode plugIns = model.hasDefined(PLUG_IN) ? model.get(PLUG_IN) : null;
         final ModelNode authentication = model.hasDefined(AUTHENTICATION) ? model.get(AUTHENTICATION) : null;
@@ -137,7 +135,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         final boolean shareLdapConnections = shareLdapConnection(context, authentication, authorization);
         ModelNode authTruststore = null;
         if (plugIns != null) {
-            addPlugInLoaderService(realmName, plugIns, serviceTarget, newControllers);
+            addPlugInLoaderService(realmName, plugIns, serviceTarget);
         }
         InjectedSetValue<CallbackHandlerService> injectorSet = securityRealmService.getCallbackHandlerService();
         if (authentication != null) {
@@ -147,30 +145,30 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             // based authentication.
             if (authentication.hasDefined(TRUSTSTORE)) {
                 authTruststore = authentication.require(TRUSTSTORE);
-                addClientCertService(realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+                addClientCertService(realmName, serviceTarget, realmBuilder, injectorSet.injector());
             }
             if (authentication.hasDefined(LOCAL)) {
-                addLocalService(context, authentication.require(LOCAL), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+                addLocalService(context, authentication.require(LOCAL), realmName, serviceTarget, realmBuilder, injectorSet.injector());
             }
             if (authentication.hasDefined(JAAS)) {
-                addJaasService(context, authentication.require(JAAS), realmName, serviceTarget, newControllers, context.isNormalServer(), realmBuilder, injectorSet.injector());
+                addJaasService(context, authentication.require(JAAS), realmName, serviceTarget, context.isNormalServer(), realmBuilder, injectorSet.injector());
             } else if (authentication.hasDefined(LDAP)) {
-                addLdapService(context, authentication.require(LDAP), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector(), shareLdapConnections);
+                addLdapService(context, authentication.require(LDAP), realmName, serviceTarget, realmBuilder, injectorSet.injector(), shareLdapConnections);
             } else if (authentication.hasDefined(PLUG_IN)) {
-                addPlugInAuthenticationService(context, authentication.require(PLUG_IN), realmName, securityRealmService, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+                addPlugInAuthenticationService(context, authentication.require(PLUG_IN), realmName, securityRealmService, serviceTarget, realmBuilder, injectorSet.injector());
             } else if (authentication.hasDefined(PROPERTIES)) {
-                addPropertiesAuthenticationService(context, authentication.require(PROPERTIES), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+                addPropertiesAuthenticationService(context, authentication.require(PROPERTIES), realmName, serviceTarget, realmBuilder, injectorSet.injector());
             } else if (authentication.hasDefined(USERS)) {
-                addUsersService(context, authentication.require(USERS), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+                addUsersService(context, authentication.require(USERS), realmName, serviceTarget, realmBuilder, injectorSet.injector());
             }
         }
         if (authorization != null) {
             if (authorization.hasDefined(PROPERTIES)) {
-                addPropertiesAuthorizationService(context, authorization.require(PROPERTIES), realmName, serviceTarget, newControllers, realmBuilder, securityRealmService.getSubjectSupplementalInjector());
+                addPropertiesAuthorizationService(context, authorization.require(PROPERTIES), realmName, serviceTarget, realmBuilder, securityRealmService.getSubjectSupplementalInjector());
             } else if (authorization.hasDefined(PLUG_IN)) {
-                addPlugInAuthorizationService(context, authorization.require(PLUG_IN), realmName, serviceTarget, newControllers, realmBuilder, securityRealmService.getSubjectSupplementalInjector());
+                addPlugInAuthorizationService(context, authorization.require(PLUG_IN), realmName, serviceTarget, realmBuilder, securityRealmService.getSubjectSupplementalInjector());
             } else if (authorization.hasDefined(LDAP)) {
-                addLdapAuthorizationService(context, authorization.require(LDAP), realmName, serviceTarget, newControllers, realmBuilder, securityRealmService.getSubjectSupplementalInjector(), shareLdapConnections);
+                addLdapAuthorizationService(context, authorization.require(LDAP), realmName, serviceTarget, realmBuilder, securityRealmService.getSubjectSupplementalInjector(), shareLdapConnections);
             }
         }
 
@@ -180,19 +178,16 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 ssl = serverIdentities.require(SSL);
             }
             if (serverIdentities.hasDefined(SECRET)) {
-                addSecretService(context, serverIdentities.require(SECRET), realmName,serviceTarget,newControllers, realmBuilder, securityRealmService.getSecretCallbackFactory());
+                addSecretService(context, serverIdentities.require(SECRET), realmName,serviceTarget, realmBuilder, securityRealmService.getSecretCallbackFactory());
             }
         }
 
         if (ssl != null || authTruststore != null) {
-            addSSLServices(context, ssl, authTruststore, realmName, serviceTarget, newControllers, realmBuilder, securityRealmService.getSSLContextInjector());
+            addSSLServices(context, ssl, authTruststore, realmName, serviceTarget, realmBuilder, securityRealmService.getSSLContextInjector());
         }
 
         realmBuilder.setInitialMode(Mode.ACTIVE);
-        ServiceController<?> sc = realmBuilder.install();
-        if (newControllers != null) {
-            newControllers.add(sc);
-        }
+        realmBuilder.install();
     }
 
     private boolean shareLdapConnection(final OperationContext context, final ModelNode authentication,
@@ -211,7 +206,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
     }
 
     private ServiceName addPlugInLoaderService(String realmName, ModelNode plugInModel,
-            ServiceTarget serviceTarget, List<ServiceController<?>> newControllers) {
+                                               ServiceTarget serviceTarget) {
         ServiceName plugInLoaderName = PlugInLoaderService.ServiceUtil.createServiceName(realmName);
 
         List<Property> plugIns = plugInModel.asPropertyList();
@@ -220,31 +215,27 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             knownNames.add(current.getName());
         }
         PlugInLoaderService loaderService = new PlugInLoaderService(Collections.unmodifiableList(knownNames));
-        ServiceBuilder<PlugInLoaderService> builder = serviceTarget.addService(plugInLoaderName, loaderService);
-        final ServiceController<PlugInLoaderService> sc = builder.setInitialMode(Mode.ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(sc);
-        }
+        serviceTarget.addService(plugInLoaderName, loaderService)
+                .setInitialMode(Mode.ON_DEMAND)
+                .install();
 
         return plugInLoaderName;
     }
 
     private void addClientCertService(String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) {
+                                      ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) {
         ServiceName clientCertServiceName = ClientCertCallbackHandler.ServiceUtil.createServiceName(realmName);
         ClientCertCallbackHandler clientCertCallbackHandler = new ClientCertCallbackHandler();
 
-        ServiceBuilder<?> ccBuilder = serviceTarget.addService(clientCertServiceName, clientCertCallbackHandler);
-        final ServiceController<?> sc = ccBuilder.setInitialMode(ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(sc);
-        }
+        serviceTarget.addService(clientCertServiceName, clientCertCallbackHandler)
+                .setInitialMode(ON_DEMAND)
+                .install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, clientCertServiceName, false);
     }
 
     private void addJaasService(OperationContext context, ModelNode jaas, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, boolean injectServerManager, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+                                boolean injectServerManager, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
         ServiceName jaasServiceName = JaasCallbackHandler.ServiceUtil.createServiceName(realmName);
         String name = JaasAuthenticationResourceDefinition.NAME.resolveModelAttribute(context, jaas).asString();
         boolean assignGroups = JaasAuthenticationResourceDefinition.ASSIGN_GROUPS.resolveModelAttribute(context, jaas).asBoolean();
@@ -256,10 +247,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                     ServerSecurityManager.class, jaasCallbackHandler.getSecurityManagerValue());
         }
 
-        final ServiceController<?> sc = jaasBuilder.setInitialMode(ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(sc);
-        }
+        jaasBuilder.setInitialMode(ON_DEMAND).install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, jaasServiceName, false);
     }
@@ -290,7 +278,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
     }
 
     private void addLdapService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector, boolean shareConnection) throws OperationFailedException {
+                                ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector, boolean shareConnection) throws OperationFailedException {
         ServiceName ldapServiceName = UserLdapCallbackHandler.ServiceUtil.createServiceName(realmName);
 
         final String baseDn = LdapAuthenticationResourceDefinition.BASE_DN.resolveModelAttribute(context, ldap).asString();
@@ -314,25 +302,20 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         final LdapCacheService<LdapEntry, String> cacheService = createCacheService(context, userSearcher, ldap.get(CACHE));
 
         ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(true, true, realmName);
-        ServiceController<LdapSearcherCache<LdapEntry, String>> cacheServiceController = serviceTarget.addService(userSearcherCacheName, cacheService).setInitialMode(ON_DEMAND).install();
-        newControllers.add(cacheServiceController);
+        serviceTarget.addService(userSearcherCacheName, cacheService).setInitialMode(ON_DEMAND).install();
 
         ServiceBuilder<?> ldapBuilder = serviceTarget.addService(ldapServiceName, ldapCallbackHandler);
         String connectionManager = LdapAuthenticationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
         LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, ldapCallbackHandler.getConnectionManagerInjector(), connectionManager, false);
         LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, ldapCallbackHandler.getLdapUserSearcherInjector(), true, true, realmName);
 
-        final ServiceController<?> serviceController = ldapBuilder.setInitialMode(ON_DEMAND)
-                .install();
-        if(newControllers != null) {
-            newControllers.add(serviceController);
-        }
+        ldapBuilder.setInitialMode(ON_DEMAND).install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, ldapServiceName, false);
     }
 
     private void addLocalService(OperationContext context, ModelNode local, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
         ServiceName localServiceName = LocalCallbackHandlerService.ServiceUtil.createServiceName(realmName);
 
         ModelNode node = LocalAuthenticationResourceDefinition.DEFAULT_USER.resolveModelAttribute(context, local);
@@ -343,18 +326,16 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         boolean skipGroupLoading = node.asBoolean();
         LocalCallbackHandlerService localCallbackHandler = new LocalCallbackHandlerService(defaultUser, allowedUsers, skipGroupLoading);
 
-        ServiceBuilder<?> jaasBuilder = serviceTarget.addService(localServiceName, localCallbackHandler);
-        final ServiceController<?> serviceController = jaasBuilder.setInitialMode(ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(serviceController);
-        }
+        serviceTarget.addService(localServiceName, localCallbackHandler)
+                .setInitialMode(ON_DEMAND)
+                .install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName, false);
     }
 
     private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,
-            SecurityRealmService registry, ServiceTarget serviceTarget, List<ServiceController<?>> newControllers,
-            ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+                                                SecurityRealmService registry, ServiceTarget serviceTarget,
+                                                ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
         ServiceName plugInServiceName = PlugInAuthenticationCallbackHandler.ServiceUtil.createServiceName(realmName);
 
         final String pluginName = PlugInAuthorizationResourceDefinition.NAME.resolveModelAttribute(context, model).asString();
@@ -367,17 +348,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceBuilder<CallbackHandlerService> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInService);
         PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInService.getPlugInLoaderServiceValue(), realmName, false);
 
-        final ServiceController<CallbackHandlerService> sc = plugInBuilder.setInitialMode(ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(sc);
-        }
+        plugInBuilder.setInitialMode(ON_DEMAND).install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName, false);
     }
 
     private void addPropertiesAuthenticationService(OperationContext context, ModelNode properties, String realmName,
-            ServiceTarget serviceTarget, List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder,
-            Injector<CallbackHandlerService> injector) throws OperationFailedException {
+                                                    ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
+                                                    Injector<CallbackHandlerService> injector) throws OperationFailedException {
 
         ServiceName propsServiceName = PropertiesCallbackHandler.ServiceUtil.createServiceName(realmName);
 
@@ -393,19 +371,15 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             propsBuilder.addDependency(pathName(relativeTo.asString()), String.class, propsCallbackHandler.getRelativeToInjector());
         }
 
-        final ServiceController<?> serviceController = propsBuilder.setInitialMode(ON_DEMAND)
+        propsBuilder.setInitialMode(ON_DEMAND)
                 .install();
-
-        if(newControllers != null) {
-            newControllers.add(serviceController);
-        }
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName, false);
     }
 
     private void addPropertiesAuthorizationService(OperationContext context, ModelNode properties,
-            String realmName, ServiceTarget serviceTarget, List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder,
-            InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
+                                                   String realmName, ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
+                                                   InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
         ServiceName propsServiceName = PropertiesSubjectSupplemental.ServiceUtil.createServiceName(realmName);
 
         final String path = PropertiesAuthorizationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
@@ -418,17 +392,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                     propsSubjectSupplemental.getRelativeToInjector());
         }
 
-        final ServiceController<?> serviceController = propsBuilder.setInitialMode(ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(serviceController);
-        }
+        propsBuilder.setInitialMode(ON_DEMAND).install();
 
         SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName, false);
     }
 
     private void addPlugInAuthorizationService(OperationContext context, ModelNode model, String realmName,
-            ServiceTarget serviceTarget, List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder,
-            InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
+                                               ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
+                                               InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
 
         ServiceName plugInServiceName = PlugInSubjectSupplemental.ServiceUtil.createServiceName(realmName);
         final String pluginName = PlugInAuthorizationResourceDefinition.NAME.resolveModelAttribute(context, model).asString();
@@ -438,17 +409,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceBuilder<?> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInSubjectSupplemental);
         PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInSubjectSupplemental.getPlugInLoaderServiceValue(), realmName, false);
 
-        final ServiceController<?> serviceController = plugInBuilder.setInitialMode(ON_DEMAND).install();
-        if (newControllers != null) {
-            newControllers.add(serviceController);
-        }
+        plugInBuilder.setInitialMode(ON_DEMAND).install();
 
         SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName, false);
     }
 
     private void addLdapAuthorizationService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> controllers, ServiceBuilder<?> realmBuilder,
-            InjectedValue<SubjectSupplementalService> injector, boolean shareConnection) throws OperationFailedException {
+                                             ServiceBuilder<?> realmBuilder,
+                                             InjectedValue<SubjectSupplementalService> injector, boolean shareConnection) throws OperationFailedException {
 
         ServiceName ldapName = LdapSubjectSupplementalService.ServiceUtil.createServiceName(realmName);
 
@@ -491,9 +459,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             LdapCacheService<LdapEntry, String> userSearcherCache = createCacheService(context, userSearcher, userCache);
 
             ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(false, true, realmName);
-            ServiceController<LdapSearcherCache<LdapEntry, String>> userSearcherController = serviceTarget
-                    .addService(userSearcherCacheName, userSearcherCache).setInitialMode(ON_DEMAND).install();
-            controllers.add(userSearcherController);
+            serviceTarget.addService(userSearcherCacheName, userSearcherCache).setInitialMode(ON_DEMAND).install();
         }
 
         ModelNode groupSearch = ldap.require(GROUP_SEARCH);
@@ -533,9 +499,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         LdapCacheService<LdapEntry[], LdapEntry> groupCacheService = createCacheService(context, groupSearcher, groupCache);
 
         ServiceName groupCacheServiceName = LdapSearcherCache.ServiceUtil.createServiceName(false, false, realmName);
-        ServiceController<LdapSearcherCache<LdapEntry[], LdapEntry>> groupSearcherCacheController = serviceTarget
-                .addService(groupCacheServiceName, groupCacheService).setInitialMode(ON_DEMAND).install();
-        controllers.add(groupSearcherCacheController);
+        serviceTarget.addService(groupCacheServiceName, groupCacheService).setInitialMode(ON_DEMAND).install();
 
         String connectionName = LdapAuthorizationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
 
@@ -548,14 +512,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         }
         LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, service.getLdapGroupSearcherInjector(), false, false, realmName);
 
-        controllers.add(ldapBuilder.install());
+        ldapBuilder.install();
 
         SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, ldapName, false);
     }
 
     private void addSSLServices(OperationContext context, ModelNode ssl, ModelNode trustStore, String realmName,
-            ServiceTarget serviceTarget, List<ServiceController<?>> controllers, ServiceBuilder<?> realmBuilder,
-            InjectedValue<SSLContext> injector) throws OperationFailedException {
+                                ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
+                                InjectedValue<SSLContext> injector) throws OperationFailedException {
 
         // Use undefined structures for null ssl model
         ssl = (ssl == null) ? new ModelNode() : ssl;
@@ -565,13 +529,13 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
         if (ssl.hasDefined(KEYSTORE_PATH) || (JKS.equals(provider) == false)) {
             keyManagerServiceName = AbstractKeyManagerService.ServiceUtil.createServiceName(SecurityRealm.ServiceUtil.createServiceName(realmName));
-            addKeyManagerService(context, ssl, keyManagerServiceName, serviceTarget, controllers);
+            addKeyManagerService(context, ssl, keyManagerServiceName, serviceTarget);
         }
 
         ServiceName trustManagerServiceName = null;
         if (trustStore != null) {
             trustManagerServiceName = AbstractTrustManagerService.ServiceUtil.createServiceName(SecurityRealm.ServiceUtil.createServiceName(realmName));
-            addTrustManagerService(context, trustStore, trustManagerServiceName, serviceTarget, controllers);
+            addTrustManagerService(context, trustStore, trustManagerServiceName, serviceTarget);
         }
 
         String protocol = SSLServerIdentityResourceDefinition.PROTOCOL.resolveModelAttribute(context, ssl).asString();
@@ -593,8 +557,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 AbstractTrustManagerService.ServiceUtil.addDependency(fullBuilder, fullSSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
             }
 
-            ServiceController<SSLContext> fullController = fullBuilder.setInitialMode(ON_DEMAND).install();
-            controllers.add(fullController);
+            fullBuilder.setInitialMode(ON_DEMAND).install();
         }
 
         // Always register this one - if no KeyStore is defined we can add an alias to this.
@@ -607,14 +570,13 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         if (trustManagerServiceName != null) {
             AbstractTrustManagerService.ServiceUtil.addDependency(trustBuilder, trustOnlySSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
         }
-        ServiceController<SSLContext> trustController = trustBuilder.setInitialMode(ON_DEMAND).install();
-        controllers.add(trustController);
+        trustBuilder.setInitialMode(ON_DEMAND).install();
 
         SSLContextService.ServiceUtil.addDependency(realmBuilder, injector, SecurityRealm.ServiceUtil.createServiceName(realmName), false);
     }
 
     private void addKeyManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
-            ServiceTarget serviceTarget, List<ServiceController<?>> controllers) throws OperationFailedException {
+                                      ServiceTarget serviceTarget) throws OperationFailedException {
 
         char[] keystorePassword = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl).asString().toCharArray();
         final ServiceBuilder<KeyManager[]> serviceBuilder;
@@ -649,14 +611,11 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             }
         }
 
-        final ServiceController<?> serviceController = serviceBuilder.setInitialMode(ON_DEMAND).install();
-        if(controllers != null) {
-            controllers.add(serviceController);
-        }
+        serviceBuilder.setInitialMode(ON_DEMAND).install();
     }
 
     private void addTrustManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
-            ServiceTarget serviceTarget, List<ServiceController<?>> controllers) throws OperationFailedException {
+                                        ServiceTarget serviceTarget) throws OperationFailedException {
 
         final ServiceBuilder<TrustManager[]> serviceBuilder;
         char[] keystorePassword = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl).asString()
@@ -680,44 +639,33 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             }
         }
 
-        final ServiceController<?> serviceController = serviceBuilder.setInitialMode(ON_DEMAND).install();
-        if (controllers != null) {
-            controllers.add(serviceController);
-        }
+        serviceBuilder.setInitialMode(ON_DEMAND).install();
     }
 
     private void addSecretService(OperationContext context, ModelNode secret, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerFactory> injector) throws OperationFailedException {
+                                  ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerFactory> injector) throws OperationFailedException {
         ServiceName secretServiceName = SecretIdentityService.ServiceUtil.createServiceName(realmName);
 
         ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
         boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
 
         SecretIdentityService sis = new SecretIdentityService(resolvedValueNode.asString(), base64);
-        final ServiceController<CallbackHandlerFactory> serviceController = serviceTarget.addService(secretServiceName, sis)
+        serviceTarget.addService(secretServiceName, sis)
                 .setInitialMode(ON_DEMAND)
                 .install();
-        if(newControllers != null) {
-            newControllers.add(serviceController);
-        }
 
         CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName, false);
     }
 
     private void addUsersService(OperationContext context, ModelNode users, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
         ServiceName usersServiceName = UserDomainCallbackHandler.ServiceUtil.createServiceName(realmName);
 
         UserDomainCallbackHandler usersCallbackHandler = new UserDomainCallbackHandler(realmName, unmaskUsersPasswords(context, users));
 
-        ServiceBuilder<?> usersBuilder = serviceTarget.addService(usersServiceName, usersCallbackHandler);
-
-
-        final ServiceController<?> serviceController = usersBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND)
+        serviceTarget.addService(usersServiceName, usersCallbackHandler)
+                .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
-        if(newControllers != null) {
-            newControllers.add(serviceController);
-        }
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName, false);
     }
@@ -769,7 +717,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             final List<ServiceController<?>> newControllers = new ArrayList<ServiceController<?>>();
             final String realmName = ManagementUtil.getSecurityRealmName(operation);
             final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-            SecurityRealmAddHandler.INSTANCE.installServices(context, realmName, model, new ServiceVerificationHandler(), newControllers);
+            SecurityRealmAddHandler.INSTANCE.installServices(context, realmName, model);
             context.completeStep(new OperationContext.RollbackHandler() {
                 @Override
                 public void handleRollback(OperationContext context, ModelNode operation) {

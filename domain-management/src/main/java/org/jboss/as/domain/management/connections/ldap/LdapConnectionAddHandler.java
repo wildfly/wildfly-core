@@ -43,7 +43,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService.Config;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.ReferralHandling;
@@ -77,8 +76,8 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
         return true;
     }
 
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> controllers) throws OperationFailedException {
+    @Override
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String name = address.getLastElement().getValue();
 
@@ -90,10 +89,6 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
                 LdapConnectionManagerService.ServiceUtil.createServiceName(name), connectionManagerService).setInitialMode(
                 ServiceController.Mode.ACTIVE);
 
-        if (verificationHandler != null) {
-            sb.addListener(verificationHandler);
-        }
-
         ModelNode securityRealm = SECURITY_REALM.resolveModelAttribute(context, model);
         if (securityRealm.isDefined()) {
             String realmName = securityRealm.asString();
@@ -101,10 +96,7 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
             SSLContextService.ServiceUtil.addDependency(sb, connectionManagerService.getTrustOnlySSLContextInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName), true);
         }
 
-        ServiceController<LdapConnectionManager> sc = sb.install();
-        if (controllers != null) {
-            controllers.add(sc);
-        }
+        sb.install();
     }
 
 
