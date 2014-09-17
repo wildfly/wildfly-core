@@ -90,8 +90,14 @@ public final class Attachments {
     public static final AttachmentKey<VirtualFile> DEPLOYMENT_CONTENTS = AttachmentKey.create(VirtualFile.class);
 
     /**
-     * This should be added as a listener to all non child services
+     * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for
+     * binary compatiblity. The management layer handles service verification internally, with no need
+     * for involvment by deployment processors.
+     *
+     * @deprecated the object attached under this key does nothing
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static final AttachmentKey<ServiceVerificationHandler> SERVICE_VERIFICATION_HANDLER = AttachmentKey.create(ServiceVerificationHandler.class);
 
 

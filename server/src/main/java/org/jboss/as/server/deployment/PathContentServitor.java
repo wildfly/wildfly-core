@@ -21,11 +21,9 @@
  */
 package org.jboss.as.server.deployment;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.msc.service.AbstractService;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -45,12 +43,11 @@ class PathContentServitor extends AbstractService<VirtualFile> {
     private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
     private volatile PathManager.Callback.Handle callbackHandle;
 
-    static ServiceController<VirtualFile> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo, final ServiceVerificationHandler verificationHandler) {
+    static ServiceController<VirtualFile> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo) {
         final PathContentServitor service = new PathContentServitor(path, relativeTo);
-        ServiceBuilder<VirtualFile> builder = serviceTarget.addService(serviceName, service);
-        builder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue);
-        builder.addListener(verificationHandler);
-        return builder.install();
+        return serviceTarget.addService(serviceName, service)
+                .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
+                .install();
     }
 
     private PathContentServitor(final String relativePath, final String relativeTo) {

@@ -46,26 +46,23 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final DeploymentUnit parent;
     private final ImmutableManagementResourceRegistration registration;
     private final ManagementResourceRegistration mutableRegistration;
-    private final ServiceVerificationHandler serviceVerificationHandler;
     private Resource resource;
     private final AbstractVaultReader vaultReader;
     private final DeploymentOverlayIndex deploymentOverlays;
 
     /**
      * Construct a new instance.
-     *  @param name the deployment unit simple name
+     *
+     * @param name the deployment unit simple name
      * @param managementName the deployment's domain-wide unique name
      * @param parent the parent deployment unit
      * @param registration the registration
      * @param mutableRegistration the mutable registration
      * @param resource the model
-     * @param serviceVerificationHandler
-     * @param vaultReader
-     * @param deploymentOverlays
+     * @param vaultReader the vault reader
+     * @param deploymentOverlays the deployment overlays
      */
-    public RootDeploymentUnitService(final String name, final String managementName, final DeploymentUnit parent, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final ServiceVerificationHandler serviceVerificationHandler, final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays) {
-        this.serviceVerificationHandler = serviceVerificationHandler;
-        this.deploymentOverlays = deploymentOverlays;
+    public RootDeploymentUnitService(final String name, final String managementName, final DeploymentUnit parent, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays) {
         assert name != null : "name is null";
         this.name = name;
         this.managementName = managementName;
@@ -74,6 +71,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         this.mutableRegistration = mutableRegistration;
         this.resource = resource;
         this.vaultReader = vaultReader;
+        this.deploymentOverlays = deploymentOverlays;
     }
 
     protected DeploymentUnit createAndInitializeDeploymentUnit(final ServiceRegistry registry) {
@@ -84,17 +82,24 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(DeploymentModelUtils.REGISTRATION_ATTACHMENT, registration);
         deploymentUnit.putAttachment(DeploymentModelUtils.MUTABLE_REGISTRATION_ATTACHMENT, mutableRegistration);
         deploymentUnit.putAttachment(DeploymentModelUtils.DEPLOYMENT_RESOURCE, resource);
-        deploymentUnit.putAttachment(Attachments.SERVICE_VERIFICATION_HANDLER, serviceVerificationHandler);
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, deploymentOverlays);
 
         // Attach the deployment repo
         deploymentUnit.putAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY, serverDeploymentRepositoryInjector.getValue());
 
+        // For compatibility only
+        addSVH(deploymentUnit);
+
         return deploymentUnit;
     }
 
     Injector<DeploymentMountProvider> getServerDeploymentRepositoryInjector() {
         return serverDeploymentRepositoryInjector;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void addSVH(DeploymentUnit deploymentUnit) {
+        deploymentUnit.putAttachment(Attachments.SERVICE_VERIFICATION_HANDLER, ServiceVerificationHandler.INSTANCE);
     }
 }
