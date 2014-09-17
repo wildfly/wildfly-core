@@ -41,7 +41,7 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
 
     public WildFlyLogContextSelectorImpl() {
         counter = new AtomicInteger(0);
-        contextSelector = new ClassLoaderLogContextSelector();
+        contextSelector = new ClassLoaderLogContextSelector(true);
         threadLocalContextSelector = new ThreadLocalLogContextSelector(contextSelector);
     }
 
