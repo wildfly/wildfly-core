@@ -32,6 +32,7 @@ import static org.jboss.as.remoting.CommonAttributes.STRENGTH;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -57,8 +58,6 @@ import org.xnio.sasl.SaslStrength;
  */
 public class SaslResource extends SimpleResourceDefinition {
     static final PathElement SASL_CONFIG_PATH = PathElement.pathElement(SECURITY, SASL);
-
-    static final SaslResource INSTANCE = new SaslResource();
 
     static final AttributeDefinition INCLUDE_MECHANISMS_ATTRIBUTE = new StringListAttributeDefinition.Builder(INCLUDE_MECHANISMS)
             .setAllowNull(true)
@@ -89,6 +88,8 @@ public class SaslResource extends SimpleResourceDefinition {
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = {INCLUDE_MECHANISMS_ATTRIBUTE, QOP_ATTRIBUTE, STRENGTH_ATTRIBUTE, SERVER_AUTH_ATTRIBUTE, REUSE_SESSION_ATTRIBUTE};
+
+    static final SaslResource INSTANCE = new SaslResource();
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

@@ -75,7 +75,7 @@ class GenericOutboundConnectionWriteHandler extends AbstractWriteAttributeHandle
             // Service isn't up so we can bounce it
             context.removeService(serviceName); // safe even if the service doesn't exist
             // install the service with new values
-            GenericOutboundConnectionAdd.INSTANCE.installRuntimeService(context, operation, fullModel, null);
+            GenericOutboundConnectionAdd.INSTANCE.installRuntimeService(context, operation, fullModel);
         }
     }
 }

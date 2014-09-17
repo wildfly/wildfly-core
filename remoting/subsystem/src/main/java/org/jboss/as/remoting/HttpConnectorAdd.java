@@ -25,16 +25,12 @@ package org.jboss.as.remoting;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.xnio.OptionMap;
@@ -50,29 +46,28 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
     static final HttpConnectorAdd INSTANCE = new HttpConnectorAdd();
 
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
-        HttpConnectorResource.CONNECTOR_REF.validateAndSet(operation, model);
-        HttpConnectorResource.AUTHENTICATION_PROVIDER.validateAndSet(operation, model);
-        HttpConnectorResource.SECURITY_REALM.validateAndSet(operation, model);
+    private HttpConnectorAdd() {
+        super(HttpConnectorResource.CONNECTOR_REF, HttpConnectorResource.AUTHENTICATION_PROVIDER, HttpConnectorResource.SECURITY_REALM );
     }
 
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    @Override
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String connectorName = address.getLastElement().getValue();
-        final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        launchServices(context, connectorName, fullModel, verificationHandler, newControllers);
+        final ModelNode fullModel = Resource.Tools.readModel(resource);
+        launchServices(context, connectorName, fullModel);
     }
 
-    void launchServices(OperationContext context, String connectorName, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    void launchServices(OperationContext context, String connectorName, ModelNode model) throws OperationFailedException {
         OptionMap optionMap = ConnectorUtils.getFullOptions(context, model);
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
         final String realmName= model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
-        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, realmName, null, tmpDirPath, verificationHandler, newControllers);
+        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, realmName, null, tmpDirPath);
 
         final ServiceTarget target = context.getServiceTarget();
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();
 
-        RemotingHttpUpgradeService.installServices(target, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, verificationHandler, newControllers);
+        RemotingHttpUpgradeService.installServices(target, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap);
     }
 }

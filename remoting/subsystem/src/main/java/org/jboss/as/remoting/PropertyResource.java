@@ -32,7 +32,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RestartParentResourceAddHandler;
 import org.jboss.as.controller.RestartParentResourceRemoveHandler;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -73,9 +72,8 @@ public class PropertyResource extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(VALUE, null, new PropertyWriteAttributeHandler(parent));
     }
 
-    private static void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-            ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-        ConnectorAdd.INSTANCE.launchServices(context, parentAddress.getLastElement().getValue(), parentModel, verificationHandler, null);
+    private static void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+        ConnectorAdd.INSTANCE.launchServices(context, parentAddress.getLastElement().getValue(), parentModel);
     }
 
     private static ServiceName getParentServiceName(PathAddress parentAddress) {
@@ -90,9 +88,8 @@ public class PropertyResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            PropertyResource.recreateParentService(context, parentAddress, parentModel, verificationHandler);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            PropertyResource.recreateParentService(context, parentAddress, parentModel);
         }
 
         @Override
@@ -112,9 +109,8 @@ public class PropertyResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            PropertyResource.recreateParentService(context, parentAddress, parentModel, verificationHandler);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            PropertyResource.recreateParentService(context, parentAddress, parentModel);
         }
 
         @Override
@@ -129,9 +125,8 @@ public class PropertyResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            PropertyResource.recreateParentService(context, parentAddress, parentModel, verificationHandler);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            PropertyResource.recreateParentService(context, parentAddress, parentModel);
         }
 
         @Override

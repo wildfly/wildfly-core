@@ -157,16 +157,16 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         }
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-        RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath, verificationHandler, newControllers);
+        RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath);
 //        final OptionMap options = OptionMap.builder().set(RemotingOptions.HEARTBEAT_INTERVAL, 30000).set(Options.READ_TIMEOUT, 65000).getMap();
         final OptionMap options = OptionMap.EMPTY;
         if (socketBindingServiceName == null) {
             ManagementRemotingServices.installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName,
-                    ManagementRemotingServices.MANAGEMENT_CONNECTOR, interfaceSvcName, port, options, verificationHandler, newControllers);
+                    ManagementRemotingServices.MANAGEMENT_CONNECTOR, interfaceSvcName, port, options);
         } else {
             ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
-                    socketBindingServiceName, options, verificationHandler, newControllers);
+                    socketBindingServiceName, options);
         }
 
     }

@@ -45,17 +45,17 @@ public class NativeManagementServices {
             ManagementChannelRegistryService.addService(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT);
 
             ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                    hostName, EndpointService.EndpointType.MANAGEMENT, CONNECTION_OPTIONS, verificationHandler, newControllers);
+                    hostName, EndpointService.EndpointType.MANAGEMENT, CONNECTION_OPTIONS);
 
 
             ManagementRemotingServices.installManagementChannelOpenListenerService(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     ManagementRemotingServices.SERVER_CHANNEL,
-                    ServerToHostOperationHandlerFactoryService.SERVICE_NAME, SERVICE_OPTIONS, verificationHandler, newControllers, onDemand);
+                    ServerToHostOperationHandlerFactoryService.SERVICE_NAME, SERVICE_OPTIONS, onDemand);
 
             ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     new ModelControllerClientOperationHandlerFactoryService(),
                     DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.MANAGEMENT_CHANNEL,
-                    HostControllerService.HC_EXECUTOR_SERVICE_NAME, verificationHandler, newControllers);
+                    HostControllerService.HC_EXECUTOR_SERVICE_NAME);
 
             RemotingConnectorService.addService(serviceTarget, verificationHandler);
 

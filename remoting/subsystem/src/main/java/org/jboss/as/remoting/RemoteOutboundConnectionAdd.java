@@ -22,19 +22,16 @@
 
 package org.jboss.as.remoting;
 
-import java.util.List;
-
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.Endpoint;
 import org.xnio.OptionMap;
@@ -42,33 +39,21 @@ import org.xnio.OptionMap;
 /**
  * @author Jaikiran Pai
  */
-class RemoteOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler {
+class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
 
     static final RemoteOutboundConnectionAdd INSTANCE = new RemoteOutboundConnectionAdd();
 
     private RemoteOutboundConnectionAdd() {
-
+        super(RemoteOutboundConnectionResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        super.populateModel(operation, model);
-
-        RemoteOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.validateAndSet(operation, model);
-        RemoteOutboundConnectionResourceDefinition.USERNAME.validateAndSet(operation, model);
-        RemoteOutboundConnectionResourceDefinition.SECURITY_REALM.validateAndSet(operation, model);
-        RemoteOutboundConnectionResourceDefinition.PROTOCOL.validateAndSet(operation, model);
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        final ModelNode fullModel = Resource.Tools.readModel(resource);
+        installRuntimeService(context, operation, fullModel);
     }
 
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        final ServiceController serviceController = installRuntimeService(context, operation, fullModel, verificationHandler);
-        newControllers.add(serviceController);
-    }
-
-    ServiceController installRuntimeService(final OperationContext context, final ModelNode operation, final ModelNode fullModel,
-                                            ServiceVerificationHandler verificationHandler) throws OperationFailedException {
+    void installRuntimeService(final OperationContext context, final ModelNode operation, final ModelNode fullModel) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
         final String connectionName = address.getLastElement().getValue();
 
@@ -93,11 +78,7 @@ class RemoteOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler {
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(svcBuilder, outboundConnectionService.getSecurityRealmInjector(), securityRealm, false);
         }
-
-        if (verificationHandler != null) {
-            svcBuilder.addListener(verificationHandler);
-        }
-        return svcBuilder.install();
+        svcBuilder.install();
 
     }
 }

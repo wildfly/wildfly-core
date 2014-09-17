@@ -34,7 +34,7 @@ class NativeManagementServices {
 
             ManagementChannelRegistryService.addService(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT);
 
-            ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT, hostName, EndpointService.EndpointType.MANAGEMENT, OPTIONS, verificationHandler, newControllers);
+            ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT, hostName, EndpointService.EndpointType.MANAGEMENT, OPTIONS);
 
 
             ManagementRemotingServices.installManagementChannelServices(serviceTarget,
@@ -42,9 +42,8 @@ class NativeManagementServices {
                     new ModelControllerClientOperationHandlerFactoryService(),
                     Services.JBOSS_SERVER_CONTROLLER,
                     ManagementRemotingServices.MANAGEMENT_CHANNEL,
-                    Services.JBOSS_SERVER_EXECUTOR,
-                    verificationHandler,
-                    newControllers);
+                    Services.JBOSS_SERVER_EXECUTOR
+            );
 
         }
     }

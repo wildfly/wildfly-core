@@ -21,6 +21,9 @@
 */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.CommonAttributes.POLICY;
+import static org.jboss.as.remoting.CommonAttributes.SASL_POLICY;
+
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -31,16 +34,11 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
-import static org.jboss.as.remoting.CommonAttributes.POLICY;
-import static org.jboss.as.remoting.CommonAttributes.SASL_POLICY;
-
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class SaslPolicyResource extends SimpleResourceDefinition {
     static final PathElement SASL_POLICY_CONFIG_PATH = PathElement.pathElement(SASL_POLICY, POLICY);
-
-    static final SaslPolicyResource INSTANCE = new SaslPolicyResource();
 
     static final SimpleAttributeDefinition FORWARD_SECRECY = createBooleanAttributeDefinition(CommonAttributes.FORWARD_SECRECY);
     static final SimpleAttributeDefinition NO_ACTIVE = createBooleanAttributeDefinition(CommonAttributes.NO_ACTIVE);
@@ -59,6 +57,8 @@ public class SaslPolicyResource extends SimpleResourceDefinition {
             PASS_CREDENTIALS,
 
     };
+
+    static final SaslPolicyResource INSTANCE = new SaslPolicyResource();
 
     private SaslPolicyResource() {
         super(SASL_POLICY_CONFIG_PATH,

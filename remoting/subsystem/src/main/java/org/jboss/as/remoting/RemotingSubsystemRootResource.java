@@ -27,9 +27,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -65,14 +63,11 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
             WORKER_WRITE_THREADS
     };
 
-    private final ProcessType processType;
-
-    public RemotingSubsystemRootResource(final ProcessType processType) {
+    public RemotingSubsystemRootResource() {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME),
                 RemotingSubsystemAdd.INSTANCE,
                 RemotingSubsystemRemove.INSTANCE);
-        this.processType = processType;
     }
 
     @Override
@@ -83,7 +78,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     }
 
     private void registerReadWriteIntAttribute(ManagementResourceRegistration resourceRegistration, AttributeDefinition attr) {
-        resourceRegistration.registerReadWriteAttribute(attr, null, new ThreadWriteAttributeHandler(attr, processType));
+        resourceRegistration.registerReadWriteAttribute(attr, null, new ThreadWriteAttributeHandler(attr));
     }
 
     private static SimpleAttributeDefinition createIntAttribute(String name, Attribute attribute, int defaultValue) {
@@ -97,27 +92,19 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     }
 
     private static class ThreadWriteAttributeHandler extends RestartParentWriteAttributeHandler {
-        private final ProcessType processType;
 
-        ThreadWriteAttributeHandler(AttributeDefinition definition, ProcessType processType) {
+        ThreadWriteAttributeHandler(AttributeDefinition definition) {
             super(CommonAttributes.SUBSYSTEM, definition);
-            this.processType = processType;
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                                             ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            RemotingSubsystemAdd.INSTANCE.launchServices(context, parentModel, verificationHandler, null);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            RemotingSubsystemAdd.INSTANCE.launchServices(context);
         }
 
         @Override
         protected ServiceName getParentServiceName(PathAddress parentAddress) {
             return RemotingServices.SUBSYSTEM_ENDPOINT;
-        }
-
-        @Override
-        protected void removeServices(final OperationContext context, final ServiceName parentService, final ModelNode parentModel) throws OperationFailedException {
-            super.removeServices(context, parentService, parentModel);
         }
 
         @Override

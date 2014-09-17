@@ -43,8 +43,6 @@ public class ConnectorResource extends SimpleResourceDefinition {
 
     static final PathElement PATH = PathElement.pathElement(CommonAttributes.CONNECTOR);
 
-    static final ConnectorResource INSTANCE = new ConnectorResource();
-
     //FIXME is this attribute still used?
     static final SimpleAttributeDefinition AUTHENTICATION_PROVIDER = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_PROVIDER, ModelType.STRING)
             .setDefaultValue(null)
@@ -62,6 +60,8 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .build();
+
+    static final ConnectorResource INSTANCE = new ConnectorResource();
 
     private ConnectorResource() {
         super(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR),
