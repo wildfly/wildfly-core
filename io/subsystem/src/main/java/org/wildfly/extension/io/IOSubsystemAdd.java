@@ -24,16 +24,11 @@
 
 package org.wildfly.extension.io;
 
-import java.util.List;
-
-import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 
 /**
@@ -41,37 +36,15 @@ import org.jboss.msc.service.ServiceController;
  *
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
-class IOSubsystemAdd extends AbstractBoottimeAddStepHandler {
+class IOSubsystemAdd extends AbstractAddStepHandler {
 
     static final IOSubsystemAdd INSTANCE = new IOSubsystemAdd();
 
     private IOSubsystemAdd() {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void performBoottime(OperationContext context, ModelNode operation, final ModelNode model,
-                                ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
-            throws OperationFailedException {
-
-
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        super.performRuntime(context, operation, model, verificationHandler, newControllers);
-
-        Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         ModelNode workers = Resource.Tools.readModel(resource).get(IOExtension.WORKER_PATH.getKey());
         WorkerAdd.checkWorkerConfiguration(context, workers);
     }
