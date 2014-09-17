@@ -1,16 +1,12 @@
 package org.jboss.as.subsystem.test.simple.subsystem;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler responsible for adding the subsystem resource to the model
@@ -20,8 +16,6 @@ import org.jboss.msc.service.ServiceController;
 class SimpleSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
     static final SimpleSubsystemAdd INSTANCE = new SimpleSubsystemAdd();
-
-    private final Logger log = Logger.getLogger(SimpleSubsystemAdd.class);
 
     private SimpleSubsystemAdd() {
     }
@@ -34,8 +28,7 @@ class SimpleSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
     /** {@inheritDoc} */
     @Override
-    public void performBoottime(OperationContext context, ModelNode operation, ModelNode model,
-            ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    public void performBoottime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {
 
         //Add deployment processors here
