@@ -26,8 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -39,7 +37,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -50,7 +47,6 @@ import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * This has subtle differences from AuditLogHandlerReferenceResourceDefinition in domain-management so it is not a duplicate
@@ -70,6 +66,10 @@ public class JmxAuditLogHandlerReferenceResourceDefinition extends SimpleResourc
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
+    }
+
+    private static boolean isNotAdminOnlyServer(OperationContext context) {
+        return !(context.getProcessType() != ProcessType.HOST_CONTROLLER && context.getRunningMode() == RunningMode.ADMIN_ONLY);
     }
 
     private static class AuditLogHandlerReferenceAddHandler extends AbstractAddStepHandler {
@@ -92,15 +92,11 @@ public class JmxAuditLogHandlerReferenceResourceDefinition extends SimpleResourc
 
         @Override
         protected boolean requiresRuntime(OperationContext context){
-            if (context.getProcessType() != ProcessType.HOST_CONTROLLER && context.getRunningMode() == RunningMode.ADMIN_ONLY){
-                return false;
-            }
-            return true;
+            return isNotAdminOnlyServer(context);
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
             auditLogger.getUpdater().addHandlerReference(PathAddress.pathAddress(operation.require(OP_ADDR)));
             context.addStep(new OperationStepHandler() {
@@ -119,8 +115,7 @@ public class JmxAuditLogHandlerReferenceResourceDefinition extends SimpleResourc
         }
 
         @Override
-        protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                List<ServiceController<?>> controllers) {
+        protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
             auditLogger.getUpdater().rollbackChanges();
         }
 
@@ -172,10 +167,7 @@ public class JmxAuditLogHandlerReferenceResourceDefinition extends SimpleResourc
 
         @Override
         protected boolean requiresRuntime(OperationContext context){
-            if (context.getProcessType() != ProcessType.HOST_CONTROLLER && context.getRunningMode() == RunningMode.ADMIN_ONLY){
-                return false;
-            }
-            return true;
+            return isNotAdminOnlyServer(context);
         }
 
         @Override
