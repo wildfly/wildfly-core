@@ -30,7 +30,6 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
 
 import java.util.Locale;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -38,8 +37,8 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -64,24 +63,6 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
     public static final String REMOVE_SUBHANDLER_OPERATION_NAME = "unassign-subhandler";
     public static final String ASYNC_HANDLER = "async-handler";
     static final PathElement ASYNC_HANDLER_PATH = PathElement.pathElement(ASYNC_HANDLER);
-
-    static final SimpleOperationDefinition ADD_HANDLER = new SimpleOperationDefinitionBuilder(ADD_HANDLER_OPERATION_NAME, HANDLER_RESOLVER)
-            .setParameters(CommonAttributes.HANDLER_NAME)
-            .build();
-
-    static final SimpleOperationDefinition REMOVE_HANDLER = new SimpleOperationDefinitionBuilder(REMOVE_HANDLER_OPERATION_NAME, HANDLER_RESOLVER)
-            .setParameters(CommonAttributes.HANDLER_NAME)
-            .build();
-
-    static final SimpleOperationDefinition LEGACY_ADD_HANDLER = new SimpleOperationDefinitionBuilder(ADD_SUBHANDLER_OPERATION_NAME, HANDLER_RESOLVER)
-            .setDeprecated(ModelVersion.create(1, 2, 0))
-            .setParameters(CommonAttributes.HANDLER_NAME)
-            .build();
-
-    static final SimpleOperationDefinition LEGACY_REMOVE_HANDLER = new SimpleOperationDefinitionBuilder(REMOVE_SUBHANDLER_OPERATION_NAME, HANDLER_RESOLVER)
-            .setDeprecated(ModelVersion.create(1, 2, 0))
-            .setParameters(CommonAttributes.HANDLER_NAME)
-            .build();
 
     public static final PropertyAttributeDefinition QUEUE_LENGTH = PropertyAttributeDefinition.Builder.of("queue-length", ModelType.INT)
             .setAllowExpression(true)
@@ -125,11 +106,24 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
     @Override
     public void registerOperations(final ManagementResourceRegistration registration) {
         super.registerOperations(registration);
+        final ResourceDescriptionResolver resourceDescriptionResolver = getResourceDescriptionResolver();
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ADD_SUBHANDLER_OPERATION_NAME, resourceDescriptionResolver)
+                .setDeprecated(ModelVersion.create(1, 2, 0))
+                .setParameters(CommonAttributes.HANDLER_NAME)
+                .build(), HandlerOperations.ADD_SUBHANDLER);
 
-        registration.registerOperationHandler(LEGACY_ADD_HANDLER, HandlerOperations.ADD_SUBHANDLER);
-        registration.registerOperationHandler(LEGACY_REMOVE_HANDLER, HandlerOperations.REMOVE_SUBHANDLER);
-        registration.registerOperationHandler(ADD_HANDLER, HandlerOperations.ADD_SUBHANDLER);
-        registration.registerOperationHandler(REMOVE_HANDLER, HandlerOperations.REMOVE_SUBHANDLER);
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(REMOVE_SUBHANDLER_OPERATION_NAME, resourceDescriptionResolver)
+                .setDeprecated(ModelVersion.create(1, 2, 0))
+                .setParameters(CommonAttributes.HANDLER_NAME)
+                .build(), HandlerOperations.REMOVE_SUBHANDLER);
+
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ADD_HANDLER_OPERATION_NAME, resourceDescriptionResolver)
+                .setParameters(CommonAttributes.HANDLER_NAME)
+                .build(), HandlerOperations.ADD_SUBHANDLER);
+
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(REMOVE_HANDLER_OPERATION_NAME, resourceDescriptionResolver)
+                .setParameters(CommonAttributes.HANDLER_NAME)
+                .build(), HandlerOperations.REMOVE_SUBHANDLER);
     }
 
     @Override
@@ -139,13 +133,13 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
             case VERSION_1_1_0: {
                 attributeBuilder
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, QUEUE_LENGTH, OVERFLOW_ACTION)
-                            .end()
+                        .end()
                         .addOperationTransformationOverride(ADD_HANDLER_OPERATION_NAME)
-                            .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                            .end()
+                        .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
+                        .end()
                         .addOperationTransformationOverride(REMOVE_HANDLER_OPERATION_NAME)
-                            .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                            .end();
+                        .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
+                        .end();
                 break;
             }
             case VERSION_1_3_0: {
