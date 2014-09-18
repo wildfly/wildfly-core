@@ -81,7 +81,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_ACCESS_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE;
@@ -89,11 +88,14 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.DEFAULT_D
 import static org.jboss.as.domain.management.ModelDescriptionConstants.DEFAULT_USER;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JAAS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JKS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KERBEROS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYSTORE_PROVIDER;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYTAB;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.LOCAL;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PLUG_IN;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PROPERTY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -133,6 +135,7 @@ import org.jboss.as.domain.management.security.BaseLdapUserSearchResource;
 import org.jboss.as.domain.management.security.GroupToPrincipalResourceDefinition;
 import org.jboss.as.domain.management.security.JaasAuthenticationResourceDefinition;
 import org.jboss.as.domain.management.security.KeystoreAttributes;
+import org.jboss.as.domain.management.security.KeytabResourceDefinition;
 import org.jboss.as.domain.management.security.LdapAuthenticationResourceDefinition;
 import org.jboss.as.domain.management.security.LdapAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.security.LdapCacheResourceDefinition;
@@ -797,7 +800,7 @@ public class ManagementXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SERVER_IDENTITIES:
-                    parseServerIdentities(reader, expectedNs, realmAddress, list);
+                    parseServerIdentities_1_0(reader, expectedNs, realmAddress, list);
                     break;
                 case AUTHENTICATION: {
                     parseAuthentication_1_0(reader, expectedNs, realmAddress, list);
@@ -829,7 +832,7 @@ public class ManagementXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SERVER_IDENTITIES:
-                    parseServerIdentities(reader, expectedNs, realmAddress, list);
+                    parseServerIdentities_1_0(reader, expectedNs, realmAddress, list);
                     break;
                 case AUTHENTICATION: {
                     parseAuthentication_1_1(reader, expectedNs, realmAddress, list);
@@ -867,7 +870,14 @@ public class ManagementXml {
                     parsePlugIns(reader, expectedNs, realmAddress, list);
                     break;
                 case SERVER_IDENTITIES:
-                    parseServerIdentities(reader, expectedNs, realmAddress, list);
+                    switch (expectedNs.getMajorVersion()) {
+                        case 1:
+                        case 2:
+                            parseServerIdentities_1_0(reader, expectedNs, realmAddress, list);
+                            break;
+                        default:
+                            parseServerIdentities_3_0(reader, expectedNs, realmAddress, list);
+                    }
                     break;
                 case AUTHENTICATION: {
                     parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
@@ -915,7 +925,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseServerIdentities(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list)
+    private static void parseServerIdentities_1_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list)
             throws XMLStreamException {
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -929,6 +939,33 @@ public class ManagementXml {
                 }
                 case SSL: {
                     parseSSL(reader, expectedNs, realmAddress, list);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
+
+    private static void parseServerIdentities_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list)
+            throws XMLStreamException {
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, expectedNs);
+
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case SECRET: {
+                    parseSecret(reader, realmAddress, list);
+                    break;
+                }
+                case SSL: {
+                    parseSSL(reader, expectedNs, realmAddress, list);
+                    break;
+                }
+                case KERBEROS: {
+                    parseKerberosIdentity(reader, expectedNs, realmAddress, list);
                     break;
                 }
                 default: {
@@ -1172,6 +1209,77 @@ public class ManagementXml {
         }
 
         requireNoContent(reader);
+    }
+
+    private static void parseKerberosIdentity(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+
+        ModelNode kerberos = new ModelNode();
+        kerberos.get(OP).set(ADD);
+        ModelNode kerberosAddress = realmAddress.clone().add(SERVER_IDENTITY, KERBEROS);
+        kerberos.get(OP_ADDR).set(kerberosAddress);
+        list.add(kerberos);
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, expectedNs);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case KEYTAB:
+                    parseKeyTab(reader, expectedNs, kerberosAddress, list);
+                    break;
+                default:
+                    throw unexpectedElement(reader);
+            }
+
+        }
+
+    }
+
+    private static void parseKeyTab(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+            final ModelNode parentAddress, final List<ModelNode> list) throws XMLStreamException {
+
+        ModelNode keytab = new ModelNode();
+        keytab.get(OP).set(ADD);
+        list.add(keytab);
+
+        Set<Attribute> requiredAttributes = EnumSet.of(Attribute.PRINCIPAL, Attribute.PATH);
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                requiredAttributes.remove(attribute);
+                switch (attribute) {
+                    case PRINCIPAL:
+                        keytab.get(OP_ADDR).set(parentAddress).add(KEYTAB, value);
+                        break;
+                    case PATH:
+                        KeytabResourceDefinition.PATH.parseAndSetParameter(value, keytab, reader);
+                        break;
+                    case RELATIVE_TO:
+                        KeytabResourceDefinition.RELATIVE_TO.parseAndSetParameter(value, keytab, reader);
+                        break;
+                    case FOR_HOSTS:
+                        for (String host : reader.getListAttributeValue(i)) {
+                            KeytabResourceDefinition.FOR_HOSTS.parseAndAddParameterElement(host, keytab, reader);
+                        }
+                        break;
+                    default:
+                        throw unexpectedAttribute(reader, i);
+
+                }
+            }
+        }
+
+        // This would pick up if the address for the operation has not yet been set.
+        if (requiredAttributes.isEmpty() == false) {
+            throw missingRequired(reader, requiredAttributes);
+        }
+
+        requireNoContent(reader);
+
     }
 
     private static void parseAuthentication_1_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list)
@@ -3680,6 +3788,25 @@ public class ManagementXml {
     private void writeServerIdentities(XMLExtendedStreamWriter writer, ModelNode realm) throws XMLStreamException {
         writer.writeStartElement(Element.SERVER_IDENTITIES.getLocalName());
         ModelNode serverIdentities = realm.get(SERVER_IDENTITY);
+        if (serverIdentities.hasDefined(KERBEROS)) {
+            writer.writeStartElement(Element.KERBEROS.getLocalName());
+            ModelNode kerberos = serverIdentities.require(KERBEROS);
+
+            if (kerberos.hasDefined(KEYTAB)) {
+                List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
+                for (Property current : keytabList) {
+                    ModelNode currentNode = current.getValue();
+                    writer.writeEmptyElement(KEYTAB);
+                    writer.writeAttribute(Attribute.PRINCIPAL.getLocalName(), current.getName());
+                    KeytabResourceDefinition.PATH.marshallAsAttribute(currentNode, writer);
+                    KeytabResourceDefinition.RELATIVE_TO.marshallAsAttribute(currentNode, writer);
+                    KeytabResourceDefinition.FOR_HOSTS.marshallAsElement(currentNode, writer);
+                }
+            }
+
+            writer.writeEndElement();
+        }
+
         if (serverIdentities.hasDefined(SSL)) {
             writer.writeStartElement(Element.SSL.getLocalName());
             ModelNode ssl = serverIdentities.get(SSL);

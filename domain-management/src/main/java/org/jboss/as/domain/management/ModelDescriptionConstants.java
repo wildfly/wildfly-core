@@ -46,6 +46,7 @@ public class ModelDescriptionConstants {
     public static final String EVICTION_TIME = "eviction-time";
     public static final String FLUSH_CACHE = "flush-cache";
     public static final String FOLLOW = "follow";
+    public static final String FOR_HOSTS = "for-hosts";
     public static final String GROUPS = "groups";
     public static final String HANDLES_REFERRALS_FOR = "handles-referrals-for";
     public static final String IDENTITY = "identity";
@@ -54,11 +55,13 @@ public class ModelDescriptionConstants {
     public static final String IS_CALLER_IN_ROLE = "is-caller-in-role";
     public static final String JAAS = "jaas";
     public static final String JKS = "JKS";
+    public static final String KERBEROS = "kerberos";
     public static final String KEY_PASSWORD = "key-password";
     public static final String KEYSTORE_PASSWORD = "keystore-password";
     public static final String KEYSTORE_PATH = "keystore-path";
     public static final String KEYSTORE_PROVIDER = "keystore-provider";
     public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
+    public static final String KEYTAB = "keytab";
     public static final String LDAP = "ldap";
     public static final String LOCAL = "local";
     public static final String MAPPED_ROLES = "mapped-roles";
@@ -68,6 +71,7 @@ public class ModelDescriptionConstants {
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
     public static final String PLUG_IN = "plug-in";
+    public static final String PRINCIPAL = "principal";
     public static final String PROPERTY = "property";
     public static final String PROVIDER = "provider";
     public static final String REALM = "realm";
@@ -78,6 +82,8 @@ public class ModelDescriptionConstants {
     public static final String SEARCH_DN = "search-dn";
     public static final String SECURITY_REALM = "security-realm";
     public static final String SKIP_GROUP_LOADING = "skip-group-loading";
+    public static final String SUBJECT = "subject";
+    public static final String TEST = "test";
     public static final String THROW = "throw";
     public static final String URL = "url";
     public static final String USERNAME = "username";

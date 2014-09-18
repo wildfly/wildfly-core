@@ -22,6 +22,9 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KERBEROS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYTAB;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
 
 import java.util.HashSet;
