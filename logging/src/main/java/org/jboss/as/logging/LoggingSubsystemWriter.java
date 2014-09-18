@@ -309,6 +309,7 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         ROTATE_SIZE.marshallAsElement(model, writer);
         MAX_BACKUP_INDEX.marshallAsElement(model, writer);
         APPEND.marshallAsElement(model, writer);
+        SizeRotatingHandlerResourceDefinition.SUFFIX.marshallAsElement(model, writer);
 
         writer.writeEndElement();
     }

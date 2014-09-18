@@ -30,11 +30,13 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker.DiscardAttributeValueChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.resolvers.SizeResolver;
 import org.jboss.as.logging.validators.SizeValidator;
+import org.jboss.as.logging.validators.SuffixValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.logmanager.handlers.SizeRotatingFileHandler;
@@ -71,7 +73,13 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
             .setValidator(new SizeValidator())
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = Logging.join(DEFAULT_ATTRIBUTES, AUTOFLUSH, APPEND, MAX_BACKUP_INDEX, ROTATE_SIZE, ROTATE_ON_BOOT, NAMED_FORMATTER, FILE);
+    public static final PropertyAttributeDefinition SUFFIX = PropertyAttributeDefinition.Builder.of("suffix", ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
+            .setValidator(new SuffixValidator(true, false))
+            .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = Logging.join(DEFAULT_ATTRIBUTES, AUTOFLUSH, APPEND, MAX_BACKUP_INDEX, ROTATE_SIZE, ROTATE_ON_BOOT, NAMED_FORMATTER, FILE, SUFFIX);
 
     public SizeRotatingHandlerResourceDefinition(final ResolvePathHandler resolvePathHandler, final boolean includeLegacyAttributes) {
         super(SIZE_ROTATING_HANDLER_PATH, SizeRotatingFileHandler.class, resolvePathHandler,
@@ -94,11 +102,28 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
                         .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
                         .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
                         .end();
-                loggingProfileBuilder
+                if (loggingProfileBuilder != null) {
+                    loggingProfileBuilder
+                            .getAttributeBuilder()
+                            .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
+                            .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
+                            .end();
+                }
+                break;
+            }
+            case VERSION_2_0_0: {
+                resourceBuilder
                         .getAttributeBuilder()
-                        .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
+                        .setDiscard(DiscardAttributeChecker.UNDEFINED, SUFFIX)
+                        .addRejectCheck(RejectAttributeChecker.DEFINED, SUFFIX)
                         .end();
+                if (loggingProfileBuilder != null) {
+                    loggingProfileBuilder
+                            .getAttributeBuilder()
+                            .setDiscard(DiscardAttributeChecker.UNDEFINED, SUFFIX)
+                            .addRejectCheck(RejectAttributeChecker.DEFINED, SUFFIX)
+                            .end();
+                }
                 break;
             }
         }

@@ -944,6 +944,15 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                     MAX_BACKUP_INDEX.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
+                case SUFFIX: {
+                    if (namespace == Namespace.LOGGING_1_0 || namespace == Namespace.LOGGING_1_1 ||
+                            namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3 ||
+                            namespace == Namespace.LOGGING_1_4 || namespace == Namespace.LOGGING_2_0) {
+                        throw unexpectedElement(reader);
+                    }
+                    SizeRotatingHandlerResourceDefinition.SUFFIX.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    break;
+                }
                 default: {
                     throw unexpectedElement(reader);
                 }
