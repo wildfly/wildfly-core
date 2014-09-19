@@ -16,6 +16,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.readFile;
 import java.io.File;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -29,7 +30,6 @@ import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.test.patching.util.module.Module;
 import org.jboss.as.version.ProductConfig;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
@@ -452,18 +452,15 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
      * Applies CP
      * changes standalone/configuration/standalone.xml
      * changes domain/configuration/domain.xml
-     * changes appclient/configuration/appclient.xml
      * does rollback of CP with --reset-configuration=true
      * Applies CP
      * changes standalone/configuration/standalone.xml
      * changes domain/configuration/domain.xml
-     * changes appclient/configuration/appclient.xml
      * does rollback of CP with --reset-configuration=false
      *
      * @throws Exception
      */
     @Test
-    @Ignore("WFLY-3592 - don't use app client")
     public void testCumulativePatchRollbackRestoreConfiguration() throws Exception {
         final String cpAsVersion = "EAP with cp patch";
         String cpPatchID = randomString();
@@ -481,19 +478,15 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
                 CliUtilsForPatching.getCumulativePatchId().equalsIgnoreCase(cpPatchID));
         controller.stop();
 
-        // save original content of files in standalone/configuration, domain/configuration, appclient/configuration
+        // save original content of files in standalone/configuration, domain/configuration
         final String standaloneXmlPath = AS_DISTRIBUTION + FILE_SEPARATOR + "standalone" + FILE_SEPARATOR + "configuration" + FILE_SEPARATOR + "standalone.xml";
         final String standaloneConfOrigContent = readFile(standaloneXmlPath);
 
         final String domainXmlPath = AS_DISTRIBUTION + FILE_SEPARATOR + "domain" + FILE_SEPARATOR + "configuration" + FILE_SEPARATOR + "domain.xml";
         final String domainConfOrigContent = readFile(domainXmlPath);
 
-        final String appClientXmlPath = AS_DISTRIBUTION + FILE_SEPARATOR + "appclient" + FILE_SEPARATOR + "configuration" + FILE_SEPARATOR + "appclient.xml";
-        final String appClientConfOrigContent = readFile(appClientXmlPath);
-
-        changeDatasource(standaloneXmlPath);
-        changeDatasource(domainXmlPath);
-        changeDatasource(appClientXmlPath);
+        addSystemProperties(standaloneXmlPath);
+        addSystemProperties(domainXmlPath);
 
         controller.start();
         // rollback with reset-configuration=true
@@ -503,7 +496,6 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
         controller.start();
         Assert.assertEquals("File should be restored", standaloneConfOrigContent, readFile(standaloneXmlPath));
         Assert.assertEquals("File should be restored", domainConfOrigContent, readFile(domainXmlPath));
-        Assert.assertEquals("File should be restored", appClientConfOrigContent, readFile(appClientXmlPath));
 
         // apply cumulative patch
         Assert.assertTrue("Patch should be accepted", CliUtilsForPatching.applyPatch(cpZip.getAbsolutePath()));
@@ -516,9 +508,8 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
                 CliUtilsForPatching.getCumulativePatchId().equalsIgnoreCase(cpPatchID));
         controller.stop();
 
-        changeDatasource(standaloneXmlPath);
-        changeDatasource(domainXmlPath);
-        changeDatasource(appClientXmlPath);
+        addSystemProperties(standaloneXmlPath);
+        addSystemProperties(domainXmlPath);
 
         controller.start();
         // rollback with reset-configuration=false
@@ -529,7 +520,6 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
         try {
             Assert.assertNotEquals("File shouldn't be restored", standaloneConfOrigContent, readFile(standaloneXmlPath));
             Assert.assertNotEquals("File shouldn't be restored", domainConfOrigContent, readFile(domainXmlPath));
-            Assert.assertNotEquals("File shouldn't be restored", appClientConfOrigContent, readFile(appClientXmlPath));
 
             // no patches present
             assertPatchElements(PatchingTestUtil.BASE_MODULE_DIRECTORY, null, false);
@@ -538,28 +528,25 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
         }
     }
 
-    private void changeDatasource(String filePath) throws Exception {
+    private void addSystemProperties(String filePath) throws Exception {
         // modify xml
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
         Document document = documentBuilder.parse(filePath);
 
-        NodeList nodeList = document.getElementsByTagName("datasource");
-
-        if (nodeList.getLength() < 1) {
-            throw new IllegalStateException("unexpected count of datasources");
+        NodeList nodeList = document.getElementsByTagName("extensions");
+        if (nodeList.getLength() != 1) {
+            throw new IllegalStateException("unexpected count of extensions elements");
         }
-
-        Node node = nodeList.item(0);
-        Node attributeNode = node.getAttributes().getNamedItem("jndi-name");
-        attributeNode.setNodeValue("java:jboss/datasources/changedDS");
+        Node extensions = nodeList.item(0);
+        Node systemProperties = document.createElement("system-properties");
+        extensions.getParentNode().insertBefore(systemProperties, extensions.getNextSibling());
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
         DOMSource domSource = new DOMSource(document);
         StreamResult streamResult = new StreamResult(new File(filePath));
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.transform(domSource, streamResult);
     }
-
-
 }
