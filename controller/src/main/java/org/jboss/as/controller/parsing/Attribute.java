@@ -60,6 +60,7 @@ public enum Attribute {
     CONTENT("content"),
     DATE_FORMAT("date-format"),
     DATE_SEPARATOR("date-separator"),
+    DEBUG("debug"),
     DEFAULT_INTERFACE("default-interface"),
     DEFAULT_USER("default-user"),
     DEBUG_ENABLED("debug-enabled"),

@@ -1266,6 +1266,9 @@ public class ManagementXml {
                             KeytabResourceDefinition.FOR_HOSTS.parseAndAddParameterElement(host, keytab, reader);
                         }
                         break;
+                    case DEBUG:
+                        KeytabResourceDefinition.DEBUG.parseAndSetParameter(value, keytab, reader);
+                        break;
                     default:
                         throw unexpectedAttribute(reader, i);
 
@@ -3801,6 +3804,7 @@ public class ManagementXml {
                     KeytabResourceDefinition.PATH.marshallAsAttribute(currentNode, writer);
                     KeytabResourceDefinition.RELATIVE_TO.marshallAsAttribute(currentNode, writer);
                     KeytabResourceDefinition.FOR_HOSTS.marshallAsElement(currentNode, writer);
+                    KeytabResourceDefinition.DEBUG.marshallAsAttribute(currentNode, writer);
                 }
             }
 

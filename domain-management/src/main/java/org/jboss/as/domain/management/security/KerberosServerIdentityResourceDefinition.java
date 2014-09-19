@@ -45,7 +45,7 @@ public class KerberosServerIdentityResourceDefinition extends SimpleResourceDefi
                 ControllerResolver.getResolver("core.management.security-realm.server-identity.kerberos"),
                 new SecurityRealmChildAddHandler(false, false, new AttributeDefinition[0]),
                 new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES,
+                OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
     }
 

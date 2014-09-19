@@ -89,7 +89,13 @@ public class KeytabResourceDefinition extends SimpleResourceDefinition {
             })
             .build();
 
-    private static AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PATH, RELATIVE_TO, FOR_HOSTS };
+    public static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEBUG, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(false))
+            .setAllowExpression(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    private static AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PATH, RELATIVE_TO, FOR_HOSTS, DEBUG };
 
     KeytabResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.KEYTAB),

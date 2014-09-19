@@ -16,7 +16,7 @@
                 <server-identities>
                     <kerberos>
                         <keytab principal="HTTP/localhost@WILDFLY.ORG" path="localhost.keytab" relative-to="jboss.server.config.dir" for-hosts="localhost wildfly.org" />
-                        <keytab principal="HTTP/dev.wildfly.org@WILDFLY.ORG" path="dev.keytab" />
+                        <keytab principal="HTTP/dev.wildfly.org@WILDFLY.ORG" path="dev.keytab" debug="true" />
                     </kerberos>
                 </server-identities>
             </security-realm>

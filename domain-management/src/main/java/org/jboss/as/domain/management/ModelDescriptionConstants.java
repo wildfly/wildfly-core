@@ -40,6 +40,7 @@ public class ModelDescriptionConstants {
     public static final String CACHE_FAILURES = "cache-failures";
     public static final String CACHE_SIZE = "cache-size";
     public static final String CONTAINS = "contains";
+    public static final String DEBUG = "debug";
     public static final String DEFAULT_USER = "default-user";
     public static final String DEFAULT_DEFAULT_USER = "$local";
     public static final String DISTINGUISHED_NAME = "distinguished-name";

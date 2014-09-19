@@ -44,7 +44,9 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH
 import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JAAS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JKS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KERBEROS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYSTORE_PATH;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYTAB;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PASSWORD;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PLUG_IN;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PROPERTY;
@@ -181,6 +183,9 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             }
             if (serverIdentities.hasDefined(SECRET)) {
                 addSecretService(context, serverIdentities.require(SECRET), realmName,serviceTarget,newControllers, realmBuilder, securityRealmService.getSecretCallbackFactory());
+            }
+            if (serverIdentities.hasDefined(KERBEROS)) {
+                addKerberosIdentityServices(context, serverIdentities.require(KERBEROS), realmName, serviceTarget, newControllers, realmBuilder, securityRealmService.getKeytabIdentityFactoryInjector());
             }
         }
 
@@ -702,6 +707,52 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         }
 
         CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName, false);
+    }
+
+    private void addKerberosIdentityServices(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
+            List<ServiceController<?>> controllers, ServiceBuilder<?> realmBuilder, Injector<KeytabIdentityFactoryService> injector) throws OperationFailedException {
+         ServiceName keyIdentityName = KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName);
+         KeytabIdentityFactoryService kifs = new KeytabIdentityFactoryService();
+         ServiceBuilder<KeytabIdentityFactoryService> kifsBuilder = serviceTarget.addService(keyIdentityName, kifs)
+                 .setInitialMode(ON_DEMAND);
+
+         if (kerberos.hasDefined(KEYTAB)) {
+             List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
+             for (Property current : keytabList) {
+                 String principal = current.getName();
+                 ModelNode keytab = current.getValue();
+                 String path = KeytabResourceDefinition.PATH.resolveModelAttribute(context, keytab).asString();
+                 ModelNode relativeTo = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
+                 boolean debug = KeytabResourceDefinition.DEBUG.resolveModelAttribute(context, keytab).asBoolean();
+                 final String[] forHostsValues;
+                 ModelNode forHosts = KeytabResourceDefinition.FOR_HOSTS.resolveModelAttribute(context, keytab);
+                 if (forHosts.isDefined()) {
+                     List<ModelNode> list = forHosts.asList();
+                     forHostsValues = new String[list.size()];
+                     for (int i=0;i<list.size();i++) {
+                         forHostsValues[i] = list.get(i).asString();
+                     }
+                 } else {
+                     forHostsValues = new String[0];
+                 }
+
+                 ServiceName keytabName = KeytabService.ServiceUtil.createServiceName(realmName, principal);
+                 KeytabService ks = new KeytabService(principal, path, forHostsValues, debug);
+
+                 ServiceBuilder<KeytabService> keytabBuilder = serviceTarget.addService(keytabName, ks).setInitialMode(ON_DEMAND);
+
+                if (relativeTo.isDefined()) {
+                    keytabBuilder.addDependency(pathName(relativeTo.asString()), String.class, ks.getRelativeToInjector());
+                }
+
+                 controllers.add(keytabBuilder.install());
+                 KeytabService.ServiceUtil.addDependency(kifsBuilder, kifs.getKeytabInjector(), realmName, principal);
+             }
+         }
+
+         controllers.add(kifsBuilder.install());
+
+         KeytabIdentityFactoryService.ServiceUtil.addDependency(realmBuilder, injector, realmName);
     }
 
     private void addUsersService(OperationContext context, ModelNode users, String realmName, ServiceTarget serviceTarget,
