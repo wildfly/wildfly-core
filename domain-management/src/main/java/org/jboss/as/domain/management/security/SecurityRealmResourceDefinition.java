@@ -26,6 +26,7 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_
 
 import java.util.List;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -71,7 +72,13 @@ public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(MAP_GROUPS_TO_ROLES, null, new ReloadRequiredWriteAttributeHandler(MAP_GROUPS_TO_ROLES));
+        resourceRegistration.registerReadWriteAttribute(MAP_GROUPS_TO_ROLES, null, new ReloadRequiredWriteAttributeHandler(MAP_GROUPS_TO_ROLES){
+            @Override
+            protected boolean requiresRuntime(OperationContext context) {
+                // secure realm runs in both running modes so running doesn't affect the result here
+                return !context.isBooting();
+            }
+        });
     }
 
     @Override

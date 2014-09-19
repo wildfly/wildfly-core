@@ -23,6 +23,7 @@
 package org.jboss.as.server.services.security;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 
 /**
@@ -31,8 +32,14 @@ import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class VaultWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
-    public VaultWriteAttributeHandler(AttributeDefinition...attributes) {
+    public VaultWriteAttributeHandler(AttributeDefinition... attributes) {
         super(attributes);
+    }
+
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        // vault is used regardless of running mode, so that's not a factor
+        return !context.isBooting();
     }
 
 }

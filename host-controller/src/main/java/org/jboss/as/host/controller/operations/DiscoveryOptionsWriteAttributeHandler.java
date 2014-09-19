@@ -32,8 +32,8 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.discovery.DiscoveryOptionsResourceDefinition;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -79,5 +79,12 @@ public class DiscoveryOptionsWriteAttributeHandler extends ReloadRequiredWriteAt
         if (newValueList.size() != unorderedDiscoveryOptionsList.size() || !newValueList.containsAll(unorderedDiscoveryOptionsList)) {
             throw HostControllerLogger.ROOT_LOGGER.invalidDiscoveryOptionsOrdering(DISCOVERY_OPTIONS);
         }
+    }
+
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        // HCs may connect to the in either RunningMode.NORMAL or ADMIN_ONLY,
+        // so the running mode doesn't figure in whether reload is required
+        return !context.isBooting();
     }
 }
