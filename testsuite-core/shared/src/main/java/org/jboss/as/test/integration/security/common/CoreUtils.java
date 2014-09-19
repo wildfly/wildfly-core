@@ -50,12 +50,15 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -208,10 +211,10 @@ public class CoreUtils {
      * @throws Exception
      */
     public static void makeCall(String URL, String user, String pass, int expectedStatusCode) throws Exception {
-        DefaultHttpClient httpclient = new DefaultHttpClient();
+        CookieStore cookieStore = new BasicCookieStore();
+        CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         try {
             HttpGet httpget = new HttpGet(URL);
-
             HttpResponse response = httpclient.execute(httpget);
 
             HttpEntity entity = response.getEntity();
@@ -223,7 +226,7 @@ public class CoreUtils {
             assertEquals(200, statusLine.getStatusCode());
 
             System.out.println("Initial set of cookies:");
-            List<Cookie> cookies = httpclient.getCookieStore().getCookies();
+            List<Cookie> cookies = cookieStore.getCookies();
             if (cookies.isEmpty()) {
                 System.out.println("None");
             } else {
@@ -259,7 +262,7 @@ public class CoreUtils {
             if (entity != null) { EntityUtils.consume(entity); }
 
             System.out.println("Post logon cookies:");
-            cookies = httpclient.getCookieStore().getCookies();
+            cookies = cookieStore.getCookies();
             if (cookies.isEmpty()) {
                 System.out.println("None");
             } else {
@@ -273,9 +276,8 @@ public class CoreUtils {
             assertEquals(expectedStatusCode, statusLine.getStatusCode());
         } finally {
             // When HttpClient instance is no longer needed,
-            // shut down the connection manager to ensure
             // immediate deallocation of all system resources
-            httpclient.getConnectionManager().shutdown();
+            httpclient.close();
         }
     }
 
@@ -314,12 +316,11 @@ public class CoreUtils {
      * @throws java.io.IOException
      * @throws java.net.URISyntaxException
      */
-    public static String makeCallWithHttpClient(URL url, HttpClient httpClient, int expectedStatusCode)
+    public static String makeCallWithHttpClient(URL url, CloseableHttpClient httpClient, int expectedStatusCode)
             throws IOException, URISyntaxException {
-
         String httpResponseBody = null;
         HttpGet httpGet = new HttpGet(url.toURI());
-        HttpResponse response = httpClient.execute(httpGet);
+        CloseableHttpResponse response = httpClient.execute(httpGet);
         int statusCode = response.getStatusLine().getStatusCode();
         LOGGER.info("Request to: " + url + " responds: " + statusCode);
 
@@ -582,7 +583,7 @@ public class CoreUtils {
      * @throws Exception
      */
     public static String makeCall(URI uri, int expectedStatusCode) throws Exception {
-        final DefaultHttpClient httpclient = new DefaultHttpClient();
+        final CloseableHttpClient httpclient = HttpClients.createDefault();
         try {
             final HttpGet httpget = new HttpGet(uri);
             final HttpResponse response = httpclient.execute(httpget);
@@ -590,7 +591,7 @@ public class CoreUtils {
             assertEquals("Unexpected status code returned after the authentication.", expectedStatusCode, statusCode);
             return EntityUtils.toString(response.getEntity());
         } finally {
-            httpclient.getConnectionManager().shutdown();
+            httpclient.close();
         }
     }
 

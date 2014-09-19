@@ -41,11 +41,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.TimeoutException;
-import javax.net.ssl.SSLPeerUnverifiedException;
+
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -182,18 +184,18 @@ public class HTTPSManagementInterfaceTestCase {
         }
         reload();
 
-        DefaultHttpClient httpClient = new DefaultHttpClient();
+        CloseableHttpClient httpClient = HttpClients.createDefault();
         URL mgmtURL = new URL("http", DomainTestSupport.masterAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX);
 
         try {
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 401);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
             fail("Untrusted client should not be authenticated.");
-        } catch (SSLPeerUnverifiedException e) {
+        } catch (SSLHandshakeException e) {
             // OK
         }
 
-        final HttpClient trustedHttpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
+        final CloseableHttpClient trustedHttpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
         String responseBody = makeCallWithHttpClient(mgmtURL, trustedHttpClient, 200);
         assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
     }
@@ -237,15 +239,15 @@ public class HTTPSManagementInterfaceTestCase {
         }
         reload();
 
-        final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
-        final HttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
+        final CloseableHttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
+        final CloseableHttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
 
         String address = addSecureInterface ? DomainTestSupport.slaveAddress : DomainTestSupport.masterAddress;
         URL mgmtURL = new URL("https", address, MANAGEMENT_HTTPS_PORT, MGMT_CTX);
         try {
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClientUntrusted, 401);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
-        } catch (SSLPeerUnverifiedException e) {
+        } catch (SSLHandshakeException e) {
             // OK
         }
 
@@ -271,14 +273,14 @@ public class HTTPSManagementInterfaceTestCase {
         }
         reload();
 
-        final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
+        final CloseableHttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
 
         URL mgmtURL = new URL("https", DomainTestSupport.masterAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX);
         try {
             int expectedStatus = addSecureInterface ? 403 : 302;
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, expectedStatus);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
-        } catch (SSLPeerUnverifiedException e) {
+        } catch (SSLException e) {
             // OK
         }
     }
@@ -349,7 +351,7 @@ public class HTTPSManagementInterfaceTestCase {
         CoreUtils.createKeyMaterial(WORK_DIR);
     }
 
-    private static HttpClient getHttpClient(File keystoreFile) {
+    private static CloseableHttpClient getHttpClient(File keystoreFile) {
         return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, CLIENT_TRUSTSTORE_FILE,
                 SecurityTestConstants.KEYSTORE_PASSWORD);
     }

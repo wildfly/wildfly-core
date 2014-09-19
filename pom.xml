@@ -82,7 +82,7 @@
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.16</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds>
-        <version.org.apache.httpcomponents.httpclient>4.2.1</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpclient>4.3.2</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.maven>3.2.1</version.org.apache.maven>
         <version.org.apache.xerces>2.9.1-jbossas-2</version.org.apache.xerces>
         <version.org.codehaus.plexus.plexus-utils>3.0.15</version.org.codehaus.plexus.plexus-utils>
