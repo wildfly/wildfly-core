@@ -36,6 +36,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,6 +46,7 @@ import java.util.Map;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.cli.CLIPatchInfoUtil;
 import org.jboss.as.patching.metadata.ContentModification;
@@ -78,7 +80,8 @@ public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase
         bytesOs = new ByteArrayOutputStream();
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
         org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
-        ctx = CommandContextFactory.getInstance().newCommandContext(null, null, null, System.in, bytesOs);
+        String controller =   "http-remoting://" + NetworkUtils.formatPossibleIpv6Address(System.getProperty("node0", "127.0.0.1")) + ":9990";
+        ctx = CommandContextFactory.getInstance().newCommandContext(controller, null, null, System.in, bytesOs);
     }
 
     @Test
