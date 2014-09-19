@@ -31,7 +31,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -115,16 +117,63 @@ public class PrimitiveListAttributeDefinitionUnitTestCase {
         assertSame(original.getElementValidator(), copy.getElementValidator());
         assertNotSame(original.getElementValidator(), copyWithOtherValidator.getElementValidator());
 
-        ModelNode operation = new ModelNode();
-        operation.get("test").add("foo");
+        ModelNode value = new ModelNode();
+        value.add("foo");
 
-        original.validateOperation(operation);
-        copy.validateOperation(operation);
-        try {
-            copyWithOtherValidator.validateOperation(operation);
-            fail("the operation must not be validated");
-        } catch (OperationFailedException e) {
-            //
+        validateOperation(original, value, true);
+        validateOperation(copy, value, true);
+        validateOperation(copyWithOtherValidator, value, false);
+    }
+
+    @Test
+    public void testBuilderCopyPreservesListValidator() throws OperationFailedException {
+
+        // List can contain at most 2 items. The value of the item can not be > 256
+        ParameterValidator ev = new IntRangeValidator(1, 256, false, false);
+        ListValidator lv = new ListValidator(ev, false, 1, 2);
+        PrimitiveListAttributeDefinition original = PrimitiveListAttributeDefinition.Builder.of("test", ModelType.STRING)
+                .setListValidator(lv)
+                .build();
+        PrimitiveListAttributeDefinition copy = new PrimitiveListAttributeDefinition.Builder(original).build();
+
+        ModelNode validValue = new ModelNode();
+        validValue.add("1");
+        validValue.add("64");
+
+        // too many elements
+        ModelNode invalidValue = new ModelNode();
+        invalidValue.add("1");
+        invalidValue.add("2");
+        invalidValue.add("64");
+
+        // 512 is not a valid element value
+        ModelNode invalidValue2 = new ModelNode();
+        invalidValue2.add("1");
+        invalidValue2.add("512");
+
+        // the original and copy attribute definition must validate the same way
+        validateOperation(original, validValue, true);
+        validateOperation(copy, validValue, true);
+
+        validateOperation(original, invalidValue, false);
+        validateOperation(copy, invalidValue, false);
+
+        validateOperation(original, invalidValue2, false);
+        validateOperation(copy, invalidValue2, false);
+    }
+
+    private void validateOperation(AttributeDefinition attributeDefinition, ModelNode value, boolean expectSuccess) throws OperationFailedException {
+        ModelNode operation = new ModelNode();
+        operation.get("test").set(value);
+
+        if (expectSuccess) {
+            attributeDefinition.validateOperation(operation);
+        } else {
+            try {
+                attributeDefinition.validateOperation(operation);
+                fail("operation must fail with invalid value " + value);
+            } catch (OperationFailedException e) {
+            }
         }
     }
 }
