@@ -34,7 +34,25 @@ import org.jboss.dmr.ValueExpression;
  */
 public class ExpressionResolverImpl implements ExpressionResolver {
 
+    private final boolean lenient;
+
+    /**
+     * Creates a new {@code ExpressionResolverImpl} configured to throw an OFE
+     * when it encounters an unresolvable expression.
+     */
     protected ExpressionResolverImpl() {
+        this(false);
+    }
+
+    /**
+     * Creates a new {@code ExpressionResolverImpl} with configurable behavior as to whether it throws an OFE
+     * when it encounters an unresolvable expression.
+     *
+     * @param lenient {@code false} if an OFE should be thrown if an unresolvable expression is found; {@code true}
+     *                           if the node should be left as an unresolved expression
+     */
+    protected ExpressionResolverImpl(boolean lenient) {
+        this.lenient = lenient;
     }
 
     @Override
@@ -57,7 +75,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         ModelType type = node.getType();
         ModelNode resolved;
         if (type == ModelType.EXPRESSION) {
-            resolved = resolveExpressionType(node, false);
+            resolved = resolveExpressionType(node, lenient);
         } else if (type == ModelType.OBJECT) {
             resolved = node.clone();
             for (Property prop : resolved.asPropertyList()) {
@@ -119,8 +137,8 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         if (resolved.getType() == ModelType.EXPRESSION ) {
             // resolvePluggableExpression did nothing. Try standard resolution
             String unresolvedString = expressionType.asString();
-            resolved = resolveStandardExpression(resolved, ignoreDMRResolutionFailure);
-            String resolvedString = resolved.asString();
+            ModelNode firstPass = resolveStandardExpression(resolved, ignoreDMRResolutionFailure);
+            String resolvedString = firstPass.asString();
             if (!unresolvedString.equals(resolvedString)) {
                 // resolveStandardExpression made progress; keep resolving
                 resolved = convertAndResolve(resolvedString);

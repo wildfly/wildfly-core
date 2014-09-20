@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import java.util.Locale;
 import java.util.Set;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -282,7 +283,14 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             ModelNode result = context.hasResult() ? context.getResult().clone() : new ModelNode();
-            ModelNode resolved = context.resolveExpressions(result);
+            // For now, don't use the context to resolve, as we don't want to support vault resolution
+            // from a remote management client. The purpose of the vault is to require someone to have
+            // access to both the config (i.e. the expression) and to the vault itself in order to read, and
+            // allowing a remote user to use the management API to read defeats the purpose.
+            //ModelNode resolved = context.resolveExpressions(result);
+            // Instead we use a resolver that will not complain about unresolvable stuff (i.e. vault expressions),
+            // simply returning them unresolved.
+            ModelNode resolved = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(result);
             context.getResult().set(resolved);
             context.stepCompleted();
         }
