@@ -100,6 +100,8 @@ import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.repository.ContentReference;
+import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.repository.RemoteFileRequestAndHandler.CannotCreateLocalDirectoryException;
 import org.jboss.as.repository.RemoteFileRequestAndHandler.DidNotReadEntireFileException;
@@ -118,8 +120,8 @@ import org.jboss.remoting3.RemotingOptions;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 
@@ -588,7 +590,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 }
                 case DomainControllerProtocol.PARAM_ROOT_ID_DEPLOYMENT: {
                     byte[] hash = HashUtil.hexStringToByteArray(filePath);
-                    localPath = localFileRepository.getDeploymentRoot(hash);
+                    localPath = localFileRepository.getDeploymentRoot(new ContentReference(filePath, hash));
                     break;
                 }
                 default: {
@@ -607,10 +609,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
     static class RemoteFileRepository implements HostFileRepository {
         private final HostFileRepository localFileRepository;
+        private final ContentRepository contentRepository;
         private volatile RemoteFileRepositoryExecutor remoteFileRepositoryExecutor;
 
-        RemoteFileRepository(final HostFileRepository localFileRepository) {
+        RemoteFileRepository(final HostFileRepository localFileRepository, final ContentRepository contentRepository) {
             this.localFileRepository = localFileRepository;
+            this.contentRepository = contentRepository;
         }
 
         @Override
@@ -624,17 +628,22 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         }
 
         @Override
-        public final File[] getDeploymentFiles(byte[] deploymentHash) {
-            final File root = getDeploymentRoot(deploymentHash);
+        public final File[] getDeploymentFiles(ContentReference reference) {
+            final File root = getDeploymentRoot(reference);
             return root.listFiles();
         }
 
         @Override
-        public File getDeploymentRoot(byte[] deploymentHash) {
-            String hex = deploymentHash == null ? "" : HashUtil.bytesToHexString(deploymentHash);
-            final File file = localFileRepository.getDeploymentRoot(deploymentHash);
+        public File getDeploymentRoot(ContentReference reference) {
+            final File file = localFileRepository.getDeploymentRoot(reference);
             if(! file.exists()) {
-                return getFile(hex, DomainControllerProtocol.PARAM_ROOT_ID_DEPLOYMENT);
+                File remoteFile = getFile(reference.getHexHash(), DomainControllerProtocol.PARAM_ROOT_ID_DEPLOYMENT);
+                if(!reference.getContentIdentifier().equals(reference.getHexHash())) {
+                    contentRepository.addContentReference(reference);
+                }
+                return remoteFile;
+            } else if(!contentRepository.hasContent(reference.getHash())) {
+                contentRepository.addContentReference(reference);
             }
             return file;
         }
@@ -648,8 +657,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         }
 
         @Override
-        public void deleteDeployment(byte[] deploymentHash) {
-            localFileRepository.deleteDeployment(deploymentHash);
+        public void deleteDeployment(ContentReference reference) {
+            localFileRepository.deleteDeployment(reference);
         }
     }
 

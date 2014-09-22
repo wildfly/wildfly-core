@@ -56,8 +56,10 @@ import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.DeploymentFileRepository;
+import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -103,7 +105,7 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
         if (content.hasDefined(HASH)) {
             managedContentValidator.validate(content);
             hash = content.require(HASH).asBytes();
-            addFromHash(hash, name, path, context);
+            addFromHash(hash, name, path, address, context);
         } else {
             hash = addFromContentAdditionParameter(context, content);
 
@@ -126,7 +128,8 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
         for (AttributeDefinition attr : DeploymentOverlayContentDefinition.attributes()) {
             attr.validateAndSet(modified, resource.getModel());
         }
-        if (!contentRepository.syncContent(hash)) {
+        ContentReference reference = ModelContentReference.fromDeploymentAddress(address, hash).toReference();
+        if (!contentRepository.syncContent(reference)) {
             throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContent(Arrays.toString(hash));
         }
     }
@@ -141,11 +144,12 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
             throw ServerLogger.ROOT_LOGGER.multipleContentItemsNotSupported();
     }
 
-    byte[] addFromHash(byte[] hash, String deploymentOverlayName, final String contentName, final OperationContext context) throws OperationFailedException {
+    byte[] addFromHash(byte[] hash, String deploymentOverlayName, final String contentName, final PathAddress address, final OperationContext context) throws OperationFailedException {
+        ContentReference reference = ModelContentReference.fromDeploymentAddress(address, hash).toReference();
         if(remoteRepository != null) {
-            remoteRepository.getDeploymentFiles(hash);
+            remoteRepository.getDeploymentFiles(reference);
         }
-        if (!contentRepository.syncContent(hash)) {
+        if (!contentRepository.syncContent(reference)) {
             if (context.isBooting()) {
                 if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                     // The deployment content is missing, which would be a fatal boot error if we were going to actually

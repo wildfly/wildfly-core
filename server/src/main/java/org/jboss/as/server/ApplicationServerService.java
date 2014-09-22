@@ -22,6 +22,8 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.server.deployment.DeploymentContentCleanerService.DEFAULT_INTERVAL;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.Iterator;
@@ -30,10 +32,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.server.deployment.DeploymentContentCleanerService;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.RemoteFileRepositoryService;
@@ -134,6 +138,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         } else {
             RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir());
         }
+        DeploymentContentCleanerService.addService(serviceTarget, DEFAULT_INTERVAL, TimeUnit.MILLISECONDS);
         DeploymentMountProvider.Factory.addService(serviceTarget);
         ServiceModuleLoader.addService(serviceTarget, configuration);
         ExternalModuleService.addService(serviceTarget);

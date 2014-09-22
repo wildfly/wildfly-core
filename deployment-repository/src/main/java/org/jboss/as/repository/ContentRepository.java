@@ -73,10 +73,10 @@ public interface ContentRepository {
     /**
      * Adds a reference to the content hash.
      *
-     * @param hash the hash of the deployment
-     * @param reference An identifier which must honour the equals() and hashCode() contracts. In the case of a deployment, this will be the deployment name. This is also used in {@link #removeContent(byte[], String)}
+     * @param reference An identifier which must honour the equals() and hashCode() contracts. In the case of a
+     * deployment, this will be the deployment name. This is also used in {@link #removeContent(byte[], String)}
      */
-    void addContentReference(byte[] hash, Object reference);
+    void addContentReference(ContentReference reference);
 
     /**
      * Get the content as a virtual file.
@@ -97,32 +97,45 @@ public interface ContentRepository {
     boolean hasContent(byte[] hash);
 
     /**
-     * Synchronize content with the given hash. This may be used in favor of {@linkplain #hasContent(byte[])}
-     * to explicitly allow additional operations to synchronize the content.
+     * Synchronize content with the given reference. This may be used in favor of {@linkplain #hasContent(byte[])} to
+     * explicitly allow additional operations to synchronize the content.
      *
-     * @param hash the hash. Cannot be {@code null}
-     * @return {@code true} if the repository has content with the given hash
+     * @param reference the reference. Cannot be {@code null}
+     * @return {@code true} if the repository has content with the given reference
      */
-    boolean syncContent(byte[] hash);
+    boolean syncContent(ContentReference reference);
 
     /**
      * Remove the given content from the repository.
      *
-     * Remove the given content from the repository. The reference for {@code name} will be removed, and if there are no references left the deployment will be totally removed
-     * @param hash the hash. Cannot be {@code null}
-     * @param reference An identifier which must honour the equals() and hashCode() contracts. In the case of a deployment, this will be the deployment name. This is also used in {@link #addContentReference(byte[], Object)}
+     * Remove the given content from the repository. The reference for {@code name} will be removed, and if there are no
+     * references left the deployment will be totally removed
+     *
+     * @param reference An identifier which must honour the equals() and hashCode() contracts. In the case of a
+     * deployment, this will be the deployment name. This is also used in {@link #addContentReference(byte[], Object)}
      */
-    void removeContent(byte[] hash, Object reference);
+    void removeContent(ContentReference reference);
+
+    /**
+     * Synchronize references passed as parameter with the existing references managed by the content repository.
+     *
+     * @param references the references to be synchronized with the content repository references.
+     */
+    void syncReferences(Set<ContentReference> references);
 
     static class Factory {
 
         public static void addService(final ServiceTarget serviceTarget, final File repoRoot) {
-            ContentRepositoryImpl contentRepository = new ContentRepositoryImpl(repoRoot);
-            serviceTarget.addService(SERVICE_NAME, contentRepository).install();
+            createService(serviceTarget, repoRoot);
         }
 
         public static ContentRepository create(final File repoRoot) {
             return new ContentRepositoryImpl(repoRoot);
+        }
+
+        public static ContentRepository createService(final ServiceTarget serviceTarget, final File repoRoot) {
+            ContentRepositoryImpl contentRepository = new ContentRepositoryImpl(repoRoot);
+            return serviceTarget.addService(SERVICE_NAME, contentRepository).install().getValue();
         }
 
         /**
@@ -134,11 +147,12 @@ public interface ContentRepository {
             protected static final String CONTENT = "content";
             private final File repoRoot;
             protected final MessageDigest messageDigest;
-            private final Map<String, Set<Object>> deploymentHashReferences = new HashMap<String, Set<Object>>();
+            private final Map<String, Set<ContentReference>> deploymentHashReferences = new HashMap<String, Set<ContentReference>>();
 
             protected ContentRepositoryImpl(final File repoRoot) {
-                if (repoRoot == null)
+                if (repoRoot == null) {
                     throw DeploymentRepositoryLogger.ROOT_LOGGER.nullVar("repoRoot");
+                }
                 if (repoRoot.exists()) {
                     if (!repoRoot.isDirectory()) {
                         throw DeploymentRepositoryLogger.ROOT_LOGGER.notADirectory(repoRoot.getAbsolutePath());
@@ -201,12 +215,12 @@ public interface ContentRepository {
             }
 
             @Override
-            public void addContentReference(byte[] hash, Object reference) {
-                String hashString = HashUtil.bytesToHexString(hash);
+            public void addContentReference(ContentReference reference) {
+                String hashString = reference.getHexHash();
                 synchronized (deploymentHashReferences) {
-                    Set<Object> references = deploymentHashReferences.get(hashString);
+                    Set<ContentReference> references = deploymentHashReferences.get(hashString);
                     if (references == null) {
-                        references = new HashSet<Object>();
+                        references = new HashSet<ContentReference>();
                         deploymentHashReferences.put(hashString, references);
                     }
                     references.add(reference);
@@ -221,8 +235,8 @@ public interface ContentRepository {
             }
 
             @Override
-            public boolean syncContent(final byte[] hash) {
-                return hasContent(hash);
+            public boolean syncContent(final ContentReference reference) {
+                return hasContent(reference.getHash());
             }
 
             @Override
@@ -329,10 +343,11 @@ public interface ContentRepository {
             }
 
             @Override
-            public void removeContent(byte[] hash, Object reference) {
-                String hashString = HashUtil.bytesToHexString(hash);
+            public void removeContent(ContentReference reference) {
+                String hashString = reference.getHexHash();
+                byte[] hash = reference.getHash();
                 synchronized (deploymentHashReferences) {
-                    final Set<Object> references = deploymentHashReferences.get(hashString);
+                    final Set<ContentReference> references = deploymentHashReferences.get(hashString);
                     if (references != null) {
                         references.remove(reference);
                         if (references.size() != 0) {
@@ -386,7 +401,68 @@ public interface ContentRepository {
             public ContentRepository getValue() throws IllegalStateException, IllegalArgumentException {
                 return this;
             }
-        }
 
+            @Override
+            public void syncReferences(Set<ContentReference> references) {
+                Map<String, ContentReference> localReferences = loadLocalReferences();
+                synchronized (deploymentHashReferences) {
+                    Set<String> referencedHashes = new HashSet<>();
+                    for (ContentReference reference : references) {
+                        if (localReferences.containsKey(reference.getHexHash())) {
+                            if (!deploymentHashReferences.containsKey(reference.getHexHash())) {
+                                deploymentHashReferences.put(reference.getHexHash(), new HashSet<ContentReference>());
+                            }
+                            deploymentHashReferences.get(reference.getHexHash()).add(reference);
+                            referencedHashes.add(reference.getHexHash());
+                        }
+                    }
+                    for(String deploymentHash : deploymentHashReferences.keySet()) {
+                        if(!referencedHashes.contains(deploymentHash)) {
+                            deploymentHashReferences.remove(deploymentHash);
+                        }
+                    }
+                    for (Map.Entry<String, ContentReference> localRef : localReferences.entrySet()) {
+                        if (!deploymentHashReferences.containsKey(localRef.getKey()) && localRef.getValue().mayBeCleaned()) {
+                            DeploymentRepositoryLogger.ROOT_LOGGER.obsoloteContentCleaned(localRef.getValue().getContentIdentifier());
+                            removeContent(localRef.getValue());
+                        }
+                    }
+                }
+            }
+
+            private Map<String, ContentReference> loadLocalReferences() {
+                Map<String, ContentReference> localReferences = new HashMap<>();
+                File[] rootHashes = repoRoot.listFiles();
+                for (File rootHash : rootHashes) {
+                    if (rootHash.isDirectory()) {
+                        File[] complementaryHashes = rootHash.listFiles();
+                        for (File complementaryHash : complementaryHashes) {
+                            String hash = rootHash.getName() + complementaryHash.getName();
+                            ContentReference reference = new ContentReference(hash, hash, getContentTimestamp(complementaryHash));
+                            localReferences.put(hash, reference);
+                        }
+                    }
+                }
+                return localReferences;
+            }
+
+            private long getContentTimestamp(File contentFile) {
+                if (contentFile.isDirectory()) {
+                    // Scan for most recent file
+                    long latest = contentFile.lastModified();
+                    if (contentFile.isDirectory()) {
+                        for (File child : contentFile.listFiles()) {
+                            long childTimestamp = getContentTimestamp(child);
+                            if (childTimestamp > latest) {
+                                latest = childTimestamp;
+                            }
+                        }
+                    }
+                    return latest;
+                } else {
+                    return contentFile.lastModified();
+                }
+            }
+        }
     }
 }

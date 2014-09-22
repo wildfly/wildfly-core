@@ -88,7 +88,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                         @Override
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                             final ModelNode opAddr = operation.get(OP_ADDR);
-                            PathAddress address = PathAddress.pathAddress(opAddr);
+                            final PathAddress address = PathAddress.pathAddress(opAddr);
                             final String managementName = address.getLastElement().getValue();
                             if (resultAction == OperationContext.ResultAction.ROLLBACK) {
                                 if (enabled) {
@@ -108,7 +108,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
 
                                 for (byte[] hash : removedHashes) {
                                     try {
-                                        contentRepository.removeContent(hash, name);
+                                        contentRepository.removeContent(ModelContentReference.fromDeploymentAddress(address, hash).toReference());
                                     } catch (Exception e) {
                                         //TODO
                                         ServerLogger.DEPLOYMENT_LOGGER.failedToRemoveDeploymentContent(e, HashUtil.bytesToHexString(hash));

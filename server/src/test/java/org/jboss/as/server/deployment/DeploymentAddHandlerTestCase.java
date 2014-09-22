@@ -23,6 +23,7 @@ package org.jboss.as.server.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -31,6 +32,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.VirtualFile;
@@ -112,12 +114,12 @@ public class DeploymentAddHandlerTestCase {
     private ContentRepository contentRepository = new ContentRepository() {
 
         @Override
-        public void removeContent(byte[] hash, Object reference) {
+        public void removeContent(ContentReference reference) {
         }
 
         @Override
-        public boolean syncContent(byte[] hash) {
-            return hasContent(hash);
+        public boolean syncContent(ContentReference reference) {
+            return hasContent(reference.getHash());
         }
 
         @Override
@@ -136,7 +138,11 @@ public class DeploymentAddHandlerTestCase {
         }
 
         @Override
-        public void addContentReference(byte[] hash, Object reference) {
+        public void addContentReference(ContentReference reference) {
+        }
+
+        @Override
+        public void syncReferences(Set<ContentReference> references) {
         }
     };
 }

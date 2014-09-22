@@ -39,6 +39,7 @@ import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.DeploymentFileRepository;
 import org.jboss.as.server.deployment.DeploymentUtils;
+import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -121,7 +122,7 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
             for (byte[] hash : hashes) {
                 try {
                     if (contentRepository != null) {
-                        contentRepository.removeContent(hash, name);
+                        contentRepository.removeContent(ModelContentReference.fromDeploymentName(name, hash).toReference());
                     }
                 } catch (Exception e) {
                     DEPLOYMENT_LOGGER.debugf(e, "Exception occurred removing %s", Arrays.asList(hash));
@@ -144,7 +145,7 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
             for (byte[] hash : hashes) {
                 try {
                     if (fileRepository != null) {
-                        fileRepository.deleteDeployment(hash);
+                        fileRepository.deleteDeployment(ModelContentReference.fromDeploymentName(name, hash).toReference());
                     }
                 } catch (Exception e) {
                     DEPLOYMENT_LOGGER.debugf(e, "Exception occurred removing %s", Arrays.asList(hash));

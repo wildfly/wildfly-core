@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller;
 
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.server.deployment.DeploymentContentCleanerService.DEFAULT_INTERVAL;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -44,6 +45,7 @@ import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.deployment.DeploymentContentCleanerService;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
 import org.jboss.msc.service.Service;
@@ -154,6 +156,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
                 .install();
 
         DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState, bootstrapListener, hostPathManagerService);
+        DeploymentContentCleanerService.addServiceOnHostController(DomainModelControllerService.SERVICE_NAME, serviceTarget, DEFAULT_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
     @Override

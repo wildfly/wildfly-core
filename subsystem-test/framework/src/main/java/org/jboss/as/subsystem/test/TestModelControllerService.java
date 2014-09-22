@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.Extension;
@@ -41,6 +42,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.StringConfigurationPersister;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.DeployerChainAddHandler;
 import org.jboss.as.server.ServerEnvironment;
@@ -173,16 +175,20 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         }
 
         @Override
-        public boolean syncContent(byte[] hash) {
+        public boolean syncContent(ContentReference reference) {
             return false;
         }
 
         @Override
-        public void removeContent(byte[] hash, Object reference) {
+        public void removeContent(ContentReference reference) {
         }
 
         @Override
-        public void addContentReference(byte[] hash, Object reference) {
+        public void addContentReference(ContentReference reference) {
+        }
+
+        @Override
+        public void syncReferences(Set<ContentReference> references) {
         }
     }
 }

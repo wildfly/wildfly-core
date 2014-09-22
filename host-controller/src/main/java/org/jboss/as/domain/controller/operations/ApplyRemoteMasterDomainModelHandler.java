@@ -51,6 +51,7 @@ import java.util.Set;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -79,8 +80,10 @@ import org.jboss.as.host.controller.ManagedServerBootConfiguration;
 import org.jboss.as.host.controller.ManagedServerOperationsFactory;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
+import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -140,9 +143,9 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
         final ModelNode startRoot = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS));
 
         final Set<String> ourServerGroups = getOurServerGroups(context);
-        final Map<String, Set<byte[]>> deploymentHashes = new HashMap<String, Set<byte[]>>();
+        final Map<String, Set<ContentReference>> deploymentHashes = new HashMap<String, Set<ContentReference>>();
         final Set<String> relevantDeployments = new HashSet<String>();
-        final Set<byte[]> requiredContent = new HashSet<byte[]>();
+        final Set<ContentReference> requiredContent = new HashSet<ContentReference>();
 
         final Resource rootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         clearDomain(rootResource);
@@ -177,12 +180,12 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
                     if (model.hasDefined(CONTENT)) {
                         for (ModelNode contentItem : model.get(CONTENT).asList()) {
                             if (contentItem.hasDefined(HASH)) {
-                                Set<byte[]> hashes = deploymentHashes.get(id);
+                                Set<ContentReference> hashes = deploymentHashes.get(id);
                                 if (hashes == null) {
-                                    hashes = new HashSet<byte[]>();
+                                    hashes = new HashSet<ContentReference>();
                                     deploymentHashes.put(id, hashes);
                                 }
-                                hashes.add(contentItem.get(HASH).asBytes());
+                                hashes.add(ModelContentReference.fromDeploymentAddress(resourceAddress, contentItem.get(HASH).asBytes()).toReference());
                                 if (hostControllerEnvironment.isBackupDomainFiles()) {
                                     relevantDeployments.add(pe.getValue());
                                 }
@@ -193,7 +196,8 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
                     // We need to pull over management content from the master HC's repo
                     ModelNode model = resource.getModel();
                     if (model.hasDefined(HASH)) {
-                        requiredContent.add(model.get(HASH).asBytes());
+                        byte[] hash = model.get(HASH).asBytes();
+                        requiredContent.add(new ContentReference(HashUtil.bytesToHexString(hash), hash));
                     }
                 }
 
@@ -207,13 +211,13 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
 
         // Make sure we have all needed deployment and management client content
         for (String id : relevantDeployments) {
-            Set<byte[]> hashes = deploymentHashes.remove(id);
+            Set<ContentReference> hashes = deploymentHashes.remove(id);
             if (hashes != null) {
                 requiredContent.addAll(hashes);
             }
         }
-        for (byte[] hash : requiredContent) {
-            fileRepository.getDeploymentFiles(hash);
+        for (ContentReference reference : requiredContent) {
+            fileRepository.getDeploymentFiles(reference);
         }
 
         if (!context.isBooting()) {
