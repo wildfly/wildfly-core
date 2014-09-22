@@ -35,6 +35,7 @@ import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.operation.CommandLineParser;
+import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
@@ -53,6 +54,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
     private final ArgumentWithValue name;
     private final ArgumentWithValue includeDefaults;
     private final ArgumentWithoutValue verbose;
+    private final ArgumentWithoutValue resolve;
 
     public ReadAttributeHandler(CommandContext ctx) {
         super(ctx, "read-attribute", true);
@@ -111,6 +113,82 @@ public class ReadAttributeHandler extends BaseOperationCommand {
         includeDefaults = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--include-defaults");
 
         verbose = new ArgumentWithoutValue(this, "--verbose", "-v");
+
+        resolve = new ArgumentWithoutValue(this, "--resolve-expressions") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                ModelNode op = new ModelNode();
+                op.get("operation").set("read-operation-description");
+                op.get("name").set("read-attribute");
+                OperationRequestAddress address = getAddress(ctx);
+                if(address.isEmpty()) {
+                    op.get(Util.ADDRESS).setEmptyList();
+                } else {
+                    final ModelNode addrNode = op.get(Util.ADDRESS);
+                    for(OperationRequestAddress.Node node : address) {
+                        addrNode.add(node.getType(), node.getName());
+                    }
+                }
+
+                ModelNode returnVal = new ModelNode();
+                try {
+                    returnVal = ctx.getModelControllerClient().execute(op);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                if( returnVal.hasDefined("outcome") && returnVal.get("outcome").asString().equals("success")){
+                    ModelNode result = returnVal.get("result");
+                    if(result.hasDefined("request-properties")){
+                        ModelNode properties = result.get("request-properties");
+                        if( properties.hasDefined("resolve-expressions")) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        };
+    }
+
+    @Override
+    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
+        super.recognizeArguments(ctx);
+
+        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
+        if(resolve.isPresent(parsedCmd)){
+            ModelNode op = new ModelNode();
+            op.get("operation").set("read-operation-description");
+            op.get("name").set("read-attribute");
+            OperationRequestAddress address = getAddress(ctx);
+            if (address.isEmpty()) {
+                op.get(Util.ADDRESS).setEmptyList();
+            } else {
+                final ModelNode addrNode = op.get(Util.ADDRESS);
+                for (OperationRequestAddress.Node node : address) {
+                    addrNode.add(node.getType(), node.getName());
+                }
+            }
+
+            ModelNode returnVal = new ModelNode();
+            try {
+                if (ctx.getModelControllerClient() != null) {
+                    returnVal = ctx.getModelControllerClient().execute(op);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (returnVal.hasDefined("outcome") && returnVal.get("outcome").asString().equals("success")) {
+                ModelNode result = returnVal.get("result");
+                if (result.hasDefined("request-properties")) {
+                    ModelNode properties = result.get("request-properties");
+                    if (!properties.hasDefined("resolve-expressions")) {
+                        throw new OperationFormatException("Resolve Expression argument not available at this location.");
+                    }
+                }
+            }
+        }
     }
 
     /* (non-Javadoc)
@@ -128,6 +206,9 @@ public class ReadAttributeHandler extends BaseOperationCommand {
         final OperationRequestAddress address = getAddress(ctx);
         ModelNode req = Util.buildRequest(ctx, address, Util.READ_ATTRIBUTE);
         req.get(Util.NAME).set(name);
+        if( resolve.isPresent(parsedCmd)){
+            req.get(Util.RESOLVE_EXPRESSIONS).set(true);
+        }
 
         final String includeDefaults = this.includeDefaults.getValue(parsedCmd);
         if(includeDefaults != null && !includeDefaults.isEmpty()) {

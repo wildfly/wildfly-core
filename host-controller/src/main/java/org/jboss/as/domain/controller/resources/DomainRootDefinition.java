@@ -303,6 +303,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new InterfaceDefinition(
                 InterfaceAddHandler.NAMED_INSTANCE,
                 InterfaceRemoveHandler.INSTANCE,
+                false,
                 false
         ));
 

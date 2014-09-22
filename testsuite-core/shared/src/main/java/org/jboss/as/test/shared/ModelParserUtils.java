@@ -364,7 +364,8 @@ public class ModelParserUtils {
                 ManagementResourceRegistration interfaces = hostRegistration.registerSubModel(new InterfaceDefinition(
                         HostSpecifiedInterfaceAddHandler.INSTANCE,
                         HostSpecifiedInterfaceRemoveHandler.INSTANCE,
-                        true
+                        true,
+                        false
                 ));
 
                 //server configurations

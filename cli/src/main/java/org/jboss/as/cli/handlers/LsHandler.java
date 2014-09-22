@@ -53,6 +53,7 @@ public class LsHandler extends CommandHandlerWithHelp {
 
     private final ArgumentWithValue nodePath;
     private final ArgumentWithoutValue l;
+    private final ArgumentWithoutValue resolve;
 
     public LsHandler() {
         this("ls");
@@ -62,7 +63,71 @@ public class LsHandler extends CommandHandlerWithHelp {
         super(command, true);
         l = new ArgumentWithoutValue(this, "-l");
         nodePath = new ArgumentWithValue(this, OperationRequestCompleter.ARG_VALUE_COMPLETER, 0, "--node-path");
+        resolve = new ArgumentWithoutValue(this, "--resolve-expressions") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                ModelNode op = new ModelNode();
+                op.get("operation").set("read-operation-description");
+                op.get("name").set("read-attribute");
+                OperationRequestAddress address = getOperationRequestAddress(ctx);
+                op = getAddressNode(ctx, address, op);
+
+                ModelNode returnVal = new ModelNode();
+                try {
+                    returnVal = ctx.getModelControllerClient().execute(op);
+                } catch (IOException e) {
+                    throw new CommandFormatException("Failed to read resource: "
+                            + e.getLocalizedMessage(), e);
+                }
+
+                if( returnVal.hasDefined("outcome") && returnVal.get("outcome").asString().equals("success")){
+                    ModelNode result = returnVal.get("result");
+                    if(result.hasDefined("request-properties")){
+                        ModelNode properties = result.get("request-properties");
+                        if( properties.hasDefined("resolve-expressions")) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        };
     }
+
+    @Override
+    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
+        super.recognizeArguments(ctx);
+
+        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
+        if(resolve.isPresent(parsedCmd)) {
+            ModelNode op = new ModelNode();
+            op.get("operation").set("read-operation-description");
+            op.get("name").set("read-attribute");
+            OperationRequestAddress address = getOperationRequestAddress(ctx);
+            op = getAddressNode(ctx, address, op);
+
+            ModelNode returnVal = new ModelNode();
+            try {
+                if (ctx.getModelControllerClient() != null) {
+                    returnVal = ctx.getModelControllerClient().execute(op);
+                }
+            } catch (IOException e) {
+                throw new CommandFormatException("Failed to read resource: "
+                        + e.getLocalizedMessage(), e);
+            }
+
+            if (returnVal.hasDefined("outcome") && returnVal.get("outcome").asString().equals("success")) {
+                ModelNode result = returnVal.get("result");
+                if (result.hasDefined("request-properties")) {
+                    ModelNode properties = result.get("request-properties");
+                    if (!properties.hasDefined("resolve-expressions") && resolve.isPresent(parsedCmd)) {
+                        throw new OperationFormatException("Resolve Expression argument not available at this location.");
+                    }
+                }
+            }
+        }
+    }
+
 
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
@@ -70,26 +135,7 @@ public class LsHandler extends CommandHandlerWithHelp {
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
         String nodePath = this.nodePath.getValue(parsedCmd);
 
-        final OperationRequestAddress address;
-        if (nodePath != null) {
-            address = new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
-            CommandLineParser.CallbackHandler handler = new DefaultCallbackHandler(address);
-
-            // this is for correct parsing of escaped characters
-            nodePath = ctx.getArgumentsString();
-            if(l.isPresent(parsedCmd)) {
-                nodePath = nodePath.trim();
-                if(nodePath.startsWith("-l ")) {
-                    nodePath = nodePath.substring(3);
-                } else {
-                    nodePath = nodePath.substring(0, nodePath.length() - 3);
-                }
-            }
-            ctx.getCommandLineParser().parse(nodePath, handler);
-        } else {
-            address = new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
-        }
-
+        final OperationRequestAddress address = getOperationRequestAddress(ctx);
         List<String> names = null;
         if(address.endsOnType()) {
             final String type = address.getNodeType();
@@ -105,53 +151,20 @@ public class LsHandler extends CommandHandlerWithHelp {
         final ModelNode steps = composite.get(Util.STEPS);
 
         {
-            final ModelNode typesRequest = new ModelNode();
+            ModelNode typesRequest = new ModelNode();
             typesRequest.get(Util.OPERATION).set(Util.READ_CHILDREN_TYPES);
-            final ModelNode addressNode = typesRequest.get(Util.ADDRESS);
-            if (address.isEmpty()) {
-                addressNode.setEmptyList();
-            } else {
-                Iterator<Node> iterator = address.iterator();
-                while (iterator.hasNext()) {
-                    OperationRequestAddress.Node node = iterator.next();
-                    if (node.getName() != null) {
-                        addressNode.add(node.getType(), node.getName());
-                    } else if (iterator.hasNext()) {
-                        throw new OperationFormatException(
-                                "Expected a node name for type '"
-                                        + node.getType()
-                                        + "' in path '"
-                                        + ctx.getNodePathFormatter().format(
-                                                address) + "'");
-                    }
-                }
-            }
+            typesRequest = getAddressNode(ctx, address, typesRequest);
             steps.add(typesRequest);
         }
 
         {
-            final ModelNode resourceRequest = new ModelNode();
+            ModelNode resourceRequest = new ModelNode();
             resourceRequest.get(Util.OPERATION).set(Util.READ_RESOURCE);
-            final ModelNode addressNode = resourceRequest.get(Util.ADDRESS);
-            if (address.isEmpty()) {
-                addressNode.setEmptyList();
-            } else {
-                Iterator<Node> iterator = address.iterator();
-                while (iterator.hasNext()) {
-                    OperationRequestAddress.Node node = iterator.next();
-                    if (node.getName() != null) {
-                        addressNode.add(node.getType(), node.getName());
-                    } else if (iterator.hasNext()) {
-                        throw new OperationFormatException(
-                                "Expected a node name for type '"
-                                        + node.getType()
-                                        + "' in path '"
-                                        + ctx.getNodePathFormatter().format(
-                                                address) + "'");
-                    }
-                }
-            }
+            resourceRequest = getAddressNode(ctx, address, resourceRequest);
             resourceRequest.get(Util.INCLUDE_RUNTIME).set(Util.TRUE);
+            if( resolve.isPresent(parsedCmd) ){
+                resourceRequest.get(Util.RESOLVE_EXPRESSIONS).set(Util.TRUE);
+            }
             steps.add(resourceRequest);
         }
 
@@ -369,6 +382,58 @@ public class LsHandler extends CommandHandlerWithHelp {
             return null;
         }
         return attrDescr.has(name) ? attrDescr.get(name).asInt() : null;
+    }
+
+    private OperationRequestAddress getOperationRequestAddress(CommandContext ctx) throws CommandFormatException{
+        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
+        String nodePathString = nodePath.getValue(parsedCmd);
+
+        final OperationRequestAddress address;
+        if (nodePathString != null) {
+            address = new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
+            CommandLineParser.CallbackHandler handler = new DefaultCallbackHandler(address);
+
+            // this is for correct parsing of escaped characters
+            nodePathString = ctx.getArgumentsString();
+            if(l.isPresent(parsedCmd)) {
+                nodePathString = nodePathString.trim();
+                if(nodePathString.startsWith("-l ")) {
+                    nodePathString = nodePathString.substring(3);
+                } else {
+                    nodePathString = nodePathString.substring(0, nodePathString.length() - 3);
+                }
+            }
+            ctx.getCommandLineParser().parse(nodePathString, handler);
+        } else {
+            address = new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
+        }
+
+        return address;
+    }
+
+    private ModelNode getAddressNode(CommandContext ctx, OperationRequestAddress address, ModelNode op) throws CommandFormatException{
+        ModelNode addressNode = op.get(Util.ADDRESS);
+
+        if (address.isEmpty()) {
+            addressNode.setEmptyList();
+        } else {
+            Iterator<Node> iterator = address.iterator();
+            while (iterator.hasNext()) {
+                OperationRequestAddress.Node node = iterator.next();
+                if (node.getName() != null) {
+                    addressNode.add(node.getType(), node.getName());
+                } else if (iterator.hasNext()) {
+                    throw new OperationFormatException(
+                            "Expected a node name for type '"
+                                    + node.getType()
+                                    + "' in path '"
+                                    + ctx.getNodePathFormatter().format(
+                                    address) + "'");
+                }
+            }
+        }
+
+        return op;
     }
 
     /*
