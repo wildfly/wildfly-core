@@ -33,7 +33,6 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.NAME;
 
 import java.util.logging.Handler;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -114,21 +113,6 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
             FILTER,
     };
 
-    static final ResourceDescriptionResolver HANDLER_RESOLVER = LoggingExtension.getResourceDescriptionResolver(CommonAttributes.HANDLER.getName());
-
-    static final SimpleOperationDefinition ENABLE_HANDLER = new SimpleOperationDefinitionBuilder(ENABLE, HANDLER_RESOLVER)
-            .setDeprecated(ModelVersion.create(1, 2, 0))
-            .build();
-
-    static final SimpleOperationDefinition DISABLE_HANDLER = new SimpleOperationDefinitionBuilder(DISABLE, HANDLER_RESOLVER)
-            .setDeprecated(ModelVersion.create(1, 2, 0))
-            .build();
-
-    static final SimpleOperationDefinition CHANGE_LEVEL = new SimpleOperationDefinitionBuilder(CHANGE_LEVEL_OPERATION_NAME, HANDLER_RESOLVER)
-            .setDeprecated(ModelVersion.create(1, 2, 0))
-            .setParameters(CommonAttributes.LEVEL)
-            .build();
-
     private final OperationStepHandler writeHandler;
     private final AttributeDefinition[] writableAttributes;
     private final AttributeDefinition[] readOnlyAttributes;
@@ -182,7 +166,7 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                                         final AttributeDefinition[] writableAttributes,
                                         final ConfigurationProperty<?>... constructionProperties) {
         super(path,
-                HANDLER_RESOLVER,
+                LoggingExtension.getResourceDescriptionResolver(path.getKey()),
                 new HandlerOperations.HandlerAddOperationStepHandler(propertySorter, type, addAttributes, constructionProperties),
                 HandlerOperations.REMOVE_HANDLER);
         this.registerLegacyOps = registerLegacyOps;
@@ -218,21 +202,33 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
         super.registerOperations(registration);
 
         if (registerLegacyOps) {
-            registration.registerOperationHandler(ENABLE_HANDLER, HandlerOperations.ENABLE_HANDLER);
-            registration.registerOperationHandler(DISABLE_HANDLER, HandlerOperations.DISABLE_HANDLER);
-            registration.registerOperationHandler(CHANGE_LEVEL, HandlerOperations.CHANGE_LEVEL);
-            final SimpleOperationDefinition updateProperties = new SimpleOperationDefinitionBuilder(UPDATE_OPERATION_NAME, HANDLER_RESOLVER)
+            final ResourceDescriptionResolver resourceDescriptionResolver = getResourceDescriptionResolver();
+            registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ENABLE, resourceDescriptionResolver)
+                    .setDeprecated(ModelVersion.create(1, 2, 0))
+                    .build(), HandlerOperations.ENABLE_HANDLER);
+
+            registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(DISABLE, resourceDescriptionResolver)
+                    .setDeprecated(ModelVersion.create(1, 2, 0))
+                    .build(), HandlerOperations.DISABLE_HANDLER);
+
+            registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(CHANGE_LEVEL_OPERATION_NAME, resourceDescriptionResolver)
+                    .setDeprecated(ModelVersion.create(1, 2, 0))
+                    .setParameters(CommonAttributes.LEVEL)
+                    .build(), HandlerOperations.CHANGE_LEVEL);
+
+            final SimpleOperationDefinition updateProperties = new SimpleOperationDefinitionBuilder(UPDATE_OPERATION_NAME,  resourceDescriptionResolver)
                     .setDeprecated(ModelVersion.create(1, 2, 0))
                     .setParameters(writableAttributes)
                     .build();
+
             registration.registerOperationHandler(updateProperties, new HandlerOperations.HandlerUpdateOperationStepHandler(propertySorter, writableAttributes));
         }
     }
 
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion,
-                                                final ResourceTransformationDescriptionBuilder rootResourceBuilder,
-                                                final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+                                     final ResourceTransformationDescriptionBuilder rootResourceBuilder,
+                                     final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         if (modelVersion.hasTransformers()) {
             final PathElement pathElement = getPathElement();
             final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);

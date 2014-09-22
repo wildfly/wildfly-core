@@ -28,10 +28,9 @@ import java.util.logging.Handler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.logging.logmanager.PropertySorter.DefaultPropertySorter;
 
 /**
@@ -40,11 +39,6 @@ import org.jboss.as.logging.logmanager.PropertySorter.DefaultPropertySorter;
 abstract class AbstractFileHandlerDefinition extends AbstractHandlerDefinition {
 
     public static final String CHANGE_FILE_OPERATION_NAME = "change-file";
-
-    static final SimpleOperationDefinition CHANGE_FILE = new SimpleOperationDefinitionBuilder(CHANGE_FILE_OPERATION_NAME, HANDLER_RESOLVER)
-            .setDeprecated(ModelVersion.create(1, 2, 0))
-            .setParameters(CommonAttributes.FILE)
-            .build();
 
     private final ResolvePathHandler resolvePathHandler;
     private final boolean registerLegacyOps;
@@ -59,7 +53,7 @@ abstract class AbstractFileHandlerDefinition extends AbstractHandlerDefinition {
                                             final Class<? extends Handler> type,
                                             final ResolvePathHandler resolvePathHandler,
                                             final AttributeDefinition... attributes) {
-        super(path, registerLegacyOps, type,new DefaultPropertySorter(FileNameLastComparator.INSTANCE), attributes);
+        super(path, registerLegacyOps, type, new DefaultPropertySorter(FileNameLastComparator.INSTANCE), attributes);
         this.registerLegacyOps = registerLegacyOps;
         this.resolvePathHandler = resolvePathHandler;
     }
@@ -68,7 +62,10 @@ abstract class AbstractFileHandlerDefinition extends AbstractHandlerDefinition {
     public void registerOperations(final ManagementResourceRegistration registration) {
         super.registerOperations(registration);
         if (registerLegacyOps) {
-            registration.registerOperationHandler(CHANGE_FILE, HandlerOperations.CHANGE_FILE);
+            registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(CHANGE_FILE_OPERATION_NAME, getResourceDescriptionResolver())
+                    .setDeprecated(ModelVersion.create(1, 2, 0))
+                    .setParameters(CommonAttributes.FILE)
+                    .build(), HandlerOperations.CHANGE_FILE);
         }
         if (resolvePathHandler != null)
             registration.registerOperationHandler(resolvePathHandler.getOperationDefinition(), resolvePathHandler);
