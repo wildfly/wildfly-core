@@ -32,16 +32,20 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import java.util.Locale;
 import java.util.Set;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParametersValidator;
@@ -70,19 +74,52 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
 
     public static final OperationStepHandler INSTANCE = new ReadAttributeHandler();
 
-    private final ParametersValidator validator = new ParametersValidator();
+    private static final SimpleAttributeDefinition RESOLVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESOLVE_EXPRESSIONS, ModelType.BOOLEAN)
+            .setAllowNull(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    public static final OperationDefinition RESOLVE_DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
+            .setParameters(RESOLVE, GlobalOperationAttributes.NAME, GlobalOperationAttributes.INCLUDE_DEFAULTS)
+            .setReadOnly()
+            .setRuntimeOnly()
+            .setReplyType(ModelType.OBJECT)
+            .build();
+
+    public static final OperationStepHandler RESOLVE_INSTANCE = new ReadAttributeHandler(true);
+
+    private final ParametersValidator validator = new ParametersValidator() {
+
+        @Override
+        public void validate(ModelNode operation) throws OperationFailedException {
+            super.validate(operation);
+            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
+                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
+                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
+                }
+            }
+        }
+    };
     private final OperationStepHandler overrideHandler;
+    private final boolean resolvable;
 
     public ReadAttributeHandler() {
-        this(null, null);
+        this(null, null, false);
     }
 
-    ReadAttributeHandler(FilteredData filteredData, OperationStepHandler overrideHandler) {
+    public ReadAttributeHandler(boolean resolve){
+        this(null, null, resolve);
+    }
+    ReadAttributeHandler(FilteredData filteredData, OperationStepHandler overrideHandler, boolean resolvable) {
         super(filteredData);
+        if( resolvable){
+            validator.registerValidator(RESOLVE.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
+        }
         validator.registerValidator(GlobalOperationAttributes.NAME.getName(), new StringLengthValidator(1));
         validator.registerValidator(GlobalOperationAttributes.INCLUDE_DEFAULTS.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
         assert overrideHandler == null || filteredData != null : "overrideHandler only supported with filteredData";
         this.overrideHandler = overrideHandler;
+        this.resolvable = resolvable;
     }
 
     @Override
@@ -90,6 +127,11 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
 
         // Add a step to authorize the attribute read once we determine the value below
         context.addStep(operation, new AuthorizeAttributeReadHandler(filteredData), OperationContext.Stage.MODEL, true);
+
+        final boolean resolve = RESOLVE.resolveModelAttribute(context, operation).asBoolean();
+        if( resolve && resolvable ){
+            context.addStep(operation, ResolveAttributeHandler.getInstance(), OperationContext.Stage.MODEL, true);
+        }
 
         if (filteredData == null) {
             doExecuteInternal(context, operation);
@@ -222,6 +264,34 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 throw ControllerLogger.ROOT_LOGGER.unauthorized(operation.require(OP).asString(), PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
             }
 
+            context.stepCompleted();
+        }
+    }
+
+    private static class ResolveAttributeHandler implements OperationStepHandler {
+
+        private ResolveAttributeHandler(){}
+
+        private static class ResolveAttributeHandlerHolder {
+            private static final ResolveAttributeHandler INSTANCE = new ResolveAttributeHandler();
+        }
+
+        public static ResolveAttributeHandler getInstance(){
+            return ResolveAttributeHandlerHolder.INSTANCE;
+        }
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            ModelNode result = context.hasResult() ? context.getResult().clone() : new ModelNode();
+            // For now, don't use the context to resolve, as we don't want to support vault resolution
+            // from a remote management client. The purpose of the vault is to require someone to have
+            // access to both the config (i.e. the expression) and to the vault itself in order to read, and
+            // allowing a remote user to use the management API to read defeats the purpose.
+            //ModelNode resolved = context.resolveExpressions(result);
+            // Instead we use a resolver that will not complain about unresolvable stuff (i.e. vault expressions),
+            // simply returning them unresolved.
+            ModelNode resolved = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(result);
+            context.getResult().set(resolved);
             context.stepCompleted();
         }
     }

@@ -48,15 +48,15 @@ public class ExpressionResolverUnitTestCase {
         System.setProperty("test.prop.c", "C");
         System.setProperty("test.prop.two", "TWO");
         System.setProperty("test.prop.three", "THREE");
-        
+
         // recursive example
         System.setProperty("test.prop.prop", "${test.prop.prop.intermediate}");
         System.setProperty("test.prop.prop.intermediate", "PROP");
-        
+
         // recursive example with a property expression as the default
         System.setProperty("test.prop.expr", "${NOTHERE:${ISHERE}}");
         System.setProperty("ISHERE", "EXPR");
-        
+
         //PROP
         try {
             ModelNode node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(createModelNode());
@@ -70,7 +70,7 @@ public class ExpressionResolverUnitTestCase {
             System.clearProperty("test.prop.prop");
         }
     }
-    
+
     @Test
     public void testDefaultExpressionResolverWithSystemPropertyResolutions() throws OperationFailedException {
         System.setProperty("test.prop.expr", "EXPR");
@@ -91,7 +91,7 @@ public class ExpressionResolverUnitTestCase {
             System.clearProperty("test.prop.prop");
         }
     }
-    
+
     @Test
     public void testPluggableExpressionResolverRecursive() throws OperationFailedException {
         ModelNode node = new ExpressionResolverImpl() {
@@ -119,7 +119,7 @@ public class ExpressionResolverUnitTestCase {
 
         checkResolved(node);
     }
-    
+
     @Test
     public void testPluggableExpressionResolver() throws OperationFailedException {
         ModelNode node = new ExpressionResolverImpl() {
@@ -186,6 +186,38 @@ public class ExpressionResolverUnitTestCase {
             System.clearProperty("test.prop.three");
             System.clearProperty("test.prop.prop");
         }
+    }
+
+    @Test
+    public void testSimpleLenientResolver() {
+
+        ModelNode input = createModelNode();
+        input.get("defaulted").set(new ValueExpression("${test:default}"));
+        ModelNode node = new ModelNode();
+        try {
+            node = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(input);
+        } catch (OperationFailedException ofe) {
+            fail("Should not have thrown OFE: " + ofe.toString());
+        }
+
+        assertEquals(7, node.keys().size());
+        assertEquals(1, node.get("int").asInt());
+        assertEquals(new ValueExpression("${test.prop.expr}"), node.get("expr").asExpression());
+        assertEquals(3, node.get("map").keys().size());
+
+        assertEquals("a", node.get("map", "plain").asString());
+        assertEquals(new ValueExpression("${test.prop.b}"), node.get("map", "prop.b").asExpression());
+        assertEquals(new ValueExpression("${test.prop.c}"), node.get("map", "prop.c").asExpression());
+
+        assertEquals(3, node.get("list").asList().size());
+        assertEquals("one", node.get("list").asList().get(0).asString());
+        assertEquals(new ValueExpression("${test.prop.two}"), node.get("list").asList().get(1).asExpression());
+        assertEquals(new ValueExpression("${test.prop.three}"), node.get("list").asList().get(2).asExpression());
+
+        assertEquals("plain", node.get("plainprop").asProperty().getValue().asString());
+        assertEquals(new ValueExpression("${test.prop.prop}"), node.get("prop").asProperty().getValue().asExpression());
+
+        assertEquals("default", node.get("defaulted").asString());
     }
 
     private void checkResolved(ModelNode node) {

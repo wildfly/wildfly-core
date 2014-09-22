@@ -67,6 +67,13 @@ public interface ExpressionResolver {
     ExpressionResolver DEFAULT = TEST_RESOLVER;
 
     /**
+     * An expression resolver that will not throw an {@code OperationFailedException} when it encounters an
+     * unresolvable expression, instead simply returning that expression. Does not support resolution from
+     * a security vault.
+     */
+    ExpressionResolver SIMPLE_LENIENT = new ExpressionResolverImpl(true);
+
+    /**
      * An expression resolver that throws an {@code OperationFailedException} if any expressions are found.
      * Intended for use with APIs where an {@code ExpressionResolver} is required but the caller requires
      * that all expression have already been resolved.

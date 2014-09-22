@@ -41,6 +41,11 @@ ARGUMENTS
               just list those properties as arguments to the ls command
               prefixing their names with '--'.
               E.g. 'ls -l --nillable --storage'.
+
+ --resolve-expressions - Resolves the expressions in the returned attributes to
+                         their values on the server. In domain mode the argument
+                         is only available at /host=*/path=*, /host=*/interface=*,
+                         and host=*/server=* locations in the configuration.
                                       
  
 The following navigation signs are supported in the node-path:

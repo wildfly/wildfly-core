@@ -21,35 +21,13 @@
 */
 package org.jboss.as.core.model.test;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PLATFORM_MBEAN;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALIDATE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
-
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationConfiguration;
 import org.jboss.as.platform.mbean.PlatformMBeanConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 
 /**
  * A model validation configuration excluding validation for known issues in the model.
@@ -75,6 +53,12 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
 
     private static ValidationConfiguration createForStandalone() {
         ValidationConfiguration config = createWithGlobalOperations();
+
+        config.allowNullValueTypeForOperationReplyProperties(createInterfaceMBeanAddress(), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createInterfaceMBeanAddress(), READ_ATTRIBUTE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createPathMBeanAddress(), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createPathMBeanAddress(), READ_ATTRIBUTE_OPERATION);
+
         config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.COMPILATION), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.THREADING), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.OPERATING_SYSTEM), READ_RESOURCE_OPERATION);
@@ -89,6 +73,17 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
 
     private static ValidationConfiguration createForHost() {
         ValidationConfiguration config = createWithGlobalOperations();
+
+        config.allowNullValueTypeForOperationReplyProperties(createInterfaceMBeanAddress(), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createInterfaceMBeanAddress(), READ_ATTRIBUTE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createPathMBeanAddress(), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createPathMBeanAddress(), READ_ATTRIBUTE_OPERATION);
+
+        config.allowNullValueTypeForOperationReplyProperties(createServerConfigInterfaceMBeanAddress(), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createServerConfigPathMBeanAddress(), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createServerConfigInterfaceMBeanAddress(), READ_ATTRIBUTE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createServerConfigPathMBeanAddress(), READ_ATTRIBUTE_OPERATION);
+
         config.allowNullValueTypeForAttribute(new ModelNode(), DOMAIN_CONTROLLER);
         config.allowNullValueTypeForOperationReplyProperties(createHostPlatformMBeanAddress(PlatformMBeanConstants.COMPILATION), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createHostPlatformMBeanAddress(PlatformMBeanConstants.THREADING), READ_RESOURCE_OPERATION);
@@ -146,6 +141,29 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
         //addr.add(HOST, "master");
         addr.add(CORE_SERVICE, PLATFORM_MBEAN);
         addr.add(TYPE, type);
+        return addr;
+    }
+
+    private static ModelNode createInterfaceMBeanAddress(){
+        ModelNode addr = new ModelNode();
+        addr.add(INTERFACE, "*");
+        return addr;
+    }
+    private static ModelNode createPathMBeanAddress(){
+        ModelNode addr = new ModelNode();
+        addr.add(PATH, "*");
+        return addr;
+    }
+    private static ModelNode createServerConfigInterfaceMBeanAddress(){
+        ModelNode addr = new ModelNode();
+        addr.add(SERVER_CONFIG, "*");
+        addr.add(INTERFACE, "*");
+        return addr;
+    }
+    private static ModelNode createServerConfigPathMBeanAddress(){
+        ModelNode addr = new ModelNode();
+        addr.add(SERVER_CONFIG, "*");
+        addr.add(PATH, "*");
         return addr;
     }
 
