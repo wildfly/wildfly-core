@@ -350,6 +350,22 @@ public interface OperationContext extends ExpressionResolver {
     void runtimeUpdateSkipped();
 
     /**
+     * Gets the address associated with the currently executing step.
+     * @return the address. Will not be {@code null}
+     */
+    PathAddress getCurrentAddress();
+
+    /**
+     * Gets the {@link PathElement#getValue() value} of the {@link #getCurrentAddress() current address'}
+     * {@link PathAddress#getLastElement() last element}.
+     *
+     * @return the last element value
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentAddress()} is the empty address
+     */
+    String getCurrentAddressValue();
+
+    /**
      * Get a read only view of the managed resource registration.  The registration is relative to the operation address.
      *
      * @return the model node registration

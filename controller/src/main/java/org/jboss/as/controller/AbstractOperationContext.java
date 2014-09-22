@@ -372,6 +372,21 @@ abstract class AbstractOperationContext implements OperationContext {
         completeStep(ResultHandler.NOOP_RESULT_HANDLER);
     }
 
+    @Override
+    public final PathAddress getCurrentAddress() {
+        assert activeStep != null;
+        return activeStep.address;
+    }
+
+    @Override
+    public final String getCurrentAddressValue() {
+        PathAddress pa = getCurrentAddress();
+        if (pa.size() == 0) {
+            throw new IllegalStateException();
+        }
+        return pa.getLastElement().getValue();
+    }
+
     /**
      * Notification that all steps in a stage have been executed.
      * <p>This default implementation always returns {@code true}.</p>
