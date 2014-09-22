@@ -22,16 +22,23 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.domain.management.ModelDescriptionConstants.SUBJECT;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.TEST;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
+
+import javax.security.auth.login.LoginException;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * The {@link OperationStepHandler} to test a keytab can successfully be used to obtain a Kerberos ticket.
@@ -40,15 +47,37 @@ import org.jboss.dmr.ModelType;
  */
 public class KeytabTestHandler implements OperationStepHandler {
 
-    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(TEST, ControllerResolver.getResolver("core.management.security-realm.server-identity.kerberos.keytab"))
-            .setReadOnly()
-            .setReplyType(ModelType.STRING)
-            .setReplyValueType(ModelType.STRING)
-            .build();
+    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(TEST,
+            ControllerResolver.getResolver("core.management.security-realm.server-identity.kerberos.keytab")).setReadOnly()
+            .setReplyType(ModelType.STRING).setReplyValueType(ModelType.STRING).build();
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        // TODO - Choose the correct stage to execute this, i.e. do we need the service or test without?
+        context.addStep(new OperationStepHandler() {
+
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                ServiceController<KeytabService> serviceController = ManagementUtil.getKeytabService(context, operation);
+
+                KeytabService keytabService = serviceController.getService().getValue();
+
+                SubjectIdentity si = null;
+                try {
+                    si = keytabService.createSubjectIdentity(false);
+                    ModelNode result = context.getResult();
+                    result.get(SUBJECT).set(si.getSubject().toString());
+
+                } catch (LoginException e) {
+                    throw SECURITY_LOGGER.unableToObtainTGT(e);
+                } finally {
+                    if (si != null) {
+                        si.logout();
+                    }
+                }
+
+                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+            }
+        }, Stage.RUNTIME);
 
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }

@@ -989,6 +989,30 @@ public interface DomainManagementLogger extends BasicLogger {
     String noNonProgressingOperationFound(long timeout);
 
     /**
+     * Create an exception indicating an error parsing the Keytab location.
+     *
+     * @return a {@link StartException} for the error.
+     */
+    @Message(id = 90, value = "Invalid Keytab path")
+    StartException invalidKeytab(@Cause Exception cause);
+
+    /**
+     * Create an exception to indicate that logout has already been called on the SubjectIdentity.
+     *
+     * @return a {@link IllegalStateException} for the error.
+     */
+    @Message(id = 91, value = "logout has already been called on this SubjectIdentity.")
+    IllegalStateException subjectIdentityLoggedOut();
+
+    /**
+     * Create an exception indicating an error obtaining a Kerberos TGT.
+     *
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 92, value = "Unable to obtain Kerberos TGT")
+    OperationFailedException unableToObtainTGT(@Cause Exception cause);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.
@@ -1281,7 +1305,6 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Using realm '%s' as discovered from the existing property files.")
     String discoveredRealm(final String realmName);
-
 
 
     //PUT YOUR NUMBERED MESSAGES ABOVE THE id=NONE ones!

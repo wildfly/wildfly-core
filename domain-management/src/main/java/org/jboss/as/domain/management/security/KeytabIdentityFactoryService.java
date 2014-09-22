@@ -22,6 +22,13 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.login.LoginException;
+
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.msc.inject.Injector;
@@ -44,16 +51,54 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
 
     private final InjectedSetValue<KeytabService> keytabServices = new InjectedSetValue<KeytabService>();
 
+    private volatile KeytabService defaultService = null;
+    private volatile Map<String, KeytabService> hostServiceMap = null;
+
     /*
      * Service Methods.
      */
 
     @Override
     public void start(StartContext context) throws StartException {
+        Set<KeytabService> services = keytabServices.getValue();
+
+        hostServiceMap = new HashMap<String, KeytabService>(services.size()); // Assume at least one per service.
+        /*
+         * Iterate the services and find the first one to offer default resolution, also create a hostname to KeytabService map
+         * for the first one that claims each host.
+         */
+        for (KeytabService current : services) {
+            for (String currentHost : current.getForHosts()) {
+                if ("*".equals(currentHost)) {
+                    if (defaultService == null) {
+                        defaultService = current;
+                    }
+                } else if (hostServiceMap.containsKey(currentHost) == false) {
+                    hostServiceMap.put(currentHost, current);
+                }
+            }
+        }
+
+        /*
+         * Iterate the services again and attempt to identify host names from the principal name and add to the map if there is
+         * not already a mapping for that host name.
+         */
+        for (KeytabService current : services) {
+            String principal = current.getPrincipal();
+            int start = principal.indexOf('/');
+            int end = principal.indexOf('@');
+
+            String currentHost = principal.substring(start > -1 ? start : 0, end > -1 ? end : principal.length() - 1);
+            if (hostServiceMap.containsKey(currentHost) == false) {
+                hostServiceMap.put(currentHost, current);
+            }
+        }
     }
 
     @Override
     public void stop(StopContext context) {
+        defaultService = null;
+        hostServiceMap = null;
     }
 
     @Override
@@ -70,6 +115,31 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
      */
 
     SubjectIdentity getSubjectIdentity(final String forHost, final boolean isClient) {
+        KeytabService selectedService = null;
+        selectedService = hostServiceMap.get(forHost);
+        if (selectedService == null) {
+            SECURITY_LOGGER.tracef("No mapping for host '%s' to KeytabService, attempting to use default.", forHost);
+            selectedService = defaultService;
+        }
+
+        if (selectedService != null) {
+            if (SECURITY_LOGGER.isTraceEnabled()) {
+                SECURITY_LOGGER.tracef("Selected KeytabService with principal '%s' for host '%s'",
+                        selectedService.getPrincipal(), forHost);
+            }
+            try {
+                return selectedService.createSubjectIdentity(isClient);
+            } catch (LoginException e) {
+                SECURITY_LOGGER.keytabLoginFailed(selectedService.getPrincipal(), forHost, e);
+                /*
+                 * Allow to continue and return null, i.e. we have an error preventing Kerberos authentication so log that but
+                 * other mechanisms may be available leaving the server still accessible.
+                 */
+            }
+        } else {
+            SECURITY_LOGGER.tracef("No KeytabService available for host '%s' unable to return SubjectIdentity.", forHost);
+        }
+
         return null;
     }
 

@@ -22,6 +22,24 @@
 
 package org.jboss.as.domain.management.security;
 
+import static javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag.REQUIRED;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+
 import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -32,13 +50,33 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 
+/**
+ * An extension to {@link AbstractKeyManagerService} so that a KeyManager[] can be provided based on a JKS file based key store.
+ *
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ */
 public class KeytabService implements Service<KeytabService> {
+
+    private static final boolean IS_IBM = System.getProperty("java.vendor").contains("IBM");
+    private static final String KRB5LoginModule = "com.sun.security.auth.module.Krb5LoginModule";
+    private static final String IBMKRB5LoginModule = "com.sun.security.auth.module.Krb5LoginModule";
+
+    private static final CallbackHandler NO_CALLBACK_HANDLER = new CallbackHandler() {
+
+        @Override
+        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+            throw new UnsupportedCallbackException(callbacks[0]);
+        }
+    };
 
     private final String principal;
     private final String path;
     private final String[] forHosts;
     private final boolean debug;
     private final InjectedValue<String> relativeTo = new InjectedValue<String>();
+
+    private Configuration clientConfiguration;
+    private Configuration serverConfiguration;
 
     KeytabService(final String principal, final String path, final String[] forHosts, final boolean debug) {
         this.principal = principal;
@@ -58,14 +96,58 @@ public class KeytabService implements Service<KeytabService> {
 
     @Override
     public void start(StartContext context) throws StartException {
-        // Create the JAAS config.
+        String relativeTo = this.relativeTo.getOptionalValue();
+        String keytabFile = relativeTo == null ? path : relativeTo + "/" + path;
+
+        try {
+            clientConfiguration = createConfiguration(false, keytabFile);
+            serverConfiguration = createConfiguration(true, keytabFile);
+        } catch (MalformedURLException e) {
+            throw SECURITY_LOGGER.invalidKeytab(e);
+        }
+    }
+
+    private Configuration createConfiguration(final boolean isServer, final String keytabLocation) throws MalformedURLException {
+        Map<String, Object> options = new HashMap<String, Object>();
+        if (debug) {
+            options.put("debug", "true");
+        }
+
+        final AppConfigurationEntry ace;
+        if (IS_IBM) {
+            options.put("noAddress", "true");
+            options.put("credsType", isServer ? "acceptor" : "initiator");
+            options.put("useKeyTab", new File(keytabLocation).toURI().toURL().toString());
+            ace = new AppConfigurationEntry(IBMKRB5LoginModule, REQUIRED, options);
+        } else {
+            options.put("storeKey", "true");
+            options.put("useKeyTab", "true");
+            options.put("keyTab", keytabLocation);
+            options.put("principal", principal);
+            options.put("isInitiator", isServer ? "false" : "true");
+
+            ace = new AppConfigurationEntry(KRB5LoginModule, REQUIRED, options);
+        }
+
+        final AppConfigurationEntry[] aceArray = new AppConfigurationEntry[] { ace };
+
+        return new Configuration() {
+
+            @Override
+            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+                assert "KDC".equals(name);
+
+                return aceArray;
+            }
+
+        };
 
     }
 
     @Override
     public void stop(StopContext context) {
-        // Destroy the JAAS config.
-
+        clientConfiguration = null;
+        serverConfiguration = null;
     }
 
     Injector<String> getRelativeToInjector() {
@@ -84,9 +166,42 @@ public class KeytabService implements Service<KeytabService> {
         return forHosts.clone();
     }
 
-    public SubjectIdentity createSubjectIdentity(final boolean isClient) {
-        return null; // TODO - Implement
+    public SubjectIdentity createSubjectIdentity(final boolean isClient) throws LoginException {
+        final Subject theSubject = new Subject();
+
+        final LoginContext lc = new LoginContext("KDC", theSubject, NO_CALLBACK_HANDLER, isClient ? clientConfiguration : serverConfiguration);
+        lc.login();
+
+
+        return new SubjectIdentity() {
+
+            volatile boolean available = true;
+
+            @Override
+            public Subject getSubject() {
+                assertAvailable();
+                return theSubject;
+            }
+
+            @Override
+            public void logout() {
+                assertAvailable();
+                try {
+                    lc.logout();
+                } catch (LoginException e) {
+                    SECURITY_LOGGER.trace("Unable to logout.", e);
+                }
+            }
+
+            private void assertAvailable() {
+                if (available == false) {
+                    throw SECURITY_LOGGER.subjectIdentityLoggedOut();
+                }
+            }
+
+        };
     }
+
 
     public static final class ServiceUtil {
 
