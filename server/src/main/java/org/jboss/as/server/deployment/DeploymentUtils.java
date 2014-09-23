@@ -51,7 +51,7 @@ public final class DeploymentUtils {
     /**
      * Format used to display timestamp of enable/disable operations.
      */
-    public static String DATEFORMAT_ATTR = "yyyy-MM-dd HH:mm:ss,SSS zzz";
+    static String DATEFORMAT_ATTR = "yyyy-MM-dd HH:mm:ss,SSS zzz";
 
     /**
      * Get all resource roots for a {@link DeploymentUnit}
@@ -133,7 +133,7 @@ public final class DeploymentUtils {
      *
      * @param model
      */
-    public static void enableAttribute(ModelNode model) {
+    static void enableAttribute(ModelNode model) {
         Date enabledTime = new Date();
         DateFormat df = new SimpleDateFormat(DATEFORMAT_ATTR);
         model.get(DeploymentAttributes.ENABLED_TIME.getName()).set(enabledTime.getTime());
@@ -145,7 +145,7 @@ public final class DeploymentUtils {
      *
      * @param model
      */
-    public static void disableAttribute(ModelNode model) {
+    static void disableAttribute(ModelNode model) {
         Date enabledTime = new Date();
         DateFormat df = new SimpleDateFormat(DATEFORMAT_ATTR);
         model.get(DeploymentAttributes.DISABLED_TIME.getName()).set(enabledTime.getTime());

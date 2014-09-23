@@ -44,6 +44,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -111,20 +112,22 @@ public class DeploymentAttributes {
         .setValidator(new EnumValidator<AbstractDeploymentUnitService.DeploymentStatus>(AbstractDeploymentUnitService.DeploymentStatus.class, false))
         .build();
 
-    public static final SimpleAttributeDefinition ENABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIME, ModelType.LONG, false)
-            .setValidator(new StringLengthValidator(1, false))
+    public static final SimpleAttributeDefinition ENABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIME, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .build();
 
-    public static final SimpleAttributeDefinition ENABLED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIMESTAMP, ModelType.STRING, false)
-            .setValidator(new StringLengthValidator(1, false))
+    public static final SimpleAttributeDefinition ENABLED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIMESTAMP, ModelType.STRING, true)
+            .setStorageRuntime()
             .build();
 
-    public static final SimpleAttributeDefinition DISABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DISABLED_TIME, ModelType.LONG, false)
-            .setValidator(new StringLengthValidator(1, false))
+    public static final SimpleAttributeDefinition DISABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DISABLED_TIME, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .build();
 
-    public static final SimpleAttributeDefinition DISABLED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DISABLED_TIMESTAMP, ModelType.STRING, false)
-            .setValidator(new StringLengthValidator(1, false))
+    public static final SimpleAttributeDefinition DISABLED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DISABLED_TIMESTAMP, ModelType.STRING, true)
+            .setStorageRuntime()
             .build();
 
     //Managed content value attributes
