@@ -846,7 +846,7 @@ class ModelControllerImpl implements ModelController {
             if (MGMT_OP_LOGGER.isTraceEnabled()) {
                 MGMT_OP_LOGGER.tracef("Executing %s %s", operation.get(OP), operation.get(OP_ADDR));
             }
-            final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            final PathAddress address = context.getCurrentAddress();
             final String operationName =  operation.require(OP).asString();
             final OperationStepHandler stepHandler = resolveOperationHandler(address, operationName);
             if(stepHandler != null) {

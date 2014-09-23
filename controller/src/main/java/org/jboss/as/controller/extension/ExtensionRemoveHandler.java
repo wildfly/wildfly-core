@@ -19,7 +19,6 @@
 package org.jboss.as.controller.extension;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
 import org.jboss.as.controller.OperationContext;
@@ -56,8 +55,7 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String module = address.getLastElement().getValue();
+        final String module = context.getCurrentAddressValue();
 
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 

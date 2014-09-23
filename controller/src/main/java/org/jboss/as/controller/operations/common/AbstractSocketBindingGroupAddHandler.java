@@ -21,11 +21,11 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -44,10 +44,11 @@ public abstract class AbstractSocketBindingGroupAddHandler extends AbstractAddSt
     protected AbstractSocketBindingGroupAddHandler() {
     }
 
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        String name = address.getLastElement().getValue();
-        model.get(NAME).set(name);
+    @Override
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+
+        ModelNode model = resource.getModel();
+        model.get(NAME).set(context.getCurrentAddressValue());
 
         SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.validateAndSet(operation, model);
     }

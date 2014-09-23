@@ -123,7 +123,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                             } catch (Exception e) {
                                 MGMT_OP_LOGGER.errorRevertingOperation(e, getClass().getSimpleName(),
                                         operation.require(ModelDescriptionConstants.OP).asString(),
-                                        PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)));
+                                        context.getCurrentAddress());
                             }
                             if (reloadRequired) {
                                 if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {

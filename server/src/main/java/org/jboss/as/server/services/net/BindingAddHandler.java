@@ -73,8 +73,8 @@ public class BindingAddHandler extends SocketBindingAddHandler {
     @Override
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
 
+        super.populateModel(context, operation, resource);
         ModelNode model = resource.getModel();
-        populateModel(operation, model);
 
         SocketBindingResourceDefinition.validateInterfaceReference(context, model);
     }

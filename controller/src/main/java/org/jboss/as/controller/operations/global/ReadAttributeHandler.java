@@ -144,7 +144,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 }
             } catch (UnauthorizedException ue) {
                 // Just report the failure to the filter and complete normally
-                PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
+                PathAddress pa = context.getCurrentAddress();
                 filteredData.addReadRestrictedAttribute(pa, operation.get(NAME).asString());
                 context.getResult().set(new ModelNode());
                 context.stepCompleted();
@@ -248,7 +248,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                         context.getResult().set(new ModelNode());
                     }
                     // Report the failure to the filter and complete normally
-                    PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
+                    PathAddress pa = context.getCurrentAddress();
                     filteredData.addReadRestrictedAttribute(pa, operation.get(NAME).asString());
                     context.getResult().set(new ModelNode());
                     context.stepCompleted();
@@ -261,7 +261,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             AuthorizationResult authorizationResult = context.authorize(operation, operation.require(NAME).asString(), value);
             if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
                 context.getResult().clear();
-                throw ControllerLogger.ROOT_LOGGER.unauthorized(operation.require(OP).asString(), PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
+                throw ControllerLogger.ROOT_LOGGER.unauthorized(operation.require(OP).asString(), context.getCurrentAddress(), authorizationResult.getExplanation());
             }
 
             context.stepCompleted();

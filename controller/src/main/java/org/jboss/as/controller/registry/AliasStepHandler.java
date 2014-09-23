@@ -24,12 +24,12 @@ package org.jboss.as.controller.registry;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -49,12 +49,12 @@ public class AliasStepHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         String op = operation.require(OP).asString();
-        PathAddress addr = PathAddress.pathAddress(operation.require(OP_ADDR));
+        PathAddress addr = context.getCurrentAddress();
 
         PathAddress mapped = aliasEntry.convertToTargetAddress(addr);
 
         OperationStepHandler targetHandler = context.getRootResourceRegistration().getOperationHandler(mapped, op);
-        if (op == null) {
+        if (targetHandler == null) {
             throw ControllerLogger.ROOT_LOGGER.aliasStepHandlerOperationNotFound(op, addr, mapped);
         }
 

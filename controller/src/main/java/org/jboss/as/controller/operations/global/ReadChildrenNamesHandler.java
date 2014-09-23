@@ -21,6 +21,7 @@
  */
 
 package org.jboss.as.controller.operations.global;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -33,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -44,6 +44,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -70,7 +71,7 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final PathAddress address = context.getCurrentAddress();
         final String childType = CHILD_TYPE.resolveModelAttribute(context, operation).asString();
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
         ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
@@ -98,7 +99,7 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
                 if (fd == null) {
                     fd = new FilteredData(address);
                 }
-                fd.addAccessRestrictedResource(PathAddress.pathAddress(opAddr));
+                fd.addAccessRestrictedResource(childAddress);
             }
         }
 

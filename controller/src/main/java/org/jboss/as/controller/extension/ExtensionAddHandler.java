@@ -19,14 +19,13 @@
 package org.jboss.as.controller.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
@@ -68,7 +67,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String moduleName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
+        final String moduleName = context.getCurrentAddressValue();
         final ExtensionResource resource = new ExtensionResource(moduleName, extensionRegistry);
 
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);

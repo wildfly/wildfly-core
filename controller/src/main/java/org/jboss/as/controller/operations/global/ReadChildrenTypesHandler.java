@@ -22,10 +22,13 @@
 
 package org.jboss.as.controller.operations.global;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_TYPES_OPERATION;
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_SINGLETONS;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -34,16 +37,10 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-
-import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
-
-import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_SINGLETONS;
-
-import java.util.Set;
-import java.util.TreeSet;
 
 
 
@@ -69,7 +66,7 @@ public class ReadChildrenTypesHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         if (registry == null) {
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(PathAddress.pathAddress(operation.get(OP_ADDR))));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(context.getCurrentAddress()));
         }
         final boolean aliases = INCLUDE_ALIASES.resolveModelAttribute(context, operation).asBoolean(false);
         final boolean singletons = INCLUDE_SINGLETONS.resolveModelAttribute(context, operation).asBoolean(false);

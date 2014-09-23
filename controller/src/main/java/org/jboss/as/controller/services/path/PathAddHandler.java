@@ -19,7 +19,6 @@
 package org.jboss.as.controller.services.path;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_SPECIFIED;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
 
@@ -87,8 +86,7 @@ public class PathAddHandler implements OperationStepHandler {
         final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
 
         final ModelNode model = resource.getModel();
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String name = address.getLastElement().getValue();
+        final String name = context.getCurrentAddressValue();
         pathAttribute.validateAndSet(operation, model);
         RELATIVE_TO.validateAndSet(operation, model);
 

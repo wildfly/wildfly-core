@@ -175,7 +175,7 @@ public class GlobalOperationHandlers {
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+            final PathAddress address = context.getCurrentAddress();
 
             // In case if it's a multiTarget operation, resolve the address first
             // This only works for model resources, which can be resolved into a concrete addresses

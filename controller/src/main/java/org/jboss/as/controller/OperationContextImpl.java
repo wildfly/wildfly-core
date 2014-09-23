@@ -1392,7 +1392,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (isModelUpdateRejectionRequired()) {
             ModelNode op = activeStep.operation;
             if (op.hasDefined(OPERATION_HEADERS) && op.get(OPERATION_HEADERS).hasDefined(CALLER_TYPE) && USER.equals(op.get(OPERATION_HEADERS, CALLER_TYPE).asString())) {
-                throw ControllerLogger.ROOT_LOGGER.modelUpdateNotAuthorized(op.require(OP).asString(), PathAddress.pathAddress(op.get(OP_ADDR)));
+                throw ControllerLogger.ROOT_LOGGER.modelUpdateNotAuthorized(op.require(OP).asString(), activeStep.address);
             }
         }
     }

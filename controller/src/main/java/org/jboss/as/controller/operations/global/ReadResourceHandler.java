@@ -172,7 +172,6 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             } catch (NoSuchResourceException nsre) {
                 // Just report the failure to the filter and complete normally
                 PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
-
                 filteredData.addAccessRestrictedResource(pa);
                 context.getResult().set(new ModelNode());
                 context.stepCompleted();
@@ -191,7 +190,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         validator.validate(operation);
 
         final String opName = operation.require(OP).asString();
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final PathAddress address = context.getCurrentAddress();
         // WFCORE-76
         final boolean recursive = GlobalOperationHandlers.getRecursive(context, operation);
         final boolean queryRuntime = operation.get(ModelDescriptionConstants.INCLUDE_RUNTIME).asBoolean(false);
