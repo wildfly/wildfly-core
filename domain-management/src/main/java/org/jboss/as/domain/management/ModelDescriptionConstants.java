@@ -78,6 +78,7 @@ public class ModelDescriptionConstants {
     public static final String REALM = "realm";
     public static final String REFERRALS = "referrals";
     public static final String RELATIVE_TO = "relative-to";
+    public static final String REMOVE_REALM = "remove-realm";
     public static final String ROLES = "roles";
     public static final String SEARCH_CREDENTIAL = "search-credential";
     public static final String SEARCH_DN = "search-dn";

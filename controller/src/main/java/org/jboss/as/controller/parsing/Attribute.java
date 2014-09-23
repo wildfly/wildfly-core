@@ -140,6 +140,7 @@ public enum Attribute {
     REGULAR_EXPRESSION("regular-expression"),
     RESULT_PATTERN("result-pattern"),
     RELATIVE_TO("relative-to"),
+    REMOVE_REALM("remove-realm"),
     REQUIRES_ADDRESSABLE("requires-addressable"),
     REQUIRES_READ("requires-read"),
     REQUIRES_WRITE("requires-write"),

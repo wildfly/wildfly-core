@@ -19,6 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.jboss.as.domain.http.server.security;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,6 +28,7 @@ import static org.jboss.as.domain.management.RealmConfigurationConstants.DIGEST_
 import io.undertow.security.idm.Account;
 import io.undertow.security.idm.Credential;
 import io.undertow.security.idm.DigestCredential;
+import io.undertow.security.idm.GSSContextCredential;
 import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.idm.PasswordCredential;
 import io.undertow.security.idm.X509CertificateCredential;
@@ -44,8 +46,12 @@ import java.util.Map;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
+import org.ietf.jgss.GSSException;
 import org.jboss.as.controller.security.InetAddressPrincipal;
 import org.jboss.as.core.security.SimplePrincipal;
 import org.jboss.as.core.security.SubjectUserInfo;
@@ -53,6 +59,7 @@ import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.AuthorizingCallbackHandler;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.sasl.callback.DigestHashCallback;
 import org.jboss.sasl.callback.VerifyPasswordCallback;
 
@@ -74,6 +81,11 @@ public class RealmIdentityManager implements IdentityManager {
     }
 
     static void clearRequestSpecific() {
+        ThreadLocalStore store = requestSpecific.get();
+        if (store != null && store.subjectIdentity != null) {
+            store.subjectIdentity.logout();
+        }
+
         requestSpecific.set(null);
     }
 
@@ -87,6 +99,10 @@ public class RealmIdentityManager implements IdentityManager {
         ThreadLocalStore store = requestSpecific.get();
 
         return store == null ? null : store.inetAddress;
+    }
+
+    void setCurrentSubjectIdentity(final SubjectIdentity subjectIdentity) {
+        requestSpecific.get().subjectIdentity = subjectIdentity;
     }
 
     private final SecurityRealm securityRealm;
@@ -232,14 +248,39 @@ public class RealmIdentityManager implements IdentityManager {
 
     @Override
     public Account verify(Credential credential) {
-        assertMechanism(AuthMechanism.CLIENT_CERT);
-        if (credential instanceof X509CertificateCredential == false) {
+        assertMechanism(AuthMechanism.CLIENT_CERT, AuthMechanism.KERBEROS);
+
+        final AuthorizingCallbackHandler ach;
+        final Principal user;
+        if (credential instanceof X509CertificateCredential) {
+            X509CertificateCredential certCred = (X509CertificateCredential) credential;
+
+            ach = securityRealm.getAuthorizingCallbackHandler(AuthMechanism.CLIENT_CERT);
+            user = certCred.getCertificate().getSubjectDN();
+        } else if (credential instanceof GSSContextCredential) {
+            GSSContextCredential gssCred = (GSSContextCredential) credential;
+            try {
+            user = new KerberosPrincipal(gssCred.getGssContext().getSrcName().toString());
+            } catch (GSSException e) {
+                // By this point this should not be able to happen.
+                ROOT_LOGGER.debug("Unexpected authentication failure", e);
+                return null;
+            }
+            ach = securityRealm.getAuthorizingCallbackHandler(AuthMechanism.KERBEROS);
+        } else {
             return null;
         }
-        X509CertificateCredential certCred = (X509CertificateCredential) credential;
 
-        AuthorizingCallbackHandler ach = securityRealm.getAuthorizingCallbackHandler(AuthMechanism.CLIENT_CERT);
-        Principal user = certCred.getCertificate().getSubjectDN();
+        try {
+            ach.handle(new Callback[] { new AuthorizeCallback(user.getName(), user.getName()) });
+        } catch (IOException e) {
+            ROOT_LOGGER.debug("Unexpected authentication failure", e);
+            return null;
+        } catch (UnsupportedCallbackException e) {
+            ROOT_LOGGER.debug("Unexpected authentication failure", e);
+            return null;
+        }
+
         Collection<Principal> userCol = Collections.singleton(user);
         SubjectUserInfo supplemental;
         try {
@@ -259,16 +300,21 @@ public class RealmIdentityManager implements IdentityManager {
         }
     }
 
-    private void assertMechanism(final AuthMechanism mechanism) {
-        if (mechanism != getRequestMeschanism()) {
-            // This is impossible, only here for testing if someone messed up a change
-            throw new IllegalStateException("Unexpected authentication mechanism executing.");
+    private void assertMechanism(final AuthMechanism... mechanisms) {
+        AuthMechanism requested = getRequestMeschanism();
+        for (AuthMechanism current : mechanisms) {
+            if (requested == current) {
+                return;
+            }
         }
+        // This is impossible, only here for testing if someone messed up a change
+        throw new IllegalStateException("Unexpected authentication mechanism executing.");
     }
 
     private static final class ThreadLocalStore {
         AuthMechanism requestMechanism;
         InetAddress inetAddress;
+        SubjectIdentity subjectIdentity;
     }
 
 }

@@ -134,6 +134,7 @@ import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource;
 import org.jboss.as.domain.management.security.BaseLdapUserSearchResource;
 import org.jboss.as.domain.management.security.GroupToPrincipalResourceDefinition;
 import org.jboss.as.domain.management.security.JaasAuthenticationResourceDefinition;
+import org.jboss.as.domain.management.security.KerberosAuthenticationResourceDefinition;
 import org.jboss.as.domain.management.security.KeystoreAttributes;
 import org.jboss.as.domain.management.security.KeytabResourceDefinition;
 import org.jboss.as.domain.management.security.LdapAuthenticationResourceDefinition;
@@ -1540,9 +1541,7 @@ public class ManagementXml {
                     if (kerberosFound) {
                         throw unexpectedElement(reader);
                     }
-                    list.add(Util.getEmptyOperation(ADD, realmAddress.clone().add(AUTHENTICATION, KERBEROS)));
-                    requireNoAttributes(reader);
-                    requireNoContent(reader);
+                    parseKerberosAuthentication_3_0(reader, realmAddress, list);
                     kerberosFound = true;
                     break;
                 }
@@ -1600,6 +1599,33 @@ public class ManagementXml {
                 }
             }
         }
+    }
+
+    private static void parseKerberosAuthentication_3_0(final XMLExtendedStreamReader reader,
+            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+        ModelNode addr = realmAddress.clone().add(AUTHENTICATION, KERBEROS);
+        ModelNode kerberos = Util.getEmptyOperation(ADD, addr);
+        list.add(kerberos);
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case REMOVE_REALM:
+                        KerberosAuthenticationResourceDefinition.REMOVE_REALM.parseAndSetParameter(value, kerberos, reader);
+                        break;
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+
+        requireNoContent(reader);
     }
 
     private static void parseJaasAuthentication_1_1(final XMLExtendedStreamReader reader,
@@ -3984,8 +4010,10 @@ public class ManagementXml {
             writer.writeEndElement();
         }
 
-        if (authentication.has(KERBEROS)) {
+        if (authentication.hasDefined(KERBEROS)) {
+            ModelNode kerberos = authentication.require(KERBEROS);
             writer.writeEmptyElement(Element.KERBEROS.getLocalName());
+            KerberosAuthenticationResourceDefinition.REMOVE_REALM.marshallAsAttribute(kerberos, writer);
         }
 
         if (authentication.hasDefined(JAAS)) {

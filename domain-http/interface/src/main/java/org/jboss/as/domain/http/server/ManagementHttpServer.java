@@ -48,6 +48,7 @@ import io.undertow.security.impl.CachedAuthenticatedSessionMechanism;
 import io.undertow.security.impl.ClientCertAuthenticationMechanism;
 import io.undertow.security.impl.DigestAuthenticationMechanism;
 import io.undertow.security.impl.DigestQop;
+import io.undertow.security.impl.GSSAPIAuthenticationMechanism;
 import io.undertow.security.impl.SimpleNonceManager;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.CanonicalPathHandler;
@@ -67,6 +68,7 @@ import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
 import org.jboss.as.domain.http.server.security.LogoutHandler;
 import org.jboss.as.domain.http.server.security.RealmIdentityManager;
 import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
+import org.jboss.as.domain.http.server.security.ServerSubjectFactory;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.Module;
@@ -260,6 +262,7 @@ public class ManagementHttpServer {
     }
 
     private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
+        RealmIdentityManager rim = new RealmIdentityManager(securityRealm);
         List<AuthenticationMechanism> undertowMechanisms;
         if (securityRealm != null) {
             Set<AuthMechanism> mechanisms = securityRealm.getSupportedAuthenticationMechanisms();
@@ -267,6 +270,10 @@ public class ManagementHttpServer {
             undertowMechanisms.add(wrap(new CachedAuthenticatedSessionMechanism(), null));
             for (AuthMechanism current : mechanisms) {
                 switch (current) {
+                    case KERBEROS:
+                        undertowMechanisms.add(wrap(new GSSAPIAuthenticationMechanism(new ServerSubjectFactory(securityRealm,
+                                rim)), current));
+                        break;
                     case CLIENT_CERT:
                         undertowMechanisms.add(wrap(new ClientCertAuthenticationMechanism(), current));
                         break;
@@ -295,7 +302,7 @@ public class ManagementHttpServer {
         current = new AuthenticationConstraintHandler(current);
         current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
 
-        return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, new RealmIdentityManager(securityRealm), current);
+        return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, rim, current);
     }
 
     private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {

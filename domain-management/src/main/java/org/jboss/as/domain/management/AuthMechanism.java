@@ -32,6 +32,6 @@ public enum AuthMechanism {
      * Values are ordered in priority order, do not re-order unless deliberately changing priority order.
      */
 
-    LOCAL, CLIENT_CERT, DIGEST, PLAIN;
+    LOCAL, CLIENT_CERT, KERBEROS, DIGEST, PLAIN;
 
 }

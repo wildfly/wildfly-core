@@ -88,7 +88,7 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
             int start = principal.indexOf('/');
             int end = principal.indexOf('@');
 
-            String currentHost = principal.substring(start > -1 ? start : 0, end > -1 ? end : principal.length() - 1);
+            String currentHost = principal.substring(start > -1 ? start + 1 : 0, end > -1 ? end : principal.length() - 1);
             if (hostServiceMap.containsKey(currentHost) == false) {
                 hostServiceMap.put(currentHost, current);
             }

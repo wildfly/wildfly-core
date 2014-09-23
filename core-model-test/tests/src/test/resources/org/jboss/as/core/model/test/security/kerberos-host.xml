@@ -28,7 +28,7 @@
                     </kerberos>
                 </server-identities>
                 <authentication>
-                    <kerberos />
+                    <kerberos remove-realm="true" />
                 </authentication>
             </security-realm>
 

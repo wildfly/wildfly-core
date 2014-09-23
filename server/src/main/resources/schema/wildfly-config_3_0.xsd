@@ -795,6 +795,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="kerberos" type="kerberosAuthenticationType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configuration to enable Kerberos authentication.
+                        
+                        Currently only supported for HTTP.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element> 
             <xs:choice minOccurs="0">
                 <xs:element name="jaas" type="jaasAuthenticationType" minOccurs="0" />
                 <xs:element name="ldap" type="ldapAuthenticationType" minOccurs="0" />
@@ -805,6 +814,25 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="kerberosAuthenticationType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition to enable Kerberos for
+                authentication.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="remove-realm" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When a user is authenticated using Kerberos typically their identity will be represented in the form username@REALM, 
+                    setting this option to true will strip the @REALM part of the name.
+
+                    This may be desired to bring the names in-line with username/password based authentication if used in parallel.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    
     <xs:complexType name="jaasAuthenticationType">
         <xs:annotation>
             <xs:documentation>

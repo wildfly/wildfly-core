@@ -154,6 +154,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             if (authentication.hasDefined(LOCAL)) {
                 addLocalService(context, authentication.require(LOCAL), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
             }
+            if (authentication.hasDefined(KERBEROS)) {
+                addKerberosService(context, authentication.require(KERBEROS), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+            }
+
             if (authentication.hasDefined(JAAS)) {
                 addJaasService(context, authentication.require(JAAS), realmName, serviceTarget, newControllers, context.isNormalServer(), realmBuilder, injectorSet.injector());
             } else if (authentication.hasDefined(LDAP)) {
@@ -246,6 +250,21 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         }
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, clientCertServiceName, false);
+    }
+
+    private void addKerberosService(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
+            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+        ServiceName kerberosServiceName = KerberosCallbackHandler.ServiceUtil.createServiceName(realmName);
+        boolean removeRealm = KerberosAuthenticationResourceDefinition.REMOVE_REALM.resolveModelAttribute(context, kerberos).asBoolean();
+        KerberosCallbackHandler kerberosCallbackHandler = new KerberosCallbackHandler(removeRealm);
+
+        ServiceBuilder<?> ccBuilder = serviceTarget.addService(kerberosServiceName, kerberosCallbackHandler);
+        final ServiceController<?> sc = ccBuilder.setInitialMode(ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(sc);
+        }
+
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, kerberosServiceName, false);
     }
 
     private void addJaasService(OperationContext context, ModelNode jaas, String realmName, ServiceTarget serviceTarget,

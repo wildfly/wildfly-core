@@ -26,9 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KERBEROS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYTAB;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
-import static org.jboss.as.domain.management.ModelDescriptionConstants.SERVER_IDENTITY;
-import static org.jboss.as.domain.management.ModelDescriptionConstants.KERBEROS;
-import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYTAB;
 
 import java.util.HashSet;
 import java.util.Set;

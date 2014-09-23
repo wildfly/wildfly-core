@@ -42,7 +42,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.domain.management.security.password.PasswordValidationException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
-import org.jboss.logging.Logger.Level;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
