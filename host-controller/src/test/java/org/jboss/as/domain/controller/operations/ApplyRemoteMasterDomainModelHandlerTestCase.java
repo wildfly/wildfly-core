@@ -74,7 +74,6 @@ import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationEntry;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -244,9 +243,8 @@ public class ApplyRemoteMasterDomainModelHandlerTestCase extends AbstractOperati
 
     private ModelNode getCurrentModelUpdates(Resource root, UpdateListModifier modifier) throws Exception {
         MockOperationContext context = getOperationContext(root, true);
-        DomainControllerRuntimeIgnoreTransformationRegistry registry = new DomainControllerRuntimeIgnoreTransformationRegistry();
-        registry.initializeHost("localhost");
-        new ReadMasterDomainModelHandler("localhost", new NoopTransformers(), registry).execute(context, new ModelNode());
+        // since we don't have a hostinfo, bypass the ReadMasterDomainHandler
+        new ReadDomainModelHandler(Transformers.DEFAULT, new NoopTransformers()).execute(context, new ModelNode());
         return modifier.modifyList(context.getResult());
     }
 
@@ -431,8 +429,7 @@ public class ApplyRemoteMasterDomainModelHandlerTestCase extends AbstractOperati
         }
 
         @Override
-        public Resource transformResource(OperationContext operationContext, PathAddress original, Resource resource, boolean skipRuntimeIgnoreCheck)
-                throws OperationFailedException {
+        public Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
             return resource;
         }
     }

@@ -52,7 +52,6 @@ import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -64,14 +63,11 @@ public class DomainSlaveHandler implements OperationStepHandler {
 
     private final MultiphaseOverallContext multiphaseContext;
     private final Map<String, ProxyController> hostProxies;
-    private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
 
     public DomainSlaveHandler(final Map<String, ProxyController> hostProxies,
-                              final MultiphaseOverallContext domainOperationContext,
-                              final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
+                              final MultiphaseOverallContext domainOperationContext) {
         this.hostProxies = hostProxies;
         this.multiphaseContext = domainOperationContext;
-        this.runtimeIgnoreTransformationRegistry = runtimeIgnoreTransformationRegistry;
     }
 
     @Override
@@ -101,7 +97,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
                 }
             }
 
-            ModelNode clonedOp = runtimeIgnoreTransformationRegistry.piggyBackMissingInformationOnHeader(context, proxyController, entry.getKey(), op.clone());
+            ModelNode clonedOp = op.clone();
             clonedOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
             final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController);
             // Execute the operation on the remote host
@@ -246,10 +242,6 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     future.cancel(true);
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 }
-            }
-
-            if (!rollback) {
-                runtimeIgnoreTransformationRegistry.updateKnownResources(context);
             }
         } finally {
             if (interruptThread) {

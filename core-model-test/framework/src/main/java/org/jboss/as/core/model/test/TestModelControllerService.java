@@ -591,8 +591,9 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     throw new RuntimeException(ex);
                 }
             } else {
-                domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
-                    hostFileRepository, true, info, extensionRegistry, null, pathManagerService, null, authorizer, null,
+
+            domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
+                    hostFileRepository, true, info, extensionRegistry, null, pathManagerService, authorizer, null,
                     getMutableRootResourceRegistrationProvider());
             }
             domainDefinition.initialize(rootRegistration);

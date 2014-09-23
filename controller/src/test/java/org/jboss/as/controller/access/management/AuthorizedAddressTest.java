@@ -118,7 +118,6 @@ public class AuthorizedAddressTest {
             this.authorizedAddress = authorizedAddress;
         }
 
-
         @Override
         public void addStep(OperationStepHandler step, Stage stage) throws IllegalArgumentException {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

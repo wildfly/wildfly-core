@@ -21,8 +21,6 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,8 +33,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -55,7 +51,6 @@ public class ReadMasterDomainModelUtil {
 
     private volatile List<ModelNode> describedResources;
 
-
     private ReadMasterDomainModelUtil() {
     }
 
@@ -65,88 +60,14 @@ public class ReadMasterDomainModelUtil {
      *  @param context the operation context
      *  @param transformers the transformers for the host
      *  @param domainRoot the domain root resource
-     *  @param runtimeIgnoreTransformationRegistry the domain controller registry of what resources should be ignored for the slave host
      *  @return a read master domain model util instance
      */
     static ReadMasterDomainModelUtil readMasterDomainResourcesForInitialConnect(
-            final OperationContext context, final Transformers transformers, final Resource domainRoot,
-            final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) throws OperationFailedException {
+            final OperationContext context, final Transformers transformers, final Resource domainRoot, final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
 
-        Resource transformedResource = transformers.transformRootResource(context, domainRoot);
+        Resource transformedResource = transformers.transformRootResource(context, domainRoot, ignoredTransformationRegistry);
         ReadMasterDomainModelUtil util = new ReadMasterDomainModelUtil();
         util.describedResources = util.describeAsNodeList(PathAddress.EMPTY_ADDRESS, transformedResource, false);
-        return util;
-    }
-
-    /**
-     * Used to read the domain model when a slave has a change to its server config and requests the DC for missing data
-     *
-     *  @param context the operation context
-     *  @param missingRootResources the set of missing addresses
-     *  @param transformers the transformers for the host
-     *  @param domainRoot the domain root resource
-     *  @param runtimeIgnoreTransformationRegistry the domain controller registry of what resources should be ignored for the slave host
-     *  @return a read master domain model util instance
-     */
-    static ReadMasterDomainModelUtil readMasterDomainResourcesForSlaveRequest(
-            final OperationContext context, final Set<PathElement> missingRootResources, final Transformers transformers, final Resource domainRoot,
-            final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) throws OperationFailedException {
-
-        final ReadMasterDomainModelUtil util = new ReadMasterDomainModelUtil();
-
-        util.describedResources = new ArrayList<ModelNode>();
-        for (PathElement element : missingRootResources) {
-            PathAddress address = PathAddress.pathAddress(element);
-            Resource original = domainRoot.getChild(element);
-            if (original == null) {
-                throw HostControllerLogger.ROOT_LOGGER.noResourceFor(address);
-            }
-            Resource resource = transformers.transformResource(context, PathAddress.EMPTY_ADDRESS, original, true);
-            util.describe(address, resource, util.describedResources, true);
-        }
-        return util;
-    }
-
-
-    /**
-     * Used to read the domain model when a change is made to a server group on the DC, and missing data needs to be piggy backed to the slave
-     *
-     *  @param context the operation context
-     *  @param missingRootResources the set of missing addresses
-     *  @param transformers the transformers for the host
-     *  @param domainRoot the domain root resource
-     *  @param runtimeIgnoreTransformationRegistry the domain controller registry of what resources should be ignored for the slave host
-     *  @return a read master domain model util instance
-     */
-    public static ReadMasterDomainModelUtil readMasterDomainResourcesForPiggyBackFollowingDomainControllerChange(
-            final OperationContext context, final Set<PathElement> missingRootResources, final Transformers transformers, String hostName, DomainControllerRuntimeIgnoreTransformationRegistry ignoreTransformationRegistry) throws OperationFailedException {
-
-        final ReadMasterDomainModelUtil util = new ReadMasterDomainModelUtil();
-
-        util.describedResources = new ArrayList<ModelNode>();
-
-        Resource domainRoot = null;
-        final Set<PathElement> allMissingRootResources = new HashSet<>(missingRootResources);
-        for (PathElement element : missingRootResources) {
-            if (element.getKey().equals(PROFILE)) {
-                if (domainRoot == null) {
-                    domainRoot = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
-                }
-                allMissingRootResources.addAll(ignoreTransformationRegistry.getUnknownExtensionsForProfile(domainRoot, hostName, element.getValue()));
-            }
-        }
-
-        for (PathElement element : allMissingRootResources) {
-            PathAddress address = PathAddress.pathAddress(element);
-            Resource original = context.readResourceFromRoot(address);
-            if (original == null) {
-                throw HostControllerLogger.ROOT_LOGGER.noResourceFor(address);
-            }
-            //TODO Look into why we need to get the child of the transformed resource
-            Resource resource = transformers.transformResource(context, address, original, true).getChild(element);
-            util.describe(address, resource, util.describedResources, true);
-        }
-
         return util;
     }
 
@@ -159,15 +80,6 @@ public class ReadMasterDomainModelUtil {
      */
     public List<ModelNode> getDescribedResources(){
         return describedResources;
-    }
-
-    /**
-     * Gets the list of the new root resources known to the slave HC
-     *
-     * @return the new root resource addresses
-     */
-    public Set<PathElement> getNewKnownRootResources(){
-        return newRootResources;
     }
 
     /**

@@ -23,19 +23,22 @@
 package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -45,7 +48,9 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -55,12 +60,16 @@ import org.jboss.dmr.ModelNode;
  */
 class SyncModelOperationHandler implements OperationStepHandler {
 
+    private final Resource remoteModel;
     private final List<ModelNode> localOperations;
     private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
+    private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
 
-    public SyncModelOperationHandler(List<ModelNode> localOperations, IgnoredDomainResourceRegistry ignoredResourceRegistry) {
+    SyncModelOperationHandler(List<ModelNode> localOperations, Resource remoteModel, IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
         this.localOperations = localOperations;
+        this.remoteModel = remoteModel;
         this.ignoredResourceRegistry = ignoredResourceRegistry;
+        this.operationExecutor = operationExecutor;
     }
 
     @Override
@@ -70,13 +79,28 @@ class SyncModelOperationHandler implements OperationStepHandler {
         } catch (OperationFailedException e) {
             e.printStackTrace();
             throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new OperationFailedException(e);
         }
     }
 
     public void internalExecute(OperationContext context, ModelNode original) throws OperationFailedException {
 
-        final List<ModelNode> remoteOperations = original.require(DOMAIN_MODEL).asList();
+        final ModelNode readOp = new ModelNode();
+        readOp.get(OP).set(ReadMasterDomainOperationsHandler.OPERATION_NAME);
+        readOp.get(OP_ADDR).setEmptyList();
 
+        // Create the remote resource based on the domain model
+        final Resource remoteResource = remoteModel;
+
+        // Describe the operations based on the remote root
+        final ReadMasterDomainOperationsHandler h = new ReadMasterDomainOperationsHandler();
+        final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteResource, h, ModelController.OperationTransactionControl.COMMIT);
+
+        final List<ModelNode> remoteOperations = result.get(RESULT).asList();
+
+        // Create the node models based on the operations
         final Node currentRoot = new Node(null, PathAddress.EMPTY_ADDRESS);
         final Node remoteRoot = new Node(null, PathAddress.EMPTY_ADDRESS);
 
@@ -91,7 +115,11 @@ class SyncModelOperationHandler implements OperationStepHandler {
         processAttributes(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
         processChildren(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
 
-        for (final ModelNode operation : operations.asList()) {
+        final List<ModelNode> ops = new ArrayList<>();
+        ops.addAll(operations.asList());
+        Collections.reverse(ops);
+
+        for (final ModelNode operation : ops) {
 
             final String operationName = operation.require(OP).asString();
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
@@ -102,7 +130,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
             final ImmutableManagementResourceRegistration rootRegistration = context.getRootResourceRegistration();
             final OperationStepHandler stepHandler = rootRegistration.getOperationHandler(address, operationName);
             if(stepHandler != null) {
-                context.addStep(operation, stepHandler, OperationContext.Stage.MODEL);
+                context.addStep(operation, stepHandler, OperationContext.Stage.MODEL, true);
             } else {
                 final ImmutableManagementResourceRegistration child = rootRegistration.getSubModel(address);
                 if (child == null) {
@@ -184,8 +212,10 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 compare(child, null, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));
             }
             // Add the remove operation
-            final ModelNode op = Operations.createRemoveOperation(current.address.toModelNode());
-            operations.add(op);
+            if (registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, REMOVE) != null) {
+                final ModelNode op = Operations.createRemoveOperation(current.address.toModelNode());
+                operations.add(op);
+            }
 
         } else {
             throw new IllegalStateException();
@@ -216,6 +246,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
     }
 
     void processChildren(final Node current, final Node remote, ModelNode operations, final ImmutableManagementResourceRegistration registration) {
+
         for (final Node child : remote.children.values()) {
             final Node currentChild = current.children.remove(child.element);
             compare(currentChild, child, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));

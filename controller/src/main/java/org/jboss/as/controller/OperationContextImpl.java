@@ -251,6 +251,10 @@ final class OperationContextImpl extends AbstractOperationContext {
         return (stage != Stage.MODEL || validateCapabilities());
     }
 
+    ModelControllerImpl.ManagementModelImpl getManagementModel() {
+        return managementModel;
+    }
+
     private boolean validateCapabilities() {
         // Validate that all required capabilities are available and fail any steps that broke this
         Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = managementModel.validateCapabilityRegistry();
@@ -719,7 +723,15 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
             throw ControllerLogger.ROOT_LOGGER.unauthorized(activeStep.operationId.name, activeStep.address, authResult.getExplanation());
         }
-        Resource model = this.managementModel.getRootResource();
+        return readResourceFromRoot(managementModel, address, recursive);
+    }
+
+    @Override
+    Resource readResourceFromRoot(ManagementModel managementModel, PathAddress address, boolean recursive) {
+        //
+        // TODO double check authorization checks for this!
+        //
+        Resource model = managementModel.getRootResource();
         final Iterator<PathElement> iterator = address.iterator();
         while(iterator.hasNext()) {
             final PathElement element = iterator.next();
@@ -1688,10 +1700,6 @@ final class OperationContextImpl extends AbstractOperationContext {
             context = new ProfileCapabilityContext(pe.getValue());
         }
         return context;
-    }
-
-    ManagementModel getManagementModel() {
-        return managementModel;
     }
 
     class ContextServiceTarget implements ServiceTarget {

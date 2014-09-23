@@ -43,7 +43,6 @@ import org.jboss.as.domain.controller.operations.ServerGroupProfileWriteAttribut
 import org.jboss.as.domain.controller.operations.ServerGroupRemoveHandler;
 import org.jboss.as.domain.controller.operations.ServerGroupSocketBindingGroupWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentReplaceHandler;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
@@ -98,21 +97,18 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
     private final boolean master;
     private final HostFileRepository fileRepository;
     private final ContentRepository contentRepository;
-    private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
 
     public ServerGroupResourceDefinition(final boolean master, final LocalHostControllerInfo hostInfo,
-                                         final HostFileRepository fileRepository, final DomainControllerRuntimeIgnoreTransformationRegistry registry) {
-        this(master, hostInfo, fileRepository, null, registry);
+                                         final HostFileRepository fileRepository) {
+        this(master, hostInfo, fileRepository, null);
     }
 
     public ServerGroupResourceDefinition(final boolean master, final LocalHostControllerInfo hostInfo,
-                                         final HostFileRepository fileRepository, final ContentRepository contentRepository,
-                                         final DomainControllerRuntimeIgnoreTransformationRegistry registry) {
+                                         final HostFileRepository fileRepository, final ContentRepository contentRepository) {
         super(PATH, DomainResolver.getResolver(SERVER_GROUP, false), new ServerGroupAddHandler(master), new ServerGroupRemoveHandler(hostInfo));
         this.master = master;
         this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
-        this.runtimeIgnoreTransformationRegistry = registry;
     }
 
     @Override
@@ -121,9 +117,9 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             if (attr.getName().equals(MANAGEMENT_SUBSYSTEM_ENDPOINT.getName())) {
                 resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_SUBSYSTEM_ENDPOINT, null);
             } else if (attr.getName().equals(PROFILE.getName())) {
-                resourceRegistration.registerReadWriteAttribute(PROFILE, null, new ServerGroupProfileWriteAttributeHandler(master, runtimeIgnoreTransformationRegistry));
+                resourceRegistration.registerReadWriteAttribute(PROFILE, null, new ServerGroupProfileWriteAttributeHandler(master));
             } else if (attr.getName().equals(SOCKET_BINDING_GROUP.getName())) {
-                resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, new ServerGroupSocketBindingGroupWriteAttributeHandler(master, runtimeIgnoreTransformationRegistry));
+                resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, new ServerGroupSocketBindingGroupWriteAttributeHandler(master));
             } else {
                 resourceRegistration.registerReadWriteAttribute(attr, null, new ModelOnlyWriteAttributeHandler(attr));
             }

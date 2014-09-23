@@ -86,7 +86,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set("profile-two");
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        new ServerGroupProfileWriteAttributeHandler(master).execute(operationContext, operation);
         Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
         checkServerOperationResolver(operationContext, operation, pa, true);
     }
@@ -111,7 +111,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set("profile-one");
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        new ServerGroupProfileWriteAttributeHandler(master).execute(operationContext, operation);
         Assert.assertTrue(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT).contains(operation));
         checkServerOperationResolver(operationContext, operation, pa, false);
     }
@@ -126,6 +126,11 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         testChangeServerGroupInvalidProfile(false);
     }
 
+    @Override
+    AbstractOperationTestCase.MockOperationContext getOperationContext() {
+        return super.getOperationContext();
+    }
+
     private void testChangeServerGroupInvalidProfile(boolean master) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
@@ -136,13 +141,12 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set("does-not-exist");
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        new ServerGroupProfileWriteAttributeHandler(master).execute(operationContext, operation);
 
         operationContext.verify();
 
         if (!master) {
             Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
-            Assert.assertTrue(operationContext.isReloadRequired());
         } else {
             Assert.fail();
         }

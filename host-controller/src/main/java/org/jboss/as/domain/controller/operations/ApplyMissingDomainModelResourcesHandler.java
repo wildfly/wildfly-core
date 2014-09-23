@@ -70,7 +70,8 @@ import org.jboss.modules.ModuleLoadException;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ApplyMissingDomainModelResourcesHandler implements OperationStepHandler {
+@Deprecated
+class ApplyMissingDomainModelResourcesHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = "apply-missing-domain-resources";
 
     protected final DomainController domainController;

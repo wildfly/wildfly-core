@@ -101,6 +101,7 @@ import org.jboss.dmr.Property;
  * @author John Bailey
  * @author Kabir Khan
  */
+@Deprecated // we can probably remove this
 public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = "apply-remote-domain-model";
 
@@ -135,7 +136,7 @@ public class ApplyRemoteMasterDomainModelHandler implements OperationStepHandler
     }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
         // We get the model as a list of resources descriptions
         final ModelNode domainModel = operation.get(DOMAIN_MODEL);

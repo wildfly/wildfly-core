@@ -43,9 +43,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -63,15 +61,10 @@ public class PrepareStepHandler  implements OperationStepHandler {
                               final Map<String, ProxyController> hostProxies,
                               final Map<String, ProxyController> serverProxies,
                               final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
-                              final ExtensionRegistry extensionRegistry,
-                              final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
+                              final ExtensionRegistry extensionRegistry) {
         this.localHostControllerInfo = localHostControllerInfo;
         this.slaveHandler = new OperationSlaveStepHandler(localHostControllerInfo, serverProxies, ignoredDomainResourceRegistry, extensionRegistry);
-        this.coordinatorHandler = new OperationCoordinatorStepHandler(localHostControllerInfo, hostProxies, serverProxies, slaveHandler, runtimeIgnoreTransformationRegistry);
-    }
-
-    public void initialize(ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler) {
-        slaveHandler.intialize(applyMissingDomainModelResourcesHandler);
+        this.coordinatorHandler = new OperationCoordinatorStepHandler(localHostControllerInfo, hostProxies, serverProxies, slaveHandler);
     }
 
     @Override

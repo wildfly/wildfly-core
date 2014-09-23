@@ -89,9 +89,6 @@
             <ignored-resources type="profile">
                 <instance name="ignored"/>
             </ignored-resources>
-            <ignored-resources type="server-group">
-                <instance name="ignored-sockets"/>
-            </ignored-resources>
             <ignored-resources type="socket-binding-group">
                 <instance name="ignored"/>
             </ignored-resources>
@@ -99,6 +96,7 @@
                 <instance name="ignored"/>
             </ignored-resources>
             <ignored-resources type="server-group">
+                <instance name="ignored-sockets"/>
                 <instance name="minimal" />
             </ignored-resources>
         </remote>

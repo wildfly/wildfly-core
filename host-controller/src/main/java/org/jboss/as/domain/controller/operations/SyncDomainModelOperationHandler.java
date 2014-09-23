@@ -22,57 +22,87 @@
 
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
-import java.util.Collection;
-
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.HostInfo;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Operation handler synchronizing the domain model.
+ * Operation handler synchronizing the domain model. This handler will calculate the operations needed to create
+ * the local model and pass them to the {@code SyncModelOperationHandler}.
+ *
+ * This handler will be called for the initial host registration as well when reconnecting.
  *
  * @author Emanuel Muckenhuber
  */
 public class SyncDomainModelOperationHandler implements OperationStepHandler {
 
-    private final boolean ignoreUnused;
+    private final HostInfo hostInfo;
     private final ExtensionRegistry extensionRegistry;
     private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
-    private final Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> serverConfigs;
+    private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
 
-    public SyncDomainModelOperationHandler(HostInfo hostInfo, ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredResourceRegistry) {
-        this.ignoreUnused = hostInfo.isIgnoreUnaffectedConfig();
+    // Create a local transformer for now, maybe just bypass transformation and only worry about the ignored resources
+    private static final Transformers TRANSFORMERS = Transformers.Factory.createLocal();
+
+    public SyncDomainModelOperationHandler(HostInfo hostInfo, ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
+        this.hostInfo = hostInfo;
         this.extensionRegistry = extensionRegistry;
         this.ignoredResourceRegistry = ignoredResourceRegistry;
-        this.serverConfigs = hostInfo.getServerConfigInfos();
+        this.operationExecutor = operationExecutor;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        try {
+            internalExecute(context, operation);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new OperationFailedException(e);
+        }
+    }
+
+    public void internalExecute(OperationContext context, ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
 
         final ModelNode readOp = new ModelNode();
-        readOp.get(OP).set(ReadMasterDomainModelHandler.OPERATION_NAME);
+        readOp.get(OP).set(ReadMasterDomainOperationsHandler.OPERATION_NAME);
         readOp.get(OP_ADDR).setEmptyList();
 
-        final ReadMasterDomainOperationsHandler h = new ReadMasterDomainOperationsHandler(ignoreUnused, serverConfigs, extensionRegistry);
-        final ModelNode localOperations = new ModelNode();
+        // Create the remote model based on the result of the read-master-model operation
+        final Resource remote = ReadOperationsHandlerUtils.createResourceFromDomainModelOp(operation.require(DOMAIN_MODEL));
+        // Create the filter based on the remote model (since it may not be available locally yet).
+        final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = ReadOperationsHandlerUtils.populateHostResultionContext(hostInfo, remote, extensionRegistry);
+        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadOperationsHandlerUtils.createHostIgnoredRegistry(hostInfo, rc);
 
-        context.addStep(localOperations, readOp, h, OperationContext.Stage.MODEL);
+        // Describe the local model
+        final ReadDomainModelHandler h1 = new ReadDomainModelHandler(ignoredTransformationRegistry, TRANSFORMERS);
+        final ModelNode localModel = operationExecutor.executeReadOnly(readOp, h1, ModelController.OperationTransactionControl.COMMIT);
+
+        // Translate the local domain-model to a resource
+        final Resource transformedResource = ReadOperationsHandlerUtils.createResourceFromDomainModelOp(localModel.get(RESULT));
+
+        // Create the local describe operations
+        final ReadMasterDomainOperationsHandler h = new ReadMasterDomainOperationsHandler();
+        final ModelNode localOperations = operationExecutor.executeReadOnly(readOp, transformedResource, h, ModelController.OperationTransactionControl.COMMIT);
+
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 final ModelNode result = localOperations.get(RESULT);
-                final SyncModelOperationHandler handler = new SyncModelOperationHandler(result.asList(), ignoredResourceRegistry);
+                final SyncModelOperationHandler handler = new SyncModelOperationHandler(result.asList(), remote, ignoredResourceRegistry, operationExecutor);
                 context.addStep(operation, handler, OperationContext.Stage.MODEL);
                 context.stepCompleted();
             }

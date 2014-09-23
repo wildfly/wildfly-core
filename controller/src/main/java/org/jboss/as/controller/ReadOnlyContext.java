@@ -24,6 +24,8 @@ package org.jboss.as.controller;
 
 import java.io.InputStream;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -55,10 +57,13 @@ class ReadOnlyContext extends AbstractOperationContext {
     private final int operationId;
     private final ModelControllerImpl controller;
     private final AbstractOperationContext primaryContext;
+    private final ModelControllerImpl.ManagementModelImpl managementModel;
     private Step lockStep;
 
+    private final ConcurrentMap<AttachmentKey<?>, Object> valueAttachments = new ConcurrentHashMap<AttachmentKey<?>, Object>();
+
     ReadOnlyContext(final ProcessType processType, final RunningMode runningMode, final ModelController.OperationTransactionControl transactionControl,
-                    final ControlledProcessState processState, final boolean booting,
+                    final ControlledProcessState processState, final boolean booting, final ModelControllerImpl.ManagementModelImpl managementModel,
                     final AbstractOperationContext primaryContext, final ModelControllerImpl controller, final int operationId) {
         super(processType, runningMode, transactionControl, processState,
                 booting, controller.getAuditLogger(), controller.getNotificationSupport(),
@@ -66,6 +71,7 @@ class ReadOnlyContext extends AbstractOperationContext {
         this.primaryContext = primaryContext;
         this.controller = controller;
         this.operationId = operationId;
+        this.managementModel = managementModel;
     }
 
     @Override
@@ -77,6 +83,11 @@ class ReadOnlyContext extends AbstractOperationContext {
         } finally {
             AbstractOperationContext.controllingThread.remove();
         }
+    }
+
+    @Override
+    ModelControllerImpl.ManagementModelImpl getManagementModel() {
+        return managementModel;
     }
 
     @Override
@@ -126,7 +137,7 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public ImmutableManagementResourceRegistration getResourceRegistration() {
-        return primaryContext.getResourceRegistration();
+        return managementModel.getRootResourceRegistration().getSubModel(activeStep.address);
     }
 
     @Override
@@ -136,7 +147,7 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public ImmutableManagementResourceRegistration getRootResourceRegistration() {
-        return primaryContext.getRootResourceRegistration();
+        return managementModel.getRootResourceRegistration();
     }
 
     @Override
@@ -194,26 +205,26 @@ class ReadOnlyContext extends AbstractOperationContext {
         throw readOnlyContext();
     }
 
-    @Override
-    public Resource readResource(PathAddress address) {
-        PathAddress fullAddress = activeStep.address.append(address);
-        return primaryContext.readResource(fullAddress);
+    public Resource readResource(final PathAddress requestAddress) {
+        return readResource(requestAddress, true);
+    }
+
+    public Resource readResource(final PathAddress requestAddress, final boolean recursive) {
+        final PathAddress address = activeStep.address.append(requestAddress);
+        return readResourceFromRoot(address, recursive);
+    }
+
+    public Resource readResourceFromRoot(final PathAddress address) {
+        return readResourceFromRoot(address, true);
+    }
+
+    public Resource readResourceFromRoot(final PathAddress address, final boolean recursive) {
+        return readResourceFromRoot(managementModel, address, recursive);
     }
 
     @Override
-    public Resource readResource(PathAddress address, boolean recursive) {
-        PathAddress fullAddress = activeStep.address.append(address);
-        return primaryContext.readResource(fullAddress, recursive);
-    }
-
-    @Override
-    public Resource readResourceFromRoot(PathAddress address) {
-        return primaryContext.readResourceFromRoot(address);
-    }
-
-    @Override
-    public Resource readResourceFromRoot(PathAddress address, boolean recursive) {
-        return primaryContext.readResourceFromRoot(address, recursive);
+    Resource readResourceFromRoot(ManagementModel model, PathAddress address, boolean recursive) {
+        return primaryContext.readResourceFromRoot(model, address, recursive);
     }
 
     @Override
@@ -233,7 +244,7 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public boolean isModelAffected() {
-        return primaryContext.isModelAffected();
+        return false;
     }
 
     @Override
@@ -273,22 +284,34 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public <T> T getAttachment(AttachmentKey<T> key) {
+        if (valueAttachments.containsKey(key)) {
+            return key.cast(valueAttachments.get(key));
+        }
         return primaryContext.getAttachment(key);
     }
 
     @Override
-    public <T> T attach(AttachmentKey<T> key, T value) {
-        throw readOnlyContext();
+    public <V> V attach(final AttachmentKey<V> key, final V value) {
+        if (key == null) {
+            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
+        }
+        return key.cast(valueAttachments.put(key, value));
     }
 
     @Override
-    public <T> T attachIfAbsent(AttachmentKey<T> key, T value) {
-        throw readOnlyContext();
+    public <V> V attachIfAbsent(final AttachmentKey<V> key, final V value) {
+        if (key == null) {
+            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
+        }
+        return key.cast(valueAttachments.putIfAbsent(key, value));
     }
 
     @Override
-    public <T> T detach(AttachmentKey<T> key) {
-        throw readOnlyContext();
+    public <V> V detach(final AttachmentKey<V> key) {
+        if (key == null) {
+            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
+        }
+        return key.cast(valueAttachments.remove(key));
     }
 
     @Override

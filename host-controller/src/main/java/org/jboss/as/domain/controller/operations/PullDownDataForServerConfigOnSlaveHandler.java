@@ -23,32 +23,22 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Executed on the DC when a slave's server-config has its server-group or socket-binding-group override changed
+ * Executed on the DC when a slave's host requests more data for a given server group.
+ *
+ * This is the remote counterpart of the {@code SyncServerConfigOperationHandler}.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -56,148 +46,28 @@ public class PullDownDataForServerConfigOnSlaveHandler implements OperationStepH
 
     public static String OPERATION_NAME = "slave-server-config-change";
 
-    protected String host;
-    protected Transformers transformers;
-    protected DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
-
+    private final String host;
+    private final Transformers transformers;
     private final ExtensionRegistry extensionRegistry;
 
-    public PullDownDataForServerConfigOnSlaveHandler(final ExtensionRegistry extensionRegistry) {
+    public PullDownDataForServerConfigOnSlaveHandler(final String hostName, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
+        this.host = hostName;
+        this.transformers = transformers;
         this.extensionRegistry = extensionRegistry;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        context.acquireControllerLock();
-
         final ServerConfigInfo serverConfig = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(operation.require(SERVER));
 
-        final IncludeFilter includeFilter = new IncludeFilter();
-        final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-        ReadOperationsHandlerUtils.processServerConfig(context, root, includeFilter.context, serverConfig, extensionRegistry);
+        // Filter the information to only include configuration for the given server-group or socket-binding group
+        final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = new ReadOperationsHandlerUtils.RequiredConfigurationHolder();
+        ReadOperationsHandlerUtils.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
+        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadOperationsHandlerUtils.createServerIgnoredRegistry(rc);
 
-        context.attach(PathAddressFilter.KEY, includeFilter);
-        context.addStep(operation, GenericModelDescribeOperationHandler.INSTANCE, OperationContext.Stage.MODEL, true);
+        final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
+        context.addStep(handler, OperationContext.Stage.MODEL);
         context.stepCompleted();
-    }
-
-    static class IncludeFilter extends PathAddressFilter {
-
-        private final ReadOperationsHandlerUtils.ResolutionContext context;
-
-        IncludeFilter() {
-            super(false);
-            this.context = new ReadOperationsHandlerUtils.ResolutionContext();
-        }
-
-        @Override
-        boolean accepts(PathAddress address) {
-            if (address.size() == 0) {
-                return true;
-            } else if (address.size() >= 1) {
-                final PathElement first = address.getElement(0);
-                final String key = first.getKey();
-                switch (key) {
-                    case EXTENSION:
-                        if (context.getExtensions().contains(first.getValue())) {
-                            return true;
-                        }
-                        break;
-                    case PROFILE:
-                        if (context.getProfiles().contains(first.getValue())) {
-                            return true;
-                        }
-                        break;
-                    case SERVER_GROUP:
-                        if (context.getServerGroups().contains(first.getValue())) {
-                            return true;
-                        }
-                        break;
-                    case SOCKET_BINDING_GROUP:
-                        if (context.getSocketBindings().contains(first.getValue())) {
-                            return true;
-                        }
-                        break;
-                }
-            }
-            return false;
-        }
-    }
-
-    public void executeOld(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        context.acquireControllerLock();
-
-        final ServerConfigInfo serverInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(operation.require(SERVER));
-
-        final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS);
-
-        final Set<PathElement> unknownElements = new HashSet<>();
-
-        //Check the server group exists and if it is unknown
-        final String serverGroupName = serverInfo.getServerGroup();
-        final PathElement serverGroupElement = PathElement.pathElement(SERVER_GROUP, serverGroupName);
-        final Resource serverGroupResource = root.getChild(serverGroupElement);
-        if (serverGroupResource == null) {
-            throw HostControllerLogger.ROOT_LOGGER.noResourceFor(PathAddress.pathAddress(serverGroupElement));
-        }
-
-        String serverGroupSocketBindingGroup = null;
-        if (!runtimeIgnoreTransformationRegistry.isServerGroupKnown(root, host, serverGroupName)) {
-            unknownElements.add(serverGroupElement);
-
-            //Look at the things brought in by the server group and see if they also need adding
-            final ModelNode serverGroupModel = serverGroupResource.getModel();
-
-            //server-group's profile
-            final String profileName = serverGroupModel.get(PROFILE).asString();
-            final PathElement profileElement = PathElement.pathElement(PROFILE, profileName);
-            final Resource profileResource = root.getChild(profileElement);
-            if (profileResource == null) {
-                throw HostControllerLogger.ROOT_LOGGER.noResourceFor(PathAddress.pathAddress(profileElement));
-            }
-
-            if (!runtimeIgnoreTransformationRegistry.isProfileKnown(root, host, profileName)) {
-                unknownElements.add(profileElement);
-                Set<PathElement> unknownExtensions = runtimeIgnoreTransformationRegistry.getUnknownExtensionsForProfile(root, host, profileName);
-                unknownElements.addAll(unknownExtensions);
-
-            }
-
-            //server-group's socket-binding group
-            if (serverGroupModel.hasDefined(SOCKET_BINDING_GROUP)) {
-                serverGroupSocketBindingGroup = serverGroupModel.get(SOCKET_BINDING_GROUP).asString();
-                addSocketBindingGroup(unknownElements, root, serverGroupSocketBindingGroup);
-            }
-
-        }
-
-        if (serverInfo.getSocketBindingGroup() != null && !serverInfo.getSocketBindingGroup().equals(serverGroupSocketBindingGroup)) {
-            addSocketBindingGroup(unknownElements, root, serverInfo.getSocketBindingGroup());
-        }
-
-        final ReadMasterDomainModelUtil readUtil = ReadMasterDomainModelUtil.readMasterDomainResourcesForSlaveRequest(context, unknownElements, transformers, root, runtimeIgnoreTransformationRegistry);
-        context.getResult().set(readUtil.getDescribedResources());
-        context.completeStep(new OperationContext.ResultHandler() {
-            @Override
-            public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                if (resultAction == ResultAction.KEEP) {
-                    //Since this method gets invoked as part of a transaction on the slave, gather the known resources and record them once the tx completes
-                    runtimeIgnoreTransformationRegistry.addKnownDataForSlave(host, readUtil.getNewKnownRootResources());
-                    runtimeIgnoreTransformationRegistry.updateSlaveServerConfig(host, serverInfo);
-                }
-            }
-        });
-    }
-
-    private void addSocketBindingGroup(Set<PathElement> unknownElements, Resource root, String socketBindingGroup) throws OperationFailedException {
-        final PathElement socketBindingGroupElement = PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroup);
-        final Resource socketBindingGroupResource = root.getChild(socketBindingGroupElement);
-        if (socketBindingGroupResource == null) {
-            throw HostControllerLogger.ROOT_LOGGER.noResourceFor(PathAddress.pathAddress(socketBindingGroupElement));
-        }
-        if (!runtimeIgnoreTransformationRegistry.isSocketBindingGroupKnown(root, host, socketBindingGroup)) {
-            unknownElements.add(socketBindingGroupElement);
-        }
     }
 
 }

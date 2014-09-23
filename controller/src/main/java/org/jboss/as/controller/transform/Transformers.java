@@ -88,21 +88,10 @@ public interface Transformers {
      */
     Resource transformRootResource(OperationContext operationContext, Resource resource) throws OperationFailedException;
 
-    /**
-     * Transform a given resource.
-     *
-     * @param operationContext the operation context
-     * @param original the address of the resource to transform
-     * @param resource the resource
-     * @param skipRuntimeIgnoreCheck
-     * @return the transformed resource
-     * @throws OperationFailedException
-     */
-    Resource transformResource(final OperationContext operationContext, PathAddress original, Resource resource, boolean skipRuntimeIgnoreCheck) throws OperationFailedException;
-
+    Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException;
 
     /**
-     * Convenience factory for unit tests
+     * Convenience factory for unit tests, and default internal implementations
      */
     public static class Factory {
         private Factory() {
@@ -131,8 +120,39 @@ public interface Transformers {
         public static ResourceTransformationContext create(TransformationTarget target, Resource model,
                                                            ImmutableManagementResourceRegistration registration, ExpressionResolver resolver,
                                                            RunningMode runningMode, ProcessType type, TransformerOperationAttachment attachment) {
-            return ResourceTransformationContextImpl.create(target, model, registration, runningMode, type, false, attachment);
+            return ResourceTransformationContextImpl.create(target, model, registration, runningMode, type, attachment, DEFAULT);
         }
+
+        /**
+         * Create a local transformer, which will use the default transformation rules, however still respect the
+         * ignored resource transformation.
+         *
+         * @return
+         */
+        public static Transformers createLocal() {
+            return new TransformersImpl(TransformationTargetImpl.createLocal());
+        }
+
     }
+
+    interface ResourceIgnoredTransformationRegistry {
+
+        /**
+         * Gets whether a resource with the given {@code address} should be excluded from
+         * {@link TransformationTarget#resolveTransformer(ResourceTransformationContext, org.jboss.as.controller.PathAddress) resource transformation}.
+         *
+         * @param address the resource address. Cannot be {@code null}
+         * @return {@code true} if the resource should be excluded from resource transformation
+         */
+        boolean isResourceTransformationIgnored(final PathAddress address);
+
+    }
+
+    ResourceIgnoredTransformationRegistry DEFAULT = new ResourceIgnoredTransformationRegistry() {
+        @Override
+        public boolean isResourceTransformationIgnored(PathAddress address) {
+            return false;
+        }
+    };
 
 }

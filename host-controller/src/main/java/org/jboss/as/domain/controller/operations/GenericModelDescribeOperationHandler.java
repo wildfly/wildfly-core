@@ -64,6 +64,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
+ * A generic model "describe" handler, returning a list of operations which is needed to create an equivalent model.
+ *
  * @author Emanuel Muckenhuber
  */
 public class GenericModelDescribeOperationHandler implements OperationStepHandler {
@@ -86,14 +88,6 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        try {
-            internalExecute(context, operation);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void internalExecute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
         final PathAddress address = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
         final PathAddressFilter filter = context.getAttachment(PathAddressFilter.KEY);
@@ -113,6 +107,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
         final AtomicReference<ModelNode> failureRef = new AtomicReference<ModelNode>();
         final Map<String, ModelNode> includeResults = new HashMap<String, ModelNode>();
 
+        // Step to handle failed operations
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -205,8 +200,10 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
         }
 
         if (address.size() == 0) {
+            // Do we need to set any root attributes?
             result.setEmptyList();
         } else {
+            // Generic operation generation
             final ModelNode model = resource.getModel();
             final OperationStepHandler addHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD);
             if (addHandler != null) {

@@ -33,6 +33,9 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 
 /**
+ * This profile describe handler branches off to the actual subsystem describe operations, however keeping the addresses
+ * consistent with the generic model describe handler.
+ *
  * @author Emanuel Muckenhuber
  */
 public class ProfileModelDescribeHandler extends GenericModelDescribeOperationHandler {

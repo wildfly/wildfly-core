@@ -241,22 +241,60 @@ class ModelControllerImpl implements ModelController {
             // TODO we might just allow this case too, but for now it's just wrong (internal) usage
             throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
         }
+        CurrentOperationIdHolder.setCurrentOperationID(operationId);
+        try {
+            return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
+        } finally {
+            CurrentOperationIdHolder.setCurrentOperationID(null);
+        }
+    }
+
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelController.ACCESS_PERMISSION);
+        }
+        // Get the primary context to delegate the reads to
+        final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
+        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
+        if(delegateContext == null) {
+            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
+            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
+        }
+        return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
+    }
+
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final Resource resource, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelController.ACCESS_PERMISSION);
+        }
+        // Get the primary context to delegate the reads to
+        final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
+        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
+        if(delegateContext == null) {
+            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
+            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
+        }
+        final ManagementModelImpl current = delegateContext.getManagementModel();
+        final ManagementModelImpl mgmtModel = new ManagementModelImpl(current.getRootResourceRegistration(), resource, current.capabilityRegistry);
+        return executeReadOnlyOperation(operation, mgmtModel, control, prepareStep, delegateContext);
+    }
+
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final ManagementModelImpl model, final OperationTransactionControl control, final OperationStepHandler prepareStep, AbstractOperationContext delegateContext) {
         final ModelNode response = new ModelNode();
-        final OperationTransactionControl originalResultTxControl = control == null ? null : new OperationTransactionControl() {
+        final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
+        final OperationTransactionControl txControl = control == null ? null : new OperationTransactionControl() {
             @Override
             public void operationPrepared(OperationTransaction transaction, ModelNode result) {
                 control.operationPrepared(transaction, response);
             }
         };
+
         // Use a read-only context
-        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), originalResultTxControl, processState, false, delegateContext, this, operationId);
+        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), control, processState, false, model, delegateContext, this, operationId);
         context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
-        CurrentOperationIdHolder.setCurrentOperationID(operationId);
-        try {
-            context.executeOperation();
-        } finally {
-            CurrentOperationIdHolder.setCurrentOperationID(null);
-        }
+        context.executeOperation();
 
         if (!response.hasDefined(RESPONSE_HEADERS) || !response.get(RESPONSE_HEADERS).hasDefined(PROCESS_STATE)) {
             ControlledProcessState.State state = processState.getState();

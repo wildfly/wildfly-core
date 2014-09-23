@@ -169,6 +169,9 @@ class OperationRouting {
                         // Make sure we don't loose the information that we have to execute the operation on all hosts
                         fwdToAllHosts = fwdToAllHosts || stepRouting.getHosts().isEmpty();
                     }
+//                    if (!localHostControllerInfo.isMasterDomainController()) {
+//                        fwdToAllHosts = fwdToAllHosts || stepRouting.getHosts().isEmpty();
+//                    }
                     allHosts.addAll(stepRouting.getHosts());
                 }
                 if (fwdToAllHosts) {

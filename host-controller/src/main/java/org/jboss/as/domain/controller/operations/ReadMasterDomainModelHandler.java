@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2014, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -26,9 +26,10 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
+import org.jboss.as.host.controller.mgmt.HostInfo;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -38,36 +39,39 @@ import org.jboss.dmr.ModelNode;
  *
  * @author John Bailey
  * @author Kabir Khan
+ * @author Emanuel Muckenhuber
  */
 public class ReadMasterDomainModelHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "read-master-domain-model";
 
-    protected final String host;
-    protected final Transformers transformers;
-    protected final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
+    private final HostInfo hostInfo;
+    private final Transformers transformers;
+    private final ExtensionRegistry extensionRegistry;
 
-    public ReadMasterDomainModelHandler(final String host, final Transformers transformers, DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
-        this.host = host;
+    public ReadMasterDomainModelHandler(HostInfo hostInfo, Transformers transformers, ExtensionRegistry extensionRegistry) {
+        this.hostInfo = hostInfo;
         this.transformers = transformers;
-        this.runtimeIgnoreTransformationRegistry = runtimeIgnoreTransformationRegistry;
+        this.extensionRegistry = extensionRegistry;
     }
 
+    @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        // Acquire the lock to make sure that nobody can modify the model before the slave has applied it
         context.acquireControllerLock();
 
-        final Resource rootResource = context.readResource(PathAddress.EMPTY_ADDRESS,true);
-        final ReadMasterDomainModelUtil readUtil = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(context, transformers, rootResource, runtimeIgnoreTransformationRegistry);
-        context.getResult().set(readUtil.getDescribedResources());
+        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry;
+        final Resource resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+        // The host info is only null in the tests
+        if (hostInfo == null) {
+            ignoredTransformationRegistry = Transformers.DEFAULT;
+        } else {
+            final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = ReadOperationsHandlerUtils.populateHostResultionContext(hostInfo, resource, extensionRegistry);
+            ignoredTransformationRegistry = ReadOperationsHandlerUtils.createHostIgnoredRegistry(hostInfo, rc);
+        }
 
-        context.completeStep(new OperationContext.ResultHandler() {
-            @Override
-            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                if (resultAction == OperationContext.ResultAction.KEEP) {
-                    runtimeIgnoreTransformationRegistry.addKnownDataForSlave(host, readUtil.getNewKnownRootResources());
-                }
-            }
-        });
+        final OperationStepHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
+        context.addStep(handler, OperationContext.Stage.MODEL);
+        context.stepCompleted();
     }
+
 }

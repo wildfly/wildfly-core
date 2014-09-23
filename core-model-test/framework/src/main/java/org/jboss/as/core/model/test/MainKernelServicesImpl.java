@@ -23,7 +23,6 @@ package org.jboss.as.core.model.test;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -54,7 +53,6 @@ import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.core.model.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
 import org.jboss.as.host.controller.ignored.IgnoreDomainResourceTypeResource;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.dmr.ModelNode;
@@ -91,7 +89,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         OperationTransformerRegistry registry = transformerRegistry.resolveHost(modelVersion, subsystemVersions);
 
         TransformationTarget target = TransformationTargetImpl.create(extensionRegistry.getTransformerRegistry(), modelVersion,
-                subsystemVersions, MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.DOMAIN, null);
+                subsystemVersions, MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.DOMAIN);
         TransformationContext transformationContext = createTransformationContext(target, attachment);
 
         OperationTransformer operationTransformer = registry.resolveOperationTransformer(address, operation.get(OP).asString(), null).getTransformer();
@@ -121,14 +119,11 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         checkIsMainController();
 
         final TransformationTarget target = TransformationTargetImpl.create(extensionRegistry.getTransformerRegistry(), modelVersion,
-                Collections.<PathAddress, ModelVersion>emptyMap(), MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.DOMAIN, null);
+                Collections.<PathAddress, ModelVersion>emptyMap(), MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.DOMAIN);
         final Transformers transformers = Transformers.Factory.create(target);
 
-        DomainControllerRuntimeIgnoreTransformationRegistry registry = new DomainControllerRuntimeIgnoreTransformationRegistry();
-        registry.initializeHost("host");
-        ModelNode fakeOP = new ModelNode();
-        fakeOP.get(OP).set("fake");
-        ModelNode result = internalExecute(fakeOP, new ReadMasterDomainModelHandler(HOST, transformers, registry));
+        ModelNode result = internalExecute(new ModelNode(), new ReadMasterDomainModelHandler(null, transformers, extensionRegistry));
+
         if (FAILED.equals(result.get(OUTCOME).asString())) {
             throw new RuntimeException(result.get(FAILURE_DESCRIPTION).asString());
         }

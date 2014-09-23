@@ -22,6 +22,7 @@
 package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP_NAME;
 
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
@@ -35,7 +36,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -47,12 +47,10 @@ import org.jboss.dmr.ModelNode;
 public class ServerGroupProfileWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
     private final boolean master;
-    private final DomainControllerRuntimeIgnoreTransformationRegistry registry;
 
-    public ServerGroupProfileWriteAttributeHandler(boolean master, DomainControllerRuntimeIgnoreTransformationRegistry registry) {
+    public ServerGroupProfileWriteAttributeHandler(boolean master) {
         super(ServerGroupResourceDefinition.PROFILE);
         this.master = master;
-        this.registry = registry;
     }
 
     @Override
@@ -70,20 +68,16 @@ public class ServerGroupProfileWriteAttributeHandler extends ModelOnlyWriteAttri
         // can safely be resolved in stage model, this profile attribute can be changed and this will still work.
         boolean reloadRequired = false;
         final String profile = ServerGroupResourceDefinition.PROFILE.resolveModelAttribute(context, resource.getModel()).asString();
-        try {
-            context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(ServerGroupResourceDefinition.PROFILE.getName(), profile)));
-        } catch (Exception e) {
+
+        if (!context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).hasChild(PathElement.pathElement(ServerGroupResourceDefinition.PROFILE.getName(), profile))) {
             if (master) {
                 throw DomainControllerLogger.ROOT_LOGGER.noProfileCalled(profile);
             } else {
                 //We are a slave HC and we don't have the profile required, so put the slave AND the server into reload-required
-                context.reloadRequired();
-                reloadRequired = true;
+                final String name = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
+                final String sb = resource.getModel().hasDefined(SOCKET_BINDING_GROUP_NAME) ? resource.getModel().get(SOCKET_BINDING_GROUP_NAME).asString() : null;
+                ServerGroupMissingConfigUtils.pullDownMissingDataFromDc(context, "test", name, sb);
             }
-        }
-
-        if (registry != null) {
-            registry.changeServerGroupProfile(context, PathAddress.pathAddress(operation.require(OP_ADDR)), newValue.asString());
         }
 
         if (reloadRequired) {
@@ -108,4 +102,5 @@ public class ServerGroupProfileWriteAttributeHandler extends ModelOnlyWriteAttri
             }, Stage.MODEL);
         }
     }
+
 }

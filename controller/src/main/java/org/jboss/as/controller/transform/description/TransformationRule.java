@@ -177,11 +177,6 @@ abstract class TransformationRule {
         }
 
         @Override
-        public boolean isSkipRuntimeIgnoreCheck() {
-            return delegate.isSkipRuntimeIgnoreCheck();
-        }
-
-        @Override
         public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
             return delegate.getAttachment(key);
         }
@@ -200,6 +195,7 @@ abstract class TransformationRule {
         public <T> T detach(OperationContext.AttachmentKey<T> key) {
             return delegate.detach(key);
         }
+
     }
 
     private static class ChainedTransformedOperation extends OperationTransformer.TransformedOperation {

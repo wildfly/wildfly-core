@@ -296,11 +296,6 @@ public class HostInfoUnitTestCase {
         }
 
         @Override
-        public boolean isSkipRuntimeIgnoreCheck() {
-            return false;
-        }
-
-        @Override
         public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
             return null;
         }

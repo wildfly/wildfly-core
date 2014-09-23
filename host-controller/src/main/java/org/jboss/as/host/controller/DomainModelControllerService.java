@@ -121,7 +121,6 @@ import org.jboss.as.host.controller.discovery.DomainControllerManagementInterfac
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationEntry;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.MasterDomainControllerOperationHandlerService;
 import org.jboss.as.host.controller.mgmt.ServerToHostOperationHandlerFactoryService;
@@ -203,7 +202,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private final PathManagerService pathManager;
     private final ExpressionResolver expressionResolver;
     private final DomainDelegatingResourceDefinition rootResourceDefinition;
-    private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
 
     // @GuardedBy(this)
     private Future<ServerInventory> inventoryFuture;
@@ -230,19 +228,16 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
-        RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
+        final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
-        final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry = new DomainControllerRuntimeIgnoreTransformationRegistry();
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
-                hostProxies, serverProxies, ignoredRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry);
+                hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry, auditLogger, authorizer);
-        //ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler = new ApplyMissingDomainModelResourcesHandler(service, environment, hostControllerInfo, ignoredRegistry);
-        //prepareStepHandler.initialize(applyMissingDomainModelResourcesHandler);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer);
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -267,7 +262,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final DomainDelegatingResourceDefinition rootResourceDefinition,
                                          final ExtensionRegistry hostExtensionRegistry,
                                          final ExtensionRegistry extensionRegistry,
-                                         final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry,
                                          final ManagedAuditLogger auditLogger,
                                          final DelegatingConfigurableAuthorizer authorizer) {
         super(ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
@@ -291,7 +285,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.pathManager = pathManager;
         this.expressionResolver = expressionResolver;
         this.rootResourceDefinition = rootResourceDefinition;
-        this.runtimeIgnoreTransformationRegistry = runtimeIgnoreTransformationRegistry;
     }
 
     private static ManagedAuditLogger createAuditLogger(HostControllerEnvironment environment) {
@@ -332,8 +325,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final String address = handler.getRemoteAddress().getHostAddress();
         slaveHostRegistrations.registerHost(hostName, pinger, address);
 
-        runtimeIgnoreTransformationRegistry.registerHost(hostName, runtimeIgnoreTransformation);
-
         if (registerProxyController) {
             // Create the proxy controller
             final TransformingProxyController hostControllerClient = TransformingProxyController.Factory.create(handler, transformers, addr, ProxyOperationAddressTranslator.HOST);
@@ -359,7 +350,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     pinger.cancel();
                 }
                 boolean registered = hostProxies.remove(id) != null;
-                runtimeIgnoreTransformationRegistry.unregisterHost(id);
                 modelNodeRegistration.unregisterProxyController(PathElement.pathElement(HOST, id));
 
                 if (registered) {
@@ -649,7 +639,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     if (ok) {
                         InternalExecutor executor = new InternalExecutor();
                         ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                                new MasterDomainControllerOperationHandlerService(this, executor, executor, runtimeIgnoreTransformationRegistry, environment.getDomainTempDir(), this),
+                                new MasterDomainControllerOperationHandlerService(this, executor, executor, environment.getDomainTempDir(), this),
                                 DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.DOMAIN_CHANNEL,
                                 HostControllerService.HC_EXECUTOR_SERVICE_NAME, HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
 
@@ -891,8 +881,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             final PathManagerService pathManager) {
 
         DomainRootDefinition domainRootDefinition = new DomainRootDefinition(this, environment, configurationPersister, contentRepo, fileRepository, isMaster, hostControllerInfo,
-                extensionRegistry, ignoredDomainResourceRegistry, pathManager,
-                isMaster ? runtimeIgnoreTransformationRegistry : null, authorizer, this, getMutableRootResourceRegistrationProvider());
+                extensionRegistry, ignoredDomainResourceRegistry, pathManager, authorizer, this, getMutableRootResourceRegistrationProvider());
         rootResourceDefinition.setDelegate(domainRootDefinition, root);
     }
 
@@ -1159,6 +1148,16 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public OperationResponse executeAndAttemptLock(Operation operation, OperationMessageHandler handler,
                 OperationTransactionControl control, OperationStepHandler step) {
             return internalExecute(operation, handler, control, step, true);
+        }
+
+        @Override
+        public ModelNode executeReadOnly(ModelNode operation, OperationStepHandler handler, OperationTransactionControl control) {
+            return executeReadOnlyOperation(operation, control, handler);
+        }
+
+        @Override
+        public ModelNode executeReadOnly(ModelNode operation, Resource model, OperationStepHandler handler, OperationTransactionControl control) {
+            return executeReadOnlyOperation(operation, model, control, handler);
         }
     }
 
