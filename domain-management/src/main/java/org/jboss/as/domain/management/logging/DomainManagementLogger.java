@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.logging;
 
 import static org.jboss.logging.Logger.Level.WARN;
+import static org.jboss.logging.Logger.Level.ERROR;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -31,14 +32,17 @@ import java.util.Set;
 import javax.naming.NamingException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.domain.management.security.password.PasswordValidationException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
@@ -1011,6 +1015,22 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = 92, value = "Unable to obtain Kerberos TGT")
     OperationFailedException unableToObtainTGT(@Cause Exception cause);
+
+    /**
+     * Logs a message indicating that attempting to login using a specific keytab failed.
+     */
+    @LogMessage(level = ERROR)
+    @Message(id = 93, value = "Login failed using Keytab for principal '%s' to handle request for host '%s'")
+    void keytabLoginFailed(String principal, String host, @Cause LoginException e);
+
+    /**
+     * Create an {@link OperationFailedException} where a security realm has Kerberos enabled for authentication but no Keytab in the server-identities.
+     *
+     * @param realm The name of the security realm.
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 94, value = "Kerberos is enabled for authentication on security realm '%s' but no Keytab has been added to the server-identity.")
+    OperationFailedException kerberosWithoutKeytab(String realm);
 
     /**
      * Information message saying the username and password must be different.

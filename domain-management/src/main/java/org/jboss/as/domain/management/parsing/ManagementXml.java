@@ -880,7 +880,14 @@ public class ManagementXml {
                     }
                     break;
                 case AUTHENTICATION: {
-                    parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
+                    switch (expectedNs.getMajorVersion()) {
+                        case 1:
+                        case 2:
+                            parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
+                            break;
+                        default:
+                            parseAuthentication_3_0(reader, expectedNs, realmAddress, list);
+                    }
                     break;
                 }
                 case AUTHORIZATION:
@@ -1494,6 +1501,97 @@ public class ManagementXml {
                             }
                     }
 
+                    localFound = true;
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
+
+    private static void parseAuthentication_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+
+        // Only one truststore can be defined.
+        boolean trustStoreFound = false;
+        // Only one local can be defined.
+        boolean localFound = false;
+        // Only one kerberos can be defined.
+        boolean kerberosFound = false;
+        // Only one of ldap, properties or users can be defined.
+        boolean usernamePasswordFound = false;
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, expectedNs);
+            final Element element = Element.forName(reader.getLocalName());
+
+            switch (element) {
+                case JAAS: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseJaasAuthentication_1_6_and_3_0(reader, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case KERBEROS: {
+                    if (kerberosFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    list.add(Util.getEmptyOperation(ADD, realmAddress.clone().add(AUTHENTICATION, KERBEROS)));
+                    requireNoAttributes(reader);
+                    requireNoContent(reader);
+                    kerberosFound = true;
+                    break;
+                }
+                case LDAP: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseLdapAuthentication_2_0(reader, expectedNs, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case PROPERTIES: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parsePropertiesAuthentication_1_1(reader, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case TRUSTSTORE: {
+                    if (trustStoreFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseTruststore(reader, expectedNs, realmAddress, list);
+                    trustStoreFound = true;
+                    break;
+                }
+                case USERS: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseUsersAuthentication(reader, expectedNs, realmAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case PLUG_IN: {
+                    if (usernamePasswordFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    ModelNode parentAddress = realmAddress.clone().add(AUTHENTICATION);
+                    parsePlugIn_Authentication(reader, expectedNs, parentAddress, list);
+                    usernamePasswordFound = true;
+                    break;
+                }
+                case LOCAL: {
+                    if (localFound) {
+                        throw unexpectedElement(reader);
+                    }
+                    parseLocalAuthentication_2_1(reader, expectedNs, realmAddress, list);
                     localFound = true;
                     break;
                 }
@@ -3884,6 +3982,10 @@ public class ManagementXml {
             LocalAuthenticationResourceDefinition.ALLOWED_USERS.marshallAsAttribute(local, writer);
             LocalAuthenticationResourceDefinition.SKIP_GROUP_LOADING.marshallAsAttribute(local, writer);
             writer.writeEndElement();
+        }
+
+        if (authentication.has(KERBEROS)) {
+            writer.writeEmptyElement(Element.KERBEROS.getLocalName());
         }
 
         if (authentication.hasDefined(JAAS)) {
