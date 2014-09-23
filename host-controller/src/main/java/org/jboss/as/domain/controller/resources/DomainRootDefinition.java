@@ -316,7 +316,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
                 ? DomainDeploymentResourceDefinition.createForDomainMaster(contentRepo)
                 : DomainDeploymentResourceDefinition.createForDomainSlave(environment.isBackupDomainFiles(), fileRepository);
         resourceRegistration.registerSubModel(domainDeploymentDefinition);
-        resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(null, contentRepo, fileRepository));
+        resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(true, contentRepo, fileRepository));
         resourceRegistration.registerSubModel(new ServerGroupResourceDefinition(isMaster, hostControllerInfo, fileRepository, runtimeIgnoreTransformationRegistry));
 
 

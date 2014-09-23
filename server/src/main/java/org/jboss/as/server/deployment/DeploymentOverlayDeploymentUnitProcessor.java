@@ -39,12 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.deployment.module.TempFileProviderService;
-import org.jboss.as.server.deploymentoverlay.service.ContentService;
-import org.jboss.as.server.deploymentoverlay.service.DeploymentOverlayIndexService;
-import org.jboss.as.server.deploymentoverlay.service.DeploymentOverlayService;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -55,12 +54,12 @@ import org.jboss.vfs.VirtualFile;
  */
 public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitProcessor {
 
-    private final DeploymentOverlayIndexService indexService;
+    private final ContentRepository contentRepository;
 
     private static final AttachmentKey<AttachmentList<Closeable>> MOUNTED_FILES = AttachmentKey.createList(Closeable.class);
 
-    public DeploymentOverlayDeploymentUnitProcessor(final DeploymentOverlayIndexService indexService) {
-        this.indexService = indexService;
+    public DeploymentOverlayDeploymentUnitProcessor(final ContentRepository contentRepository) {
+        this.contentRepository = contentRepository;
     }
 
     @Override
@@ -81,50 +80,53 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
                 resourceRootMap.put(root.getRoot().getPathNameRelativeTo(deploymentRoot.getRoot()), root);
             }
         }
-
+        DeploymentOverlayIndex overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX);
+        if(overlays == null) {
+            return;
+        }
         //exploded is true if this is a zip deployment that has been mounted exploded
         final boolean exploded = MountExplodedMarker.isMountExploded(deploymentUnit) && !ExplodedDeploymentMarker.isExplodedDeployment(deploymentUnit);
         final Set<String> paths = new HashSet<String>();
-        for (final DeploymentOverlayService deploymentOverlay : indexService.getOverrides(deploymentUnit.getName())) {
-            for (final ContentService override : deploymentOverlay.getContentServices()) {
+        for (final Map.Entry<String, byte[]> entry : overlays.getOverlays(deploymentUnit.getName()).entrySet()) {
 
-                String path = override.getPath();
-                if(path.startsWith("/")) {
-                    path = path.substring(1);
-                }
-                try {
-                    if (!paths.contains(path)) {
-                        VirtualFile mountPoint = deploymentRoot.getRoot().getChild(path);
+            String path = entry.getKey();
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            try {
+                if (!paths.contains(path)) {
+                    VirtualFile mountPoint = deploymentRoot.getRoot().getChild(path);
 
-                        paths.add(path);
-                        if (exploded) {
-                            //for exploded deployments we simply copy the file
-                            copyFile(override.getContentHash().getPhysicalFile(), mountPoint.getPhysicalFile());
+                    paths.add(path);
+                    VirtualFile content = contentRepository.getContent(entry.getValue());
+                    if (exploded) {
+                        //for exploded deployments we simply copy the file
 
-                        } else {
-                            VirtualFile parent = mountPoint.getParent();
-                            List<VirtualFile> createParents = new ArrayList<>();
-                            while (!parent.exists()) {
-                                createParents.add(parent);
-                                parent = parent.getParent();
-                            }
-                            Collections.reverse(createParents);
-                            for(VirtualFile file : createParents) {
-                                Closeable closable = VFS.mountTemp(file, TempFileProviderService.provider());
-                                deploymentUnit.addToAttachmentList(MOUNTED_FILES, closable);
-                            }
-                            Closeable handle = VFS.mountReal(override.getContentHash().getPhysicalFile(), mountPoint);
-                            MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, override.getContentHash().getPhysicalFile(),  mountPoint, TempFileProviderService.provider());
-                            deploymentUnit.addToAttachmentList(MOUNTED_FILES, mounted);
-                            mounts.put(path, mounted);
-
+                        copyFile(content.getPhysicalFile(), mountPoint.getPhysicalFile());
+                    } else {
+                        VirtualFile parent = mountPoint.getParent();
+                        List<VirtualFile> createParents = new ArrayList<>();
+                        while (!parent.exists()) {
+                            createParents.add(parent);
+                            parent = parent.getParent();
                         }
+                        Collections.reverse(createParents);
+                        for (VirtualFile file : createParents) {
+                            Closeable closable = VFS.mountTemp(file, TempFileProviderService.provider());
+                            deploymentUnit.addToAttachmentList(MOUNTED_FILES, closable);
+                        }
+                        Closeable handle = VFS.mountReal(content.getPhysicalFile(), mountPoint);
+                        MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content.getPhysicalFile(), mountPoint, TempFileProviderService.provider());
+                        deploymentUnit.addToAttachmentList(MOUNTED_FILES, mounted);
+                        mounts.put(path, mounted);
+
                     }
-                } catch (IOException e) {
-                    throw ServerLogger.ROOT_LOGGER.deploymentOverlayFailed(e, deploymentOverlay.getName(), path);
                 }
+            } catch (IOException e) {
+                throw ServerLogger.ROOT_LOGGER.deploymentOverlayFailed(e, entry.getKey(), path);
             }
         }
+
     }
 
     @Override
