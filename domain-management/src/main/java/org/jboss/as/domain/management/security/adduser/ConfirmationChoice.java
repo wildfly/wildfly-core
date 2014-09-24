@@ -27,6 +27,7 @@ import static org.jboss.as.domain.management.security.adduser.AddUser.SPACE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 
@@ -37,6 +38,12 @@ import org.jboss.as.domain.management.logging.DomainManagementLogger;
  * on invalid input.
  */
 public class ConfirmationChoice implements State {
+
+    // These are deliberately using the default locale i.e. the same as the language the interface is presented in.
+    private static final String LONG_YES = DomainManagementLogger.ROOT_LOGGER.yes().toLowerCase(Locale.getDefault());
+    private static final String LONG_NO = DomainManagementLogger.ROOT_LOGGER.no().toLowerCase(Locale.getDefault());
+    private static final String SHORT_YES = DomainManagementLogger.ROOT_LOGGER.shortYes().toLowerCase(Locale.getDefault());
+    private static final String SHORT_NO = DomainManagementLogger.ROOT_LOGGER.shortNo().toLowerCase(Locale.getDefault());
 
     private ConsoleWrapper theConsole;
     private final String[] messageLines;
@@ -102,11 +109,11 @@ public class ConfirmationChoice implements State {
     private int convertResponse(final String response) {
         if (response != null) {
             String temp = response.toLowerCase(); // We now need to match on the current local.
-            if (DomainManagementLogger.ROOT_LOGGER.yes().equals(temp) || DomainManagementLogger.ROOT_LOGGER.shortYes().equals(temp)) {
+            if (LONG_YES.equals(temp) || SHORT_YES.equals(temp)) {
                 return YES;
             }
 
-            if (DomainManagementLogger.ROOT_LOGGER.no().equals(temp) || DomainManagementLogger.ROOT_LOGGER.shortNo().equals(temp)) {
+            if (LONG_NO.equals(temp) || SHORT_NO.equals(temp)) {
                 return NO;
             }
         }
