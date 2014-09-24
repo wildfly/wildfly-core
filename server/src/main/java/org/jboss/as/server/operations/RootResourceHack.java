@@ -84,7 +84,7 @@ public class RootResourceHack implements OperationStepHandler {
             throw ServerLogger.ROOT_LOGGER.internalUseOnly();
         }
         try {
-        resource.set(new ResourceAndRegistration(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true), context.getResourceRegistration()));
+        resource.set(new ResourceAndRegistration(context.readResource(PathAddress.EMPTY_ADDRESS, true), context.getResourceRegistration()));
         } catch (UnauthorizedException e) {
             resource.set(new ResourceAndRegistration(Resource.Factory.create(), new EmptyResourceRegistration()));
         }

@@ -639,20 +639,35 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
+    @Override
     public Resource readResource(final PathAddress requestAddress) {
         return readResource(requestAddress, true);
     }
 
+    @Override
     public Resource readResource(final PathAddress requestAddress, final boolean recursive) {
         final PathAddress address = activeStep.address.append(requestAddress);
-        return readResourceFromRoot(address, recursive);
+        // This read is relative to the address where the caller is registered, so we consider
+        // the caller to be an "owner" of this resource. So, for efficiency, we allow them to
+        // have a direct ref to the resource and don't clone it before returning it. They shouldn't
+        // modify it anyway, but we trust the caller with their own resources
+        return readResourceFromRoot(address, recursive, false);
     }
 
+    @Override
     public Resource readResourceFromRoot(final PathAddress address) {
         return readResourceFromRoot(address, true);
     }
 
+    @Override
     public Resource readResourceFromRoot(final PathAddress address, final boolean recursive) {
+        // The calling step is presumably not the "owner" of the resource (or they'd use readResource)
+        // so we want to clone the model before returning it to guard against misuse. This is the "read-only"
+        // bit referred to in the javadoc for this method
+        return readResourceFromRoot(address, recursive, true);
+    }
+
+    private Resource readResourceFromRoot(final PathAddress address, final boolean recursive, final boolean cloneResult) {
         assert isControllingThread();
         assertNotComplete(currentStage);
         //Clone the operation to preserve all the headers
@@ -694,7 +709,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
         }
         if(recursive) {
-            return model.clone();
+            return cloneResult ? model.clone() : model;
         } else {
             final Resource copy = Resource.Factory.create();
             copy.writeModel(model.getModel());
