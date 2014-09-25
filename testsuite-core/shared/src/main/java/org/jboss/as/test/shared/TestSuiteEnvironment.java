@@ -64,14 +64,22 @@ public class TestSuiteEnvironment {
      * @return The server port for node0
      */
     public static int getServerPort() {
-        return Integer.getInteger("management.port", 9990);
+        //this here is just fallback logic for older testsuite code that wasn't updated to newer property names
+        return Integer.getInteger("management.port", Integer.getInteger("as.managementPort", 9990));
     }
 
     /**
      * @return The server address of node0
      */
     public static String getServerAddress() {
-        return formatPossibleIpv6Address(System.getProperty("management.address", "localhost"));
+        String address = System.getProperty("management.address");
+        if (address==null){
+            address = System.getProperty("node0");
+        }
+        if (address!=null){
+            formatPossibleIpv6Address(address);
+        }
+        return "localhost";
     }
 
     /**
