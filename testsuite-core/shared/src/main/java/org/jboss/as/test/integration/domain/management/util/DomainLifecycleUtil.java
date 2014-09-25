@@ -91,8 +91,6 @@ public class DomainLifecycleUtil {
     private final PathAddress address;
     private final boolean closeClientConfig;
 
-    private boolean closeConnectionBeforeStop = true;
-
     public DomainLifecycleUtil(final WildFlyManagedConfiguration configuration) throws IOException {
         this(configuration, DomainControllerClientConfig.create(), true);
     }
@@ -113,10 +111,6 @@ public class DomainLifecycleUtil {
 
     public WildFlyManagedConfiguration getConfiguration() {
         return configuration;
-    }
-
-    public void setCloseConnectionBeforeStop(boolean closeConnectionBeforeStop)  {
-        this.closeConnectionBeforeStop = closeConnectionBeforeStop;
     }
 
     public PathAddress getAddress() {
@@ -288,8 +282,7 @@ public class DomainLifecycleUtil {
         } catch (Exception e) {
             toThrow = new RuntimeException("Could not stop container", e);
         } finally {
-            if (closeConnectionBeforeStop)
-                closeConnection();
+            closeConnection();
             final ExecutorService exec = executor;
             if (exec != null) {
                 exec.shutdownNow();
@@ -304,6 +297,7 @@ public class DomainLifecycleUtil {
                     }
                 }
             }
+            domainClient = null;
         }
 
         if (toThrow != null) {
