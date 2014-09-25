@@ -42,7 +42,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class LdapAuthenticationBuilder implements AuthenticationBuilderChild {
+public class LdapAuthenticationBuilder extends Builder<AuthenticationBuilder> {
 
     private final AuthenticationBuilder parent;
     private boolean built = false;
