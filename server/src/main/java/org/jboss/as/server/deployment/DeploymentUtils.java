@@ -24,12 +24,16 @@ package org.jboss.as.server.deployment;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -43,6 +47,11 @@ import org.jboss.msc.service.ServiceName;
  * @author Ales Justin
  */
 public final class DeploymentUtils {
+
+    /**
+     * Format used to display timestamp of enable/disable operations.
+     */
+    static String DATEFORMAT_ATTR = "yyyy-MM-dd HH:mm:ss,SSS zzz";
 
     /**
      * Get all resource roots for a {@link DeploymentUnit}
@@ -117,6 +126,30 @@ public final class DeploymentUtils {
             }
         }
         return hashes;
+    }
+
+    /**
+     * Set the enabled-time{stamp} attribute of deployment to the current timestamp. Useful to track the deployment enable events.
+     *
+     * @param model
+     */
+    static void enableAttribute(ModelNode model) {
+        Date enabledTime = new Date();
+        DateFormat df = new SimpleDateFormat(DATEFORMAT_ATTR);
+        model.get(DeploymentAttributes.ENABLED_TIME.getName()).set(enabledTime.getTime());
+        model.get(DeploymentAttributes.ENABLED_TIMESTAMP.getName()).set(df.format(enabledTime));
+    }
+
+    /**
+     * Set the disabled-time{stamp} attribute of deployment to the current timestamp. Useful to track the deployment disable events.
+     *
+     * @param model
+     */
+    static void disableAttribute(ModelNode model) {
+        Date enabledTime = new Date();
+        DateFormat df = new SimpleDateFormat(DATEFORMAT_ATTR);
+        model.get(DeploymentAttributes.DISABLED_TIME.getName()).set(enabledTime.getTime());
+        model.get(DeploymentAttributes.DISABLED_TIMESTAMP.getName()).set(df.format(enabledTime));
     }
 
     private DeploymentUtils() {

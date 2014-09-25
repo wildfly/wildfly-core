@@ -54,6 +54,7 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
         final String managementName = address.getLastElement().getValue();
 
         DeploymentHandlerUtil.undeploy(context, managementName, deploymentUnitName, vaultReader);
+        DeploymentUtils.disableAttribute(model);
 
         context.stepCompleted();
     }
