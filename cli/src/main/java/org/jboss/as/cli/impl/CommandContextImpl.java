@@ -851,7 +851,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 retry = false;
                 connInfoBean = new ConnectionInfoBean();
                 tryConnection(tempClient, address);
-                initNewClient(tempClient, address);
+                initNewClient(tempClient, address, connInfoBean);
                 connInfoBean.setDisableLocalAuth(disableLocalAuth);
                 connInfoBean.setLoggedSince(new Date());
             } catch (RedirectException re) {
@@ -897,10 +897,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void bindClient(ModelControllerClient newClient) {
-        initNewClient(newClient, null);
+        initNewClient(newClient, null, null);
     }
 
-    private void initNewClient(ModelControllerClient newClient, ControllerAddress address) {
+    private void initNewClient(ModelControllerClient newClient, ControllerAddress address,
+            ConnectionInfoBean conInfo) {
         if (newClient != null) {
             if (this.client != null) {
                 disconnectController();
@@ -908,6 +909,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
             client = newClient;
             this.currentAddress = address;
+            this.connInfoBean = conInfo;
 
             List<String> nodeTypes = Util.getNodeTypes(newClient, new DefaultOperationRequestAddress());
             domainMode = nodeTypes.contains(Util.SERVER_GROUP);
