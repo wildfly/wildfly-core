@@ -31,6 +31,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_FILTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_TO_DN;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -38,9 +41,10 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class UsernameFilter implements LdapAuthorizationBuilderChild {
+public class UsernameFilter extends ParentBuilder<LdapAuthorizationBuilder> {
 
     private final LdapAuthorizationBuilder parent;
+    private final ModelNode address;
     private boolean built = false;
 
     private boolean force = false;
@@ -48,8 +52,12 @@ public class UsernameFilter implements LdapAuthorizationBuilderChild {
     private String baseDn;
     private boolean recursive;
 
+    private CacheBuilder<UsernameFilter> cacheBuilder = null;
+    private final List<ModelNode> additionalSteps = new ArrayList<ModelNode>();
+
     UsernameFilter(LdapAuthorizationBuilder parent) {
         this.parent = parent;
+        address = parent.getLdapAuthorizationAddress().add(USERNAME_TO_DN, USERNAME_FILTER);
     }
 
     public UsernameFilter setForce(final boolean force) {
@@ -80,6 +88,15 @@ public class UsernameFilter implements LdapAuthorizationBuilderChild {
         return this;
     }
 
+    public CacheBuilder<UsernameFilter> cache() {
+        assertNotBuilt();
+        if (cacheBuilder == null) {
+            cacheBuilder = new CacheBuilder<UsernameFilter>(this, address.clone());
+        }
+
+        return cacheBuilder;
+    }
+
     @Override
     public boolean isBuilt() {
         return built;
@@ -88,11 +105,14 @@ public class UsernameFilter implements LdapAuthorizationBuilderChild {
     @Override
     public LdapAuthorizationBuilder build() {
         assertNotBuilt();
+        if (cacheBuilder != null && cacheBuilder.isBuilt() == false) {
+            cacheBuilder.build();
+        }
         built=true;
 
         ModelNode add = new ModelNode();
         add.get(OP).set(ADD);
-        add.get(ADDRESS).set(parent.getLdapAuthorizationAddress().add(USERNAME_TO_DN, USERNAME_FILTER));
+        add.get(ADDRESS).set(address);
 
         if (force) {
             add.get(FORCE).set(true);
@@ -107,7 +127,12 @@ public class UsernameFilter implements LdapAuthorizationBuilderChild {
             add.get(BASE_DN).set(baseDn);
         }
 
-        return parent.addStep(add);
+        parent.addStep(add);
+        for (ModelNode current : additionalSteps) {
+            parent.addStep(current);
+        }
+
+        return parent;
     }
 
     void assertNotBuilt() {
@@ -115,6 +140,12 @@ public class UsernameFilter implements LdapAuthorizationBuilderChild {
         if (built) {
             throw new IllegalStateException("Already built.");
         }
+    }
+
+    @Override
+    void addStep(ModelNode step) {
+        assertNotBuilt();
+        additionalSteps.add(step);
     }
 
 }
