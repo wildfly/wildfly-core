@@ -332,6 +332,10 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
                 specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource
                         .getRootName(), root, resource.isUsePhysicalCodeSource()), filterBuilder.create()));
             }
+            // start with the root
+            permFactories.add(new ImmediatePermissionFactory(
+                    new VirtualFilePermission(root.getPathName(), VirtualFilePermission.FLAG_READ)));
+            // also include all children, recursively
             permFactories.add(new ImmediatePermissionFactory(
                     new VirtualFilePermission(root.getChild("-").getPathName(), VirtualFilePermission.FLAG_READ)));
         } catch (IOException e) {
