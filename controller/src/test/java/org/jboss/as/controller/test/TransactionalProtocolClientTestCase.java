@@ -31,20 +31,18 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.MockModelController;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalOperationImpl;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
@@ -153,7 +151,7 @@ public class TransactionalProtocolClientTestCase {
         // Commit
         prepared.commit();
         // Block until we have the result
-        final ModelNode result = prepared.getFinalResult().get();
+        final ModelNode result = prepared.getFinalResult().get().getResponseNode();
         assert result.hasDefined(ModelDescriptionConstants.OUTCOME);
         assert prepared.isDone();
     }
@@ -178,7 +176,7 @@ public class TransactionalProtocolClientTestCase {
         };
         //
         final TestUpdateWrapper wrapper = createTestClient(0, handler);
-        final Future<ModelNode> futureResult = wrapper.execute(listener);
+        final Future<OperationResponse> futureResult = wrapper.execute(listener);
         latch.await();
         // Now the server side should for latch to countDown
         futureResult.cancel(false);
@@ -189,7 +187,7 @@ public class TransactionalProtocolClientTestCase {
             Thread.sleep(15);
         }
         wrapper.assertResultAction(OperationContext.ResultAction.ROLLBACK);
-        final ModelNode result = futureResult.get();
+        final ModelNode result = futureResult.get().getResponseNode();
         Assert.assertEquals(FAILURE, result);
     }
 
@@ -203,7 +201,7 @@ public class TransactionalProtocolClientTestCase {
             }
         };
         final TestUpdateWrapper wrapper = createTestClient(0, handler);
-        final Future<ModelNode> futureResult = wrapper.execute(listener);
+        final Future<OperationResponse> futureResult = wrapper.execute(listener);
         listener.retrievePreparedOperation();
 
         futureConnection.get().close();
@@ -246,7 +244,7 @@ public class TransactionalProtocolClientTestCase {
         // Now we just need to get the final results
         for(final TransactionalProtocolClient.PreparedOperation<TestUpdateWrapper> prepared : preparedOps) {
             // Block until we have the result
-            final ModelNode finalResult = prepared.getFinalResult().get();
+            final ModelNode finalResult = prepared.getFinalResult().get().getResponseNode();
             final MockController controller = prepared.getOperation().getController();
             assert prepared.isDone();
             assert ! controller.lock.isLocked();
@@ -279,7 +277,7 @@ public class TransactionalProtocolClientTestCase {
             // Commit
             prepared.commit();
             // Block until we have the result
-            final ModelNode finalResult = prepared.getFinalResult().get();
+            final ModelNode finalResult = prepared.getFinalResult().get().getResponseNode();
             assert prepared.isDone();
             assert ! controller.lock.isLocked();
             final int id = prepared.getOperation().getId();
@@ -404,7 +402,7 @@ public class TransactionalProtocolClientTestCase {
             // controller.action = null;
         }
 
-        Future<ModelNode> execute(TransactionalProtocolClient.TransactionalOperationListener<TestUpdateWrapper> listener) throws IOException {
+        Future<OperationResponse> execute(TransactionalProtocolClient.TransactionalOperationListener<TestUpdateWrapper> listener) throws IOException {
             return client.execute(listener, this);
         }
 
@@ -413,7 +411,7 @@ public class TransactionalProtocolClientTestCase {
     /**
      * A mock controller
      */
-    private static class MockController implements ModelController {
+    private static class MockController extends MockModelController {
         private final ReentrantLock lock = new ReentrantLock();
         private final FutureResult<OperationContext.ResultAction> action = new FutureResult<>();
         private TestOperationHandler handler;
@@ -452,16 +450,6 @@ public class TransactionalProtocolClientTestCase {
             } finally {
                 lock.unlock();
             }
-        }
-
-        @Override
-        public ModelControllerClient createClient(Executor executor) {
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public NotificationHandlerRegistration getNotificationRegistry() {
-            throw new IllegalStateException();
         }
     }
 

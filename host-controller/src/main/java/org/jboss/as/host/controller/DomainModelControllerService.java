@@ -86,7 +86,9 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -1128,24 +1130,23 @@ public class DomainModelControllerService extends AbstractControllerService impl
     final class InternalExecutor implements HostControllerRegistrationHandler.OperationExecutor, ServerToHostProtocolHandler.OperationExecutor, MasterDomainControllerOperationHandlerService.TransactionalOperationExecutor {
 
         @Override
-        public ModelNode execute(ModelNode operation, OperationMessageHandler handler, OperationTransactionControl control,
-                org.jboss.as.controller.client.OperationAttachments attachments, OperationStepHandler step) {
-            return internalExecute(operation, handler, control, attachments, step);
+        public ModelNode execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control,
+                OperationStepHandler step) {
+            return internalExecute(operation, handler, control, step).getResponseNode();
         }
 
         @Override
         @SuppressWarnings("deprecation")
         public ModelNode joinActiveOperation(ModelNode operation, OperationMessageHandler handler,
-                OperationTransactionControl control, org.jboss.as.controller.client.OperationAttachments attachments,
-                OperationStepHandler step, int permit) {
-            return executeReadOnlyOperation(operation, handler, control, attachments, step, permit);
+                                             OperationTransactionControl control,
+                                             OperationStepHandler step, int permit) {
+            return executeReadOnlyOperation(operation, handler, control, step, permit);
         }
 
         @Override
-        public ModelNode executeAndAttemptLock(ModelNode operation, OperationMessageHandler handler,
-                OperationTransactionControl control, org.jboss.as.controller.client.OperationAttachments attachments,
-                OperationStepHandler step) {
-            return internalExecute(operation, handler, control, attachments, step, true);
+        public OperationResponse executeAndAttemptLock(Operation operation, OperationMessageHandler handler,
+                OperationTransactionControl control, OperationStepHandler step) {
+            return internalExecute(operation, handler, control, step, true);
         }
     }
 }

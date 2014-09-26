@@ -33,6 +33,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.security.auth.Subject;
@@ -40,8 +41,9 @@ import javax.security.auth.Subject;
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.controller.client.OperationAttachments;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
@@ -69,6 +71,8 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
     private final ModelController controller;
     private final ManagementChannelAssociation channelAssociation;
+    private final ResponseAttachmentInputStreamSupport responseAttachmentSupport = new ResponseAttachmentInputStreamSupport();
+
     public TransactionalProtocolOperationHandler(final ModelController controller, final ManagementChannelAssociation channelAssociation) {
         this.controller = controller;
         this.channelAssociation = channelAssociation;
@@ -79,7 +83,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         switch(request.getOperationId()) {
             case ModelControllerProtocol.EXECUTE_TX_REQUEST: {
                 // Initialize the request context
-                final ExecuteRequestContext executeRequestContext = new ExecuteRequestContext();
+                final ExecuteRequestContext executeRequestContext = new ExecuteRequestContext(responseAttachmentSupport);
                 try {
                     executeRequestContext.operation = handlers.registerActiveOperation(request.getBatchId(), executeRequestContext, executeRequestContext);
                 } catch (IllegalStateException ise) {
@@ -89,7 +93,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 return new ExecuteRequestHandler();
             }
             case ModelControllerProtocol.COMPLETE_TX_REQUEST: {
-                final ExecuteRequestContext executeRequestContext = new ExecuteRequestContext();
+                final ExecuteRequestContext executeRequestContext = new ExecuteRequestContext(responseAttachmentSupport);
                 try {
                     executeRequestContext.operation = handlers.registerActiveOperation(request.getBatchId(), executeRequestContext, executeRequestContext);
                     // WLFY-3381 Unusual case where the initial request must have lost a race with a COMPLETE_TX_REQUEST carrying a cancellation
@@ -99,6 +103,16 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     // won a race with the initial request
                 }
                 return new CompleteTxOperationHandler();
+            }
+            case ModelControllerProtocol.GET_CHUNKED_INPUTSTREAM_REQUEST: {
+                // initialize the operation ctx before executing the request handler
+                handlers.registerActiveOperation(request.getBatchId(), null);
+                return responseAttachmentSupport.getReadHandler();
+            }
+            case ModelControllerProtocol.CLOSE_INPUTSTREAM_REQUEST: {
+                // initialize the operation ctx before executing the request handler
+                handlers.registerActiveOperation(request.getBatchId(), null);
+                return responseAttachmentSupport.getCloseHandler();
             }
         }
         return handlers.resolveNext();
@@ -152,11 +166,11 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             final Integer batchId = executeRequestContext.getOperationId();
             final OperationMessageHandlerProxy messageHandlerProxy = new OperationMessageHandlerProxy(channelAssociation, batchId);
             final ProxyOperationControlProxy control = new ProxyOperationControlProxy(executeRequestContext);
-            final OperationAttachmentsProxy attachmentsProxy = OperationAttachmentsProxy.create(channelAssociation, batchId, attachmentsLength);
-            final ModelNode result;
+            final OperationAttachmentsProxy attachmentsProxy = OperationAttachmentsProxy.create(operation, channelAssociation, batchId, attachmentsLength);
+            final OperationResponse result;
             try {
                 // Execute the operation
-                result = internalExecute(operation, context, messageHandlerProxy, control, attachmentsProxy);
+                result = internalExecute(attachmentsProxy, context, messageHandlerProxy, control);
             } catch (Exception e) {
 
                 final ModelNode failure = new ModelNode();
@@ -167,8 +181,8 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 return;
             }
 
-            if (result.hasDefined(FAILURE_DESCRIPTION)) {
-                control.operationFailed(result);
+            if (result.getResponseNode().hasDefined(FAILURE_DESCRIPTION)) {
+                control.operationFailed(result.getResponseNode());
             } else {
                 // controller.execute() will block in OperationControl.prepared until the {@code ProxyController}
                 // sent a CompleteTxRequest, which will either commit or rollback the operation
@@ -212,16 +226,14 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
      * @param operation the operation being executed
      * @param messageHandler the operation message handler proxy
      * @param control the operation transaction control
-     * @param attachments the operation attachments proxy
      * @return the result of the executed operation
      */
-    protected ModelNode internalExecute(final ModelNode operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ProxyController.ProxyOperationControl control, OperationAttachments attachments) {
+    protected OperationResponse internalExecute(final Operation operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ProxyController.ProxyOperationControl control) {
         // Execute the operation
         return controller.execute(
                 operation,
                 messageHandler,
-                control,
-                attachments);
+                control);
     }
 
     /**
@@ -289,7 +301,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         }
 
         @Override
-        public void operationCompleted(final ModelNode response) {
+        public void operationCompleted(final OperationResponse response) {
             requestContext.completed(response);
         }
 
@@ -317,6 +329,12 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         private final CountDownLatch txCompletedLatch = new CountDownLatch(1);
         private boolean txCompleted;
         private PrivilegedAction<Void> action;
+
+        final ResponseAttachmentInputStreamSupport streamSupport;
+
+        ExecuteRequestContext(final ResponseAttachmentInputStreamSupport streamSupport) {
+            this.streamSupport = streamSupport;
+        }
 
         Integer getOperationId() {
             return operation.getOperationId();
@@ -437,7 +455,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         synchronized void failed(final ModelNode response) {
             if(prepared) {
                 // in case commit or rollback throws an exception, to conform with the API we still send an operation-completed message
-                completed(response);
+                completed(OperationResponse.Factory.createSimple(response));
             } else {
                 assert responseChannel != null;
                 ControllerLogger.MGMT_OP_LOGGER.tracef("sending pre-prepare failed response for %d  --- interrupted: %s", getOperationId(), Thread.currentThread().isInterrupted());
@@ -452,13 +470,17 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             }
         }
 
-        synchronized void completed(final ModelNode response) {
+        synchronized void completed(final OperationResponse response) {
             assert prepared;
             assert responseChannel != null;
             ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response for %d  --- interrupted: %s", getOperationId(), Thread.currentThread().isInterrupted());
+            List<OperationResponse.StreamEntry> streams = response.getInputStreams();
+            for (int i = 0; i < streams.size(); i++) {
+                streamSupport.registerStream(operation.getOperationId(), i, streams.get(i));
+            }
             try {
                 // 4) operation-completed (done)
-                sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_COMPLETED, response);
+                sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_COMPLETED, response.getResponseNode());
             } catch (IOException e) {
                 ControllerLogger.MGMT_OP_LOGGER.debugf(e, "failed to process message");
             } finally {

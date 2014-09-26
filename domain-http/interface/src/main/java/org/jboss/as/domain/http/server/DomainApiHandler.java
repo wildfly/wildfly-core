@@ -45,6 +45,7 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,14 +57,16 @@ import io.undertow.util.ETagUtils;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HexConverter;
+import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
-
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
+import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
 import org.xnio.streams.ChannelInputStream;
@@ -75,6 +78,8 @@ import org.xnio.streams.ChannelInputStream;
 class DomainApiHandler implements HttpHandler {
 
     private static final String JSON_PRETTY = "json.pretty";
+    private static final String USE_STREAM_AS_RESPONSE = "useStreamAsResponse";
+    private static final HttpString USE_STREAM_AS_RESPONSE_HEADER = new HttpString("org.wildfly.useStreamAsResponse");
 
     /**
      * Represents all possible management operations that can be executed using HTTP GET. Cacheable operations
@@ -119,14 +124,15 @@ class DomainApiHandler implements HttpHandler {
     public void handleRequest(final HttpServerExchange exchange) {
 
         final ModelNode dmr;
-        ModelNode response;
+        final OperationResponse response;
 
-        HeaderMap requestHeaders = exchange.getRequestHeaders();
+        final HeaderMap requestHeaders = exchange.getRequestHeaders();
         final boolean cachable;
         final boolean get = exchange.getRequestMethod().equals(Methods.GET);
         final boolean encode = Common.APPLICATION_DMR_ENCODED.equals(requestHeaders.getFirst(Headers.ACCEPT))
                 || Common.APPLICATION_DMR_ENCODED.equals(requestHeaders.getFirst(Headers.CONTENT_TYPE));
         final OperationParameter.Builder operationParameterBuilder = new OperationParameter.Builder(get).encode(encode);
+        final int streamIndex = getStreamIndex(exchange, requestHeaders);
 
         try {
             if (get) {
@@ -147,18 +153,40 @@ class DomainApiHandler implements HttpHandler {
             operationParameterBuilder.pretty(pretty);
         } catch (Exception e) {
             ROOT_LOGGER.debugf("Unable to construct ModelNode '%s'", e.getMessage());
-            Common.sendError(exchange, false, e.getLocalizedMessage());
+            Common.sendError(exchange, false, e.toString());
             return;
         }
 
         final ResponseCallback callback = new ResponseCallback() {
             @Override
-            void doSendResponse(final ModelNode response) {
-                if (response.hasDefined(OUTCOME) && FAILED.equals(response.get(OUTCOME).asString())) {
-                    Common.sendError(exchange, encode, response);
-                    return;
+            void doSendResponse(final OperationResponse response) {
+                boolean closeResponse = true;
+                try {
+                    ModelNode responseNode = response.getResponseNode();
+                    if (responseNode.hasDefined(OUTCOME) && FAILED.equals(responseNode.get(OUTCOME).asString())) {
+                        Common.sendError(exchange, encode, responseNode);
+                        return;
+                    }
+                    if (streamIndex < 0) {
+                        writeResponse(exchange, 200, responseNode, operationParameterBuilder.build());
+                    } else {
+                        List<OperationResponse.StreamEntry> streamEntries = response.getInputStreams();
+                        if (streamIndex >= streamEntries.size()) {
+                            // invalid index
+                            Common.sendError(exchange, encode, HttpServerLogger.ROOT_LOGGER.invalidUseStreamAsResponseIndex(streamIndex, streamEntries.size()));
+                        } else {
+                            // writeResponse will close the response
+                            closeResponse = false;
+                            writeResponse(exchange, 200, response, streamIndex, operationParameterBuilder.build());
+                        }
+                    }
+                } finally {
+                    if (closeResponse) {
+                        StreamUtils.safeClose(response);
+                    }
                 }
-                writeResponse(exchange, 200, response, operationParameterBuilder.build());
+
+
             }
         };
 
@@ -170,14 +198,14 @@ class DomainApiHandler implements HttpHandler {
                 // Fix prepared result
                 result.get(OUTCOME).set(SUCCESS);
                 result.get(RESULT);
-                callback.sendResponse(result);
+                callback.sendResponse(OperationResponse.Factory.createSimple(result));
             }
         } : ModelController.OperationTransactionControl.COMMIT;
 
         try {
             dmr.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
-            response = modelController.execute(dmr, OperationMessageHandler.logging, control, new OperationBuilder(dmr).build());
-            if (cachable) {
+            response = modelController.execute(new OperationBuilder(dmr).build(), OperationMessageHandler.logging, control);
+            if (cachable && streamIndex > -1) {
                 // Use the MD5 of the model nodes toString() method as ETag
                 MessageDigest md = MessageDigest.getInstance("MD5");
                 md.update(response.toString().getBytes());
@@ -197,6 +225,31 @@ class DomainApiHandler implements HttpHandler {
         }
 
         callback.sendResponse(response);
+    }
+
+    private static int getStreamIndex(final HttpServerExchange exchange, final HeaderMap requestHeaders) {
+        // First check for an HTTP header
+        int result = getStreamIndex(requestHeaders.get(USE_STREAM_AS_RESPONSE_HEADER));
+        if (result == -1) {
+            // Nope. Now check for a URL query parameter
+            Map<String, Deque<String>> queryParams = exchange.getQueryParameters();
+            result = getStreamIndex(queryParams.get(USE_STREAM_AS_RESPONSE));
+        }
+        return result;
+    }
+
+    private static int getStreamIndex(Deque<String> holder) {
+        int result;
+        if (holder != null) {
+            if (holder.size() > 0 && holder.getFirst().length() > 0) {
+                result = Integer.parseInt(holder.getFirst());
+            } else {
+                result = 0;
+            }
+        } else {
+            result = -1;
+        }
+        return result;
     }
 
     private GetOperation getOperation(HttpServerExchange exchange) {
@@ -319,7 +372,7 @@ class DomainApiHandler implements HttpHandler {
     private abstract static class ResponseCallback {
         private volatile boolean complete;
 
-        void sendResponse(final ModelNode response) {
+        void sendResponse(final OperationResponse response) {
             if (complete) {
                 return;
             }
@@ -327,6 +380,6 @@ class DomainApiHandler implements HttpHandler {
             doSendResponse(response);
         }
 
-        abstract void doSendResponse(ModelNode response);
+        abstract void doSendResponse(OperationResponse response);
     }
 }

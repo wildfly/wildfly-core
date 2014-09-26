@@ -69,7 +69,9 @@ import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
@@ -117,8 +119,8 @@ import org.jboss.remoting3.RemotingOptions;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 
@@ -138,6 +140,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
     private static final ModelNode APPLY_EXTENSIONS = new ModelNode();
     private static final ModelNode APPLY_DOMAIN_MODEL = new ModelNode();
+    private static final Operation GRAB_DOMAIN_RESOURCE;
     static {
         APPLY_EXTENSIONS.get(OP).set(ApplyExtensionsHandler.OPERATION_NAME);
         APPLY_EXTENSIONS.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
@@ -149,6 +152,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         APPLY_DOMAIN_MODEL.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
         APPLY_DOMAIN_MODEL.get(OP_ADDR).setEmptyList();
         APPLY_DOMAIN_MODEL.protect();
+
+        ModelNode mn  = new ModelNode();
+        mn.get(OP).set("grab-domain-resource"); // This is actually not used anywhere
+        mn.get(OP_ADDR).setEmptyList();
+        mn.protect();
+        GRAB_DOMAIN_RESOURCE = OperationBuilder.create(mn).build();
     }
 
     private final ExtensionRegistry extensionRegistry;
@@ -338,6 +347,16 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     @Override
     public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeAsync(operation, messageHandler);
+    }
+
+    @Override
+    public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
+        return masterProxy.executeOperation(operation, messageHandler);
+    }
+
+    @Override
+    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        return masterProxy.executeOperationAsync(operation, messageHandler);
     }
 
     @Override
@@ -697,7 +716,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
         static Resource grabDomainResource(HostControllerRegistrationHandler.OperationExecutor executor) {
             ReadRootResourceHandler handler = new ReadRootResourceHandler();
-            executor.execute(new ModelNode(), OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, null, handler);
+            executor.execute(GRAB_DOMAIN_RESOURCE, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, handler);
             return handler.resource;
         }
 
@@ -741,8 +760,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 }
 
                 @Override
-                public void operationCompleted(ModelNode response) {
-                    finalResultRef.set(response);
+                public void operationCompleted(OperationResponse response) {
+                    finalResultRef.set(response.getResponseNode());
                 }
             };
             remoteProxy.execute(operation, messageHandler, proxyControl, new DelegatingOperationAttachments(context));

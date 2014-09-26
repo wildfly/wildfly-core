@@ -42,6 +42,7 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -120,8 +121,8 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         op.get(OP_ADDR).set(PathAddress.EMPTY_ADDRESS.toModelNode());
         op.get(SUBSYSTEM).set(mainSubsystemName);
         op.get(INCLUDE_DEFAULTS).set(includeDefaults);
-        ModelNode result = internalExecute(op, new ReadTransformedResourceOperation(getTransformersRegistry(), getCoreModelVersionByLegacyModelVersion(modelVersion), modelVersion));
-        return ModelTestUtils.checkResultAndGetContents(result);
+        OperationResponse response = internalExecute(op, new ReadTransformedResourceOperation(getTransformersRegistry(), getCoreModelVersionByLegacyModelVersion(modelVersion), modelVersion));
+        return ModelTestUtils.checkResultAndGetContents(response.getResponseNode());
     }
 
     /**

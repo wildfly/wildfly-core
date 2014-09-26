@@ -22,6 +22,7 @@
 package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
+
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.BlockingHandler;
@@ -30,7 +31,6 @@ import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
-
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -87,7 +87,6 @@ class DomainApiCheckHandler implements HttpHandler {
         HeaderMap headers = exchange.getRequestHeaders();
         String contentType = extractContentType(headers.getFirst(Headers.CONTENT_TYPE));
         if (!(Common.APPLICATION_JSON.equals(contentType) || Common.APPLICATION_DMR_ENCODED.equals(contentType))) {
-
             // RFC 2616: 14.11 Content-Encoding
             // If the content-coding of an entity in a request message is not
             // acceptable to the origin server, the server SHOULD respond with a

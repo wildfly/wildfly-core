@@ -50,6 +50,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
@@ -634,12 +635,22 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
                                     }
 
                                     @Override
+                                    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+                                        return null;
+                                    }
+
+                                    @Override
                                     public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
                                         return null;
                                     }
 
                                     @Override
                                     public ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
                                         return null;
                                     }
 

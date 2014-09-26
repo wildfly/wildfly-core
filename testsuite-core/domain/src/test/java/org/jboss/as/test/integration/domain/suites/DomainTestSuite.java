@@ -52,6 +52,7 @@ import org.junit.runners.Suite;
         OperationCancellationTestCase.class,
         OperationTransformationTestCase.class,
         //ReadEnvironmentVariablesTestCase.class,
+        ResponseStreamTestCase.class,
         ServerRestartRequiredTestCase.class,
         ValidateAddressOperationTestCase.class,
         ValidateOperationOperationTestCase.class
