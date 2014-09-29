@@ -175,12 +175,23 @@ public interface Resource extends Cloneable {
         private Factory() { }
 
         /**
-         * Create a default resource implementation.
+         * Create a default resource implementation. Equivalent to {@link #create(boolean) create(false)}.
          *
          * @return the resource
          */
         public static Resource create() {
             return new BasicResource();
+        }
+
+        /**
+         * Create a default resource implementation.
+         *
+         * @param runtimeOnly the value the resource should return from {@link Resource#isRuntime()}
+         *
+         * @return the resource
+         */
+        public static Resource create(boolean runtimeOnly) {
+            return new BasicResource(runtimeOnly);
         }
     }
 

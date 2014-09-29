@@ -44,6 +44,15 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
 
     /** The children. */
     private final Map<String, ResourceProvider> children = new LinkedHashMap<String, ResourceProvider>();
+    private final boolean runtimeOnly;
+
+    protected AbstractModelResource() {
+        this(false);
+    }
+
+    protected AbstractModelResource(boolean runtimeOnly) {
+        this.runtimeOnly = runtimeOnly;
+    }
 
     @Override
     public Resource getChild(final PathElement address) {
@@ -157,7 +166,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
 
     @Override
     public boolean isRuntime() {
-        return false;
+        return runtimeOnly;
     }
 
     protected void registerResourceProvider(final String type, final ResourceProvider provider) {

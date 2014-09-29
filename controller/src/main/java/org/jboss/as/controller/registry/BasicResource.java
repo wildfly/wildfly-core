@@ -40,6 +40,11 @@ class BasicResource extends AbstractModelResource implements Resource {
     private final ModelNode model = new ModelNode();
 
     protected BasicResource() {
+        this(false);
+    }
+
+    protected BasicResource(boolean runtimeOnly) {
+        super(runtimeOnly);
     }
 
     @Override
