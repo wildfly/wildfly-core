@@ -104,7 +104,7 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
         resourceRegistration.registerReadOnlyAttribute(EXCLUSIVE_RUNNING_TIME, null);
         resourceRegistration.registerReadOnlyAttribute(CANCELLED, null);
 
-        // HACK -- workaround WFLY-3057
+        // HACK -- workaround WFCORE-17
         resourceRegistration.setRuntimeOnly(true);
     }
 }

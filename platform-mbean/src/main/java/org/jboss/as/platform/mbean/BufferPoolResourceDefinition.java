@@ -94,6 +94,9 @@ class BufferPoolResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, BufferPoolMXBeanAttributeHandler.INSTANCE);
         }
+
+        // HACK -- workaround WFCORE-17
+        registration.setRuntimeOnly(true);
     }
 
 }

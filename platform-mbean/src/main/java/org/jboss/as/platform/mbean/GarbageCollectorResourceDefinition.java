@@ -95,6 +95,9 @@ class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, GarbageCollectorMXBeanAttributeHandler.INSTANCE);
         }
+
+        // HACK -- workaround WFCORE-17
+        registration.setRuntimeOnly(true);
     }
 
 

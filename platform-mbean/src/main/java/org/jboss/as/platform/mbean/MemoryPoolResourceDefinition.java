@@ -199,6 +199,9 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, MemoryPoolMXBeanAttributeHandler.INSTANCE);
         }
+
+        // HACK -- workaround WFCORE-17
+        registration.setRuntimeOnly(true);
     }
 
     @Override

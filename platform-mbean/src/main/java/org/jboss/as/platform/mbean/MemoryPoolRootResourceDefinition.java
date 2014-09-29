@@ -41,6 +41,9 @@ class MemoryPoolRootResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(MemoryPoolResourceDefinition.INSTANCE);
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 }
 

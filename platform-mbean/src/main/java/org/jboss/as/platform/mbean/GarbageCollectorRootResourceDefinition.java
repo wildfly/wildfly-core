@@ -17,6 +17,9 @@ class GarbageCollectorRootResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(GarbageCollectorResourceDefinition.INSTANCE);
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 }
 
