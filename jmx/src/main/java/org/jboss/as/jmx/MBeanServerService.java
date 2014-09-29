@@ -36,6 +36,7 @@ import org.jboss.as.server.Services;
 import org.jboss.as.server.jmx.MBeanServerPlugin;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
@@ -44,6 +45,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Basic service managing and wrapping an MBeanServer instance. Note: Just using the platform mbean server for now.
@@ -60,7 +62,8 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     private final boolean coreMBeanSensitivity;
     private final JmxAuthorizer authorizer;
     private final ManagedAuditLogger auditLoggerInfo;
-    private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
+    private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<>();
+    private final InjectedValue<AsyncFuture> containerValue = new InjectedValue<>();
     private final boolean forStandalone;
     private PluggableMBeanServer mBeanServer;
     private MBeanServerPlugin showModelPlugin;
@@ -77,6 +80,14 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         this.forStandalone = forStandalone;
     }
 
+    private ServiceContainer getServiceContainer() {
+        try {
+            return (ServiceContainer) containerValue.getValue().get();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @SafeVarargs
     public static ServiceController<?> addService(final ServiceTarget batchBuilder, final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                                   final boolean coreMBeanSensitivity,
@@ -88,6 +99,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
             .addListener(listeners)
             .setInitialMode(ServiceController.Mode.ACTIVE)
             .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.modelControllerValue)
+            .addDependency(Services.JBOSS_AS, AsyncFuture.class, service.containerValue)
             .install();
     }
 
@@ -95,7 +107,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     public synchronized void start(final StartContext context) throws StartException {
         //If the platform MBeanServer was set up to be the PluggableMBeanServer, use that otherwise create a new one and delegate
         MBeanServer platform = ManagementFactory.getPlatformMBeanServer();
-        PluggableMBeanServerImpl pluggable = platform instanceof PluggableMBeanServerImpl ? (PluggableMBeanServerImpl)platform : new PluggableMBeanServerImpl(platform, null);
+        PluggableMBeanServerImpl pluggable = platform instanceof PluggableMBeanServerImpl ? (PluggableMBeanServerImpl)platform : new PluggableMBeanServerImpl(platform, null, getServiceContainer());
         MBeanServerDelegate delegate = platform instanceof PluggableMBeanServerImpl ? ((PluggableMBeanServerImpl)platform).getMBeanServerDelegate() : null;
         pluggable.setAuditLogger(auditLoggerInfo);
         pluggable.setAuthorizer(authorizer);

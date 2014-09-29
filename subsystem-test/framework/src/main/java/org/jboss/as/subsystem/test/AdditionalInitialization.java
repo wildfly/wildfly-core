@@ -15,6 +15,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
+import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -222,6 +223,15 @@ public class AdditionalInitialization extends AdditionalParsers {
      * @param target the service controller target
      */
     protected void addExtraServices(ServiceTarget target) {
+    }
+
+    /**
+     * Adds extra services to the service controller
+     *
+     * @param target the service controller target
+     * @param container the container
+     */
+    protected void addExtraServices(ServiceTarget target, ServiceContainer container) {
     }
 
     /**

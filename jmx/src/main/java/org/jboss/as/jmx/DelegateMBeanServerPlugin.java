@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2014, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,26 +20,34 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server;
+package org.jboss.as.jmx;
 
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.threads.AsyncFutureTask;
-import org.jboss.threads.JBossExecutors;
+import javax.management.ObjectName;
+
+import org.jboss.as.server.jmx.MBeanServerPlugin;
 
 /**
- * @author John Bailey
+ * @author Ales Justin
  */
-public class FutureServiceContainer extends AsyncFutureTask<ServiceContainer> {
-    public FutureServiceContainer() {
-        super(JBossExecutors.directExecutor());
+public class DelegateMBeanServerPlugin extends DelegateMBeanServer implements MBeanServerPlugin {
+
+    public DelegateMBeanServerPlugin(MBeanServerPlugin delegate) {
+        super(delegate);
     }
 
-    public FutureServiceContainer(ServiceContainer container) {
-        this();
-        done(container);
+    protected MBeanServerPlugin getDelegate() {
+        return (MBeanServerPlugin) super.getDelegate();
     }
 
-    void done(final ServiceContainer container) {
-        setResult(container);
+    public boolean accepts(ObjectName objectName) {
+        return getDelegate().accepts(objectName);
+    }
+
+    public boolean shouldAuditLog() {
+        return getDelegate().shouldAuditLog();
+    }
+
+    public boolean shouldAuthorize() {
+        return getDelegate().shouldAuthorize();
     }
 }

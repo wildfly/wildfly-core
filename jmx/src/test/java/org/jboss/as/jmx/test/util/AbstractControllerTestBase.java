@@ -22,13 +22,6 @@
 
 package org.jboss.as.jmx.test.util;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -52,16 +45,29 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.jboss.staxmapper.XMLElementWriter;
+import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
 /**
  * @author Emanuel Muckenhuber
@@ -125,11 +131,27 @@ public abstract class AbstractControllerTestBase {
     @Before
     public void setupController() throws InterruptedException {
         container = ServiceContainer.Factory.create("test");
+
+        final FutureServiceContainer fsc = new FutureServiceContainer(container);
+        ServiceBuilder<AsyncFuture<ServiceContainer>> containerBuilder = container.addService(Services.JBOSS_AS, new Service<AsyncFuture<ServiceContainer>>() {
+            public void start(StartContext context) throws StartException {
+            }
+
+            public void stop(StopContext context) {
+            }
+
+            public AsyncFuture<ServiceContainer> getValue() throws IllegalStateException, IllegalArgumentException {
+                return fsc;
+            }
+        });
+        containerBuilder.install();
+
         ServiceTarget target = container.subTarget();
         ModelControllerService svc = new ModelControllerService(processType, getAuditLogger(), getAuthorizer());
         ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         builder.install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
+
         controller = svc.getValue();
         //ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         //controller.execute(setup, null, null, null);
@@ -255,5 +277,4 @@ public abstract class AbstractControllerTestBase {
             }
         }
     }
-
 }

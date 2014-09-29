@@ -237,9 +237,9 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
             executeForResult(sensitiveMBeansOp);
         }
 
-        final boolean canRead = standardRole == null ? true : canRead(standardRole, sensitiveMBeans);
-        final boolean canWrite = standardRole == null ? true : canWrite(standardRole, sensitiveMBeans);
-        final boolean canAccessSpecial = standardRole == null ? true : canAccessSpecial(standardRole);
+        final boolean canRead = standardRole == null || canRead(standardRole, sensitiveMBeans);
+        final boolean canWrite = standardRole == null || canWrite(standardRole, sensitiveMBeans);
+        final boolean canAccessSpecial = standardRole == null || canAccessSpecial(standardRole);
 
 
         Subject subject = standardRole == null ? null :
@@ -327,8 +327,10 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
                     if (canWrite) {
                         server.createMBean(Bean.class.getName(), OBJECT_NAME2);
                         server.unregisterMBean(OBJECT_NAME2);
+
                         server.createMBean(Bean.class.getName(), OBJECT_NAME2, new Object[0], new String[0]);
                         server.unregisterMBean(OBJECT_NAME2);
+
                         server.registerMBean(new Bean(), OBJECT_NAME2);
                         server.unregisterMBean(OBJECT_NAME2);
 

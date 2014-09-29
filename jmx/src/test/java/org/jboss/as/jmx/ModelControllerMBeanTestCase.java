@@ -21,8 +21,6 @@
  */
 package org.jboss.as.jmx;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
@@ -89,8 +87,6 @@ import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.as.subsystem.test.AbstractSubsystemTest;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelType;
@@ -105,6 +101,8 @@ import org.junit.Test;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+
 /**
  *
  * This test modifies the {@link java.lang.management.ManagementFactory#getPlatformMBeanServer()} by setting the
@@ -115,7 +113,7 @@ import org.xnio.OptionMap;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
+public class ModelControllerMBeanTestCase extends JMXTestBase {
 
     private static final String LEGACY_DOMAIN = "jboss.resolved";
     private final static ObjectName LEGACY_ROOT_NAME = ModelControllerMBeanHelper.createRootObjectName(LEGACY_DOMAIN);
@@ -1553,7 +1551,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     }
 
 
-    private static class BaseAdditionalInitialization extends AdditionalInitialization {
+    private static class BaseAdditionalInitialization extends JMXAdditionalInitialization {
 
         final ProcessType processType;
 

@@ -37,8 +37,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.ServerEnvironmentResourceDescription;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
-import org.jboss.as.subsystem.test.AbstractSubsystemTest;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
@@ -50,7 +48,7 @@ import org.junit.Test;
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
+public class PluggableMBeanServerTestCase extends JMXTestBase {
 
     private static final String TYPE_STANDALONE = "STANDALONE";
 
@@ -175,7 +173,7 @@ public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
 
     }
 
-    private static class BaseAdditionalInitialization extends AdditionalInitialization {
+    private static class BaseAdditionalInitialization extends JMXAdditionalInitialization {
 
         @Override
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
