@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.Util;
 import org.jboss.as.test.http.Authentication;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -178,7 +179,7 @@ public class CLIWrapper {
         if(consoleOut.size() <= 0) {
             return null;
         }
-        return new String(consoleOut.toByteArray());
+        return new String(consoleOut.toByteArray()).trim();
     }
 
     /**
@@ -209,6 +210,15 @@ public class CLIWrapper {
      */
     public boolean hasQuit() {
         return ctx.isTerminated();
+    }
+
+    public boolean isValidPath(String... node) {
+        try {
+            return Util.isValidPath(ctx.getModelControllerClient(), node);
+        } catch (CommandLineException e) {
+            Assert.fail("Failed to validate path: " + e.getLocalizedMessage());
+            return false;
+        }
     }
 
     protected String getUsername() {
