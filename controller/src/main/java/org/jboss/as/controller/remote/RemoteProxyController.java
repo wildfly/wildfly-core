@@ -24,21 +24,15 @@ package org.jboss.as.controller.remote;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALID;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
@@ -47,9 +41,6 @@ import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
-import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.dmr.ModelNode;
 
@@ -64,14 +55,12 @@ public class RemoteProxyController implements ProxyController {
     private final PathAddress pathAddress;
     private final ProxyOperationAddressTranslator addressTranslator;
     private final TransactionalProtocolClient client;
-    private final boolean validateAddresses;
 
     private RemoteProxyController(final TransactionalProtocolClient client, final PathAddress pathAddress,
-                                      final ProxyOperationAddressTranslator addressTranslator, final boolean validateAddresses) {
+                                  final ProxyOperationAddressTranslator addressTranslator) {
         this.client = client;
         this.pathAddress = pathAddress;
         this.addressTranslator = addressTranslator;
-        this.validateAddresses = validateAddresses;
     }
 
     /**
@@ -82,8 +71,8 @@ public class RemoteProxyController implements ProxyController {
      * @param addressTranslator the address translator
      * @return the proxy controller
      */
-    public static RemoteProxyController create(final TransactionalProtocolClient client, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator, final boolean validateAddresses) {
-        return new RemoteProxyController(client, pathAddress, addressTranslator, validateAddresses);
+    public static RemoteProxyController create(final TransactionalProtocolClient client, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
+        return new RemoteProxyController(client, pathAddress, addressTranslator);
     }
 
     /**
@@ -94,10 +83,10 @@ public class RemoteProxyController implements ProxyController {
      * @param addressTranslator the translator to use translating the address for the remote proxy
      * @return the proxy controller
      */
-    public static RemoteProxyController create(final ManagementChannelHandler channelAssociation, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator, final boolean validateAddresses) {
+    public static RemoteProxyController create(final ManagementChannelHandler channelAssociation, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
         final TransactionalProtocolClient client = TransactionalProtocolHandlers.createClient(channelAssociation);
         // the remote proxy
-        return create(client, pathAddress, addressTranslator, validateAddresses);
+        return create(client, pathAddress, addressTranslator);
     }
 
     /**
@@ -235,93 +224,6 @@ public class RemoteProxyController implements ProxyController {
         final ModelNode proxyOp = op.clone();
         proxyOp.get(OP_ADDR).set(translated.toModelNode());
         return proxyOp;
-    }
-
-
-    /**
-     * We know the address is valid but need to make sure the caller has the permissions to read the address in question in the target
-     * controller. If it does not we throw a {@link org.jboss.as.controller.NoSuchResourceException} which fails that call, but keeps the transaction not rolled back.
-     * See https://issues.jboss.org/browse/WFLY-2139 for some background
-     *
-     */
-    private boolean validateAddress(final ModelNode operation, final OperationMessageHandler messageHandler) throws IOException, InterruptedException {
-        if (!GlobalOperationHandlers.isGlobalReadOperation(operation.get(OP).asString())) {
-            //It is not a global read operation. Just say it is valid for now, and let the write fail on the remote end if the user does not have the correct permissions
-            return true;
-        }
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-
-        PathAddress operationAddress = PathAddress.EMPTY_ADDRESS;
-        PathAddress paramAddress = address;
-        if (address.size() >= 1 && address.getElement(0).getKey().equals(HOST)) {
-            operationAddress = PathAddress.pathAddress(address.getElement(0));
-            paramAddress = address.size() == 1 ? PathAddress.EMPTY_ADDRESS : address.subAddress(1);
-
-        }
-
-        if (paramAddress.isMultiTarget()) {
-            //It is a wildcard address, the best we can do is to validate the nearest non-multi-target parent address
-            while (paramAddress.size() >= 1) {
-                //Get the parent address
-                if (paramAddress.isMultiTarget()) {
-                    //It is still a multi target address
-                    paramAddress = paramAddress.subAddress(0, paramAddress.size() - 1);
-                } else {
-                    //A non-multi-target
-                    return executeValidateAddress(operation, messageHandler, operationAddress, paramAddress);
-                }
-            }
-            //There are no more parents we cannot validate it, so say we are valid
-            return true;
-        } else {
-            return executeValidateAddress(operation, messageHandler, operationAddress, paramAddress);
-        }
-    }
-
-    private boolean executeValidateAddress(final ModelNode original, final OperationMessageHandler messageHandler, final PathAddress operationAddress, final PathAddress paramAddress) throws IOException {
-        final CountDownLatch completed = new CountDownLatch(1);
-        final AtomicReference<ModelNode> preparedResult = new AtomicReference<>();
-        final BlockingQueue<TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation>> queue = new ArrayBlockingQueue<TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation>>(1, true);
-        final TransactionalProtocolClient.TransactionalOperationListener<TransactionalProtocolClient.Operation> operationListener = new TransactionalProtocolClient.TransactionalOperationListener<TransactionalProtocolClient.Operation>() {
-            @Override
-            public void operationPrepared(TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation> prepared) {
-                try {
-                    preparedResult.set(prepared.getPreparedResult());
-                } finally {
-                    completed.countDown();
-                }
-            }
-
-            @Override
-            public void operationFailed(TransactionalProtocolClient.Operation operation, ModelNode result) {
-                //If we end up here it means that we could not validate the operation due to not being allowed to see the resource containing the validate-address operation
-                completed.countDown();
-            }
-
-            @Override
-            public void operationComplete(TransactionalProtocolClient.Operation operation, ModelNode result) {
-                completed.countDown();
-            }
-        };
-
-        final ModelNode validateAddress = Util.createOperation(ValidateAddressOperationHandler.OPERATION_NAME, operationAddress);
-        validateAddress.get(VALUE).set(paramAddress.toModelNode());
-        validateAddress.get(OPERATION_HEADERS).set(original.get(OPERATION_HEADERS));
-        Future<ModelNode> futureResult = client.execute(operationListener, validateAddress, messageHandler, null);
-        try {
-            completed.await();
-        } catch (InterruptedException e) {
-            if (futureResult != null) {
-                futureResult.cancel(false);
-            }
-        }
-        ModelNode result = preparedResult.get();
-        if (result != null) {
-            //For safety say the address is valid if for some reason something went wrong with the validate-address operation
-            return result.get(RESULT, VALID).asBoolean(true);
-        }
-        //We did not get a preparedResult, because the address is not valid for the current user
-        return false;
     }
 
     private static ModelNode getCancelledResponse() {
