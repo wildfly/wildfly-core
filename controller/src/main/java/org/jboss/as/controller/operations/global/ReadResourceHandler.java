@@ -353,7 +353,8 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
     private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData, ImmutableManagementResourceRegistration registry, String attributeName, Map<String, ModelNode> responseMap) {
         // See if there was an override registered for the standard :read-attribute handling (unlikely!!!)
         OperationStepHandler overrideHandler = registry.getOperationHandler(PathAddress.EMPTY_ADDRESS, READ_ATTRIBUTE_OPERATION);
-        if (overrideHandler != null && overrideHandler == ReadAttributeHandler.INSTANCE) {
+        if (overrideHandler != null &&
+                (overrideHandler == ReadAttributeHandler.INSTANCE || overrideHandler == ReadAttributeHandler.RESOLVE_INSTANCE)) {
             // not an override
             overrideHandler = null;
         }
