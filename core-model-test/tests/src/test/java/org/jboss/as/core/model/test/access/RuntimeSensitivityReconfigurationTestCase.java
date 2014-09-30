@@ -53,6 +53,7 @@ import static org.junit.Assert.assertTrue;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.rbac.StandardRole;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
@@ -96,8 +97,9 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
         assertTrue(kernelServices.isSuccessfulBoot());
 
         reconfigureSensitivity(SOCKET_CONFIG, true, true, true);
-        assertNoAccess(readInterface(FOO, role));
-        assertNoAccess(addInterface(role));
+        assertNoAccessInterface(readInterface(FOO, role), FOO);
+        String interfaceName = "test" + counter;
+        assertNoAccessInterface(addInterface(role), interfaceName);
 
         reconfigureSensitivity(SOCKET_CONFIG, false, true, true);
         assertDenied(readInterface(FOO, role));
@@ -119,8 +121,9 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
         StandardRole role = StandardRole.MAINTAINER;
 
         reconfigureSensitivity(SOCKET_CONFIG, true, true, true);
-        assertNoAccess(readInterface(FOO, role));
-        assertNoAccess(addInterface(role));
+        assertNoAccessInterface(readInterface(FOO, role), FOO);
+        String interfaceName = "test" + counter;
+        assertNoAccessInterface(addInterface(role), interfaceName);
 
         reconfigureSensitivity(SOCKET_CONFIG, false, true, true);
         assertDenied(readInterface(FOO, role));
@@ -250,11 +253,12 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
 
     protected static void assertDenied(ModelNode operationResult) {
         assertEquals(FAILED, operationResult.get(OUTCOME).asString());
-        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains("Permission denied"));
+        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains(ControllerLogger.ACCESS_LOGGER.permissionDenied()));
     }
 
-    protected static void assertNoAccess(ModelNode operationResult) {
+    protected static void assertNoAccessInterface(ModelNode operationResult, String name) {
         assertEquals(FAILED, operationResult.get(OUTCOME).asString());
-        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains("not found"));
+        assertEquals(ControllerLogger.ACCESS_LOGGER.managementResourceNotFound(pathAddress(INTERFACE, name)).getMessage(),
+                operationResult.get(FAILURE_DESCRIPTION).asString());
     }
 }

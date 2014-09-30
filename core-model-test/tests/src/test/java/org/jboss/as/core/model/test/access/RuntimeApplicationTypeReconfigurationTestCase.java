@@ -22,6 +22,7 @@
 
 package org.jboss.as.core.model.test.access;
 
+
 import static org.jboss.as.controller.PathAddress.pathAddress;
 import static org.jboss.as.controller.PathElement.pathElement;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
@@ -50,6 +51,7 @@ import static org.junit.Assert.assertTrue;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.rbac.StandardRole;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
@@ -195,11 +197,6 @@ public class RuntimeApplicationTypeReconfigurationTestCase extends AbstractCoreM
 
     protected static void assertDenied(ModelNode operationResult) {
         assertEquals(FAILED, operationResult.get(OUTCOME).asString());
-        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains("Permission denied"));
-    }
-
-    protected static void assertNoAccess(ModelNode operationResult) {
-        assertEquals(FAILED, operationResult.get(OUTCOME).asString());
-        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains("not found"));
+        assertTrue(operationResult.get(FAILURE_DESCRIPTION).asString().contains(ControllerLogger.ACCESS_LOGGER.permissionDenied()));
     }
 }
