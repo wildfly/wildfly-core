@@ -33,6 +33,7 @@ import java.util.Set;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.NameNotFoundException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
@@ -57,8 +58,9 @@ public class LdapGroupSearcherFactory {
         return new GroupToPrincipalSearcher(baseDn, groupDnAttribute, groupNameAttribute, principalAttribute, recursive, searchBy, preferOriginalConnection);
     }
 
-    static LdapSearcher<LdapEntry[], LdapEntry> createForPrincipalToGroup(final String groupAttribute, final String groupNameAttribute, final boolean preferOriginalConnection) {
-        return new PrincipalToGroupSearcher(groupAttribute, groupNameAttribute, preferOriginalConnection);
+    static LdapSearcher<LdapEntry[], LdapEntry> createForPrincipalToGroup(final String groupAttribute, final String groupNameAttribute,
+                                                                          final boolean preferOriginalConnection, final boolean skipMissingGroups) {
+        return new PrincipalToGroupSearcher(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups);
     }
 
     private static SearchControls createSearchControl(final boolean recursive, final String[] attributes) {
@@ -210,16 +212,19 @@ public class LdapGroupSearcherFactory {
         private final String groupAttribute; // The attribute on the principal that references the group it is a member of.
         private final String groupNameAttribute; // The attribute on the group that is it's simple name.
         private final boolean preferOriginalConnection; // After a referral should we still prefer the original connection?
+        private final boolean skipMissingGroups;
 
-        private PrincipalToGroupSearcher(final String groupAttribute, final String groupNameAttribute, final boolean preferOriginalConnection) {
+        private PrincipalToGroupSearcher(final String groupAttribute, final String groupNameAttribute, final boolean preferOriginalConnection, final boolean skipMissingGroups) {
             this.groupAttribute = groupAttribute;
             this.groupNameAttribute = groupNameAttribute;
             this.preferOriginalConnection = preferOriginalConnection;
+            this.skipMissingGroups = skipMissingGroups;
 
             if (SECURITY_LOGGER.isTraceEnabled()) {
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher groupAttribute=%s", groupAttribute);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher groupNameAttribute=%s", groupNameAttribute);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher preferOriginalConnection=%b", preferOriginalConnection);
+                SECURITY_LOGGER.tracef("PrincipalToGroupSearcher skipMissingGroups=%b", skipMissingGroups);
             }
         }
 
@@ -282,6 +287,11 @@ public class LdapGroupSearcherFactory {
                                 SECURITY_LOGGER.trace("No groupNameAttribute to load simpleName");
                             }
                             foundEntries.add(new LdapEntry(simpleName, distingushedName, groupReferralAddress));
+                        } catch (NameNotFoundException e) {
+                            SECURITY_LOGGER.tracef("Failed to query roleNameAttrName: %s", e.getMessage());
+                            if (skipMissingGroups == false) {
+                                throw e;
+                            }
                         } catch (LdapReferralException e) {
                             Object info = e.getReferralInfo();
                             try {

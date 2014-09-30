@@ -23,6 +23,7 @@ package org.jboss.as.domain.management.security.realms;
 
 import org.jboss.as.domain.management.security.operations.SecurityRealmAddBuilder;
 import org.jboss.as.domain.management.security.operations.CacheBuilder.By;
+import org.junit.Test;
 
 /**
  * A test suite test to test LDAP based group assignment where principals contain the memberOf attribute referencing the groups
@@ -60,11 +61,22 @@ public class PrincipalToGroupLdapSuiteTest extends LdapGroupAssignmentBaseSuiteT
         .build().build()
         .principalToGroup()
         .setIterative(true)
+        .setSkipMissingGroups(true)
         .cache()
         .setBy(By.SEARCH_TIME)
         .setEvictionTime(1)
         .setMaxCacheSize(1)
         .build().build().build().build();
+    }
+
+    /**
+     * Expected membership (GroupTwo)
+     *
+     * This user is also a member of a missing group which should be ignored.
+     */
+    @Test
+    public void testTestUserEleven() throws Exception {
+        verifyGroupMembership(TEST_REALM, "TestUserEleven", "passwordEleven", "GroupTwo");
     }
 
 }
