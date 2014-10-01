@@ -21,6 +21,7 @@
 */
 package org.jboss.as.jmx;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.jmx.MBeanServerSignature.ADD_NOTIFICATION_LISTENER;
 import static org.jboss.as.jmx.MBeanServerSignature.CREATE_MBEAN;
 import static org.jboss.as.jmx.MBeanServerSignature.DESERIALIZE;
@@ -46,11 +47,14 @@ import static org.jboss.as.jmx.MBeanServerSignature.UNREGISTER_MBEAN;
 import static org.jboss.as.jmx.SecurityActions.createCaller;
 
 import java.io.ObjectInputStream;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.InetAddress;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -1219,7 +1223,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     void log(boolean readOnly, Throwable error, String methodName, String[] methodSignature, Object...methodParams) {
         AccessControlContext acc = AccessController.getContext();
         if (WildFlySecurityManager.isChecking()) {
-            AccessController.doPrivileged(new LogAction(acc, auditLogger, readOnly, error, methodName, methodSignature, methodParams));
+            doPrivileged(new LogAction(acc, auditLogger, readOnly, error, methodName, methodSignature, methodParams));
         } else {
             LogAction.doLog(acc, auditLogger, readOnly, error, methodName, methodSignature, methodParams);
         }
@@ -1612,13 +1616,51 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             delegate.unregisterMBean(name);
         }
 
-        private ClassLoader pushClassLoader(ObjectName name) throws InstanceNotFoundException {
-            ClassLoader mbeanCl = delegate.getClassLoaderFor(name);
+        private ClassLoader pushClassLoader(final ObjectName name) throws InstanceNotFoundException {
+            ClassLoader mbeanCl;
+            try {
+                mbeanCl = doPrivileged(new PrivilegedExceptionAction<ClassLoader>() {
+                    public ClassLoader run() throws InstanceNotFoundException {
+                        return delegate.getClassLoaderFor(name);
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                try {
+                    throw e.getCause();
+                } catch (RuntimeException r) {
+                    throw r;
+                } catch (InstanceNotFoundException ie) {
+                    throw ie;
+                } catch (Error error) {
+                    throw error;
+                } catch (Throwable throwable) {
+                    throw new UndeclaredThrowableException(throwable);
+                }
+            }
             return WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(mbeanCl);
         }
 
-        private ClassLoader pushClassLoaderByName(ObjectName loaderName) throws InstanceNotFoundException {
-            ClassLoader mbeanCl = delegate.getClassLoader(loaderName);
+        private ClassLoader pushClassLoaderByName(final ObjectName loaderName) throws InstanceNotFoundException {
+            ClassLoader mbeanCl;
+            try {
+                mbeanCl = doPrivileged(new PrivilegedExceptionAction<ClassLoader>() {
+                    public ClassLoader run() throws Exception {
+                        return delegate.getClassLoader(loaderName);
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                try {
+                    throw e.getCause();
+                } catch (RuntimeException r) {
+                    throw r;
+                } catch (InstanceNotFoundException ie) {
+                    throw ie;
+                } catch (Error error) {
+                    throw error;
+                } catch (Throwable throwable) {
+                    throw new UndeclaredThrowableException(throwable);
+                }
+            }
             return WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(mbeanCl);
         }
 

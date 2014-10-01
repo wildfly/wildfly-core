@@ -185,6 +185,17 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         permissions.add(new PropertyPermission("os.version", "read"));
         permissions.add(new PropertyPermission("os.arch", "read"));
         permissions.add(new PropertyPermission("path.separator", "read"));
+        // these permissions are apparently non-standard, but there is no reason not to make them available if the above are
+        permissions.add(new PropertyPermission("java.runtime.name", "read"));
+        permissions.add(new PropertyPermission("java.runtime.version", "read"));
+        permissions.add(new PropertyPermission("java.vendor.url.bug", "read"));
+        permissions.add(new PropertyPermission("java.vm.info", "read"));
+        permissions.add(new PropertyPermission("java.vm.specification.name", "read"));
+        permissions.add(new PropertyPermission("java.vm.specification.vendor", "read"));
+        permissions.add(new PropertyPermission("java.vm.specification.version", "read"));
+        permissions.add(new PropertyPermission("sun.cpu.endian", "read"));
+        permissions.add(new PropertyPermission("sun.cpu.isalist", "read"));
+        permissions.add(new PropertyPermission("sun.management.compiler", "read"));
         permissions.setReadOnly();
         DEFAULT_PERMISSIONS = permissions;
     }
@@ -332,6 +343,10 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
                 specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource
                         .getRootName(), root, resource.isUsePhysicalCodeSource()), filterBuilder.create()));
             }
+            // start with the root
+            permFactories.add(new ImmediatePermissionFactory(
+                    new VirtualFilePermission(root.getPathName(), VirtualFilePermission.FLAG_READ)));
+            // also include all children, recursively
             permFactories.add(new ImmediatePermissionFactory(
                     new VirtualFilePermission(root.getChild("-").getPathName(), VirtualFilePermission.FLAG_READ)));
         } catch (IOException e) {
