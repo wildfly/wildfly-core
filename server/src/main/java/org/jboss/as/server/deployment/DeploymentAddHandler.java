@@ -82,15 +82,18 @@ public class DeploymentAddHandler implements OperationStepHandler {
      * {@inheritDoc}
      */
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
-        ModelNode newModel = resource.getModel();
 
         //Persistent is hidden from CLI users so let's set this to true here if it is not defined
         if (!operation.hasDefined(PERSISTENT.getName())) {
             operation.get(PERSISTENT.getName()).set(true);
         }
-        PERSISTENT.validateAndSet(operation, newModel);
+        boolean persistent = PERSISTENT.resolveModelAttribute(context, operation).asBoolean();
 
+        final Resource resource = Resource.Factory.create(!persistent);
+        context.addResource(PathAddress.EMPTY_ADDRESS, resource);
+
+        ModelNode newModel = resource.getModel();
+        PERSISTENT.validateAndSet(operation, newModel);
         // Store the rest of the attributes.
         for (AttributeDefinition def : SERVER_ADD_ATTRIBUTES) {
             def.validateAndSet(operation, newModel);

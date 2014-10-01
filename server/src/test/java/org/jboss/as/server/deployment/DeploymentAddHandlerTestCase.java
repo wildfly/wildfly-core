@@ -79,24 +79,29 @@ public class DeploymentAddHandlerTestCase {
     @Test (expected = OperationFailedException.class)
     public void testTooMuchContent() throws OperationFailedException {
         final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
-        final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.createResource(PathAddress.EMPTY_ADDRESS)).thenReturn(Resource.Factory.create());
         final ModelNode operation = new ModelNode();
         //operation.get("address").setEmptyList().get(0).get("deployment").set("test.war");
         operation.get("address").get(0).setExpression("deployment", "test.war");
         operation.get("content").get(0).get("archive").set(true);
         operation.get("content").get(0).get("path").set("test.war");
         operation.get("content").add("muck");
+        final ModelNode model = operation.clone();
+        model.get("persistent").set(true);
+        model.remove("address");
+        final OperationContext context = Mockito.mock(OperationContext.class);
+        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>anyObject())).thenReturn(model);
         handler.execute(context, operation);
     }
 
     @Test
     public void testValidator() throws OperationFailedException {
         final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
-        final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.createResource(PathAddress.EMPTY_ADDRESS)).thenReturn(Resource.Factory.create());
         final ModelNode operation = new ModelNode();
         operation.get("content").get(0).get("archive").set("wrong");
+        final ModelNode model = operation.clone();
+        model.get("persistent").set(true);
+        final OperationContext context = Mockito.mock(OperationContext.class);
+        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>anyObject())).thenReturn(model);
         try {
             handler.execute(context, operation);
         } catch (OperationFailedException e) {
