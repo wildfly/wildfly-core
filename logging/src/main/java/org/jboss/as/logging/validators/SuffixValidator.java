@@ -54,7 +54,7 @@ public class SuffixValidator extends ModelTypeValidator {
             final String suffix = value.asString();
             try {
                 if (denySeconds && (suffix.contains("s") || suffix.contains("S"))) {
-                    throw createOperationFailure(LoggingLogger.ROOT_LOGGER.invalidSuffix(suffix));
+                    throw createOperationFailure(LoggingLogger.ROOT_LOGGER.suffixContainsMillis(suffix));
                 }
                 new SimpleDateFormat(suffix);
             } catch (IllegalArgumentException e) {

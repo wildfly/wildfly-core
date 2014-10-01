@@ -422,7 +422,7 @@ public interface LoggingLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = 41, value = "The suffix (%s) is invalid. A suffix must be a valid date format and not contain seconds or milliseconds.")
+    @Message(id = 41, value = "The suffix (%s) is invalid. A suffix must be a valid date format.")
     String invalidSuffix(String suffix);
 
     /**
@@ -860,4 +860,14 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 81, value = "File '%s' is not allowed to be read.")
     OperationFailedException readNotAllowed(String name);
+
+    /**
+     * A message indicating a suffix contains seconds or milliseconds and the handler does not allow it.
+     *
+     * @param suffix the suffix.
+     *
+     * @return the message.
+     */
+    @Message(id = 82, value = "The suffix (%s) can not contain seconds or milliseconds.")
+    String suffixContainsMillis(String suffix);
 }
