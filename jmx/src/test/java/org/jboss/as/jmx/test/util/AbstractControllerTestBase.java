@@ -45,7 +45,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.server.FutureServiceContainer;
+import org.jboss.as.jmx.TestFutureServiceContainer;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -132,7 +132,7 @@ public abstract class AbstractControllerTestBase {
     public void setupController() throws InterruptedException {
         container = ServiceContainer.Factory.create("test");
 
-        final FutureServiceContainer fsc = new FutureServiceContainer(container);
+        final TestFutureServiceContainer fsc = new TestFutureServiceContainer(container);
         ServiceBuilder<AsyncFuture<ServiceContainer>> containerBuilder = container.addService(Services.JBOSS_AS, new Service<AsyncFuture<ServiceContainer>>() {
             public void start(StartContext context) throws StartException {
             }

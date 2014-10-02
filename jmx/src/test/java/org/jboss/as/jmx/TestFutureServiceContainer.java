@@ -20,18 +20,23 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server;
+package org.jboss.as.jmx;
 
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossExecutors;
 
 /**
- * @author John Bailey
+ * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class FutureServiceContainer extends AsyncFutureTask<ServiceContainer> {
-    public FutureServiceContainer() {
+public class TestFutureServiceContainer extends AsyncFutureTask<ServiceContainer> {
+    public TestFutureServiceContainer() {
         super(JBossExecutors.directExecutor());
+    }
+
+    public TestFutureServiceContainer(ServiceContainer container) {
+        this();
+        done(container);
     }
 
     void done(final ServiceContainer container) {

@@ -25,7 +25,6 @@ import java.util.Comparator;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -53,7 +52,7 @@ public abstract class JMXTestBase extends AbstractSubsystemTest {
     protected static class JMXAdditionalInitialization extends AdditionalInitialization {
         @Override
         protected void addExtraServices(ServiceTarget target, ServiceContainer container) {
-            final FutureServiceContainer fsc = new FutureServiceContainer(container);
+            final TestFutureServiceContainer fsc = new TestFutureServiceContainer(container);
             ServiceBuilder<AsyncFuture<ServiceContainer>> containerBuilder = target.addService(Services.JBOSS_AS, new Service<AsyncFuture<ServiceContainer>>() {
                 public void start(StartContext context) throws StartException {
                 }
