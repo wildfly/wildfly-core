@@ -3259,4 +3259,8 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 374, value = "Unable to resolve expressions at this location.")
     OperationFailedException unableToResolveExpressions();
+
+    @LogMessage(level = WARN)
+    @Message(id = 375, value = "Update of the management operation audit log failed on the handler '%s' due to '%s'. Please make sure that the syslog server is running and reachable")
+    void udpSyslogServerUnavailable(String name, String message);
 }
