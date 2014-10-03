@@ -587,8 +587,13 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return the builder
      */
     public DomainCommandBuilder addProcessControllerJavaOption(final String arg) {
-        if (arg != null) {
-            processControllerJavaOpts.add(arg);
+        if (arg != null && !arg.trim().isEmpty()) {
+            final Argument argument = Arguments.parse(arg);
+            if (argument.getKey().equals(SECURITY_MANAGER_PROP)) {
+                setUseSecurityManager(true);
+            } else {
+                processControllerJavaOpts.add(argument);
+            }
         }
         return this;
     }

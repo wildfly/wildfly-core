@@ -40,11 +40,11 @@ public class StandaloneCommandBuilderTest extends CommandBuilderTest {
                 .setBindAddressHint("0.0.0.0")
                 .setDebug(true, 5005)
                 .setServerConfiguration("standalone-full.xml")
+                .addJavaOption("-Djava.security.manager")
                 .setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
         List<String> commands = commandBuilder.buildArguments();
-        System.out.println(commands);
 
         Assert.assertTrue("--admin-only is missing", commands.contains("--admin-only"));
 
@@ -55,6 +55,8 @@ public class StandaloneCommandBuilderTest extends CommandBuilderTest {
         Assert.assertTrue("Missing debug argument", commands.contains(String.format(StandaloneCommandBuilder.DEBUG_FORMAT, "y", 5005)));
 
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
+
+        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
         // Rename the binding address
         commandBuilder.setBindAddressHint(null);

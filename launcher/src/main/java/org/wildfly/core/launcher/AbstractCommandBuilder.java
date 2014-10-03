@@ -43,6 +43,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
 
     static final String HOME_DIR = "jboss.home.dir";
     static final String SECURITY_MANAGER_ARG = "-secmgr";
+    static final String SECURITY_MANAGER_PROP = "java.security.manager";
     // TODO (jrp) should java.awt.headless=true be added?
     static final String[] DEFAULT_VM_ARGUMENTS = {
             "-Xms64m",

@@ -114,6 +114,8 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
                 if (argument.getValue() != null) {
                     setLogDirectory(argument.getValue());
                 }
+            } else if (argument.getKey().equals(SECURITY_MANAGER_PROP)) {
+                setUseSecurityManager(true);
             } else {
                 javaOpts.add(argument);
             }

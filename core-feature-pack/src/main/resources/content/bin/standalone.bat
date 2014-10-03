@@ -28,6 +28,11 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
+rem check for the security manager system property
+echo(%SERVER_OPTS% | findstr /r /c:"^-Djava.security.manager" > nul
+if not errorlevel == 1 (
+	set SECMGR=true
+)
 
 rem Read command-line args.
 :READ-ARGS
@@ -35,12 +40,14 @@ if "%1" == "" (
    goto MAIN
 ) else if "%1" == "--debug" (
    goto READ-DEBUG-PORT
+) else if "%1" == "-secmgr" (
+   set SECMGR=true
 ) else (
    rem This doesn't work as Windows splits on = and spaces by default
    rem set SERVER_OPTS=%SERVER_OPTS% %1
-   shift
-   goto READ-ARGS
 )
+shift
+goto READ-ARGS
 
 :READ-DEBUG-PORT
 set "DEBUG_MODE=true"
@@ -194,6 +201,25 @@ for /f "tokens=1* delims= " %%i IN ("%CONSOLIDATED_OPTS%") DO (
 
 :ENDDIRLOOP
 
+rem check the JAVA_OPTS
+set "X_JAVA_OPTS=%JAVA_OPTS%"
+:JAVAOPTLOOP
+rem fail if the -Djava.security.manager is set, can't find a reliable way to filter this out
+echo(%X_JAVA_OPTS% | findstr /r /c:"^-Djava.security.manager" > nul && (
+  echo ERROR: Cannot start server with -Djava.security.manager. Use the option -secmgr or set the SECMGR=true environment variable
+  GOTO END_NO_PAUSE
+)
+
+for /f "tokens=1* delims= " %%i IN ("%X_JAVA_OPTS%") DO (
+  if %%i == "" (
+    goto ENDJAVAOPTLOOP
+  ) else (
+    set X_JAVA_OPTS=%%j
+    GOTO JAVAOPTLOOP
+  )
+)
+:ENDJAVAOPTLOOP
+
 rem Set default module root paths
 if "x%JBOSS_MODULEPATH%" == "x" (
   set  "JBOSS_MODULEPATH=%JBOSS_HOME%\modules"
@@ -210,6 +236,12 @@ if "x%JBOSS_LOG_DIR%" == "x" (
 rem Set the standalone configuration dir
 if "x%JBOSS_CONFIG_DIR%" == "x" (
   set  "JBOSS_CONFIG_DIR=%JBOSS_BASE_DIR%\configuration"
+)
+
+rem Set the module options
+set "MODULE_OPTS="
+if "%SECMGR%" == "true" (
+    set "MODULE_OPTS=-secmgr"
 )
 
 echo ===============================================================================
@@ -231,6 +263,7 @@ rem if x%XLOGGC% == x (
    "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\server.log" ^
    "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       -jar "%JBOSS_HOME%\jboss-modules.jar" ^
+      %MODULE_OPTS% ^
       -mp "%JBOSS_MODULEPATH%" ^
       -jaxpmodule "javax.xml.jaxp-provider" ^
        org.jboss.as.standalone ^
@@ -241,8 +274,8 @@ rem ) else (
    rem "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\server.log" ^
    rem "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       rem -jar "%JBOSS_HOME%\jboss-modules.jar" ^
+      rem %MODULE_OPTS% ^
       rem -mp "%JBOSS_MODULEPATH%" ^
-      rem -jaxpmodule "javax.xml.jaxp-provider" ^
       rem org.jboss.as.standalone ^
       rem "-Djboss.home.dir=%JBOSS_HOME%" ^
       rem %SERVER_OPTS%

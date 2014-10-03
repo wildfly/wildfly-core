@@ -41,11 +41,11 @@ public class DomainCommandBuilderTest extends CommandBuilderTest {
                 .setMasterAddressHint("0.0.0.0")
                 .setDomainConfiguration("domain.xml")
                 .setHostConfiguration("host.xml")
+                .addProcessControllerJavaOption("-Djava.security.manager")
                 .setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
         List<String> commands = commandBuilder.buildArguments();
-        System.out.println(commands);
 
         Assert.assertTrue("--admin-only is missing", commands.contains("--admin-only"));
 
@@ -56,6 +56,8 @@ public class DomainCommandBuilderTest extends CommandBuilderTest {
         Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
 
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=domain.xml"));
+
+        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
         // Rename the binding address
         commandBuilder.setBindAddressHint(null);

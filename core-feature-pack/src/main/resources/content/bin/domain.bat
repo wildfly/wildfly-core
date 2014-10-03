@@ -20,6 +20,24 @@ pushd "%DIRNAME%.."
 set "RESOLVED_JBOSS_HOME=%CD%"
 popd
 
+
+rem check for the security manager system property
+echo(%SERVER_OPTS% | findstr /r /c:"^-Djava.security.manager" > nul
+if not errorlevel == 1 (
+	set SECMGR=true
+)
+rem Read command-line args.
+:READ-ARGS
+if "%1" == "" (
+   goto MAIN
+) else if "%1" == "-secmgr" (
+   set SECMGR=true
+)
+shift
+goto READ-ARGS
+
+:MAIN
+
 if "x%JBOSS_HOME%" == "x" (
   set "JBOSS_HOME=%RESOLVED_JBOSS_HOME%"
 )
@@ -118,6 +136,25 @@ for /f "tokens=1* delims= " %%i IN ("%CONSOLIDATED_OPTS%") DO (
 
 :ENDDIRLOOP
 
+rem check the PROCESS_CONTROLLER_JAVA_OPTS
+set "X_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS%"
+:JAVAOPTLOOP
+rem fail if the -Djava.security.manager is set, can't find a reliable way to filter this out
+echo(%X_JAVA_OPTS% | findstr /r /c:"^-Djava.security.manager" > nul && (
+  echo ERROR: Cannot start server with -Djava.security.manager. Use the option -secmgr or set the SECMGR=true environment variable
+  GOTO END_NO_PAUSE
+)
+
+for /f "tokens=1* delims= " %%i IN ("%X_JAVA_OPTS%") DO (
+  if %%i == "" (
+    goto ENDJAVAOPTLOOP
+  ) else (
+    set X_JAVA_OPTS=%%j
+    GOTO JAVAOPTLOOP
+  )
+)
+:ENDJAVAOPTLOOP
+
 rem Setup JBoss specific properties
 
 rem Set default module root paths
@@ -138,6 +175,12 @@ if "x%JBOSS_CONFIG_DIR%" == "x" (
   set  "JBOSS_CONFIG_DIR=%JBOSS_BASE_DIR%\configuration"
 )
 
+rem Set the module options
+set "MODULE_OPTS="
+if "%SECMGR%" == "true" (
+    set "MODULE_OPTS=-secmgr"
+)
+
 echo ===============================================================================
 echo.
 echo   JBoss Bootstrap Environment
@@ -156,10 +199,12 @@ echo.
  "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\process-controller.log" ^
  "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
     -jar "%JBOSS_HOME%\jboss-modules.jar" ^
+    %MODULE_OPTS% ^
     -mp "%JBOSS_MODULEPATH%" ^
      org.jboss.as.process-controller ^
     -jboss-home "%JBOSS_HOME%" ^
     -jvm "%JAVA%" ^
+    %MODULE_OPTS% ^
     -mp "%JBOSS_MODULEPATH%" ^
     -- ^
     "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\host-controller.log" ^

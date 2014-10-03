@@ -41,7 +41,6 @@ import javax.net.ServerSocketFactory;
 
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.ProtocolServer;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.as.version.Version;
 import org.jboss.logging.MDC;
@@ -49,6 +48,7 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.modules.Module;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * The main entry point for the process controller.
@@ -97,6 +97,8 @@ public final class Main {
         // -jar is jboss-modules.jar in jboss-home
         // log config should be fixed loc
 
+        // If the security manager is installed assume we need to use -secmgr
+        boolean securityManagerEnabled = System.getSecurityManager() != null;
         OUT: for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if ("-jvm".equals(arg)) {
@@ -107,6 +109,8 @@ public final class Main {
                 modulePath = args[++i];
             } else if ("-jar".equals(arg)) {
                 bootJar = args[++i];
+            } else if ("-secmgr".equals(arg)) {
+                securityManagerEnabled = true;
             } else if ("--".equals(arg)) {
                 for (i++; i < args.length; i++) {
                     arg = args[i];
@@ -148,7 +152,13 @@ public final class Main {
                         }
                         i += pcSocketConfig.getArgIncrement();
                     } else {
-                        addJavaOption(arg, javaOptions);
+                        // Windows batch scripts can't filter out parameters, ignore the -Djava.security.manager system property
+                        if (arg.startsWith("-Djava.security.manager")) {
+                            // Turn on the security manager
+                            securityManagerEnabled = true;
+                        } else {
+                            addJavaOption(arg, javaOptions);
+                        }
                     }
                 }
                 break OUT;
@@ -212,9 +222,17 @@ public final class Main {
         initialCommand.addAll(javaOptions);
         initialCommand.add("-jar");
         initialCommand.add(bootJar);
+        // Optionally pass the security manager property to the host controller
+        if (securityManagerEnabled){
+            initialCommand.add("-secmgr");
+        }
         initialCommand.add("-mp");
         initialCommand.add(modulePath);
         initialCommand.add(bootModule);
+        // Optionally pass the security manager property to the process controller
+        if (securityManagerEnabled){
+            initialCommand.add("-secmgr");
+        }
         initialCommand.add("-mp");  // Repeat the module path so HostController's Main sees it
         initialCommand.add(modulePath);
         initialCommand.add(CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR);
