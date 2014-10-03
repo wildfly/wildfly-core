@@ -42,7 +42,13 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jboss.as.controller.services.path.PathEntry;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManager.Callback;
+import org.jboss.as.controller.services.path.PathManager.Event;
+import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
+import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -72,8 +78,10 @@ public class PropertiesFileLoader {
     public static final Pattern PROPERTY_PATTERN = Pattern.compile("#??([^#]*)=([^=]*)");
     public static final String DISABLE_SUFFIX_KEY = "!disable";
 
+    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
+
     private final String path;
-    private final InjectedValue<String> relativeTo = new InjectedValue<String>();
+    private final String relativeTo;
 
     protected File propertiesFile;
     private volatile long fileUpdated = -1;
@@ -87,18 +95,36 @@ public class PropertiesFileLoader {
      * End of state maintained during persistence.
      */
 
-
-    public PropertiesFileLoader(final String path) {
+    public PropertiesFileLoader(final String path, final String relativeTo) {
         this.path = path;
+        this.relativeTo = relativeTo;
     }
 
-    public InjectedValue<String> getRelativeToInjector() {
-        return relativeTo;
+    public Injector<PathManager> getPathManagerInjectorInjector() {
+        return pathManager;
     }
 
     public void start(StartContext context) throws StartException {
-        String relativeTo = this.relativeTo.getOptionalValue();
-        String file = relativeTo == null ? path : relativeTo + "/" + path;
+        String file = path;
+        if (relativeTo != null) {
+            PathManager pm = pathManager.getValue();
+
+            file = pm.resolveRelativePathEntry(file, relativeTo);
+            pm.registerCallback(relativeTo, new Callback() {
+
+                @Override
+                public void pathModelEvent(PathEventContext eventContext, String name) {
+                    if (eventContext.isResourceServiceRestartAllowed() == false) {
+                        eventContext.reloadRequired();
+                    }
+                }
+
+                @Override
+                public void pathEvent(Event event, PathEntry pathEntry) {
+                    // Service dependencies should trigger a stop and start.
+                }
+            }, Event.REMOVED, Event.UPDATED);
+        }
 
         propertiesFile = new File(file);
         try {

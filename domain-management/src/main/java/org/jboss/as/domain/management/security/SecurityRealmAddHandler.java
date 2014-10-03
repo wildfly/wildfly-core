@@ -66,6 +66,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
@@ -382,15 +384,17 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceName propsServiceName = PropertiesCallbackHandler.ServiceUtil.createServiceName(realmName);
 
         final String path = PropertiesAuthenticationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
-        final ModelNode relativeTo = PropertiesAuthenticationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
+        final ModelNode relativeToNode = PropertiesAuthenticationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
         final boolean plainText = PropertiesAuthenticationResourceDefinition.PLAIN_TEXT.resolveModelAttribute(context, properties).asBoolean();
+        String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-        PropertiesCallbackHandler propsCallbackHandler = new PropertiesCallbackHandler(realmName, path, plainText);
+        PropertiesCallbackHandler propsCallbackHandler = new PropertiesCallbackHandler(realmName, path, relativeTo, plainText);
 
         ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsCallbackHandler);
 
-        if (relativeTo.isDefined()) {
-            propsBuilder.addDependency(pathName(relativeTo.asString()), String.class, propsCallbackHandler.getRelativeToInjector());
+        if (relativeTo != null) {
+            propsBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
+            propsBuilder.addDependency(pathName(relativeTo));
         }
 
         final ServiceController<?> serviceController = propsBuilder.setInitialMode(ON_DEMAND)
@@ -409,13 +413,15 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceName propsServiceName = PropertiesSubjectSupplemental.ServiceUtil.createServiceName(realmName);
 
         final String path = PropertiesAuthorizationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
-        final ModelNode relativeTo = PropertiesAuthorizationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
-        PropertiesSubjectSupplemental propsSubjectSupplemental = new PropertiesSubjectSupplemental(realmName, path);
+        final ModelNode relativeToNode = PropertiesAuthorizationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
+        String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+
+        PropertiesSubjectSupplemental propsSubjectSupplemental = new PropertiesSubjectSupplemental(realmName, path, relativeTo);
 
         ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsSubjectSupplemental);
-        if (relativeTo.isDefined()) {
-            propsBuilder.addDependency(pathName(relativeTo.asString()), String.class,
-                    propsSubjectSupplemental.getRelativeToInjector());
+        if (relativeTo != null) {
+            propsBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
+            propsBuilder.addDependency(pathName(relativeTo));
         }
 
         final ServiceController<?> serviceController = propsBuilder.setInitialMode(ON_DEMAND).install();

@@ -71,8 +71,8 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
     private final String realm;
     private final boolean plainText;
 
-    public PropertiesCallbackHandler(String realm, String path, boolean plainText) {
-        super(path);
+    public PropertiesCallbackHandler(String realm, String path, String relativeTo, boolean plainText) {
+        super(path, relativeTo);
         this.realm = realm;
         this.plainText = plainText;
     }
