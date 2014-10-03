@@ -99,6 +99,9 @@ public abstract class OperationDefinition {
         return replyType;
     }
 
+    /**
+     * Only required if the reply type is some form of collection.
+     */
     public ModelType getReplyValueType() {
         return replyValueType;
     }

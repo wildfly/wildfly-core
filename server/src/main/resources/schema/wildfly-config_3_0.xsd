@@ -455,7 +455,7 @@
                         <xs:documentation>
                             Reference to an individual keytab.
 
-                            On receipt of an incomming request the host name will be extracted from the request and the keytab to be used will be selected as follows: -
+                            On receipt of an incoming request the host name will be extracted from the request and the keytab to be used will be selected as follows: -
                               1 - Iterate the list of keytabs and identify one where the host name is listed in the for-hosts attribute.
                               2 - Iterate the list of keytabs and compare the host name against the host extracted from the request.
                               3 - Use the keytab where for-hosts is set to '*'.

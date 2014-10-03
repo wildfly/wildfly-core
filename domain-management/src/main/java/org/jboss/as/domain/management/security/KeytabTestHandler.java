@@ -32,6 +32,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -47,12 +48,17 @@ import org.jboss.msc.service.ServiceController;
  */
 public class KeytabTestHandler implements OperationStepHandler {
 
-    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(TEST,
-            ControllerResolver.getResolver("core.management.security-realm.server-identity.kerberos.keytab")).setReadOnly()
-            .setReplyType(ModelType.STRING).setReplyValueType(ModelType.STRING).build();
+    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(TEST, ControllerResolver.getResolver("core.management.security-realm.server-identity.kerberos.keytab"))
+            .setReadOnly()
+            .setReplyType(ModelType.STRING)
+            .build();
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        // Validate this is being called against an actual resource.
+        // This makes valid the subsequent assumption that the relevant service will be installed.
+        context.readResource(PathAddress.EMPTY_ADDRESS, false);
+
         context.addStep(new OperationStepHandler() {
 
             @Override

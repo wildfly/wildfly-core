@@ -40,6 +40,10 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
+import org.jboss.as.controller.services.path.PathEntry;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManager.Event;
+import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -71,16 +75,18 @@ public class KeytabService implements Service<KeytabService> {
 
     private final String principal;
     private final String path;
+    private final String relativeTo;
     private final String[] forHosts;
     private final boolean debug;
-    private final InjectedValue<String> relativeTo = new InjectedValue<String>();
+    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
     private Configuration clientConfiguration;
     private Configuration serverConfiguration;
 
-    KeytabService(final String principal, final String path, final String[] forHosts, final boolean debug) {
+    KeytabService(final String principal, final String path, final String relativeTo, final String[] forHosts, final boolean debug) {
         this.principal = principal;
         this.path = path;
+        this.relativeTo = relativeTo;
         this.forHosts = forHosts;
         this.debug = debug;
     }
@@ -96,12 +102,30 @@ public class KeytabService implements Service<KeytabService> {
 
     @Override
     public void start(StartContext context) throws StartException {
-        String relativeTo = this.relativeTo.getOptionalValue();
-        String keytabFile = relativeTo == null ? path : relativeTo + "/" + path;
+        String file = path;
+        if (relativeTo != null) {
+            PathManager pm = pathManager.getValue();
+
+            file = pm.resolveRelativePathEntry(file, relativeTo);
+            pm.registerCallback(relativeTo, new org.jboss.as.controller.services.path.PathManager.Callback() {
+
+                @Override
+                public void pathModelEvent(PathEventContext eventContext, String name) {
+                    if (eventContext.isResourceServiceRestartAllowed() == false) {
+                        eventContext.reloadRequired();
+                    }
+                }
+
+                @Override
+                public void pathEvent(Event event, PathEntry pathEntry) {
+                    // Service dependencies should trigger a stop and start.
+                }
+            }, Event.REMOVED, Event.UPDATED);
+        }
 
         try {
-            clientConfiguration = createConfiguration(false, keytabFile);
-            serverConfiguration = createConfiguration(true, keytabFile);
+            clientConfiguration = createConfiguration(false, file);
+            serverConfiguration = createConfiguration(true, file);
         } catch (MalformedURLException e) {
             throw SECURITY_LOGGER.invalidKeytab(e);
         }
@@ -150,8 +174,8 @@ public class KeytabService implements Service<KeytabService> {
         serverConfiguration = null;
     }
 
-    Injector<String> getRelativeToInjector() {
-        return relativeTo;
+    Injector<PathManager> getPathManagerInjector() {
+        return pathManager;
     }
 
     /*

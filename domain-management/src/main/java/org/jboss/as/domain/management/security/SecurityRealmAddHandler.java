@@ -68,6 +68,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
@@ -741,7 +743,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                  String principal = current.getName();
                  ModelNode keytab = current.getValue();
                  String path = KeytabResourceDefinition.PATH.resolveModelAttribute(context, keytab).asString();
-                 ModelNode relativeTo = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
+                 ModelNode relativeToNode = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
+                 String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
                  boolean debug = KeytabResourceDefinition.DEBUG.resolveModelAttribute(context, keytab).asBoolean();
                  final String[] forHostsValues;
                  ModelNode forHosts = KeytabResourceDefinition.FOR_HOSTS.resolveModelAttribute(context, keytab);
@@ -756,12 +759,13 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                  }
 
                  ServiceName keytabName = KeytabService.ServiceUtil.createServiceName(realmName, principal);
-                 KeytabService ks = new KeytabService(principal, path, forHostsValues, debug);
+                 KeytabService ks = new KeytabService(principal, path, relativeTo, forHostsValues, debug);
 
                  ServiceBuilder<KeytabService> keytabBuilder = serviceTarget.addService(keytabName, ks).setInitialMode(ON_DEMAND);
 
-                if (relativeTo.isDefined()) {
-                    keytabBuilder.addDependency(pathName(relativeTo.asString()), String.class, ks.getRelativeToInjector());
+                if (relativeTo != null) {
+                    keytabBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, ks.getPathManagerInjector());
+                    keytabBuilder.addDependency(pathName(relativeTo));
                 }
 
                  controllers.add(keytabBuilder.install());
