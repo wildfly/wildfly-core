@@ -28,9 +28,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP_TO_PRINCIPAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRINCIPAL_TO_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECRET;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
@@ -66,6 +68,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
@@ -636,16 +640,19 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             } else {
                 keyPassword = null;
             }
+            ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
+            String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+
             ModelNode aliasNode = KeystoreAttributes.ALIAS.resolveModelAttribute(context, ssl);
             String alias = aliasNode.isDefined() ? aliasNode.asString() : null;
 
-            FileKeyManagerService keyManagerService = new FileKeyManagerService(provider, path, keystorePassword, keyPassword, alias);
+            FileKeyManagerService keyManagerService = new FileKeyManagerService(provider, path, relativeTo, keystorePassword, keyPassword, alias);
 
             serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
-            ModelNode relativeTo = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
-            if (relativeTo.isDefined()) {
-                serviceBuilder.addDependency(pathName(relativeTo.asString()), String.class,
-                        keyManagerService.getRelativeToInjector());
+
+            if (relativeTo != null) {
+                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyManagerService.getPathManagerInjector());
+                serviceBuilder.addDependency(pathName(relativeTo));
             }
         }
 
@@ -669,14 +676,15 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
         } else {
             String path = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl).asString();
+            ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
+            String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-            FileTrustManagerService trustManagerService = new FileTrustManagerService(provider, path, keystorePassword);
+            FileTrustManagerService trustManagerService = new FileTrustManagerService(provider, path, relativeTo, keystorePassword);
 
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
-            ModelNode relativeTo = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
-            if (relativeTo.isDefined()) {
-                serviceBuilder.addDependency(pathName(relativeTo.asString()), String.class,
-                        trustManagerService.getRelativeToInjector());
+            if (relativeTo != null) {
+                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, trustManagerService.getPathManagerInjector());
+                serviceBuilder.addDependency(pathName(relativeTo));
             }
         }
 
@@ -722,10 +730,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName, false);
     }
 
-
-
     private static ServiceName pathName(String relativeTo) {
-        return ServiceName.JBOSS.append("server", "path", relativeTo);
+        return ServiceName.JBOSS.append(SERVER, PATH, relativeTo);
     }
 
     private ModelNode unmaskUsersPasswords(OperationContext context, ModelNode users) throws OperationFailedException {

@@ -23,6 +23,12 @@ package org.jboss.as.domain.management.security;
 
 import java.security.KeyStore;
 
+import org.jboss.as.controller.services.path.PathEntry;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManager.Callback;
+import org.jboss.as.controller.services.path.PathManager.Event;
+import org.jboss.as.controller.services.path.PathManager.PathEventContext;
+import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -35,21 +41,24 @@ import org.jboss.msc.value.InjectedValue;
  */
 class FileKeyManagerService extends AbstractKeyManagerService {
 
-    private final InjectedValue<String> relativeTo = new InjectedValue<String>();
+    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
     private volatile String provider;
     private volatile String path;
+    private volatile String relativeTo;
     private volatile char[] keystorePassword;
     private volatile char[] keyPassword;
     private volatile String alias;
 
     private volatile FileKeystore keyStore;
 
-    FileKeyManagerService(final String provider, final String path, final char[] keystorePassword, final char[] keyPassword, final String alias) {
+    FileKeyManagerService(final String provider, final String path, final String relativeTo, final char[] keystorePassword,
+                          final char[] keyPassword, final String alias) {
         super(keystorePassword, keyPassword);
 
         this.provider = provider;
         this.path = path;
+        this.relativeTo = relativeTo;
         this.keystorePassword = keystorePassword;
         this.keyPassword = keyPassword;
         this.alias = alias;
@@ -71,35 +80,33 @@ class FileKeyManagerService extends AbstractKeyManagerService {
         this.path = path;
     }
 
+    public String getRelativeTo() {
+        return relativeTo;
+    }
+
+    public void setRelativeTo(final String relativeTo) {
+        this.relativeTo = relativeTo;
+    }
+
     public char[] getKeystorePassword() {
         return keystorePassword;
     }
-
-
 
     public void setKeystorePassword(char[] keystorePassword) {
         this.keystorePassword = keystorePassword;
     }
 
-
-
     public char[] getKeyPassword() {
         return keyPassword;
     }
-
-
 
     public void setKeyPassword(char[] keyPassword) {
         this.keyPassword = keyPassword;
     }
 
-
-
     public String getAlias() {
         return alias;
     }
-
-
 
     public void setAlias(String alias) {
         this.alias = alias;
@@ -113,8 +120,27 @@ class FileKeyManagerService extends AbstractKeyManagerService {
     public void start(StartContext context) throws StartException {
         // Do our initialisation first as the parent implementation will
         // expect that to be complete.
-        String relativeTo = this.relativeTo.getOptionalValue();
-        String file = relativeTo == null ? path : relativeTo + "/" + path;
+        String file = path;
+        if (relativeTo != null) {
+            PathManager pm = pathManager.getValue();
+
+            file = pm.resolveRelativePathEntry(file, relativeTo);
+            pm.registerCallback(relativeTo, new Callback() {
+
+                @Override
+                public void pathModelEvent(PathEventContext eventContext, String name) {
+                    if (eventContext.isResourceServiceRestartAllowed() == false) {
+                        eventContext.reloadRequired();
+                    }
+                }
+
+                @Override
+                public void pathEvent(Event event, PathEntry pathEntry) {
+                    // Service dependencies should trigger a stop and start.
+                }
+            }, Event.REMOVED, Event.UPDATED);
+        }
+
         keyStore = FileKeystore.newKeyStore(provider, file, keystorePassword, keyPassword, alias);
         keyStore.load();
 
@@ -132,8 +158,8 @@ class FileKeyManagerService extends AbstractKeyManagerService {
         return keyStore.getKeyStore();
     }
 
-    public InjectedValue<String> getRelativeToInjector() {
-        return relativeTo;
+    public Injector<PathManager> getPathManagerInjector() {
+        return pathManager;
     }
 
 }
