@@ -54,8 +54,8 @@ public abstract class UpdatePropertiesHandler {
      * Implement the persistence handler for storing the user properties.
      */
     void persist(final String key, final String value, final boolean enableDisableMode, final boolean disable, final File file, final String realm) throws IOException, StartException {
-        final PropertiesFileLoader propertiesHandler = realm == null ? new PropertiesFileLoader(file.getAbsolutePath()) :
-                new UserPropertiesFileLoader(file.getAbsolutePath());
+        final PropertiesFileLoader propertiesHandler = realm == null ? new PropertiesFileLoader(file.getAbsolutePath(), null) :
+                new UserPropertiesFileLoader(file.getAbsolutePath(), null);
         try {
             propertiesHandler.start(null);
             if (realm != null) {

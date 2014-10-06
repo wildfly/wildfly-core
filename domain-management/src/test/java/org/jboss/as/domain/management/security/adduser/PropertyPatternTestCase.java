@@ -70,7 +70,7 @@ public class PropertyPatternTestCase {
         } finally {
             writer.close();
         }
-        UserPropertiesFileLoader propertiesLoad = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath());
+        UserPropertiesFileLoader propertiesLoad = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath(), null);
         propertiesLoad.start(null);
         assertEquals(1, propertiesLoad.getEnabledUserNames().size());
         assertEquals(2, propertiesLoad.getDisabledUserNames().size());

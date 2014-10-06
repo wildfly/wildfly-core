@@ -55,8 +55,8 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
 
     private final String realmName;
 
-    public PropertiesSubjectSupplemental(final String realmName, final String path) {
-        super(path);
+    public PropertiesSubjectSupplemental(final String realmName, final String path, final String relativeTo) {
+        super(path, relativeTo);
         this.realmName = realmName;
     }
 

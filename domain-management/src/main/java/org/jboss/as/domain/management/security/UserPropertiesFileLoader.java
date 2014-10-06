@@ -54,8 +54,8 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
      * End of state maintained during persistence.
      */
 
-    public UserPropertiesFileLoader(final String path) {
-        super(path);
+    public UserPropertiesFileLoader(final String path, final String relativeTo) {
+        super(path, relativeTo);
     }
 
     public String getRealmName() throws IOException {
