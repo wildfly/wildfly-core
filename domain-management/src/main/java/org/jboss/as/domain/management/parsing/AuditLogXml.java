@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_CERT_STORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.controller.parsing.ParseUtils.duplicateNamedElement;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
@@ -36,6 +37,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+
 
 import java.util.Collections;
 import java.util.List;
@@ -392,7 +394,7 @@ public class AuditLogXml {
     }
 
     private void parseSyslogAuditLogHandlerProtocol_1_5(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list, final Element protocolElement) throws XMLStreamException {
-        PathAddress protocolAddress = PathAddress.pathAddress(address.clone().add(ModelDescriptionConstants.PROTOCOL, protocolElement.getLocalName()));
+        PathAddress protocolAddress = PathAddress.pathAddress(address.clone().add(PROTOCOL, protocolElement.getLocalName()));
         ModelNode add = Util.createAddOperation(protocolAddress);
         list.add(add);
         final int tcpCount = reader.getAttributeCount();
@@ -456,7 +458,7 @@ public class AuditLogXml {
     }
 
     private void parseSyslogAuditLogHandlerProtocol3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list, final Element protocolElement) throws XMLStreamException {
-        PathAddress protocolAddress = PathAddress.pathAddress(address.clone().add(ModelDescriptionConstants.PROTOCOL, protocolElement.getLocalName()));
+        PathAddress protocolAddress = PathAddress.pathAddress(address.clone().add(PROTOCOL, protocolElement.getLocalName()));
         ModelNode add = Util.createAddOperation(protocolAddress);
         list.add(add);
         final int tcpCount = reader.getAttributeCount();
@@ -699,8 +701,8 @@ public class AuditLogXml {
                     SyslogAuditLogHandlerResourceDefinition.TRUNCATE.marshallAsAttribute(handler, writer);
                     SyslogAuditLogHandlerResourceDefinition.FACILITY.marshallAsAttribute(handler, writer);
                     SyslogAuditLogHandlerResourceDefinition.APP_NAME.marshallAsAttribute(handler, writer);
-                    if (handler.hasDefined(ModelDescriptionConstants.PROTOCOL)) {
-                        writeAuditLogSyslogProtocol(writer, handler.get(ModelDescriptionConstants.PROTOCOL));
+                    if (handler.hasDefined(PROTOCOL)) {
+                        writeAuditLogSyslogProtocol(writer, handler.get(PROTOCOL));
                     }
                     writer.writeEndElement();
                 }

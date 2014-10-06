@@ -24,6 +24,7 @@ package org.jboss.as.domain.management.audit;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_CERT_STORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 
 import java.util.List;
@@ -145,7 +146,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
 
     public static class Udp extends SyslogAuditLogProtocolResourceDefinition {
-        public static final PathElement PATH_ELEMENT = PathElement.pathElement(ModelDescriptionConstants.PROTOCOL, ModelDescriptionConstants.UDP);
+        public static final PathElement PATH_ELEMENT = PathElement.pathElement(PROTOCOL, ModelDescriptionConstants.UDP);
 
         private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{HOST, PORT};
 
@@ -162,7 +163,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
     }
 
     public static class Tcp extends Udp {
-        public static final PathElement PATH_ELEMENT = PathElement.pathElement(ModelDescriptionConstants.PROTOCOL, ModelDescriptionConstants.TCP);
+        public static final PathElement PATH_ELEMENT = PathElement.pathElement(PROTOCOL, ModelDescriptionConstants.TCP);
 
         public static final SimpleAttributeDefinition MESSAGE_TRANSFER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MESSAGE_TRANSFER, ModelType.STRING)
             .setAllowNull(true)
@@ -191,7 +192,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
     }
 
     public static class Tls extends Tcp {
-        public static final PathElement PATH_ELEMENT = PathElement.pathElement(ModelDescriptionConstants.PROTOCOL, ModelDescriptionConstants.TLS);
+        public static final PathElement PATH_ELEMENT = PathElement.pathElement(PROTOCOL, ModelDescriptionConstants.TLS);
 
         private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{HOST, PORT, MESSAGE_TRANSFER, RECONNECT_TIMEOUT};
 
@@ -314,7 +315,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
             PathAddress opAddr = PathAddress.pathAddress(operation.require(OP_ADDR));
             PathAddress addr = opAddr.subAddress(0, opAddr.size() - 1);
             Resource resource = context.readResourceFromRoot(addr);
-            Set<ResourceEntry> existing = resource.getChildren(ModelDescriptionConstants.PROTOCOL);
+            Set<ResourceEntry> existing = resource.getChildren(PROTOCOL);
             if (existing.size() > 1) {
                 for (ResourceEntry entry : existing) {
                     PathElement mine = addr.getLastElement();

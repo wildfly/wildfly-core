@@ -47,12 +47,7 @@ public class AuthenticationMechanismWrapper implements AuthenticationMechanism {
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
         try {
-            InetAddress inetAddress = null;
-            SocketAddress address = exchange.getConnection().getPeerAddress();
-            if (address instanceof InetSocketAddress) {
-                inetAddress = ((InetSocketAddress)address).getAddress();
-            }
-            RealmIdentityManager.setRequestSpecific(mechanism, inetAddress);
+            initialiseRealmIdentityManager(exchange);
 
             return wrapped.authenticate(exchange, securityContext);
         } finally {
@@ -62,7 +57,22 @@ public class AuthenticationMechanismWrapper implements AuthenticationMechanism {
 
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
-        return wrapped.sendChallenge(exchange, securityContext);
+        try {
+            initialiseRealmIdentityManager(exchange);
+
+            return wrapped.sendChallenge(exchange, securityContext);
+        } finally {
+            RealmIdentityManager.clearRequestSpecific();
+        }
+    }
+
+    private void initialiseRealmIdentityManager(HttpServerExchange exchange) {
+        InetAddress inetAddress = null;
+        SocketAddress address = exchange.getConnection().getPeerAddress();
+        if (address instanceof InetSocketAddress) {
+            inetAddress = ((InetSocketAddress) address).getAddress();
+        }
+        RealmIdentityManager.setRequestSpecific(mechanism, inetAddress);
     }
 
 }

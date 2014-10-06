@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.logging;
 
 import static org.jboss.logging.Logger.Level.WARN;
+import static org.jboss.logging.Logger.Level.ERROR;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -31,8 +32,10 @@ import java.util.Set;
 import javax.naming.NamingException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -989,6 +992,46 @@ public interface DomainManagementLogger extends BasicLogger {
     String noNonProgressingOperationFound(long timeout);
 
     /**
+     * Create an exception indicating an error parsing the Keytab location.
+     *
+     * @return a {@link StartException} for the error.
+     */
+    @Message(id = 90, value = "Invalid Keytab path")
+    StartException invalidKeytab(@Cause Exception cause);
+
+    /**
+     * Create an exception to indicate that logout has already been called on the SubjectIdentity.
+     *
+     * @return a {@link IllegalStateException} for the error.
+     */
+    @Message(id = 91, value = "logout has already been called on this SubjectIdentity.")
+    IllegalStateException subjectIdentityLoggedOut();
+
+    /**
+     * Create an exception indicating an error obtaining a Kerberos TGT.
+     *
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 92, value = "Unable to obtain Kerberos TGT")
+    OperationFailedException unableToObtainTGT(@Cause Exception cause);
+
+    /**
+     * Logs a message indicating that attempting to login using a specific keytab failed.
+     */
+    @LogMessage(level = ERROR)
+    @Message(id = 93, value = "Login failed using Keytab for principal '%s' to handle request for host '%s'")
+    void keytabLoginFailed(String principal, String host, @Cause LoginException e);
+
+    /**
+     * Create an {@link OperationFailedException} where a security realm has Kerberos enabled for authentication but no Keytab in the server-identities.
+     *
+     * @param realm The name of the security realm.
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 94, value = "Kerberos is enabled for authentication on security realm '%s' but no Keytab has been added to the server-identity.")
+    OperationFailedException kerberosWithoutKeytab(String realm);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.
@@ -1281,7 +1324,6 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Using realm '%s' as discovered from the existing property files.")
     String discoveredRealm(final String realmName);
-
 
 
     //PUT YOUR NUMBERED MESSAGES ABOVE THE id=NONE ones!

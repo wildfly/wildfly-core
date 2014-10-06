@@ -104,7 +104,9 @@ public enum Element {
     JVMS("jvms"),
     JVM_OPTIONS("jvm-options"),
 
+    KERBEROS("kerberos"),
     KEYSTORE("keystore"),
+    KEYTAB("keytab"),
 
     LAUNCH_COMMAND("launch-command"),
     LDAP("ldap"),

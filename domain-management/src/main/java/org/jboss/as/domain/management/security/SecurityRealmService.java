@@ -49,6 +49,7 @@ import org.jboss.as.core.security.SubjectUserInfo;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.AuthorizingCallbackHandler;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
+import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.msc.service.Service;
@@ -73,6 +74,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     private final InjectedValue<SSLContext> sslContext = new InjectedValue<SSLContext>();
 
     private final InjectedValue<CallbackHandlerFactory> secretCallbackFactory = new InjectedValue<CallbackHandlerFactory>();
+    private final InjectedValue<KeytabIdentityFactoryService> keytabFactory = new InjectedValue<KeytabIdentityFactoryService>();
     private final InjectedSetValue<CallbackHandlerService> callbackHandlerServices = new InjectedSetValue<CallbackHandlerService>();
 
     private final String name;
@@ -231,6 +233,13 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         throw DomainManagementLogger.ROOT_LOGGER.noCallbackHandlerForMechanism(mechanism.toString(), name);
     }
 
+    @Override
+    public SubjectIdentity getSubjectIdentity(String forHost, boolean isClient) {
+        KeytabIdentityFactoryService kifs = keytabFactory.getOptionalValue();
+
+        return kifs != null ? kifs.getSubjectIdentity(forHost, isClient) : null;
+    }
+
     /*
      * Injectors
      */
@@ -245,6 +254,10 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     public InjectedValue<CallbackHandlerFactory> getSecretCallbackFactory() {
         return secretCallbackFactory;
+    }
+
+    public InjectedValue<KeytabIdentityFactoryService> getKeytabIdentityFactoryInjector() {
+        return keytabFactory;
     }
 
     public InjectedSetValue<CallbackHandlerService> getCallbackHandlerService() {
