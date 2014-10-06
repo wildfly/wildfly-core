@@ -515,6 +515,7 @@ public class DomainLifecycleUtil {
     private synchronized void closeConnection() {
         if (connection != null) {
             try {
+                domainClient = null;
                 connection.close();
             } catch (Exception e) {
                 log.log(Level.SEVERE, "Caught exception closing DomainTestConnection", e);
