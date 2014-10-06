@@ -70,7 +70,6 @@ public class WhoAmIOperation implements OperationStepHandler {
             .setParameters(VERBOSE)
             .setReadOnly()
             .setReplyType(ModelType.STRING)
-            .setReplyValueType(ModelType.STRING)
             .build();
 
     private final Authorizer authorizer;
