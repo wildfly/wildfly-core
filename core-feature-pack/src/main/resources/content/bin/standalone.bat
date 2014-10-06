@@ -167,17 +167,17 @@ rem Setup JBoss specific properties
 rem Setup directories, note directories with spaces do not work
 set "CONSOLIDATED_OPTS=%JAVA_OPTS% %SERVER_OPTS%"
 :DIRLOOP
-echo(%CONSOLIDATED_OPTS% | findstr /r /c:"^-Djboss.server.base.dir" > nul && (
+echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.base.dir" > nul && (
   for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
     for /f %%i IN ("%%b") DO set "JBOSS_BASE_DIR=%%~fi"
   )
 )
-echo(%CONSOLIDATED_OPTS% | findstr /r /c:"^-Djboss.server.config.dir" > nul && (
+echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.config.dir" > nul && (
   for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
     for /f %%i IN ("%%b") DO set "JBOSS_CONFIG_DIR=%%~fi"
   )
 )
-echo(%CONSOLIDATED_OPTS% | findstr /r /c:"^-Djboss.server.log.dir" > nul && (
+echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.log.dir" > nul && (
   for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
     for /f %%i IN ("%%b") DO set "JBOSS_LOG_DIR=%%~fi"
   )
