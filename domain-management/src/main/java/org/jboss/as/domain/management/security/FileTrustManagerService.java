@@ -33,7 +33,13 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import org.jboss.as.controller.services.path.PathEntry;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManager.Callback;
+import org.jboss.as.controller.services.path.PathManager.Event;
+import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
+import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -47,18 +53,20 @@ import org.jboss.msc.value.InjectedValue;
  */
 class FileTrustManagerService extends AbstractTrustManagerService {
 
-    private final InjectedValue<String> relativeTo = new InjectedValue<String>();
+    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
     private volatile String provider;
     private volatile String path;
+    private volatile String relativeTo;
     private volatile char[] keystorePassword;
 
     private volatile TrustManagerFactory trustManagerFactory;
     private volatile FileKeystore keyStore;
 
-    FileTrustManagerService(final String provider, final String path, final char[] keystorePassword) {
+    FileTrustManagerService(final String provider, final String path, final String relativeTo, final char[] keystorePassword) {
         this.provider = provider;
         this.path = path;
+        this.relativeTo = relativeTo;
         this.keystorePassword = keystorePassword;
     }
 
@@ -76,6 +84,14 @@ class FileTrustManagerService extends AbstractTrustManagerService {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getRelativeTo() {
+        return relativeTo;
+    }
+
+    public void setRelativeTo(final String relativeTo) {
+        this.relativeTo = relativeTo;
     }
 
     public char[] getKeystorePassword() {
@@ -99,8 +115,26 @@ class FileTrustManagerService extends AbstractTrustManagerService {
         }
         // Do our initialisation first as the parent implementation will
         // expect that to be complete.
-        String relativeTo = this.relativeTo.getOptionalValue();
-        String file = relativeTo == null ? path : relativeTo + "/" + path;
+        String file = path;
+        if (relativeTo != null) {
+            PathManager pm = pathManager.getValue();
+
+            file = pm.resolveRelativePathEntry(file, relativeTo);
+            pm.registerCallback(relativeTo, new Callback() {
+
+                @Override
+                public void pathModelEvent(PathEventContext eventContext, String name) {
+                    if (eventContext.isResourceServiceRestartAllowed() == false) {
+                        eventContext.reloadRequired();
+                    }
+                }
+
+                @Override
+                public void pathEvent(Event event, PathEntry pathEntry) {
+                    // Service dependencies should trigger a stop and start.
+                }
+            }, Event.REMOVED, Event.UPDATED);
+        }
         keyStore = FileKeystore.newTrustStore(provider, file, keystorePassword);
         keyStore.load();
 
@@ -190,8 +224,8 @@ class FileTrustManagerService extends AbstractTrustManagerService {
 
     }
 
-    public InjectedValue<String> getRelativeToInjector() {
-        return relativeTo;
+    public Injector<PathManager> getPathManagerInjector() {
+        return pathManager;
     }
 
 }
