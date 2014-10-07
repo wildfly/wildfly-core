@@ -31,7 +31,7 @@
 
     <file-handler name="FILE" autoflush="true">
         <formatter>
-            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="rollback-server.log"/>
         <append value="true"/>
@@ -50,7 +50,7 @@
     </root-logger>
 
     <formatter name="CONSOLE-PATTERN">
-        <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n" color-map="info:cyan"/>
+        <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n" color-map="info:cyan"/>
     </formatter>
 
     <logging-profiles>
@@ -60,7 +60,7 @@
                 <level name="ALL"/>
                 <filter-spec value="levelRange(TRACE,WARN)"/>
                 <formatter>
-                    <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+                    <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
                 </formatter>
             </console-handler>
 

@@ -48,6 +48,7 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -80,7 +81,7 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                     }
                 }
             })
-            .setDefaultValue(new ModelNode("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"))
+            .setDefaultValue(new ModelNode("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"))
             .build();
 
     public static final SimpleAttributeDefinition NAMED_FORMATTER = SimpleAttributeDefinitionBuilder.create("named-formatter", ModelType.STRING, true)
@@ -274,6 +275,18 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                             .getAttributeBuilder()
                             .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
                             .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
+                            .end();
+                    break;
+                }
+                case VERSION_2_0_0: {
+                    final AttributeConverter attributeConverter = AttributeConverter.Factory
+                            .createHardCoded(FORMATTER.getDefaultValue(), true);
+                    resourceBuilder.getAttributeBuilder()
+                            .setValueConverter(attributeConverter, FORMATTER)
+                            .end();
+                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
+                    loggingProfileResourceBuilder.getAttributeBuilder()
+                            .setValueConverter(attributeConverter, FORMATTER)
                             .end();
                     break;
                 }

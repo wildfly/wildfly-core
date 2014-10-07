@@ -37,7 +37,7 @@
         <encoding value="${test.encoding:UTF-8}"/>
         <filter-spec value="${test.console.filter:levelRange(TRACE,WARN)}" />
         <formatter>
-            <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}"/>
+            <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
         </formatter>
         <target name="${test.console.target:System.out}"/>
     </console-handler>
@@ -57,7 +57,7 @@
         <encoding value="${test.encoding:UTF-8}"/>
         <filter-spec value="${test.file.filter:any(levels(INFO),not(levels(TRACE)))}"/>
         <formatter>
-            <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}"/>
+            <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="${test.server.log.file:server.log}"/>
         <suffix value="${test.file.suffix:.yyyy-MM-dd}"/>
@@ -67,7 +67,7 @@
         <level name="${test.file.level:INFO}"/>
         <encoding value="${test.encoding:UTF-8}"/>
         <formatter>
-            <pattern-formatter pattern="${test.file.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}"/>
+            <pattern-formatter pattern="${test.file.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="${test.periodic.size.log.file:ps.log}"/>
         <rotate-size value="${test.rotate.size:64m}"/>
@@ -80,7 +80,7 @@
         <level name="${test.file.level:INFO}"/>
         <encoding value="${test.encoding:UTF-8}"/>
         <formatter>
-            <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}"/>
+            <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="${test.size.log.file:sizeLogger.log}"/>
         <rotate-size value="${test.rotate.size:64m}"/>
@@ -119,7 +119,7 @@
     </root-logger>
 
     <formatter name="PATTERN">
-        <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
+        <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
     </formatter>
 
     <logging-profiles>
@@ -130,7 +130,7 @@
                 <encoding value="${test.encoding:UTF-8}"/>
                 <filter-spec value="${test.console.filter:levelRange(TRACE,WARN)}" />
                 <formatter>
-                    <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}"/>
+                    <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
                 </formatter>
             </console-handler>
 
@@ -169,7 +169,7 @@
             </root-logger>
 
             <formatter name="PATTERN">
-                <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
+                <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
             </formatter>
         </logging-profile>
     </logging-profiles>

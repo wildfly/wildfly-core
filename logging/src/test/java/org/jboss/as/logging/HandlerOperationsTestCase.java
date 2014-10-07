@@ -504,7 +504,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         testWrite(kernelServices, address, CommonAttributes.LEVEL, "INFO");
         testWrite(kernelServices, address, CommonAttributes.ENABLED, true);
         testWrite(kernelServices, address, CommonAttributes.ENCODING, ENCODING);
-        testWrite(kernelServices, address, AbstractHandlerDefinition.FORMATTER, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%E%n");
+        testWrite(kernelServices, address, AbstractHandlerDefinition.FORMATTER, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
         testWrite(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
 
         // Add a pattern-formatter
@@ -527,7 +527,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
     private void addPatternFormatter(final KernelServices kernelServices, final String profileName, final String name) throws Exception {
         final ModelNode address = createPatternFormatterAddress(profileName, name).toModelNode();
         final ModelNode op = createAddOperation(address);
-        op.get(PatternFormatterResourceDefinition.PATTERN.getName()).set("[test-pattern] %d{HH:mm:ss,SSS} %-5p [%c] %s%E%n");
+        op.get(PatternFormatterResourceDefinition.PATTERN.getName()).set("[test-pattern] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
         executeOperation(kernelServices, op);
     }
 

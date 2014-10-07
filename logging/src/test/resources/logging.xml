@@ -37,7 +37,7 @@
         <level name="INFO"/>
         <filter-spec value="levelRange(TRACE,WARN)" />
         <formatter>
-            <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
         <target name="console"/>
     </console-handler>
@@ -82,7 +82,7 @@
         <encoding value="UTF-8"/>
         <filter-spec value="any(levels(INFO),not(levels(TRACE)))"/>
         <formatter>
-            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="server.log"/>
         <suffix value=".yyyy-MM-dd"/>
@@ -107,7 +107,7 @@
         <encoding value="UTF-8"/>
         <filter-spec value="all(levelChange(DEBUG),match(&quot;JBAS+\\d&quot;))"/>
         <formatter>
-            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="sizeLogger.log"/>
         <rotate-size value="64m"/>
@@ -151,7 +151,7 @@
     </root-logger>
 
     <formatter name="PATTERN">
-        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n" color-map="info:cyan,warn:yellow,error:red"/>
+        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n" color-map="info:cyan,warn:yellow,error:red"/>
     </formatter>
 
     <logging-profiles>
@@ -161,7 +161,7 @@
                 <level name="ALL"/>
                 <filter-spec value="levelRange(TRACE,WARN)"/>
                 <formatter>
-                    <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+                    <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
                 </formatter>
             </console-handler>
 
@@ -201,7 +201,7 @@
             </root-logger>
 
             <formatter name="PATTERN">
-                <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n" color-map="info:cyan"/>
+                <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n" color-map="info:cyan"/>
             </formatter>
         </logging-profile>
     </logging-profiles>

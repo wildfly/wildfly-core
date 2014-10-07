@@ -49,7 +49,7 @@
     </root-logger>
 
     <formatter name="PATTERN">
-        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
     </formatter>
 
     <logging-profiles>
@@ -78,7 +78,7 @@
             </root-logger>
 
             <formatter name="PATTERN">
-                <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+                <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
             </formatter>
         </logging-profile>
     </logging-profiles>
