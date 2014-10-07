@@ -157,7 +157,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 addLocalService(context, authentication.require(LOCAL), realmName, serviceTarget, realmBuilder, injectorSet.injector());
             }
             if (authentication.hasDefined(KERBEROS)) {
-                addKerberosService(context, authentication.require(KERBEROS), realmName, serviceTarget, newControllers, realmBuilder, injectorSet.injector());
+                addKerberosService(context, authentication.require(KERBEROS), realmName, serviceTarget, realmBuilder, injectorSet.injector());
             }
 
             if (authentication.hasDefined(JAAS)) {
@@ -191,7 +191,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 addSecretService(context, serverIdentities.require(SECRET), realmName,serviceTarget, realmBuilder, securityRealmService.getSecretCallbackFactory());
             }
             if (serverIdentities.hasDefined(KERBEROS)) {
-                addKerberosIdentityServices(context, serverIdentities.require(KERBEROS), realmName, serviceTarget, newControllers, realmBuilder, securityRealmService.getKeytabIdentityFactoryInjector());
+                addKerberosIdentityServices(context, serverIdentities.require(KERBEROS), realmName, serviceTarget, realmBuilder, securityRealmService.getKeytabIdentityFactoryInjector());
             }
         }
 
@@ -248,16 +248,13 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
     }
 
     private void addKerberosService(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> newControllers, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+            ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
         ServiceName kerberosServiceName = KerberosCallbackHandler.ServiceUtil.createServiceName(realmName);
         boolean removeRealm = KerberosAuthenticationResourceDefinition.REMOVE_REALM.resolveModelAttribute(context, kerberos).asBoolean();
         KerberosCallbackHandler kerberosCallbackHandler = new KerberosCallbackHandler(removeRealm);
 
         ServiceBuilder<?> ccBuilder = serviceTarget.addService(kerberosServiceName, kerberosCallbackHandler);
-        final ServiceController<?> sc = ccBuilder.setInitialMode(ON_DEMAND).install();
-        if(newControllers != null) {
-            newControllers.add(sc);
-        }
+        ccBuilder.setInitialMode(ON_DEMAND).install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, kerberosServiceName, false);
     }
@@ -694,7 +691,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
     }
 
     private void addKerberosIdentityServices(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
-            List<ServiceController<?>> controllers, ServiceBuilder<?> realmBuilder, Injector<KeytabIdentityFactoryService> injector) throws OperationFailedException {
+            ServiceBuilder<?> realmBuilder, Injector<KeytabIdentityFactoryService> injector) throws OperationFailedException {
          ServiceName keyIdentityName = KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName);
          KeytabIdentityFactoryService kifs = new KeytabIdentityFactoryService();
          ServiceBuilder<KeytabIdentityFactoryService> kifsBuilder = serviceTarget.addService(keyIdentityName, kifs)
@@ -731,12 +728,12 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                     keytabBuilder.addDependency(pathName(relativeTo));
                 }
 
-                 controllers.add(keytabBuilder.install());
+                 keytabBuilder.install();
                  KeytabService.ServiceUtil.addDependency(kifsBuilder, kifs.getKeytabInjector(), realmName, principal);
              }
          }
 
-         controllers.add(kifsBuilder.install());
+         kifsBuilder.install();
 
          KeytabIdentityFactoryService.ServiceUtil.addDependency(realmBuilder, injector, realmName);
     }
