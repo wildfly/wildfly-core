@@ -33,8 +33,6 @@ import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ServiceVerificationHandler;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
@@ -46,7 +44,6 @@ import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -56,19 +53,11 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
     static final LoggingSubsystemAdd INSTANCE = new LoggingSubsystemAdd();
 
     private LoggingSubsystemAdd() {
-
+        super(LoggingRootResource.ATTRIBUTES);
     }
 
     @Override
-    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        model.setEmptyObject();
-        for (SimpleAttributeDefinition attribute : LoggingRootResource.ATTRIBUTES) {
-            attribute.validateAndSet(operation, model);
-        }
-    }
-
-    @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         final boolean addDependencies = LoggingRootResource.ADD_LOGGING_API_DEPENDENCIES.resolveModelAttribute(context, model).asBoolean();
         final boolean useLoggingConfig = LoggingRootResource.USE_DEPLOYMENT_LOGGING_CONFIG.resolveModelAttribute(context, model).asBoolean();
         context.addStep(new AbstractDeploymentChainStep() {

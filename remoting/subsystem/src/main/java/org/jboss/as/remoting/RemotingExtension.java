@@ -85,7 +85,7 @@ public class RemotingExtension implements Extension {
                 MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
         registration.registerXMLElementWriter(RemotingSubsystemXMLPersister.INSTANCE);
 
-        final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new RemotingSubsystemRootResource(context.getProcessType()));
+        final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new RemotingSubsystemRootResource());
         subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         subsystem.registerSubModel(RemotingEndpointResource.INSTANCE);

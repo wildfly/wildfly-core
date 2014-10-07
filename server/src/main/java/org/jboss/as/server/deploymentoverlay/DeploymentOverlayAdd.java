@@ -22,17 +22,15 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * @author Stuart Douglas
@@ -41,6 +39,10 @@ public class DeploymentOverlayAdd extends AbstractAddStepHandler {
 
     public static final DeploymentOverlayAdd INSTANCE = new DeploymentOverlayAdd();
 
+    private DeploymentOverlayAdd() {
+        super(DeploymentOverlayDefinition.attributes());
+    }
+
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
@@ -48,15 +50,13 @@ public class DeploymentOverlayAdd extends AbstractAddStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         if (address.size() > 1) {
             final String name = address.getLastElement().getValue();
-            final Resource deploymentOverlayResource = context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT_OVERLAY, name)));
+            context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT_OVERLAY, name)));
         }
         super.execute(context, operation);
     }
 
     @Override
-    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        for (AttributeDefinition attr : DeploymentOverlayDefinition.attributes()) {
-            attr.validateAndSet(operation, model);
-        }
+    protected boolean requiresRuntime(OperationContext context) {
+        return false;
     }
 }

@@ -26,7 +26,6 @@ import static org.jboss.as.threads.CommonAttributes.KEEPALIVE_TIME;
 import static org.jboss.as.threads.CommonAttributes.TIME;
 import static org.jboss.as.threads.CommonAttributes.UNIT;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
@@ -39,8 +38,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -58,13 +55,11 @@ class ThreadPoolManagementUtils {
                                              final String threadFactoryName,
                                              final ThreadFactoryResolver threadFactoryResolver,
                                              final Injector<ThreadFactory> threadFactoryInjector,
-                                             final ServiceTarget target,
-                                             final List<ServiceController<?>> newControllers,
-                                             final ServiceListener<Object>... newServiceListeners) {
+                                             final ServiceTarget target) {
         installThreadPoolService(threadPoolService, threadPoolName, serviceNameBase,
                 threadFactoryName, threadFactoryResolver, threadFactoryInjector,
                 null, null, null,
-                target, newControllers, newServiceListeners);
+                target);
     }
 
     static <T> void installThreadPoolService(final Service<T> threadPoolService,
@@ -76,33 +71,25 @@ class ThreadPoolManagementUtils {
                                              final String handoffExecutorName,
                                              final HandoffExecutorResolver handoffExecutorResolver,
                                              final Injector<Executor> handoffExecutorInjector,
-                                             final ServiceTarget target,
-                                             final List<ServiceController<?>> newControllers,
-                                             final ServiceListener<Object>... newServiceListeners) {
+                                             final ServiceTarget target) {
 
         final ServiceName threadPoolServiceName = serviceNameBase.append(threadPoolName);
 
         final ServiceBuilder<?> serviceBuilder = target.addService(threadPoolServiceName, threadPoolService);
 
         final ServiceName threadFactoryServiceName = threadFactoryResolver.resolveThreadFactory(threadFactoryName,
-                threadPoolName, threadPoolServiceName, target, newControllers, newServiceListeners);
+                threadPoolName, threadPoolServiceName, target);
         serviceBuilder.addDependency(threadFactoryServiceName, ThreadFactory.class, threadFactoryInjector);
 
         if (handoffExecutorInjector != null) {
             ServiceName handoffServiceName = handoffExecutorResolver.resolveHandoffExecutor(handoffExecutorName,
-                    threadPoolName, threadPoolServiceName, target, newControllers, newServiceListeners);
+                    threadPoolName, threadPoolServiceName, target);
             if (handoffServiceName != null) {
                 serviceBuilder.addDependency(handoffServiceName, Executor.class, handoffExecutorInjector);
             }
         }
 
-        if (newServiceListeners != null  && newServiceListeners.length > 0) {
-            serviceBuilder.addListener(newServiceListeners);
-        }
-        ServiceController<?> sc = serviceBuilder.install();
-        if (newControllers != null) {
-            newControllers.add(sc);
-        }
+        serviceBuilder.install();
 
     }
 

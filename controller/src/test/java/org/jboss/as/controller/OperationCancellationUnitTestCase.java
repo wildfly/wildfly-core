@@ -475,11 +475,7 @@ public class OperationCancellationUnitTestCase {
                 public void execute(final OperationContext context, ModelNode operation) {
 
                     final ServiceName svcName = ServiceName.JBOSS.append("good-service");
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                    context.getServiceTarget().addService(svcName, Service.NULL)
-                            .addListener(verificationHandler)
-                            .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
+                    context.getServiceTarget().addService(svcName, Service.NULL).install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -524,11 +520,7 @@ public class OperationCancellationUnitTestCase {
 
                     };
                     final ServiceName svcName = ServiceName.JBOSS.append("bad-service");
-                    ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-                    context.getServiceTarget().addService(svcName, bad)
-                            .addListener(verificationHandler)
-                            .install();
-                    context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
+                    context.getServiceTarget().addService(svcName, bad).install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override

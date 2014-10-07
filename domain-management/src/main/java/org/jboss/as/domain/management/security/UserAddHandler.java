@@ -22,14 +22,11 @@
 
 package org.jboss.as.domain.management.security;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Add step handler for a user resource in the users-in-domain-config authentication mechanism.
@@ -41,11 +38,7 @@ public class UserAddHandler extends AbstractAddStepHandler {
     public static final UserAddHandler INSTANCE = new UserAddHandler();
 
     private UserAddHandler() {
-    }
-
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        UserResourceDefinition.PASSWORD.validateAndSet(operation, model);
+        super(UserResourceDefinition.PASSWORD);
     }
 
     @Override
@@ -54,17 +47,12 @@ public class UserAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected boolean requiresRuntimeVerification() {
-        return false;
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         ManagementUtil.updateUserDomainCallbackHandler(context, operation, false);
     }
 
     @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         ManagementUtil.updateUserDomainCallbackHandler(context, operation, true);
     }
 }

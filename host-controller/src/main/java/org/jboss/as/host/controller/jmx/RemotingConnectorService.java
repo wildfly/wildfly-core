@@ -24,11 +24,8 @@ package org.jboss.as.host.controller.jmx;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -77,17 +74,11 @@ public class RemotingConnectorService implements Service<RemotingConnectorServer
         return server;
     }
 
-    public static ServiceController<?> addService(final ServiceTarget target,
-            final ServiceVerificationHandler verificationHandler) {
+    public static void addService(final ServiceTarget target) {
         final RemotingConnectorService service = new RemotingConnectorService();
-        final ServiceBuilder<RemotingConnectorServer> builder = target.addService(SERVICE_NAME, service);
-
-        builder.addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpoint);
-
-        if (verificationHandler != null) {
-            builder.addListener(verificationHandler);
-        }
-        return builder.install();
+        target.addService(SERVICE_NAME, service)
+                .addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpoint)
+                .install();
     }
 
 }

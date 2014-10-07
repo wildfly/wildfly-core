@@ -21,19 +21,15 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
 import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler for the interface resource add operation.
@@ -81,13 +77,13 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
         }
     }
 
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         String name = getInterfaceName(operation);
         ParsedInterfaceCriteria parsed = getCriteria(context, operation);
         if (parsed.getFailureMessage() != null) {
             throw new OperationFailedException(new ModelNode().set(parsed.getFailureMessage()));
         }
-        performRuntime(context, operation, model, verificationHandler, newControllers, name, parsed);
+        performRuntime(context, operation, model, name, parsed);
     }
 
     protected String getInterfaceName(ModelNode operation) {
@@ -99,7 +95,7 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
         return ParsedInterfaceCriteria.parse(operation, specified, context);
     }
 
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers, String name, ParsedInterfaceCriteria criteria) {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, String name, ParsedInterfaceCriteria criteria) {
     }
 
 

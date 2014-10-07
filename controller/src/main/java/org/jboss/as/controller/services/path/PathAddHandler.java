@@ -27,7 +27,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
@@ -111,15 +110,12 @@ public class PathAddHandler implements OperationStepHandler {
                     if (pathEventContext.isInstallServices()) {
 
                         //Add the legacy services
-                        final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
                         final ServiceTarget target = context.getServiceTarget();
                         if (relativeTo == null) {
-                            legacyService = pathManager.addAbsolutePathService(target, name, path, verificationHandler);
+                            legacyService = pathManager.addAbsolutePathService(target, name, path);
                         } else {
-                            legacyService = pathManager.addRelativePathService(target, name, path, false, relativeTo, verificationHandler);
+                            legacyService = pathManager.addRelativePathService(target, name, path, false, relativeTo);
                         }
-                        //This is a change from the original version
-                        context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
                     } else {
                         legacyService = null;
                     }

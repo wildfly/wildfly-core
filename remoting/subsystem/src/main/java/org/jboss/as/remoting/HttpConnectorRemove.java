@@ -52,6 +52,6 @@ public class HttpConnectorRemove extends AbstractRemoveStepHandler {
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final String name = address.getLastElement().getValue();
-        HttpConnectorAdd.INSTANCE.launchServices(context, name, model, null, null);
+        HttpConnectorAdd.INSTANCE.launchServices(context, name, model);
     }
 }

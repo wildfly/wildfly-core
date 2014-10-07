@@ -23,7 +23,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
-import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
@@ -31,7 +30,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
@@ -42,7 +40,6 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * Handler for the server socket-binding-group resource's add operation.
@@ -106,25 +103,14 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         int portOffset = SocketBindingGroupResourceDefinition.PORT_OFFSET.resolveModelAttribute(context, model).asInt();
         String defaultInterface = SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.resolveModelAttribute(context, model).asString();
 
         SocketBindingManagerService service = new SocketBindingManagerService(portOffset);
-        final ServiceTarget serviceTarget = context.getServiceTarget();
-        newControllers.add(serviceTarget.addService(SocketBindingManager.SOCKET_BINDING_MANAGER, service)
+        context.getServiceTarget().addService(SocketBindingManager.SOCKET_BINDING_MANAGER, service)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(defaultInterface), NetworkInterfaceBinding.class, service.getDefaultInterfaceBindingInjector())
-                .addListener(verificationHandler)
-                .install());
-    }
-
-    @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
-        if (context.isBooting()) {
-            super.rollbackRuntime(context, operation, model, controllers);
-        } else {
-            context.revertReloadRequired();
-        }
+                .install();
     }
 }

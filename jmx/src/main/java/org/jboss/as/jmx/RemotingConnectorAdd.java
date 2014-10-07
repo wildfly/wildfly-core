@@ -22,21 +22,15 @@
 
 package org.jboss.as.jmx;
 
-import static org.jboss.as.jmx.CommonAttributes.USE_MANAGEMENT_ENDPOINT;
 import static org.jboss.as.jmx.JMXSubsystemAdd.getDomainName;
-
-import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * @author Stuart Douglas
@@ -46,40 +40,21 @@ class RemotingConnectorAdd extends AbstractAddStepHandler {
     static final RemotingConnectorAdd INSTANCE = new RemotingConnectorAdd();
 
     private RemotingConnectorAdd() {
+        super(RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT);
     }
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        if(operation.hasDefined(USE_MANAGEMENT_ENDPOINT)) {
-            RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT.validateAndSet(operation, model);
-        }
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model,
-            ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
             throws OperationFailedException {
-        boolean useManagementEndpoint = true;
-        if(model.hasDefined(USE_MANAGEMENT_ENDPOINT)) {
-             useManagementEndpoint = RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT.resolveModelAttribute(context, model).asBoolean();
-        }
+        boolean useManagementEndpoint = RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT.resolveModelAttribute(context, model).asBoolean();
 
-        // Read the model for the JMW subsystem to find the domain name for the resolved/expressions models (if they are exposed).
+        // Read the model for the JMX subsystem to find the domain name for the resolved/expressions models (if they are exposed).
         PathAddress address = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
         PathAddress parentAddress = address.subAddress(0, address.size() - 1);
         ModelNode jmxSubsystemModel = Resource.Tools.readModel(context.readResourceFromRoot(parentAddress, true));
         String resolvedDomain = getDomainName(context, jmxSubsystemModel, CommonAttributes.RESOLVED);
         String expressionsDomain = getDomainName(context, jmxSubsystemModel, CommonAttributes.EXPRESSION);
 
-        launchServices(context, verificationHandler, newControllers, useManagementEndpoint, resolvedDomain, expressionsDomain);
-    }
-
-    void launchServices(OperationContext context, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers, boolean useManagementEndpoint, String resolvedDomain, String expressionsDomain) {
-
-        final ServiceTarget target = context.getServiceTarget();
-        ServiceController<?> controller = RemotingConnectorService.addService(target, verificationHandler, useManagementEndpoint, resolvedDomain, expressionsDomain);
-        if (newControllers != null) {
-            newControllers.add(controller);
-        }
+        RemotingConnectorService.addService(context.getServiceTarget(), useManagementEndpoint, resolvedDomain, expressionsDomain);
     }
 }

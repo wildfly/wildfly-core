@@ -78,6 +78,9 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.InetAddressPrincipal;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -217,6 +220,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     void addStep(final ModelNode response, final ModelNode operation, final PathAddress address, final OperationStepHandler step,
             final Stage stage, boolean addFirst) throws IllegalArgumentException {
+
         assert isControllingThread();
         if (response == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("response");
@@ -242,6 +246,7 @@ abstract class AbstractOperationContext implements OperationContext {
         if (stage == Stage.DONE) {
             throw ControllerLogger.ROOT_LOGGER.invalidStepStage();
         }
+
         if (!booting && activeStep != null) {
             // Added steps inherit the caller type of their parent
             if (activeStep.operation.hasDefined(OPERATION_HEADERS)) {
@@ -698,7 +703,11 @@ abstract class AbstractOperationContext implements OperationContext {
                         MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
                                 step.response.get(FAILURE_DESCRIPTION));
                     }
+                    if (step.serviceVerificationHelper != null) {
+                        addStep(step.serviceVerificationHelper, Stage.VERIFY);
+                    }
                 } finally {
+                    step.executed = true;
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                 }
 
@@ -992,8 +1001,12 @@ abstract class AbstractOperationContext implements OperationContext {
         final OperationId operationId;
         private Object restartStamp;
         private ResultHandler resultHandler;
+        ServiceTarget serviceTarget;
+        private ServiceVerificationHelper serviceVerificationHelper;
+        private Set<ServiceName> addedServices;
         Step predecessor;
         boolean hasRemovals;
+        boolean executed;
 
         private Step(final OperationStepHandler handler, final ModelNode response, final ModelNode operation,
                 final PathAddress address) {
@@ -1006,6 +1019,62 @@ abstract class AbstractOperationContext implements OperationContext {
             // Create the outcome node early so it appears at the top of the
             // response
             response.get(OUTCOME);
+        }
+
+        /**
+         * Gets a {@code ServiceTarget} {@link org.jboss.msc.service.ServiceTarget#subTarget() scoped to this step},
+         * with a {@link org.jboss.as.controller.ServiceVerificationHelper} registered, so all services
+         * created by the target will be monitored.
+         * @param parent the parent target. Cannot be {@code null}
+         * @return the service target. Will not be {@code null}
+         */
+        ServiceTarget getScopedServiceTarget(ServiceTarget parent) {
+            if (serviceTarget == null) {
+                serviceTarget = parent.subTarget();
+                serviceTarget.addMonitor(getServiceVerificationHelper().getMonitor());
+            }
+            return serviceTarget;
+        }
+
+        /**
+         * Tracks a service for possible removal on rollback.
+         *
+         * @param controller the service
+         */
+        void serviceAdded(ServiceController<?> controller) {
+            if (!executed) {
+                getAddedServices().add(controller.getName());
+            } // else this is rollback stuff we ignore
+        }
+
+        /**
+         * Tracks a service whose mode is changing for subsequent verification of service stability.
+         * @param service the service
+         */
+        void serviceModeChanged(ServiceController<?> service) {
+            // This should not be used for removals
+            assert service.getMode() != ServiceController.Mode.REMOVE;
+
+            if (!executed) {
+                if (addedServices == null || !addedServices.contains(service.getName())) {
+                    service.addListener(getServiceVerificationHelper());
+                } // else we already handled this when it was added
+
+            } // else this is rollback stuff we ignore
+        }
+
+        private ServiceVerificationHelper getServiceVerificationHelper() {
+            if (serviceVerificationHelper == null) {
+                serviceVerificationHelper = new ServiceVerificationHelper();
+            }
+            return serviceVerificationHelper;
+        }
+
+        private Set<ServiceName> getAddedServices() {
+            if (addedServices == null) {
+                addedServices = new HashSet<>();
+            }
+            return addedServices;
         }
 
         private boolean hasFailed() {
@@ -1100,25 +1169,46 @@ abstract class AbstractOperationContext implements OperationContext {
         }
 
         private void handleResult() {
+            hasRemovals = false;
+            try {
+                try {
+                    invokeResultHandler();
+                } finally {
+                    try {
+                        rollbackAddedServices();
+                    } finally {
+                        if (hasRemovals) {
+                            waitForRemovals();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                report(MessageSeverity.ERROR,
+                        ControllerLogger.ROOT_LOGGER.stepHandlerFailedRollback(handler, operation.asString(), address, e));
+            }
+        }
+
+        private void invokeResultHandler() {
             if (resultHandler != null) {
-                hasRemovals = false;
                 try {
                     ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
                     try {
                         resultHandler.handleResult(resultAction, AbstractOperationContext.this, operation);
                     } finally {
                         WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
-                        if (hasRemovals) {
-                            waitForRemovals();
-                        }
                     }
-                } catch (Exception e) {
-                    report(MessageSeverity.ERROR,
-                            ControllerLogger.ROOT_LOGGER.stepHandlerFailedRollback(handler, operation.asString(), address, e));
                 } finally {
                     // Clear the result handler so we never try and finalize
                     // this step again
                     resultHandler = null;
+                }
+            }
+        }
+
+        private void rollbackAddedServices() {
+            if (resultAction == ResultAction.ROLLBACK && addedServices != null) {
+                for (ServiceName serviceName : addedServices) {
+                    removeService(serviceName);
                 }
             }
         }

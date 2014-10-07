@@ -22,16 +22,18 @@
 
 package org.jboss.as.controller;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 
 /**
- * Base class for {@link OperationStepHandler} implementations that add managed resource and also perform runtime
+ * Base class for {@link OperationStepHandler} implementations that add managed resources and also perform runtime
  * processing that <strong>should only occur during server boot</strong>. An example of such processing would be installing a
  * deployment unit processor.
  * <p>
@@ -41,7 +43,7 @@ import org.jboss.msc.service.ServiceController;
  * <p>
  * If an operation handled via an extension of this class is executed on a server after boot, the server's persistent
  * configuration model will be updated, but the
- * {@link #performBoottime(OperationContext, ModelNode, ModelNode, ServiceVerificationHandler, List) performBoottime}
+ * {@link #performBoottime(OperationContext, ModelNode, org.jboss.as.controller.registry.Resource) performBoottime}
  * method will not be invoked. Instead the server will be {@link OperationContext#reloadRequired() put into "reload required" state}.
  * </p>
  *
@@ -99,44 +101,106 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
 
     /**
      * If {@link OperationContext#isBooting()} returns {@code true}, invokes
-     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)},
+     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)},
      * else invokes {@link OperationContext#reloadRequired()}.
+     *
+     * {@inheritDoc}
      */
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected final void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         if (context.isBooting()) {
-            performBoottime(context, operation, model, verificationHandler, newControllers);
+            performBoottime(context, operation, resource);
         } else {
             context.reloadRequired();
         }
     }
 
     /**
+     * <strong>Deprecated</strong>. Always throws {@link java.lang.UnsupportedOperationException}.
+     *
+     * {@inheritDoc}
+     *
+     * @throws java.lang.UnsupportedOperationException always
+     *
+     * @deprecated subclasses should override {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     */
+    @Override
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Make any runtime changes necessary to effect the changes indicated by the given {@code operation}. Will only be
-     * invoked if {@link OperationContext#isBooting()} returns {@code true}.
+     * invoked if {@link OperationContext#isBooting()} returns {@code true}. Executes
+     * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
+     * parameter will reflect any changes made in that method. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}. Subclasses that wish to make
+     * changes to runtime services should override this method.
+     * <p>
+     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
+     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
+     * variant. It then does nothing with the objects referenced by the {@code verificationHandler} and
+     * {@code controllers} parameters passed to that method. Subclasses that overrode that method are encouraged to
+     * instead override this one instead.
+     * <strong>Subclasses that override this method should not call{@code super.performBoottime(...)}.</strong>
+     *
+     * @param context             the operation context
+     * @param operation           the operation being executed
+     * @param resource               persistent configuration resource that corresponds to the address of {@code operation}
+     * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
+     */
+    @SuppressWarnings("deprecation")
+    protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        performBoottime(context, operation, resource.getModel(),
+                ServiceVerificationHandler.INSTANCE, new ArrayList<ServiceController<?>>());
+    }
+
+    /**
+     * <strong>Deprecated</strong>. Subclasses should instead override
+     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.
+     * <p>
+     * This default implementation does nothing.
      *
      * @param context             the operation context
      * @param operation           the operation being executed
      * @param model               persistent configuration model node that corresponds to the address of {@code operation}
-     * @param verificationHandler step handler that can be added as a listener to any new services installed in order to
-     *                            validate the services installed correctly during the
-     *                            {@link OperationContext.Stage#VERIFY VERIFY stage}
-     * @param newControllers      holder for the {@link ServiceController} for any new services installed by the method. The
-     *                            method should add the {@code ServiceController} for any new services to this list. If the
-     *                            overall operation needs to be rolled back, the list will be used in
-     *                            {@link #rollbackRuntime(OperationContext, ModelNode, ModelNode, java.util.List)}  to automatically removed
-     *                            the newly added services
+     * @param verificationHandler not used; service verification is performed automatically
+     * @param newControllers not used; removal of added services during rollback is performed automatically.
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
-    protected abstract void performBoottime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException;
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    protected void performBoottime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+        // no-op
+    }
 
     /**
-     * Overrides the superclass to additionally call {@link OperationContext#revertReloadRequired()}
+     * Overrides the superclass to call {@link OperationContext#revertReloadRequired()}
      * if {@link OperationContext#isBooting()} returns {@code false}.
+     *
+     * {@inheritDoc}
      */
     @Override
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
+        revertReload(context);
+    }
+
+    /**
+     * <strong>Deprecated</strong>. Overrides the superclass to call {@link OperationContext#revertReloadRequired()}
+     * if {@link OperationContext#isBooting()} returns {@code false}.
+     *
+     * {@inheritDoc}
+     */
+    @Deprecated
+    @Override
+    @SuppressWarnings("deprecation")
     protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
-        super.rollbackRuntime(context, operation, model, controllers);
+        revertReload(context);
+    }
+
+    private static void revertReload(OperationContext context) {
         if (!context.isBooting()) {
             context.revertReloadRequired();
         }

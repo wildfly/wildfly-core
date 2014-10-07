@@ -22,30 +22,27 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.Endpoint;
 import org.xnio.OptionMap;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 /**
  * @author Jaikiran Pai
  */
-class GenericOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler {
+class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
 
     static final GenericOutboundConnectionAdd INSTANCE = new GenericOutboundConnectionAdd();
 
@@ -67,27 +64,17 @@ class GenericOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler 
     }
 
     private GenericOutboundConnectionAdd() {
-
+        super(GenericOutboundConnectionResourceDefinition.URI);
     }
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        super.populateModel(operation, model);
-        GenericOutboundConnectionResourceDefinition.URI.validateAndSet(operation, model);
-
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                                  ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {
-        final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        final ServiceController serviceController = installRuntimeService(context, operation, fullModel, verificationHandler);
-        newControllers.add(serviceController);
+        final ModelNode fullModel = Resource.Tools.readModel(resource);
+        installRuntimeService(context, operation, fullModel);
     }
 
-    ServiceController installRuntimeService(final OperationContext context, final ModelNode operation, final ModelNode fullModel,
-                                            ServiceVerificationHandler verificationHandler) throws OperationFailedException {
+    void installRuntimeService(final OperationContext context, final ModelNode operation, final ModelNode fullModel) throws OperationFailedException {
 
         final PathAddress pathAddress = PathAddress.pathAddress(operation.require(OP_ADDR));
         final String connectionName = pathAddress.getLastElement().getValue();
@@ -102,14 +89,10 @@ class GenericOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler 
         final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = GenericOutboundConnectionService.GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
-        final ServiceBuilder<GenericOutboundConnectionService> svcBuilder = context.getServiceTarget().addService(serviceName, outboundRemotingConnectionService)
+        context.getServiceTarget().addService(serviceName, outboundRemotingConnectionService)
                 .addAliases(aliasServiceName)
-                .addDependency(RemotingServices.SUBSYSTEM_ENDPOINT, Endpoint.class, outboundRemotingConnectionService.getEndpointInjector());
-
-        if (verificationHandler != null) {
-            svcBuilder.addListener(verificationHandler);
-        }
-        return svcBuilder.install();
+                .addDependency(RemotingServices.SUBSYSTEM_ENDPOINT, Endpoint.class, outboundRemotingConnectionService.getEndpointInjector())
+                .install();
     }
 
     URI getDestinationURI(final OperationContext context, final ModelNode outboundConnection) throws OperationFailedException {

@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
@@ -57,6 +56,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
@@ -125,46 +125,52 @@ public class ServerControllerUnitTestCase {
         base.get(ModelDescriptionConstants.OP).set("add");
         base.get(ModelDescriptionConstants.OP_ADDR).add("interface", "alternative");
         {
+            // any-address is not valid with the normal criteria
             final ModelNode operation = base.clone();
             operation.get("any-address").set(true);
             populateCritieria(operation, Nesting.TOP);
-            executeForFailure(client, operation);
+            executeForNonServiceFailure(client, operation);
         }
         {
+            // any-ipv4-address is not valid with the normal criteria
             final ModelNode operation = base.clone();
             operation.get("any-ipv4-address").set(true);
             populateCritieria(operation, Nesting.TOP);
-            executeForFailure(client, operation);
+            executeForNonServiceFailure(client, operation);
         }
         {
+            // any-ipv6-address is not valid with the normal criteria
             final ModelNode operation = base.clone();
             operation.get("any-ipv6-address").set(true);
             populateCritieria(operation, Nesting.TOP);
-            executeForFailure(client, operation);
+            executeForNonServiceFailure(client, operation);
         }
         {
+            // Mixing any-xxx-address criteria is not legal
             final ModelNode operation = base.clone();
             operation.get("any-ipv6-address").set(true);
             operation.get("any-ipv4-address").set(true);
-            executeForFailure(client, operation);
+            executeForNonServiceFailure(client, operation);
         }
         {
+            // Mixing any-xxx-address criteria is not legal
             final ModelNode operation = base.clone();
             operation.get("any-address").set(true);
             operation.get("any-ipv4-address").set(true);
-            executeForFailure(client, operation);
+            executeForNonServiceFailure(client, operation);
         }
+        // Disabled. See https://github.com/wildfly/wildfly-core/commit/ae0ca95c42b481ef519246b9a6eab2b50c48472e
+//        {
+//            // AS7-2685 had a notion of disallowing LOOPBACK and LINK_LOCAL_ADDRESS
+//            final ModelNode operation = base.clone();
+//            populateCritieria(operation, Nesting.TOP, InterfaceDefinition.LOOPBACK, InterfaceDefinition.LINK_LOCAL_ADDRESS);
+//            executeForNonServiceFailure(client, operation);
+//        }
         {
+            // The full set of normal criteria is ok, although it won't resolve properly
             final ModelNode operation = base.clone();
-            // operation.get("any-address").set(true);
-            populateCritieria(operation, Nesting.TOP, InterfaceDefinition.LOOPBACK);
-            executeForResult(client, operation);
-        }
-        {
-            final ModelNode operation = base.clone();
-            // operation.get("any-address").set(true);
             populateCritieria(operation, Nesting.TOP);
-            executeForFailure(client, operation);
+            executeForServiceFailure(client, operation);
         }
     }
 
@@ -228,7 +234,7 @@ public class ServerControllerUnitTestCase {
 
         final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
 
-        executeForResult(client, operation);
+        executeForServiceFailure(client, operation);
     }
 
     protected void populateCritieria(final ModelNode model, final Nesting nesting, final AttributeDefinition...excluded) {
@@ -434,18 +440,47 @@ public class ServerControllerUnitTestCase {
         return executeForResult(client, operation);
     }
 
-    static void executeForFailure(final ModelControllerClient client, final ModelNode operation) {
+    /**
+     * Assert that the operation failed, but not with the failure message that indicates a service start problem.
+     * Use this to check that problems that should be detected in the OSH and not in the service are properly
+     * detected.
+     *
+     * @param client the client to use to execute the operation
+     * @param operation the operation to execute
+     */
+    private static void executeForNonServiceFailure(final ModelControllerClient client, final ModelNode operation) {
         try {
             final ModelNode result = client.execute(operation);
             if (! result.hasDefined("outcome") && ! ModelDescriptionConstants.FAILED.equals(result.get("outcome").asString())) {
                 Assert.fail("Operation outcome is " + result.get("outcome").asString());
             }
+            Assert.assertFalse(result.toString(), result.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).toString().contains(ControllerLogger.MGMT_OP_LOGGER.failedServices()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    static ModelNode executeForResult(final ModelControllerClient client, final ModelNode operation) {
+    /**
+     * Assert that the operation failed, but only with the failure message that indicates a service start problem.
+     * Use this for instead of executeFoResult in tests that use criteria that may not be resolvable on a real machine,
+     * but which are conceptually valid. The inability to resolve a matching interface will lead to the service start problem.
+     *
+     * @param client the client to use to execute the operation
+     * @param operation the operation to execute
+     */
+    private static void executeForServiceFailure(final ModelControllerClient client, final ModelNode operation) {
+        try {
+            final ModelNode result = client.execute(operation);
+            if (! result.hasDefined("outcome") && ! ModelDescriptionConstants.FAILED.equals(result.get("outcome").asString())) {
+                Assert.fail("Operation outcome is " + result.get("outcome").asString());
+            }
+            Assert.assertTrue(result.toString(), result.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).toString().contains(ControllerLogger.MGMT_OP_LOGGER.failedServices()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static ModelNode executeForResult(final ModelControllerClient client, final ModelNode operation) {
         try {
             final ModelNode result = client.execute(operation);
             if (result.hasDefined("outcome") && "success".equals(result.get("outcome").asString())) {

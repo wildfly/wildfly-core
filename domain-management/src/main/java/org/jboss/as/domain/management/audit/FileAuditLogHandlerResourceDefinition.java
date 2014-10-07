@@ -24,15 +24,12 @@ package org.jboss.as.domain.management.audit;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.audit.FileAuditLogHandler;
@@ -42,11 +39,10 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManagerService;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceController;
 
 /**
  *
@@ -135,15 +131,13 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
             auditLogger.getUpdater().addHandler(createHandler(pathManager, context, operation));
         }
 
         @Override
-        protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                List<ServiceController<?>> controllers)  {
+        protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource)  {
             auditLogger.getUpdater().rollbackChanges();
         }
     }

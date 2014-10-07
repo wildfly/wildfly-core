@@ -26,9 +26,9 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.service.ServiceRegistry;
 
@@ -42,12 +42,10 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final DeploymentUnit parent;
     private final ImmutableManagementResourceRegistration registration;
     private final ManagementResourceRegistration mutableRegistration;
-    private final ServiceVerificationHandler serviceVerificationHandler;
     private Resource resource;
     private final AbstractVaultReader vaultReader;
 
-    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final ServiceVerificationHandler serviceVerificationHandler, final AbstractVaultReader vaultReader) {
-        this.serviceVerificationHandler = serviceVerificationHandler;
+    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final AbstractVaultReader vaultReader) {
         if (deploymentRoot == null) throw ServerLogger.ROOT_LOGGER.deploymentRootRequired();
         this.deploymentRoot = deploymentRoot;
         if (parent == null) throw ServerLogger.ROOT_LOGGER.subdeploymentsRequireParent();
@@ -66,11 +64,19 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(DeploymentModelUtils.REGISTRATION_ATTACHMENT, registration);
         deploymentUnit.putAttachment(DeploymentModelUtils.MUTABLE_REGISTRATION_ATTACHMENT, mutableRegistration);
         deploymentUnit.putAttachment(DeploymentModelUtils.DEPLOYMENT_RESOURCE, resource);
-        deploymentUnit.putAttachment(Attachments.SERVICE_VERIFICATION_HANDLER, serviceVerificationHandler);
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, parent.getAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX));
+
+        // For compatibility only
+        addSVH(deploymentUnit);
+
         this.resource = null;
         return deploymentUnit;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void addSVH(DeploymentUnit deploymentUnit) {
+        deploymentUnit.putAttachment(Attachments.SERVICE_VERIFICATION_HANDLER, ServiceVerificationHandler.INSTANCE);
     }
 
 }

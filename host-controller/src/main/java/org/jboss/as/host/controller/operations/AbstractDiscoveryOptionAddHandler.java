@@ -43,7 +43,7 @@ public abstract class AbstractDiscoveryOptionAddHandler extends AbstractAddStepH
 
     public static final String OPERATION_NAME = ADD;
 
-    protected void updateDiscoveryOptionsOrdering(OperationContext context, ModelNode operation,
+    static void updateDiscoveryOptionsOrdering(OperationContext context, ModelNode operation,
             String type) {
         PathAddress operationAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         PathAddress discoveryOptionsAddress = operationAddress.subAddress(0, operationAddress.size() - 1);

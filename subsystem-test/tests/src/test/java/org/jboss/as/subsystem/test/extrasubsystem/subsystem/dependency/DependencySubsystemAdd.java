@@ -1,13 +1,10 @@
 package org.jboss.as.subsystem.test.extrasubsystem.subsystem.dependency;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler responsible for adding the subsystem resource to the model
@@ -29,8 +26,7 @@ class DependencySubsystemAdd extends AbstractBoottimeAddStepHandler {
 
     /** {@inheritDoc} */
     @Override
-    public void performBoottime(OperationContext context, ModelNode operation, ModelNode model,
-            ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    public void performBoottime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {
         Dependency dependency = new Dependency();
         context.getServiceTarget().addService(Dependency.NAME, dependency).install();

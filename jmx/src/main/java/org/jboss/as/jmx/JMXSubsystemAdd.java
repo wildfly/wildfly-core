@@ -22,19 +22,15 @@
 
 package org.jboss.as.jmx;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -47,23 +43,17 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
     private final JmxAuthorizer authorizer;
 
     JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer) {
+        super(JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY);
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
     }
 
-    @Override
-    protected void populateModel(OperationContext context, ModelNode operation, Resource resource)
-            throws OperationFailedException {
-        ModelNode model = resource.getModel();
-        JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.validateAndSet(operation, model);
-    }
-
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        launchServices(context, Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)), auditLoggerInfo, authorizer, verificationHandler, newControllers);
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        launchServices(context, Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)), auditLoggerInfo, authorizer);
     }
 
     static void launchServices(OperationContext context, ModelNode model, ManagedAuditLogger auditLoggerInfo,
-                               JmxAuthorizer authorizer, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+                               JmxAuthorizer authorizer) throws OperationFailedException {
         // Add the MBean service
         String resolvedDomain = getDomainName(context, model, CommonAttributes.RESOLVED);
         String expressionsDomain = getDomainName(context, model, CommonAttributes.EXPRESSION);
@@ -73,14 +63,8 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
         }
         boolean coreMBeanSensitivity = JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.resolveModelAttribute(context, model).asBoolean();
         boolean forStandalone = context.getProcessType() == ProcessType.STANDALONE_SERVER;
-        ServiceController<?> controller = verificationHandler != null ?
-                MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
-                        coreMBeanSensitivity, auditLoggerInfo, authorizer, forStandalone, verificationHandler) :
-                    MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
+        MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
                             coreMBeanSensitivity, auditLoggerInfo, authorizer, forStandalone);
-        if (newControllers != null) {
-            newControllers.add(controller);
-        }
     }
 
     /**

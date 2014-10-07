@@ -31,11 +31,9 @@ import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_B
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.addValidatingHandler;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -43,7 +41,6 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.http.server.ConsoleMode;
@@ -102,19 +99,15 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         //The core model testing currently uses RunningMode.ADMIN_ONLY, but in the real world
         //the http interface needs to be enabled even when that happens.
         //I don't want to wire up all the services unless I can avoid it, so for now the tests set this system property
-        if (WildFlySecurityManager.getPropertyPrivileged("jboss.as.test.disable.runtime", null) != null) {
-            return false;
-        }
-        return true;
+        return WildFlySecurityManager.getPropertyPrivileged("jboss.as.test.disable.runtime", null) == null;
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers)
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model)
             throws OperationFailedException {
 
         boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        installHttpManagementConnector(context, model, context.getServiceTarget(), verificationHandler, newControllers, httpUpgrade);
+        installHttpManagementConnector(context, model, context.getServiceTarget(), httpUpgrade);
     }
 
     // TODO move this kind of logic into AttributeDefinition itself
@@ -164,8 +157,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     static void installHttpManagementConnector(final OperationContext context, final ModelNode model, final ServiceTarget serviceTarget,
-                                               final ServiceVerificationHandler verificationHandler,
-                                               final List<ServiceController<?>> newControllers, final boolean httpUpgrade) throws OperationFailedException {
+                                               final boolean httpUpgrade) throws OperationFailedException {
 
         ServiceName socketBindingServiceName = null;
         ServiceName secureSocketBindingServiceName = null;
@@ -236,10 +228,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
         // Track active requests
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
-        final ServiceController<?> requestProcessor = HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
-        if (newControllers != null) {
-            newControllers.add(requestProcessor);
-        }
+        HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
@@ -267,18 +256,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
         }
 
-        if (verificationHandler != null) {
-            undertowBuilder.addListener(verificationHandler);
-        }
-        ServiceController<?> controller = undertowBuilder.install();
-        if (newControllers != null) {
-            newControllers.add(controller);
-        }
+        undertowBuilder.install();
 
         // Add service preventing the server from shutting down
         final HttpShutdownService shutdownService = new HttpShutdownService();
         final ServiceName shutdownName = UndertowHttpManagementService.SERVICE_NAME.append("shutdown");
-        final ServiceController<?> shutdown = serviceTarget.addService(shutdownName, shutdownService)
+        serviceTarget.addService(shutdownName, shutdownService)
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue())
                 .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, shutdownService.getExecutorValue())
                 .addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry())
@@ -286,16 +269,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
 
-        if (newControllers != null) {
-            newControllers.add(shutdown);
-        }
-
         if(httpUpgrade) {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-            RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, null, tmpDirPath, verificationHandler, newControllers);
-            NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, verificationHandler, null, context.getServiceRegistry(false));
+            RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, null, tmpDirPath);
+            NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
             if (port > -1 || socketBindingServiceName != null || (securePort < 0 && secureSocketBindingServiceName == null)) {
                 httpConnectorName = ManagementRemotingServices.HTTP_CONNECTOR;
@@ -303,7 +282,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
-            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, OptionMap.EMPTY, verificationHandler, newControllers);
+            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, OptionMap.EMPTY);
         }
 
     }

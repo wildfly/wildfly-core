@@ -167,7 +167,7 @@ class ParallelBootOperationContext extends AbstractOperationContext {
         if(modify) {
             acquireControllerLock();
         }
-        return primaryContext.getServiceRegistry(modify);
+        return primaryContext.getServiceRegistry(modify, activeStep);
     }
 
     @Override
@@ -185,7 +185,7 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     @Override
     public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
         acquireControllerLock();
-        return primaryContext.getServiceTarget();
+        return primaryContext.getServiceTarget(activeStep);
     }
 
     @Override

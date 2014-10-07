@@ -1,15 +1,11 @@
 package org.jboss.as.subsystem.test.otherservices.subsystem;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler responsible for adding the subsystem resource to the model
@@ -19,8 +15,6 @@ import org.jboss.msc.service.ServiceController;
 public class SubsystemAddWithSocketBindingUserService extends AbstractBoottimeAddStepHandler {
 
     public static final SubsystemAddWithSocketBindingUserService INSTANCE = new SubsystemAddWithSocketBindingUserService();
-
-    private final Logger log = Logger.getLogger(SubsystemAddWithSocketBindingUserService.class);
 
     private SubsystemAddWithSocketBindingUserService() {
     }
@@ -33,8 +27,7 @@ public class SubsystemAddWithSocketBindingUserService extends AbstractBoottimeAd
 
     /** {@inheritDoc} */
     @Override
-    public void performBoottime(OperationContext context, ModelNode operation, ModelNode model,
-            ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    public void performBoottime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {
 
         SocketBindingUserService mine = new SocketBindingUserService();

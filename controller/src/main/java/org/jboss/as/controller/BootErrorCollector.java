@@ -67,15 +67,15 @@ public class BootErrorCollector {
         failedOperation.get(OP_ADDR).set(opAddr);
 
         error.get(FAILURE_DESCRIPTION).set(failureDescription.asString());
-        ModelNode report = ServiceVerificationHandler.extractFailedServicesDescription(failureDescription);
+        ModelNode report = ServiceVerificationHelper.extractFailedServicesDescription(failureDescription);
         if (report != null) {
             error.get(FAILED_SERVICES).set(report);
         }
-        report = ServiceVerificationHandler.extractMissingServicesDescription(failureDescription);
+        report = ServiceVerificationHelper.extractMissingServicesDescription(failureDescription);
         if (report != null) {
             error.get(SERVICES_MISSING_DEPENDENCIES).set(report);
         }
-        report = ServiceVerificationHandler.extractTransitiveDependencyProblemDescription(failureDescription);
+        report = ServiceVerificationHelper.extractTransitiveDependencyProblemDescription(failureDescription);
         if (report != null) {
             error.get(MISSING_TRANSITIVE_DEPENDENCY_PROBLEMS).set(report);
         }

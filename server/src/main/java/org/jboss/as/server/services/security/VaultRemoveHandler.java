@@ -54,6 +54,6 @@ public class VaultRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        new VaultAddHandler(vaultReader).performRuntime(context, operation, model, null, null);
+        new VaultAddHandler(vaultReader).performRuntime(context, operation, model);
     }
 }

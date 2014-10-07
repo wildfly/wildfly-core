@@ -49,6 +49,6 @@ public class UnboundedQueueThreadPoolRemove extends AbstractRemoveStepHandler {
     }
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        addHandler.performRuntime(context, operation, model, null, null);
+        addHandler.performRuntime(context, operation, model);
     }
 }

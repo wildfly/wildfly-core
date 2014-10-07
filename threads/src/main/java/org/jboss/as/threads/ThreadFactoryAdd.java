@@ -23,16 +23,12 @@ package org.jboss.as.threads;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -46,24 +42,20 @@ import org.jboss.msc.service.ServiceTarget;
  */
 public class ThreadFactoryAdd extends AbstractAddStepHandler {
 
-    static final ThreadFactoryAdd INSTANCE = new ThreadFactoryAdd();
-
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {
         PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY};
 
     static final AttributeDefinition[] RW_ATTRIBUTES = new AttributeDefinition[] {
         PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY};
 
-    @Override
-    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        for(final AttributeDefinition attribute : ATTRIBUTES) {
-            attribute.validateAndSet(operation, model);
-        }
+    static final ThreadFactoryAdd INSTANCE = new ThreadFactoryAdd();
+
+    private ThreadFactoryAdd() {
+        super(ATTRIBUTES);
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         ModelNode priorityModelNode = PoolAttributeDefinitions.PRIORITY.resolveModelAttribute(context, model);
 
@@ -79,14 +71,8 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
         service.setNamePattern(threadNamePattern);
         service.setPriority(priority);
         service.setThreadGroupName(groupName);
-        ServiceBuilder<?> serviceBuilder = target.addService(ThreadsServices.threadFactoryName(name), service)
-                .setInitialMode(ServiceController.Mode.ACTIVE);
-        if (verificationHandler != null) {
-            serviceBuilder.addListener(verificationHandler);
-        }
-        ServiceController<?> sc = serviceBuilder.install();
-        if (newControllers != null) {
-            newControllers.add(sc);
-        }
+        target.addService(ThreadsServices.threadFactoryName(name), service)
+                .setInitialMode(ServiceController.Mode.ACTIVE)
+                .install();
     }
 }

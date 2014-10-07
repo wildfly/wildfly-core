@@ -22,14 +22,8 @@
 
 package org.jboss.as.remoting;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
-import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 /**
  * Add a connector to a remoting container.
  *
@@ -41,15 +35,16 @@ public class SaslAdd extends AbstractAddStepHandler {
 
     static final SaslAdd INSTANCE = new SaslAdd();
 
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
-        SaslResource.INCLUDE_MECHANISMS_ATTRIBUTE.validateAndSet(operation, model);
-        SaslResource.QOP_ATTRIBUTE.validateAndSet(operation, model);
-        SaslResource.STRENGTH_ATTRIBUTE.validateAndSet(operation, model);
-        SaslResource.REUSE_SESSION_ATTRIBUTE.validateAndSet(operation, model);
-        SaslResource.SERVER_AUTH_ATTRIBUTE.validateAndSet(operation, model);
+    private SaslAdd() {
+        super(SaslResource.INCLUDE_MECHANISMS_ATTRIBUTE,
+                SaslResource.QOP_ATTRIBUTE,
+                SaslResource.STRENGTH_ATTRIBUTE,
+                SaslResource.REUSE_SESSION_ATTRIBUTE,
+                SaslResource.SERVER_AUTH_ATTRIBUTE);
     }
 
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        return false;
     }
-
 }

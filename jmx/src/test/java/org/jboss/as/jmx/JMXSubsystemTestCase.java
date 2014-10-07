@@ -1104,11 +1104,11 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void addExtraServices(final ServiceTarget target) {
-            ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "localhost", EndpointService.EndpointType.MANAGEMENT, null, null);
+            ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "localhost", EndpointService.EndpointType.MANAGEMENT);
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
-            RemotingServices.installSecurityServices(target, "remote", null, null, tmpDirPath, null, null);
-            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "remote", SocketBinding.JBOSS_BINDING_NAME.append("remote"), OptionMap.EMPTY, null, null);
+            RemotingServices.installSecurityServices(target, "remote", null, null, tmpDirPath);
+            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "remote", SocketBinding.JBOSS_BINDING_NAME.append("remote"), OptionMap.EMPTY);
         }
     }
 

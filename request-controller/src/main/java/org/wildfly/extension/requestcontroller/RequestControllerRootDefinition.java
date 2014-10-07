@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
@@ -41,7 +42,6 @@ import org.jboss.dmr.ModelType;
  * @author Stuart Douglas
  */
 class RequestControllerRootDefinition extends PersistentResourceDefinition {
-    static final RequestControllerRootDefinition INSTANCE = new RequestControllerRootDefinition(new RequestController());
 
     static final PersistentResourceDefinition[] CHILDREN = {
     };
@@ -60,6 +60,8 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
     public static final AttributeDefinition[] ATTRIBUTES = {
             MAX_REQUESTS
     };
+
+    static final RequestControllerRootDefinition INSTANCE = new RequestControllerRootDefinition(new RequestController());
 
     private RequestControllerRootDefinition(RequestController requestController) {
         super(RequestControllerExtension.SUBSYSTEM_PATH,

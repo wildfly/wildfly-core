@@ -45,7 +45,7 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
-        if (isRemoveService(context, operation)) {
+        if (isRemoveService(context)) {
             //Since so many things can depend on this, only remove if the user set the ALLOW_RESOURCE_SERVICE_RESTART operation header
             context.removeService(MBeanServerService.SERVICE_NAME);
         } else {
@@ -54,14 +54,14 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
     }
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        if (isRemoveService(context, operation)) {
-            JMXSubsystemAdd.launchServices(context, model, auditLoggerInfo, authorizer, null, null);
+        if (isRemoveService(context)) {
+            JMXSubsystemAdd.launchServices(context, model, auditLoggerInfo, authorizer);
         } else {
             context.revertReloadRequired();
         }
     }
 
-    private boolean isRemoveService(OperationContext context, ModelNode operation) {
+    private boolean isRemoveService(OperationContext context) {
         if (context.isNormalServer()) {
             if (context.isResourceServiceRestartAllowed()) {
                 context.removeService(MBeanServerService.SERVICE_NAME);

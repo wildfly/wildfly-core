@@ -40,8 +40,6 @@ import org.jboss.dmr.ModelType;
  */
 public class LocalDestinationOutboundSocketBindingResourceDefinition extends OutboundSocketBindingResourceDefinition {
 
-    public static final LocalDestinationOutboundSocketBindingResourceDefinition INSTANCE = new LocalDestinationOutboundSocketBindingResourceDefinition();
-
     public static final SimpleAttributeDefinition SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_REF, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
@@ -50,6 +48,8 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
             .build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT, SOURCE_INTERFACE, FIXED_SOURCE_PORT, SOCKET_BINDING_REF};
+
+    public static final LocalDestinationOutboundSocketBindingResourceDefinition INSTANCE = new LocalDestinationOutboundSocketBindingResourceDefinition();
 
     private LocalDestinationOutboundSocketBindingResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),

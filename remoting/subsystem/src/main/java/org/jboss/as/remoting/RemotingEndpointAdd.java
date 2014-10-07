@@ -24,21 +24,17 @@
 
 package org.jboss.as.remoting;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
@@ -89,7 +85,7 @@ public class RemotingEndpointAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         if (context.getAttachment(RemotingSubsystemAdd.RUNTIME_KEY) == null) {
             // We're not running in the same op set as RemotingSubsystemAdd
             // See if the config has changed from the default; if so reload is needed
@@ -113,12 +109,7 @@ public class RemotingEndpointAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected boolean requiresRuntimeVerification() {
-        return false;
-    }
-
-    @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         Boolean revert = context.getAttachment(RemotingSubsystemAdd.RUNTIME_KEY);
         if (revert != null && revert.booleanValue()) {
             context.revertReloadRequired();

@@ -26,20 +26,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIS
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.DiscoveryOptionResourceDefinition;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler for the discovery option resource's add operation.
@@ -65,19 +63,12 @@ public class DiscoveryOptionAddHandler extends AbstractDiscoveryOptionAddHandler
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler,
-                                  final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         if (context.isBooting()) {
             populateHostControllerInfo(hostControllerInfo, context, operation, model);
         } else {
             context.reloadRequired();
         }
-    }
-
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        // no-op
     }
 
     @Override

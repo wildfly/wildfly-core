@@ -69,6 +69,6 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        HttpManagementAddHandler.INSTANCE.performRuntime(context, operation, model, null, null);
+        HttpManagementAddHandler.INSTANCE.performRuntime(context, operation, model);
     }
 }

@@ -24,7 +24,6 @@ package org.jboss.as.server.deployment;
 
 import java.util.List;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -46,7 +45,6 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ResourceRoot deploymentResourceRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
-        final ServiceVerificationHandler serviceVerificationHandler = deploymentUnit.getAttachment(Attachments.SERVICE_VERIFICATION_HANDLER);
 
         if(deploymentResourceRoot.getRoot().isDirectory()) {
             ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
@@ -62,7 +60,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             final ImmutableManagementResourceRegistration registration = deploymentUnit.getAttachment(DeploymentModelUtils.REGISTRATION_ATTACHMENT);
             final ManagementResourceRegistration mutableRegistration =  deploymentUnit.getAttachment(DeploymentModelUtils.MUTABLE_REGISTRATION_ATTACHMENT);
             final AbstractVaultReader vaultReader = deploymentUnit.getAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY);
-            final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration, mutableRegistration, resource, serviceVerificationHandler, vaultReader);
+            final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration, mutableRegistration, resource, vaultReader);
 
             final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
 

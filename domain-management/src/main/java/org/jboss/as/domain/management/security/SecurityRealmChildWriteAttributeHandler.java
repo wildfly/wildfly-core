@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.dmr.ModelNode;
@@ -72,9 +71,8 @@ public class SecurityRealmChildWriteAttributeHandler extends RestartParentWriteA
     }
 
     @Override
-    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                                         ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-        SecurityRealmAddHandler.INSTANCE.installServices(context, parentAddress.getLastElement().getValue(), parentModel, verificationHandler, null);
+    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+        SecurityRealmAddHandler.INSTANCE.installServices(context, parentAddress.getLastElement().getValue(), parentModel);
     }
 
     @Override

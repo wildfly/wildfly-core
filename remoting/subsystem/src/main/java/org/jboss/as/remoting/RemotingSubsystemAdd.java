@@ -22,15 +22,12 @@
 
 package org.jboss.as.remoting;
 
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
@@ -66,14 +63,14 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         // Signal RemotingEndpointAdd that we ran
         context.attach(RUNTIME_KEY, Boolean.FALSE);
 
-        launchServices(context, model, verificationHandler, newControllers);
+        launchServices(context);
     }
 
-    void launchServices(final OperationContext context, final ModelNode model, final ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    void launchServices(final OperationContext context) throws OperationFailedException {
 
         ModelNode endpointModel = context.readResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH)).getModel();
         String workerName = RemotingEndpointResource.WORKER.resolveModelAttribute(context, endpointModel).asString();
@@ -97,14 +94,7 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
         final ServiceBuilder<Endpoint> builder = serviceTarget.addService(RemotingServices.SUBSYSTEM_ENDPOINT, endpointService)
                 .addDependency(IOServices.WORKER.append(workerName), XnioWorker.class, endpointService.getWorker());
 
-        if (verificationHandler != null) {
-            builder.addListener(verificationHandler);
-        }
-
-        ServiceController<?> controller = builder.install();
-        if (newControllers != null) {
-            newControllers.add(controller);
-        }
+        builder.install();
     }
 
     private boolean areWorkerAttributesSet(final OperationContext context, final ModelNode model) throws OperationFailedException {

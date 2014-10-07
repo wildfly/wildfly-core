@@ -21,16 +21,12 @@
  */
 package org.jboss.as.remoting;
 
+import java.io.IOException;
+
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
-
-import java.io.IOException;
-import java.util.List;
-
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -96,26 +92,18 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     }
 
 
-    public static void installServices(final ServiceTarget serviceTarget, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName, final OptionMap connectorPropertiesOptionMap, final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) {
+    public static void installServices(final ServiceTarget serviceTarget, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName, final OptionMap connectorPropertiesOptionMap) {
         final RemotingHttpUpgradeService service = new RemotingHttpUpgradeService(httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap);
 
         final ServiceName securityProviderName = RealmSecurityProviderService.createName(remotingConnectorName);
 
-        ServiceBuilder<RemotingHttpUpgradeService> builder = serviceTarget.addService(UPGRADE_SERVICE_NAME.append(remotingConnectorName), service)
+        serviceTarget.addService(UPGRADE_SERVICE_NAME.append(remotingConnectorName), service)
                 .setInitialMode(ServiceController.Mode.PASSIVE)
                 .addDependency(HTTP_UPGRADE_REGISTRY.append(httpConnectorName), ChannelUpgradeHandler.class, service.injectedRegistry)
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.listenerRegistry)
                 .addDependency(endpointName, Endpoint.class, service.injectedEndpoint)
-                .addDependency(securityProviderName, RemotingSecurityProvider.class, service.securityProviderValue);
-
-        if (verificationHandler != null) {
-            builder.addListener(verificationHandler);
-        }
-
-        ServiceController<RemotingHttpUpgradeService> controller = builder.install();
-        if(newControllers != null) {
-            newControllers.add(controller);
-        }
+                .addDependency(securityProviderName, RemotingSecurityProvider.class, service.securityProviderValue)
+                .install();
     }
 
 

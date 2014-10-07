@@ -42,7 +42,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -61,7 +60,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.logmanager.handlers.SyslogHandler;
-import org.jboss.msc.service.ServiceController;
 
 /**
  *
@@ -296,14 +294,12 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
             auditLogger.getUpdater().addHandler(createHandler(pathManager, context, operation, environmentReader));
         }
         @Override
-        protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model,
-                List<ServiceController<?>> controllers) {
+        protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
             auditLogger.getUpdater().rollbackChanges();
         }
     }

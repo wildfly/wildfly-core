@@ -23,18 +23,14 @@ package org.jboss.as.remoting;
 
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 
-import java.util.List;
-
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
@@ -91,67 +87,41 @@ public class RemotingServices {
         return endpointName.append("channel").append(channelName);
     }
 
-    /**
-     * Add a service controller, registering a verification listener if present and adding the controller
-     * to the given list, if present
-     * @param newControllers the list of new controllers to add the controller to. May be {@code null}
-     * @param verificationHandler the verification listener to register. May be {@code null}
-     * @param builder the builder for the service controller. Will not be {@code null}
-     */
-    public static void addController(final List<ServiceController<?>> newControllers,
-            final ServiceVerificationHandler verificationHandler, final ServiceBuilder<?> builder) {
-        if (verificationHandler != null) {
-            builder.addListener(verificationHandler);
-        }
-        ServiceController<?> controller = builder.install();
-        if (newControllers != null) {
-            newControllers.add(controller);
-        }
+    public static void installRemotingManagementEndpoint(final ServiceTarget serviceTarget, final ServiceName endpointName,
+                                                         final String hostName, final EndpointService.EndpointType type) {
+        installRemotingManagementEndpoint(serviceTarget, endpointName, hostName, type, OptionMap.EMPTY);
     }
 
     public static void installRemotingManagementEndpoint(final ServiceTarget serviceTarget, final ServiceName endpointName,
-                                                         final String hostName, final EndpointService.EndpointType type, final ServiceVerificationHandler verificationHandler,
-                                                         final List<ServiceController<?>> newControllers) {
-        installRemotingManagementEndpoint(serviceTarget, endpointName, hostName, type, OptionMap.EMPTY, verificationHandler, newControllers);
-    }
-
-    public static void installRemotingManagementEndpoint(final ServiceTarget serviceTarget, final ServiceName endpointName,
-                                                         final String hostName, final EndpointService.EndpointType type, final OptionMap options,
-                                                         final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) {
+                                                         final String hostName, final EndpointService.EndpointType type, final OptionMap options) {
         ManagementEndpointService endpointService = new ManagementEndpointService(hostName, type, options);
-        final ServiceBuilder<Endpoint> builder = serviceTarget.addService(endpointName, endpointService)
-                .setInitialMode(ACTIVE);
-        addController(newControllers, verificationHandler, builder);
+        serviceTarget.addService(endpointName, endpointService)
+                .setInitialMode(ACTIVE)
+                .install();
     }
 
     public static void installConnectorServicesForNetworkInterfaceBinding(ServiceTarget serviceTarget,
-            final ServiceName endpointName,
-            final String connectorName,
-            final ServiceName networkInterfaceBindingName,
-            final int port,
-            final OptionMap connectorPropertiesOptionMap,
-            final ServiceVerificationHandler verificationHandler,
-            final List<ServiceController<?>> newControllers) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap, verificationHandler, newControllers);
+                                                                          final ServiceName endpointName,
+                                                                          final String connectorName,
+                                                                          final ServiceName networkInterfaceBindingName,
+                                                                          final int port,
+                                                                          final OptionMap connectorPropertiesOptionMap) {
+        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap);
     }
 
     public static void installConnectorServicesForSocketBinding(ServiceTarget serviceTarget,
-            final ServiceName endpointName,
-            final String connectorName,
-            final ServiceName socketBindingName,
-            final OptionMap connectorPropertiesOptionMap,
-            final ServiceVerificationHandler verificationHandler,
-            final List<ServiceController<?>> newControllers) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap, verificationHandler, newControllers);
+                                                                final ServiceName endpointName,
+                                                                final String connectorName,
+                                                                final ServiceName socketBindingName,
+                                                                final OptionMap connectorPropertiesOptionMap) {
+        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap);
     }
 
     public static void installSecurityServices(ServiceTarget serviceTarget,
-                                                 final String connectorName,
-                                                 final String realmName,
-                                                 final ServiceName serverCallbackServiceName,
-                                                 final ServiceName tmpDirService,
-                                                 final ServiceVerificationHandler verificationHandler,
-                                                 final List<ServiceController<?>> newControllers) {
+                                               final String connectorName,
+                                               final String realmName,
+                                               final ServiceName serverCallbackServiceName,
+                                               final ServiceName tmpDirService) {
         final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
 
         final RealmSecurityProviderService rsps = new RealmSecurityProviderService();
@@ -163,38 +133,34 @@ public class RemotingServices {
             builder.addDependency(serverCallbackServiceName, CallbackHandler.class, rsps.getServerCallbackValue());
         }
         builder.addDependency(tmpDirService, String.class, rsps.getTmpDirValue());
-        addController(newControllers, verificationHandler, builder);
+        builder.install();
     }
 
     private static void installConnectorServices(ServiceTarget serviceTarget,
-                final ServiceName endpointName,
-                final String connectorName,
-                final ServiceName bindingName,
-                final int port,
-                final boolean isNetworkInterfaceBinding,
-                final OptionMap connectorPropertiesOptionMap,
-                final ServiceVerificationHandler verificationHandler,
-                final List<ServiceController<?>> newControllers) {
+                                                 final ServiceName endpointName,
+                                                 final String connectorName,
+                                                 final ServiceName bindingName,
+                                                 final int port,
+                                                 final boolean isNetworkInterfaceBinding,
+                                                 final OptionMap connectorPropertiesOptionMap) {
 
         final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
         if (isNetworkInterfaceBinding) {
             final InjectedNetworkBindingStreamServerService streamServerService = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port);
-            addController(newControllers,
-                    verificationHandler,
-                    serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                        .addDependency(securityProviderName, RemotingSecurityProvider.class, streamServerService.getSecurityProviderInjector())
-                        .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
-                        .addDependency(bindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector())
-                        .addDependency(ServiceBuilder.DependencyType.OPTIONAL, SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector()));
+            serviceTarget.addService(serverServiceName(connectorName), streamServerService)
+                    .addDependency(securityProviderName, RemotingSecurityProvider.class, streamServerService.getSecurityProviderInjector())
+                    .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
+                    .addDependency(bindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector())
+                    .addDependency(ServiceBuilder.DependencyType.OPTIONAL, SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector())
+                    .install();
         } else {
             final InjectedSocketBindingStreamServerService streamServerService = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap);
-            addController(newControllers,
-                    verificationHandler,
-                    serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                        .addDependency(securityProviderName, RemotingSecurityProvider.class, streamServerService.getSecurityProviderInjector())
-                        .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
-                        .addDependency(bindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
-                        .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector()));
+            serviceTarget.addService(serverServiceName(connectorName), streamServerService)
+                    .addDependency(securityProviderName, RemotingSecurityProvider.class, streamServerService.getSecurityProviderInjector())
+                    .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
+                    .addDependency(bindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
+                    .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector())
+                    .install();
 
         }
     }

@@ -40,8 +40,6 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
 
     static final PathElement PATH = PathElement.pathElement(CommonAttributes.HTTP_CONNECTOR);
 
-    static final HttpConnectorResource INSTANCE = new HttpConnectorResource();
-
     //FIXME is this attribute still used?
     static final SimpleAttributeDefinition AUTHENTICATION_PROVIDER = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_PROVIDER, ModelType.STRING)
             .setDefaultValue(null)
@@ -53,6 +51,8 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(
             CommonAttributes.SECURITY_REALM, ModelType.STRING, true).setValidator(
             new StringLengthValidator(1, Integer.MAX_VALUE, true, false)).build();
+
+    static final HttpConnectorResource INSTANCE = new HttpConnectorResource();
 
     private HttpConnectorResource() {
         super(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR),

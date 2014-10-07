@@ -24,18 +24,15 @@
 
 package org.wildfly.extension.requestcontroller;
 
-import java.util.List;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 
 /**
@@ -48,6 +45,7 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
     private final RequestController requestController;
 
     RequestControllerSubsystemAdd(RequestController requestController) {
+        super(RequestControllerRootDefinition.ATTRIBUTES);
         this.requestController = requestController;
     }
 
@@ -55,19 +53,7 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
      * {@inheritDoc}
      */
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-
-        for (AttributeDefinition attr : RequestControllerRootDefinition.ATTRIBUTES) {
-            attr.validateAndSet(operation, model);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void performBoottime(OperationContext context, ModelNode operation, final ModelNode model,
-                                ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers)
+    public void performBoottime(OperationContext context, ModelNode operation, final Resource resource)
             throws OperationFailedException {
 
         context.addStep(new AbstractDeploymentChainStep() {
@@ -75,22 +61,15 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
             protected void execute(DeploymentProcessorTarget processorTarget) {
 
                 processorTarget.addDeploymentProcessor(RequestControllerExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_GLOBAL_REQUEST_CONTROLLER, new RequestControllerDeploymentUnitProcessor());
- }
+            }
         }, OperationContext.Stage.RUNTIME);
 
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        super.performRuntime(context, operation, model, verificationHandler, newControllers);
-
-        int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, model).asInt();
+        int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, resource.getModel()).asInt();
         requestController.setMaxRequestCount(maxRequests);
 
         context.getServiceTarget().addService(RequestController.SERVICE_NAME, requestController)
                 .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, requestController.getShutdownControllerInjectedValue())
                 .install();
-
 
     }
 }

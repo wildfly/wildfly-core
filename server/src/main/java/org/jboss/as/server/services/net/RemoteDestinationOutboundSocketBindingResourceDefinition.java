@@ -42,8 +42,6 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING);
 
-    public static final RemoteDestinationOutboundSocketBindingResourceDefinition INSTANCE = new RemoteDestinationOutboundSocketBindingResourceDefinition();
-
     public static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
@@ -57,6 +55,8 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
             .build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {HOST, PORT, SOURCE_INTERFACE, SOURCE_PORT, FIXED_SOURCE_PORT};
+
+    public static final RemoteDestinationOutboundSocketBindingResourceDefinition INSTANCE = new RemoteDestinationOutboundSocketBindingResourceDefinition();
 
     private RemoteDestinationOutboundSocketBindingResourceDefinition() {
         super(PATH,

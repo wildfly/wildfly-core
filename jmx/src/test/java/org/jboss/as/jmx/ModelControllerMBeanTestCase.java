@@ -1576,11 +1576,11 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void addExtraServices(final ServiceTarget target) {
-            ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "loaclhost", EndpointService.EndpointType.MANAGEMENT, null, null);
+            ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "loaclhost", EndpointService.EndpointType.MANAGEMENT);
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
-            RemotingServices.installSecurityServices(target, "server", null, null, tmpDirPath, null, null);
-            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY, null, null);
+            RemotingServices.installSecurityServices(target, "server", null, null, tmpDirPath);
+            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY);
         }
 
         @Override

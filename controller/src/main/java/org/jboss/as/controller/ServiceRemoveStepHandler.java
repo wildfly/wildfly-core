@@ -1,17 +1,14 @@
 package org.jboss.as.controller;
 
-import java.util.ArrayList;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * Abstract remove step handler that simply removes a service. If the operation is rolled
  * back it delegates the rollback to the corresponding add operations
- * {@link AbstractAddStepHandler#performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
+ * {@link AbstractAddStepHandler#performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}
  * method
  *
  * @author Stuart Douglas
@@ -30,6 +27,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
         this(null, addOperation);
     }
 
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
         if (context.isResourceServiceRestartAllowed()) {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
@@ -61,7 +59,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         if (context.isResourceServiceRestartAllowed()) {
-            addOperation.performRuntime(context, operation, model, new ServiceVerificationHandler(), new ArrayList<ServiceController<?>>());
+            addOperation.performRuntime(context, operation, model);
         } else {
             context.revertReloadRequired();
         }

@@ -39,7 +39,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -57,7 +56,6 @@ import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.security.KeystoreAttributes;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceController;
 
 /**
  *
@@ -333,12 +331,12 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, operation, environmentReader));
         }
 
         @Override
-        protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+        protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
             auditLogger.getUpdater().rollbackChanges();
         }
     }
@@ -369,12 +367,12 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, operation, environmentReader));
         }
 
         @Override
-        protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+        protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
             auditLogger.getUpdater().rollbackChanges();
         }
     }

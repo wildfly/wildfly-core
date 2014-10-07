@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -131,10 +130,7 @@ public class DeployerChainAddHandler implements OperationStepHandler {
                 }
                 finalDeployers.put(phase, new ArrayList<RegisteredDeploymentUnitProcessor>(processorList));
             }
-            final ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-            DeployerChainsService.addService(context.getServiceTarget(), finalDeployers, verificationHandler);
-
-            context.addStep(verificationHandler, OperationContext.Stage.VERIFY);
+            DeployerChainsService.addService(context.getServiceTarget(), finalDeployers);
 
             context.completeStep(new OperationContext.RollbackHandler() {
                 @Override

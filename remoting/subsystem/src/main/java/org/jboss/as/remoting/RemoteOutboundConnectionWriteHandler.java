@@ -75,7 +75,7 @@ class RemoteOutboundConnectionWriteHandler extends AbstractWriteAttributeHandler
             // Service isn't up so we can bounce it
             context.removeService(serviceName); // safe even if the service doesn't exist
             // install the service with new values
-            RemoteOutboundConnectionAdd.INSTANCE.installRuntimeService(context, operation, fullModel, null);
+            RemoteOutboundConnectionAdd.INSTANCE.installRuntimeService(context, operation, fullModel);
         }
 
         return reloadRequired;

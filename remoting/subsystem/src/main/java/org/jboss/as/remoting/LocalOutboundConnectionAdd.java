@@ -22,18 +22,15 @@
 
 package org.jboss.as.remoting;
 
-import java.util.List;
-
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.Endpoint;
 import org.xnio.OptionMap;
@@ -41,30 +38,22 @@ import org.xnio.OptionMap;
 /**
  * @author Jaikiran Pai
  */
-class LocalOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler {
+class LocalOutboundConnectionAdd extends AbstractAddStepHandler {
 
     static final LocalOutboundConnectionAdd INSTANCE = new LocalOutboundConnectionAdd();
 
     private LocalOutboundConnectionAdd() {
-
+        super(LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF);
     }
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        super.populateModel(operation, model);
-
-        LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.validateAndSet(operation, model);
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        final ServiceController serviceController = installRuntimeService(context, operation, fullModel, verificationHandler);
-        newControllers.add(serviceController);
+        installRuntimeService(context, operation, fullModel);
     }
 
-    ServiceController installRuntimeService(final OperationContext context,final ModelNode operation,
-                                            final ModelNode fullModel, final ServiceVerificationHandler verificationHandler) throws OperationFailedException {
+    void installRuntimeService(final OperationContext context, final ModelNode operation,
+                                            final ModelNode fullModel) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
         final String connectionName = address.getLastElement().getValue();
         final String outboundSocketBindingRef = LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.resolveModelAttribute(context, operation).asString();
@@ -81,9 +70,6 @@ class LocalOutboundConnectionAdd extends AbstractOutboundConnectionAddHandler {
                 .addDependency(RemotingServices.SUBSYSTEM_ENDPOINT, Endpoint.class, outboundConnectionService.getEndpointInjector())
                 .addDependency(outboundSocketBindingDependency, OutboundSocketBinding.class, outboundConnectionService.getDestinationOutboundSocketBindingInjector());
 
-        if (verificationHandler != null) {
-            svcBuilder.addListener(verificationHandler);
-        }
-        return svcBuilder.install();
+        svcBuilder.install();
     }
 }

@@ -38,9 +38,9 @@ public class HttpManagementRequestsService implements Service<ManagementHttpRequ
 
     private volatile ManagementHttpRequestProcessor processor;
 
-    public static ServiceController<?> installService(final ServiceName name, final ServiceTarget target) {
+    public static void installService(final ServiceName name, final ServiceTarget target) {
         final HttpManagementRequestsService processor = new HttpManagementRequestsService();
-        return target.addService(name, processor)
+        target.addService(name, processor)
                 .setInitialMode(ServiceController.Mode.PASSIVE)
                 .install();
     }

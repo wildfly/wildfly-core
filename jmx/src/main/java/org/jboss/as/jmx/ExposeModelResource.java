@@ -29,7 +29,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RestartParentResourceAddHandler;
 import org.jboss.as.controller.RestartParentResourceRemoveHandler;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
@@ -81,9 +80,8 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, verificationHandler, null);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer);
         }
 
         @Override
@@ -117,9 +115,8 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, verificationHandler, null);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer);
         }
 
         @Override
@@ -140,9 +137,8 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel,
-                ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, verificationHandler, null);
+        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer);
         }
 
         @Override
