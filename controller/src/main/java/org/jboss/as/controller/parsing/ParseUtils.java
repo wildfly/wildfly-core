@@ -87,6 +87,15 @@ public final class ParseUtils {
     }
 
     /**
+     * Get an exception reporting an unexpected XML element.
+     * @param reader the stream reader
+     * @return the exception
+     */
+    public static XMLStreamException unexpectedElement(final XMLExtendedStreamReader reader, Set<String> possible) {
+        return ControllerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), asStringList(possible), reader.getLocation());
+    }
+
+    /**
      * Get an exception reporting an unexpected end tag for an XML element.
      * @param reader the stream reader
      * @return the exception
@@ -106,6 +115,29 @@ public final class ParseUtils {
     }
 
     /**
+     * Get an exception reporting an unexpected XML attribute.
+     * @param reader the stream reader
+     * @param index the attribute index
+     * @param possibleAttributes attributes that are expected on this element
+     * @return the exception
+     */
+    public static XMLStreamException unexpectedAttribute(final XMLExtendedStreamReader reader, final int index, Set<String> possibleAttributes) {
+        return ControllerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), asStringList(possibleAttributes), reader.getLocation());
+    }
+
+    private static StringBuilder asStringList(Set<?> attributes) {
+        final StringBuilder b = new StringBuilder();
+        Iterator<?> iterator = attributes.iterator();
+        while (iterator.hasNext()) {
+            final Object o = iterator.next();
+            b.append(o.toString());
+            if (iterator.hasNext()) {
+                b.append(", ");
+            }
+        }
+        return b;
+    }
+    /**
      * Get an exception reporting an invalid XML attribute value.
      * @param reader the stream reader
      * @param index the attribute index
@@ -123,16 +155,7 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException missingRequired(final XMLExtendedStreamReader reader, final Set<?> required) {
-        final StringBuilder b = new StringBuilder();
-        Iterator<?> iterator = required.iterator();
-        while (iterator.hasNext()) {
-            final Object o = iterator.next();
-            b.append(o.toString());
-            if (iterator.hasNext()) {
-                b.append(", ");
-            }
-        }
-        return ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(b, reader.getLocation());
+        return ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(asStringList(required), reader.getLocation());
     }
 
     /**

@@ -3263,4 +3263,12 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 375, value = "Update of the management operation audit log failed on the handler '%s' due to '%s'. Please make sure that the syslog server is running and reachable")
     void udpSyslogServerUnavailable(String name, String message);
+
+    @Message(id = 376, value = "Unexpected attribute '%s' encountered. Valid attributes are: '%s'")
+    XMLStreamException unexpectedAttribute(QName name, StringBuilder possibleAttributes, @Param Location location);
+
+    @Message(id = 377, value = "Unexpected element '%s' encountered. Valid elements are: '%s'")
+    XMLStreamException unexpectedElement(QName name, StringBuilder possible, @Param Location location);
+
+
 }
