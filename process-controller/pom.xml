@@ -29,12 +29,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.Alpha9</version>
+        <version>1.0.0.Alpha10-SNAPSHOT</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-process-controller</artifactId>
-    <version>1.0.0.Alpha9</version>
+    <version>1.0.0.Alpha10-SNAPSHOT</version>
 
     <name>WildFly: Process Controller</name>
 
