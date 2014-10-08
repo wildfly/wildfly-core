@@ -81,7 +81,7 @@ public class PersistentResourceXMLDescription {
                 assert parser != null;
                 parser.parseAndSetParameter(def,value,op,reader);
             } else {
-                throw ParseUtils.unexpectedAttribute(reader, i);
+                throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
             }
         }
         for (AttributeDefinition attributeDefinition: attributes.values()){
@@ -133,7 +133,7 @@ public class PersistentResourceXMLDescription {
                 if (child != null) {
                     child.parse(reader, parentAddress, list);
                 } else {
-                    throw ParseUtils.unexpectedElement(reader);
+                    throw ParseUtils.unexpectedElement(reader, children.keySet());
                 }
             }
         }
