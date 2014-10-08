@@ -169,6 +169,9 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, RuntimeMXBeanAttributeHandler.INSTANCE);
         }
+
+        // HACK -- workaround WFCORE-17
+        registration.setRuntimeOnly(true);
     }
 
     @Override

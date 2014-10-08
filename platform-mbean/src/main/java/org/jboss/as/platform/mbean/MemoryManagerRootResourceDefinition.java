@@ -41,6 +41,9 @@ class MemoryManagerRootResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(MemoryManagerResourceDefinition.INSTANCE);
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 }
 

@@ -114,6 +114,9 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, MemoryMXBeanAttributeHandler.INSTANCE);
         }
+
+        // HACK -- workaround WFCORE-17
+        registration.setRuntimeOnly(true);
     }
 
     @Override

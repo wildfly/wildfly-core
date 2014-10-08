@@ -75,5 +75,8 @@ public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefiniti
         resourceRegistration.registerReadOnlyAttribute(MINOR_VERSION, null);
         resourceRegistration.registerReadOnlyAttribute(MICRO_VERSION, null);
         resourceRegistration.registerReadOnlyAttribute(XML_NAMESPACES, null);
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 }

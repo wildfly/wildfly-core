@@ -81,6 +81,9 @@ public class AccessConstraintAppliesToResourceDefinition extends SimpleResourceD
         resourceRegistration.registerReadOnlyAttribute(ENTIRE_RESOURCE, new EntireResourceHandler());
         resourceRegistration.registerReadOnlyAttribute(ATTRIBUTES, new AttributesHandler());
         resourceRegistration.registerReadOnlyAttribute(OPERATIONS, new OperationsHandler());
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 
     static Resource.ResourceEntry createResource(AccessConstraintUtilization constraintUtilization) {

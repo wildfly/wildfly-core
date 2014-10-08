@@ -49,6 +49,9 @@ class BufferPoolRootResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(BufferPoolResourceDefinition.INSTANCE);
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 }
 

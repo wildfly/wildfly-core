@@ -59,7 +59,7 @@ public class ManagementControllerResourceDefinition extends SimpleResourceDefini
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(ActiveOperationResourceDefinition.INSTANCE);
 
-        // HACK -- workaround WFLY-3057
+        // HACK -- workaround WFCORE-17
         resourceRegistration.setRuntimeOnly(true);
     }
 }

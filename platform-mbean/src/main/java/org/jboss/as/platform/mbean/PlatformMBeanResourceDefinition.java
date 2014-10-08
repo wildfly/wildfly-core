@@ -32,5 +32,8 @@ public class PlatformMBeanResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(ThreadResourceDefinition.INSTANCE);
 
         resourceRegistration.registerSubModel(BufferPoolRootResourceDefinition.INSTANCE);
+
+        // HACK -- workaround WFCORE-17
+        resourceRegistration.setRuntimeOnly(true);
     }
 }

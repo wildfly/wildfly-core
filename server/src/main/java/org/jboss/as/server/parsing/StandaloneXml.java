@@ -41,7 +41,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
@@ -69,9 +68,9 @@ import java.util.concurrent.ExecutorService;
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
@@ -1245,32 +1244,31 @@ public class StandaloneXml extends CommonXml {
     private void writeServerDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode)
             throws XMLStreamException {
 
-        Set<String> deploymentNames = modelNode.keys();
-        if (deploymentNames.size() > 0) {
-            boolean deploymentWritten = false;
-            for (String uniqueName : deploymentNames) {
-                final ModelNode deployment = modelNode.get(uniqueName);
-                if (deployment.hasDefined(PERSISTENT) && !deployment.get(PERSISTENT).asBoolean()) {
-                    continue;
-                }
-                if (!deploymentWritten) {
-                    writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
-                    deploymentWritten = true;
-                }
+        boolean deploymentWritten = false;
+        for (Property property : modelNode.asPropertyList()) {
 
-                writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-                writeAttribute(writer, Attribute.NAME, uniqueName);
-                DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
-                DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
-                final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
-                for (ModelNode contentItem : contentItems) {
-                    writeContentItem(writer, contentItem);
-                }
-                writer.writeEndElement();
+            final ModelNode deployment = property.getValue();
+            if (!deployment.isDefined()) {
+                continue;
             }
-            if (deploymentWritten) {
-                writer.writeEndElement();
+
+            if (!deploymentWritten) {
+                writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
+                deploymentWritten = true;
             }
+
+            writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
+            writeAttribute(writer, Attribute.NAME, property.getName());
+            DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
+            DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
+            final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
+            for (ModelNode contentItem : contentItems) {
+                writeContentItem(writer, contentItem);
+            }
+            writer.writeEndElement();
+        }
+        if (deploymentWritten) {
+            writer.writeEndElement();
         }
     }
 

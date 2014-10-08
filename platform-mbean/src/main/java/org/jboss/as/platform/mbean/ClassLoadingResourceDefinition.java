@@ -66,6 +66,9 @@ class ClassLoadingResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : READ_WRITE_ATTRIBUTES) {
             registration.registerReadWriteAttribute(attribute, ClassLoadingMXBeanAttributeHandler.INSTANCE, ClassLoadingMXBeanAttributeHandler.INSTANCE);
         }
+
+        // HACK -- workaround WFCORE-17
+        registration.setRuntimeOnly(true);
     }
 
 

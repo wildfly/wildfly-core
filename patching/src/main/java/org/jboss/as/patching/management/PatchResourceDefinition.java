@@ -225,6 +225,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                     }
                 });
 
+                // HACK -- workaround WFCORE-17
+                resource.setRuntimeOnly(true);
+
             }
 
             @Override
@@ -261,6 +264,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                         }
                     }
                 });
+
+                // HACK -- workaround WFCORE-17
+                resource.setRuntimeOnly(true);
             }
 
             @Override
@@ -269,6 +275,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             }
 
         });
+
+        // HACK -- workaround WFCORE-17
+        registry.setRuntimeOnly(true);
     }
 
     @Override
