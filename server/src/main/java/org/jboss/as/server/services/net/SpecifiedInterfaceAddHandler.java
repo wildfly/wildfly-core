@@ -24,6 +24,7 @@ import org.jboss.as.controller.operations.common.InterfaceAddHandler;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * Handler for adding a fully specified interface.
@@ -46,6 +47,7 @@ public class SpecifiedInterfaceAddHandler extends InterfaceAddHandler {
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, String name, ParsedInterfaceCriteria criteria) {
         context.getServiceTarget().addService(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(name), createInterfaceService(name, criteria))
+            .setInitialMode(ServiceController.Mode.ON_DEMAND)
             .install();
     }
 

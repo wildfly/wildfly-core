@@ -23,10 +23,10 @@
 package org.jboss.as.controller.interfaces;
 
 
-import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV4_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV6_ADDRESS;
+import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -36,16 +36,15 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Utility class to create an interface criteria based on a {@link ModelNode} description
@@ -118,12 +117,7 @@ public final class ParsedInterfaceCriteria {
         } else if(subModel.hasDefined(ANY_IPV4_ADDRESS) && subModel.get(ANY_IPV4_ADDRESS).asBoolean(false)) {
             parsed = ParsedInterfaceCriteria.V4;
         } else if(subModel.hasDefined(ANY_IPV6_ADDRESS) && subModel.get(ANY_IPV6_ADDRESS).asBoolean(false)) {
-            // AS7-5360 Reject this setting if java.net.preferIPv4Stack=true
-            if (Boolean.parseBoolean(WildFlySecurityManager.getEnvPropertyPrivileged("java.net.preferIPv4Stack", "false"))) {
-                parsed = new ParsedInterfaceCriteria(ControllerLogger.ROOT_LOGGER.invalidAnyIPv6());
-            } else {
-                parsed = ParsedInterfaceCriteria.V6;
-            }
+            parsed = ParsedInterfaceCriteria.V6;
         } else {
             try {
                 final List<Property> nodes = subModel.asPropertyList();

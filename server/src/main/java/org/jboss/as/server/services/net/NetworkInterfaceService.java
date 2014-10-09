@@ -37,6 +37,7 @@ import java.util.Set;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.interfaces.OverallInterfaceCriteria;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
@@ -86,6 +87,11 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
 
     public synchronized void start(StartContext arg0) throws StartException {
         log.debug("Starting NetworkInterfaceService\n");
+        // WFLY-184 Reject any-ipv6-address config if java.net.preferIPv4Stack=true
+        if (anyLocalV6 && Boolean.parseBoolean(WildFlySecurityManager.getEnvPropertyPrivileged("java.net.preferIPv4Stack", "false"))) {
+            throw ControllerLogger.ROOT_LOGGER.invalidAnyIPv6();
+        }
+
         try {
             this.interfaceBinding = createBinding(anyLocalV4, anyLocalV6, anyLocal, criteria);
         } catch (Exception e) {
