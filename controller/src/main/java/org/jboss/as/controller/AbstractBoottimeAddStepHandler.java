@@ -137,7 +137,31 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
      * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
      * parameter will reflect any changes made in that method. This method is
      * invoked during {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}. Subclasses that wish to make
-     * changes to runtime services should override this method.
+     * changes to runtime services should override this method or the
+     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)} variant.
+     * <p>
+     * This default implementation simply calls the
+     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)} variant.
+     * <strong>Subclasses that override this method should not call{@code super.performBoottime(...)}.</strong>
+     *
+     * @param context             the operation context
+     * @param operation           the operation being executed
+     * @param resource               persistent configuration resource that corresponds to the address of {@code operation}
+     * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
+     */
+    protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        performBoottime(context, operation, resource.getModel());
+    }
+
+    /**
+     * Make any runtime changes necessary to effect the changes indicated by the given {@code operation}. Will only be
+     * invoked if {@link OperationContext#isBooting()} returns {@code true}. Executes
+     * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
+     * parameter will reflect any changes made in that method. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}. Subclasses that wish to make
+     * changes to runtime services should override this method or the
+     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * variant.
      * <p>
      * To provide compatible behavior with previous releases, this default implementation calls the deprecated
      * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
@@ -148,18 +172,19 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
      *
      * @param context             the operation context
      * @param operation           the operation being executed
-     * @param resource               persistent configuration resource that corresponds to the address of {@code operation}
+     * @param model               persistent configuration model from the resource that corresponds to the address of {@code operation}
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
     @SuppressWarnings("deprecation")
-    protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        performBoottime(context, operation, resource.getModel(),
+    protected void performBoottime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        performBoottime(context, operation, model,
                 ServiceVerificationHandler.INSTANCE, new ArrayList<ServiceController<?>>());
     }
 
     /**
      * <strong>Deprecated</strong>. Subclasses should instead override
-     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.
+     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * or {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}.
      * <p>
      * This default implementation does nothing.
      *
