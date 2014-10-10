@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller.discovery;
 
 import io.undertow.util.NetworkUtils;
+import java.util.List;
 
 
 import org.jboss.as.controller.OperationFailedException;
@@ -51,7 +52,7 @@ public class StaticDiscovery implements DiscoveryOption {
     }
 
     @Override
-    public void allowDiscovery(String protocol, String host, int port) {
+    public void allowDiscovery(List<DomainControllerManagementInterface> interfaces) {
         // no-op
     }
 

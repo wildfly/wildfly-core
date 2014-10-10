@@ -32,19 +32,22 @@ import static org.jboss.as.host.controller.discovery.Constants.PRE_SIGNED_PUT_UR
 import static org.jboss.as.host.controller.discovery.Constants.SECRET_ACCESS_KEY;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.discovery.S3Util.AWSAuthConnection;
 import org.jboss.as.host.controller.discovery.S3Util.Bucket;
 import org.jboss.as.host.controller.discovery.S3Util.GetResponse;
 import org.jboss.as.host.controller.discovery.S3Util.ListAllMyBucketsResponse;
 import org.jboss.as.host.controller.discovery.S3Util.PreSignedUrlParser;
 import org.jboss.as.host.controller.discovery.S3Util.S3Object;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -107,11 +110,30 @@ public class S3Discovery implements DiscoveryOption {
     }
 
     @Override
-    public void allowDiscovery(String protocol, String host, int port) {
+    public void allowDiscovery(List<DomainControllerManagementInterface> interfaces) {
         try {
             // Write the domain controller data to an S3 file
-            writeToFile(new DomainControllerData(protocol, host, port), MASTER);
-        } catch (Exception e) {
+            List<DomainControllerData> data = new ArrayList<DomainControllerData>(interfaces.size());
+            for (DomainControllerManagementInterface managementInterface : interfaces) {
+                data.add(new DomainControllerData(managementInterface.getProtocol().toString(), managementInterface.getHost(), managementInterface.getPort()));
+            }
+            Collections.sort(data, new Comparator<DomainControllerData>() {
+                @Override
+                public int compare(DomainControllerData data, DomainControllerData otherData) {
+                    if (Protocol.REMOTE.toString().equals(data.getProtocol())) {
+                        return 1;
+                    }
+                    if (Protocol.HTTPS_REMOTING.toString().equals(data.getProtocol())) {
+                        if (Protocol.REMOTE.toString().equals(otherData.getProtocol())) {
+                            return -1;
+                        }
+                        return 1;
+                    }
+                    return -1;
+                }});
+        writeToFile(data, MASTER);
+        }
+        catch (Exception e) {
             ROOT_LOGGER.cannotWriteDomainControllerData(e);
         }
     }
@@ -119,31 +141,36 @@ public class S3Discovery implements DiscoveryOption {
     @Override
     public void discover() {
         // Read the domain controller data from an S3 file
-        DomainControllerData data = readFromFile(MASTER);
-
-        if (data != null) {
-            // Validate and set the host and port
-            String host = data.getHost();
-            int port = data.getPort();
-            String protocol = data.getProtocol();
-            try {
-                // Use the static discovery AD's. They don't allow undefined.
-                StaticDiscoveryResourceDefinition.HOST.getValidator()
-                    .validateParameter(StaticDiscoveryResourceDefinition.HOST.getName(),
-                            host == null? new ModelNode() : new ModelNode(host));
-                StaticDiscoveryResourceDefinition.PORT.getValidator()
-                    .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(port));
-                StaticDiscoveryResourceDefinition.PROTOCOL.getValidator()
-                    .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(protocol));
-            } catch (OperationFailedException e) {
-                throw new IllegalStateException(e.getFailureDescription().asString());
+        List<DomainControllerData> dataDc = readFromFile(MASTER);
+        List<StaticDiscovery> options = new ArrayList<StaticDiscovery>(dataDc.size());
+        for (DomainControllerData data : dataDc) {
+            if (data != null) {
+                // Validate and set the host and port
+                StaticDiscovery discovery = new StaticDiscovery(data.getProtocol(), data.getHost(), data.getPort());
+                String host = data.getHost();
+                try {
+                    // Use the static discovery AD's. They don't allow undefined.
+                    StaticDiscoveryResourceDefinition.HOST.getValidator()
+                            .validateParameter(StaticDiscoveryResourceDefinition.HOST.getName(),
+                                    host == null ? new ModelNode() : new ModelNode(host));
+                    StaticDiscoveryResourceDefinition.PORT.getValidator()
+                            .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(discovery.getRemoteDomainControllerPort()));
+                    StaticDiscoveryResourceDefinition.PROTOCOL.getValidator()
+                            .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(discovery.getRemoteDomainControllerProtocol()));
+                    options.add(discovery);
+                } catch (OperationFailedException e) {
+                }
+            } else {
+                throw HostControllerLogger.ROOT_LOGGER.failedMarshallingDomainControllerData();
             }
-            setRemoteDomainControllerHost(host);
-            setRemoteDomainControllerPort(port);
-            setRemoteDomainControllerProtocol(protocol);
-        } else {
+        }
+        if (options.isEmpty()) {
             throw HostControllerLogger.ROOT_LOGGER.failedMarshallingDomainControllerData();
         }
+        DiscoveryHostStategy.DEFAULT_STRATEGY.organize(options);
+        setRemoteDomainControllerHost(options.get(0).getRemoteDomainControllerHost());
+        setRemoteDomainControllerPort(options.get(0).getRemoteDomainControllerPort());
+        setRemoteDomainControllerProtocol(options.get(0).getRemoteDomainControllerProtocol());
     }
 
     @Override
@@ -168,7 +195,7 @@ public class S3Discovery implements DiscoveryOption {
     }
 
     @Override
-    public String toString() {
+        public String toString() {
         // TODO consider including 'location' but that may be sensitive data not wanted in logs
         return getClass().getSimpleName();
     }
@@ -242,16 +269,16 @@ public class S3Discovery implements DiscoveryOption {
      * @param directoryName the name of the directory in the bucket that contains the S3 file
      * @return the domain controller data
      */
-    private DomainControllerData readFromFile(String directoryName) {
-        if(directoryName == null) {
-            return null;
+    private List<DomainControllerData> readFromFile(String directoryName) {
+        List<DomainControllerData> data = new ArrayList<DomainControllerData>();
+        if (directoryName == null) {
+            return data;
         }
 
         if (conn == null) {
             init();
         }
 
-        DomainControllerData data = null;
         try {
             if (usingPreSignedUrls()) {
                 PreSignedUrlParser parsedPut = new PreSignedUrlParser(pre_signed_put_url);
@@ -282,7 +309,7 @@ public class S3Discovery implements DiscoveryOption {
      * @param domainName the name of the directory in the bucket to write the S3 file to
      * @throws IOException
      */
-    private void writeToFile(DomainControllerData data, String domainName) throws IOException {
+    private void writeToFile(List<DomainControllerData> data, String domainName) throws IOException {
         if(domainName == null || data == null) {
             return;
         }

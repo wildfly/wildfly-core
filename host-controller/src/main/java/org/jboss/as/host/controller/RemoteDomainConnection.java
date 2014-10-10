@@ -44,6 +44,7 @@ import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.host.controller.discovery.DiscoveryHostStategy;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
@@ -127,6 +128,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
         this.username = username;
         this.realm = realm;
         this.discoveryOptions = discoveryOptions;
+        DiscoveryHostStategy.DEFAULT_STRATEGY.organize(this.discoveryOptions);
         this.executorService = executorService;
         this.channelHandler = new ManagementChannelHandler(this, executorService);
         this.scheduledExecutorService = scheduledExecutorService;
