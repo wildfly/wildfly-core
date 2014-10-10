@@ -293,7 +293,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      *
      * @param context  the operation context
      * @param operation the operation being executed
-     * @param model persistent configuration resource that corresponds to the address of {@code operation}
+     * @param model persistent configuration model from the resource that corresponds to the address of {@code operation}
      *
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
