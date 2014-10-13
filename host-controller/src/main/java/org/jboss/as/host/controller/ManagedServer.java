@@ -254,7 +254,12 @@ class ManagedServer {
         if(required != InternalState.STOPPED) {
             this.requiredState = InternalState.STOPPED;
             ROOT_LOGGER.stoppingServer(serverName);
-            internalSetState(new ServerStopTask(operationID, timeout), internalState, InternalState.PROCESS_STOPPING);
+            // Only send the stop operation if the server is started
+            if (internalState == InternalState.SERVER_STARTED) {
+                internalSetState(new ServerStopTask(operationID, timeout), internalState, InternalState.PROCESS_STOPPING);
+            } else {
+                transition(false);
+            }
         }
     }
 
