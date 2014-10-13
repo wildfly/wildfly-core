@@ -93,8 +93,6 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         builder.install();
         target.addService(PathManagerService.SERVICE_NAME, pathManager).install();
 
-        additionalInit.addExtraServices(target, container);
-
         additionalInit.addExtraServices(target);
 
         //sharedState = svc.state;
