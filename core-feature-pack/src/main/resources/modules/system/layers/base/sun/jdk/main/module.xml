@@ -88,6 +88,13 @@
                 <path name="sun/nio/ch"/>
                 <path name="sun/nio/cs"/>
                 <path name="sun/nio/cs/ext"/>
+                <path name="sun/rmi/log"/>
+                <path name="sun/rmi/registry"/>
+                <path name="sun/rmi/runtime"/>
+                <path name="sun/rmi/server"/>
+                <path name="sun/rmi/transport"/>
+                <path name="sun/rmi/transport/proxy"/>
+                <path name="sun/rmi/transport/tcp"/>
                 <path name="sun/security"/>
                 <path name="sun/security/util"/>
                 <path name="sun/security/krb5"/>
