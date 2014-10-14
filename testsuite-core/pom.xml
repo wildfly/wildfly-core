@@ -383,7 +383,7 @@
                 <jvm.args.ip>-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true</jvm.args.ip>
                 <!-- Override IPv4 defaults from the top. -->
                 <node0>::1</node0>
-                <mcast>ff01::1</mcast>
+                <mcast>ff13::1</mcast>
                 <!-- ff01::1  is IPv6 Node-Local scope mcast addr. -->
                 <management.address>${node0}</management.address>
             </properties>
