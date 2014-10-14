@@ -125,9 +125,12 @@ public class CLIWrapper {
      * be used
      */
     public final boolean sendConnect(String cliAddress) {
-        String addr = cliAddress != null ? cliAddress : TestSuiteEnvironment.getServerAddress();
         try {
-            ctx.connectController(new URI("http-remoting", null, addr, TestSuiteEnvironment.getServerPort(), null, null, null).toString());
+            if (cliAddress!=null) {
+                ctx.connectController(new URI("http-remoting", null, cliAddress, TestSuiteEnvironment.getServerPort(), null, null, null).toString());
+            }else{
+                ctx.connectController();//use already configured ctx
+            }
             return true;
         } catch (CommandLineException e) {
             e.printStackTrace();

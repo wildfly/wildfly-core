@@ -32,6 +32,8 @@ import java.net.URISyntaxException;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 
 /**
@@ -49,6 +51,18 @@ public class CLITestUtil {
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(constructUri("http-remoting", serverAddr , serverPort), null, null);
     }
+
+    public static CommandContext getCommandContext(DomainTestSupport domainTestSupport) throws CliInitializationException {
+        return getCommandContext(domainTestSupport.getDomainMasterConfiguration());
+    }
+
+    public static CommandContext getCommandContext(WildFlyManagedConfiguration config) throws CliInitializationException {
+            setJBossCliConfig();
+            return CommandContextFactory.getInstance().newCommandContext(
+                    constructUri(config.getHostControllerManagementProtocol(),
+                            config.getHostControllerManagementAddress(),
+                            config.getHostControllerManagementPort()), null, null);
+        }
 
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
             throws CliInitializationException {
