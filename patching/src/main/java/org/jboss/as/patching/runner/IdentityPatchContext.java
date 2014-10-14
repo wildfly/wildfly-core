@@ -6,7 +6,6 @@ import static org.jboss.as.patching.runner.PatchUtils.JAR_EXT;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -772,13 +771,8 @@ class IdentityPatchContext implements PatchContentProvider {
 
         @Override
         public void invalidateRoot(final File moduleRoot) throws IOException {
-            final File[] files = moduleRoot.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(JAR_EXT) || name.endsWith(BACKUP_EXT);
-                }
-            });
-            if (files != null && files.length > 0) {
+            final List<File> files = listFiles(moduleRoot);
+            if (files != null && files.size() > 0) {
                 for (final File file : files) {
                     moduleInvalidations.add(file);
                     if (mode == Mode.ROLLBACK) {
@@ -787,6 +781,19 @@ class IdentityPatchContext implements PatchContentProvider {
                     }
                 }
             }
+        }
+
+        protected List<File> listFiles(final File... files) {
+            final List<File> result = new ArrayList<File>();
+            for (File f : files) {
+                final String name = f.getName();
+                if (f.isFile() && (name.endsWith(JAR_EXT) || name.endsWith(BACKUP_EXT))) {
+                    result.add(f);
+                } else if (f.isDirectory()) {
+                    result.addAll(listFiles(f.listFiles()));
+                }
+            }
+            return result;
         }
 
         /**
