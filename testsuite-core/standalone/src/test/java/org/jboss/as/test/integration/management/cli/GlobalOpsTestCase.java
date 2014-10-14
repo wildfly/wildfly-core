@@ -33,6 +33,7 @@ import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -65,7 +66,7 @@ public class GlobalOpsTestCase extends AbstractCliTestBase {
     }
 
     private void testReadResource(boolean recursive) throws Exception {
-        cli.sendLine("/extension=org.jboss.as.logging:read-resource(recursive="+ String.valueOf(recursive) +")");
+        cli.sendLine("/extension=org.jboss.as.logging:read-resource(recursive="+ String.valueOf(recursive) +",include-runtime=true)");
         CLIOpResult result = cli.readAllAsOpResult();
 
         assertTrue(result.isIsOutcomeSuccess());
@@ -220,17 +221,21 @@ public class GlobalOpsTestCase extends AbstractCliTestBase {
 
     @Test
     public void testStringValueParsing() throws Exception {
-        cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:add");
-        CLIOpResult result = cli.readAllAsOpResult();
-        assertTrue(result.isIsOutcomeSuccess());
-        cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:write-attribute(name=filter-spec, value=\"substituteAll(\\\"JBAS\\\",\\\"DUMMY\\\")\")");
-        result = cli.readAllAsOpResult();
-        assertTrue(result.isIsOutcomeSuccess());
-        cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:read-resource(recursive=true)");
-        result = cli.readAllAsOpResult();
-        assertTrue(result.isIsOutcomeSuccess());
-        Map<String, Object> resource = result.getResultAsMap();
-        assertTrue(resource.containsKey("filter-spec"));
-        Assert.assertThat((String) resource.get("filter-spec"), org.hamcrest.CoreMatchers.is("substituteAll(\"JBAS\",\"DUMMY\")"));
+        try {
+            cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:add");
+            CLIOpResult result = cli.readAllAsOpResult();
+            assertTrue(result.isIsOutcomeSuccess());
+            cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:write-attribute(name=filter-spec, value=\"substituteAll(\\\"JBAS\\\",\\\"DUMMY\\\")\")");
+            result = cli.readAllAsOpResult();
+            assertTrue(result.isIsOutcomeSuccess());
+            cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:read-resource(recursive=true)");
+            result = cli.readAllAsOpResult();
+            assertTrue(result.isIsOutcomeSuccess());
+            Map<String, Object> resource = result.getResultAsMap();
+            assertTrue(resource.containsKey("filter-spec"));
+            Assert.assertThat((String) resource.get("filter-spec"), org.hamcrest.CoreMatchers.is("substituteAll(\"JBAS\",\"DUMMY\")"));
+        } finally {
+            cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:remove");
+        }
     }
 }
