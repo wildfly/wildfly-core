@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -60,11 +61,12 @@ public class UndeployWildcardDomainTestCase {
     private static String sgTwo;
 
     private CommandContext ctx;
+    private static DomainTestSupport testSupport;
 
     @BeforeClass
     public static void before() throws Exception {
 
-        CLITestSuite.createSupport(UndeployWildcardDomainTestCase.class.getSimpleName());
+        testSupport = CLITestSuite.createSupport(UndeployWildcardDomainTestCase.class.getSimpleName());
 
         String tempDir = System.getProperty("java.io.tmpdir");
 
@@ -120,7 +122,7 @@ public class UndeployWildcardDomainTestCase {
 
     @Before
     public void beforeTest() throws Exception {
-        ctx = CLITestUtil.getCommandContext();
+        ctx = CLITestUtil.getCommandContext(testSupport);
         ctx.connectController();
 
         ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
