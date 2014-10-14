@@ -23,6 +23,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLACE_DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_REPLACE;
 
@@ -38,6 +39,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
+import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -72,6 +74,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
 
         final PathElement deploymentPath = PathElement.pathElement(DEPLOYMENT, name);
         final PathElement replacePath = PathElement.pathElement(DEPLOYMENT, toReplace);
+        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
 
         Resource domainDeployment;
         try {
@@ -86,7 +89,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
             if ((content.hasDefined(HASH))) {
                 byte[] hash = content.require(HASH).asBytes();
                 // Ensure the local repo has the files
-                fileRepository.getDeploymentFiles(hash);
+                fileRepository.getDeploymentFiles(ModelContentReference.fromDeploymentAddress(address, hash).toReference());
             }
         }
 

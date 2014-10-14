@@ -215,7 +215,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
         final AbstractVaultReader vaultReader = service(AbstractVaultReader.class);
         ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
-        final ContentRepository contentRepository = ContentRepository.Factory.create(environment.getDomainContentDir());
+        final ContentRepository contentRepository = ContentRepository.Factory.createService(serviceTarget, environment.getDomainContentDir());
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
@@ -263,7 +263,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.hostControllerInfo = hostControllerInfo;
         this.localFileRepository = new LocalFileRepository(environment.getDomainBaseDir(), environment.getDomainContentDir(), environment.getDomainConfigurationDir());
 
-        this.remoteFileRepository = new RemoteFileRepository(localFileRepository);
+        this.remoteFileRepository = new RemoteFileRepository(localFileRepository, contentRepository);
         this.contentRepository = contentRepository;
         this.hostProxies = hostProxies;
         this.serverProxies = serverProxies;

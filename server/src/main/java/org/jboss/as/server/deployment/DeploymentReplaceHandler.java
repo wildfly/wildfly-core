@@ -29,7 +29,6 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENAB
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -37,6 +36,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.logging.ServerLogger;
@@ -88,7 +88,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
 
         final ModelNode replaceNode = context.readResourceForUpdate(PathAddress.pathAddress(replacePath)).getModel();
         final String replacedName = DeploymentAttributes.REPLACE_DEPLOYMENT_ATTRIBUTES.get(RUNTIME_NAME).resolveModelAttribute(context, replaceNode).asString();
-
+        final PathAddress deployAddress = PathAddress.pathAddress(deployPath);
         ModelNode deployNode;
         String runtimeName;
         if (!root.hasChild(deployPath)) {
@@ -102,13 +102,14 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
             final ModelNode contentItemNode = content.require(0);
             if (contentItemNode.hasDefined(HASH)) {
                 byte[] hash = contentItemNode.require(HASH).asBytes();
-                addFromHash(hash);
+                ContentReference reference = ModelContentReference.fromDeploymentAddress(deployAddress, hash).toReference();
+                addFromHash(reference);
             } else {
             }
             runtimeName = operation.hasDefined(RUNTIME_NAME) ? DeploymentAttributes.REPLACE_DEPLOYMENT_ATTRIBUTES.get(RUNTIME_NAME).resolveModelAttribute(context, operation).asString() : replacedName;
 
             // Create the resource
-            final Resource deployResource = context.createResource(PathAddress.pathAddress(deployPath));
+            final Resource deployResource = context.createResource(deployAddress);
             deployNode = deployResource.getModel();
             deployNode.get(RUNTIME_NAME).set(runtimeName);
 
@@ -118,7 +119,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
             deployNode.get(CONTENT).set(content);
 
         } else {
-            deployNode = context.readResourceForUpdate(PathAddress.pathAddress(deployPath)).getModel();
+            deployNode = context.readResourceForUpdate(deployAddress).getModel();
             if (ENABLED.resolveModelAttribute(context, deployNode).asBoolean()) {
                 throw ServerLogger.ROOT_LOGGER.deploymentAlreadyStarted(toReplace);
             }
@@ -134,9 +135,9 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
         context.stepCompleted();
     }
 
-    protected void addFromHash(byte[] hash) throws OperationFailedException {
-        if (!contentRepository.syncContent(hash)) {
-            throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContent(HashUtil.bytesToHexString(hash));
+    protected void addFromHash(ContentReference reference) throws OperationFailedException {
+        if (!contentRepository.syncContent(reference)) {
+            throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContent(reference.getHexHash());
         }
     }
 

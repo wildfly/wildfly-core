@@ -40,6 +40,7 @@ import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.deployment.DeploymentHandlerUtils;
+import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -90,7 +91,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         ModelNode contentItemNode = content.require(0);
 
         final ModelNode opAddr = correctedOperation.get(OP_ADDR);
-        PathAddress address = PathAddress.pathAddress(opAddr);
+        final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
         if (!newModel.hasDefined(RUNTIME_NAME.getName())) {
             newModel.get(RUNTIME_NAME.getName()).set(name);
@@ -117,7 +118,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 }
             } else if (fileRepository != null) {
                 // Ensure the local repo has the files
-                fileRepository.getDeploymentFiles(hash);
+                fileRepository.getDeploymentFiles(ModelContentReference.fromDeploymentAddress(address, hash).toReference());
             }
         } else if (DeploymentHandlerUtils.hasValidContentAdditionParameterDefined(contentItemNode)) {
             if (contentRepository == null) {
@@ -143,9 +144,10 @@ public class DeploymentAddHandler implements OperationStepHandler {
         if (contentRepository != null && hash != null) {
             final byte[] contentHash = hash;
             context.completeStep(new OperationContext.ResultHandler() {
+                @Override
                 public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                     if (resultAction == ResultAction.KEEP) {
-                        contentRepository.addContentReference(contentHash, name);
+                        contentRepository.addContentReference(ModelContentReference.fromDeploymentAddress(address, contentHash).toReference());
                     }
                 }
             });

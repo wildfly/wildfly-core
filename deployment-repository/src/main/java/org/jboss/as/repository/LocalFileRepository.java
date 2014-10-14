@@ -60,17 +60,17 @@ public class LocalFileRepository extends LocalDeploymentFileRepository implement
 
     /** {@inheritDoc} */
     @Override
-    public File[] getDeploymentFiles(byte[] hash) {
-        return getDeploymentRoot(hash).listFiles();
+    public File[] getDeploymentFiles(ContentReference reference) {
+        return getDeploymentRoot(reference).listFiles();
     }
 
     /** {@inheritDoc} */
     @Override
-    public File getDeploymentRoot(byte[] hash) {
-        if (hash == null || hash.length == 0) {
+    public File getDeploymentRoot(ContentReference reference) {
+        if (reference == null || reference.getHash() == null || reference.getHash().length == 0) {
             return deploymentRoot;
         }
-        String hex = HashUtil.bytesToHexString(hash);
+        String hex = reference.getHexHash();
         File first = new File(deploymentRoot, hex.substring(0,2));
         return new File(first, hex.substring(2));
     }

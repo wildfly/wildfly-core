@@ -50,6 +50,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
@@ -104,7 +105,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         ModelNode contentItemNode = content.require(0);
 
         final ModelNode opAddr = operation.get(OP_ADDR);
-        PathAddress address = PathAddress.pathAddress(opAddr);
+        final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
         final String runtimeName = operation.hasDefined(RUNTIME_NAME.getName()) ? operation.get(RUNTIME_NAME.getName()).asString() : name;
         newModel.get(RUNTIME_NAME.getName()).set(runtimeName);
@@ -112,7 +113,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         final DeploymentHandlerUtil.ContentItem contentItem;
         if (contentItemNode.hasDefined(CONTENT_HASH.getName())) {
             byte[] hash = contentItemNode.require(CONTENT_HASH.getName()).asBytes();
-            contentItem = addFromHash(hash, name, context);
+            contentItem = addFromHash(hash, name, address, context);
         } else if (hasValidContentAdditionParameterDefined(contentItemNode)) {
             contentItem = addFromContentAdditionParameter(context, contentItemNode);
             // Store a hash-based contentItemNode back to the model
@@ -145,7 +146,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             context.completeStep(new OperationContext.ResultHandler() {
                 public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                     if (resultAction == ResultAction.KEEP) {
-                        contentRepository.addContentReference(contentHash, name);
+                        contentRepository.addContentReference(ModelContentReference.fromDeploymentAddress(address, contentHash).toReference());
                     }
                 }
             });
@@ -182,8 +183,9 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 ? deployment.get(ModelDescriptionConstants.RUNTIME_NAME).asString() : name;
     }
 
-    DeploymentHandlerUtil.ContentItem addFromHash(byte[] hash, String deploymentName, OperationContext context) throws OperationFailedException {
-        if (!contentRepository.syncContent(hash)) {
+    DeploymentHandlerUtil.ContentItem addFromHash(byte[] hash, String deploymentName, PathAddress address, OperationContext context) throws OperationFailedException {
+        ContentReference reference = ModelContentReference.fromDeploymentAddress(address, hash).toReference();
+        if (!contentRepository.syncContent(reference)) {
             if (context.isBooting()) {
                 if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                     // The deployment content is missing, which would be a fatal boot error if we were going to actually

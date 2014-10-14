@@ -36,7 +36,7 @@ public interface DeploymentFileRepository {
 
      * @return the files associated with the deployment, or <code>null</code> if it is not found
      */
-    File[] getDeploymentFiles(final byte[] deploymentHash);
+    File[] getDeploymentFiles(final ContentReference reference);
 
     /**
      * Gets the directory under which files associated with a given deployment
@@ -47,13 +47,13 @@ public interface DeploymentFileRepository {
      * @return the directory. Will not be <code>null</code>, even if the
      *         deployment is unknown
      */
-    File getDeploymentRoot(byte[] deploymentHash);
+    File getDeploymentRoot(ContentReference reference);
 
     /**
      * Deletes a deployment from the local file system
      *
      * @param deploymentHash the hash of the deployment content
      */
-    void deleteDeployment(byte[] deploymentHash);
+    void deleteDeployment(ContentReference reference);
 
 }

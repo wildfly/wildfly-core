@@ -43,6 +43,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.HostFileRepository;
+import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -76,7 +77,7 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
             if ((content.hasDefined(CONTENT_HASH.getName()))) {
                 CONTENT_HASH.validateOperation(content);
                 // Ensure the local repo has the files
-                fileRepository.getDeploymentFiles(CONTENT_HASH.resolveModelAttribute(context, content).asBytes());
+                fileRepository.getDeploymentFiles(ModelContentReference.fromDeploymentAddress(address, CONTENT_HASH.resolveModelAttribute(context, content).asBytes()).toReference());
             }
         }
 

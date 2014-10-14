@@ -112,4 +112,8 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
      */
     @Message(id = 8, value = "%s is null")
     IllegalArgumentException nullVar(String name);
+
+    @LogMessage(level = INFO)
+    @Message(id = 9, value = "Content %s is obsolete and will be removed")
+    void obsoloteContentCleaned(String contentIdentifier);
 }
