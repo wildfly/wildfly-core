@@ -68,7 +68,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                         context.reloadRequired();
                     } else if (service != null ) {
                         parentModel = getModel(context, address);
-                        if (parentModel != null && context.markResourceRestarted(address, this)) {
+                        if (parentModel != null && context.markResourceRestarted(address, RestartParentResourceHandlerBase.this)) {
                             removeServices(context, serviceName, parentModel);
                             recreateParentService(context, address, parentModel);
                             servicesRestarted = true;

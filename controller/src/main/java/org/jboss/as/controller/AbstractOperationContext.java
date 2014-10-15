@@ -1176,7 +1176,6 @@ abstract class AbstractOperationContext implements OperationContext {
                 } finally {
                     try {
                         invokeResultHandler();
-
                     } finally {
                         if (hasRemovals) {
                             waitForRemovals();
