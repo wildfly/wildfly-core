@@ -22,17 +22,17 @@
 
 package org.jboss.as.protocol.mgmt;
 
-import org.jboss.as.protocol.StreamUtils;
-import org.jboss.as.protocol.logging.ProtocolLogger;
-import org.jboss.remoting3.Channel;
-import org.jboss.remoting3.MessageInputStream;
-import org.jboss.remoting3.MessageOutputStream;
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
+
+import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.protocol.logging.ProtocolLogger;
+import org.jboss.remoting3.Channel;
+import org.jboss.remoting3.MessageInputStream;
+import org.jboss.remoting3.MessageOutputStream;
 
 /**
  * Base receiver class for the management protocol support.
@@ -68,20 +68,30 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
             final DataInput input = new DataInputStream(message);
             final ManagementProtocolHeader header = ManagementProtocolHeader.parse(input);
             final byte type = header.getType();
-            if(type == ManagementProtocol.TYPE_PING) {
-                // Handle legacy ping/pong directly
-                ProtocolLogger.ROOT_LOGGER.tracef("Received ping on %s", this);
-                handlePing(channel, header);
-            } else if (type == ManagementProtocol.TYPE_PONG) {
-                // Nothing to do here
-                ProtocolLogger.ROOT_LOGGER.tracef("Received on on %s", this);
-            } else if (type == ManagementProtocol.TYPE_BYE_BYE) {
-                // Close the channel
-                ProtocolLogger.ROOT_LOGGER.tracef("Received bye bye on %s, closing", this);
-                handleChannelReset(channel);
-            } else {
-                // Handle a message
-                handleMessage(channel, input, header);
+            try {
+                if (type == ManagementProtocol.TYPE_PING) {
+                    // Handle legacy ping/pong directly
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received ping on %s", this);
+                    handlePing(channel, header);
+                } else if (type == ManagementProtocol.TYPE_PONG) {
+                    // Nothing to do here
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received on on %s", this);
+                } else if (type == ManagementProtocol.TYPE_BYE_BYE) {
+                    // Close the channel
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received bye bye on %s, closing", this);
+                    handleChannelReset(channel);
+                } else {
+                    // Handle a message
+                    handleMessage(channel, input, header);
+                }
+            } finally {
+                try {
+                    while (message.read() != -1) {
+                        // drain the message to workaround a potential remoting buffer leak
+                    }
+                } catch (IOException ignore) {
+                    //
+                }
             }
             message.close();
         } catch(IOException e) {

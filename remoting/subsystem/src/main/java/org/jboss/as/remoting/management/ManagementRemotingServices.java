@@ -32,14 +32,12 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
-import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 
 /**
@@ -137,8 +135,7 @@ public final class ManagementRemotingServices extends RemotingServices {
             final String channelName,
             ServiceName executorServiceName) {
 
-        final OptionMap options = OptionMap.create(RemotingOptions.RECEIVE_WINDOW_SIZE, ProtocolChannelClient.Configuration.WINDOW_SIZE,
-                RemotingOptions.TRANSMIT_WINDOW_SIZE, ProtocolChannelClient.Configuration.WINDOW_SIZE);
+        final OptionMap options = OptionMap.EMPTY;
         final ServiceName operationHandlerName = endpointName.append(channelName).append(ModelControllerClientOperationHandlerFactoryService.OPERATION_HANDLER_NAME_SUFFIX);
 
         serviceTarget.addService(operationHandlerName, operationHandlerService)

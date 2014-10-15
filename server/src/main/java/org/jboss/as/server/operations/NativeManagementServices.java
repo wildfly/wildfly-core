@@ -1,14 +1,12 @@
 package org.jboss.as.server.operations;
 
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
-import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.Services;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 
 /**
@@ -19,8 +17,7 @@ import org.xnio.OptionMap;
  */
 class NativeManagementServices {
 
-    private static final int WINDOW_SIZE = ProtocolChannelClient.Configuration.WINDOW_SIZE;
-    private static final OptionMap OPTIONS = OptionMap.create(RemotingOptions.RECEIVE_WINDOW_SIZE, WINDOW_SIZE);
+    private static final OptionMap OPTIONS = OptionMap.EMPTY;
 
     static synchronized void installRemotingServicesIfNotInstalled(final ServiceTarget serviceTarget,
                                                                    final String hostName,
