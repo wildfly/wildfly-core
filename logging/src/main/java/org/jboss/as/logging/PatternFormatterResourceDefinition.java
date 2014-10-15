@@ -64,7 +64,7 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
     public static final PropertyAttributeDefinition PATTERN = PropertyAttributeDefinition.Builder.of("pattern", ModelType.STRING)
             .setAllowExpression(true)
             .setAllowNull(false)
-            .setDefaultValue(new ModelNode("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"))
+            .setDefaultValue(new ModelNode("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"))
             .build();
 
     public static final ObjectTypeAttributeDefinition PATTERN_FORMATTER = ObjectTypeAttributeDefinition.Builder.of("pattern-formatter", PATTERN, COLOR_MAP)

@@ -89,7 +89,7 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
         executeOperation(kernelServices, addOp);
 
         // Write each attribute and check the value
-        testWrite(kernelServices, address, PatternFormatterResourceDefinition.PATTERN, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%E%n");
+        testWrite(kernelServices, address, PatternFormatterResourceDefinition.PATTERN, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
         testWrite(kernelServices, address, PatternFormatterResourceDefinition.COLOR_MAP, "info:blue,warn:yellow,error:red,debug:cyan");
 
         // Undefine attributes

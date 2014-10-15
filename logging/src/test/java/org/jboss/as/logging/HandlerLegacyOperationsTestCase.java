@@ -306,7 +306,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         testUpdateProperties(kernelServices, address, CommonAttributes.LEVEL, "TRACE");
         testUpdateProperties(kernelServices, address, CommonAttributes.ENABLED, false);
         testUpdateProperties(kernelServices, address, CommonAttributes.ENCODING, "utf-8");
-        testUpdateProperties(kernelServices, address, AbstractHandlerDefinition.FORMATTER, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%E%n");
+        testUpdateProperties(kernelServices, address, AbstractHandlerDefinition.FORMATTER, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
         testUpdateProperties(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
     }
 
