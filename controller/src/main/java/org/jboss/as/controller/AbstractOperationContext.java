@@ -1172,10 +1172,11 @@ abstract class AbstractOperationContext implements OperationContext {
             hasRemovals = false;
             try {
                 try {
-                    invokeResultHandler();
+                    rollbackAddedServices();
                 } finally {
                     try {
-                        rollbackAddedServices();
+                        invokeResultHandler();
+
                     } finally {
                         if (hasRemovals) {
                             waitForRemovals();

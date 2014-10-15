@@ -360,7 +360,7 @@ public interface OperationContext extends ExpressionResolver {
      * The returned controller may be used to attempt to cancel a removal in progress.
      *
      * @param name the service to remove
-     * @return the controller of the service to be removed
+     * @return the controller of the service to be removed if service of given name exists; null otherwise
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
      */
     ServiceController<?> removeService(ServiceName name) throws UnsupportedOperationException;
@@ -935,10 +935,10 @@ public interface OperationContext extends ExpressionResolver {
 
 
         /**
-         * Callback to an {@link OperationStepHandler} indicating that the overall operation is being
-         * rolled back and the handler should revert any change it has made. A handler executing in
-         * {@link Stage#MODEL} need not revert any changes it has made to the configuration model; this
-         * will be done automatically.
+         * Callback to an {@link OperationStepHandler} indicating that the overall operation is being rolled back and the
+         * handler should revert any change it has made. A handler executing in {@link Stage#MODEL} need not revert any changes
+         * it has made to the configuration model; this will be done automatically. A handler need not to remove services
+         * created by the operation; this will be done automatically.
          *
          * @param context  the operation execution context; will be the same as what was passed to the
          *                 {@link OperationStepHandler#execute(OperationContext, ModelNode)} method invocation

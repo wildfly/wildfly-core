@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2014, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -81,6 +81,7 @@ import org.junit.Test;
  * Unit tests of {@link ModelControllerImpl}.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:tadamski@redhat.com">Tomasz Adamski</a>
  */
 public class ModelControllerImplUnitTestCase {
 
@@ -304,6 +305,26 @@ public class ModelControllerImplUnitTestCase {
         // Assert the first response was as expected
         assertEquals(FAILED, result.get(OUTCOME).asString());   // TODO success may be valid???
         assertTrue(result.get(ROLLED_BACK).asBoolean());
+    }
+
+    @Test
+    public void testGoodServiceInvalidUpdateRollback() throws Exception {
+        ModelNode operation=getOperation("good-service", "attr1", 5);
+        ModelNode result = controller.execute(operation, null, null, null);
+        assertEquals("success", result.get("outcome").asString());
+        assertEquals(1, result.get("result").asInt());
+
+        ServiceController<?> sc = container.getService(ServiceName.JBOSS.append("good-service"));
+        assertNotNull(sc);
+        assertEquals(ServiceController.State.UP, sc.getState());
+
+        ModelNode result2 = controller.execute(getOperation("invalid-service-update", "attr1", 5), null, null, null);
+        System.out.println(result2);
+        assertEquals(1, result.get("result").asInt());
+
+        ServiceController<?> sc2 = container.getService(ServiceName.JBOSS.append("good-service"));
+        assertNotNull(sc2);
+        assertEquals(ServiceController.State.UP, sc2.getState());
     }
 
     @Test
@@ -621,6 +642,7 @@ public class ModelControllerImplUnitTestCase {
             rootRegistration.registerOperationHandler(getOD("dependent-service"), new ModelControllerImplUnitTestCase.DependentServiceHandler(),true);
             rootRegistration.registerOperationHandler(getOD("remove-dependent-service"), new ModelControllerImplUnitTestCase.RemoveDependentServiceHandler(),true);
             rootRegistration.registerOperationHandler(getOD("read-wildcards"), new ModelControllerImplUnitTestCase.WildcardReadHandler(),true);
+            rootRegistration.registerOperationHandler(getOD("invalid-service-update"), new ModelControllerImplUnitTestCase.InvalidServiceUpdateHandler(),true);
 
             GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
 
@@ -1072,6 +1094,31 @@ public class ModelControllerImplUnitTestCase {
             context.stepCompleted();
         }
 
+    }
+
+    public static class InvalidServiceUpdateHandler implements OperationStepHandler {
+        @Override
+        public void execute(OperationContext context,final ModelNode operation) {
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(final OperationContext context, ModelNode operation) {
+                    final ServiceName svcName = ServiceName.JBOSS.append("good-service");
+                    context.removeService(svcName);
+                    context.getServiceTarget().addService(svcName, Service.NULL)
+                            .addDependency(ServiceName.JBOSS.append("missing"))
+                            .install();
+
+                    context.completeStep(new OperationContext.RollbackHandler() {
+                        @Override
+                        public void handleRollback(OperationContext context, ModelNode operation) {
+                            context.getServiceTarget().addService(svcName, Service.NULL)
+                            .install();
+                        }
+                    });
+                }
+            }, OperationContext.Stage.RUNTIME);
+            context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+        }
     }
 
     static class RollbackTransactionControl implements ModelController.OperationTransactionControl {
