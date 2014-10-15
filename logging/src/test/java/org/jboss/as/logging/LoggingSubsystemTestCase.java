@@ -284,6 +284,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
 
         // Create the legacy kernel
         builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, modelVersion)
+                .addMavenResourceURL("org.jboss.as:jboss-as-server:" + controllerVersion.getMavenGavVersion())
                 .addMavenResourceURL("org.jboss.as:jboss-as-logging:" + controllerVersion.getMavenGavVersion())
                 .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class);
 

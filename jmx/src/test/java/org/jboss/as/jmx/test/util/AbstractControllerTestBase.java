@@ -125,11 +125,13 @@ public abstract class AbstractControllerTestBase {
     @Before
     public void setupController() throws InterruptedException {
         container = ServiceContainer.Factory.create("test");
+
         ServiceTarget target = container.subTarget();
         ModelControllerService svc = new ModelControllerService(processType, getAuditLogger(), getAuthorizer());
         ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         builder.install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
+
         controller = svc.getValue();
         //ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         //controller.execute(setup, null, null, null);
@@ -255,5 +257,4 @@ public abstract class AbstractControllerTestBase {
             }
         }
     }
-
 }
