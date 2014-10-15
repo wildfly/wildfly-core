@@ -32,6 +32,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -117,6 +120,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -132,6 +136,9 @@ import org.wildfly.security.manager.action.GetAccessControlContextAction;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class ServerService extends AbstractControllerService {
+
+    /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
+    public static final ServiceName JBOSS_SERVER_SCHEDULED_EXECUTOR = Services.JBOSS_SERVER_EXECUTOR.append("scheduled");
 
     private final InjectedValue<DeploymentMountProvider> injectedDeploymentRepository = new InjectedValue<DeploymentMountProvider>();
     private final InjectedValue<ContentRepository> injectedContentRepository = new InjectedValue<ContentRepository>();
@@ -206,6 +213,10 @@ public final class ServerService extends AbstractControllerService {
         final ServerExecutorService serverExecutorService = new ServerExecutorService(threadFactory);
         serviceTarget.addService(Services.JBOSS_SERVER_EXECUTOR, serverExecutorService)
                 .addAliases(ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
+                .install();
+        final ServerScheduledExecutorService serverScheduledExecutorService = new ServerScheduledExecutorService(threadFactory);
+        serviceTarget.addService(JBOSS_SERVER_SCHEDULED_EXECUTOR, serverScheduledExecutorService)
+                .addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
                 .install();
 
         DelegatingResourceDefinition rootResourceDefinition = new DelegatingResourceDefinition();
@@ -438,6 +449,49 @@ public final class ServerService extends AbstractControllerService {
         @Override
         public synchronized ExecutorService getValue() throws IllegalStateException, IllegalArgumentException {
             return executorService;
+        }
+    }
+
+    static final class ServerScheduledExecutorService implements Service<ScheduledExecutorService> {
+        private final ThreadFactory threadFactory;
+        private ScheduledThreadPoolExecutor scheduledExecutorService;
+        private final InjectedValue<ExecutorService> executorInjector = new InjectedValue<>();
+
+        private ServerScheduledExecutorService(ThreadFactory threadFactory) {
+            this.threadFactory = threadFactory;
+        }
+
+        @Override
+        public synchronized void start(final StartContext context) throws StartException {
+            scheduledExecutorService = new ScheduledThreadPoolExecutor(4 , threadFactory);
+            scheduledExecutorService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        }
+
+        @Override
+        public synchronized void stop(final StopContext context) {
+            Runnable r = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        scheduledExecutorService.shutdown();
+                    } finally {
+                        scheduledExecutorService = null;
+                        context.complete();
+                    }
+                }
+            };
+            try {
+                executorInjector.getValue().execute(r);
+            } catch (RejectedExecutionException e) {
+                r.run();
+            } finally {
+                context.asynchronous();
+            }
+        }
+
+        @Override
+        public synchronized ScheduledExecutorService getValue() throws IllegalStateException {
+            return scheduledExecutorService;
         }
     }
 

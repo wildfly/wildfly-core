@@ -22,7 +22,6 @@
 
 package org.jboss.as.host.controller;
 
-import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -45,11 +44,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -76,6 +73,7 @@ import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.remote.RemoteProxyController;
+import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
@@ -118,9 +116,7 @@ import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
-import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 
@@ -180,11 +176,11 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private final InjectedValue<Endpoint> endpointInjector = new InjectedValue<Endpoint>();
     private final InjectedValue<SecurityRealm> securityRealmInjector = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ServerInventory> serverInventoryInjector = new InjectedValue<ServerInventory>();
+    private final InjectedValue<ScheduledExecutorService> scheduledExecutorInjector = new InjectedValue<>();
     private final ExecutorService executor;
 
-    private ScheduledExecutorService scheduledExecutorService;
-
     private ManagementChannelHandler handler;
+    private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
     private volatile RemoteDomainConnection connection;
 
     private RemoteDomainConnectionService(final ModelController controller, final ExtensionRegistry extensionRegistry,
@@ -226,6 +222,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         ServiceBuilder<MasterDomainControllerClient> builder = serviceTarget.addService(MasterDomainControllerClient.SERVICE_NAME, service)
                 .addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpointInjector)
                 .addDependency(ServerInventoryService.SERVICE_NAME, ServerInventory.class, service.serverInventoryInjector)
+                .addDependency(HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME, ScheduledExecutorService.class, service.scheduledExecutorInjector)
                 .setInitialMode(ServiceController.Mode.ACTIVE);
 
         if (securityRealm != null) {
@@ -283,7 +280,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                HostControllerLogger.ROOT_LOGGER.connectedToMaster(masterURI);
 
                // Setup the transaction protocol handler
-               handler.addHandlerFactory(new TransactionalProtocolOperationHandler(controller, handler));
+               handler.addHandlerFactory(new TransactionalProtocolOperationHandler(controller, handler, responseAttachmentSupport));
                // Use the existing channel strategy
                masterProxy = ExistingChannelModelControllerClient.createAndAdd(handler);
                txMasterProxy = new TransactionalDomainControllerClient(handler);
@@ -394,8 +391,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         final ManagementChannelHandler handler;
         try {
 
-            ThreadFactory scheduledThreadFactory = new JBossThreadFactory(new ThreadGroup("domain-connection-pinger-threads"), Boolean.TRUE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
-            this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(scheduledThreadFactory);
+            ScheduledExecutorService scheduledExecutorService = scheduledExecutorInjector.getValue();
+            this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorService);
 
             // Include additional local host information when registering at the DC
             final ModelNode hostInfo = HostInfo.createLocalHostHostInfo(localHostInfo, productConfig, ignoredDomainResourceRegistry, ReadRootResourceHandler.grabDomainResource(operationExecutor).getChildren(HOST).iterator().next());
@@ -509,7 +506,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             public void run() {
                 try {
                     StreamUtils.safeClose(connection);
-                    scheduledExecutorService.shutdownNow();
+                    responseAttachmentSupport.shutdown();
                 } finally {
                     context.complete();
                 }

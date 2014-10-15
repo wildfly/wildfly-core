@@ -24,6 +24,7 @@ package org.jboss.as.server;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
@@ -93,6 +94,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             // Install the communication services
             HostControllerConnectionService service = new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint);
             Services.addServerExecutorDependency(serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME, service), service.getExecutorInjector(), false)
+                    .addDependency(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR, ScheduledExecutorService.class, service.getScheduledExecutorInjector())
                     .addDependency(endpointName, Endpoint.class, service.getEndpointInjector())
                     .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getProcessStateServiceInjectedValue())
                     .setInitialMode(ServiceController.Mode.ACTIVE).install();

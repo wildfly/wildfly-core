@@ -39,6 +39,7 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandler;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
+import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
@@ -97,10 +98,10 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
         // Assemble the request handlers for the domain channel
         handler.addHandlerFactory(new HostControllerRegistrationHandler(handler, domainController, operationExecutor,
                 getExecutor(), runtimeIgnoreTransformationRegistry, slaveHostRegistrations));
-        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler));
+        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport()));
         handler.addHandlerFactory(new MasterDomainControllerOperationHandlerImpl(domainController, getExecutor()));
         handler.addHandlerFactory(pongRequestHandler);
-        handler.addHandlerFactory(new DomainTransactionalProtocolOperationHandler(txOperationExecutor, handler));
+        handler.addHandlerFactory(new DomainTransactionalProtocolOperationHandler(txOperationExecutor, handler, getResponseAttachmentSupport()));
         channel.receiveMessage(handler.getReceiver());
         return handler;
     }
@@ -110,8 +111,9 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 
         private volatile SlaveRequest activeSlaveRequest;
 
-        public DomainTransactionalProtocolOperationHandler(TransactionalOperationExecutor executor, ManagementChannelAssociation channelAssociation) {
-            super(null, channelAssociation);
+        public DomainTransactionalProtocolOperationHandler(TransactionalOperationExecutor executor, ManagementChannelAssociation channelAssociation,
+                                                           ResponseAttachmentInputStreamSupport responseAttachmentSupport) {
+            super(null, channelAssociation, responseAttachmentSupport);
             this.executor = executor;
         }
 
