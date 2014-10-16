@@ -3270,5 +3270,6 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 377, value = "Unexpected element '%s' encountered. Valid elements are: '%s'")
     XMLStreamException unexpectedElement(QName name, StringBuilder possible, @Param Location location);
 
-
+    @Message(id = 378, value = "Attribute '%s' is not of type '%s', it is type '%s'")
+    OperationFailedException attributeIsWrongType(String name, ModelType expectedType, ModelType providedType);
 }

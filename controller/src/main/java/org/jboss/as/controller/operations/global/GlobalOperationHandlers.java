@@ -72,6 +72,12 @@ public class GlobalOperationHandlers {
         set.add(ReadOperationNamesHandler.DEFINITION.getName());
         set.add(ReadOperationDescriptionHandler.DEFINITION.getName());
         set.add(ReadResourceDescriptionHandler.CheckResourceAccessHandler.DEFINITION.getName());
+        set.add(MapOperations.MAP_PUT_DEFINITION.getName());
+        set.add(MapOperations.MAP_GET_DEFINITION.getName());
+        set.add(MapOperations.MAP_CLEAR_DEFINITION.getName());
+        set.add(MapOperations.MAP_REMOVE_DEFINITION.getName());
+        set.add(ListOperations.LIST_ADD_DEFINITION.getName());
+
         GLOBAL_READ_OPERATION_NAMES = Collections.unmodifiableSet(set);
     }
 
@@ -98,6 +104,17 @@ public class GlobalOperationHandlers {
         root.registerOperationHandler(ReadChildrenResourcesHandler.DEFINITION, ReadChildrenResourcesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadOperationNamesHandler.DEFINITION, ReadOperationNamesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadOperationDescriptionHandler.DEFINITION, ReadOperationDescriptionHandler.INSTANCE, true);
+        //map operations
+        root.registerOperationHandler(MapOperations.MAP_PUT_DEFINITION, MapOperations.MAP_PUT_HANDLER, true);
+        root.registerOperationHandler(MapOperations.MAP_GET_DEFINITION, MapOperations.MAP_GET_HANDLER, true);
+        root.registerOperationHandler(MapOperations.MAP_REMOVE_DEFINITION, MapOperations.MAP_REMOVE_HANDLER, true);
+        root.registerOperationHandler(MapOperations.MAP_CLEAR_DEFINITION, MapOperations.MAP_CLEAR_HANDLER, true);
+        //list operations
+        root.registerOperationHandler(ListOperations.LIST_ADD_DEFINITION, ListOperations.LIST_ADD_HANDLER, true);
+        root.registerOperationHandler(ListOperations.LIST_REMOVE_DEFINITION, ListOperations.LIST_REMOVE_HANDLER, true);
+        root.registerOperationHandler(ListOperations.LIST_GET_DEFINITION, ListOperations.LIST_GET_HANDLER, true);
+        root.registerOperationHandler(ListOperations.LIST_CLEAR_DEFINITION, ListOperations.LIST_CLEAR_HANDLER, true);
+
         root.registerOperationHandler(ReadResourceDescriptionHandler.CheckResourceAccessHandler.DEFINITION, new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

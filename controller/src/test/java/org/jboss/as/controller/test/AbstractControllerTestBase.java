@@ -109,10 +109,7 @@ public abstract class AbstractControllerTestBase {
         ModelNode operation = new ModelNode();
         operation.get(OP).set(operationName);
         if (address.size() > 0) {
-            for (PathElement element : address) {
-                operation.get(OP_ADDR).add(element.getKey());
-                operation.get(OP_ADDR).add(element.getValue());
-            }
+            operation.get(OP_ADDR).set(address.toModelNode());
         } else {
             operation.get(OP_ADDR).setEmptyList();
         }

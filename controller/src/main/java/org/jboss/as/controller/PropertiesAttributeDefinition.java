@@ -24,11 +24,11 @@ package org.jboss.as.controller;
 
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -46,7 +46,7 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  * Represents simple key=value map equivalent of java.util.Map<String,String>()
  *
  * @author Jason T. Greene
- * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
+ * @author Tomaz Cerar<
  */
 //todo maybe replace with SimpleMapAttributeDefinition?
 public final class PropertiesAttributeDefinition extends MapAttributeDefinition {
@@ -77,19 +77,24 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         }
     }
 
-    public Map<String, String> unwrap(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        if (!model.hasDefined(getName())) {
-            return new HashMap<String, String>();
+    public Map<String, String> unwrap(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
+        if (!model.hasDefined(getName())){
+            return Collections.emptyMap();
         }
         ModelNode modelProps = model.get(getName());
-        Map<String, String> props = new HashMap<String, String>();
-        for (Property p : modelProps.asPropertyList()) {
+        return unwrapModel(context, modelProps);
+    }
+
+    public static Map<String, String> unwrapModel(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
+        if (!model.isDefined()) return Collections.emptyMap();
+        Map<String, String> props = new HashMap<>();
+        for (Property p : model.asPropertyList()) {
             props.put(p.getName(), context.resolveExpressions(p.getValue()).asString());
         }
         return props;
     }
 
-    public void parse(final XMLExtendedStreamReader reader,final ModelNode operation) throws XMLStreamException {
+    public void parse(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
         while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
             if (reader.getLocalName().equals(getXmlName())) {
                 final String[] array = requireAttributes(reader, org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName());

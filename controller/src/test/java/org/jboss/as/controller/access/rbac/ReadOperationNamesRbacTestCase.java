@@ -64,6 +64,8 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
+import org.jboss.as.controller.operations.global.ListOperations;
+import org.jboss.as.controller.operations.global.MapOperations;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
@@ -119,8 +121,9 @@ public class ReadOperationNamesRbacTestCase extends AbstractControllerTestBase {
                 OP_CONFIG_RW_ACCESS_READ_WRITE, OP_CONFIG_RW_READ_WRITE, OP_CONFIG_RW_WRITE, OP_CONFIG_RW_READ, OP_CONFIG_RW_NONE,
                 OP_RUNTIME_RW_ACCESS_READ_WRITE, OP_RUNTIME_RW_READ_WRITE, OP_RUNTIME_RW_WRITE, OP_RUNTIME_RW_READ, OP_RUNTIME_RW_NONE,
                 OP_CONFIG_RO_ACCESS_READ_WRITE, OP_CONFIG_RO_READ_WRITE, OP_CONFIG_RO_WRITE, OP_CONFIG_RO_READ, OP_CONFIG_RO_NONE,
-                OP_RUNTIME_RO_ACCESS_READ_WRITE, OP_RUNTIME_RO_READ_WRITE, OP_RUNTIME_RO_WRITE, OP_RUNTIME_RO_READ, OP_RUNTIME_RO_NONE};
-        HashSet<String> allNames = new HashSet<String>(
+                OP_RUNTIME_RO_ACCESS_READ_WRITE, OP_RUNTIME_RO_READ_WRITE, OP_RUNTIME_RO_WRITE, OP_RUNTIME_RO_READ, OP_RUNTIME_RO_NONE,
+        "map-clear", "list-clear", "map-put", "list-get", "map-get", "list-remove", "list-add", "map-remove"};
+        HashSet<String> allNames = new HashSet<>(
                 Arrays.asList(ALL_OPERATION_NAMES_ARRAY));
         ALL_OPERATION_NAMES = Collections.unmodifiableSet(allNames);
     }
@@ -143,7 +146,7 @@ public class ReadOperationNamesRbacTestCase extends AbstractControllerTestBase {
                 OP_CONFIG_RO_WRITE /*Although this has a write sensitivity, the operation is read-only so the sensitivity should not be relevant*/,
                 OP_CONFIG_RO_NONE,
                 OP_RUNTIME_RO_WRITE /*Although this has a write sensitivity, the operation is read-only so the sensitivity should not be relevant*/,
-                OP_RUNTIME_RO_NONE});
+                OP_RUNTIME_RO_NONE, "list-get", "map-get"});
         testReadOperationNames(StandardRole.MONITOR, false, ALL_OPERATION_NAMES_ARRAY);
     }
 
@@ -163,7 +166,9 @@ public class ReadOperationNamesRbacTestCase extends AbstractControllerTestBase {
                 OP_CONFIG_RO_WRITE /*Although this has a write sensitivity, the operation is read-only so the sensitivity should not be relevant*/,
                 OP_CONFIG_RO_NONE,
                 OP_RUNTIME_RO_WRITE /*Although this has a write sensitivity, the operation is read-only so the sensitivity should not be relevant*/,
-                OP_RUNTIME_RO_NONE});
+                OP_RUNTIME_RO_NONE,
+                "map-clear", "list-clear", "map-put", "list-get", "map-get", "list-remove", "list-add", "map-remove"
+        });
         testReadOperationNames(StandardRole.MAINTAINER, false, ALL_OPERATION_NAMES_ARRAY);
     }
 

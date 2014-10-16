@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,13 +42,19 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         super(builder, ModelType.STRING);
     }
 
-    public List<String> unwrap(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        if (!model.hasDefined(getName())) {
+    public List<String> unwrap(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
+        if (!model.hasDefined(getName())){
+            return Collections.emptyList();
+        }
+        return unwrapValue(context, model.get(getName()));
+    }
+
+    public static List<String> unwrapValue(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
+        if (!model.isDefined()) {
             return null;
         }
-        ModelNode modelProps = model.get(getName());
         List<String> result = new LinkedList<String>();
-        for (ModelNode p : modelProps.asList()) {
+        for (ModelNode p : model.asList()) {
             result.add(context.resolveExpressions(p).asString());
         }
         return result;
