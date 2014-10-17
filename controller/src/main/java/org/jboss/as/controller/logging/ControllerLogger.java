@@ -3272,4 +3272,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 378, value = "Attribute '%s' is not of type '%s', it is type '%s'")
     OperationFailedException attributeIsWrongType(String name, ModelType expectedType, ModelType providedType);
+
+    @Message(id = 379, value = "System boot is in process; execution of remote management operations is not currently available")
+    String managementUnavailableDuringBoot();
 }

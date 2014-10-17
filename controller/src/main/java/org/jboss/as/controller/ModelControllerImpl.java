@@ -290,17 +290,26 @@ class ModelControllerImpl implements ModelController {
         AccessMechanism accessMechanism = null;
         AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
         if (accessContext != null) {
+            // External caller of some sort.
             if (operation.hasDefined(OPERATION_HEADERS)) {
                 ModelNode operationHeaders = operation.get(OPERATION_HEADERS);
+                // Internal domain ManagementRequestHandler impls will set a header to track an op through the domain
                 if (operationHeaders.hasDefined(DOMAIN_UUID)) {
                     accessContext.setDomainUuid(operationHeaders.get(DOMAIN_UUID).asString());
                 }
+                // Native and http ManagementRequestHandler impls, plus those used for intra-domain comms
+                // will always set a header to specify the access mechanism. JMX directly sets it on the accessContext
                 if (operationHeaders.hasDefined(ACCESS_MECHANISM)) {
                     accessContext
                             .setAccessMechanism(AccessMechanism.valueOf(operationHeaders.get(ACCESS_MECHANISM).asString()));
                 }
             }
             accessMechanism = accessContext.getAccessMechanism();
+        } // else its an internal caller as external callers always get an AccessAuditContext
+
+        // WFCORE-184. Exclude external callers during boot. AccessMechanism is always set for external callers
+        if (accessMechanism != null && bootingFlag.get()) {
+            return handleExternalRequestDuringBoot();
         }
 
         for (;;) {
@@ -350,6 +359,15 @@ class ModelControllerImpl implements ModelController {
             }
         }
         return response;
+    }
+
+    private static ModelNode handleExternalRequestDuringBoot() {
+        ModelNode result = new ModelNode();
+        result.get(OUTCOME).set(FAILED);
+        result.get(FAILURE_DESCRIPTION).set(ControllerLogger.MGMT_OP_LOGGER.managementUnavailableDuringBoot());
+        // TODO WFCORE-185 once we have http codes for failure messages, include those, e.g.
+        // result.get("http-code").set(nsre.getHttpCode());
+        return result;
     }
 
     boolean boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
