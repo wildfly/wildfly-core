@@ -109,8 +109,8 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 7, value = "The attribute %s could not be set as it is not a configurable property value.")
     void invalidPropertyAttribute(String name);
 
-    @Message(id = 8, value = "The path manager service does not appear to be started. Any changes may be lost as a result of this.")
-    String pathManagerServiceNotStarted();
+    @Message(id = 8, value = "The path manager service does not appear to be started.")
+    IllegalStateException pathManagerServiceNotStarted();
 
     /**
      * Logs a warning message indicating filters are not currently supported for log4j appenders.

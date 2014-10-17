@@ -32,8 +32,8 @@ import java.util.List;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.DelegatingPathManager;
 import org.jboss.as.logging.logging.LoggingLogger;
-import org.jboss.as.logging.resolvers.FileResolver;
 import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
@@ -374,44 +374,40 @@ public class ConfigurationPersistence implements Configurator, LogContextConfigu
         final String loggingConfig;
         switch (context.getProcessType()) {
             case DOMAIN_SERVER: {
-                loggingConfig = FileResolver.resolvePath(context, "jboss.server.data.dir", PROPERTIES_FILE);
+                loggingConfig = DelegatingPathManager.getInstance().resolveRelativePathEntry(PROPERTIES_FILE, "jboss.server.data.dir");
                 break;
             }
             default: {
-                loggingConfig = FileResolver.resolvePath(context, "jboss.server.config.dir", PROPERTIES_FILE);
+                loggingConfig = DelegatingPathManager.getInstance().resolveRelativePathEntry(PROPERTIES_FILE, "jboss.server.config.dir");
             }
         }
-        if (loggingConfig == null) {
-            LoggingLogger.ROOT_LOGGER.warn(LoggingLogger.ROOT_LOGGER.pathManagerServiceNotStarted());
-        } else {
-            final File configFile = new File(loggingConfig);
-            synchronized (LOCK) {
+        final File configFile = new File(loggingConfig);
+        synchronized (LOCK) {
+            try {
+                // Commit the log context configuration
+                commit();
+                FileOutputStream out = null;
                 try {
-                    // Commit the log context configuration
-                    commit();
-                    FileOutputStream out = null;
+                    out = new FileOutputStream(configFile);
+                    final FileLock lock = out.getChannel().lock();
                     try {
-                        out = new FileOutputStream(configFile);
-                        final FileLock lock = out.getChannel().lock();
-                        try {
-                            out.write(NOTE_MESSAGE);
-                            config.writeConfiguration(out);
-                        } finally {
-                            // The write should close the stream which would release the lock this check ensures the
-                            // lock will be released
-                            if (lock.isValid()) {
-                                lock.release();
-                            }
-                        }
-                        LoggingLogger.ROOT_LOGGER.tracef("Logging configuration file '%s' successfully written.", configFile.getAbsolutePath());
-                    } catch (IOException e) {
-                        throw LoggingLogger.ROOT_LOGGER.failedToWriteConfigurationFile(e, configFile);
+                        out.write(NOTE_MESSAGE);
+                        config.writeConfiguration(out);
                     } finally {
-                        safeClose(out);
+                        // The write should close the stream which would release the lock this check ensures the
+                        // lock will be released
+                        if (lock.isValid()) {
+                            lock.release();
+                        }
                     }
+                    LoggingLogger.ROOT_LOGGER.tracef("Logging configuration file '%s' successfully written.", configFile.getAbsolutePath());
+                } catch (IOException e) {
+                    throw LoggingLogger.ROOT_LOGGER.failedToWriteConfigurationFile(e, configFile);
                 } finally {
-                    forget();
+                    safeClose(out);
                 }
+            } finally {
+                forget();
             }
         }
     }
