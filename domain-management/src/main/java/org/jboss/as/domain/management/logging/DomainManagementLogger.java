@@ -1032,6 +1032,26 @@ public interface DomainManagementLogger extends BasicLogger {
     OperationFailedException kerberosWithoutKeytab(String realm);
 
     /**
+     * Create an {@link StartException} where the requested cipher suites do not match any of the supported cipher suites.
+     *
+     * @param supported the supported cipher suites
+     * @param requested the requested cipher suites
+     * @return a {@link StartException} for the error.
+     */
+    @Message(id = 95, value = "No cipher suites in common, supported=(%s), requested=(%s)")
+    StartException noCipherSuitesInCommon(String supported, String requested);
+
+    /**
+     * Create an {@link StartException} where the requested protocols do not match any of the supported protocols.
+     *
+     * @param supported the supported protocols
+     * @param requested the requested protocols
+     * @return a {@link StartException} for the error.
+     */
+    @Message(id = 96, value = "No protocols in common, supported=(%s), requested=(%s)")
+    StartException noProtocolsInCommon(String supported, String requested);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.
