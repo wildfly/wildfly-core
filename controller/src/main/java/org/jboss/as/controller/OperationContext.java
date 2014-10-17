@@ -449,10 +449,10 @@ public interface OperationContext extends ExpressionResolver {
 
     /**
      * Read an addressable resource from the root of the model. Reads never block. If a write action was previously performed,
-     * the value read will be from an uncommitted copy of the the management model.<br/>
-     *
-     * Note: By default the returned resource is read-only copy of the entire sub-model. In case this is not required use
-     * {@link OperationContext#readResourceFromRoot(PathAddress, boolean)} instead.
+     * the value read will be from an uncommitted copy of the the management model.
+     * <p>
+     * Note: By default the returned resource is read-only copy of the entire sub-model. In case the entire sub-model
+     * is not required use {@link OperationContext#readResourceFromRoot(PathAddress, boolean)} instead.
      *
      * @param address the (possibly empty) address
      * @return a read-only reference from the model
@@ -462,6 +462,12 @@ public interface OperationContext extends ExpressionResolver {
     /**
      * Read an addressable resource from the root of the model. Reads never block. If a write action was previously performed,
      * the value read will be from an uncommitted copy of the the management model.
+     * <p>
+     * Use the {@code recursive} parameter to avoid the expense of making read-only copies of large portions of the
+     * resource tree. If {@code recursive} is {@code false}, the returned resource will only have placeholder resources
+     * for immediate children. Those placeholder resources will return an empty
+     * {@link org.jboss.as.controller.registry.Resource#getModel() model} and will not themselves have any children.
+     * Their presence, however, allows the caller to see what immediate children exist under the target resource.
      *
      * @param address the (possibly empty) address
      * @param recursive whether the model should be read recursively or not

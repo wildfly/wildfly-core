@@ -66,18 +66,19 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
     @Override
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
 
-        final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
-
-        ModelNode model = resource.getModel();
+        final ModelNode model = resource.getModel();
         populateModel(operation, model);
 
         SocketBindingGroupResourceDefinition.PORT_OFFSET.validateAndSet(operation, model);
 
-        // Validate only a single socket binding group
+        // Validate only a single socket binding group and a valid default interface
         final PathAddress mine = PathAddress.pathAddress(operation.require(OP_ADDR));
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+
+                // Do a non-recursive read, which will bring in placeholders for the children
+                final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
 
                 Set<ResourceEntry> children = root.getChildren(SOCKET_BINDING_GROUP);
                 if (children.size() > 1) {
@@ -90,11 +91,11 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
                     }
                 }
 
+                SocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
+
                 context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL);
-
-        SocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
     }
 
     @Override
