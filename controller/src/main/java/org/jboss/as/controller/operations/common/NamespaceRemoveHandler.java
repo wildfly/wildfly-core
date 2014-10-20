@@ -21,7 +21,6 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -32,6 +31,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -86,7 +86,7 @@ public class NamespaceRemoveHandler implements OperationStepHandler {
         if (toRemove != null) {
             namespaces.set(newList);
         } else {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.namespaceNotFound(prefix)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.namespaceNotFound(prefix));
         }
         context.stepCompleted();
     }

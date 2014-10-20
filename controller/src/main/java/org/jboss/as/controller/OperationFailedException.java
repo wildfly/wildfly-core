@@ -64,7 +64,11 @@ public class OperationFailedException extends Exception implements OperationClie
      * subsequently be initialized by a call to {@link #initCause(Throwable) initCause}.
      *
      * @param description the description of the failure. Cannot be {@code null}
+     *
+     * @deprecated provide a message and use {@link #OperationFailedException(String, org.jboss.dmr.ModelNode)} or
+     *              if the {@code description} model node is {@code ModelType.STRING}, just use {@link #OperationFailedException(String)}
      */
+    @Deprecated
     public OperationFailedException(final ModelNode description) {
         assert description != null : "description is null";
         failureDescription = description;

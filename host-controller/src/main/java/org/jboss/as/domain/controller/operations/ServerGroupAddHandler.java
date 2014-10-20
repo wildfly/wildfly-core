@@ -86,7 +86,7 @@ public class ServerGroupAddHandler implements OperationStepHandler {
                 context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP.getName(), socketBindingGroup)));
             } catch (NoSuchElementException e) {
                 if (master) {
-                    throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unknown(SOCKET_BINDING_GROUP.getName(), socketBindingGroup)));
+                    throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.unknown(SOCKET_BINDING_GROUP.getName(), socketBindingGroup));
                 } else {
                     //We are a slave HC and we don't have the socket-binding-group required, so put the slave into reload-required
                     reloadRequired = true;

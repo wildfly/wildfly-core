@@ -285,7 +285,8 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 extensions.add(entry.getName());
             }
             if(! extensions.isDefined()) {
-                throw new OperationFailedException(extensions);
+                // TODO add a real error message
+                throw new OperationFailedException(extensions.toString(), extensions);
             }
             // Remotely resolve the subsystem versions and create the transformation
             registrationContext.processSubsystems(transformers, extensions);
@@ -435,7 +436,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 }
             });
             if(failed) {
-                throw new OperationFailedException(new ModelNode("failed to setup transformers"));
+                throw new OperationFailedException("failed to setup transformers");
             }
             final TransformationTarget target = transformers.getTarget();
             for(final Property subsystem : subsystems.asPropertyList()) {

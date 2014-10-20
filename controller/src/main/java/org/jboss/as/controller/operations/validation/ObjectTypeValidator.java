@@ -60,7 +60,7 @@ public class ObjectTypeValidator extends ModelTypeValidator implements AllowedVa
                 if (allowedValues.containsKey(key)) {
                     allowedValues.get(key).getValidator().validateParameter(key, value.get(key));
                 } else {
-                    throw new OperationFailedException(new ModelNode().set("invalid type key"));
+                    throw new OperationFailedException("invalid type key");
                 }
             }
         }

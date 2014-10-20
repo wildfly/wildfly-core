@@ -26,7 +26,6 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -34,6 +33,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 
@@ -78,7 +78,7 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
                 }
             }
             catch (IOException e) {
-                throw new OperationFailedException(new ModelNode().set(e.toString()));
+                throw DEPLOYMENT_LOGGER.caughtIOExceptionUploadingContent(e);
             }
         }
         // else this is a slave domain controller and we should ignore this operation

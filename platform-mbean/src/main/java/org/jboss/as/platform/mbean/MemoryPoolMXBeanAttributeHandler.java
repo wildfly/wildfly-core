@@ -69,7 +69,7 @@ class MemoryPoolMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHan
                 throw unknownAttribute(operation);
             }
         } catch (UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
     }
@@ -99,9 +99,9 @@ class MemoryPoolMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHan
                 throw unknownAttribute(operation);
             }
         } catch (SecurityException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         } catch (UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
     }

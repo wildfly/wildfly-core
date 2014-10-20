@@ -53,7 +53,7 @@ abstract class AbstractWriteAttributeHandler extends org.jboss.as.controller.Abs
         final String name = address.getLastElement().getValue();
         final ServiceController<?> controller = context.getServiceRegistry(false).getService(DeploymentScannerService.getServiceName(name));
         if (controller == null) {
-            throw new OperationFailedException(new ModelNode().set(DeploymentScannerLogger.ROOT_LOGGER.scannerNotConfigured()));
+            throw new OperationFailedException(DeploymentScannerLogger.ROOT_LOGGER.scannerNotConfigured());
         } else {
             DeploymentScanner scanner = (DeploymentScanner) controller.getValue();
             updateScanner(scanner, newValue);

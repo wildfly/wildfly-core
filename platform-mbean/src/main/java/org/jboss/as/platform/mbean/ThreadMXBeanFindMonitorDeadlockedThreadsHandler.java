@@ -66,7 +66,7 @@ public class ThreadMXBeanFindMonitorDeadlockedThreadsHandler implements Operatio
                 }
             }
         } catch (SecurityException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
         context.stepCompleted();

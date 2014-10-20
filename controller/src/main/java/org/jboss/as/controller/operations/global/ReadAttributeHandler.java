@@ -164,7 +164,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         if (attributeAccess == null) {
             final Set<String> children = context.getResourceRegistration().getChildNames(PathAddress.EMPTY_ADDRESS);
             if (children.contains(attributeName)) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.attributeRegisteredOnResource(attributeName, operation.get(OP_ADDR))));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeRegisteredOnResource(attributeName, operation.get(OP_ADDR)));
             } else {
                 final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
                 final ModelNode subModel = resource.getModel();
@@ -184,7 +184,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                         // as proof that it's a legit attribute name
                         context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
                     } else {
-                        throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName)));
+                        throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
                     }
                 }
             }

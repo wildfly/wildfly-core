@@ -79,7 +79,7 @@ public class SpecifiedInterfaceResolveHandler implements OperationStepHandler {
 
         ParsedInterfaceCriteria parsed = ParsedInterfaceCriteria.parse(config, true, context);
         if (parsed.getFailureMessage() != null) {
-            throw new OperationFailedException(new ModelNode().set(parsed.getFailureMessage()));
+            throw new OperationFailedException(parsed.getFailureMessage());
         }
 
         try {
@@ -98,11 +98,11 @@ public class SpecifiedInterfaceResolveHandler implements OperationStepHandler {
         final String attributeName = definition.getName();
         final boolean has = operation.has(attributeName);
         if(! has && definition.isRequired(operation)) {
-            throw new OperationFailedException(new ModelNode(ControllerLogger.ROOT_LOGGER.required(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
         }
         if(has) {
             if(! definition.isAllowed(operation)) {
-                throw new OperationFailedException(new ModelNode(ControllerLogger.ROOT_LOGGER.invalid(attributeName)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalid(attributeName));
             }
             definition.validateAndSet(operation, subModel);
         } else {

@@ -65,7 +65,7 @@ public class ThreadMXBeanCpuTimeHandler implements OperationStepHandler {
             long id = operation.require(PlatformMBeanConstants.ID).asLong();
             context.getResult().set(ManagementFactory.getThreadMXBean().getThreadCpuTime(id));
         } catch (UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
         context.stepCompleted();

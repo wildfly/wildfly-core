@@ -117,6 +117,6 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
     }
 
     private static OperationFailedException operationFailed(String msg) {
-        return new OperationFailedException(new ModelNode().set(msg));
+        return new OperationFailedException(msg);
     }
 }

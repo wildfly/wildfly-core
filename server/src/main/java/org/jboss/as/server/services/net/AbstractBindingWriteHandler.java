@@ -123,7 +123,7 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
         try {
             BindingAddHandler.installBindingService(context, bindingModel, bindingName);
         } catch (UnknownHostException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
     }
 

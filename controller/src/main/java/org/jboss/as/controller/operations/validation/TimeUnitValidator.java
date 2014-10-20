@@ -71,7 +71,7 @@ public class TimeUnitValidator extends ModelTypeValidator implements AllowedValu
             String tuString = value.asString();
             TimeUnit tu = TimeUnit.valueOf(tuString.toUpperCase(Locale.ENGLISH));
             if (tu == null || !allowedValues.contains(tu)) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidValue(tuString, parameterName, allowedValues)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(tuString, parameterName, allowedValues));
             }
         }
     }

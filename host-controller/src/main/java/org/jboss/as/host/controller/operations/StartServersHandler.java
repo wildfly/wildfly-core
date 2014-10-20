@@ -80,11 +80,11 @@ public class StartServersHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         if (!context.isBooting()) {
-            throw new OperationFailedException(new ModelNode().set(HostControllerLogger.ROOT_LOGGER.invocationNotAllowedAfterBoot(operation.require(OP))));
+            throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.invocationNotAllowedAfterBoot(operation.require(OP)));
         }
 
         if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
-            throw new OperationFailedException(new ModelNode(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode())));
+            throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
         final ModelNode domainModel = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));

@@ -81,9 +81,9 @@ public class ThreadMXBeanDumpAllThreadsHandler implements OperationStepHandler {
                 }
             }
         } catch (SecurityException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         } catch (UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
         context.stepCompleted();

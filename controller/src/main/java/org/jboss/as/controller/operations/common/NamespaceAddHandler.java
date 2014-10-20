@@ -94,7 +94,7 @@ public class NamespaceAddHandler extends AbstractModelUpdateHandler {
             String namespaceString = namespace.asString();
             for (ModelNode node : namespaces.asList()) {
                 if (namespaceString.equals(node.asProperty().getName())) {
-                    throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.namespaceAlreadyRegistered(namespaceString, node.asProperty().getValue().asString())));
+                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.namespaceAlreadyRegistered(namespaceString, node.asProperty().getValue().asString()));
                 }
             }
         }

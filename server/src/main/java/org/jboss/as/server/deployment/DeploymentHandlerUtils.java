@@ -49,7 +49,7 @@ public abstract class DeploymentHandlerUtils {
     }
 
     protected static OperationFailedException createFailureException(String msg) {
-        return new OperationFailedException(new ModelNode(msg));
+        return new OperationFailedException(msg);
     }
 
     protected static OperationFailedException createFailureException(Throwable cause, String msg) {

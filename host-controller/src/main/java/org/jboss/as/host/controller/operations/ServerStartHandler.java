@@ -90,7 +90,7 @@ public class ServerStartHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
-            throw new OperationFailedException(new ModelNode(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode())));
+            throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));

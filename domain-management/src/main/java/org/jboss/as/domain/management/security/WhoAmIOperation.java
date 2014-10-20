@@ -87,7 +87,7 @@ public class WhoAmIOperation implements OperationStepHandler {
 
         Caller caller = context.getCaller();
         if (caller == null) {
-            throw new OperationFailedException(new ModelNode().set(DomainManagementLogger.ROOT_LOGGER.noSecurityContextEstablished()));
+            throw new OperationFailedException(DomainManagementLogger.ROOT_LOGGER.noSecurityContextEstablished());
         }
 
         ModelNode result = context.getResult();

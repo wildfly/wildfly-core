@@ -248,7 +248,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     if (recursive) {
                         ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
                         if (childReg == null) {
-                            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.noChildRegistry(childType, child)));
+                            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noChildRegistry(childType, child));
                         }
                         // Decide if we want to invoke on this child resource
                         boolean proxy = childReg.isRemote();

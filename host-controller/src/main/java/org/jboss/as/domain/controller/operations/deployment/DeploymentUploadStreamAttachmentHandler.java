@@ -71,12 +71,12 @@ extends AbstractDeploymentUploadHandler {
         int streamIndex = operation.get(INPUT_STREAM_INDEX).asInt();
         int maxIndex = operationContext.getAttachmentStreamCount();
         if (streamIndex > maxIndex) {
-            throw new OperationFailedException(new ModelNode().set(String.format(DomainControllerLogger.ROOT_LOGGER.invalidValue(INPUT_STREAM_INDEX, streamIndex, maxIndex))));
+            throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidValue(INPUT_STREAM_INDEX, streamIndex, maxIndex));
         }
 
         InputStream in = operationContext.getAttachmentStream(streamIndex);
         if (in == null) {
-            throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.nullStream(streamIndex)));
+            throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.nullStream(streamIndex));
         }
 
         return in;

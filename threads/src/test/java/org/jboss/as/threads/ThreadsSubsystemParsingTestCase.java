@@ -1091,7 +1091,8 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT);
         ModelNode rsp = services.executeForResult(operation);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
-            throw new OperationFailedException(rsp.get(FAILURE_DESCRIPTION));
+            ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
+            throw new OperationFailedException(fd.toString(), fd);
         }
         model = services.readWholeModel();
         return rsp.get(RESULT);

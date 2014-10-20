@@ -82,9 +82,9 @@ public class ResolveExpressionHandler implements OperationStepHandler {
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 } catch (SecurityException e) {
-                    throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(toResolve, e)));
+                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(toResolve, e));
                 } catch (IllegalStateException e) {
-                    throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve, e)));
+                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve, e));
                 }
             }
         }, OperationContext.Stage.RUNTIME);

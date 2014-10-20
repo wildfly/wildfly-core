@@ -93,7 +93,7 @@ public class SchemaLocationAddHandler extends AbstractModelUpdateHandler {
             String uriString = uri.asString();
             for (Property prop : locations.asPropertyList()) {
                 if (uriString.equals(prop.getName())) {
-                    throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.schemaAlreadyRegistered(uriString, prop.getValue().asString())));
+                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.schemaAlreadyRegistered(uriString, prop.getValue().asString()));
                 }
             }
         }

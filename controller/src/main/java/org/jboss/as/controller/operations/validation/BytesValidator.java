@@ -49,12 +49,12 @@ public class BytesValidator extends ModelTypeValidator implements MinMaxValidato
 
     @Override
     public Long getMin() {
-        return Long.valueOf(min);
+        return (long) min;
     }
 
     @Override
     public Long getMax() {
-        return Long.valueOf(max);
+        return (long) max;
     }
 
     /**
@@ -66,10 +66,10 @@ public class BytesValidator extends ModelTypeValidator implements MinMaxValidato
         if (value.isDefined() && value.getType() != ModelType.EXPRESSION) {
             byte[] val = value.asBytes();
             if (val.length < min) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMinSize(val.length, parameterName, min)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinSize(val.length, parameterName, min));
             }
             else if (val.length > max) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMaxSize(val.length, parameterName, max)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxSize(val.length, parameterName, max));
             }
         }
     }

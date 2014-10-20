@@ -82,7 +82,7 @@ public class SocketBindingGroupIncludeRemoveHandler extends AbstractRemoveStepHa
         if (toRemove != null) {
             includes.set(newList);
         } else {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.groupNotFound(group)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.groupNotFound(group));
         }
     }
 

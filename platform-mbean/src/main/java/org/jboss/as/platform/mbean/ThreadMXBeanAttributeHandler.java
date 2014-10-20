@@ -64,7 +64,7 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
                 throw unknownAttribute(operation);
             }
         } catch (SecurityException | UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
     }
@@ -91,9 +91,9 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
                 throw unknownAttribute(operation);
             }
         } catch (SecurityException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         } catch (UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
     }

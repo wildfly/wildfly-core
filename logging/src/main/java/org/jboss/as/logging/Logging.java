@@ -70,7 +70,7 @@ public final class Logging {
      * @return a new {@link OperationFailedException}
      */
     public static OperationFailedException createOperationFailure(final String message) {
-        return new OperationFailedException(new ModelNode(message));
+        return new OperationFailedException(message);
     }
 
     /**

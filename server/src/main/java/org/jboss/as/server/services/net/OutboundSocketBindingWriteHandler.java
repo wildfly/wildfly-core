@@ -105,7 +105,7 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
                 LocalDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, bindingModel, bindingName);
             }
         } catch (UnknownHostException e) {
-            throw new OperationFailedException(new ModelNode().set(e.getLocalizedMessage()));
+            throw new OperationFailedException(e.toString());
         }
     }
 

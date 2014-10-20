@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -722,5 +723,8 @@ public interface DomainControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 71, value = "Interrupted awaiting host prepared response(s) -- cancelling updates for hosts %s")
     void interruptedAwaitingHostPreparedResponse(Set<String> hosts);
+
+    @Message(id = 72, value = "Caught IOException reading uploaded deployment content")
+    OperationFailedException caughtIOExceptionUploadingContent(@Cause IOException cause);
 
 }

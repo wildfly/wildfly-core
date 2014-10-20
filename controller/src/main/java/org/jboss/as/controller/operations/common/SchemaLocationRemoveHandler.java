@@ -91,7 +91,7 @@ public class SchemaLocationRemoveHandler implements OperationStepHandler {
         if (toRemove != null) {
             locations.set(newList);
         } else {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.schemaNotFound(uri)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.schemaNotFound(uri));
         }
 
         context.stepCompleted();
