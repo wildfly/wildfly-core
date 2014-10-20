@@ -552,7 +552,7 @@
                 unlerlying SSLEngine created for request handling.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="enabled-protocols" use="optional" type="stringListType">
+        <xs:attribute name="enabled-protocols" use="optional" type="stringListType" default="TLSv1 TLSv1.1 TLSv1.2">
             <xs:annotation>
                 <xs:documentation>
                     A space separated list of protocols that may be enabled on the SSLEngine handling requests.
