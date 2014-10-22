@@ -25,6 +25,10 @@ package org.jboss.as.logging.resolvers;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.PathManager;
@@ -56,6 +60,10 @@ public class FileResolver implements ModelNodeResolver<String> {
         }
         if (result == null) {
             throw new IllegalStateException(LoggingLogger.ROOT_LOGGER.pathManagerServiceNotStarted());
+        }
+        final Path file = Paths.get(result);
+        if (Files.exists(file) && Files.isDirectory(file)) {
+            throw LoggingLogger.ROOT_LOGGER.invalidLogFile(file.normalize().toString());
         }
         return result;
     }
