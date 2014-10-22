@@ -173,10 +173,10 @@ public class AutoIgnoredResourcesDomainTestCase {
     public void test02_ChangeSlaveServerConfigGroupPullsDownDataFromDc() throws Exception {
         validateResponse(slaveClient.execute(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2)), false);
 
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(0);
         Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
 
@@ -192,10 +192,10 @@ public class AutoIgnoredResourcesDomainTestCase {
         validateResponse(masterClient.execute(addGroupOp), false);
 
         //New data should not be pushed yet since nothing on the slave uses it
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(0);
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
 
@@ -204,10 +204,10 @@ public class AutoIgnoredResourcesDomainTestCase {
         validateResponse(slaveClient.execute(addConfigOp), false);
 
         //Now that we have a group using the new data it should be pulled down
-        checkSlaveProfiles(PROFILE1, PROFILE2, PROFILE3);
+        checkSlaveProfiles(PROFILE2, PROFILE3);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO, EXTENSION_JMX, EXTENSION_SAR);
-        checkSlaveServerGroups(GROUP1, GROUP2, "testgroup");
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2, SOCKETS3);
+        checkSlaveServerGroups(GROUP2, "testgroup");
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3);
         checkSystemProperties(0);
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
     }
@@ -242,10 +242,10 @@ public class AutoIgnoredResourcesDomainTestCase {
     public void test11_ChangeSlaveServerConfigGroupPullsDownDataFromDcWithDcLockTaken() throws Exception {
         validateResponse(slaveClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2))), false);
 
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(2); //Composite added a property
         Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
 
@@ -261,10 +261,10 @@ public class AutoIgnoredResourcesDomainTestCase {
         validateResponse(masterClient.execute(createDcLockTakenComposite(addGroupOp)), false);
 
         //New data should not be pushed yet since nothing on the slave uses it
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(3); //Composite added a property
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
 
@@ -273,10 +273,10 @@ public class AutoIgnoredResourcesDomainTestCase {
         validateResponse(slaveClient.execute(createDcLockTakenComposite(addConfigOp)), false);
 
         //Now that we have a group using the new data it should be pulled down
-        checkSlaveProfiles(PROFILE1, PROFILE2, PROFILE3);
+        checkSlaveProfiles(PROFILE2, PROFILE3);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO, EXTENSION_JMX, EXTENSION_SAR);
-        checkSlaveServerGroups(GROUP1, GROUP2, "testgroup");
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2, SOCKETS3);
+        checkSlaveServerGroups(GROUP2, "testgroup");
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3);
         checkSystemProperties(4); //Composite added a property
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
     }
@@ -334,10 +334,10 @@ public class AutoIgnoredResourcesDomainTestCase {
 
         validateResponse(slaveClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2))), false);
 
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(2); //Composite added a property
         Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
 
@@ -353,29 +353,29 @@ public class AutoIgnoredResourcesDomainTestCase {
         validateResponse(masterClient.execute(createDcLockTakenComposite(addGroupOp)), false);
 
         //New data should not be pushed yet since nothing on the slave uses it
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(3); //Composite added a property
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
 
         ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSlaveServerConfigAddress("testserver")));
         addConfigOp.get(GROUP).set("testgroup");
         validateFailedResponse(slaveClient.execute(createDcLockTakenCompositeWithRollback(addConfigOp)));
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2);
         checkSystemProperties(3);
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
 
         //Now that we have a group using the new data it should be pulled down
         validateResponse(slaveClient.execute(createDcLockTakenComposite(addConfigOp)), false);
-        checkSlaveProfiles(PROFILE1, PROFILE2, PROFILE3);
+        checkSlaveProfiles(PROFILE2, PROFILE3);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO, EXTENSION_JMX, EXTENSION_SAR);
-        checkSlaveServerGroups(GROUP1, GROUP2, "testgroup");
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, SOCKETS2, SOCKETS3);
+        checkSlaveServerGroups(GROUP2, "testgroup");
+        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3);
         checkSystemProperties(4); //Composite added a property
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
     }
@@ -398,7 +398,7 @@ public class AutoIgnoredResourcesDomainTestCase {
         checkSlaveProfiles(PROFILE1);
         checkSlaveExtensions(EXTENSION_LOGGING);
         checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETS2);
+        checkSlaveSocketBindingGroups(SOCKETS2);
         Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
 
         restartSlaveServer(SERVER1);
@@ -411,10 +411,10 @@ public class AutoIgnoredResourcesDomainTestCase {
         ModelNode op = Util.getWriteAttributeOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, GROUP1)).toModelNode(), PROFILE, PROFILE2);
         validateResponse(masterClient.execute(op));
 
-        checkSlaveProfiles(PROFILE1, PROFILE2);
+        checkSlaveProfiles(PROFILE2);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO);
         checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETS2);
+        checkSlaveSocketBindingGroups(SOCKETS2);
         Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
 
         restartSlaveServer(SERVER1);
@@ -452,10 +452,10 @@ public class AutoIgnoredResourcesDomainTestCase {
         op = Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2);
         validateResponse(slaveClient.execute(op));
 
-        checkSlaveProfiles(PROFILE1, PROFILE2, PROFILE3);
+        checkSlaveProfiles(PROFILE3);
         checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_MAIL, EXTENSION_NAMING, EXTENSION_POJO, EXTENSION_JMX, EXTENSION_SAR);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETS2);
+        checkSlaveServerGroups(GROUP2);
+        checkSlaveSocketBindingGroups(SOCKETS2);
         Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
 
         Assert.assertFalse(testMarker.exists());

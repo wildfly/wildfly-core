@@ -23,7 +23,7 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -42,7 +42,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class PullDownDataForServerConfigOnSlaveHandler implements OperationStepHandler {
+public class FetchServerConfigHandler implements OperationStepHandler {
 
     public static String OPERATION_NAME = "slave-server-config-change";
 
@@ -50,7 +50,7 @@ public class PullDownDataForServerConfigOnSlaveHandler implements OperationStepH
     private final Transformers transformers;
     private final ExtensionRegistry extensionRegistry;
 
-    public PullDownDataForServerConfigOnSlaveHandler(final String hostName, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
+    public FetchServerConfigHandler(final String hostName, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
         this.host = hostName;
         this.transformers = transformers;
         this.extensionRegistry = extensionRegistry;
@@ -58,11 +58,14 @@ public class PullDownDataForServerConfigOnSlaveHandler implements OperationStepH
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ServerConfigInfo serverConfig = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(operation.require(SERVER));
+        context.acquireControllerLock();
 
         // Filter the information to only include configuration for the given server-group or socket-binding group
+        final Map<String, ServerConfigInfo> serverConfigs = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(operation);
         final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = new ReadOperationsHandlerUtils.RequiredConfigurationHolder();
-        ReadOperationsHandlerUtils.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
+        for (final ServerConfigInfo serverConfig : serverConfigs.values()) {
+            ReadOperationsHandlerUtils.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
+        }
         final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadOperationsHandlerUtils.createServerIgnoredRegistry(rc);
 
         final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);

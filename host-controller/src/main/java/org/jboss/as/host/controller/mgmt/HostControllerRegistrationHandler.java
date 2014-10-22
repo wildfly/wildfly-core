@@ -64,7 +64,6 @@ import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
-import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
@@ -347,9 +346,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             this.hostInfo = HostInfo.fromModelNode(hostInfo);
             this.responseChannel = responseChannel;
             this.runtimeIgnoreTransformation = DomainControllerRuntimeIgnoreTransformationEntry.create(this.hostInfo, extensionRegistry);
-            for (final IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo info : this.hostInfo.getServerConfigInfos()) {
-                runtimeIgnoreTransformation.updateSlaveServerConfig(info);
-            }
         }
 
         @Override

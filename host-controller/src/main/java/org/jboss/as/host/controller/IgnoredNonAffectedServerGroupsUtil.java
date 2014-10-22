@@ -26,6 +26,7 @@ package org.jboss.as.host.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INITIAL_SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -33,7 +34,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +48,7 @@ import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 
 /**
  * Utility to inspect what resources should be ignored on a slave according to its server-configs
@@ -82,6 +86,11 @@ public class IgnoredNonAffectedServerGroupsUtil {
             return model;
         }
         model.get(IGNORE_UNUSED_CONFIG).set(ignoreUnaffectedServerGroups);
+        addServerGroupsToModel(hostModel, model);
+        return model;
+    }
+
+    public static void addServerGroupsToModel(Resource hostModel, ModelNode model) {
         ModelNode initialServerGroups = new ModelNode();
         initialServerGroups.setEmptyObject();
         for (ResourceEntry entry : hostModel.getChildren(SERVER_CONFIG)) {
@@ -93,7 +102,38 @@ public class IgnoredNonAffectedServerGroupsUtil {
             initialServerGroups.get(entry.getName()).set(serverNode);
         }
         model.get(ModelDescriptionConstants.INITIAL_SERVER_GROUPS).set(initialServerGroups);
-        return model;
+    }
+
+    public static Map<String, ServerConfigInfo> createConfigsFromHostModel(final Resource hostModel) {
+        final Map<String, ServerConfigInfo> serverConfigs = new HashMap<>();
+        for (ResourceEntry entry : hostModel.getChildren(SERVER_CONFIG)) {
+            final ModelNode server = entry.getModel();
+            final String name = entry.getName();
+            final String group = server.get(GROUP).asString();
+            final String socketBinding;
+            if (server.hasDefined(SOCKET_BINDING_GROUP)) {
+                socketBinding = server.get(SOCKET_BINDING_GROUP).asString();
+            } else {
+                socketBinding = null;
+            }
+            final ServerConfigInfo info = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(name, group, socketBinding);
+            serverConfigs.put(name, info);
+        }
+        return serverConfigs;
+    }
+
+    public static Map<String, ServerConfigInfo> createConfigsFromModel(final ModelNode model) {
+        final Map<String, ServerConfigInfo> serverConfigs = new HashMap<>();
+        ModelNode initialServerGroups = model.get(INITIAL_SERVER_GROUPS);
+        for (Property prop : initialServerGroups.asPropertyList()) {
+            final List<ModelNode> servers = prop.getValue().asList();
+            for (ModelNode server : servers) {
+                final String socketBindingGroupOverride = server.hasDefined(SOCKET_BINDING_GROUP) ? server.get(SOCKET_BINDING_GROUP).asString() : null;
+                final ServerConfigInfo serverConfigInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(prop.getName(), prop.getValue().get(GROUP).asString(), socketBindingGroupOverride);
+                serverConfigs.put(serverConfigInfo.getName(), serverConfigInfo);
+            }
+        }
+        return serverConfigs;
     }
 
     /**

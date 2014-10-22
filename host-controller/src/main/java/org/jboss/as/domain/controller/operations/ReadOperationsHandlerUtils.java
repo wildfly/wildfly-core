@@ -22,8 +22,10 @@
 
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
@@ -88,7 +90,7 @@ class ReadOperationsHandlerUtils {
      * @param extensionRegistry    the extension registry
      * @return
      */
-    public static RequiredConfigurationHolder populateHostResultionContext(final HostInfo hostInfo, final Resource root, final ExtensionRegistry extensionRegistry) {
+    public static RequiredConfigurationHolder populateHostResolutionContext(final HostInfo hostInfo, final Resource root, final ExtensionRegistry extensionRegistry) {
         final RequiredConfigurationHolder rc = new RequiredConfigurationHolder();
         for (IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo info : hostInfo.getServerConfigInfos()) {
             ReadOperationsHandlerUtils.processServerConfig(root, rc, info, extensionRegistry);
@@ -156,6 +158,77 @@ class ReadOperationsHandlerUtils {
                         if (subsystems.contains(subsystem)) {
                             extensions.add(extension);
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    static void processHostModel(final RequiredConfigurationHolder holder, final Resource domain, final Resource hostModel, ExtensionRegistry extensionRegistry) {
+
+        final Set<String> serverGroups = holder.serverGroups;
+        final Set<String> socketBindings = holder.socketBindings;
+
+        for (final Resource.ResourceEntry entry : hostModel.getChildren(SERVER_CONFIG)) {
+            final ModelNode model = entry.getModel();
+            final String serverGroup = model.get(GROUP).asString();
+
+            if (!serverGroups.contains(serverGroup)) {
+                serverGroups.add(serverGroup);
+            }
+            if (model.hasDefined(SOCKET_BINDING_GROUP)) {
+                final String socketBindingGroup = model.get(SOCKET_BINDING_GROUP).asString();
+                if (!socketBindings.contains(socketBindingGroup)) {
+                    socketBindings.add(socketBindingGroup);
+                }
+            }
+            // Always process the server group, since it may be different between the current vs. original model
+            processServerGroup(holder, serverGroup, domain, extensionRegistry);
+        }
+    }
+
+    private static void processServerGroup(final RequiredConfigurationHolder holder, final String group, final Resource domain, ExtensionRegistry extensionRegistry) {
+
+        final PathElement groupElement = PathElement.pathElement(SERVER_GROUP, group);
+        if (!domain.hasChild(groupElement)) {
+            return;
+        }
+        final Set<String> profiles = holder.profiles;
+        final Set<String> extensions = holder.extensions;
+        final Set<String> socketBindings = holder.socketBindings;
+
+        final Resource serverGroup = domain.getChild(groupElement);
+        final ModelNode model = serverGroup.getModel();
+
+        final String profile = model.get(PROFILE).asString();
+        if (!profiles.contains(profile)) {
+            profiles.add(profile);
+        }
+
+        if (model.hasDefined(SOCKET_BINDING_GROUP)) {
+            final String socketBindingGroup = model.get(SOCKET_BINDING_GROUP).asString();
+            if (!socketBindings.contains(socketBindingGroup)) {
+                socketBindings.add(socketBindingGroup);
+            }
+        }
+
+        final PathElement profileElement = PathElement.pathElement(PROFILE, profile);
+        if (domain.hasChild(profileElement)) {
+            final Resource resource = domain.getChild(profileElement);
+
+            final Set<String> subsystems = new HashSet<>();
+            final Set<String> availableExtensions = extensionRegistry.getExtensionModuleNames();
+            for (final Resource.ResourceEntry subsystem : resource.getChildren(SUBSYSTEM)) {
+                subsystems.add(subsystem.getName());
+            }
+            for (final String extension : availableExtensions) {
+                if (extensions.contains(extension)) {
+                    // Skip already processed extensions
+                    continue;
+                }
+                for (final String subsystem : extensionRegistry.getAvailableSubsystems(extension).keySet()) {
+                    if (subsystems.contains(subsystem)) {
+                        extensions.add(extension);
                     }
                 }
             }

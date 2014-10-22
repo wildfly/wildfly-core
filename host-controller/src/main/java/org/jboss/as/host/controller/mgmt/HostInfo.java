@@ -22,11 +22,9 @@
 
 package org.jboss.as.host.controller.mgmt;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INITIAL_SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
@@ -36,17 +34,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_CODENAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WILDCARD;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -119,7 +114,7 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
     private final Long remoteConnectionId;
     private final Map<String, IgnoredType> ignoredResources;
     private final boolean ignoreUnaffectedConfig;
-    private final ConcurrentMap<String, ServerConfigInfo> serverConfigInfos;
+    private final Map<String, ServerConfigInfo> serverConfigInfos;
 
     private HostInfo(final ModelNode hostInfo) {
         hostName = hostInfo.require(NAME).asString();
@@ -145,17 +140,11 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
             ignoredResources = null;
         }
         ignoreUnaffectedConfig = hostInfo.hasDefined(IGNORE_UNUSED_CONFIG) ? hostInfo.get(IGNORE_UNUSED_CONFIG).asBoolean() : false;
-        final ConcurrentMap<String, ServerConfigInfo> serverConfigInfos = new ConcurrentHashMap<>();
+        final Map<String, ServerConfigInfo> serverConfigInfos;
         if (ignoreUnaffectedConfig) {
-            ModelNode initialServerGroups = hostInfo.get(INITIAL_SERVER_GROUPS);
-            for (Property prop : initialServerGroups.asPropertyList()) {
-                final List<ModelNode> servers = prop.getValue().asList();
-                for (ModelNode server : servers) {
-                    final String socketBindingGroupOverride = server.hasDefined(SOCKET_BINDING_GROUP) ? server.get(SOCKET_BINDING_GROUP).asString() : null;
-                    final ServerConfigInfo serverConfigInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(prop.getName(), prop.getValue().get(GROUP).asString(), socketBindingGroupOverride);
-                    serverConfigInfos.put(serverConfigInfo.getName(), serverConfigInfo);
-                }
-            }
+            serverConfigInfos = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(hostInfo);
+        } else {
+            serverConfigInfos = Collections.emptyMap();
         }
         this.serverConfigInfos = serverConfigInfos;
     }
@@ -223,10 +212,6 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
 
     public Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> getServerConfigInfos() {
             return serverConfigInfos.values();
-    }
-
-    void updateSlaveServerConfigInfo(ServerConfigInfo serverInfo) {
-        serverConfigInfos.put(serverInfo.getName(), serverInfo);
     }
 
     public String getPrettyProductName() {

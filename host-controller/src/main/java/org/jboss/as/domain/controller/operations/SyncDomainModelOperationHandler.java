@@ -84,7 +84,7 @@ public class SyncDomainModelOperationHandler implements OperationStepHandler {
         // Create the remote model based on the result of the read-master-model operation
         final Resource remote = ReadOperationsHandlerUtils.createResourceFromDomainModelOp(operation.require(DOMAIN_MODEL));
         // Create the filter based on the remote model (since it may not be available locally yet).
-        final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = ReadOperationsHandlerUtils.populateHostResultionContext(hostInfo, remote, extensionRegistry);
+        final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = ReadOperationsHandlerUtils.populateHostResolutionContext(hostInfo, remote, extensionRegistry);
         final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadOperationsHandlerUtils.createHostIgnoredRegistry(hostInfo, rc);
 
         // Describe the local model
