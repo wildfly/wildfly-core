@@ -26,9 +26,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -60,25 +57,20 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         return result;
     }
 
-    public void parseAndSetParameter(String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-        if (value != null) {
-            for (String element : value.split(",")) {
-                parseAndAddParameterElement(element, operation, reader);
-            }
-        }
-    }
 
     public static class Builder extends ListAttributeDefinition.Builder<Builder, StringListAttributeDefinition> {
 
         public Builder(final String name) {
             super(name);
             parser = AttributeParser.STRING_LIST;
+            attributeMarshaller = AttributeMarshaller.STRING_LIST;
             setElementValidator(new ModelTypeValidator(ModelType.STRING));
         }
 
         public Builder(final StringListAttributeDefinition basic) {
             super(basic);
             parser = AttributeParser.STRING_LIST;
+            attributeMarshaller = AttributeMarshaller.STRING_LIST;
         }
 
         @Override

@@ -153,6 +153,21 @@ public abstract class AttributeParser {
         @Override
         public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
             if (value == null) { return; }
+            for (String element : value.split(" ")) {
+                parseAndAddParameterElement(attribute, element, operation, reader);
+            }
+        }
+
+        private void parseAndAddParameterElement(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
+            ModelNode paramVal = parse(attribute, value, reader);
+            operation.get(attribute.getName()).add(paramVal);
+        }
+    };
+
+    public static final AttributeParser COMMA_DELIMITED_STRING_LIST = new AttributeParser() {
+        @Override
+        public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
+            if (value == null) { return; }
             for (String element : value.split(",")) {
                 parseAndAddParameterElement(attribute, element, operation, reader);
             }
