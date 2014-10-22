@@ -29,11 +29,15 @@ import java.util.Set;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.RollbackHandler;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingProfileDeploymentProcessor;
@@ -54,6 +58,23 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
 
     private LoggingSubsystemAdd() {
         super(LoggingRootResource.ATTRIBUTES);
+    }
+
+    @Override
+    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        super.execute(context, operation);
+        context.addStep(new OperationStepHandler() {
+            @Override
+            public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+
+                // Add the PathManager service dependency
+                final DelegatingPathManager service = DelegatingPathManager.getInstance();
+                context.getServiceTarget().addService(DelegatingPathManager.SERVICE_NAME, service)
+                        .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.getPathManagerInjector())
+                        .install();
+                context.completeStep(RollbackHandler.NOOP_ROLLBACK_HANDLER);
+            }
+        }, Stage.RUNTIME);
     }
 
     @Override

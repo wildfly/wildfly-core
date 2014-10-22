@@ -109,8 +109,8 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 7, value = "The attribute %s could not be set as it is not a configurable property value.")
     void invalidPropertyAttribute(String name);
 
-    @Message(id = 8, value = "The path manager service does not appear to be started. Any changes may be lost as a result of this.")
-    String pathManagerServiceNotStarted();
+    @Message(id = 8, value = "The path manager service does not appear to be started.")
+    IllegalStateException pathManagerServiceNotStarted();
 
     /**
      * Logs a warning message indicating filters are not currently supported for log4j appenders.
@@ -870,4 +870,14 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 82, value = "The suffix (%s) can not contain seconds or milliseconds.")
     String suffixContainsMillis(String suffix);
+
+    /**
+     * Creates an exception indicating the path is a directory and cannot be used as a log file.
+     *
+     * @param path the path attempting to be used as a log file
+     *
+     * @return an {@link org.jboss.as.controller.OperationFailedException} for the error.
+     */
+    @Message(id = 83, value = "Path '%s' is a directory and cannot be used as a log file.")
+    OperationFailedException invalidLogFile(String path);
 }

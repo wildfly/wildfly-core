@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.ResultHandler;
@@ -47,7 +48,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -152,14 +152,14 @@ public class LoggingRootResource extends TransformerResourceDefinition {
             USE_DEPLOYMENT_LOGGING_CONFIG,
     };
 
-    private final PathManager pathManager;
+    private final boolean isServer;
 
-    protected LoggingRootResource(final PathManager pathManager) {
+    protected LoggingRootResource(final boolean isServer) {
         super(SUBSYSTEM_PATH,
                 LoggingExtension.getResourceDescriptionResolver(),
                 LoggingSubsystemAdd.INSTANCE,
-                ReloadRequiredRemoveStepHandler.INSTANCE);
-        this.pathManager = pathManager;
+                LoggingSubsystemRemove.INSTANCE);
+        this.isServer = isServer;
     }
 
     @Override
@@ -176,9 +176,9 @@ public class LoggingRootResource extends TransformerResourceDefinition {
     public void registerOperations(final ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         // Only register on server
-        if (pathManager != null) {
-            resourceRegistration.registerOperationHandler(LIST_LOG_FILES, new ListLogFilesOperation(pathManager));
-            resourceRegistration.registerOperationHandler(READ_LOG_FILE, new ReadLogFileOperation(pathManager));
+        if (isServer) {
+            resourceRegistration.registerOperationHandler(LIST_LOG_FILES, new ListLogFilesOperation());
+            resourceRegistration.registerOperationHandler(READ_LOG_FILE, new ReadLogFileOperation());
         }
     }
 
@@ -202,17 +202,35 @@ public class LoggingRootResource extends TransformerResourceDefinition {
         }
     }
 
-    private static class ListLogFilesOperation implements OperationStepHandler {
+    private static class LoggingSubsystemRemove extends AbstractRemoveStepHandler {
 
-        private final PathManager pathManager;
+        static final LoggingSubsystemRemove INSTANCE = new LoggingSubsystemRemove();
 
-        private ListLogFilesOperation(final PathManager pathManager) {
-            this.pathManager = pathManager;
+        @Override
+        protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+            context.removeService(DelegatingPathManager.SERVICE_NAME);
         }
 
         @Override
+        protected void recoverServices(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+            try {
+                LoggingSubsystemAdd.INSTANCE.performRuntime(context, operation, model);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        protected boolean requiresRuntime(final OperationContext context) {
+            return true;
+        }
+    }
+
+    private static class ListLogFilesOperation implements OperationStepHandler {
+
+        @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            final List<File> logFiles = findFiles(pathManager, context);
+            final List<File> logFiles = findFiles(DelegatingPathManager.getInstance(), context);
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
             final ModelNode result = context.getResult().setEmptyList();
             for (File logFile : logFiles) {
@@ -235,18 +253,14 @@ public class LoggingRootResource extends TransformerResourceDefinition {
      */
     private static class ReadLogFileOperation implements OperationStepHandler {
 
-        private final PathManager pathManager;
-
-        private ReadLogFileOperation(final PathManager pathManager) {
-            this.pathManager = pathManager;
-        }
-
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             // Validate the operation
             for (AttributeDefinition attribute : READ_LOG_FILE.getParameters()) {
                 attribute.validateOperation(operation);
             }
+
+            final PathManager pathManager = DelegatingPathManager.getInstance();
 
             final String fileName = NAME.resolveModelAttribute(context, operation).asString();
             final int numberOfLines = LINES.resolveModelAttribute(context, operation).asInt();

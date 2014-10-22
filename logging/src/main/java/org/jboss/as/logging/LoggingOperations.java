@@ -157,9 +157,9 @@ final class LoggingOperations {
             final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
 
             execute(context, operation, name, logContextConfiguration);
-            // This should only check that it's a server for the commit step. The logging.properties may need to be written
-            // in ADMIN_ONLY mode
-            if (context.getProcessType().isServer()) {
+            // Only write the logging.properties if this is a standard server. One not booted in admin-only mode since
+            // changes to runtime don't happen in admin-only mode there is nothing new to write.
+            if (context.isNormalServer()) {
                 addCommitStep(context, configurationPersistence);
                 // Add rollback handler in case rollback is invoked before a commit step is invoked
                 context.completeStep(new RollbackHandler() {

@@ -100,7 +100,7 @@ public interface CommonAttributes {
             })
             .setCorrector(FileCorrector.INSTANCE)
             .setPropertyName("fileName")
-            .setResolver(FileResolver.INSTANCE)
+            .setResolver(new FileResolver())
             .setValidator(new FileValidator())
             .build();
 
