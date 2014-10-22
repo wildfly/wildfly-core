@@ -46,6 +46,9 @@
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
+        <extension module="org.jboss.as.remoting"/>
+        <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.request-controller"/>
     </extensions>
     <profiles>
         <profile name="profile1">

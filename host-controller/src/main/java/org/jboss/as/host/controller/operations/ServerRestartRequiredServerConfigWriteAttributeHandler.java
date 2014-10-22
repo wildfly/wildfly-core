@@ -21,25 +21,20 @@
 */
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.host.controller.MasterDomainControllerClient;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -108,11 +103,7 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
                 if (hostControllerInfo.isMasterDomainController() || !hostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
                         throw HostControllerLogger.ROOT_LOGGER.noServerGroupCalled(resolvedValue.asString());
                 } else {
-                    //We are a slave HC set up to ignore unaffected resources and we don't have the server-group required, so pull it down
-                    final String serverName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-                    final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-                    String socketBindingGroupName = model.hasDefined(SOCKET_BINDING_GROUP) ? model.get(SOCKET_BINDING_GROUP).asString() : null;
-                    pullDownMissingDataFromDc(context, serverName, resolvedValue.asString(), socketBindingGroupName);
+                    // TODO validation
                 }
             }
         }
@@ -137,11 +128,7 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
                     if (hostControllerInfo.isMasterDomainController() || !hostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
                         throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(resolvedValue.asString());
                     } else {
-                        //We are a slave HC set up to ignore unaffected resources and we don't have the socket-binding-group required, so pull it down
-                        final String serverName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-                        final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-                        String serverGroupName = model.require(GROUP).asString();
-                        pullDownMissingDataFromDc(context, serverName, serverGroupName, resolvedValue.asString());
+                        // TODO validation
                     }
                 }
             }
@@ -184,27 +171,4 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
         }
     }
 
-    private static void pullDownMissingDataFromDc(final OperationContext context, final String serverName, final String serverGroupName, final String socketBindingGroupName) {
-        context.addStep(new OperationStepHandler() {
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                //Get the missing data
-                final MasterDomainControllerClient masterDomainControllerClient = (MasterDomainControllerClient)context.getServiceRegistry(false).getRequiredService(MasterDomainControllerClient.SERVICE_NAME).getValue();
-                masterDomainControllerClient.pullDownDataForUpdatedServerConfigAndApplyToModel(context, serverName, serverGroupName, socketBindingGroupName);
-                context.addStep(new OperationStepHandler() {
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        //An extra sanity check, is this necessary?
-                        final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-                        if (!root.hasChild(PathElement.pathElement(SERVER_GROUP, serverGroupName))) {
-                            throw HostControllerLogger.ROOT_LOGGER.noServerGroupCalled(serverGroupName);
-                        }
-                        if (socketBindingGroupName != null) {
-                            if (!root.hasChild(PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroupName))) {
-                                throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(socketBindingGroupName);
-                            }
-                        }
-                    }
-                }, Stage.MODEL);
-            }
-        }, Stage.MODEL);
-    }
 }

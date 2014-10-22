@@ -22,20 +22,7 @@
 
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.host.controller.MasterDomainControllerClient;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceRegistry;
 
 /**
  * @author Emanuel Muckenhuber
@@ -43,39 +30,7 @@ import org.jboss.msc.service.ServiceRegistry;
 class ServerGroupMissingConfigUtils {
 
     static void pullDownMissingDataFromDc(final OperationContext context, final String serverName, final String serverGroupName, final String socketBindingGroupName) {
-        if (context.isBooting()) {
-            return;
-        }
-        context.addStep(new OperationStepHandler() {
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
-                if (serviceRegistry == null) {
-                    // This is only null in tests
-                    context.stepCompleted();
-                    return;
-                }
-                //Get the missing data
-                final ServiceController<?> controller = serviceRegistry.getRequiredService(MasterDomainControllerClient.SERVICE_NAME);
-                final MasterDomainControllerClient masterDomainControllerClient = (MasterDomainControllerClient) controller.getValue();
-                masterDomainControllerClient.pullDownDataForUpdatedServerConfigAndApplyToModel(context, serverName, serverGroupName, socketBindingGroupName);
-                context.addStep(new OperationStepHandler() {
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        //An extra sanity check, is this necessary?
-                        final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-                        if (!root.hasChild(PathElement.pathElement(SERVER_GROUP, serverGroupName))) {
-                            throw HostControllerLogger.ROOT_LOGGER.noServerGroupCalled(serverGroupName);
-                        }
-                        if (socketBindingGroupName != null) {
-                            if (!root.hasChild(PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroupName))) {
-                                throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(socketBindingGroupName);
-                            }
-                        }
-                        context.stepCompleted();
-                    }
-                }, OperationContext.Stage.VERIFY);
-                context.stepCompleted();
-            }
-        }, OperationContext.Stage.MODEL);
+        //
     }
 
 }

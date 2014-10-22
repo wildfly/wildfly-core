@@ -40,8 +40,10 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.operations.SyncModelOperationHandlerWrapper;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
 
@@ -145,9 +147,16 @@ class OperationSlaveStepHandler {
     private void addBasicStep(OperationContext context, ModelNode operation, ModelNode localReponse) throws OperationFailedException {
         final String operationName = operation.require(OP).asString();
 
-        final OperationStepHandler stepHandler = context.getResourceRegistration().getOperationHandler(PathAddress.EMPTY_ADDRESS, operationName);
-        if(stepHandler != null) {
-            context.addStep(localReponse, operation, stepHandler, OperationContext.Stage.MODEL);
+        final OperationEntry entry = context.getResourceRegistration().getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
+        if(entry != null) {
+            if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
+                context.addStep(localReponse, operation, entry.getOperationHandler(), OperationContext.Stage.MODEL);
+            } else {
+                // For slave host controllers wrap the operation handler to synchronize missing configuration
+                final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+                final OperationStepHandler wrapper = SyncModelOperationHandlerWrapper.wrapHandler(localHostControllerInfo.getLocalHostName(), operationName, address, entry);
+                context.addStep(localReponse, operation, wrapper, OperationContext.Stage.MODEL);
+            }
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR))));
         }

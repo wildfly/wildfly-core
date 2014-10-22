@@ -23,6 +23,7 @@
 package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -37,6 +38,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -45,10 +47,12 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.dmr.ModelNode;
@@ -56,47 +60,63 @@ import org.jboss.dmr.ModelNode;
 /**
  * Internal {@code OperationStepHandler} which synchronizes the model based on a comparison of local and remote operations.
  *
+ * Basically it compares the current state of the model to the one from the master. Where the initial connection to the
+ * master tries to sync the whole model, fetching missing configuration only looks at server-groups and it's references,
+ * ignoring all other resources.
+ *
  * @author Emanuel Muckenhuber
  */
 class SyncModelOperationHandler implements OperationStepHandler {
 
     private final Resource remoteModel;
     private final List<ModelNode> localOperations;
+    private final Set<String> missingExtensions;
+    private final ExtensionRegistry extensionRegistry;
     private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
     private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
 
-    SyncModelOperationHandler(List<ModelNode> localOperations, Resource remoteModel, IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
+    SyncModelOperationHandler(List<ModelNode> localOperations, Resource remoteModel, Set<String> missingExtensions,
+                              IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor,
+                              ExtensionRegistry extensionRegistry) {
         this.localOperations = localOperations;
         this.remoteModel = remoteModel;
+        this.missingExtensions = missingExtensions;
         this.ignoredResourceRegistry = ignoredResourceRegistry;
         this.operationExecutor = operationExecutor;
+        this.extensionRegistry = extensionRegistry;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode original) throws OperationFailedException {
-        try {
-            internalExecute(context, original);
-        } catch (OperationFailedException e) {
-            e.printStackTrace();
-            throw e;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new OperationFailedException(e);
-        }
-    }
 
-    public void internalExecute(OperationContext context, ModelNode original) throws OperationFailedException {
+        // In case we want to automatically ignore extensions we would need to add them before describing the operations
+        // This is also required for resolving the corresponding OperationStepHandler here
+//        final ManagementResourceRegistration registration = context.getResourceRegistrationForUpdate();
+//        for (String extension : missingExtensions) {
+//            final PathElement element = PathElement.pathElement(EXTENSION, extension);
+//            if (ignoredResourceRegistry.isResourceExcluded(PathAddress.pathAddress(element))) {
+//                continue;
+//            }
+//            context.addResource(PathAddress.pathAddress(element), new ExtensionResource(extension, extensionRegistry));
+//            initializeExtension(extension, registration);
+//        }
+        // There should be no missing extensions for now, unless they are manually ignored
+        if (!missingExtensions.isEmpty()) {
+            throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.missingExtensions(missingExtensions);
+        }
 
         final ModelNode readOp = new ModelNode();
         readOp.get(OP).set(ReadMasterDomainOperationsHandler.OPERATION_NAME);
         readOp.get(OP_ADDR).setEmptyList();
 
-        // Create the remote resource based on the domain model
-        final Resource remoteResource = remoteModel;
-
-        // Describe the operations based on the remote root
-        final ReadMasterDomainOperationsHandler h = new ReadMasterDomainOperationsHandler();
-        final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteResource, h, ModelController.OperationTransactionControl.COMMIT);
+        // Describe the operations based on the remote model
+        final ReadMasterDomainOperationsHandler readOperationsHandler = new ReadMasterDomainOperationsHandler();
+        final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteModel, readOperationsHandler, ModelController.OperationTransactionControl.COMMIT);
+        if (result.hasDefined(FAILURE_DESCRIPTION)) {
+            context.getFailureDescription().set(result.get(FAILURE_DESCRIPTION));
+            context.stepCompleted();
+            return;
+        }
 
         final List<ModelNode> remoteOperations = result.get(RESULT).asList();
 
@@ -108,15 +128,14 @@ class SyncModelOperationHandler implements OperationStepHandler {
         process(currentRoot, localOperations);
         process(remoteRoot, remoteOperations);
 
-        final ModelNode operations = new ModelNode();
-        operations.setEmptyList();
-
-        // Compare the nodes
+        // Compare the nodes and create the operations to sync the model
+        final List<ModelNode> operations = new ArrayList<>();
         processAttributes(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
         processChildren(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
 
+        // Reverse, since we are adding the steps on top of the queue
         final List<ModelNode> ops = new ArrayList<>();
-        ops.addAll(operations.asList());
+        ops.addAll(operations);
         Collections.reverse(ops);
 
         for (final ModelNode operation : ops) {
@@ -126,6 +145,10 @@ class SyncModelOperationHandler implements OperationStepHandler {
             if (ignoredResourceRegistry.isResourceExcluded(address)) {
                 continue;
             }
+            // Ignore all extension:add operations, since we've added them before
+//            if (address.size() == 1 && EXTENSION.equals(address.getElement(0).getKey()) && ADD.equals(operationName)) {
+//                continue;
+//            }
 
             final ImmutableManagementResourceRegistration rootRegistration = context.getRootResourceRegistration();
             final OperationStepHandler stepHandler = rootRegistration.getOperationHandler(address, operationName);
@@ -144,10 +167,9 @@ class SyncModelOperationHandler implements OperationStepHandler {
         context.stepCompleted();
     }
 
-    void compare(Node current, Node remote, ModelNode operations, ImmutableManagementResourceRegistration registration) {
+    void compare(Node current, Node remote, List<ModelNode> operations, ImmutableManagementResourceRegistration registration) {
 
         if (current != null && remote != null) {
-
             // If the current:add() and remote:add() don't match
             if (current.add != null && remote.add != null) {
                 if (!current.add.equals(remote.add)) {
@@ -188,6 +210,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 }
                 // Process the attributes
                 processAttributes(current, remote, operations, registration);
+                // TODO process other operations maps, lists etc.
                 // Process the children
                 processChildren(current, remote, operations, registration);
             }
@@ -199,6 +222,9 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 operations.add(remote.add);
             }
             for (final ModelNode operation : remote.attributes.values()) {
+                operations.add(operation);
+            }
+            for (final ModelNode operation : remote.operations) {
                 operations.add(operation);
             }
             //
@@ -223,7 +249,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
     }
 
-    void processAttributes(final Node current, final Node remote, ModelNode operations, final ImmutableManagementResourceRegistration registration) {
+    void processAttributes(final Node current, final Node remote, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
 
         for (final String attribute : remote.attributes.keySet()) {
             // Remove from current model
@@ -245,7 +271,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
-    void processChildren(final Node current, final Node remote, ModelNode operations, final ImmutableManagementResourceRegistration registration) {
+    void processChildren(final Node current, final Node remote, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
 
         for (final Node child : remote.children.values()) {
             final Node currentChild = current.children.remove(child.element);
@@ -274,7 +300,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 final String name = operation.get(NAME).asString();
                 node.attributes.put(name, operation);
             } else {
-                // TODO So what should we do with those !?
                 node.operations.add(operation);
             }
         }

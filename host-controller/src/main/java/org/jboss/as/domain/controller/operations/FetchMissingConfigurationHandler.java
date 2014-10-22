@@ -41,17 +41,16 @@ import org.jboss.dmr.ModelNode;
  * This is the remote counterpart of the {@code SyncServerConfigOperationHandler}.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Emanuel Muckenhuber
  */
-public class FetchServerConfigHandler implements OperationStepHandler {
+public class FetchMissingConfigurationHandler implements OperationStepHandler {
 
     public static String OPERATION_NAME = "slave-server-config-change";
 
-    private final String host;
     private final Transformers transformers;
     private final ExtensionRegistry extensionRegistry;
 
-    public FetchServerConfigHandler(final String hostName, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
-        this.host = hostName;
+    public FetchMissingConfigurationHandler(final String hostName, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
         this.transformers = transformers;
         this.extensionRegistry = extensionRegistry;
     }
@@ -62,11 +61,11 @@ public class FetchServerConfigHandler implements OperationStepHandler {
 
         // Filter the information to only include configuration for the given server-group or socket-binding group
         final Map<String, ServerConfigInfo> serverConfigs = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(operation);
-        final ReadOperationsHandlerUtils.RequiredConfigurationHolder rc = new ReadOperationsHandlerUtils.RequiredConfigurationHolder();
+        final ReadMasterDomainModelUtil.RequiredConfigurationHolder rc = new ReadMasterDomainModelUtil.RequiredConfigurationHolder();
         for (final ServerConfigInfo serverConfig : serverConfigs.values()) {
-            ReadOperationsHandlerUtils.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
+            ReadMasterDomainModelUtil.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
         }
-        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadOperationsHandlerUtils.createServerIgnoredRegistry(rc);
+        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, false);
 
         final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
         context.addStep(handler, OperationContext.Stage.MODEL);

@@ -23,7 +23,6 @@
  */
 package org.jboss.as.host.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INITIAL_SERVER_GROUPS;
@@ -104,24 +103,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
         model.get(ModelDescriptionConstants.INITIAL_SERVER_GROUPS).set(initialServerGroups);
     }
 
-    public static Map<String, ServerConfigInfo> createConfigsFromHostModel(final Resource hostModel) {
-        final Map<String, ServerConfigInfo> serverConfigs = new HashMap<>();
-        for (ResourceEntry entry : hostModel.getChildren(SERVER_CONFIG)) {
-            final ModelNode server = entry.getModel();
-            final String name = entry.getName();
-            final String group = server.get(GROUP).asString();
-            final String socketBinding;
-            if (server.hasDefined(SOCKET_BINDING_GROUP)) {
-                socketBinding = server.get(SOCKET_BINDING_GROUP).asString();
-            } else {
-                socketBinding = null;
-            }
-            final ServerConfigInfo info = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(name, group, socketBinding);
-            serverConfigs.put(name, info);
-        }
-        return serverConfigs;
-    }
-
     public static Map<String, ServerConfigInfo> createConfigsFromModel(final ModelNode model) {
         final Map<String, ServerConfigInfo> serverConfigs = new HashMap<>();
         ModelNode initialServerGroups = model.get(INITIAL_SERVER_GROUPS);
@@ -134,21 +115,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
             }
         }
         return serverConfigs;
-    }
-
-    /**
-     * For the DC to check whether a resource address should be ignored on the slave, if the slave is set up to ignore config not relevant to it
-     *
-     * @param domainResource the domain root resource
-     * @param serverConfigs the server configs the slave is known to have
-     * @param pathAddress the address of the resource to check if should be ignored or not
-     */
-    public boolean ignoreResource(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final PathAddress pathAddress) {
-        if (pathAddress.size() != 1) {
-            return false;
-        }
-        boolean ignore = ignoreResourceInternal(domainResource, serverConfigs, pathAddress);
-        return ignore;
     }
 
     /**
@@ -166,30 +132,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
         return ignore;
     }
 
-    /**
-     * Gets all the extensions used by a profile's subsystems on the DC
-     *
-     * @param domainResource the root domain resource
-     * @param profileElement the address of the profile element
-     */
-    public Set<PathElement> getAllExtensionsForProfile(Resource domainResource, PathElement profileElement) {
-        Set<String> extensionModuleNames = extensionRegistry.getExtensionModuleNames();
-        Set<String> subsystemNamesForProfile = new HashSet<>();
-        for (ResourceEntry entry : domainResource.getChild(profileElement).getChildren(SUBSYSTEM)) {
-            subsystemNamesForProfile.add(entry.getName());
-        }
-        Set<PathElement> extensionsForProfile = new HashSet<>();
-        for (String extensionModule : extensionModuleNames) {
-            Map<String, SubsystemInformation> infos = extensionRegistry.getAvailableSubsystems(extensionModule);
-            for (String subsystemName : infos.keySet()) {
-                if (subsystemNamesForProfile.contains(subsystemName)) {
-                    extensionsForProfile.add(PathElement.pathElement(EXTENSION, extensionModule));
-                }
-            }
-        }
-        return extensionsForProfile;
-    }
-
     private boolean ignoreResourceInternal(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final PathAddress pathAddress) {
         String type = pathAddress.getElement(0).getKey();
         switch (type) {
@@ -197,8 +139,9 @@ public class IgnoredNonAffectedServerGroupsUtil {
             return ignoreProfile(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         case SERVER_GROUP:
             return ignoreServerGroup(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
-        case EXTENSION:
-            return ignoreExtension(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
+        // We don't automatically ignore extensions for now
+//        case EXTENSION:
+//            return ignoreExtension(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         case SOCKET_BINDING_GROUP:
             return ignoreSocketBindingGroups(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         default:
@@ -287,18 +230,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
      */
     public static ServerConfigInfo createServerConfigInfo(String name, String serverGroup, String socketBindingGroup) {
         return new ServerConfigInfoImpl(name, serverGroup, socketBindingGroup);
-    }
-
-    /**
-     * Creates a server config info from it's model representation as created by {@link ServerConfigInfo#toModelNode()}
-     *
-     * @param model the model
-     * @return the server config info
-     *
-     */
-    public static ServerConfigInfo createServerConfigInfo(ModelNode model) {
-        String name = model.keys().iterator().next();
-        return new ServerConfigInfoImpl(name, model.get(name));
     }
 
     /**

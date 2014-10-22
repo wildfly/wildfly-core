@@ -882,17 +882,9 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
                                     }
 
                                     @Override
-                                    public void pullDownDataForUpdatedServerConfigAndApplyToModel(OperationContext context,
-                                            String serverName, String serverGroupName, String socketBindingGroupName)
+                                    public void fetchAndSyncMissingConfiguration(OperationContext context, Resource resource)
                                             throws OperationFailedException {
-                                        if (root.getChild(PathElement.pathElement(SERVER_GROUP, serverGroupName)) == null) {
-                                            root.registerChild(PathElement.pathElement(SERVER_GROUP, serverGroupName), Resource.Factory.create());
-                                        }
-                                        if (socketBindingGroupName != null) {
-                                            if (root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroupName)) == null) {
-                                                root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroupName), Resource.Factory.create());
-                                            }
-                                        }
+                                        //
                                     }
                                 };
                             }

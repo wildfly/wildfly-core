@@ -22,19 +22,14 @@
 
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.PROFILE;
-import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_GROUP;
+import static org.jboss.as.domain.controller.operations.ServerGroupReferenceValidationHandler.create;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -43,10 +38,8 @@ import org.jboss.dmr.ModelNode;
  */
 public class ServerGroupAddHandler implements OperationStepHandler {
 
-    private final boolean master;
-
     public ServerGroupAddHandler(boolean master) {
-        this.master = master;
+        //
     }
 
     /** {@inheritDoc */
@@ -60,50 +53,11 @@ public class ServerGroupAddHandler implements OperationStepHandler {
         }
 
         // Validate the profile reference.
+        final OperationStepHandler validationHandler = new ServerGroupReferenceValidationHandler(
+                create(ServerGroupResourceDefinition.PROFILE.getName(), ServerGroupResourceDefinition.PROFILE),
+                create(ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.getName(), ServerGroupResourceDefinition.SOCKET_BINDING_GROUP));
 
-        // Future proofing: We resolve the profile in Stage.MODEL even though system properties may not be available yet
-        // solely because currently the attribute doesn't support expressions. In the future if system properties
-        // can safely be resolved in stage model, this profile attribute can be changed and this will still work.
-        boolean reloadRequired = false;
-        final String profile = PROFILE.resolveModelAttribute(context, model).asString();
-        boolean missing = false;
-        if (!context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).hasChild(PathElement.pathElement(ServerGroupResourceDefinition.PROFILE.getName(), profile))) {
-            if (master) {
-                throw DomainControllerLogger.ROOT_LOGGER.noProfileCalled(profile);
-            } else {
-                missing = true;
-            }
-        }
-
-        final String socketBindingGroup = SOCKET_BINDING_GROUP.resolveModelAttribute(context, model).asString();
-        if (operation.hasDefined(SOCKET_BINDING_GROUP.getName())) {
-            if (!context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).hasChild(PathElement.pathElement(ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.getName(), socketBindingGroup))) {
-                if (master) {
-                    throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.unknown(SOCKET_BINDING_GROUP.getName(), socketBindingGroup));
-                } else {
-                    missing = true;
-                }
-            }
-        }
-
-        if (!context.isBooting() && missing) {
-            final String name = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-            ServerGroupMissingConfigUtils.pullDownMissingDataFromDc(context, "test", name, socketBindingGroup);
-        }
-
-        final boolean revertReloadRequiredOnRollback = reloadRequired;
-        context.completeStep(new OperationContext.ResultHandler() {
-            @Override
-            public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                if (resultAction == ResultAction.ROLLBACK) {
-                    if (revertReloadRequiredOnRollback){
-                        context.revertReloadRequired();
-                    }
-                }
-            }});
+        context.addStep(validationHandler, OperationContext.Stage.VERIFY);
     }
 
-    protected boolean requiresRuntime(OperationContext context) {
-        return false;
-    }
 }

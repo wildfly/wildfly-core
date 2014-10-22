@@ -73,7 +73,6 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationEntry;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -315,8 +314,7 @@ public class ApplyRemoteMasterDomainModelHandlerTestCase extends AbstractOperati
 
         @Override
         public void registerRemoteHost(String hostName, ManagementChannelHandler handler, Transformers transformers,
-                                       Long remoteConnectionId, DomainControllerRuntimeIgnoreTransformationEntry runtimeIgnoreTransformation,
-                                       boolean registerProxyController) throws SlaveRegistrationException {
+                                       Long remoteConnectionId, boolean registerProxyController) throws SlaveRegistrationException {
             //To change body of implemented methods use File | Settings | File Templates.
         }
 

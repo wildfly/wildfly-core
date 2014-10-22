@@ -43,7 +43,7 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
-import org.jboss.as.domain.controller.operations.FetchServerConfigHandler;
+import org.jboss.as.domain.controller.operations.FetchMissingConfigurationHandler;
 import org.jboss.as.domain.controller.operations.coordination.DomainControllerLockIdUtils;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
@@ -121,8 +121,8 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
             final ModelNode operationNode = operation.getOperation();
             final OperationStepHandler handler;
             final String operationName = operation.getOperation().require(OP).asString();
-            if (operationName.equals(FetchServerConfigHandler.OPERATION_NAME)) {
-                handler = new FetchServerConfigHandler(SlaveChannelAttachments.getHostName(context.getChannel()),
+            if (operationName.equals(FetchMissingConfigurationHandler.OPERATION_NAME)) {
+                handler = new FetchMissingConfigurationHandler(SlaveChannelAttachments.getHostName(context.getChannel()),
                         SlaveChannelAttachments.getTransformers(context.getChannel()),
                         domainController.getExtensionRegistry());
             } else {

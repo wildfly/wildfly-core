@@ -31,7 +31,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationEntry;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
@@ -73,14 +72,12 @@ public interface DomainController {
      * @param handler  handler for communications with the host
      * @param transformers transformation handler for converting resources and operations to forms appropriate for the slave
      * @param remoteConnectionId long identifying this specific connection to the host, or {@code null} if the host did not provide such an id
-     * @param runtimeIgnoreTransformation The runtime ignore transformation utility for the host
      * @param registerProxyController {@code true} if a proxy controller should be registered for the host; {@code false}
      *                                             if the host is in --admin-only mode and should not be visible to outside users
      * @throws SlaveRegistrationException  if there is a problem registering the host
      */
     void registerRemoteHost(final String hostName, final ManagementChannelHandler handler, final Transformers transformers,
-                            final Long remoteConnectionId, final DomainControllerRuntimeIgnoreTransformationEntry runtimeIgnoreTransformation,
-                            final boolean registerProxyController) throws SlaveRegistrationException;
+                            Long remoteConnectionId, boolean registerProxyController) throws SlaveRegistrationException;
 
     /**
      * Check if a Host Controller is already registered with this domain controller.

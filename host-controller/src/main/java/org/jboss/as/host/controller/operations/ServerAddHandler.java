@@ -20,9 +20,6 @@ package org.jboss.as.host.controller.operations;
 
 
 import static org.jboss.as.controller.PathAddress.EMPTY_ADDRESS;
-
-import org.jboss.as.host.controller.resources.ServerConfigResource;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -32,11 +29,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
 import java.io.File;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -44,9 +41,9 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.host.controller.MasterDomainControllerClient;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.host.controller.resources.ServerConfigResource;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -133,8 +130,7 @@ public class ServerAddHandler extends AbstractAddStepHandler {
         }
 
         if (missingData) {
-            String serverName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-            pullDownMissingDataFromDc(context, serverName, group, socketBindingGroup);
+            //
         }
     }
 
@@ -147,27 +143,4 @@ public class ServerAddHandler extends AbstractAddStepHandler {
         return false;
     }
 
-    private static void pullDownMissingDataFromDc(final OperationContext context, final String serverName, final String serverGroupName, final String socketBindingGroupName) {
-        context.addStep(new OperationStepHandler() {
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                //Get the missing data
-                final MasterDomainControllerClient masterDomainControllerClient = (MasterDomainControllerClient)context.getServiceRegistry(false).getRequiredService(MasterDomainControllerClient.SERVICE_NAME).getValue();
-                masterDomainControllerClient.pullDownDataForUpdatedServerConfigAndApplyToModel(context, serverName, serverGroupName, socketBindingGroupName);
-                context.addStep(new OperationStepHandler() {
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        //An extra sanity check, is this necessary?
-                        final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-                        if (!root.hasChild(PathElement.pathElement(SERVER_GROUP, serverGroupName))) {
-                            throw HostControllerLogger.ROOT_LOGGER.noServerGroupCalled(serverGroupName);
-                        }
-                        if (socketBindingGroupName != null) {
-                            if (!root.hasChild(PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroupName))) {
-                                throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(socketBindingGroupName);
-                            }
-                        }
-                    }
-                }, Stage.MODEL);
-            }
-        }, Stage.MODEL);
-    }
 }

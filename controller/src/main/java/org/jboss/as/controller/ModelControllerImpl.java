@@ -219,6 +219,20 @@ class ModelControllerImpl implements ModelController {
         return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false);
     }
 
+    private AbstractOperationContext getDelegateContext(final int operationId) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelController.ACCESS_PERMISSION);
+        }
+        // Get the primary context to delegate the reads to
+        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
+        if(delegateContext == null) {
+            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
+            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
+        }
+        return delegateContext;
+    }
+
     /**
      * Executes an operation on the controller latching onto an existing transaction
      *
@@ -230,17 +244,7 @@ class ModelControllerImpl implements ModelController {
      * @return the result of the operation
      */
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationStepHandler prepareStep, final int operationId) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ModelController.ACCESS_PERMISSION);
-        }
-
-        // Get the primary context to delegate the reads to
-        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
-        if(delegateContext == null) {
-            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
-            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
-        }
+        final AbstractOperationContext delegateContext = getDelegateContext(operationId);
         CurrentOperationIdHolder.setCurrentOperationID(operationId);
         try {
             return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
@@ -250,32 +254,14 @@ class ModelControllerImpl implements ModelController {
     }
 
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ModelController.ACCESS_PERMISSION);
-        }
-        // Get the primary context to delegate the reads to
-        final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
-        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
-        if(delegateContext == null) {
-            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
-            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
-        }
+        final AbstractOperationContext delegateContext = getDelegateContext(CurrentOperationIdHolder.getCurrentOperationID());
         return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
     }
 
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final Resource resource, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ModelController.ACCESS_PERMISSION);
-        }
         // Get the primary context to delegate the reads to
         final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
-        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
-        if(delegateContext == null) {
-            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
-            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
-        }
+        final AbstractOperationContext delegateContext = getDelegateContext(operationId);
         final ManagementModelImpl current = delegateContext.getManagementModel();
         final ManagementModelImpl mgmtModel = new ManagementModelImpl(current.getRootResourceRegistration(), resource, current.capabilityRegistry);
         return executeReadOnlyOperation(operation, mgmtModel, control, prepareStep, delegateContext);
@@ -292,7 +278,7 @@ class ModelControllerImpl implements ModelController {
         };
 
         // Use a read-only context
-        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), control, processState, false, model, delegateContext, this, operationId);
+        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId);
         context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
         context.executeOperation();
 

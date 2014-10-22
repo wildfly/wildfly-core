@@ -120,7 +120,6 @@ import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.DomainControllerManagementInterface;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationEntry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.MasterDomainControllerOperationHandlerService;
 import org.jboss.as.host.controller.mgmt.ServerToHostOperationHandlerFactoryService;
@@ -303,8 +302,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     @Override
     public void registerRemoteHost(final String hostName, final ManagementChannelHandler handler, final Transformers transformers,
-                                   final Long remoteConnectionId, final DomainControllerRuntimeIgnoreTransformationEntry runtimeIgnoreTransformation,
-                                   boolean registerProxyController) throws SlaveRegistrationException {
+                                   final Long remoteConnectionId, final boolean registerProxyController) throws SlaveRegistrationException {
         if (!hostControllerInfo.isMasterDomainController()) {
             throw SlaveRegistrationException.forHostIsNotMaster();
         }

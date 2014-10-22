@@ -30,6 +30,7 @@ import java.io.IOException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.msc.service.ServiceName;
 
@@ -73,10 +74,8 @@ public interface MasterDomainControllerClient extends ModelControllerClient {
      * Pulls down missing data from the domain controller and applies it to the local model as a result of a change to a/an added server-config
      *
      * @param context the operation context
-     * @param serverName the name of the server
-     * @param serverGroupName the name of the group
-     * @param socketBindingGroupName the name of the socket binding group override
+     * @param domain the original domain model before the change
      * @throws OperationFailedException
      */
-    void pullDownDataForUpdatedServerConfigAndApplyToModel(OperationContext context, String serverName, String serverGroupName, String socketBindingGroupName) throws OperationFailedException;
+    void fetchAndSyncMissingConfiguration(OperationContext context, Resource original) throws OperationFailedException;
 }
