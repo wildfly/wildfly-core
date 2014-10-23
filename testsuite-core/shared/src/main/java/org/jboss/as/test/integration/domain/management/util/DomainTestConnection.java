@@ -230,6 +230,7 @@ class DomainTestConnection implements Closeable {
                 public void handleClose(final Channel old, final IOException e) {
                     synchronized (ChannelStrategy.this) {
                         if(ChannelStrategy.this.channel == old) {
+                            ChannelStrategy.this.handler.handleClose(old, e);
                             ChannelStrategy.this.channel = null;
                         }
                     }

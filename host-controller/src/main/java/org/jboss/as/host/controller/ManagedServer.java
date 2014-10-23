@@ -411,32 +411,36 @@ class ManagedServer {
      * @param shuttingDown whether the server inventory is shutting down
      * @return whether the registration can be removed from the domain-controller
      */
-    synchronized boolean callbackUnregistered(final TransactionalProtocolClient old, final boolean shuttingDown) {
-        // Disconnect the remote connection
+    boolean callbackUnregistered(final TransactionalProtocolClient old, final boolean shuttingDown) {
+        // Disconnect the remote connection.
+        // WFCORE-196 Do this out of the sync block to avoid deadlocks where in-flight requests can't
+        // be informed that the channel has closed
         protocolClient.disconnected(old);
 
-        // If the connection dropped without us stopping the process ask for reconnection
-        if(! shuttingDown && requiredState == InternalState.SERVER_STARTED) {
-            final InternalState state = internalState;
-            if(state == InternalState.PROCESS_STOPPED
-                    || state == InternalState.PROCESS_STOPPING
-                    || state == InternalState.STOPPED) {
-                // In case it stopped we don't reconnect
+        synchronized (this) {
+            // If the connection dropped without us stopping the process ask for reconnection
+            if (!shuttingDown && requiredState == InternalState.SERVER_STARTED) {
+                final InternalState state = internalState;
+                if (state == InternalState.PROCESS_STOPPED
+                        || state == InternalState.PROCESS_STOPPING
+                        || state == InternalState.STOPPED) {
+                    // In case it stopped we don't reconnect
+                    return true;
+                }
+                // In case we are reloading, it will reconnect automatically
+                if (state == InternalState.RELOADING) {
+                    return true;
+                }
+                try {
+                    ROOT_LOGGER.logf(DEBUG_LEVEL, "trying to reconnect to %s current-state (%s) required-state (%s)", serverName, state, requiredState);
+                    internalSetState(new ReconnectTask(), state, InternalState.SEND_STDIN);
+                } catch (Exception e) {
+                    ROOT_LOGGER.logf(DEBUG_LEVEL, e, "failed to send reconnect task");
+                }
+                return false;
+            } else {
                 return true;
             }
-            // In case we are reloading, it will reconnect automatically
-            if (state == InternalState.RELOADING) {
-                return true;
-            }
-            try {
-                ROOT_LOGGER.logf(DEBUG_LEVEL, "trying to reconnect to %s current-state (%s) required-state (%s)", serverName, state, requiredState);
-                internalSetState(new ReconnectTask(), state, InternalState.SEND_STDIN);
-            } catch (Exception e) {
-                ROOT_LOGGER.logf(DEBUG_LEVEL, e, "failed to send reconnect task");
-            }
-            return false;
-        } else {
-            return true;
         }
     }
 
