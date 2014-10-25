@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.logging.Handler;
 
+import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.logging.Target;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -838,7 +839,7 @@ public interface LoggingLogger extends BasicLogger {
      * @return an {@link OperationFailedException} for the error
      */
     @Message(id = 79, value = "Failed to read the log file '%s'")
-    OperationFailedException failedToReadLogFile(@Cause Throwable cause, String name);
+    RuntimeException failedToReadLogFile(@Cause Throwable cause, String name);
 
     /**
      * Creates an exception indicating the file was found in the log directory.
@@ -848,8 +849,8 @@ public interface LoggingLogger extends BasicLogger {
      *
      * @return an {@link OperationFailedException} for the error
      */
-    @Message(id = 80, value = "File '%s' was not found and cannot be found in the %s directory property.")
-    OperationFailedException logFileNotFound(String name, String directoryProperty);
+    @Message(id = 80, value = "File '%s' was not found and cannot be found in the %s directory.")
+    NoSuchResourceException logFileNotFound(String name, String directoryProperty);
 
     /**
      * Creates an exception indicating the user cannot read the file.
@@ -880,4 +881,20 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 83, value = "Path '%s' is a directory and cannot be used as a log file.")
     OperationFailedException invalidLogFile(String path);
+
+    /**
+     * Create a failure description message indicating that the resource of given type can not be registered.
+     *
+     * @return an {@link UnsupportedOperationException} for the error
+     */
+    @Message(id = 84, value = "Resources of type %s cannot be registered")
+    UnsupportedOperationException cannotRegisterResourceOfType(String childType);
+
+    /**
+     * Create a failure description message indicating that the resource of given type can not be removed.
+     *
+     * @return an {@link UnsupportedOperationException} for the error
+     */
+    @Message(id = 85, value = "Resources of type %s cannot be removed")
+    UnsupportedOperationException cannotRemoveResourceOfType(String childType);
 }

@@ -203,7 +203,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops,
                 new FailedOperationTransformationConfig()
                         .addFailedAttribute(SUBSYSTEM_ADDRESS,
-                                new NewAttributesConfig(LoggingRootResource.ATTRIBUTES))
+                                new NewAttributesConfig(LoggingResourceDefinition.ATTRIBUTES))
                         .addFailedAttribute(createRootLoggerAddress(),
                                 new RejectExpressionsConfig(RootLoggerResourceDefinition.EXPRESSION_ATTRIBUTES))
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(LoggerResourceDefinition.LOGGER_PATH),
@@ -299,7 +299,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops,
                 new FailedOperationTransformationConfig()
                         .addFailedAttribute(SUBSYSTEM_ADDRESS,
-                                new NewAttributesConfig(LoggingRootResource.ATTRIBUTES))
+                                new NewAttributesConfig(LoggingResourceDefinition.ATTRIBUTES))
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(FileHandlerResourceDefinition.FILE_HANDLER_PATH),
                                 new NewAttributesConfig(FileHandlerResourceDefinition.NAMED_FORMATTER))
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
