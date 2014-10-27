@@ -31,7 +31,7 @@ popd
 
 if /i "%RESOLVED_JBOSS_HOME%" NEQ "%SANITIZED_JBOSS_HOME%" (
    echo.
-   echo   WARNING:  JBOSS_HOME may be pointing to a different installation - unpredictable results may occur.
+   echo   WARNING: The JBOSS_HOME ("%SANITIZED_JBOSS_HOME%") that this script uses points to a different installation to the one that this script resides in ("%RESOLVED_JBOSS_HOME%"). Unpredictable results may occur.
    echo.
    echo       JBOSS_HOME: "%JBOSS_HOME%"
    echo.
