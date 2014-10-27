@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import java.security.Permission;
 import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -30,6 +31,7 @@ import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.registry.NotificationHandlerRegistration;
+import org.jboss.as.controller.security.ControllerPermission;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -40,10 +42,10 @@ import org.jboss.dmr.ModelNode;
 public interface ModelController {
 
     /**
-     * A {@link RuntimePermission} needed to access a {@link ModelController} via {@link org.jboss.msc.service.Service#getValue()} or
-     * to invoke its methods. The name of the necessary {@code RuntimePermission} is "{@code canAccessModelController}."
+     * A {@link org.jboss.as.controller.security.ControllerPermission} needed to access a {@link ModelController} via {@link org.jboss.msc.service.Service#getValue()} or
+     * to invoke its methods. The name of the permission is "{@code canAccessModelController}."
      */
-    RuntimePermission ACCESS_PERMISSION = new RuntimePermission("canAccessModelController");
+    Permission ACCESS_PERMISSION = ControllerPermission.CAN_ACCESS_MODEL_CONTROLLER;
 
     /**
      * Execute an operation, sending updates to the given handler. This method is not intended to be invoked directly

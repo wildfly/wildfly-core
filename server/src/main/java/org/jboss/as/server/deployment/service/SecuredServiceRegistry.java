@@ -1,11 +1,13 @@
 package org.jboss.as.server.deployment.service;
 
+import org.jboss.as.server.security.ServerPermission;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
 
 import java.security.AccessController;
+import java.security.Permission;
 import java.util.List;
 
 /**
@@ -15,7 +17,10 @@ import java.util.List;
  */
 public class SecuredServiceRegistry implements ServiceRegistry {
 
-    public static final RuntimePermission PERMISSION = new RuntimePermission("org.jboss.as.server.deployment.service.USE_SERVICE_REGISTRY");
+    /**
+     * A {@link org.jboss.as.server.security.ServerPermission} needed to use {@link org.jboss.as.server.deployment.service.SecuredServiceRegistry}, i.e. invoke its methods. The name of the permission is "{@code useServiceRegistry}."
+     */
+    public static final Permission PERMISSION = ServerPermission.USE_SERVICE_REGISTRY;
 
     private final ServiceRegistry delegate;
 

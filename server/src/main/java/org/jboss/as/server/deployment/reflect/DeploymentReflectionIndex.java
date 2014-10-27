@@ -22,11 +22,11 @@
 
 package org.jboss.as.server.deployment.reflect;
 
-import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.security.ServerPermission;
 
 /**
  * A reflection index for a deployment.
@@ -39,8 +39,6 @@ public final class DeploymentReflectionIndex {
     DeploymentReflectionIndex() {
     }
 
-    private static final Permission DEPLOYMENT_REFLECTION_INDEX_PERMISSION = new RuntimePermission("createDeploymentReflectionIndex");
-
     /**
      * Construct a new instance.
      *
@@ -49,7 +47,7 @@ public final class DeploymentReflectionIndex {
     public static DeploymentReflectionIndex create() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(DEPLOYMENT_REFLECTION_INDEX_PERMISSION);
+            sm.checkPermission(ServerPermission.CREATE_DEPLOYMENT_REFLECTION_INDEX);
         }
         return new DeploymentReflectionIndex();
     }

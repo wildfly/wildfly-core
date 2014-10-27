@@ -24,6 +24,7 @@ package org.jboss.as.controller;
 
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.security.ControllerPermission;
 import org.jboss.as.core.security.AccessMechanism;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -33,9 +34,6 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class AccessAuditContext {
-
-    private static final RuntimePermission GET_ACCESS_AUDIT_CONTEXT = new RuntimePermission(
-            "org.jboss.as.controller.GET_ACCESS_AUDIT_CONTEXT");
 
     private static ThreadLocal<AccessAuditContext> contextThreadLocal = new ThreadLocal<AccessAuditContext>();
 
@@ -71,7 +69,7 @@ public class AccessAuditContext {
     @Deprecated
     public static AccessAuditContext currentAccessAuditContext() {
         if (WildFlySecurityManager.isChecking()) {
-            System.getSecurityManager().checkPermission(GET_ACCESS_AUDIT_CONTEXT);
+            System.getSecurityManager().checkPermission(ControllerPermission.GET_CURRENT_ACCESS_AUDIT_CONTEXT);
         }
         return contextThreadLocal.get();
     }
