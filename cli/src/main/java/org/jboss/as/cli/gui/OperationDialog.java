@@ -44,6 +44,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
 import org.jboss.as.cli.gui.ManagementModelNode.UserObject;
+import org.jboss.as.cli.gui.component.BrowsePanel;
 import org.jboss.as.cli.gui.component.ListEditor;
 import org.jboss.as.cli.gui.component.WordWrapLabel;
 import org.jboss.dmr.ModelNode;
@@ -378,6 +379,10 @@ public class OperationDialog extends JDialog {
                 return ((JLabel)valueComponent).getText();
             }
 
+            if (valueComponent instanceof BrowsePanel) {
+                return ((BrowsePanel)valueComponent).getText();
+            }
+
             return null;
         }
 
@@ -396,6 +401,8 @@ public class OperationDialog extends JDialog {
             } else if (type == ModelType.LIST) {
                 ListEditor listEditor = new ListEditor(OperationDialog.this);
                 this.valueComponent = listEditor;
+            } else if (type == ModelType.BYTES) {
+                this.valueComponent = new BrowsePanel(OperationDialog.this);
             } else {
                 JTextField textField = new JTextField(30);
                 this.valueComponent = textField;
@@ -431,6 +438,10 @@ public class OperationDialog extends JDialog {
 
             if (valueComponent instanceof JComboBox) {
                 ((JComboBox)valueComponent).setSelectedItem(valueToSet.asString());
+            }
+
+            if (valueComponent instanceof BrowsePanel) {
+                ((BrowsePanel)valueComponent).setText(valueToSet.asString());
             }
         }
 

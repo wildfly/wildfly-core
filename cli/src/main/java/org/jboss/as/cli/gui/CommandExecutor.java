@@ -19,11 +19,16 @@
 package org.jboss.as.cli.gui;
 
 import java.awt.Cursor;
+import java.io.File;
 import java.io.IOException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
+import org.jboss.as.cli.Util;
+import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 
 /**
  * This class takes a command-line cli command and submits it to the server.
@@ -64,23 +69,56 @@ public class CommandExecutor {
      */
     public synchronized ModelNode doCommand(String command) throws CommandFormatException, IOException {
         ModelNode request = cmdCtx.buildRequest(command);
-        return execute(command, request);
+        return execute(request, isSlowCommand(command));
     }
 
+    /**
+     * User-initiated commands use this method.
+     *
+     * @param command The CLI command
+     * @return A Response object containing the command line, DMR request, and DMR response
+     * @throws CommandFormatException
+     * @throws IOException
+     */
     public synchronized Response doCommandFullResponse(String command) throws CommandFormatException, IOException {
         ModelNode request = cmdCtx.buildRequest(command);
-        ModelNode response = execute(command, request);
+        boolean replacedBytes = replaceFilePathsWithBytes(request);
+        ModelNode response = execute(request, isSlowCommand(command) || replacedBytes);
         return new Response(command, request, response);
     }
 
-    private ModelNode execute(String command, ModelNode request) throws IOException {
+    // For any request params that are of type BYTES, replace the file path with the bytes from the file
+    private boolean replaceFilePathsWithBytes(ModelNode request) throws CommandFormatException, IOException {
+        boolean didReplacement = false;
+        ModelNode opDesc = request.clone();
+        String opName = opDesc.get("operation").asString();
+        opDesc.get("operation").set("read-operation-description");
+        opDesc.get("name").set(opName);
+        ModelNode response = execute(opDesc, false);
+        ModelNode requestProps = response.get("result", "request-properties");
+        for (Property prop : requestProps.asPropertyList()) {
+            if (ModelType.valueOf(prop.getValue().get("type").asString()) == ModelType.BYTES) {
+                String filePath = request.get(prop.getName()).asString();
+                File localFile = new File(filePath);
+                try {
+                    request.get(prop.getName()).set(Util.readBytes(localFile));
+                    didReplacement = true;
+                } catch (OperationFormatException e) {
+                    throw new CommandFormatException(e);
+                }
+            }
+        }
+        return didReplacement;
+    }
+
+    private ModelNode execute(ModelNode request, boolean useWaitCursor) throws IOException {
         try {
-            if (isSlowCommand(command)) {
+            if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             }
             return client.execute(request);
         } finally {
-            if (isSlowCommand(command)) {
+            if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getDefaultCursor());
             }
         }

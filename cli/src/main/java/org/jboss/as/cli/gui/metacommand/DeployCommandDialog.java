@@ -28,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.IOException;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -41,6 +40,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
 import org.jboss.as.cli.gui.CliGuiContext;
+import org.jboss.as.cli.gui.component.BrowseButton;
 import org.jboss.as.cli.gui.component.HelpButton;
 import org.jboss.as.cli.gui.component.ServerGroupChooser;
 
@@ -127,19 +127,7 @@ public class DeployCommandDialog extends JDialog implements ActionListener {
         inputPanel.add(pathField, gbConst);
 
         addStrut();
-        JButton browse = new JButton("Browse ...");
-        browse.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                int returnVal = fileChooser.showOpenDialog(DeployCommandDialog.this);
-                if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    try {
-                        pathField.setText(fileChooser.getSelectedFile().getCanonicalPath());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+        JButton browse = new BrowseButton(DeployCommandDialog.this, pathField);
         gbConst.gridwidth = GridBagConstraints.REMAINDER;
         inputPanel.add(browse, gbConst);
 
