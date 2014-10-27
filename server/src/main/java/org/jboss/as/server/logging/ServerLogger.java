@@ -1092,4 +1092,10 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 220, value = "Server shutdown has been requested.")
     void shutdownHookInvoked();
+
+    @Message(id = 221, value="Illegal permission name '%s'")
+    IllegalArgumentException illegalPermissionName(String name);
+
+    @Message(id = 222, value="Illegal permission actions '%s'")
+    IllegalArgumentException illegalPermissionActions(String actions);
 }

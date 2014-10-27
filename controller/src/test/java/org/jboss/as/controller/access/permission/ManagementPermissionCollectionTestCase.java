@@ -30,6 +30,7 @@ import java.security.Permission;
 import java.util.Enumeration;
 
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.security.ControllerPermission;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,7 +59,7 @@ public class ManagementPermissionCollectionTestCase {
         } catch (IllegalArgumentException ignored) { /* expected */ }
 
         try {
-            permissionCollection.add(new RuntimePermission("bad"));
+            permissionCollection.add(new ControllerPermission("bad"));
             fail();
         } catch (IllegalArgumentException ignored) { /* expected */ }
     }

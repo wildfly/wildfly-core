@@ -3287,4 +3287,10 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 380, value="Attribute '%s' needs to be set or passed before attribute '%s' can be correctly set")
     OperationFailedException requiredAttributeNotSet(String required, String name);
+
+    @Message(id = 381, value="Illegal permission name '%s'")
+    IllegalArgumentException illegalPermissionName(String name);
+
+    @Message(id = 382, value="Illegal permission actions '%s'")
+    IllegalArgumentException illegalPermissionActions(String actions);
 }
