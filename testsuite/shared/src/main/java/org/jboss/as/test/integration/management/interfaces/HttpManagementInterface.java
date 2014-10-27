@@ -29,8 +29,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -38,19 +36,21 @@ import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.params.AuthPolicy;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.jboss.dmr.ModelNode;
 
@@ -111,26 +111,19 @@ public class HttpManagementInterface implements ManagementInterface {
     }
 
     private static HttpClient createHttpClient(String host, int port, String username, String password) {
-        PoolingClientConnectionManager connectionPool = new PoolingClientConnectionManager();
-        DefaultHttpClient httpClient = new DefaultHttpClient(connectionPool);
-        SchemeRegistry schemeRegistry = httpClient.getConnectionManager().getSchemeRegistry();
-        schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-        try {
-            schemeRegistry.register(new Scheme("https", 443, new SSLSocketFactory(new TrustStrategy() {
-                @Override
-                public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                    return true;
-                }
-            }, new AllowAllHostnameVerifier())));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        httpClient.setHttpRequestRetryHandler(new StandardHttpRequestRetryHandler(5, true));
-        httpClient.getCredentialsProvider().setCredentials(
-                new AuthScope(host, port, MANAGEMENT_REALM, AuthPolicy.DIGEST),
-                new UsernamePasswordCredentials(username, password)
-        );
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                        .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                        .register("https", new SSLConnectionSocketFactory(SSLContexts.createDefault(), new AllowAllHostnameVerifier()))
+                        .build();
+        BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(new AuthScope(host, port, MANAGEMENT_REALM, AuthSchemes.DIGEST),
+                        new UsernamePasswordCredentials(username, password));
 
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
+                .setRetryHandler(new StandardHttpRequestRetryHandler(5,true))
+                .setDefaultCredentialsProvider(credentialsProvider)
+                .build();
         return httpClient;
     }
 
