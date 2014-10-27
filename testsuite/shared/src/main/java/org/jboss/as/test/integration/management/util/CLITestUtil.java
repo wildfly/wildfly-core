@@ -72,6 +72,14 @@ public class CLITestUtil {
         return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, null, null, in, out);
     }
 
+    public static CommandContext getCommandContext(String protocol, String address, int port)
+            throws CliInitializationException {
+        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
+        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
+        setJBossCliConfig();
+        return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port), null, null);
+    }
+
     public static CommandContext getCommandContext(OutputStream out) throws CliInitializationException {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
         org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());

@@ -45,7 +45,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -182,7 +182,7 @@ public class HTTPSManagementInterfaceTestCase {
         }
         reload();
 
-        DefaultHttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = HttpClients.createDefault();
         URL mgmtURL = new URL("http", DomainTestSupport.masterAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX);
 
         try {
