@@ -32,16 +32,16 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
@@ -59,7 +59,7 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
     private final PathElement pathElement;
     private final String childType;
     private final ContentRepository contentRepository;
-    private final Map<String, ManagedContent> content = new HashMap<String, ManagedContent>();
+    private final Map<String, ManagedContent> content = new TreeMap<String, ManagedContent>();
     private final ModelNode model = new ModelNode();
     private final MessageDigest messageDigest;
 
