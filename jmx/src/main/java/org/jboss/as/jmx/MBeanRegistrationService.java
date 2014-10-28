@@ -97,11 +97,7 @@ public class MBeanRegistrationService<T> implements Service<Void> {
             }
             try {
                 ROOT_LOGGER.debugf("Registering [%s] with name [%s]", value, objectName);
-                if (mBeanServer instanceof MBeanServerExt) {
-                    MBeanServerExt.class.cast(mBeanServer).registerMBeanInternal(value, objectName);
-                } else {
-                    mBeanServer.registerMBean(value, objectName);
-                }
+                mBeanServer.registerMBean(value, objectName);
             } catch (Exception e) {
                 throw ROOT_LOGGER.mbeanRegistrationFailed(e, name);
             }
