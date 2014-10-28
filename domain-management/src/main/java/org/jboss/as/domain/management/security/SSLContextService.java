@@ -23,9 +23,13 @@ package org.jboss.as.domain.management.security;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Set;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
@@ -49,10 +53,14 @@ public class SSLContextService implements Service<SSLContext> {
     private InjectedValue<TrustManager[]> injectedtrustManagers = new InjectedValue<TrustManager[]>();
 
     private volatile String protocol;
+    private volatile Set<String> enabledCipherSuites;
+    private volatile Set<String> enabledProtocols;
     private volatile SSLContext theSSLContext;
 
-    SSLContextService(final String protocol) {
+    SSLContextService(final String protocol, final Set<String> enabledCipherSuites, final Set<String> enabledProtocols) {
         this.protocol = protocol;
+        this.enabledCipherSuites = enabledCipherSuites;
+        this.enabledProtocols = enabledProtocols;
     }
 
     public String getProtocol() {
@@ -78,6 +86,36 @@ public class SSLContextService implements Service<SSLContext> {
             SSLContext sslContext = SSLContext.getInstance(protocol);
             sslContext.init(keyManagers, trustManagers, null);
 
+            if (enabledCipherSuites.isEmpty() != true || enabledProtocols.isEmpty() != true) {
+                SSLParameters parameters = sslContext.getSupportedSSLParameters();
+
+                String[] commonCiphers;
+                if (enabledCipherSuites.isEmpty()) {
+                    commonCiphers = new String[0];
+                } else {
+                    commonCiphers = calculateCommon(parameters.getCipherSuites(), enabledCipherSuites);
+                    // Not valid to be empty now as there was an attempt to find a common set.
+                    if (commonCiphers.length == 0) {
+                        throw DomainManagementLogger.ROOT_LOGGER.noCipherSuitesInCommon(
+                                Arrays.asList(parameters.getCipherSuites()).toString(), enabledCipherSuites.toString());
+                    }
+                }
+
+                String[] commonProtocols;
+                if (enabledProtocols.isEmpty()) {
+                    commonProtocols = new String[0];
+                } else {
+                    commonProtocols = calculateCommon(parameters.getProtocols(), enabledProtocols);
+                    // Not valid to be empty now as there was an attempt to find a common set.
+                    if (commonProtocols.length == 0) {
+                        throw DomainManagementLogger.ROOT_LOGGER.noProtocolsInCommon(Arrays.asList(parameters.getProtocols())
+                                .toString(), enabledProtocols.toString());
+                    }
+                }
+
+                sslContext = new WrapperSSLContext(sslContext, commonCiphers, commonProtocols);
+            }
+
             this.theSSLContext = sslContext;
 
         } catch (NoSuchAlgorithmException e) {
@@ -86,6 +124,18 @@ public class SSLContextService implements Service<SSLContext> {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
         }
     }
+
+    private String[] calculateCommon(String[] supported, Set<String> configured) {
+        ArrayList<String> matched = new ArrayList<String>();
+        for (String current : supported) {
+            if (configured.contains(current)) {
+                matched.add(current);
+            }
+        }
+
+        return matched.toArray(new String[matched.size()]);
+    }
+
 
     @Override
     public void stop(final StopContext context) {
