@@ -97,7 +97,8 @@ public class CommandExecutor {
         ModelNode response = execute(opDesc, false);
         ModelNode requestProps = response.get("result", "request-properties");
         for (Property prop : requestProps.asPropertyList()) {
-            if (ModelType.valueOf(prop.getValue().get("type").asString()) == ModelType.BYTES) {
+            ModelNode typeDesc = prop.getValue().get("type");
+            if (typeDesc.getType() == ModelType.TYPE && typeDesc.asType() == ModelType.BYTES) {
                 String filePath = request.get(prop.getName()).asString();
                 File localFile = new File(filePath);
                 try {
