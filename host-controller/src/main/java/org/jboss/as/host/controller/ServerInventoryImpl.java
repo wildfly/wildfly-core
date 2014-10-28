@@ -617,8 +617,8 @@ public class ServerInventoryImpl implements ServerInventory {
         final Map<PathAddress, ModelVersion> subsystems = TransformerRegistry.resolveVersions(extensionRegistry);
         final ModelVersion modelVersion = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
         //We don't need any transformation between host and server
-        final TransformationTarget target = TransformationTargetImpl.create(extensionRegistry.getTransformerRegistry(),
-                modelVersion, subsystems, null, TransformationTarget.TransformationTargetType.SERVER);
+        final TransformationTarget target = TransformationTargetImpl.create(hostControllerName, extensionRegistry.getTransformerRegistry(),
+                modelVersion, subsystems, TransformationTarget.TransformationTargetType.SERVER);
         return new ManagedServer(hostControllerName, serverName, authKey, processControllerClient, managementURI, target);
     }
 

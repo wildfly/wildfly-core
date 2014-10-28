@@ -124,6 +124,29 @@ public interface Transformers {
         }
 
         /**
+         * Creates a ResourceTransformationContext
+         *
+         * @param target the transformation target
+         * @param model the model
+         * @param registration the resource registration
+         * @param resolver the expression resolver
+         * @param runningMode the server running mode
+         * @param type the process type
+         * @param attachment attachments propagated from the operation context to the created transformer context.
+         *                   This may be {@code null}. In a non-test scenario, this will be added by operation handlers
+         *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
+         *                   ensure themselves that the relevant attachments get set.
+         *
+         * @return the created context
+         */
+        public static ResourceTransformationContext create(TransformationTarget target, Resource model,
+                                                           ImmutableManagementResourceRegistration registration, ExpressionResolver resolver,
+                                                           RunningMode runningMode, ProcessType type, TransformerOperationAttachment attachment,
+                                                           Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) {
+            return ResourceTransformationContextImpl.create(target, model, registration, runningMode, type, attachment, ignoredTransformationRegistry);
+        }
+
+        /**
          * Create a local transformer, which will use the default transformation rules, however still respect the
          * ignored resource transformation.
          *

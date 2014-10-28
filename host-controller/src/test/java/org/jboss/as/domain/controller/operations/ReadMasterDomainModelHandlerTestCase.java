@@ -51,7 +51,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
-import org.jboss.as.controller.transform.TransformationTarget.IgnoredTransformationRegistry;
 import org.jboss.as.controller.transform.TransformationTarget.TransformationTargetType;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
@@ -125,23 +124,28 @@ public class ReadMasterDomainModelHandlerTestCase {
     }
 
 
-    private Resource transformResource(TransformerRegistry registry, Resource resourceRoot, ManagementResourceRegistration resourceRegistration, IgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
-        final TransformationTarget target = create(registry, ModelVersion.create(1), ignoredTransformationRegistry);
-        final ResourceTransformationContext context = createContext(registry, resourceRoot, target, resourceRegistration);
+    private Resource transformResource(TransformerRegistry registry, Resource resourceRoot,
+                                       ManagementResourceRegistration resourceRegistration,
+                                       Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
+        final TransformationTarget target = create(registry, ModelVersion.create(1));
+        final ResourceTransformationContext context = createContext(registry, resourceRoot, target, resourceRegistration, ignoredTransformationRegistry);
         return getTransfomers(target).transformResource(context, resourceRoot);
     }
 
-    private ResourceTransformationContext createContext(TransformerRegistry registry, Resource resourceRoot, TransformationTarget target, ManagementResourceRegistration resourceRegistration) {
+    private ResourceTransformationContext createContext(TransformerRegistry registry, Resource resourceRoot,
+                TransformationTarget target, ManagementResourceRegistration resourceRegistration,
+                Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) {
         return Transformers.Factory.create(target, resourceRoot, resourceRegistration,
-                ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER, null);
+                ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER, null, ignoredTransformationRegistry);
+
     }
 
     private Transformers getTransfomers(final TransformationTarget target) {
         return Transformers.Factory.create(target);
     }
 
-    protected TransformationTarget create(final TransformerRegistry registry, ModelVersion version, IgnoredTransformationRegistry ignoredTransformationRegistry) {
-        return TransformationTargetImpl.create(registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), ignoredTransformationRegistry, TransformationTargetType.DOMAIN);
+    protected TransformationTarget create(final TransformerRegistry registry, ModelVersion version) {
+        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTargetType.DOMAIN);
     }
 
     private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());

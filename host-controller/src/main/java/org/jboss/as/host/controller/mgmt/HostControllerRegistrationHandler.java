@@ -291,8 +291,8 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 throw failure;
             }
             // Initialize the transformers
-            final TransformationTarget target = TransformationTargetImpl.create(transformerRegistry, ModelVersion.create(major, minor, micro),
-                    Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo, TransformationTarget.TransformationTargetType.HOST);
+            final TransformationTarget target = TransformationTargetImpl.create(hostInfo.getHostName(), transformerRegistry, ModelVersion.create(major, minor, micro),
+                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST);
             final Transformers transformers = Transformers.Factory.create(target);
             try {
                 SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);
@@ -312,7 +312,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             }
             // Remotely resolve the subsystem versions and create the transformation
             registrationContext.processSubsystems(transformers, extensions);
-            registrationContext.operationContext = context;
             // Now run the read-domain model operation
             final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo, transformers, domainController.getExtensionRegistry());
             context.addStep(READ_DOMAIN_MODEL.getOperation(), handler, OperationContext.Stage.MODEL);
@@ -330,7 +329,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         private volatile IOTask<?> task;
         private volatile boolean failed;
         private volatile Transformers transformers;
-        private volatile OperationContext operationContext;
         private ActiveOperation<Void, RegistrationContext> activeOperation;
         private final AtomicBoolean completed = new AtomicBoolean();
 

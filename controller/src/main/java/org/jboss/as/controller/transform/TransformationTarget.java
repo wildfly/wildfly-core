@@ -138,6 +138,7 @@ public interface TransformationTarget {
      *
      * @author Brian Stansberry (c) 2012 Red Hat Inc.
      */
+    @Deprecated
     public interface IgnoredTransformationRegistry {
 
         /**

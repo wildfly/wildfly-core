@@ -46,7 +46,7 @@ import java.util.Set;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.transform.TransformationTarget;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
@@ -62,7 +62,7 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
-public class HostInfo implements TransformationTarget.IgnoredTransformationRegistry {
+public class HostInfo implements Transformers.ResourceIgnoredTransformationRegistry {
 
     /**
      * Create the metadata which gets send to the DC when registering.
@@ -112,7 +112,7 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
     private final String productName;
     private final String productVersion;
     private final Long remoteConnectionId;
-    private final Map<String, IgnoredType> ignoredResources;
+    private final Transformers.ResourceIgnoredTransformationRegistry ignoredResources;
     private final boolean ignoreUnaffectedConfig;
     private final Map<String, ServerConfigInfo> serverConfigInfos;
 
@@ -128,17 +128,7 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
 
-        if (hostInfo.hasDefined(IGNORED_RESOURCES)) {
-            ignoredResources = new HashMap<String, IgnoredType>();
-            for (Property prop : hostInfo.require(IGNORED_RESOURCES).asPropertyList()) {
-                String type = prop.getName();
-                ModelNode model = prop.getValue();
-                IgnoredType ignoredType = model.get(WILDCARD).asBoolean(false) ? new IgnoredType() : new IgnoredType(model.get(NAMES));
-                ignoredResources.put(type, ignoredType);
-            }
-        } else {
-            ignoredResources = null;
-        }
+        ignoredResources = createIgnoredRegistry(hostInfo);
         ignoreUnaffectedConfig = hostInfo.hasDefined(IGNORE_UNUSED_CONFIG) ? hostInfo.get(IGNORE_UNUSED_CONFIG).asBoolean() : false;
         final Map<String, ServerConfigInfo> serverConfigInfos;
         if (ignoreUnaffectedConfig) {
@@ -186,28 +176,13 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
     }
 
     public boolean isResourceTransformationIgnored(final PathAddress address) {
-        //Resource transformation only happens on boot so the list from the slave is up to date
-        if (ignoredResources != null && address.size() > 0) {
-            PathElement firstElement = address.getElement(0);
-            IgnoredType ignoredType = ignoredResources.get(firstElement.getKey());
-            if (ignoredType != null) {
-                if (ignoredType.hasName(firstElement.getValue())) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        // This resource transformation is only used when registering the host
+        // Future operations will send an updated list of ignored-resources
+        return ignoredResources.isResourceTransformationIgnored(address);
     }
 
     public boolean isIgnoreUnaffectedConfig() {
         return ignoreUnaffectedConfig;
-    }
-
-    @Override
-    public boolean isOperationTransformationIgnored(PathAddress address) {
-        // Currently the master receives no notification from slaves when changes are made
-        // to the IgnoredResourceRegistry post-boot, so we can't ignore operation transformation
-        return false;
     }
 
     public Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> getServerConfigInfos() {
@@ -251,5 +226,39 @@ public class HostInfo implements TransformationTarget.IgnoredTransformationRegis
         }
     }
 
+    public static Transformers.ResourceIgnoredTransformationRegistry createIgnoredRegistry(final ModelNode modelNode) {
+        final Map<String, IgnoredType> ignoredResources = processIgnoredResource(modelNode);
+        return new Transformers.ResourceIgnoredTransformationRegistry() {
+            @Override
+            public boolean isResourceTransformationIgnored(PathAddress address) {
+                if (ignoredResources != null && address.size() > 0) {
+                    PathElement firstElement = address.getElement(0);
+                    IgnoredType ignoredType = ignoredResources.get(firstElement.getKey());
+                    if (ignoredType != null) {
+                        if (ignoredType.hasName(firstElement.getValue())) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        };
+    }
+
+    private static Map<String, IgnoredType> processIgnoredResource(final ModelNode model) {
+
+        if (model.hasDefined(IGNORED_RESOURCES)) {
+            final Map<String, IgnoredType> ignoredResources = new HashMap<>();
+            for (Property prop : model.require(IGNORED_RESOURCES).asPropertyList()) {
+                String type = prop.getName();
+                ModelNode ignoredModel = prop.getValue();
+                IgnoredType ignoredType = ignoredModel.get(WILDCARD).asBoolean(false) ? new IgnoredType() : new IgnoredType(ignoredModel.get(NAMES));
+                ignoredResources.put(type, ignoredType);
+            }
+            return ignoredResources;
+        } else {
+            return null;
+        }
+    }
 
 }

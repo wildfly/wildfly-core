@@ -33,6 +33,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
+import org.jboss.as.host.controller.mgmt.HostInfo;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -65,7 +66,8 @@ public class FetchMissingConfigurationHandler implements OperationStepHandler {
         for (final ServerConfigInfo serverConfig : serverConfigs.values()) {
             ReadMasterDomainModelUtil.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
         }
-        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, false);
+        final Transformers.ResourceIgnoredTransformationRegistry manualExcludes = HostInfo.createIgnoredRegistry(operation);
+        final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, false, manualExcludes);
 
         final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
         context.addStep(handler, OperationContext.Stage.MODEL);

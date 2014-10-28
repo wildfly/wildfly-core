@@ -49,6 +49,7 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
     private final String localHostName;
     private final Resource originalModel;
     private final ExtensionRegistry extensionRegistry;
+    private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
 
     public SyncServerGroupOperationHandler(String localHostName, Resource originalDomainModel, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                                            ExtensionRegistry extensionRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
@@ -56,6 +57,7 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
         this.localHostName = localHostName;
         this.originalModel = originalDomainModel;
         this.extensionRegistry = extensionRegistry;
+        this.ignoredResourceRegistry = ignoredDomainResourceRegistry;
     }
 
     /**
@@ -80,7 +82,13 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
         // Process the original
         ReadMasterDomainModelUtil.processHostModel(rc, original, original.getChild(host), extensionRegistry);
 
-        return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, true);
+        final Transformers.ResourceIgnoredTransformationRegistry delegate = new Transformers.ResourceIgnoredTransformationRegistry() {
+            @Override
+            public boolean isResourceTransformationIgnored(PathAddress address) {
+                return ignoredResourceRegistry.isResourceExcluded(address);
+            }
+        };
+        return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, true, delegate);
     }
 
 }
