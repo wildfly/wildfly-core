@@ -204,8 +204,6 @@ public class ReadMasterDomainModelUtil {
      */
     static void processServerConfig(final Resource root, final RequiredConfigurationHolder requiredConfigurationHolder, final IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo serverConfig, final ExtensionRegistry extensionRegistry) {
 
-        final Set<String> extensions = requiredConfigurationHolder.extensions;
-        final Set<String> profiles = requiredConfigurationHolder.profiles;
         final Set<String> serverGroups = requiredConfigurationHolder.serverGroups;
         final Set<String> socketBindings = requiredConfigurationHolder.socketBindings;
 
@@ -231,32 +229,7 @@ public class ReadMasterDomainModelUtil {
             }
 
             final String profileName = groupModel.get(PROFILE).asString();
-            final PathElement profileElement = PathElement.pathElement(PROFILE, profileName);
-            if (!profiles.contains(profileName) && root.hasChild(profileElement)) {
-                final Resource profile = root.getChild(profileElement);
-
-                if (profile.getModel().hasDefined(INCLUDE)) {
-                    // TODO include is currently disabled
-                }
-
-                profiles.add(profileName);
-                final Set<String> subsystems = new HashSet<>();
-                final Set<String> availableExtensions = extensionRegistry.getExtensionModuleNames();
-                for (final Resource.ResourceEntry subsystem : profile.getChildren(SUBSYSTEM)) {
-                    subsystems.add(subsystem.getName());
-                }
-                for (final String extension : availableExtensions) {
-                    if (extensions.contains(extension)) {
-                        // Skip already processed extensions
-                        continue;
-                    }
-                    for (final String subsystem : extensionRegistry.getAvailableSubsystems(extension).keySet()) {
-                        if (subsystems.contains(subsystem)) {
-                            extensions.add(extension);
-                        }
-                    }
-                }
-            }
+            processProfile(root, profileName, requiredConfigurationHolder, extensionRegistry);
         }
     }
 
@@ -289,17 +262,10 @@ public class ReadMasterDomainModelUtil {
         if (!domain.hasChild(groupElement)) {
             return;
         }
-        final Set<String> profiles = holder.profiles;
-        final Set<String> extensions = holder.extensions;
         final Set<String> socketBindings = holder.socketBindings;
 
         final Resource serverGroup = domain.getChild(groupElement);
         final ModelNode model = serverGroup.getModel();
-
-        final String profile = model.get(PROFILE).asString();
-        if (!profiles.contains(profile)) {
-            profiles.add(profile);
-        }
 
         if (model.hasDefined(SOCKET_BINDING_GROUP)) {
             final String socketBindingGroup = model.get(SOCKET_BINDING_GROUP).asString();
@@ -308,6 +274,19 @@ public class ReadMasterDomainModelUtil {
             }
         }
 
+        final String profile = model.get(PROFILE).asString();
+        processProfile(domain, profile, holder, extensionRegistry);
+
+    }
+
+    private static void processProfile(final Resource domain, final String profile, final RequiredConfigurationHolder holder, final ExtensionRegistry extensionRegistry) {
+        final Set<String> profiles = holder.profiles;
+        final Set<String> extensions = holder.extensions;
+
+        if (profiles.contains(profile)) {
+            return;
+        }
+        profiles.add(profile);
         final PathElement profileElement = PathElement.pathElement(PROFILE, profile);
         if (domain.hasChild(profileElement)) {
             final Resource resource = domain.getChild(profileElement);
@@ -328,7 +307,12 @@ public class ReadMasterDomainModelUtil {
                     }
                 }
             }
+            if (resource.getModel().hasDefined(INCLUDE)) {
+                final String include = resource.getModel().get(INCLUDE).asString();
+                processProfile(domain, include, holder, extensionRegistry);
+            }
         }
+
     }
 
     /**

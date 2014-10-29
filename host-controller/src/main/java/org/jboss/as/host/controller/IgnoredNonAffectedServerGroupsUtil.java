@@ -25,6 +25,7 @@ package org.jboss.as.host.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INITIAL_SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
@@ -151,17 +152,36 @@ public class IgnoredNonAffectedServerGroupsUtil {
 
     private boolean ignoreProfile(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {
         Set<String> seenGroups = new HashSet<>();
+        Set<String> profiles = new HashSet<>();
         for (ServerConfigInfo serverConfig : serverConfigs) {
             if (seenGroups.contains(serverConfig.getServerGroup())) {
                 continue;
             }
             seenGroups.add(serverConfig.getServerGroup());
             Resource serverGroupResource = domainResource.getChild(PathElement.pathElement(SERVER_GROUP, serverConfig.getServerGroup()));
-            if (serverGroupResource.getModel().get(PROFILE).asString().equals(name)) {
+            String profile = serverGroupResource.getModel().get(PROFILE).asString();
+            if (profile.equals(name)) {
                 return false;
             }
+            processProfiles(domainResource, profile, profiles);
         }
-        return true;
+        return !profiles.contains(name);
+    }
+
+    private void processProfiles(final Resource domain, final String profile, final Set<String> profiles) {
+        if (!profiles.contains(profile)) {
+            profiles.add(profile);
+            final PathElement pathElement = PathElement.pathElement(PROFILE, profile);
+            if (domain.hasChild(pathElement)) {
+                final Resource resource = domain.getChild(pathElement);
+                final ModelNode model = resource.getModel();
+
+                if (model.hasDefined(INCLUDE)) {
+                    final String include = model.get(INCLUDE).asString();
+                    processProfiles(domain, include, profiles);
+                }
+            }
+        }
     }
 
     private boolean ignoreServerGroup(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {

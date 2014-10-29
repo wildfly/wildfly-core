@@ -25,10 +25,12 @@ package org.jboss.as.domain.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -84,6 +86,11 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
             final PathElement element = address.getElement(0);
             if (SERVER_GROUP.equals(element.getKey())) {
                 return new SyncModelOperationHandlerWrapper(localHostName, entry.getOperationHandler());
+            } else if (PROFILE.equals(element.getKey())) {
+                // This might just need to wrap the write-attribute(name=include) operation
+                if (WRITE_ATTRIBUTE_OPERATION.equals(operationName)) {
+                    return new SyncModelOperationHandlerWrapper(localHostName, entry.getOperationHandler());
+                }
             }
         } else if (size == 2) {
             // Wrap all configuration operations targeting the server-config directly
@@ -157,8 +164,9 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
             final ModelNode model = serverGroup.getModel();
 
             final String profile = model.require(PROFILE).asString();
-            if (!profiles.contains(profile)) {
-                profiles.add(profile);
+            // Check for missing profiles
+            if (missingProfile(domain, profile, profiles)) {
+                return true;
             }
 
             processSocketBindingGroup(model, socketBindings);
@@ -190,6 +198,26 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
             return true;
         }
         // Looks good!
+        return false;
+    }
+
+    static boolean missingProfile(final Resource domain, String profile, Set<String> profiles) {
+        if (!profiles.contains(profile)) {
+            profiles.add(profile);
+            final PathElement pathElement = PathElement.pathElement(PROFILE, profile);
+            if (domain.hasChild(pathElement)) {
+                final Resource resource = domain.getChild(pathElement);
+                final ModelNode model = resource.getModel();
+                if (model.hasDefined(INCLUDE)) {
+                    final String include = model.get(INCLUDE).asString();
+                    if (missingProfile(domain, include, profiles)) {
+                        return true;
+                    }
+                }
+            } else {
+                return true;
+            }
+        }
         return false;
     }
 
