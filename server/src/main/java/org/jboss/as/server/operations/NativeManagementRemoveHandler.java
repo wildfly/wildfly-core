@@ -27,7 +27,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.domain.management.access.RbacSanityCheckOperation;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -64,8 +63,6 @@ public class NativeManagementRemoveHandler extends AbstractRemoveStepHandler {
         // ManagementRemotingServices.removeManagementChannelServices(context, endpointName, ManagementRemotingServices.MANAGEMENT_CHANNEL);
 
         // Remove management Connector
-        final ModelNode portNode = NativeManagementResourceDefinition.NATIVE_PORT.resolveModelAttribute(context, model);
-        int port = portNode.isDefined() ? portNode.asInt() : 0;
         ManagementRemotingServices.removeConnectorServices(context, ManagementRemotingServices.MANAGEMENT_CONNECTOR);
 
         // We don't remove the endpoint or other remoting services, as it may still be in use by the HTTP upgrade handler.
