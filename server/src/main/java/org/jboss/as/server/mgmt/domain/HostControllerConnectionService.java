@@ -37,7 +37,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -69,8 +68,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private final InjectedValue<Endpoint> endpointInjector = new InjectedValue<Endpoint>();
     private final InjectedValue<ControlledProcessStateService> processStateServiceInjectedValue = new InjectedValue<ControlledProcessStateService>();
 
-    private final int port;
-    private final String hostName;
+    private final URI connectionURI;
     private final String serverName;
     private final String userName;
     private final String serverProcessName;
@@ -80,11 +78,10 @@ public class HostControllerConnectionService implements Service<HostControllerCl
 
     private HostControllerClient client;
 
-    public HostControllerConnectionService(final String hostName, final int port, final String serverName, final String serverProcessName,
+    public HostControllerConnectionService(final URI connectionURI, final String serverName, final String serverProcessName,
                                            final byte[] authKey, final int connectOperationID,
                                            final boolean managementSubsystemEndpoint) {
-        this.port = port;
-        this.hostName = hostName;
+        this.connectionURI= connectionURI;
         this.serverName = serverName;
         this.userName = "=" + serverName;
         this.serverProcessName = serverProcessName;
@@ -98,7 +95,6 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint = endpointInjector.getValue();
         try {
-            final URI connectionURI = new URI("remote://" + NetworkUtils.formatPossibleIpv6Address(hostName) + ":" + port);
             final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, options);

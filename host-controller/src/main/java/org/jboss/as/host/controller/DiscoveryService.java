@@ -22,14 +22,20 @@
 
 package org.jboss.as.host.controller;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
+import org.jboss.as.host.controller.discovery.DomainControllerManagementInterface;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -47,10 +53,10 @@ class DiscoveryService implements Service<Void> {
 
     static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "discovery");
 
-    private final InjectedValue<NetworkInterfaceBinding> interfaceBinding = new InjectedValue<NetworkInterfaceBinding>();
+    private final Map<String, InjectedValue<NetworkInterfaceBinding>> interfaceBindings = new HashMap<String, InjectedValue<NetworkInterfaceBinding>>();
     private final InjectedValue<ExecutorService> executorService = new InjectedValue<ExecutorService>();
     private final List<DiscoveryOption> discoveryOptions;
-    private final int port;
+    private final List<DomainControllerManagementInterface> managementInterfaces;
     private final boolean isMasterDomainController;
 
     /**
@@ -60,19 +66,28 @@ class DiscoveryService implements Service<Void> {
      * @param port the port number of the domain controller
      * @param isMasterDomainController whether or not the local host controller is the master
      */
-    private DiscoveryService(List<DiscoveryOption> discoveryOptions, int port, boolean isMasterDomainController) {
+    private DiscoveryService(List<DiscoveryOption> discoveryOptions, List<DomainControllerManagementInterface> managementInterfaces, boolean isMasterDomainController) {
         this.discoveryOptions = discoveryOptions;
-        this.port = port;
+        this.managementInterfaces = managementInterfaces;
+        for(DomainControllerManagementInterface managementInterface : managementInterfaces) {
+            interfaceBindings.put(managementInterface.getHost(), new InjectedValue<NetworkInterfaceBinding>());
+        }
         this.isMasterDomainController = isMasterDomainController;
     }
 
     static void install(final ServiceTarget serviceTarget, final List<DiscoveryOption> discoveryOptions,
-                        final String interfaceBinding, final int port, final boolean isMasterDomainController) {
-        final DiscoveryService discovery = new DiscoveryService(discoveryOptions, port, isMasterDomainController);
-        serviceTarget.addService(DiscoveryService.SERVICE_NAME, discovery)
-            .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, discovery.executorService)
-            .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceBinding), NetworkInterfaceBinding.class, discovery.interfaceBinding)
-            .install();
+                        final List<DomainControllerManagementInterface> managementInterfaces, final boolean isMasterDomainController) {
+        final DiscoveryService discovery = new DiscoveryService(discoveryOptions, managementInterfaces, isMasterDomainController);
+        ServiceBuilder builder = serviceTarget.addService(DiscoveryService.SERVICE_NAME, discovery)
+                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, discovery.executorService);
+        Set<String> alreadyDefinedInterfaces = new HashSet<String>();
+        for(DomainControllerManagementInterface managementInterface : managementInterfaces) {
+            if(!alreadyDefinedInterfaces.contains(managementInterface.getAddress())) {
+                builder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(managementInterface.getAddress()), NetworkInterfaceBinding.class, discovery.interfaceBindings.get(managementInterface.getAddress()));
+                alreadyDefinedInterfaces.add(managementInterface.getAddress());
+            }
+        }
+       builder.install();
     }
 
     /** {@inheritDoc} */
@@ -85,9 +100,13 @@ class DiscoveryService implements Service<Void> {
                     if (isMasterDomainController && (discoveryOptions != null)) {
                         // Allow slave host controllers to discover this domain controller using any
                         // of the provided discovery options.
-                        String host = interfaceBinding.getValue().getAddress().getHostAddress();
+
+                        for(DomainControllerManagementInterface managementInterface : managementInterfaces) {
+                            String host = interfaceBindings.get(managementInterface.getAddress()).getValue().getAddress().getHostAddress();
+                            managementInterface.setHost(host);
+                        }
                         for (DiscoveryOption discoveryOption : discoveryOptions) {
-                            discoveryOption.allowDiscovery(host, port);
+                            discoveryOption.allowDiscovery(managementInterfaces);
                         }
                     }
                     context.complete();

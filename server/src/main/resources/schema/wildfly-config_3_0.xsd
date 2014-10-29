@@ -2177,6 +2177,15 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="protocol" type="remote-protocol-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                     The remote domain controller's protocol. If not set, a discovery option must be provided,
+                    or the --cached-dc startup option must be used, or the --admin-only startup option must be used
+                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="security-realm" type="xs:string" use="optional" />
         <xs:attribute name="username" type="xs:string" use="optional" />
         <xs:attribute name="ignore-unused-configuration" type="xs:boolean" default="false">
@@ -2346,6 +2355,13 @@
             <xs:annotation>
                 <xs:documentation>
                     The remote domain controller's port.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="protocol" type="remote-protocol-type" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                     The remote domain controller's protocol.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2942,6 +2958,14 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:simpleType name="remote-protocol-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="remote"/>
+            <xs:enumeration value="http-remoting"/>
+            <xs:enumeration value="https-remoting"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="local-destinationType">
         <xs:attribute name="socket-binding-ref" type="xs:string" use="required">

@@ -23,12 +23,11 @@
 package org.jboss.as.server;
 
 import java.io.Serializable;
-import java.net.InetSocketAddress;
+import java.net.URI;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.remoting.EndpointConfigFactory;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
@@ -60,16 +59,16 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
     private static volatile int initialOperationID;
 
     private final ModelNode endpointConfig;
-    private final InetSocketAddress managementSocket;
+    private final URI managementURI;
     private final String serverName;
     private final String serverProcessName;
     private final byte[] authKey;
 
     private final boolean managementSubsystemEndpoint;
 
-    DomainServerCommunicationServices(ModelNode endpointConfig, InetSocketAddress managementSocket, String serverName, String serverProcessName, byte[] authKey, boolean managementSubsystemEndpoint) {
+    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, byte[] authKey, boolean managementSubsystemEndpoint) {
         this.endpointConfig = endpointConfig;
-        this.managementSocket = managementSocket;
+        this.managementURI = managementURI;
         this.serverName = serverName;
         this.serverProcessName = serverProcessName;
         this.authKey = authKey;
@@ -92,9 +91,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, endpointName, WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null), endpointType, options);
 
             // Install the communication services
-            final int port = managementSocket.getPort();
-            final String host = NetworkUtils.canonize(managementSocket.getAddress().getHostAddress());
-            HostControllerConnectionService service = new HostControllerConnectionService(host, port, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint);
+            HostControllerConnectionService service = new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint);
             Services.addServerExecutorDependency(serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME, service), service.getExecutorInjector(), false)
                     .addDependency(endpointName, Endpoint.class, service.getEndpointInjector())
                     .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getProcessStateServiceInjectedValue())
@@ -109,17 +106,17 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
      * Create a new service activator for the domain server communication services.
      *
      * @param endpointConfig the endpoint configuration
-     * @param managementSocket the management socket address
+     * @param managementURI the management connection URI
      * @param serverName the server name
      * @param serverProcessName the server process name
      * @param authKey the authentication key
      * @param managementSubsystemEndpoint whether to use the mgmt subsystem endpoint or not
      * @return the service activator
      */
-    public static ServiceActivator create(final ModelNode endpointConfig, final InetSocketAddress managementSocket, final String serverName, final String serverProcessName,
+    public static ServiceActivator create(final ModelNode endpointConfig, final URI managementURI, final String serverName, final String serverProcessName,
                                           final byte[] authKey, final boolean managementSubsystemEndpoint) {
 
-        return new DomainServerCommunicationServices(endpointConfig, managementSocket, serverName, serverProcessName, authKey, managementSubsystemEndpoint);
+        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, authKey, managementSubsystemEndpoint);
     }
 
     public interface OperationIDUpdater {

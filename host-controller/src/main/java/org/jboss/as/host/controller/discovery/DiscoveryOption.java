@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.discovery;
 
+import java.util.List;
+
 /**
  * Allow the discovery of a remote domain controller's host and port.
  *
@@ -33,10 +35,9 @@ public interface DiscoveryOption {
      *  Allow a domain controller's host name and port number to be discovered.
      *  This method is intended to be called by the domain controller.
      *
-     *  @param host the host name of the domain controller
-     *  @param port the port number of the domain controller
+     *  @param interfaces the interfaces of the domain controller.
      */
-    void allowDiscovery(String host, int port);
+    void allowDiscovery(List<DomainControllerManagementInterface> interfaces);
 
     /**
      *  Determine the host name and port of the remote domain controller.
@@ -62,4 +63,11 @@ public interface DiscoveryOption {
      * @return the port number
      */
     int getRemoteDomainControllerPort();
+
+    /**
+     *  Gets the protocol to communicate with the domain controller.
+     *
+     * @return the protocol to use.
+     */
+    String getRemoteDomainControllerProtocol();
 }

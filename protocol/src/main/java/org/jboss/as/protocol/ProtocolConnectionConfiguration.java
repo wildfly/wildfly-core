@@ -49,6 +49,8 @@ public class ProtocolConnectionConfiguration {
     private SSLContext sslContext;
     private String clientBindAddress;
     private ProtocolTimeoutHandler timeoutHandler;
+    private boolean sslEnabled = true;
+    private boolean useStartTLS = true;
 
     protected ProtocolConnectionConfiguration() {
         // TODO AS7-6223 propagate clientBindAddress configuration up to end user level and get rid of this system property
@@ -73,6 +75,13 @@ public class ProtocolConnectionConfiguration {
 
     public void setUri(URI uri) {
         this.uri = uri;
+        if("http-remoting".equals(uri.getScheme())) {
+            this.sslEnabled = false;
+            this.useStartTLS = false;
+        } else if ("https-remoting".equals(uri.getScheme())) {
+             this.sslEnabled = true;
+            this.useStartTLS = false;
+        }
     }
 
     public Endpoint getEndpoint() {
@@ -139,6 +148,14 @@ public class ProtocolConnectionConfiguration {
         this.timeoutHandler = timeoutHandler;
     }
 
+    public boolean isSslEnabled() {
+        return sslEnabled;
+    }
+
+    public boolean isUseStartTLS() {
+        return useStartTLS;
+    }
+
     public ProtocolConnectionConfiguration copy() {
         return copy(this);
     }
@@ -166,6 +183,8 @@ public class ProtocolConnectionConfiguration {
         configuration.sslContext = old.sslContext;
         configuration.clientBindAddress = old.clientBindAddress;
         configuration.timeoutHandler = old.timeoutHandler;
+        configuration.sslEnabled = old.sslEnabled;
+        configuration.useStartTLS = old.useStartTLS;
         return configuration;
     }
 

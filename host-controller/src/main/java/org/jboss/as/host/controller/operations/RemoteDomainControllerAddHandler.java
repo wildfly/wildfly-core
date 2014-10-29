@@ -24,9 +24,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.dmr.ModelType.STRING;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -51,6 +48,7 @@ import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.discovery.StaticDiscovery;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
@@ -78,6 +76,14 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
+    public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
+            .setAllowNull(true)
+            .setAllowExpression(true)
+            .setValidator(new EnumValidator(Protocol.class, true, true))
+            .setDefaultValue(Protocol.REMOTE.toModelNode())
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .build();
+
     public static final SimpleAttributeDefinition USERNAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USERNAME, STRING, true)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
@@ -101,7 +107,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
-            .setParameters(PORT, HOST, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
+            .setParameters(PORT, HOST, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY, PROTOCOL)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .build();
 
@@ -144,6 +150,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
 
         PORT.validateAndSet(operation, remoteDC);
         HOST.validateAndSet(operation, remoteDC);
+        PROTOCOL.validateAndSet(operation, remoteDC);
         USERNAME.validateAndSet(operation, remoteDC);
         IGNORE_UNUSED_CONFIG.validateAndSet(operation, remoteDC);
         ADMIN_ONLY_POLICY.validateAndSet(operation, remoteDC);
@@ -179,12 +186,12 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
         hostControllerInfo.setMasterDomainController(false);
         ModelNode hostNode = RemoteDomainControllerAddHandler.HOST.resolveModelAttribute(context, remoteDC);
         ModelNode portNode = RemoteDomainControllerAddHandler.PORT.resolveModelAttribute(context, remoteDC);
+        ModelNode protocolNode = RemoteDomainControllerAddHandler.PROTOCOL.resolveModelAttribute(context, remoteDC);
         if (hostNode.isDefined() && portNode.isDefined()) {
-            // Create a StaticDiscovery option and add it to the host controller info
-            Map<String, ModelNode> properties = new HashMap<String, ModelNode>();
-            properties.put(ModelDescriptionConstants.HOST, hostNode);
-            properties.put(ModelDescriptionConstants.PORT, portNode);
-            StaticDiscovery staticDiscoveryOption = new StaticDiscovery(properties);
+            String host =  hostNode.asString();
+            int port = portNode.asInt();
+            String protocol = protocolNode.asString();
+            StaticDiscovery staticDiscoveryOption = new StaticDiscovery(protocol, host, port);
             hostControllerInfo.addRemoteDomainControllerDiscoveryOption(staticDiscoveryOption);
         }
         ModelNode usernameNode = USERNAME.resolveModelAttribute(context, remoteDC);

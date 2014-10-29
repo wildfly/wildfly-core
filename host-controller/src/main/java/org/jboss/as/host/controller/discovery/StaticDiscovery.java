@@ -22,10 +22,9 @@
 
 package org.jboss.as.host.controller.discovery;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
+import io.undertow.util.NetworkUtils;
+import java.util.List;
 
-import java.util.Map;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
@@ -43,21 +42,17 @@ public class StaticDiscovery implements DiscoveryOption {
     // The port number of the domain controller
     private final int remoteDcPort;
 
-    /**
-     * Create the StaticDiscovery option.
-     *
-     * @param properties map of properties needed to statically discover the domain controller
-     */
-    public StaticDiscovery(Map<String, ModelNode> properties) {
-        ModelNode hostNode = properties.get(HOST);
-        remoteDcHost = (hostNode == null || !hostNode.isDefined()) ? null : hostNode.asString();
+    // The port number of the domain controller
+    private final String remoteDcProtocol;
 
-        ModelNode portNode = properties.get(PORT);
-        remoteDcPort = (portNode == null || !portNode.isDefined()) ? -1 : portNode.asInt();
+    public StaticDiscovery(String protocol, String host, int port) {
+        remoteDcHost = NetworkUtils.formatPossibleIpv6Address(host);
+        remoteDcPort = port;
+        remoteDcProtocol = protocol;
     }
 
     @Override
-    public void allowDiscovery(String host, int port) {
+    public void allowDiscovery(List<DomainControllerManagementInterface> interfaces) {
         // no-op
     }
 
@@ -69,6 +64,8 @@ public class StaticDiscovery implements DiscoveryOption {
                 .validateParameter(StaticDiscoveryResourceDefinition.HOST.getName(), new ModelNode(remoteDcHost));
             StaticDiscoveryResourceDefinition.PORT.getValidator()
                 .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(remoteDcPort));
+            StaticDiscoveryResourceDefinition.PROTOCOL.getValidator()
+                .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(remoteDcProtocol));
         } catch (OperationFailedException e) {
             throw new IllegalStateException(e.getFailureDescription().asString());
         }
@@ -90,7 +87,12 @@ public class StaticDiscovery implements DiscoveryOption {
     }
 
     @Override
+    public String getRemoteDomainControllerProtocol() {
+        return remoteDcProtocol;
+    }
+
+    @Override
     public String toString() {
-        return getClass().getSimpleName() + "{host=" + remoteDcHost + ",port=" + remoteDcPort + '}';
+        return getClass().getSimpleName() + "{protocol=" + remoteDcProtocol + ",host=" + remoteDcHost + ",port=" + remoteDcPort + '}';
     }
 }

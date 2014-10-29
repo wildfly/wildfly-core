@@ -33,7 +33,6 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -88,9 +87,7 @@ public class HostControllerClient implements Closeable {
         this.controller = controller;
     }
 
-    public void reconnect(final String hostName, final int port, final byte[] authKey, final boolean mgmtSubsystemEndpoint) throws IOException, URISyntaxException {
-        final String host = NetworkUtils.formatPossibleIpv6Address(hostName);
-        final URI uri = new URI("remote://" + host + ":" + port);
+    public void reconnect(final URI uri, final byte[] authKey, final boolean mgmtSubsystemEndpoint) throws IOException, URISyntaxException {
         // In case the server is out of sync after the reconnect, set reload required
         final boolean mgmtEndpointChanged = this.managementSubsystemEndpoint != mgmtSubsystemEndpoint;
         connection.asyncReconnect(uri, authKey, new HostControllerConnection.ReconnectCallback() {

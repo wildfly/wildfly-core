@@ -217,12 +217,13 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             if (isPrivileged) {
                                 operationType = ProcessMessageHandler.OperationType.REMOVE;
                                 processName = readUTFZBytes(dataStream);
+                                final String scheme = StreamUtils.readUTFZBytes(dataStream);
                                 final String hostName = readUTFZBytes(dataStream);
                                 final int port = readInt(dataStream);
                                 final boolean managementSubsystemEndpoint = readBoolean(dataStream);
                                 final byte[] asAuthKey = new byte[16];
                                 readFully(dataStream, asAuthKey);
-                                processController.sendReconnectProcess(processName, hostName, port, managementSubsystemEndpoint, asAuthKey);
+                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, asAuthKey);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring reconnect_process message from untrusted source");
                             }

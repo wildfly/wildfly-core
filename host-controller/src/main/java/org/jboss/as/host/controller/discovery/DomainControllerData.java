@@ -34,6 +34,7 @@ public class DomainControllerData {
 
     protected String host;
     protected int port;
+    protected String protocol;
 
     public DomainControllerData() {
     }
@@ -41,10 +42,12 @@ public class DomainControllerData {
     /**
      * Create the DomainControllerData.
      *
+     * @param protocol the protocol used by the domain controller
      * @param host the host name of the domain controller
      * @param port the port number of the domain controller
      */
-    public DomainControllerData(String host, int port) {
+    public DomainControllerData(String protocol, String host, int port) {
+        this.protocol = protocol;
         this.host = host;
         this.port = port;
     }
@@ -68,6 +71,14 @@ public class DomainControllerData {
     }
 
     /**
+     *  Gets the domain controller's protocol.
+     *
+     *  @return the protocol
+     */
+    public String getProtocol() {
+        return protocol;
+    }
+    /**
      * Write the domain controller's data to an output stream.
      *
      * @param outstream the output stream
@@ -76,6 +87,7 @@ public class DomainControllerData {
     public void writeTo(DataOutput outstream) throws Exception {
         S3Util.writeString(host, outstream);
         outstream.writeInt(port);
+        S3Util.writeString(protocol, outstream);
     }
 
     /**
@@ -87,12 +99,15 @@ public class DomainControllerData {
     public void readFrom(DataInput instream) throws Exception {
         host = S3Util.readString(instream);
         port = instream.readInt();
+        protocol = S3Util.readString(instream);
     }
 
+    @Override
     public String toString() {
         StringBuilder sb=new StringBuilder();
         sb.append("master_host=" + getHost());
         sb.append(",master_port=" + getPort());
+        sb.append(",master_protocol=" + getProtocol());
         return sb.toString();
     }
 }

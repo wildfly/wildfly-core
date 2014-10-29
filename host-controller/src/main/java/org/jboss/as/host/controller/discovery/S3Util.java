@@ -1,25 +1,24 @@
 /*
-* JBoss, Home of Professional Open Source.
-* Copyright 2013, Red Hat Middleware LLC, and individual contributors
-* as indicated by the @author tags. See the copyright.txt file in the
-* distribution for a full listing of individual contributors.
-*
-* This is free software; you can redistribute it and/or modify it
-* under the terms of the GNU Lesser General Public License as
-* published by the Free Software Foundation; either version 2.1 of
-* the License, or (at your option) any later version.
-*
-* This software is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this software; if not, write to the Free
-* Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-* 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
-
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2013, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.jboss.as.host.controller.discovery;
 
 import java.io.ByteArrayInputStream;
@@ -28,6 +27,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -64,13 +64,14 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- * Collection of utility methods required for S3 discovery.
- * Some methods here are based on similar ones from JGroups' S3_PING.java.
- * The S3 access code reuses the example shipped by Amazon, like S3_PING.java does.
+ * Collection of utility methods required for S3 discovery. Some methods here are based on similar ones from JGroups'
+ * S3_PING.java. The S3 access code reuses the example shipped by Amazon, like S3_PING.java does.
  *
  * @author Farah Juma
  */
 public class S3Util {
+
+    private static final String SEPARATOR = "####";
 
     /**
      * Get the domain controller data from the given byte buffer.
@@ -79,15 +80,24 @@ public class S3Util {
      * @return the domain controller data
      * @throws Exception
      */
-    public static DomainControllerData domainControllerDataFromByteBuffer(byte[] buffer) throws Exception {
-        if(buffer == null) {
-            return null;
+    public static List<DomainControllerData> domainControllerDataFromByteBuffer(byte[] buffer) throws Exception {
+        List<DomainControllerData> retval = new ArrayList<DomainControllerData>();
+        if (buffer == null) {
+            return retval;
         }
-        DomainControllerData retval = null;
         ByteArrayInputStream in_stream = new ByteArrayInputStream(buffer);
         DataInputStream in = new DataInputStream(in_stream);
-        retval = new DomainControllerData();
-        retval.readFrom(in);
+        String content = SEPARATOR;
+        while (SEPARATOR.equals(content)) {
+            DomainControllerData data = new DomainControllerData();
+            data.readFrom(in);
+            retval.add(data);
+            try {
+                content = readString(in);
+            } catch (EOFException ex) {
+                content = null;
+            }
+        }
         in.close();
         return retval;
     }
@@ -95,17 +105,24 @@ public class S3Util {
     /**
      * Write the domain controller data to a byte buffer.
      *
-     * @param dcData the domain controller data
+     * @param data the domain controller data
      * @return the byte buffer
      * @throws Exception
      */
-    public static byte[] domainControllerDataToByteBuffer(DomainControllerData dcData) throws Exception {
-        byte[] result=null;
-        final ByteArrayOutputStream out_stream=new ByteArrayOutputStream(512);
-        DataOutputStream out=new DataOutputStream(out_stream);
-        dcData.writeTo(out);
-        result=out_stream.toByteArray();
-        out.close();
+    public static byte[] domainControllerDataToByteBuffer(List<DomainControllerData> data) throws Exception {
+        final ByteArrayOutputStream out_stream = new ByteArrayOutputStream(512);
+        byte[] result;
+        try (DataOutputStream out = new DataOutputStream(out_stream)) {
+            Iterator<DomainControllerData> iter = data.iterator();
+            while (iter.hasNext()) {
+                DomainControllerData dcData = iter.next();
+                dcData.writeTo(out);
+                if (iter.hasNext()) {
+                    S3Util.writeString(SEPARATOR, out);
+                }
+            }
+            result = out_stream.toByteArray();
+        }
         return result;
     }
 
@@ -113,33 +130,24 @@ public class S3Util {
      * Sanitize bucket and folder names according to AWS guidelines.
      */
     protected static String sanitize(final String name) {
-        String retval=name;
-        retval=retval.replace('/', '-');
-        retval=retval.replace('\\', '-');
+        String retval = name;
+        retval = retval.replace('/', '-');
+        retval = retval.replace('\\', '-');
         return retval;
     }
 
     /**
-     * Use this helper method to generate pre-signed S3 urls.
-     * You'll need to generate urls for both the put and delete http methods.
-     * Example:
-     * Your AWS Access Key is "abcd".
-     * Your AWS Secret Access Key is "efgh".
-     * You want this node to write its information to "/S3/master/jboss-domain-master-data".
-     * So, your bucket is "S3" and your key is "master/jboss-domain-master-data".
-     * You want this to expire one year from now, or
-     *   (System.currentTimeMillis / 1000) + (60 * 60 * 24 * 365)
-     *   Let's assume that this equals 1316286684
+     * Use this helper method to generate pre-signed S3 urls. You'll need to generate urls for both the put and delete
+     * http methods. Example: Your AWS Access Key is "abcd". Your AWS Secret Access Key is "efgh". You want this node to
+     * write its information to "/S3/master/jboss-domain-master-data". So, your bucket is "S3" and your key is
+     * "master/jboss-domain-master-data". You want this to expire one year from now, or (System.currentTimeMillis /
+     * 1000) + (60 * 60 * 24 * 365) Let's assume that this equals 1316286684
      *
-     * Here's how to generate the value for the pre_signed_put_url property:
-     * String putUrl = S3Util.generatePreSignedUrl("abcd", "efgh", "put",
-     *                                              "S3", "master/jboss-domain-master-data",
-     *                                              1316286684);
+     * Here's how to generate the value for the pre_signed_put_url property: String putUrl =
+     * S3Util.generatePreSignedUrl("abcd", "efgh", "put", "S3", "master/jboss-domain-master-data", 1316286684);
      *
-     * Here's how to generate the value for the pre_signed_delete_url property:
-     * String deleteUrl = S3Util.generatePreSignedUrl("abcd", "efgh", "delete",
-     *                                                 "S3", "master/jboss-domain-master-data",
-     *                                                 1316286684);
+     * Here's how to generate the value for the pre_signed_delete_url property: String deleteUrl =
+     * S3Util.generatePreSignedUrl("abcd", "efgh", "delete", "S3", "master/jboss-domain-master-data", 1316286684);
      *
      * @param awsAccessKey Your AWS Access Key
      * @param awsSecretAccessKey Your AWS Secret Access Key
@@ -150,38 +158,39 @@ public class S3Util {
      * @return The pre-signed url to be used in pre_signed_put_url or pre_signed_delete_url properties
      */
     public static String generatePreSignedUrl(String awsAccessKey, String awsSecretAccessKey, String method,
-                                       String bucket, String key, long expirationDate) {
+            String bucket, String key, long expirationDate) {
         Map headers = new HashMap();
         if (method.equalsIgnoreCase("PUT")) {
             headers.put("x-amz-acl", Arrays.asList("public-read"));
         }
         return Utils.generateQueryStringAuthentication(awsAccessKey, awsSecretAccessKey, method,
-                                                       bucket, key, new HashMap(), headers,
-                                                       expirationDate);
+                bucket, key, new HashMap(), headers,
+                expirationDate);
     }
 
     public static String readString(DataInput in) throws Exception {
-        int b=in.readByte();
-        if(b == 1)
+        int b = in.readByte();
+        if (b == 1) {
             return in.readUTF();
+        }
         return null;
     }
 
     public static void writeString(String s, DataOutput out) throws Exception {
-        if(s != null) {
+        if (s != null) {
             out.write(1);
             out.writeUTF(s);
-        }
-        else {
+        } else {
             out.write(0);
         }
     }
 
     /**
-     * Class that manipulates pre-signed urls. This has been copied from S3_PING.java since
-     * it is not declared with public access in S3_PING.java.
+     * Class that manipulates pre-signed urls. This has been copied from S3_PING.java since it is not declared with
+     * public access in S3_PING.java.
      */
     static class PreSignedUrlParser {
+
         String bucket = "";
         String prefix = "";
 
@@ -215,17 +224,19 @@ public class S3Util {
         }
     }
 
-    /*****************************************************************************************
+    /**
+     * ***************************************************************************************
      *
-     * The remaining classes have been copied from Amazon's sample code.
-     * Note: These nested classes are also defined in S3_PING.java. However, they
-     * are not declared with public access in S3_PING.java and so we have copied
-     * them here and added i18n for the error messages.
+     * The remaining classes have been copied from Amazon's sample code. Note: These nested classes are also defined in
+     * S3_PING.java. However, they are not declared with public access in S3_PING.java and so we have copied them here
+     * and added i18n for the error messages.
      *
-     *****************************************************************************************/
+     ****************************************************************************************
+     */
     static class AWSAuthConnection {
-        public static final String LOCATION_DEFAULT=null;
-        public static final String LOCATION_EU="EU";
+
+        public static final String LOCATION_DEFAULT = null;
+        public static final String LOCATION_EU = "EU";
 
         private String awsAccessKeyId;
         private String awsSecretAccessKey;
@@ -243,48 +254,49 @@ public class S3Util {
         }
 
         public AWSAuthConnection(String awsAccessKeyId, String awsSecretAccessKey, boolean isSecure,
-                                 String server) {
+                String server) {
             this(awsAccessKeyId, awsSecretAccessKey, isSecure, server,
-                 isSecure? Utils.SECURE_PORT : Utils.INSECURE_PORT);
+                    isSecure ? Utils.SECURE_PORT : Utils.INSECURE_PORT);
         }
 
         public AWSAuthConnection(String awsAccessKeyId, String awsSecretAccessKey, boolean isSecure,
-                                 String server, int port) {
+                String server, int port) {
             this(awsAccessKeyId, awsSecretAccessKey, isSecure, server, port, CallingFormat.getSubdomainCallingFormat());
 
         }
 
         public AWSAuthConnection(String awsAccessKeyId, String awsSecretAccessKey, boolean isSecure,
-                                 String server, CallingFormat format) {
+                String server, CallingFormat format) {
             this(awsAccessKeyId, awsSecretAccessKey, isSecure, server,
-                 isSecure? Utils.SECURE_PORT : Utils.INSECURE_PORT,
-                 format);
+                    isSecure ? Utils.SECURE_PORT : Utils.INSECURE_PORT,
+                    format);
         }
 
         /**
-         * Create a new interface to interact with S3 with the given credential and connection
-         * parameters
-         * @param awsAccessKeyId     Your user key into AWS
+         * Create a new interface to interact with S3 with the given credential and connection parameters
+         *
+         * @param awsAccessKeyId Your user key into AWS
          * @param awsSecretAccessKey The secret string used to generate signatures for authentication.
-         * @param isSecure           use SSL encryption
-         * @param server             Which host to connect to.  Usually, this will be s3.amazonaws.com
-         * @param port               Which port to use.
-         * @param format             Type of request Regular/Vanity or Pure Vanity domain
+         * @param isSecure use SSL encryption
+         * @param server Which host to connect to. Usually, this will be s3.amazonaws.com
+         * @param port Which port to use.
+         * @param format Type of request Regular/Vanity or Pure Vanity domain
          */
         public AWSAuthConnection(String awsAccessKeyId, String awsSecretAccessKey, boolean isSecure,
-                                 String server, int port, CallingFormat format) {
-            this.awsAccessKeyId=awsAccessKeyId;
-            this.awsSecretAccessKey=awsSecretAccessKey;
-            this.isSecure=isSecure;
-            this.server=server;
-            this.port=port;
-            this.callingFormat=format;
+                String server, int port, CallingFormat format) {
+            this.awsAccessKeyId = awsAccessKeyId;
+            this.awsSecretAccessKey = awsSecretAccessKey;
+            this.isSecure = isSecure;
+            this.server = server;
+            this.port = port;
+            this.callingFormat = format;
         }
 
         /**
          * Creates a new bucket.
-         * @param bucket   The name of the bucket to create.
-         * @param headers  A Map of String to List of Strings representing the http headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket to create.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response createBucket(String bucket, Map headers) throws IOException {
             return createBucket(bucket, null, headers);
@@ -292,31 +304,32 @@ public class S3Util {
 
         /**
          * Creates a new bucket.
-         * @param bucket   The name of the bucket to create.
+         *
+         * @param bucket The name of the bucket to create.
          * @param location Desired location ("EU") (or null for default).
-         * @param headers  A Map of String to List of Strings representing the http
-         *                 headers to pass (can be null).
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          * @throws IllegalArgumentException on invalid location
          */
         public Response createBucket(String bucket, String location, Map headers) throws IOException {
             String body;
-            if(location == null) {
-                body=null;
-            }
-            else if(LOCATION_EU.equals(location)) {
-                if(!callingFormat.supportsLocatedBuckets())
+            if (location == null) {
+                body = null;
+            } else if (LOCATION_EU.equals(location)) {
+                if (!callingFormat.supportsLocatedBuckets()) {
                     throw HostControllerLogger.ROOT_LOGGER.creatingBucketWithUnsupportedCallingFormat();
-                body="<CreateBucketConstraint><LocationConstraint>" + location + "</LocationConstraint></CreateBucketConstraint>";
-            }
-            else
+                }
+                body = "<CreateBucketConstraint><LocationConstraint>" + location + "</LocationConstraint></CreateBucketConstraint>";
+            } else {
                 throw HostControllerLogger.ROOT_LOGGER.invalidS3Location(location);
+            }
 
             // validate bucket name
-            if(!Utils.validateBucketName(bucket, callingFormat))
+            if (!Utils.validateBucketName(bucket, callingFormat)) {
                 throw HostControllerLogger.ROOT_LOGGER.invalidS3Bucket(bucket);
+            }
 
-            HttpURLConnection request=makeRequest("PUT", bucket, "", null, headers);
-            if(body != null) {
+            HttpURLConnection request = makeRequest("PUT", bucket, "", null, headers);
+            if (body != null) {
                 request.setDoOutput(true);
                 request.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
             }
@@ -325,57 +338,60 @@ public class S3Util {
 
         /**
          * Check if the specified bucket exists (via a HEAD request)
+         *
          * @param bucket The name of the bucket to check
          * @return true if HEAD access returned success
          */
         public boolean checkBucketExists(String bucket) throws IOException {
-            HttpURLConnection response=makeRequest("HEAD", bucket, "", null, null);
-            int httpCode=response.getResponseCode();
+            HttpURLConnection response = makeRequest("HEAD", bucket, "", null, null);
+            int httpCode = response.getResponseCode();
 
-            if(httpCode >= 200 && httpCode < 300)
+            if (httpCode >= 200 && httpCode < 300) {
                 return true;
-            if(httpCode == HttpURLConnection.HTTP_NOT_FOUND) // bucket doesn't exist
+            }
+            if (httpCode == HttpURLConnection.HTTP_NOT_FOUND) // bucket doesn't exist
+            {
                 return false;
+            }
             throw HostControllerLogger.ROOT_LOGGER.bucketAuthenticationFailure(bucket, httpCode, response.getResponseMessage());
         }
 
         /**
          * Lists the contents of a bucket.
-         * @param bucket  The name of the bucket to create.
-         * @param prefix  All returned keys will start with this string (can be null).
-         * @param marker  All returned keys will be lexographically greater than
-         *                this string (can be null).
+         *
+         * @param bucket The name of the bucket to create.
+         * @param prefix All returned keys will start with this string (can be null).
+         * @param marker All returned keys will be lexographically greater than this string (can be null).
          * @param maxKeys The maximum number of keys to return (can be null).
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public ListBucketResponse listBucket(String bucket, String prefix, String marker,
-                                             Integer maxKeys, Map headers) throws IOException {
+                Integer maxKeys, Map headers) throws IOException {
             return listBucket(bucket, prefix, marker, maxKeys, null, headers);
         }
 
         /**
          * Lists the contents of a bucket.
-         * @param bucket    The name of the bucket to list.
-         * @param prefix    All returned keys will start with this string (can be null).
-         * @param marker    All returned keys will be lexographically greater than
-         *                  this string (can be null).
-         * @param maxKeys   The maximum number of keys to return (can be null).
-         * @param delimiter Keys that contain a string between the prefix and the first
-         *                  occurrence of the delimiter will be rolled up into a single element.
-         * @param headers   A Map of String to List of Strings representing the http
-         *                  headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket to list.
+         * @param prefix All returned keys will start with this string (can be null).
+         * @param marker All returned keys will be lexographically greater than this string (can be null).
+         * @param maxKeys The maximum number of keys to return (can be null).
+         * @param delimiter Keys that contain a string between the prefix and the first occurrence of the delimiter will
+         * be rolled up into a single element.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public ListBucketResponse listBucket(String bucket, String prefix, String marker,
-                                             Integer maxKeys, String delimiter, Map headers) throws IOException {
+                Integer maxKeys, String delimiter, Map headers) throws IOException {
 
-            Map pathArgs=Utils.paramsForListOptions(prefix, marker, maxKeys, delimiter);
+            Map pathArgs = Utils.paramsForListOptions(prefix, marker, maxKeys, delimiter);
             return new ListBucketResponse(makeRequest("GET", bucket, "", pathArgs, headers));
         }
 
         /**
          * Deletes a bucket.
-         * @param bucket  The name of the bucket to delete.
+         *
+         * @param bucket The name of the bucket to delete.
          * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response deleteBucket(String bucket, Map headers) throws IOException {
@@ -384,18 +400,18 @@ public class S3Util {
 
         /**
          * Writes an object to S3.
-         * @param bucket  The name of the bucket to which the object will be added.
-         * @param key     The name of the key to use.
-         * @param object  An S3Object containing the data to write.
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket to which the object will be added.
+         * @param key The name of the key to use.
+         * @param object An S3Object containing the data to write.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response put(String bucket, String key, S3Object object, Map headers) throws IOException {
-            HttpURLConnection request=
-                    makeRequest("PUT", bucket, Utils.urlencode(key), null, headers, object);
+            HttpURLConnection request
+                    = makeRequest("PUT", bucket, Utils.urlencode(key), null, headers, object);
 
             request.setDoOutput(true);
-            request.getOutputStream().write(object.data == null? new byte[]{} : object.data);
+            request.getOutputStream().write(object.data == null ? new byte[]{} : object.data);
 
             return new Response(request);
         }
@@ -403,72 +419,70 @@ public class S3Util {
         public Response put(String preSignedUrl, S3Object object, Map headers) throws IOException {
             HttpURLConnection request = makePreSignedRequest("PUT", preSignedUrl, headers);
             request.setDoOutput(true);
-            request.getOutputStream().write(object.data == null? new byte[]{} : object.data);
+            request.getOutputStream().write(object.data == null ? new byte[]{} : object.data);
 
             return new Response(request);
         }
 
         /**
-         * Creates a copy of an existing S3 Object.  In this signature, we will copy the
-         * existing metadata.  The default access control policy is private; if you want
-         * to override it, please use x-amz-acl in the headers.
-         * @param sourceBucket      The name of the bucket where the source object lives.
-         * @param sourceKey         The name of the key to copy.
+         * Creates a copy of an existing S3 Object. In this signature, we will copy the existing metadata. The default
+         * access control policy is private; if you want to override it, please use x-amz-acl in the headers.
+         *
+         * @param sourceBucket The name of the bucket where the source object lives.
+         * @param sourceKey The name of the key to copy.
          * @param destinationBucket The name of the bucket to which the object will be added.
-         * @param destinationKey    The name of the key to use.
-         * @param headers           A Map of String to List of Strings representing the http
-         *                          headers to pass (can be null).  You may wish to set the x-amz-acl header appropriately.
+         * @param destinationKey The name of the key to use.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null). You
+         * may wish to set the x-amz-acl header appropriately.
          */
         public Response copy(String sourceBucket, String sourceKey, String destinationBucket, String destinationKey, Map headers)
                 throws IOException {
-            S3Object object=new S3Object(new byte[]{}, new HashMap());
-            headers=headers == null? new HashMap() : new HashMap(headers);
+            S3Object object = new S3Object(new byte[]{}, new HashMap());
+            headers = headers == null ? new HashMap() : new HashMap(headers);
             headers.put("x-amz-copy-source", Arrays.asList(sourceBucket + "/" + sourceKey));
             headers.put("x-amz-metadata-directive", Arrays.asList("COPY"));
             return verifyCopy(put(destinationBucket, destinationKey, object, headers));
         }
 
         /**
-         * Creates a copy of an existing S3 Object.  In this signature, we will replace the
-         * existing metadata.  The default access control policy is private; if you want
-         * to override it, please use x-amz-acl in the headers.
-         * @param sourceBucket      The name of the bucket where the source object lives.
-         * @param sourceKey         The name of the key to copy.
+         * Creates a copy of an existing S3 Object. In this signature, we will replace the existing metadata. The
+         * default access control policy is private; if you want to override it, please use x-amz-acl in the headers.
+         *
+         * @param sourceBucket The name of the bucket where the source object lives.
+         * @param sourceKey The name of the key to copy.
          * @param destinationBucket The name of the bucket to which the object will be added.
-         * @param destinationKey    The name of the key to use.
-         * @param metadata          A Map of String to List of Strings representing the S3 metadata
-         *                          for the new object.
-         * @param headers           A Map of String to List of Strings representing the http
-         *                          headers to pass (can be null).  You may wish to set the x-amz-acl header appropriately.
+         * @param destinationKey The name of the key to use.
+         * @param metadata A Map of String to List of Strings representing the S3 metadata for the new object.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null). You
+         * may wish to set the x-amz-acl header appropriately.
          */
         public Response copy(String sourceBucket, String sourceKey, String destinationBucket, String destinationKey, Map metadata, Map headers)
                 throws IOException {
-            S3Object object=new S3Object(new byte[]{}, metadata);
-            headers=headers == null? new HashMap() : new HashMap(headers);
+            S3Object object = new S3Object(new byte[]{}, metadata);
+            headers = headers == null ? new HashMap() : new HashMap(headers);
             headers.put("x-amz-copy-source", Arrays.asList(sourceBucket + "/" + sourceKey));
             headers.put("x-amz-metadata-directive", Arrays.asList("REPLACE"));
             return verifyCopy(put(destinationBucket, destinationKey, object, headers));
         }
 
         /**
-         * Copy sometimes returns a successful response and starts to send whitespace
-         * characters to us.  This method processes those whitespace characters and
-         * will throw an exception if the response is either unknown or an error.
+         * Copy sometimes returns a successful response and starts to send whitespace characters to us. This method
+         * processes those whitespace characters and will throw an exception if the response is either unknown or an
+         * error.
+         *
          * @param response Response object from the PUT request.
          * @return The response with the input stream drained.
          * @throws IOException If anything goes wrong.
          */
         private static Response verifyCopy(Response response) throws IOException {
-            if(response.connection.getResponseCode() < 400) {
-                byte[] body=GetResponse.slurpInputStream(response.connection.getInputStream());
-                String message=new String(body);
-                if(message.contains("<Error")) {
+            if (response.connection.getResponseCode() < 400) {
+                byte[] body = GetResponse.slurpInputStream(response.connection.getInputStream());
+                String message = new String(body);
+                if (message.contains("<Error")) {
                     throw new IOException(message.substring(message.indexOf("<Error")));
-                }
-                else if(message.contains("</CopyObjectResult>")) {
+                } else if (message.contains("</CopyObjectResult>")) {
                     // It worked!
-                }
-                else {
+                } else {
                     throw HostControllerLogger.ROOT_LOGGER.unexpectedResponse(message);
                 }
             }
@@ -477,10 +491,10 @@ public class S3Util {
 
         /**
          * Reads an object from S3.
-         * @param bucket  The name of the bucket where the object lives.
-         * @param key     The name of the key to use.
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket where the object lives.
+         * @param key The name of the key to use.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public GetResponse get(String bucket, String key, Map headers) throws IOException {
             return new GetResponse(makeRequest("GET", bucket, Utils.urlencode(key), null, headers));
@@ -488,10 +502,10 @@ public class S3Util {
 
         /**
          * Deletes an object from S3.
-         * @param bucket  The name of the bucket where the object lives.
-         * @param key     The name of the key to use.
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket where the object lives.
+         * @param key The name of the key to use.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response delete(String bucket, String key, Map headers) throws IOException {
             return new Response(makeRequest("DELETE", bucket, Utils.urlencode(key), null, headers));
@@ -503,71 +517,72 @@ public class S3Util {
 
         /**
          * Get the requestPayment xml document for a given bucket
-         * @param bucket  The name of the bucket
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public GetResponse getBucketRequestPayment(String bucket, Map headers) throws IOException {
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("requestPayment", null);
             return new GetResponse(makeRequest("GET", bucket, "", pathArgs, headers));
         }
 
         /**
          * Write a new requestPayment xml document for a given bucket
-         * @param bucket        The name of the bucket
+         *
+         * @param bucket The name of the bucket
          * @param requestPaymentXMLDoc
-         * @param headers       A Map of String to List of Strings representing the http
-         *                      headers to pass (can be null).
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response putBucketRequestPayment(String bucket, String requestPaymentXMLDoc, Map headers)
                 throws IOException {
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("requestPayment", null);
-            S3Object object=new S3Object(requestPaymentXMLDoc.getBytes(), null);
-            HttpURLConnection request=makeRequest("PUT", bucket, "", pathArgs, headers, object);
+            S3Object object = new S3Object(requestPaymentXMLDoc.getBytes(), null);
+            HttpURLConnection request = makeRequest("PUT", bucket, "", pathArgs, headers, object);
 
             request.setDoOutput(true);
-            request.getOutputStream().write(object.data == null? new byte[]{} : object.data);
+            request.getOutputStream().write(object.data == null ? new byte[]{} : object.data);
 
             return new Response(request);
         }
 
         /**
          * Get the logging xml document for a given bucket
-         * @param bucket  The name of the bucket
+         *
+         * @param bucket The name of the bucket
          * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public GetResponse getBucketLogging(String bucket, Map headers) throws IOException {
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("logging", null);
             return new GetResponse(makeRequest("GET", bucket, "", pathArgs, headers));
         }
 
         /**
          * Write a new logging xml document for a given bucket
+         *
          * @param loggingXMLDoc The xml representation of the logging configuration as a String
-         * @param bucket        The name of the bucket
-         * @param headers       A Map of String to List of Strings representing the http
-         *                      headers to pass (can be null).
+         * @param bucket The name of the bucket
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response putBucketLogging(String bucket, String loggingXMLDoc, Map headers) throws IOException {
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("logging", null);
-            S3Object object=new S3Object(loggingXMLDoc.getBytes(), null);
-            HttpURLConnection request=makeRequest("PUT", bucket, "", pathArgs, headers, object);
+            S3Object object = new S3Object(loggingXMLDoc.getBytes(), null);
+            HttpURLConnection request = makeRequest("PUT", bucket, "", pathArgs, headers, object);
 
             request.setDoOutput(true);
-            request.getOutputStream().write(object.data == null? new byte[]{} : object.data);
+            request.getOutputStream().write(object.data == null ? new byte[]{} : object.data);
 
             return new Response(request);
         }
 
         /**
          * Get the ACL for a given bucket
-         * @param bucket  The name of the bucket where the object lives.
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket where the object lives.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public GetResponse getBucketACL(String bucket, Map headers) throws IOException {
             return getACL(bucket, "", headers);
@@ -575,15 +590,17 @@ public class S3Util {
 
         /**
          * Get the ACL for a given object (or bucket, if key is null).
-         * @param bucket  The name of the bucket where the object lives.
-         * @param key     The name of the key to use.
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param bucket The name of the bucket where the object lives.
+         * @param key The name of the key to use.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public GetResponse getACL(String bucket, String key, Map headers) throws IOException {
-            if(key == null) key="";
+            if (key == null) {
+                key = "";
+            }
 
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("acl", null);
 
             return new GetResponse(
@@ -593,9 +610,10 @@ public class S3Util {
 
         /**
          * Write a new ACL for a given bucket
+         *
          * @param aclXMLDoc The xml representation of the ACL as a String
-         * @param bucket    The name of the bucket where the object lives.
-         * @param headers   A Map of String to List of Strings representing the http headers to pass (can be null).
+         * @param bucket The name of the bucket where the object lives.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response putBucketACL(String bucket, String aclXMLDoc, Map headers) throws IOException {
             return putACL(bucket, "", aclXMLDoc, headers);
@@ -603,54 +621,53 @@ public class S3Util {
 
         /**
          * Write a new ACL for a given object
+         *
          * @param aclXMLDoc The xml representation of the ACL as a String
-         * @param bucket    The name of the bucket where the object lives.
-         * @param key       The name of the key to use.
-         * @param headers   A Map of String to List of Strings representing the http
-         *                  headers to pass (can be null).
+         * @param bucket The name of the bucket where the object lives.
+         * @param key The name of the key to use.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public Response putACL(String bucket, String key, String aclXMLDoc, Map headers)
                 throws IOException {
-            S3Object object=new S3Object(aclXMLDoc.getBytes(), null);
+            S3Object object = new S3Object(aclXMLDoc.getBytes(), null);
 
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("acl", null);
 
-            HttpURLConnection request=
-                    makeRequest("PUT", bucket, Utils.urlencode(key), pathArgs, headers, object);
+            HttpURLConnection request
+                    = makeRequest("PUT", bucket, Utils.urlencode(key), pathArgs, headers, object);
 
             request.setDoOutput(true);
-            request.getOutputStream().write(object.data == null? new byte[]{} : object.data);
+            request.getOutputStream().write(object.data == null ? new byte[]{} : object.data);
 
             return new Response(request);
         }
 
         public LocationResponse getBucketLocation(String bucket)
                 throws IOException {
-            Map pathArgs=new HashMap();
+            Map pathArgs = new HashMap();
             pathArgs.put("location", null);
             return new LocationResponse(makeRequest("GET", bucket, "", pathArgs, null));
         }
 
-
         /**
          * List all the buckets created by this account.
-         * @param headers A Map of String to List of Strings representing the http
-         *                headers to pass (can be null).
+         *
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         public ListAllMyBucketsResponse listAllMyBuckets(Map headers)
                 throws IOException {
             return new ListAllMyBucketsResponse(makeRequest("GET", "", "", null, headers));
         }
 
-
         /**
-         * Make a new HttpURLConnection without passing an S3Object parameter.
-         * Use this method for key operations that do require arguments
-         * @param method     The method to invoke
+         * Make a new HttpURLConnection without passing an S3Object parameter. Use this method for key operations that
+         * do require arguments
+         *
+         * @param method The method to invoke
          * @param bucketName the bucket this request is for
-         * @param key        the key this request is for
-         * @param pathArgs   the
+         * @param key the key this request is for
+         * @param pathArgs the
          * @param headers
          * @return
          * @throws MalformedURLException
@@ -661,39 +678,41 @@ public class S3Util {
             return makeRequest(method, bucketName, key, pathArgs, headers, null);
         }
 
-
         /**
          * Make a new HttpURLConnection.
-         * @param method     The HTTP method to use (GET, PUT, DELETE)
-         * @param bucket     The bucket name this request affects
-         * @param key        The key this request is for
-         * @param pathArgs   parameters if any to be sent along this request
-         * @param headers    A Map of String to List of Strings representing the http
-         *                   headers to pass (can be null).
-         * @param object     The S3Object that is to be written (can be null).
+         *
+         * @param method The HTTP method to use (GET, PUT, DELETE)
+         * @param bucket The bucket name this request affects
+         * @param key The key this request is for
+         * @param pathArgs parameters if any to be sent along this request
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
+         * @param object The S3Object that is to be written (can be null).
          */
         private HttpURLConnection makeRequest(String method, String bucket, String key, Map pathArgs, Map headers,
-                                              S3Object object)
+                S3Object object)
                 throws IOException {
-            CallingFormat format=Utils.getCallingFormatForBucket(this.callingFormat, bucket);
-            if(isSecure && format != CallingFormat.getPathCallingFormat() && bucket.contains(".")) {
+            CallingFormat format = Utils.getCallingFormatForBucket(this.callingFormat, bucket);
+            if (isSecure && format != CallingFormat.getPathCallingFormat() && bucket.contains(".")) {
                 System.err.println("You are making an SSL connection, however, the bucket contains periods and the wildcard certificate will not match by default.  Please consider using HTTP.");
             }
 
             // build the domain based on the calling format
-            URL url=format.getURL(isSecure, server, this.port, bucket, key, pathArgs);
+            URL url = format.getURL(isSecure, server, this.port, bucket, key, pathArgs);
 
-            HttpURLConnection connection=(HttpURLConnection)url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
 
             // subdomain-style urls may encounter http redirects.
             // Ensure that redirects are supported.
-            if(!connection.getInstanceFollowRedirects()
-                    && format.supportsLocatedBuckets())
+            if (!connection.getInstanceFollowRedirects()
+                    && format.supportsLocatedBuckets()) {
                 throw HostControllerLogger.ROOT_LOGGER.httpRedirectSupportRequired();
+            }
 
             addHeaders(connection, headers);
-            if(object != null) addMetadataHeaders(connection, object.metadata);
+            if (object != null) {
+                addMetadataHeaders(connection, object.metadata);
+            }
             addAuthHeader(connection, method, bucket, key, pathArgs);
 
             return connection;
@@ -711,9 +730,9 @@ public class S3Util {
 
         /**
          * Add the given headers to the HttpURLConnection.
+         *
          * @param connection The HttpURLConnection to which the headers will be added.
-         * @param headers    A Map of String to List of Strings representing the http
-         *                   headers to pass (can be null).
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
          */
         private static void addHeaders(HttpURLConnection connection, Map headers) {
             addHeaders(connection, headers, "");
@@ -721,9 +740,9 @@ public class S3Util {
 
         /**
          * Add the given metadata fields to the HttpURLConnection.
+         *
          * @param connection The HttpURLConnection to which the headers will be added.
-         * @param metadata   A Map of String to List of Strings representing the s3
-         *                   metadata for this resource.
+         * @param metadata A Map of String to List of Strings representing the s3 metadata for this resource.
          */
         private static void addMetadataHeaders(HttpURLConnection connection, Map metadata) {
             addHeaders(connection, metadata, Utils.METADATA_PREFIX);
@@ -731,17 +750,17 @@ public class S3Util {
 
         /**
          * Add the given headers to the HttpURLConnection with a prefix before the keys.
+         *
          * @param connection The HttpURLConnection to which the headers will be added.
-         * @param headers    A Map of String to List of Strings representing the http
-         *                   headers to pass (can be null).
-         * @param prefix     The string to prepend to each key before adding it to the connection.
+         * @param headers A Map of String to List of Strings representing the http headers to pass (can be null).
+         * @param prefix The string to prepend to each key before adding it to the connection.
          */
         private static void addHeaders(HttpURLConnection connection, Map headers, String prefix) {
-            if(headers != null) {
-                for(Iterator i=headers.keySet().iterator(); i.hasNext();) {
-                    String key=(String)i.next();
-                    for(Iterator j=((List)headers.get(key)).iterator(); j.hasNext();) {
-                        String value=(String)j.next();
+            if (headers != null) {
+                for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
+                    String key = (String) i.next();
+                    for (Iterator j = ((List) headers.get(key)).iterator(); j.hasNext();) {
+                        String value = (String) j.next();
                         connection.addRequestProperty(prefix + key, value);
                     }
                 }
@@ -750,42 +769,43 @@ public class S3Util {
 
         /**
          * Add the appropriate Authorization header to the HttpURLConnection.
+         *
          * @param connection The HttpURLConnection to which the header will be added.
-         * @param method     The HTTP method to use (GET, PUT, DELETE)
-         * @param bucket     the bucket name this request is for
-         * @param key        the key this request is for
-         * @param pathArgs   path arguments which are part of this request
+         * @param method The HTTP method to use (GET, PUT, DELETE)
+         * @param bucket the bucket name this request is for
+         * @param key the key this request is for
+         * @param pathArgs path arguments which are part of this request
          */
         private void addAuthHeader(HttpURLConnection connection, String method, String bucket, String key, Map pathArgs) {
-            if(connection.getRequestProperty("Date") == null) {
+            if (connection.getRequestProperty("Date") == null) {
                 connection.setRequestProperty("Date", httpDate());
             }
-            if(connection.getRequestProperty("Content-Type") == null) {
+            if (connection.getRequestProperty("Content-Type") == null) {
                 connection.setRequestProperty("Content-Type", "");
             }
 
-            if(this.awsAccessKeyId != null && this.awsSecretAccessKey != null) {
-                String canonicalString=
-                        Utils.makeCanonicalString(method, bucket, key, pathArgs, connection.getRequestProperties());
-                String encodedCanonical=Utils.encode(this.awsSecretAccessKey, canonicalString, false);
+            if (this.awsAccessKeyId != null && this.awsSecretAccessKey != null) {
+                String canonicalString
+                        = Utils.makeCanonicalString(method, bucket, key, pathArgs, connection.getRequestProperties());
+                String encodedCanonical = Utils.encode(this.awsSecretAccessKey, canonicalString, false);
                 connection.setRequestProperty("Authorization",
-                                              "AWS " + this.awsAccessKeyId + ":" + encodedCanonical);
+                        "AWS " + this.awsAccessKeyId + ":" + encodedCanonical);
             }
         }
-
 
         /**
          * Generate an rfc822 date for use in the Date HTTP header.
          */
         public static String httpDate() {
-            final String DateFormat="EEE, dd MMM yyyy HH:mm:ss ";
-            SimpleDateFormat format=new SimpleDateFormat(DateFormat, Locale.US);
+            final String DateFormat = "EEE, dd MMM yyyy HH:mm:ss ";
+            SimpleDateFormat format = new SimpleDateFormat(DateFormat, Locale.US);
             format.setTimeZone(TimeZone.getTimeZone("GMT"));
             return format.format(new Date()) + "GMT";
         }
     }
 
     static class ListEntry {
+
         /**
          * The name of the object
          */
@@ -822,21 +842,22 @@ public class S3Util {
     }
 
     static class Owner {
+
         public String id;
         public String displayName;
     }
 
-
     static class Response {
+
         public HttpURLConnection connection;
 
         public Response(HttpURLConnection connection) throws IOException {
-            this.connection=connection;
+            this.connection = connection;
         }
     }
 
-
     static class GetResponse extends Response {
+
         public S3Object object;
 
         /**
@@ -844,24 +865,26 @@ public class S3Util {
          */
         public GetResponse(HttpURLConnection connection) throws IOException {
             super(connection);
-            if(connection.getResponseCode() < 400) {
-                Map metadata=extractMetadata(connection);
-                byte[] body=slurpInputStream(connection.getInputStream());
-                this.object=new S3Object(body, metadata);
+            if (connection.getResponseCode() < 400) {
+                Map metadata = extractMetadata(connection);
+                byte[] body = slurpInputStream(connection.getInputStream());
+                this.object = new S3Object(body, metadata);
             }
         }
 
         /**
-         * Examines the response's header fields and returns a Map from String to List of Strings
-         * representing the object's metadata.
+         * Examines the response's header fields and returns a Map from String to List of Strings representing the
+         * object's metadata.
          */
         private static Map extractMetadata(HttpURLConnection connection) {
-            TreeMap metadata=new TreeMap();
-            Map headers=connection.getHeaderFields();
-            for(Iterator i=headers.keySet().iterator(); i.hasNext();) {
-                String key=(String)i.next();
-                if(key == null) continue;
-                if(key.startsWith(Utils.METADATA_PREFIX)) {
+            TreeMap metadata = new TreeMap();
+            Map headers = connection.getHeaderFields();
+            for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
+                String key = (String) i.next();
+                if (key == null) {
+                    continue;
+                }
+                if (key.startsWith(Utils.METADATA_PREFIX)) {
                     metadata.put(key.substring(Utils.METADATA_PREFIX.length()), headers.get(key));
                 }
             }
@@ -873,18 +896,21 @@ public class S3Util {
          * Read the input stream and dump it all into a big byte array
          */
         static byte[] slurpInputStream(InputStream stream) throws IOException {
-            final int chunkSize=2048;
-            byte[] buf=new byte[chunkSize];
-            ByteArrayOutputStream byteStream=new ByteArrayOutputStream(chunkSize);
+            final int chunkSize = 2048;
+            byte[] buf = new byte[chunkSize];
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream(chunkSize);
             int count;
 
-            while((count=stream.read(buf)) != -1) byteStream.write(buf, 0, count);
+            while ((count = stream.read(buf)) != -1) {
+                byteStream.write(buf, 0, count);
+            }
 
             return byteStream.toByteArray();
         }
     }
 
     static class LocationResponse extends Response {
+
         String location;
 
         /**
@@ -892,30 +918,26 @@ public class S3Util {
          */
         public LocationResponse(HttpURLConnection connection) throws IOException {
             super(connection);
-            if(connection.getResponseCode() < 400) {
+            if (connection.getResponseCode() < 400) {
                 try {
-                    XMLReader xr=Utils.createXMLReader();
-                    LocationResponseHandler handler=new LocationResponseHandler();
+                    XMLReader xr = Utils.createXMLReader();
+                    LocationResponseHandler handler = new LocationResponseHandler();
                     xr.setContentHandler(handler);
                     xr.setErrorHandler(handler);
 
                     xr.parse(new InputSource(connection.getInputStream()));
-                    this.location=handler.loc;
-                }
-                catch(SAXException e) {
+                    this.location = handler.loc;
+                } catch (SAXException e) {
                     throw HostControllerLogger.ROOT_LOGGER.errorParsingBucketListings(e);
                 }
-            }
-            else {
-                this.location="<error>";
+            } else {
+                this.location = "<error>";
             }
         }
 
         /**
-         * Report the location-constraint for a bucket.
-         * A value of null indicates an error;
-         * the empty string indicates no constraint;
-         * and any other value is an actual location constraint value.
+         * Report the location-constraint for a bucket. A value of null indicates an error; the empty string indicates
+         * no constraint; and any other value is an actual location constraint value.
          */
         public String getLocation() {
             return location;
@@ -925,34 +947,36 @@ public class S3Util {
          * Helper class to parse LocationConstraint response XML
          */
         static class LocationResponseHandler extends DefaultHandler {
-            String loc=null;
-            private StringBuffer currText=null;
+
+            String loc = null;
+            private StringBuffer currText = null;
 
             public void startDocument() {
             }
 
             public void startElement(String uri, String name, String qName, Attributes attrs) {
-                if(name.equals("LocationConstraint")) {
-                    this.currText=new StringBuffer();
+                if (name.equals("LocationConstraint")) {
+                    this.currText = new StringBuffer();
                 }
             }
 
             public void endElement(String uri, String name, String qName) {
-                if(name.equals("LocationConstraint")) {
-                    loc=this.currText.toString();
-                    this.currText=null;
+                if (name.equals("LocationConstraint")) {
+                    loc = this.currText.toString();
+                    this.currText = null;
                 }
             }
 
             public void characters(char[] ch, int start, int length) {
-                if(currText != null)
+                if (currText != null) {
                     this.currText.append(ch, start, length);
+                }
             }
         }
     }
 
-
     static class Bucket {
+
         /**
          * The name of the bucket.
          */
@@ -964,13 +988,13 @@ public class S3Util {
         public Date creationDate;
 
         public Bucket() {
-            this.name=null;
-            this.creationDate=null;
+            this.name = null;
+            this.creationDate = null;
         }
 
         public Bucket(String name, Date creationDate) {
-            this.name=name;
-            this.creationDate=creationDate;
+            this.name = name;
+            this.creationDate = creationDate;
         }
 
         public String toString() {
@@ -981,79 +1005,75 @@ public class S3Util {
     static class ListBucketResponse extends Response {
 
         /**
-         * The name of the bucket being listed.  Null if request fails.
+         * The name of the bucket being listed. Null if request fails.
          */
-        public String name=null;
+        public String name = null;
 
         /**
-         * The prefix echoed back from the request.  Null if request fails.
+         * The prefix echoed back from the request. Null if request fails.
          */
-        public String prefix=null;
+        public String prefix = null;
 
         /**
-         * The marker echoed back from the request.  Null if request fails.
+         * The marker echoed back from the request. Null if request fails.
          */
-        public String marker=null;
+        public String marker = null;
 
         /**
-         * The delimiter echoed back from the request.  Null if not specified in
-         * the request, or if it fails.
+         * The delimiter echoed back from the request. Null if not specified in the request, or if it fails.
          */
-        public String delimiter=null;
+        public String delimiter = null;
 
         /**
-         * The maxKeys echoed back from the request if specified.  0 if request fails.
+         * The maxKeys echoed back from the request if specified. 0 if request fails.
          */
-        public int maxKeys=0;
+        public int maxKeys = 0;
 
         /**
-         * Indicates if there are more results to the list.  True if the current
-         * list results have been truncated.  false if request fails.
+         * Indicates if there are more results to the list. True if the current list results have been truncated. false
+         * if request fails.
          */
-        public boolean isTruncated=false;
+        public boolean isTruncated = false;
 
         /**
-         * Indicates what to use as a marker for subsequent list requests in the event
-         * that the results are truncated.  Present only when a delimiter is specified.
-         * Null if request fails.
+         * Indicates what to use as a marker for subsequent list requests in the event that the results are truncated.
+         * Present only when a delimiter is specified. Null if request fails.
          */
-        public String nextMarker=null;
+        public String nextMarker = null;
 
         /**
-         * A List of ListEntry objects representing the objects in the given bucket.
-         * Null if the request fails.
+         * A List of ListEntry objects representing the objects in the given bucket. Null if the request fails.
          */
-        public List entries=null;
+        public List entries = null;
 
         /**
-         * A List of CommonPrefixEntry objects representing the common prefixes of the
-         * keys that matched up to the delimiter.  Null if the request fails.
+         * A List of CommonPrefixEntry objects representing the common prefixes of the keys that matched up to the
+         * delimiter. Null if the request fails.
          */
-        public List commonPrefixEntries=null;
+        public List commonPrefixEntries = null;
 
         public ListBucketResponse(HttpURLConnection connection) throws IOException {
             super(connection);
-            if(connection.getResponseCode() < 400) {
+            if (connection.getResponseCode() < 400) {
                 try {
-                    XMLReader xr=Utils.createXMLReader();
-                    ListBucketHandler handler=new ListBucketHandler();
+                    XMLReader xr = Utils.createXMLReader();
+                    ListBucketHandler handler = new ListBucketHandler();
                     xr.setContentHandler(handler);
                     xr.setErrorHandler(handler);
 
                     xr.parse(new InputSource(connection.getInputStream()));
 
-                    this.name=handler.getName();
-                    this.prefix=handler.getPrefix();
-                    this.marker=handler.getMarker();
-                    this.delimiter=handler.getDelimiter();
-                    this.maxKeys=handler.getMaxKeys();
-                    this.isTruncated=handler.getIsTruncated();
-                    this.nextMarker=handler.getNextMarker();
-                    this.entries=handler.getKeyEntries();
-                    this.commonPrefixEntries=handler.getCommonPrefixEntries();
+                    this.name = handler.getName();
+                    this.prefix = handler.getPrefix();
+                    this.marker = handler.getMarker();
+                    this.delimiter = handler.getDelimiter();
+                    this.maxKeys = handler.getMaxKeys();
+                    this.isTruncated = handler.getIsTruncated();
+                    this.nextMarker = handler.getNextMarker();
+                    this.entries = handler.getKeyEntries();
+                    this.commonPrefixEntries = handler.getCommonPrefixEntries();
 
-                }
-                catch(SAXException e) {
+                } catch (SAXException e) {
                     throw HostControllerLogger.ROOT_LOGGER.errorParsingBucketListings(e);
                 }
             }
@@ -1061,32 +1081,32 @@ public class S3Util {
 
         static class ListBucketHandler extends DefaultHandler {
 
-            private String name=null;
-            private String prefix=null;
-            private String marker=null;
-            private String delimiter=null;
-            private int maxKeys=0;
-            private boolean isTruncated=false;
-            private String nextMarker=null;
-            private boolean isEchoedPrefix=false;
-            private List keyEntries=null;
-            private ListEntry keyEntry=null;
-            private List commonPrefixEntries=null;
-            private CommonPrefixEntry commonPrefixEntry=null;
-            private StringBuffer currText=null;
-            private SimpleDateFormat iso8601Parser=null;
+            private String name = null;
+            private String prefix = null;
+            private String marker = null;
+            private String delimiter = null;
+            private int maxKeys = 0;
+            private boolean isTruncated = false;
+            private String nextMarker = null;
+            private boolean isEchoedPrefix = false;
+            private List keyEntries = null;
+            private ListEntry keyEntry = null;
+            private List commonPrefixEntries = null;
+            private CommonPrefixEntry commonPrefixEntry = null;
+            private StringBuffer currText = null;
+            private SimpleDateFormat iso8601Parser = null;
 
             public ListBucketHandler() {
                 super();
-                keyEntries=new ArrayList();
-                commonPrefixEntries=new ArrayList();
-                this.iso8601Parser=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                keyEntries = new ArrayList();
+                commonPrefixEntries = new ArrayList();
+                this.iso8601Parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                 this.iso8601Parser.setTimeZone(new SimpleTimeZone(0, "GMT"));
-                this.currText=new StringBuffer();
+                this.currText = new StringBuffer();
             }
 
             public void startDocument() {
-                this.isEchoedPrefix=true;
+                this.isEchoedPrefix = true;
             }
 
             public void endDocument() {
@@ -1094,79 +1114,61 @@ public class S3Util {
             }
 
             public void startElement(String uri, String name, String qName, Attributes attrs) {
-                if(name.equals("Contents")) {
-                    this.keyEntry=new ListEntry();
-                }
-                else if(name.equals("Owner")) {
-                    this.keyEntry.owner=new Owner();
-                }
-                else if(name.equals("CommonPrefixes")) {
-                    this.commonPrefixEntry=new CommonPrefixEntry();
+                if (name.equals("Contents")) {
+                    this.keyEntry = new ListEntry();
+                } else if (name.equals("Owner")) {
+                    this.keyEntry.owner = new Owner();
+                } else if (name.equals("CommonPrefixes")) {
+                    this.commonPrefixEntry = new CommonPrefixEntry();
                 }
             }
 
             public void endElement(String uri, String name, String qName) {
-                if(name.equals("Name")) {
-                    this.name=this.currText.toString();
-                }
-                // this prefix is the one we echo back from the request
-                else if(name.equals("Prefix") && this.isEchoedPrefix) {
-                    this.prefix=this.currText.toString();
-                    this.isEchoedPrefix=false;
-                }
-                else if(name.equals("Marker")) {
-                    this.marker=this.currText.toString();
-                }
-                else if(name.equals("MaxKeys")) {
-                    this.maxKeys=Integer.parseInt(this.currText.toString());
-                }
-                else if(name.equals("Delimiter")) {
-                    this.delimiter=this.currText.toString();
-                }
-                else if(name.equals("IsTruncated")) {
-                    this.isTruncated=Boolean.valueOf(this.currText.toString());
-                }
-                else if(name.equals("NextMarker")) {
-                    this.nextMarker=this.currText.toString();
-                }
-                else if(name.equals("Contents")) {
+                if (name.equals("Name")) {
+                    this.name = this.currText.toString();
+                } // this prefix is the one we echo back from the request
+                else if (name.equals("Prefix") && this.isEchoedPrefix) {
+                    this.prefix = this.currText.toString();
+                    this.isEchoedPrefix = false;
+                } else if (name.equals("Marker")) {
+                    this.marker = this.currText.toString();
+                } else if (name.equals("MaxKeys")) {
+                    this.maxKeys = Integer.parseInt(this.currText.toString());
+                } else if (name.equals("Delimiter")) {
+                    this.delimiter = this.currText.toString();
+                } else if (name.equals("IsTruncated")) {
+                    this.isTruncated = Boolean.valueOf(this.currText.toString());
+                } else if (name.equals("NextMarker")) {
+                    this.nextMarker = this.currText.toString();
+                } else if (name.equals("Contents")) {
                     this.keyEntries.add(this.keyEntry);
-                }
-                else if(name.equals("Key")) {
-                    this.keyEntry.key=this.currText.toString();
-                }
-                else if(name.equals("LastModified")) {
+                } else if (name.equals("Key")) {
+                    this.keyEntry.key = this.currText.toString();
+                } else if (name.equals("LastModified")) {
                     try {
-                        this.keyEntry.lastModified=this.iso8601Parser.parse(this.currText.toString());
-                    }
-                    catch(ParseException e) {
+                        this.keyEntry.lastModified = this.iso8601Parser.parse(this.currText.toString());
+                    } catch (ParseException e) {
                         throw HostControllerLogger.ROOT_LOGGER.errorParsingBucketListings(e);
                     }
-                }
-                else if(name.equals("ETag")) {
-                    this.keyEntry.eTag=this.currText.toString();
-                }
-                else if(name.equals("Size")) {
-                    this.keyEntry.size=Long.parseLong(this.currText.toString());
-                }
-                else if(name.equals("StorageClass")) {
-                    this.keyEntry.storageClass=this.currText.toString();
-                }
-                else if(name.equals("ID")) {
-                    this.keyEntry.owner.id=this.currText.toString();
-                }
-                else if(name.equals("DisplayName")) {
-                    this.keyEntry.owner.displayName=this.currText.toString();
-                }
-                else if(name.equals("CommonPrefixes")) {
+                } else if (name.equals("ETag")) {
+                    this.keyEntry.eTag = this.currText.toString();
+                } else if (name.equals("Size")) {
+                    this.keyEntry.size = Long.parseLong(this.currText.toString());
+                } else if (name.equals("StorageClass")) {
+                    this.keyEntry.storageClass = this.currText.toString();
+                } else if (name.equals("ID")) {
+                    this.keyEntry.owner.id = this.currText.toString();
+                } else if (name.equals("DisplayName")) {
+                    this.keyEntry.owner.displayName = this.currText.toString();
+                } else if (name.equals("CommonPrefixes")) {
                     this.commonPrefixEntries.add(this.commonPrefixEntry);
+                } // this is the common prefix for keys that match up to the delimiter
+                else if (name.equals("Prefix")) {
+                    this.commonPrefixEntry.prefix = this.currText.toString();
                 }
-                // this is the common prefix for keys that match up to the delimiter
-                else if(name.equals("Prefix")) {
-                    this.commonPrefixEntry.prefix=this.currText.toString();
+                if (this.currText.length() != 0) {
+                    this.currText = new StringBuffer();
                 }
-                if(this.currText.length() != 0)
-                    this.currText=new StringBuffer();
             }
 
             public void characters(char[] ch, int start, int length) {
@@ -1211,35 +1213,33 @@ public class S3Util {
         }
     }
 
-
     static class CommonPrefixEntry {
+
         /**
          * The prefix common to the delimited keys it represents
          */
         public String prefix;
     }
 
-
     static class ListAllMyBucketsResponse extends Response {
+
         /**
-         * A list of Bucket objects, one for each of this account's buckets.  Will be null if
-         * the request fails.
+         * A list of Bucket objects, one for each of this account's buckets. Will be null if the request fails.
          */
         public List entries;
 
         public ListAllMyBucketsResponse(HttpURLConnection connection) throws IOException {
             super(connection);
-            if(connection.getResponseCode() < 400) {
+            if (connection.getResponseCode() < 400) {
                 try {
-                    XMLReader xr=Utils.createXMLReader();
-                    ListAllMyBucketsHandler handler=new ListAllMyBucketsHandler();
+                    XMLReader xr = Utils.createXMLReader();
+                    ListAllMyBucketsHandler handler = new ListAllMyBucketsHandler();
                     xr.setContentHandler(handler);
                     xr.setErrorHandler(handler);
 
                     xr.parse(new InputSource(connection.getInputStream()));
-                    this.entries=handler.getEntries();
-                }
-                catch(SAXException e) {
+                    this.entries = handler.getEntries();
+                } catch (SAXException e) {
                     throw HostControllerLogger.ROOT_LOGGER.errorParsingBucketListings(e);
                 }
             }
@@ -1247,17 +1247,17 @@ public class S3Util {
 
         static class ListAllMyBucketsHandler extends DefaultHandler {
 
-            private List entries=null;
-            private Bucket currBucket=null;
-            private StringBuffer currText=null;
-            private SimpleDateFormat iso8601Parser=null;
+            private List entries = null;
+            private Bucket currBucket = null;
+            private StringBuffer currText = null;
+            private SimpleDateFormat iso8601Parser = null;
 
             public ListAllMyBucketsHandler() {
                 super();
-                entries=new ArrayList();
-                this.iso8601Parser=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                entries = new ArrayList();
+                this.iso8601Parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                 this.iso8601Parser.setTimeZone(new SimpleTimeZone(0, "GMT"));
-                this.currText=new StringBuffer();
+                this.currText = new StringBuffer();
             }
 
             public void startDocument() {
@@ -1269,27 +1269,24 @@ public class S3Util {
             }
 
             public void startElement(String uri, String name, String qName, Attributes attrs) {
-                if(name.equals("Bucket")) {
-                    this.currBucket=new Bucket();
+                if (name.equals("Bucket")) {
+                    this.currBucket = new Bucket();
                 }
             }
 
             public void endElement(String uri, String name, String qName) {
-                if(name.equals("Bucket")) {
+                if (name.equals("Bucket")) {
                     this.entries.add(this.currBucket);
-                }
-                else if(name.equals("Name")) {
-                    this.currBucket.name=this.currText.toString();
-                }
-                else if(name.equals("CreationDate")) {
+                } else if (name.equals("Name")) {
+                    this.currBucket.name = this.currText.toString();
+                } else if (name.equals("CreationDate")) {
                     try {
-                        this.currBucket.creationDate=this.iso8601Parser.parse(this.currText.toString());
-                    }
-                    catch(ParseException e) {
+                        this.currBucket.creationDate = this.iso8601Parser.parse(this.currText.toString());
+                    } catch (ParseException e) {
                         throw HostControllerLogger.ROOT_LOGGER.errorParsingBucketListings(e);
                     }
                 }
-                this.currText=new StringBuffer();
+                this.currText = new StringBuffer();
             }
 
             public void characters(char[] ch, int start, int length) {
@@ -1302,7 +1299,6 @@ public class S3Util {
         }
     }
 
-
     static class S3Object {
 
         public byte[] data;
@@ -1313,17 +1309,16 @@ public class S3Util {
         public Map metadata;
 
         public S3Object(byte[] data, Map metadata) {
-            this.data=data;
-            this.metadata=metadata;
+            this.data = data;
+            this.metadata = metadata;
         }
     }
 
-
     abstract static class CallingFormat {
 
-        protected static CallingFormat pathCallingFormat=new PathCallingFormat();
-        protected static CallingFormat subdomainCallingFormat=new SubdomainCallingFormat();
-        protected static CallingFormat vanityCallingFormat=new VanityCallingFormat();
+        protected static CallingFormat pathCallingFormat = new PathCallingFormat();
+        protected static CallingFormat subdomainCallingFormat = new SubdomainCallingFormat();
+        protected static CallingFormat vanityCallingFormat = new VanityCallingFormat();
 
         public abstract boolean supportsLocatedBuckets();
 
@@ -1347,12 +1342,13 @@ public class S3Util {
         }
 
         private static class PathCallingFormat extends CallingFormat {
+
             public boolean supportsLocatedBuckets() {
                 return false;
             }
 
             public String getPathBase(String bucket, String key) {
-                return isBucketSpecified(bucket)? "/" + bucket + "/" + key : "/";
+                return isBucketSpecified(bucket) ? "/" + bucket + "/" + key : "/";
             }
 
             public String getEndpoint(String server, int port, String bucket) {
@@ -1361,9 +1357,9 @@ public class S3Util {
 
             public URL getURL(boolean isSecure, String server, int port, String bucket, String key, Map pathArgs)
                     throws MalformedURLException {
-                String pathBase=isBucketSpecified(bucket)? "/" + bucket + "/" + key : "/";
-                String pathArguments=Utils.convertPathArgsHashToString(pathArgs);
-                return new URL(isSecure? "https" : "http", server, port, pathBase + pathArguments);
+                String pathBase = isBucketSpecified(bucket) ? "/" + bucket + "/" + key : "/";
+                String pathArguments = Utils.convertPathArgsHashToString(pathArgs);
+                return new URL(isSecure ? "https" : "http", server, port, pathBase + pathArguments);
             }
 
             private static boolean isBucketSpecified(String bucket) {
@@ -1372,6 +1368,7 @@ public class S3Util {
         }
 
         private static class SubdomainCallingFormat extends CallingFormat {
+
             public boolean supportsLocatedBuckets() {
                 return true;
             }
@@ -1390,21 +1387,21 @@ public class S3Util {
 
             public URL getURL(boolean isSecure, String server, int port, String bucket, String key, Map pathArgs)
                     throws MalformedURLException {
-                if(bucket == null || bucket.length() == 0) {
+                if (bucket == null || bucket.length() == 0) {
                     //The bucket is null, this is listAllBuckets request
-                    String pathArguments=Utils.convertPathArgsHashToString(pathArgs);
-                    return new URL(isSecure? "https" : "http", server, port, "/" + pathArguments);
-                }
-                else {
-                    String serverToUse=getServer(server, bucket);
-                    String pathBase=getPathBase(bucket, key);
-                    String pathArguments=Utils.convertPathArgsHashToString(pathArgs);
-                    return new URL(isSecure? "https" : "http", serverToUse, port, pathBase + pathArguments);
+                    String pathArguments = Utils.convertPathArgsHashToString(pathArgs);
+                    return new URL(isSecure ? "https" : "http", server, port, "/" + pathArguments);
+                } else {
+                    String serverToUse = getServer(server, bucket);
+                    String pathBase = getPathBase(bucket, key);
+                    String pathArguments = Utils.convertPathArgsHashToString(pathArgs);
+                    return new URL(isSecure ? "https" : "http", serverToUse, port, pathBase + pathArguments);
                 }
             }
         }
 
         private static class VanityCallingFormat extends SubdomainCallingFormat {
+
             public String getServer(String server, String bucket) {
                 return bucket;
             }
@@ -1412,107 +1409,104 @@ public class S3Util {
     }
 
     static class Utils {
-        static final String METADATA_PREFIX="x-amz-meta-";
-        static final String AMAZON_HEADER_PREFIX="x-amz-";
-        static final String ALTERNATIVE_DATE_HEADER="x-amz-date";
-        public static final String DEFAULT_HOST="s3.amazonaws.com";
 
-        public static final int SECURE_PORT=443;
-        public static final int INSECURE_PORT=80;
+        static final String METADATA_PREFIX = "x-amz-meta-";
+        static final String AMAZON_HEADER_PREFIX = "x-amz-";
+        static final String ALTERNATIVE_DATE_HEADER = "x-amz-date";
+        public static final String DEFAULT_HOST = "s3.amazonaws.com";
 
+        public static final int SECURE_PORT = 443;
+        public static final int INSECURE_PORT = 80;
 
         /**
          * HMAC/SHA1 Algorithm per RFC 2104.
          */
-        private static final String HMAC_SHA1_ALGORITHM="HmacSHA1";
+        private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
         static String makeCanonicalString(String method, String bucket, String key, Map pathArgs, Map headers) {
             return makeCanonicalString(method, bucket, key, pathArgs, headers, null);
         }
 
         /**
-         * Calculate the canonical string.  When expires is non-null, it will be
-         * used instead of the Date header.
+         * Calculate the canonical string. When expires is non-null, it will be used instead of the Date header.
          */
         static String makeCanonicalString(String method, String bucketName, String key, Map pathArgs,
-                                          Map headers, String expires) {
-            StringBuilder buf=new StringBuilder();
+                Map headers, String expires) {
+            StringBuilder buf = new StringBuilder();
             buf.append(method + "\n");
 
             // Add all interesting headers to a list, then sort them.  "Interesting"
             // is defined as Content-MD5, Content-Type, Date, and x-amz-
-            SortedMap interestingHeaders=new TreeMap();
-            if(headers != null) {
-                for(Iterator i=headers.keySet().iterator(); i.hasNext();) {
-                    String hashKey=(String)i.next();
-                    if(hashKey == null) continue;
-                    String lk=hashKey.toLowerCase();
+            SortedMap interestingHeaders = new TreeMap();
+            if (headers != null) {
+                for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
+                    String hashKey = (String) i.next();
+                    if (hashKey == null) {
+                        continue;
+                    }
+                    String lk = hashKey.toLowerCase();
 
                     // Ignore any headers that are not particularly interesting.
-                    if(lk.equals("content-type") || lk.equals("content-md5") || lk.equals("date") ||
-                            lk.startsWith(AMAZON_HEADER_PREFIX)) {
-                        List s=(List)headers.get(hashKey);
+                    if (lk.equals("content-type") || lk.equals("content-md5") || lk.equals("date")
+                            || lk.startsWith(AMAZON_HEADER_PREFIX)) {
+                        List s = (List) headers.get(hashKey);
                         interestingHeaders.put(lk, concatenateList(s));
                     }
                 }
             }
 
-            if(interestingHeaders.containsKey(ALTERNATIVE_DATE_HEADER)) {
+            if (interestingHeaders.containsKey(ALTERNATIVE_DATE_HEADER)) {
                 interestingHeaders.put("date", "");
             }
 
             // if the expires is non-null, use that for the date field.  this
             // trumps the x-amz-date behavior.
-            if(expires != null) {
+            if (expires != null) {
                 interestingHeaders.put("date", expires);
             }
 
             // these headers require that we still put a new line in after them,
             // even if they don't exist.
-            if(!interestingHeaders.containsKey("content-type")) {
+            if (!interestingHeaders.containsKey("content-type")) {
                 interestingHeaders.put("content-type", "");
             }
-            if(!interestingHeaders.containsKey("content-md5")) {
+            if (!interestingHeaders.containsKey("content-md5")) {
                 interestingHeaders.put("content-md5", "");
             }
 
             // Finally, add all the interesting headers (i.e.: all that startwith x-amz- ;-))
-            for(Iterator i=interestingHeaders.keySet().iterator(); i.hasNext();) {
-                String headerKey=(String)i.next();
-                if(headerKey.startsWith(AMAZON_HEADER_PREFIX)) {
+            for (Iterator i = interestingHeaders.keySet().iterator(); i.hasNext();) {
+                String headerKey = (String) i.next();
+                if (headerKey.startsWith(AMAZON_HEADER_PREFIX)) {
                     buf.append(headerKey).append(':').append(interestingHeaders.get(headerKey));
-                }
-                else {
+                } else {
                     buf.append(interestingHeaders.get(headerKey));
                 }
                 buf.append("\n");
             }
 
             // build the path using the bucket and key
-            if(bucketName != null && bucketName.length() != 0) {
+            if (bucketName != null && bucketName.length() != 0) {
                 buf.append("/" + bucketName);
             }
 
             // append the key (it might be an empty string)
             // append a slash regardless
             buf.append("/");
-            if(key != null) {
+            if (key != null) {
                 buf.append(key);
             }
 
             // if there is an acl, logging or torrent parameter
             // add them to the string
-            if(pathArgs != null) {
-                if(pathArgs.containsKey("acl")) {
+            if (pathArgs != null) {
+                if (pathArgs.containsKey("acl")) {
                     buf.append("?acl");
-                }
-                else if(pathArgs.containsKey("torrent")) {
+                } else if (pathArgs.containsKey("torrent")) {
                     buf.append("?torrent");
-                }
-                else if(pathArgs.containsKey("logging")) {
+                } else if (pathArgs.containsKey("logging")) {
                     buf.append("?logging");
-                }
-                else if(pathArgs.containsKey("location")) {
+                } else if (pathArgs.containsKey("location")) {
                     buf.append("?location");
                 }
             }
@@ -1523,45 +1517,41 @@ public class S3Util {
 
         /**
          * Calculate the HMAC/SHA1 on a string.
+         *
          * @return Signature
-         * @throws java.security.NoSuchAlgorithmException
-         *          If the algorithm does not exist.  Unlikely
-         * @throws java.security.InvalidKeyException
-         *          If the key is invalid.
+         * @throws java.security.NoSuchAlgorithmException If the algorithm does not exist. Unlikely
+         * @throws java.security.InvalidKeyException If the key is invalid.
          */
         static String encode(String awsSecretAccessKey, String canonicalString,
-                             boolean urlencode) {
+                boolean urlencode) {
             // The following HMAC/SHA1 code for the signature is taken from the
             // AWS Platform's implementation of RFC2104 (amazon.webservices.common.Signature)
             //
             // Acquire an HMAC/SHA1 from the raw key bytes.
-            SecretKeySpec signingKey=
-                    new SecretKeySpec(awsSecretAccessKey.getBytes(), HMAC_SHA1_ALGORITHM);
+            SecretKeySpec signingKey
+                    = new SecretKeySpec(awsSecretAccessKey.getBytes(), HMAC_SHA1_ALGORITHM);
 
             // Acquire the MAC instance and initialize with the signing key.
-            Mac mac=null;
+            Mac mac = null;
             try {
-                mac=Mac.getInstance(HMAC_SHA1_ALGORITHM);
-            }
-            catch(NoSuchAlgorithmException e) {
+                mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+            } catch (NoSuchAlgorithmException e) {
                 // should not happen
                 throw new RuntimeException(e.getLocalizedMessage());
             }
             try {
                 mac.init(signingKey);
-            }
-            catch(InvalidKeyException e) {
+            } catch (InvalidKeyException e) {
                 // also should not happen
                 throw new RuntimeException(e.getLocalizedMessage());
             }
 
             // Compute the HMAC on the digest, and set it.
-            String b64=Base64.encodeBytes(mac.doFinal(canonicalString.getBytes()));
+            String b64 = Base64.encodeBytes(mac.doFinal(canonicalString.getBytes()));
 
-            if(urlencode) {
+            if (urlencode) {
                 return urlencode(b64);
-            }
-            else {
+            } else {
                 return b64;
             }
         }
@@ -1572,17 +1562,21 @@ public class S3Util {
 
         static Map paramsForListOptions(String prefix, String marker, Integer maxKeys, String delimiter) {
 
-            Map argParams=new HashMap();
+            Map argParams = new HashMap();
             // these three params must be url encoded
-            if(prefix != null)
+            if (prefix != null) {
                 argParams.put("prefix", urlencode(prefix));
-            if(marker != null)
+            }
+            if (marker != null) {
                 argParams.put("marker", urlencode(marker));
-            if(delimiter != null)
+            }
+            if (delimiter != null) {
                 argParams.put("delimiter", urlencode(delimiter));
+            }
 
-            if(maxKeys != null)
+            if (maxKeys != null) {
                 argParams.put("max-keys", Integer.toString(maxKeys.intValue()));
+            }
 
             return argParams;
 
@@ -1590,27 +1584,27 @@ public class S3Util {
 
         /**
          * Converts the Path Arguments from a map to String which can be used in url construction
+         *
          * @param pathArgs a map of arguments
          * @return a string representation of pathArgs
          */
         public static String convertPathArgsHashToString(Map pathArgs) {
-            StringBuilder pathArgsString=new StringBuilder();
+            StringBuilder pathArgsString = new StringBuilder();
             String argumentValue;
-            boolean firstRun=true;
-            if(pathArgs != null) {
-                for(Iterator argumentIterator=pathArgs.keySet().iterator(); argumentIterator.hasNext();) {
-                    String argument=(String)argumentIterator.next();
-                    if(firstRun) {
-                        firstRun=false;
+            boolean firstRun = true;
+            if (pathArgs != null) {
+                for (Iterator argumentIterator = pathArgs.keySet().iterator(); argumentIterator.hasNext();) {
+                    String argument = (String) argumentIterator.next();
+                    if (firstRun) {
+                        firstRun = false;
                         pathArgsString.append("?");
-                    }
-                    else {
+                    } else {
                         pathArgsString.append("&");
                     }
 
-                    argumentValue=(String)pathArgs.get(argument);
+                    argumentValue = (String) pathArgs.get(argument);
                     pathArgsString.append(argument);
-                    if(argumentValue != null) {
+                    if (argumentValue != null) {
                         pathArgsString.append("=");
                         pathArgsString.append(argumentValue);
                     }
@@ -1620,12 +1614,10 @@ public class S3Util {
             return pathArgsString.toString();
         }
 
-
         static String urlencode(String unencoded) {
             try {
                 return URLEncoder.encode(unencoded, "UTF-8");
-            }
-            catch(UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                 // should never happen
                 throw new RuntimeException(e.getLocalizedMessage());
             }
@@ -1634,30 +1626,29 @@ public class S3Util {
         static XMLReader createXMLReader() {
             try {
                 return XMLReaderFactory.createXMLReader();
-            }
-            catch(SAXException e) {
+            } catch (SAXException e) {
                 // oops, lets try doing this (needed in 1.4)
                 System.setProperty("org.xml.sax.driver", "org.apache.crimson.parser.XMLReaderImpl");
             }
             try {
                 // try once more
                 return XMLReaderFactory.createXMLReader();
-            }
-            catch(SAXException e) {
+            } catch (SAXException e) {
                 throw HostControllerLogger.ROOT_LOGGER.cannotInitializeSaxDriver();
             }
         }
 
         /**
          * Concatenates a bunch of header values, separating them with a comma.
+         *
          * @param values List of header values.
          * @return String of all headers, with commas.
          */
         private static String concatenateList(List values) {
-            StringBuilder buf=new StringBuilder();
-            for(int i=0, size=values.size(); i < size; ++i) {
-                buf.append(((String)values.get(i)).replaceAll("\n", "").trim());
-                if(i != (size - 1)) {
+            StringBuilder buf = new StringBuilder();
+            for (int i = 0, size = values.size(); i < size; ++i) {
+                buf.append(((String) values.get(i)).replaceAll("\n", "").trim());
+                if (i != (size - 1)) {
                     buf.append(",");
                 }
             }
@@ -1668,68 +1659,67 @@ public class S3Util {
          * Validate bucket-name
          */
         static boolean validateBucketName(String bucketName, CallingFormat callingFormat) {
-            if(callingFormat == CallingFormat.getPathCallingFormat()) {
-                final int MIN_BUCKET_LENGTH=3;
-                final int MAX_BUCKET_LENGTH=255;
-                final String BUCKET_NAME_REGEX="^[0-9A-Za-z\\.\\-_]*$";
+            if (callingFormat == CallingFormat.getPathCallingFormat()) {
+                final int MIN_BUCKET_LENGTH = 3;
+                final int MAX_BUCKET_LENGTH = 255;
+                final String BUCKET_NAME_REGEX = "^[0-9A-Za-z\\.\\-_]*$";
 
-                return null != bucketName &&
-                        bucketName.length() >= MIN_BUCKET_LENGTH &&
-                        bucketName.length() <= MAX_BUCKET_LENGTH &&
-                        bucketName.matches(BUCKET_NAME_REGEX);
-            }
-            else {
+                return null != bucketName
+                        && bucketName.length() >= MIN_BUCKET_LENGTH
+                        && bucketName.length() <= MAX_BUCKET_LENGTH
+                        && bucketName.matches(BUCKET_NAME_REGEX);
+            } else {
                 return isValidSubdomainBucketName(bucketName);
             }
         }
 
         static boolean isValidSubdomainBucketName(String bucketName) {
-            final int MIN_BUCKET_LENGTH=3;
-            final int MAX_BUCKET_LENGTH=63;
+            final int MIN_BUCKET_LENGTH = 3;
+            final int MAX_BUCKET_LENGTH = 63;
             // don't allow names that look like 127.0.0.1
-            final String IPv4_REGEX="^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+            final String IPv4_REGEX = "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
             // dns sub-name restrictions
-            final String BUCKET_NAME_REGEX="^[a-z0-9]([a-z0-9\\-\\_]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9\\-\\_]*[a-z0-9])?)*$";
+            final String BUCKET_NAME_REGEX = "^[a-z0-9]([a-z0-9\\-\\_]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9\\-\\_]*[a-z0-9])?)*$";
 
             // If there wasn't a location-constraint, then the current actual
             // restriction is just that no 'part' of the name (i.e. sequence
             // of characters between any 2 '.'s has to be 63) but the recommendation
             // is to keep the entire bucket name under 63.
-            return null != bucketName &&
-                    bucketName.length() >= MIN_BUCKET_LENGTH &&
-                    bucketName.length() <= MAX_BUCKET_LENGTH &&
-                    !bucketName.matches(IPv4_REGEX) &&
-                    bucketName.matches(BUCKET_NAME_REGEX);
+            return null != bucketName
+                    && bucketName.length() >= MIN_BUCKET_LENGTH
+                    && bucketName.length() <= MAX_BUCKET_LENGTH
+                    && !bucketName.matches(IPv4_REGEX)
+                    && bucketName.matches(BUCKET_NAME_REGEX);
         }
 
         static CallingFormat getCallingFormatForBucket(CallingFormat desiredFormat, String bucketName) {
-            CallingFormat callingFormat=desiredFormat;
-            if(callingFormat == CallingFormat.getSubdomainCallingFormat() && !Utils.isValidSubdomainBucketName(bucketName)) {
-                callingFormat=CallingFormat.getPathCallingFormat();
+            CallingFormat callingFormat = desiredFormat;
+            if (callingFormat == CallingFormat.getSubdomainCallingFormat() && !Utils.isValidSubdomainBucketName(bucketName)) {
+                callingFormat = CallingFormat.getPathCallingFormat();
             }
             return callingFormat;
         }
 
         public static String generateQueryStringAuthentication(String awsAccessKey, String awsSecretAccessKey,
-                                                               String method, String bucket, String key,
-                                                               Map pathArgs, Map headers) {
+                String method, String bucket, String key,
+                Map pathArgs, Map headers) {
             int defaultExpiresIn = 300; // 5 minutes
             long expirationDate = (System.currentTimeMillis() / 1000) + defaultExpiresIn;
             return generateQueryStringAuthentication(awsAccessKey, awsSecretAccessKey,
-                                                     method, bucket, key,
-                                                     pathArgs, headers, expirationDate);
+                    method, bucket, key,
+                    pathArgs, headers, expirationDate);
         }
 
         public static String generateQueryStringAuthentication(String awsAccessKey, String awsSecretAccessKey,
-                                                               String method, String bucket, String key,
-                                                               Map pathArgs, Map headers, long expirationDate) {
+                String method, String bucket, String key,
+                Map pathArgs, Map headers, long expirationDate) {
             method = method.toUpperCase(Locale.ENGLISH); // Method should always be uppercase
-            String canonicalString =
-                makeCanonicalString(method, bucket, key, pathArgs, headers, "" + expirationDate);
+            String canonicalString
+                    = makeCanonicalString(method, bucket, key, pathArgs, headers, "" + expirationDate);
             String encodedCanonical = encode(awsSecretAccessKey, canonicalString, true);
-            return "http://" + DEFAULT_HOST + "/" + bucket + "/" + key + "?" +
-                "AWSAccessKeyId=" + awsAccessKey + "&Expires=" + expirationDate +
-                "&Signature=" + encodedCanonical;
+            return "http://" + DEFAULT_HOST + "/" + bucket + "/" + key + "?"
+                    + "AWSAccessKeyId=" + awsAccessKey + "&Expires=" + expirationDate
+                    + "&Signature=" + encodedCanonical;
         }
     }
 }

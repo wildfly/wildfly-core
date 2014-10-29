@@ -36,6 +36,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -291,7 +292,7 @@ public final class ProcessControllerClient implements Closeable {
         }
     }
 
-    public void reconnectProcess(final String processName, final String hostName, final int port, final boolean managementSubsystemEndpoint, final byte[] authKey) throws IOException {
+    public void reconnectProcess(final String processName, final URI managementURI, final boolean managementSubsystemEndpoint, final byte[] authKey) throws IOException {
         if (processName == null){
             throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
         }
@@ -299,8 +300,9 @@ public final class ProcessControllerClient implements Closeable {
         try{
             os.write(Protocol.RECONNECT_PROCESS);
             writeUTFZBytes(os, processName);
-            writeUTFZBytes(os, hostName);
-            writeInt(os, port);
+            writeUTFZBytes(os, managementURI.getScheme());
+            writeUTFZBytes(os, managementURI.getHost());
+            writeInt(os, managementURI.getPort());
             writeBoolean(os, managementSubsystemEndpoint);
             os.write(authKey);
             os.close();

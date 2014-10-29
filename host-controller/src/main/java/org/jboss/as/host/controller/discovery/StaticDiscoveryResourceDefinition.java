@@ -27,18 +27,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.validation.IntRangeValidator;
-import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
+import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.StaticDiscoveryAddHandler;
 import org.jboss.as.host.controller.operations.StaticDiscoveryRemoveHandler;
-import org.jboss.dmr.ModelType;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a resource representing a static discovery option.
@@ -47,17 +43,13 @@ import org.jboss.dmr.ModelType;
  */
 public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition {
 
-    public static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST, ModelType.STRING)
-        .setAllowExpression(true)
-        .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-        .build();
+    public static final SimpleAttributeDefinition HOST = RemoteDomainControllerAddHandler.HOST;
 
-    public static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT)
-        .setAllowExpression(true)
-        .setValidator(new IntRangeValidator(1, 65535, false, true))
-        .build();
+    public static final SimpleAttributeDefinition PORT = RemoteDomainControllerAddHandler.PORT;
 
-    public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {HOST, PORT};
+    public static final SimpleAttributeDefinition PROTOCOL = RemoteDomainControllerAddHandler.PROTOCOL;
+
+    public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {HOST, PORT, PROTOCOL};
 
     public StaticDiscoveryResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
         super(PathElement.pathElement(STATIC_DISCOVERY), HostResolver.getResolver(STATIC_DISCOVERY),

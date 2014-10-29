@@ -31,7 +31,7 @@ import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOG
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,7 +47,6 @@ import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.server.DomainServerCommunicationServices;
@@ -107,7 +106,7 @@ class ManagedServer {
     private final String serverProcessName;
     private final String hostControllerName;
 
-    private final InetSocketAddress managementSocket;
+    private final URI managementURI;
     private final ProcessControllerClient processControllerClient;
 
     private final ManagedServerProxy protocolClient;
@@ -122,19 +121,19 @@ class ManagedServer {
     private volatile ManagedServerBootConfiguration bootConfiguration;
 
     ManagedServer(final String hostControllerName, final String serverName, final byte[] authKey,
-                  final ProcessControllerClient processControllerClient, final InetSocketAddress managementSocket,
+                  final ProcessControllerClient processControllerClient, final URI managementURI,
                   final TransformationTarget transformationTarget) {
 
         assert hostControllerName  != null : "hostControllerName is null";
         assert serverName  != null : "serverName is null";
         assert processControllerClient != null : "processControllerSlave is null";
-        assert managementSocket != null : "managementSocket is null";
+        assert managementURI != null : "managementURI is null";
 
         this.hostControllerName = hostControllerName;
         this.serverName = serverName;
         this.serverProcessName = getServerProcessName(serverName);
         this.processControllerClient = processControllerClient;
-        this.managementSocket = managementSocket;
+        this.managementURI = managementURI;
 
         this.authKey = authKey;
 
@@ -795,7 +794,7 @@ class ManagedServer {
             final boolean useSubsystemEndpoint = bootConfiguration.isManagementSubsystemEndpoint();
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
-            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementSocket, serverName, serverProcessName, authKey, useSubsystemEndpoint);
+            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint);
             final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID, Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties);
             final Marshaller marshaller = MARSHALLER_FACTORY.createMarshaller(CONFIG);
             final OutputStream os = processControllerClient.sendStdin(serverProcessName);
@@ -869,9 +868,7 @@ class ManagedServer {
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
             // Reconnect
-            final String hostName = managementSocket.getHostString();
-            final int port = managementSocket.getPort();
-            processControllerClient.reconnectProcess(serverProcessName, NetworkUtils.formatPossibleIpv6Address(hostName), port, bootConfiguration.isManagementSubsystemEndpoint(), authKey);
+            processControllerClient.reconnectProcess(serverProcessName, managementURI, bootConfiguration.isManagementSubsystemEndpoint(), authKey);
             return true;
         }
     }

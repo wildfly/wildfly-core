@@ -35,6 +35,15 @@ public class HostModelTestCase extends AbstractCoreModelTest {
         doHostXml("host-with-secure-interface.xml");
     }
 
+    @Test
+    public void testWFLY75() throws Exception {
+        doRemoteHostXml("host-remote-domain-manager.xml");
+    }
+
+    @Test
+    public void testWFLY75HtpRemoting() throws Exception {
+        doRemoteHostXml("host-http-remoting-domain-manager.xml");
+    }
     private final ModelInitializer MODEL_SANITIZER = new ModelInitializer() {
         @Override
         public void populateModel(Resource rootResource) {
@@ -55,6 +64,17 @@ public class HostModelTestCase extends AbstractCoreModelTest {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
                 .setXmlResource(hostXmlFile)
                 .setModelInitializer(MODEL_SANITIZER, MODEL_WRITER_SANITIZER)
+                .build();
+        Assert.assertTrue(kernelServices.isSuccessfulBoot());
+        String xml = kernelServices.getPersistedSubsystemXml();
+        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), hostXmlFile), xml);
+        ModelTestUtils.validateModelDescriptions(PathAddress.EMPTY_ADDRESS, kernelServices.getRootRegistration());
+    }
+
+    private void doRemoteHostXml(String hostXmlFile) throws Exception {
+        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
+                .setXmlResource(hostXmlFile)
+                .setModelInitializer(MODEL_SANITIZER, null)
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
         String xml = kernelServices.getPersistedSubsystemXml();
