@@ -36,7 +36,6 @@ import org.jboss.as.server.Services;
 import org.jboss.as.server.jmx.MBeanServerPlugin;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
@@ -61,7 +60,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     private final boolean coreMBeanSensitivity;
     private final JmxAuthorizer authorizer;
     private final ManagedAuditLogger auditLoggerInfo;
-    private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<>();
+    private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
     private final boolean forStandalone;
     private PluggableMBeanServer mBeanServer;
     private MBeanServerPlugin showModelPlugin;
@@ -96,8 +95,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     public synchronized void start(final StartContext context) throws StartException {
         //If the platform MBeanServer was set up to be the PluggableMBeanServer, use that otherwise create a new one and delegate
         MBeanServer platform = ManagementFactory.getPlatformMBeanServer();
-        ServiceContainer container = context.getController().getServiceContainer();
-        PluggableMBeanServerImpl pluggable = platform instanceof PluggableMBeanServerImpl ? (PluggableMBeanServerImpl)platform : new PluggableMBeanServerImpl(platform, null, container);
+        PluggableMBeanServerImpl pluggable = platform instanceof PluggableMBeanServerImpl ? (PluggableMBeanServerImpl)platform : new PluggableMBeanServerImpl(platform, null);
         MBeanServerDelegate delegate = platform instanceof PluggableMBeanServerImpl ? ((PluggableMBeanServerImpl)platform).getMBeanServerDelegate() : null;
         pluggable.setAuditLogger(auditLoggerInfo);
         pluggable.setAuthorizer(authorizer);

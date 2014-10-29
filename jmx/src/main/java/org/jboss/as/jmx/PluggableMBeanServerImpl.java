@@ -98,10 +98,8 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.security.InetAddressPrincipal;
 import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.jmx.logging.JmxLogger;
-import org.jboss.as.server.CurrentServiceContainer;
 import org.jboss.as.server.jmx.MBeanServerPlugin;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
-import org.jboss.msc.service.ServiceContainer;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -109,9 +107,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * <em>Note:</em> If this class name changes ModelCombiner must be updated.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
- * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
+class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
     private static final Object[] NO_ARGS = new Object[0];
     private static final String[] EMPTY_SIG = new String[0];
@@ -120,7 +117,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
     private final MBeanServerDelegate rootMBeanServerDelegate;
     private volatile ManagedAuditLogger auditLogger;
 
-    private final Set<MBeanServerPlugin> delegates = new CopyOnWriteArraySet<>();
+    private final Set<MBeanServerPlugin> delegates = new CopyOnWriteArraySet<MBeanServerPlugin>();
 
     private volatile JmxAuthorizer authorizer;
 
@@ -130,12 +127,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
      * @param rootMBeanServerDelegate can be {@code null} if the {@link PluggableMBeanServerBuilder} is not used
      */
     PluggableMBeanServerImpl(MBeanServer rootMBeanServer, MBeanServerDelegate rootMBeanServerDelegate) {
-        this(rootMBeanServer, rootMBeanServerDelegate, CurrentServiceContainer.getServiceContainer());
-    }
-
-    PluggableMBeanServerImpl(MBeanServer rootMBeanServer, MBeanServerDelegate rootMBeanServerDelegate, ServiceContainer container) {
-        TcclMBeanServer tcclMBeanServer = new TcclMBeanServer(rootMBeanServer);
-        this.rootMBeanServer = new MscMBeanServer(tcclMBeanServer, container);
+        this.rootMBeanServer = new TcclMBeanServer(rootMBeanServer);
         this.rootMBeanServerDelegate = rootMBeanServerDelegate;
     }
 
@@ -157,10 +149,6 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
 
     public void removePlugin(MBeanServerPlugin delegate) {
         delegates.remove(delegate);
-    }
-
-    public ObjectInstance registerMBeanInternal(Object mbean, ObjectName name) throws InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException {
-        return doRegisterMBean(mbean, name, true);
     }
 
     @Override
@@ -902,11 +890,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
     }
 
     @Override
-    public ObjectInstance registerMBean(Object object, ObjectName name) throws InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException {
-        return doRegisterMBean(object, name, false);
-    }
-
-    private ObjectInstance doRegisterMBean(Object object, ObjectName name, boolean isInternal) throws InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException {
+    public ObjectInstance registerMBean(Object object, ObjectName name) throws InstanceAlreadyExistsException,
+            MBeanRegistrationException, NotCompliantMBeanException {
         Throwable error = null;
         MBeanServerPlugin delegate = null;
         final boolean readOnly = false;
@@ -915,13 +900,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
             if (delegate.shouldAuthorize()) {
                 authorizeSensitiveOperation(REGISTER_MBEAN, readOnly, true);
             }
-            ObjectInstance instance;
-            if (isInternal && delegate instanceof MBeanServerExt) {
-                instance = MBeanServerExt.class.cast(delegate).registerMBeanInternal(object, name);
-            } else {
-                instance = delegate.registerMBean(object, name);
-            }
-            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, instance, delegate);
+            return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.registerMBean(object, name), delegate);
         } catch (Exception e) {
             error = e;
             if (e instanceof InstanceAlreadyExistsException) throw (InstanceAlreadyExistsException)e;
@@ -1368,9 +1347,12 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
         }
     };
 
-    private class TcclMBeanServer extends DelegateMBeanServer implements MBeanServerPlugin {
+    private class TcclMBeanServer implements MBeanServerPlugin {
+
+        private final MBeanServer delegate;
+
         public TcclMBeanServer(MBeanServer delegate) {
-            super(delegate);
+            this.delegate = delegate;
         }
 
         @Override
@@ -1410,6 +1392,11 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
             }
         }
 
+        public ObjectInstance createMBean(String className, ObjectName name, Object[] params, String[] signature) throws ReflectionException,
+                InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException {
+            return delegate.createMBean(className, name, params, signature);
+        }
+
         public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName, Object[] params, String[] signature)
                 throws ReflectionException, InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException,
                 InstanceNotFoundException {
@@ -1433,6 +1420,30 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
 
         }
 
+        public ObjectInstance createMBean(String className, ObjectName name) throws ReflectionException, InstanceAlreadyExistsException,
+                 MBeanException, NotCompliantMBeanException {
+            return delegate.createMBean(className, name);
+        }
+
+        @Override
+        @Deprecated
+        public ObjectInputStream deserialize(ObjectName name, byte[] data) throws OperationsException {
+            return delegate.deserialize(name, data);
+        }
+
+        @Override
+        @Deprecated
+        public ObjectInputStream deserialize(String className, byte[] data) throws OperationsException, ReflectionException {
+            return delegate.deserialize(className, data);
+        }
+
+        @Override
+        @Deprecated
+        public ObjectInputStream deserialize(String className, ObjectName loaderName, byte[] data) throws OperationsException,
+                ReflectionException {
+            return delegate.deserialize(className, loaderName, data);
+        }
+
         public Object getAttribute(ObjectName name, String attribute) throws MBeanException, AttributeNotFoundException, InstanceNotFoundException,
                 ReflectionException {
             ClassLoader old = pushClassLoader(name);
@@ -1450,6 +1461,42 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
             } finally {
                 resetClassLoader(old);
             }
+        }
+
+        public ClassLoader getClassLoader(ObjectName loaderName) throws InstanceNotFoundException {
+            return delegate.getClassLoader(loaderName);
+        }
+
+        public ClassLoader getClassLoaderFor(ObjectName mbeanName) throws InstanceNotFoundException {
+            return delegate.getClassLoaderFor(mbeanName);
+        }
+
+        public ClassLoaderRepository getClassLoaderRepository() {
+            return delegate.getClassLoaderRepository();
+        }
+
+        public String getDefaultDomain() {
+            return delegate.getDefaultDomain();
+        }
+
+        public String[] getDomains() {
+            return delegate.getDomains();
+        }
+
+        public Integer getMBeanCount() {
+            return delegate.getMBeanCount();
+        }
+
+        public MBeanInfo getMBeanInfo(ObjectName name) throws InstanceNotFoundException, IntrospectionException, ReflectionException {
+            return delegate.getMBeanInfo(name);
+        }
+
+        public ObjectInstance getObjectInstance(ObjectName name) throws InstanceNotFoundException {
+            return delegate.getObjectInstance(name);
+        }
+
+        public Object instantiate(String className, Object[] params, String[] signature) throws ReflectionException, MBeanException {
+            return delegate.instantiate(className, params, signature);
         }
 
         public Object instantiate(String className, ObjectName loaderName, Object[] params, String[] signature) throws ReflectionException,
@@ -1471,6 +1518,10 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
             }
         }
 
+        public Object instantiate(String className) throws ReflectionException, MBeanException {
+            return delegate.instantiate(className);
+        }
+
         public Object invoke(ObjectName name, String operationName, Object[] params, String[] signature) throws InstanceNotFoundException,
                 MBeanException, ReflectionException {
 
@@ -1480,6 +1531,27 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer, MBeanServerExt {
             } finally {
                 resetClassLoader(old);
             }
+        }
+
+        public boolean isInstanceOf(ObjectName name, String className) throws InstanceNotFoundException {
+            return delegate.isInstanceOf(name, className);
+        }
+
+        public boolean isRegistered(ObjectName name) {
+            return delegate.isRegistered(name);
+        }
+
+        public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
+            return delegate.queryMBeans(name, query);
+        }
+
+        public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
+            return delegate.queryNames(name, query);
+        }
+
+        public ObjectInstance registerMBean(Object object, ObjectName name) throws InstanceAlreadyExistsException, MBeanRegistrationException,
+                NotCompliantMBeanException {
+            return delegate.registerMBean(object, name);
         }
 
         public void removeNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter, Object handback)
