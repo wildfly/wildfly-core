@@ -948,7 +948,21 @@ public class ManagementXml {
                     break;
                 }
                 case SSL: {
-                    parseSSL_1_0(reader, expectedNs, realmAddress, list);
+                    if (expectedNs.getMajorVersion() == 1) {
+                        // This is only needed until we port version 1.7 of the schema from EAP to here
+                        // and then the 1.x versions will also be listed in the switch below.
+                        parseSSL_1_0(reader, expectedNs, realmAddress, list);
+                    } else {
+                        switch (expectedNs) {
+                            case DOMAIN_2_0:
+                            case DOMAIN_2_1:
+                                parseSSL_1_0(reader, expectedNs, realmAddress, list);
+                                break;
+                            default:
+                                parseSSL_2_2(reader, expectedNs, realmAddress, list);
+                                break;
+                        }
+                    }
                     break;
                 }
                 default: {
@@ -971,7 +985,7 @@ public class ManagementXml {
                     break;
                 }
                 case SSL: {
-                    parseSSL_3_0(reader, expectedNs, realmAddress, list);
+                    parseSSL_2_2(reader, expectedNs, realmAddress, list);
                     break;
                 }
                 case KERBEROS: {
@@ -1054,7 +1068,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseSSL_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+    private static void parseSSL_2_2(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
 
         ModelNode ssl = new ModelNode();
         ssl.get(OP).set(ADD);
