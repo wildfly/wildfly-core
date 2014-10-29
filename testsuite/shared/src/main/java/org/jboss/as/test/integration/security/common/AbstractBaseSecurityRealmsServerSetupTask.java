@@ -76,22 +76,34 @@ import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
+import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerSetupTask;
 
 /**
  *
  * @see org.jboss.as.test.integration.security.common.config.realm.SecurityRealm
  * @author Josef Cacek
  */
-public abstract class AbstractBaseSecurityRealmsServerSetupTask {
+public abstract class AbstractBaseSecurityRealmsServerSetupTask implements ServerSetupTask {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractBaseSecurityRealmsServerSetupTask.class);
     private static final String KEYSTORE_PATH = "keystore-path";
 
     private SecurityRealm[] securityRealms;
 
+    @Override
+    public void setup(ManagementClient managementClient) throws Exception {
+        setup(managementClient.getControllerClient());
+    }
+
+    @Override
+    public void tearDown(ManagementClient managementClient) throws Exception {
+        tearDown(managementClient.getControllerClient());
+    }
+
     // Protected methods -----------------------------------------------------
 
-    protected void setup(final ModelControllerClient modelControllerClient, String containerId) throws Exception {
+    protected void setup(final ModelControllerClient modelControllerClient) throws Exception {
         securityRealms = getSecurityRealms();
 
         if (securityRealms == null || securityRealms.length == 0) {
@@ -182,7 +194,7 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask {
         CoreUtils.applyUpdates(updates, modelControllerClient);
     }
 
-    protected void tearDown(ModelControllerClient modelControllerClient, String containerId) throws Exception {
+    protected void tearDown(ModelControllerClient modelControllerClient) throws Exception {
         if (securityRealms == null || securityRealms.length == 0) {
             LOGGER.warn("Empty security realms configuration.");
             return;

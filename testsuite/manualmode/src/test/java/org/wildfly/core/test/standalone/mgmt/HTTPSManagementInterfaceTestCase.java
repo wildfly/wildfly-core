@@ -100,20 +100,12 @@ public class HTTPSManagementInterfaceTestCase {
     public static final File CLIENT_TRUSTSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.CLIENT_TRUSTSTORE);
     public static final File UNTRUSTED_KEYSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.UNTRUSTED_KEYSTORE);
 
-    private static final String RELOAD = "reload";
-    private static final int MAX_RELOAD_TIME = 20000;
-
     private static final ManagementWebRealmSetup managementNativeRealmSetup = new ManagementWebRealmSetup();
     private static final String MANAGEMENT_WEB_REALM = "ManagementWebRealm";
     private static final String MGMT_CTX = "/management";
-    public static final String CONTAINER = "default-jbossas";
 
     @Inject
     protected static ServerController controller;
-
-  /*  @Inject
-    protected ManagementClient managementClient;
-    */
 
 
     @BeforeClass
@@ -127,7 +119,7 @@ public class HTTPSManagementInterfaceTestCase {
 
         LOGGER.info("*** will configure server now");
         serverSetup(managementClient);
-        managementNativeRealmSetup.setup(client, CONTAINER);
+        managementNativeRealmSetup.setup(client);
 
         LOGGER.info("*** reloading server");
         // To apply new security realm settings for http interface reload of
@@ -135,7 +127,7 @@ public class HTTPSManagementInterfaceTestCase {
         reloadServer();
     }
 
-    private static void reloadServer() throws Exception {
+    static void reloadServer() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext("remoting", TestSuiteEnvironment.getServerAddress(), 9999);
         try {
             ctx.connectController();
@@ -219,28 +211,29 @@ public class HTTPSManagementInterfaceTestCase {
         reloadServer();
 
         serverTearDown(client);
-        managementNativeRealmSetup.tearDown(client, CONTAINER);
+        managementNativeRealmSetup.tearDown(client);
 
         LOGGER.info("*** stopping container");
         controller.stop();
+
+        //FileUtils.deleteDirectory(WORK_DIR);
     }
 
     private static HttpClient getHttpClient(File keystoreFile) {
-        return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, CLIENT_TRUSTSTORE_FILE,
-                SecurityTestConstants.KEYSTORE_PASSWORD);
+        return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, CLIENT_TRUSTSTORE_FILE, SecurityTestConstants.KEYSTORE_PASSWORD);
     }
 
     static class ManagementWebRealmSetup extends AbstractBaseSecurityRealmsServerSetupTask {
 
         // Overridden just to expose locally
         @Override
-        protected void setup(ModelControllerClient modelControllerClient, String containerId) throws Exception {
-            super.setup(modelControllerClient, containerId);
+        protected void setup(ModelControllerClient modelControllerClient) throws Exception {
+            super.setup(modelControllerClient);
         }
 
         @Override
-        protected void tearDown(ModelControllerClient modelControllerClient, String containerId) throws Exception {
-            super.tearDown(modelControllerClient, containerId);
+        protected void tearDown(ModelControllerClient modelControllerClient) throws Exception {
+            super.tearDown(modelControllerClient);
         }
 
         @Override
@@ -280,11 +273,17 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get(VALUE).set("management-https");
         CoreUtils.applyUpdate(operation, client);
 
+        // add native socket binding
+        operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.ADD);
+        operation.get("port").set(MANAGEMENT_NATIVE_PORT);
+        operation.get("interface").set("management");
+        CoreUtils.applyUpdate(operation, client);
+
+
         // create native interface to control server while http interface will be secured
         operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
         operation.get("security-realm").set("ManagementRealm");
-        operation.get("interface").set("management");
-        operation.get("port").set(MANAGEMENT_NATIVE_PORT);
+        operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
     }
 
@@ -294,10 +293,13 @@ public class HTTPSManagementInterfaceTestCase {
                 ModelDescriptionConstants.REMOVE);
         CoreUtils.applyUpdate(operation, client);
 
+        operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.REMOVE);
+        CoreUtils.applyUpdate(operation, client);
+
         FileUtils.deleteDirectory(WORK_DIR);
     }
 
-    private static void resetHttpInterfaceConfiguration(ModelControllerClient client) throws Exception {
+    static void resetHttpInterfaceConfiguration(ModelControllerClient client) throws Exception {
 
         // change back security realm for http management interface
         ModelNode operation = createOpNode("core-service=management/management-interface=http-interface",
@@ -313,7 +315,7 @@ public class HTTPSManagementInterfaceTestCase {
         CoreUtils.applyUpdate(operation, client);
     }
 
-    private static ModelControllerClient getNativeModelControllerClient() {
+    static ModelControllerClient getNativeModelControllerClient() {
 
         ModelControllerClient client = null;
         try {

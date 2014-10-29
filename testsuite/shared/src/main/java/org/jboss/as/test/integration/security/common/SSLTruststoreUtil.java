@@ -29,18 +29,22 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import javax.net.ssl.SSLContext;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.jboss.as.test.integration.management.util.CustomCLIExecutor;
+import org.apache.http.client.HttpClient;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.jboss.logging.Logger;
 
 public class SSLTruststoreUtil {
@@ -52,37 +56,44 @@ public class SSLTruststoreUtil {
     public static final int HTTPS_PORT_VERIFY_WANT = 18444;
     public static final int HTTPS_PORT_VERIFY_TRUE = 18445;
 
-    public static final int[] HTTPS_PORTS = { HTTPS_PORT_VERIFY_FALSE, HTTPS_PORT_VERIFY_TRUE, HTTPS_PORT_VERIFY_WANT };
+    public static final int[] HTTPS_PORTS = {HTTPS_PORT_VERIFY_FALSE, HTTPS_PORT_VERIFY_TRUE, HTTPS_PORT_VERIFY_WANT};
 
     private static final String HTTPS = "https";
 
-    public static DefaultHttpClient getHttpClientWithSSL(File trustStoreFile, String password) {
+    public static HttpClient getHttpClientWithSSL(File trustStoreFile, String password) {
         return getHttpClientWithSSL(null, null, trustStoreFile, password);
     }
 
-    public static DefaultHttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile,
-            String trustStorePassword) {
+    public static HttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile,
+                                                  String trustStorePassword) {
 
         try {
             final KeyStore truststore = loadKeyStore(trustStoreFile, trustStorePassword.toCharArray());
             final KeyStore keystore = keyStoreFile != null ? loadKeyStore(keyStoreFile, keyStorePassword.toCharArray()) : null;
-            final SSLSocketFactory ssf = new SSLSocketFactory(SSLSocketFactory.TLS, keystore, keyStorePassword, truststore,
-                    null, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-            HttpParams params = new BasicHttpParams();
-
-            SchemeRegistry registry = new SchemeRegistry();
-            registry.register(new Scheme("http", CustomCLIExecutor.MANAGEMENT_HTTP_PORT, PlainSocketFactory
-                    .getSocketFactory()));
-            registry.register(new Scheme("https", CustomCLIExecutor.MANAGEMENT_HTTPS_PORT, ssf));
-            for (int port : HTTPS_PORTS) {
-                registry.register(new Scheme("https", port, ssf));
+            SSLContextBuilder sslContextBuilder = SSLContexts.custom()
+                    .useTLS()
+                    .loadTrustMaterial(truststore);
+            if (keyStoreFile!=null){
+                sslContextBuilder.loadKeyMaterial(keystore, keyStorePassword.toCharArray());
             }
-            ClientConnectionManager ccm = new PoolingClientConnectionManager(registry);
-            return new DefaultHttpClient(ccm, params);
+            SSLContext sslContext = sslContextBuilder.build();
+            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext,new AllowAllHostnameVerifier());
+
+            Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                    .register("https", socketFactory)
+                    .build();
+
+            return HttpClientBuilder.create()
+                    .setSSLSocketFactory(socketFactory)
+                    .setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+                    .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
+                    .setSchemePortResolver(new DefaultSchemePortResolver())
+                    .build();
+
         } catch (Exception e) {
             LOGGER.error("Creating HttpClient with customized SSL failed. We are returning the default one instead.", e);
-            return new DefaultHttpClient();
+            return HttpClients.createDefault();
         }
     }
 
@@ -90,7 +101,7 @@ public class SSLTruststoreUtil {
      * Loads a JKS keystore with given path and password.
      *
      * @param keystoreFile path to keystore file
-     * @param keystorePwd keystore password
+     * @param keystorePwd  keystore password
      * @return
      * @throws KeyStoreException
      * @throws NoSuchAlgorithmException

@@ -39,8 +39,10 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URL;
 import java.util.concurrent.TimeoutException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.apache.commons.io.FileUtils;
@@ -67,6 +69,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -86,7 +89,6 @@ public class HTTPSManagementInterfaceTestCase {
     private static final HttpManagementRealmSetup httpManagementRealmSetup = new HttpManagementRealmSetup();
     private static final String MANAGEMENT_WEB_REALM = "ManagementWebRealm";
     private static final String MGMT_CTX = "/management";
-    public static final String CONTAINER = "default-jbossas";
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
@@ -107,13 +109,13 @@ public class HTTPSManagementInterfaceTestCase {
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
 
-        httpManagementRealmSetup.setup(domainMasterLifecycleUtil.getDomainClient(), CONTAINER);
+        httpManagementRealmSetup.setup(domainMasterLifecycleUtil.getDomainClient());
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
 
-        httpManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient(), CONTAINER);
+        httpManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient());
 
         testSupport.stop();
         testSupport = null;
@@ -189,7 +191,9 @@ public class HTTPSManagementInterfaceTestCase {
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 401);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
             fail("Untrusted client should not be authenticated.");
-        } catch (SSLPeerUnverifiedException e) {
+        } catch (SSLHandshakeException | SSLPeerUnverifiedException | SocketException e) {
+            //depending on the OS and the version of HTTP client in use any one of these exceptions may be thrown
+            //in particular the SocketException gets thrown on Windows
             // OK
         }
 
@@ -245,7 +249,9 @@ public class HTTPSManagementInterfaceTestCase {
         try {
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClientUntrusted, 401);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
-        } catch (SSLPeerUnverifiedException e) {
+        } catch (SSLHandshakeException | SSLPeerUnverifiedException | SocketException e) {
+            //depending on the OS and the version of HTTP client in use any one of these exceptions may be thrown
+            //in particular the SocketException gets thrown on Windows
             // OK
         }
 
@@ -255,11 +261,13 @@ public class HTTPSManagementInterfaceTestCase {
     }
 
     @Test
+    @Ignore("Ignored until we find better way to test redirects")
     public void testHttpsRedirect() throws Exception {
         httpsRedirectTest(false);
     }
 
     @Test
+    @Ignore("Ignored until we find better way to test redirects")
     public void testNoHttpsRedirectWithSecureInterface() throws Exception {
         httpsRedirectTest(true);
     }
@@ -278,7 +286,9 @@ public class HTTPSManagementInterfaceTestCase {
             int expectedStatus = addSecureInterface ? 403 : 302;
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, expectedStatus);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
-        } catch (SSLPeerUnverifiedException e) {
+        } catch (SSLHandshakeException | SSLPeerUnverifiedException | SocketException e) {
+            //depending on the OS and the version of HTTP client in use any one of these exceptions may be thrown
+            //in particular the SocketException gets thrown on Windows
             // OK
         }
     }
@@ -310,14 +320,14 @@ public class HTTPSManagementInterfaceTestCase {
 
         // Overridden just to expose locally
         @Override
-        protected void setup(ModelControllerClient modelControllerClient, String containerId) throws Exception {
-            super.setup(modelControllerClient, containerId);
+        protected void setup(ModelControllerClient modelControllerClient) throws Exception {
+            super.setup(modelControllerClient);
         }
 
         // Overridden just to expose locally
         @Override
-        protected void tearDown(ModelControllerClient modelControllerClient, String containerId) throws Exception {
-            super.tearDown(modelControllerClient, containerId);
+        protected void tearDown(ModelControllerClient modelControllerClient) throws Exception {
+            super.tearDown(modelControllerClient);
         }
 
         @Override

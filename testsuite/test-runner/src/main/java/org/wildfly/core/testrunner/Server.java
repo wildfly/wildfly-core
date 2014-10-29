@@ -215,7 +215,7 @@ public class Server {
                 byte[] buf = new byte[32];
                 int num;
                 // Do not try reading a line cos it considers '\r' end of line
-                while ((num = source.read(buf)) != 1) {
+                while ((num = source.read(buf)) != -1) {
                     target.write(buf, 0, num);
                 }
             } catch (IOException ignore) {

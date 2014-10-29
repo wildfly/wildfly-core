@@ -71,6 +71,7 @@
         <module>shared</module>
         <module>test-runner</module>
         <module>standalone</module>
+        <module>manualmode</module>
     </modules>
 
 
@@ -282,7 +283,6 @@
                         <failIfNoTests>false</failIfNoTests>
                         <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
                         <systemPropertyVariables>
-                            <jboss.options>${surefire.system.args}</jboss.options>
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <jboss.dist>${jboss.dist}</jboss.dist>
                             <jboss.home>${basedir}/target/wildfly-core</jboss.home>
@@ -371,7 +371,7 @@
             </properties>
         </profile>
 
-        <!-- IPv6. Wildfly-2228. -->
+        <!-- IPv6. WFLY-2228. -->
         <profile>
             <id>ts.ipv6</id>
             <activation>

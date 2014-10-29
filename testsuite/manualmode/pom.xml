@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source
+  ~ Copyright 2014, JBoss Inc., and individual contributors as indicated
+  ~ by the @authors tag.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+          <groupId>org.wildfly.core</groupId>
+          <artifactId>wildfly-core-testsuite</artifactId>
+          <version>1.0.0.Alpha11-SNAPSHOT</version>
+          <relativePath>../pom.xml</relativePath>
+     </parent>
+
+    <artifactId>wildfly-core-testsuite-manualmode</artifactId>
+
+    <name>WildFly Core Test Suite: Manual Mode Tests</name>
+
+    <properties>
+        <!--<jbossas.ts.integ.dir>${basedir}/..</jbossas.ts.integ.dir>
+        <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
+        <jbossas.project.dir>${jbossas.ts.dir}/..</jbossas.project.dir>-->
+        <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-test-runner</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-testsuite-shared</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-build</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-model-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.syslog4j</groupId>
+            <artifactId>syslog4j</artifactId>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+
+        <profile>
+            <id>manualmode.integration.tests.profile</id>
+            <activation>
+                <property>
+                    <name>!noManualmode</name>
+                </property>
+            </activation>
+
+            <properties>
+            </properties>
+
+            <!--
+                Server configuration executions.
+                Naming convention for executions (which we read in the log): for server config X, call it X.server
+            -->
+            <build>
+                <plugins>
+
+                    <!-- Build the server configuration(s) -->
+                 <!--   <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions combine.children="append">
+                            <execution>
+                                <id>build-manual-mode-servers</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="${jbossas.ts.integ.dir}/src/test/scripts/manualmode-build.xml">
+                                            <property name="management.address" value="${node0}"/>
+                                            <property name="node1" value="${node1}"/>
+                                            <property name="node0" value="${node0}"/>
+                                            <property name="mcast.ttl" value="${mcast.ttl}"/>
+                                            <property name="jboss.dist" value="${jboss.dist}"/>
+                                            <target name="build-manual-mode"/>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>-->
+
+                    <plugin>
+                        <groupId>org.wildfly.build</groupId>
+                        <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>server-provisioning</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <config-file>server-provisioning.xml</config-file>
+                                    <server-name>wildfly-core</server-name>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Surefire. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+
+                            <!-- Workaround for nasty and hacky tests not cleaning up completely after themselves. -->
+                            <runOrder>alphabetical</runOrder>
+
+                            <!-- Parameters to test cases. -->
+                            <systemPropertyVariables combine.children="append">
+                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                                <jboss.home>${wildfly.home}</jboss.home>
+                                <module.path>${wildfly.home}/modules/</module.path>
+                                <jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
+                                <javax.net.ssl.trustStore>${basedir}/src/test/resources/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
+                                <javax.net.ssl.keyStore>${basedir}/src/test/resources/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
+                                <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
+                                <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
+                            </systemPropertyVariables>
+                        </configuration>
+
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>keytool-maven-plugin</artifactId>
+                        <version>1.4</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.codehaus.mojo</groupId>
+                                <artifactId>keytool-api-1.7</artifactId>
+                                <version>1.4</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <phase>generate-test-resources</phase>
+                                <id>clean-cli-vault-keystore</id>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <phase>generate-test-resources</phase>
+                                <id>genseckey-cli-vault-keystore</id>
+                                <goals>
+                                    <goal>generateSecretKey</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <keystore>${basedir}/target/cli-vault.keystore</keystore>
+                            <dname>cn=JBoss Security,ou=JBoss Division,o=RedHatInc,l=Raleigh,st=NC,c=US</dname>
+                            <keypass>secret_1</keypass>
+                            <storepass>secret_1</storepass>
+                            <storetype>jceks</storetype>
+                            <alias>vault</alias>
+                            <keyalg>AES</keyalg>
+                            <keysize>128</keysize>
+                            <validity>365</validity>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+</project>

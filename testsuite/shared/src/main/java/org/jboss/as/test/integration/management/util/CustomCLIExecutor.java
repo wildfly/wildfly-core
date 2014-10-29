@@ -105,7 +105,7 @@ public class CustomCLIExecutor {
         command.add("--controller=" + controller);
         command.add(operation);
         builder.command(command);
-
+        LOGGER.infof("CLI Starting with command: %s",command);
         Process cliProc = null;
         try {
             cliProc = builder.start();

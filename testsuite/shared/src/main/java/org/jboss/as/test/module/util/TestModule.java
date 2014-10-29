@@ -117,7 +117,6 @@ public class TestModule {
      */
     public void create(boolean deleteFirst) throws IOException {
         File moduleDirectory = getModuleDirectory();
-
         if (moduleDirectory.exists()) {
             if (!deleteFirst) {
                 throw new IllegalArgumentException(moduleDirectory + " already exists.");
@@ -127,6 +126,8 @@ public class TestModule {
         }
 
         File mainDirectory = new File(moduleDirectory, "main");
+        log.infof("creating module in: %s",mainDirectory);
+
 
         if (!mainDirectory.mkdirs()) {
             throw new IllegalArgumentException("Could not create " + mainDirectory);
@@ -134,7 +135,9 @@ public class TestModule {
 
         try {
             if (moduleXml != null) {
-                copyFile(new File(mainDirectory, "module.xml"), new FileInputStream(this.moduleXml));
+                try (FileInputStream fis = new FileInputStream(this.moduleXml)) {
+                    copyFile(new File(mainDirectory, "module.xml"), fis);
+                }
             } else {
                 generateModuleXml(mainDirectory);
             }

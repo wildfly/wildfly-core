@@ -1,7 +1,10 @@
 package org.wildfly.core.testrunner;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.LinkedList;
+import java.util.List;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -20,6 +23,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
     private final ServerController controller = new ServerController();
     private final boolean automaticServerControl;
+    private final List<ServerSetupTask> serverSetupTasks = new LinkedList<>();
 
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
@@ -36,7 +40,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         }
         startServerIfRequired();
         doInject(klass, null);
-
+        prepareSetupTasks(klass);
     }
 
     private void doInject(Class<?> klass, Object instance) {
@@ -73,20 +77,62 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     }
 
     @Override
-    public void run(final RunNotifier notifier) {
+    public void run(final RunNotifier notifier){
         notifier.addListener(new RunListener() {
-
             @Override
             public void testRunFinished(Result result) throws Exception {
                 super.testRunFinished(result);
                 if (automaticServerControl) {
                     controller.stop();
                 }
-
             }
         });
         startServerIfRequired();
+        if (!serverSetupTasks.isEmpty() && !automaticServerControl) {
+            throw new RuntimeException("Can't run setup tasks with manual server control");
+        }
+        if (automaticServerControl) {
+            runSetupTasks();
+        }
         super.run(notifier);
+        if (automaticServerControl) {
+            runTearDownTasks();
+        }
+    }
+
+    private void runSetupTasks() {
+        for (ServerSetupTask task : serverSetupTasks) {
+            try {
+                task.setup(controller.getClient());
+            } catch (Exception e) {
+                throw new RuntimeException(String.format("Could not run setup task '%s'", task), e);
+            }
+        }
+    }
+
+    private void runTearDownTasks() {
+        for (ServerSetupTask task : serverSetupTasks) {
+            try {
+                task.tearDown(controller.getClient());
+            } catch (Exception e) {
+                throw new RuntimeException(String.format("Could not run tear down task '%s'", task), e);
+            }
+        }
+    }
+
+    private void prepareSetupTasks(Class<?> klass) throws InitializationError {
+        try {
+            if (klass.isAnnotationPresent(ServerSetup.class)) {
+                ServerSetup serverSetup = klass.getAnnotation(ServerSetup.class);
+                for (Class<? extends ServerSetupTask> clazz : serverSetup.value()) {
+                    Constructor<? extends ServerSetupTask> ctor = clazz.getDeclaredConstructor();
+                    ctor.setAccessible(true);
+                    serverSetupTasks.add(ctor.newInstance());
+                }
+            }
+        } catch (Exception e) {
+            throw new InitializationError(e);
+        }
     }
 
     private void startServerIfRequired() {
