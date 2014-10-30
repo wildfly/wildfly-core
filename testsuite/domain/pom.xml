@@ -186,6 +186,7 @@
                         <jboss.test.host.slave.address>${node0}</jboss.test.host.slave.address>
                         <management.address>${management.address}</management.address>
                         <settings.localRepository>${settings.localRepository}</settings.localRepository>
+                        <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                         <server.jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
                     </systemPropertyVariables>
                     <includes>

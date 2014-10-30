@@ -96,6 +96,9 @@ public class CustomCLIExecutor {
         } else {
             command.add("-Djboss.cli.config=" + jbossDist + File.separator + "bin" + File.separator + "jboss-cli.xml");
         }
+        if (System.getProperty("cli.args") != null) {
+            command.add(System.getProperty("cli.args"));
+        }
         command.add("-jar");
         command.add(jbossDist + File.separatorChar + "jboss-modules.jar");
         command.add("-mp");
@@ -105,7 +108,6 @@ public class CustomCLIExecutor {
         command.add("--controller=" + controller);
         command.add(operation);
         builder.command(command);
-        LOGGER.infof("CLI Starting with command: %s",command);
         Process cliProc = null;
         try {
             cliProc = builder.start();

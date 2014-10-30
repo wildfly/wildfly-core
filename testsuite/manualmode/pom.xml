@@ -143,7 +143,8 @@
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <jboss.home>${wildfly.home}</jboss.home>
                                 <module.path>${wildfly.home}/modules/</module.path>
-                                <jvm.args>-Dlocal.maven.repo.path=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
+                                <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
+                                <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                                 <javax.net.ssl.trustStore>${basedir}/src/test/resources/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
                                 <javax.net.ssl.keyStore>${basedir}/src/test/resources/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
