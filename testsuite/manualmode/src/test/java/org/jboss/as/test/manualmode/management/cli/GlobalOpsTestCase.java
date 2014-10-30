@@ -34,7 +34,9 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,32 +49,23 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore("AS7-5929") // disabled until intermittent failures are resolved
 public class GlobalOpsTestCase extends AbstractCliTestBase {
 
     @Inject
-    private ServerController container;
+    private static ServerController container;
 
-    //NOTE: BeforeClass is not subject to ARQ injection.
-    @Before
-    public void initServer() throws Exception {
+    @BeforeClass
+    public static void initServer() throws Exception {
         container.start();
         initCLI();
     }
 
-    @After
-    public void closeServer() throws Exception {
+    @AfterClass
+    public static void closeServer() throws Exception {
         closeCLI();
         container.stop();
     }
 
-   /* @Deployment(name = DEPLOYMENT_NAME, managed = false)
-    @TargetsContainer(DEFAULT_JBOSSAS)
-    public static Archive<?> getDeployment() {
-        JavaArchive ja = ShrinkWrap.create(JavaArchive.class, "dummy.jar");
-        ja.addClass(GlobalOpsTestCase.class);
-        return ja;
-    }*/
 
     @Test
     public void testPersistentRestart() throws Exception {
@@ -87,7 +80,7 @@ public class GlobalOpsTestCase extends AbstractCliTestBase {
         checkResponseHeadersForProcessState(result);
 
 
-        boolean sendLineResult = cli.sendLine(":reload", true);
+        boolean sendLineResult = cli.sendLine("reload", true);
         assertTrue(sendLineResult);
         //null when comm is broken on :reload before answer is sent.
         if (cli.readOutput() != null) {
