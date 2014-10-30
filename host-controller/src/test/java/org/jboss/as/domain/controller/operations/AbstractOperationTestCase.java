@@ -325,15 +325,15 @@ public abstract class AbstractOperationTestCase {
         }
 
         public void completeStep(OperationContext.RollbackHandler rollbackHandler) {
-
+            stepCompleted();
         }
 
         public void completeStep(ResultHandler resultHandler) {
-
+            stepCompleted();
         }
 
         public void stepCompleted() {
-            completeStep(ResultHandler.NOOP_RESULT_HANDLER);
+            
         }
 
         public ModelNode getFailureDescription() {
@@ -443,7 +443,7 @@ public abstract class AbstractOperationTestCase {
 
         public void addResource(PathAddress relativeAddress, Resource toAdd) {
             Resource model = root;
-            final Iterator<PathElement> i = relativeAddress.iterator();
+            final Iterator<PathElement> i = operationAddress.append(relativeAddress).iterator();
             while (i.hasNext()) {
                 final PathElement element = i.next();
                 if (element.isMultiTarget()) {
@@ -715,7 +715,7 @@ public abstract class AbstractOperationTestCase {
         rootResource.registerChild(PathElement.pathElement(SERVER_GROUP, "group-one"), serverGroup1);
 
         final Resource serverGroup2 = Resource.Factory.create();
-        serverGroup2.getModel().get(PROFILE).set("profile-2");
+        serverGroup2.getModel().get(PROFILE).set("profile-two");
         serverGroup2.getModel().get(SOCKET_BINDING_GROUP).set("binding-two");
         rootResource.registerChild(PathElement.pathElement(SERVER_GROUP, "group-two"), serverGroup2);
 

@@ -21,19 +21,11 @@
 */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP_NAME;
-
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -46,11 +38,15 @@ import org.jboss.dmr.ModelNode;
  */
 public class ServerGroupSocketBindingGroupWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    private final boolean master;
+    public static final ModelOnlyWriteAttributeHandler INSTANCE = new ServerGroupSocketBindingGroupWriteAttributeHandler();
 
-    public ServerGroupSocketBindingGroupWriteAttributeHandler(boolean master) {
+    ServerGroupSocketBindingGroupWriteAttributeHandler() {
         super(ServerGroupResourceDefinition.SOCKET_BINDING_GROUP);
-        this.master = master;
+    }
+
+    @Deprecated
+    public ServerGroupSocketBindingGroupWriteAttributeHandler(boolean master) {
+        this();
     }
 
     @Override
@@ -60,45 +56,7 @@ public class ServerGroupSocketBindingGroupWriteAttributeHandler extends ModelOnl
             //Set an attachment to avoid propagation to the servers, we don't want them to go into restart-required if nothing changed
             ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
         }
-        // Validate the profile reference.
+        context.addStep(DomainModelReferenceValidator.INSTANCE, Stage.MODEL);
 
-        // Future proofing: We resolve the profile in Stage.MODEL even though system properties may not be available yet
-        // solely because currently the attribute doesn't support expressions. In the future if system properties
-        // can safely be resolved in stage model, this profile attribute can be changed and this will still work.
-        boolean reloadRequired = false;
-        final String socketBindingGroup = ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.resolveModelAttribute(context, resource.getModel()).asString();
-
-        if (!context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).hasChild(PathElement.pathElement(ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.getName(), socketBindingGroup))) {
-            if (master) {
-                throw DomainControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(socketBindingGroup);
-            } else {
-                //We are a slave HC and we don't have the profile required, so put the slave AND the server into reload-required
-                final String name = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-                final String sb = resource.getModel().hasDefined(SOCKET_BINDING_GROUP_NAME) ? resource.getModel().get(SOCKET_BINDING_GROUP_NAME).asString() : null;
-                ServerGroupMissingConfigUtils.pullDownMissingDataFromDc(context, "test", name, sb);
-            }
-        }
-
-        final boolean revertReloadRequiredOnRollback = reloadRequired;
-        if (reloadRequired){
-            //We are adding an extra step here to be able to see if we rolled back
-            //This is currently not possible with AbstractWriteAttributeHandler and I don't want to clutter up that class
-            //any more
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    context.completeStep(new OperationContext.ResultHandler() {
-                        @Override
-                        public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                            if (resultAction == ResultAction.ROLLBACK) {
-                                if (revertReloadRequiredOnRollback){
-                                    context.revertReloadRequired();
-                                }
-                            }
-                        }
-                    });
-                }
-            }, Stage.MODEL);
-        }
     }
 }

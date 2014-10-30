@@ -87,6 +87,7 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
@@ -112,6 +113,7 @@ import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -649,6 +651,24 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     final String hostName = hostControllerInfo.getLocalHostName();
                     slaveHostRegistrations.registerHost(hostName, null, "local");
                 }
+            }
+
+            if (ok && hostControllerInfo.getAdminOnlyDomainConfigPolicy() != AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG) {
+                final ModelNode validate = new ModelNode();
+                validate.get(OP).set("validate");
+                validate.get(OP_ADDR).setEmptyList();
+                final ModelNode result = internalExecute(OperationBuilder.create(validate).build(), OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        DomainModelReferenceValidator.validate(context);
+                        context.stepCompleted();
+                    }
+                }).getResponseNode();
+
+                if (!SUCCESS.equals(result.get(OUTCOME).asString())) {
+                    throw new OperationFailedException(result.get(FAILURE_DESCRIPTION));
+                }
+
             }
 
             if (ok) {

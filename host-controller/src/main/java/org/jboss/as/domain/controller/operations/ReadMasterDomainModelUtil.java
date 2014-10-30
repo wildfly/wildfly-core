@@ -23,7 +23,7 @@ package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -307,9 +307,10 @@ public class ReadMasterDomainModelUtil {
                     }
                 }
             }
-            if (resource.getModel().hasDefined(INCLUDE)) {
-                final String include = resource.getModel().get(INCLUDE).asString();
-                processProfile(domain, include, holder, extensionRegistry);
+            if (resource.getModel().hasDefined(INCLUDES)) {
+                for (final ModelNode include : resource.getModel().get(INCLUDES).asList()) {
+                    processProfile(domain, include.asString(), holder, extensionRegistry);
+                }
             }
         }
 

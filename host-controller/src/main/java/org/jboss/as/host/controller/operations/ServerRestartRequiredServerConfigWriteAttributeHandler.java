@@ -21,20 +21,14 @@
 */
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -46,25 +40,25 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    public static final ServerRestartRequiredServerConfigWriteAttributeHandler SOCKET_BINDING_PORT_OFFSET_INSTANCE = new SocketBindingPortOffsetHandler();
-
-    private final AttributeDefinition attributeDefinition;
+    public static final ModelOnlyWriteAttributeHandler SERVER_GROUP_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.GROUP);
+    public static final ModelOnlyWriteAttributeHandler SOCKET_BINDING_GROUP_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.SOCKET_BINDING_GROUP);
+    public static final ModelOnlyWriteAttributeHandler SOCKET_BINDING_PORT_OFFSET_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
+    public static final ModelOnlyWriteAttributeHandler SOCKET_BINDING_DEFAULT_INTERFACE_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
 
     protected ServerRestartRequiredServerConfigWriteAttributeHandler(AttributeDefinition attributeDefinition) {
         super(attributeDefinition);
-        this.attributeDefinition = attributeDefinition;
     }
 
-    public static ServerRestartRequiredServerConfigWriteAttributeHandler createGroupInstance(LocalHostControllerInfo hostControllerInfo) {
-        return new GroupHandler(hostControllerInfo);
+    public static ModelOnlyWriteAttributeHandler createGroupInstance(LocalHostControllerInfo hostControllerInfo) {
+        return SERVER_GROUP_INSTANCE;
     }
 
-    public static ServerRestartRequiredServerConfigWriteAttributeHandler createSocketBindingGroupInstance(LocalHostControllerInfo hostControllerInfo) {
-        return new SocketBindingGroupHandler(hostControllerInfo);
+    public static ModelOnlyWriteAttributeHandler createSocketBindingGroupInstance(LocalHostControllerInfo hostControllerInfo) {
+        return SOCKET_BINDING_GROUP_INSTANCE;
     }
 
-    public static ServerRestartRequiredServerConfigWriteAttributeHandler createDefaultSocketBindingInstance(LocalHostControllerInfo hostControllerInfo) {
-        return new SocketBindingDefaultInterfaceHandler(hostControllerInfo);
+    public static ModelOnlyWriteAttributeHandler createDefaultSocketBindingInstance(LocalHostControllerInfo hostControllerInfo) {
+        return SOCKET_BINDING_DEFAULT_INTERFACE_INSTANCE;
     }
 
     @Override
@@ -75,100 +69,8 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
             ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
         }
 
-        // Validate the model reference.
-
-        // Issue: We resolve in Stage.MODEL even though system properties may not be available yet. Not ideal,
-        // but the attributes involved do not support expressions because they are model references
-        ModelNode resolvedValue = attributeDefinition.resolveModelAttribute(context, resource.getModel());
-        validateReferencedNewValueExists(context, operation, currentValue, resolvedValue);
-    }
-
-    protected abstract void validateReferencedNewValueExists(OperationContext context, ModelNode operation, ModelNode currentValue, ModelNode value) throws OperationFailedException;
-
-    private static class GroupHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
-
-        final LocalHostControllerInfo hostControllerInfo;
-
-        public GroupHandler(LocalHostControllerInfo hostControllerInfo) {
-            super(ServerConfigResourceDefinition.GROUP);
-            this.hostControllerInfo = hostControllerInfo;
-        }
-
-        @Override
-        protected void validateReferencedNewValueExists(final OperationContext context, final ModelNode operation, final ModelNode currentValue, final ModelNode resolvedValue) throws OperationFailedException{
-            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-
-            //Don't do this on boot since the domain model is not populated yet
-            if (!context.isBooting() && root.getChild(PathElement.pathElement(SERVER_GROUP, resolvedValue.asString())) == null) {
-                if (hostControllerInfo.isMasterDomainController() || !hostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
-                        throw HostControllerLogger.ROOT_LOGGER.noServerGroupCalled(resolvedValue.asString());
-                } else {
-                    // TODO validation
-                }
-            }
-        }
-    }
-
-    private static class SocketBindingGroupHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
-
-        final LocalHostControllerInfo hostControllerInfo;
-
-        public SocketBindingGroupHandler(LocalHostControllerInfo hostControllerInfo) {
-            super(ServerConfigResourceDefinition.SOCKET_BINDING_GROUP);
-            this.hostControllerInfo = hostControllerInfo;
-        }
-
-        @Override
-        protected void validateReferencedNewValueExists(final OperationContext context, final ModelNode operation, final ModelNode currentValue, final ModelNode resolvedValue) throws OperationFailedException{
-            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-
-            if (resolvedValue.isDefined()) {
-                //Don't do this on boot since the domain model is not populated yet
-                if (!context.isBooting() && resolvedValue.isDefined() && root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, resolvedValue.asString())) == null) {
-                    if (hostControllerInfo.isMasterDomainController() || !hostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
-                        throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(resolvedValue.asString());
-                    } else {
-                        // TODO validation
-                    }
-                }
-            }
-        }
-    }
-
-    private static class SocketBindingDefaultInterfaceHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
-
-        final LocalHostControllerInfo hostControllerInfo;
-
-        public SocketBindingDefaultInterfaceHandler(LocalHostControllerInfo hostControllerInfo) {
-            super(ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
-            this.hostControllerInfo = hostControllerInfo;
-        }
-
-        @Override
-        protected void validateReferencedNewValueExists(OperationContext context, ModelNode operation, ModelNode currentValue, ModelNode resolvedValue) throws OperationFailedException {
-            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-
-            if (resolvedValue.isDefined()) {
-                //Don't do this on boot since the domain model is not populated yet
-                if (!context.isBooting() && resolvedValue.isDefined() && root.getChild(PathElement.pathElement(INTERFACE, resolvedValue.asString())) == null) {
-                    if (hostControllerInfo.isMasterDomainController() || !hostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
-                        throw HostControllerLogger.ROOT_LOGGER.failedToResolveInterface(resolvedValue.asString());
-                    }
-                }
-            }
-        }
-    }
-
-    private static class SocketBindingPortOffsetHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
-
-        public SocketBindingPortOffsetHandler() {
-            super(ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
-        }
-
-        @Override
-        protected void validateReferencedNewValueExists(OperationContext context, ModelNode operation, ModelNode currentValue, ModelNode resolvedValue) throws OperationFailedException {
-            // our attribute is not a model reference
-        }
+        // Validate the model references
+        context.addStep(DomainModelReferenceValidator.INSTANCE, OperationContext.Stage.MODEL);
     }
 
 }

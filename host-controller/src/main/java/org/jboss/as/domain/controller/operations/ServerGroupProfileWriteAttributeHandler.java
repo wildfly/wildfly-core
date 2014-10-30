@@ -21,19 +21,12 @@
 */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP_NAME;
-
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -46,11 +39,15 @@ import org.jboss.dmr.ModelNode;
  */
 public class ServerGroupProfileWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    private final boolean master;
+    public static final OperationStepHandler INSTANCE = new ServerGroupProfileWriteAttributeHandler();
 
-    public ServerGroupProfileWriteAttributeHandler(boolean master) {
+    ServerGroupProfileWriteAttributeHandler() {
         super(ServerGroupResourceDefinition.PROFILE);
-        this.master = master;
+    }
+
+    @Deprecated
+    public ServerGroupProfileWriteAttributeHandler(boolean master) {
+        this();
     }
 
     @Override
@@ -60,47 +57,7 @@ public class ServerGroupProfileWriteAttributeHandler extends ModelOnlyWriteAttri
             //Set an attachment to avoid propagation to the servers, we don't want them to go into restart-required if nothing changed
             ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
         }
-
-        // Validate the profile reference.
-
-        // Future proofing: We resolve the profile in Stage.MODEL even though system properties may not be available yet
-        // solely because currently the attribute doesn't support expressions. In the future if system properties
-        // can safely be resolved in stage model, this profile attribute can be changed and this will still work.
-        boolean reloadRequired = false;
-        final String profile = ServerGroupResourceDefinition.PROFILE.resolveModelAttribute(context, resource.getModel()).asString();
-
-        if (!context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).hasChild(PathElement.pathElement(ServerGroupResourceDefinition.PROFILE.getName(), profile))) {
-            if (master) {
-                throw DomainControllerLogger.ROOT_LOGGER.noProfileCalled(profile);
-            } else {
-                //We are a slave HC and we don't have the profile required, so put the slave AND the server into reload-required
-                final String name = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-                final String sb = resource.getModel().hasDefined(SOCKET_BINDING_GROUP_NAME) ? resource.getModel().get(SOCKET_BINDING_GROUP_NAME).asString() : null;
-                ServerGroupMissingConfigUtils.pullDownMissingDataFromDc(context, "test", name, sb);
-            }
-        }
-
-        if (reloadRequired) {
-            final boolean revertReloadRequiredOnRollback = reloadRequired;
-            //We are adding an extra step here to be able to see if we rolled back
-            //This is currently not possible with AbstractWriteAttributeHandler and I don't want to clutter up that class
-            //any more
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    context.completeStep(new OperationContext.ResultHandler() {
-                        @Override
-                        public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                            if (resultAction == ResultAction.ROLLBACK) {
-                                if (revertReloadRequiredOnRollback){
-                                    context.revertReloadRequired();
-                                }
-                            }
-                        }
-                    });
-                }
-            }, Stage.MODEL);
-        }
+        context.addStep(DomainModelReferenceValidator.INSTANCE, Stage.MODEL);
     }
 
 }

@@ -66,7 +66,6 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             .setValidator(new StringLengthValidator(1))
             .build();
 
-
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, false)
             .setXmlName(Attribute.REF.getLocalName())
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
@@ -94,7 +93,6 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     public static final AttributeDefinition[] ADD_ATTRIBUTES = new AttributeDefinition[] {PROFILE, SOCKET_BINDING_GROUP, SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, MANAGEMENT_SUBSYSTEM_ENDPOINT};
 
-    private final boolean master;
     private final HostFileRepository fileRepository;
     private final ContentRepository contentRepository;
 
@@ -105,8 +103,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     public ServerGroupResourceDefinition(final boolean master, final LocalHostControllerInfo hostInfo,
                                          final HostFileRepository fileRepository, final ContentRepository contentRepository) {
-        super(PATH, DomainResolver.getResolver(SERVER_GROUP, false), new ServerGroupAddHandler(master), new ServerGroupRemoveHandler(hostInfo));
-        this.master = master;
+        super(PATH, DomainResolver.getResolver(SERVER_GROUP, false), ServerGroupAddHandler.INSTANCE, new ServerGroupRemoveHandler(hostInfo));
         this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
     }
@@ -117,9 +114,9 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             if (attr.getName().equals(MANAGEMENT_SUBSYSTEM_ENDPOINT.getName())) {
                 resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_SUBSYSTEM_ENDPOINT, null);
             } else if (attr.getName().equals(PROFILE.getName())) {
-                resourceRegistration.registerReadWriteAttribute(PROFILE, null, new ServerGroupProfileWriteAttributeHandler(master));
+                resourceRegistration.registerReadWriteAttribute(PROFILE, null, ServerGroupProfileWriteAttributeHandler.INSTANCE);
             } else if (attr.getName().equals(SOCKET_BINDING_GROUP.getName())) {
-                resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, new ServerGroupSocketBindingGroupWriteAttributeHandler(master));
+                resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerGroupSocketBindingGroupWriteAttributeHandler.INSTANCE);
             } else {
                 resourceRegistration.registerReadWriteAttribute(attr, null, new ModelOnlyWriteAttributeHandler(attr));
             }

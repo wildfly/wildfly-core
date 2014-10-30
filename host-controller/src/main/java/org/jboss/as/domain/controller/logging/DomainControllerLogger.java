@@ -731,6 +731,10 @@ public interface DomainControllerLogger extends BasicLogger {
     @Message(id = 74, value = "Operation failed or was rolled back on all servers. Server failures:")
     String operationFailedOrRolledBackWithCause();
 
+
     @Message(id = 75, value = "Cannot synchronize the model due to missing extensions: %s")
     OperationFailedException missingExtensions(Set<String> missingExtensions);
+
+    @Message(id = 76, value = "Model references of type '%s' are missing: %s")
+    OperationFailedException missingReferences(String type, Set<String> missing);
 }

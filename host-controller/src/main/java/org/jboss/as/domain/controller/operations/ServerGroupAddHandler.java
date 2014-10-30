@@ -22,8 +22,6 @@
 
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.domain.controller.operations.ServerGroupReferenceValidationHandler.create;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -38,6 +36,13 @@ import org.jboss.dmr.ModelNode;
  */
 public class ServerGroupAddHandler implements OperationStepHandler {
 
+    public static OperationStepHandler INSTANCE = new ServerGroupAddHandler();
+
+    ServerGroupAddHandler() {
+        //
+    }
+
+    @Deprecated
     public ServerGroupAddHandler(boolean master) {
         //
     }
@@ -51,13 +56,7 @@ public class ServerGroupAddHandler implements OperationStepHandler {
         for (AttributeDefinition attr : ServerGroupResourceDefinition.ADD_ATTRIBUTES) {
             attr.validateAndSet(operation, model);
         }
-
-        // Validate the profile reference.
-        final OperationStepHandler validationHandler = new ServerGroupReferenceValidationHandler(
-                create(ServerGroupResourceDefinition.PROFILE.getName(), ServerGroupResourceDefinition.PROFILE),
-                create(ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.getName(), ServerGroupResourceDefinition.SOCKET_BINDING_GROUP));
-
-        context.addStep(validationHandler, OperationContext.Stage.VERIFY);
+        context.addStep(DomainModelReferenceValidator.INSTANCE, OperationContext.Stage.MODEL);
     }
 
 }
