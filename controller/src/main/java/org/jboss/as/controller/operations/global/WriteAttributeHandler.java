@@ -58,7 +58,6 @@ public class WriteAttributeHandler implements OperationStepHandler {
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(NAME, VALUE)
-            .setRuntimeOnly()
             .build();
 
     public static final OperationStepHandler INSTANCE = new WriteAttributeHandler();
