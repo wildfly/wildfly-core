@@ -129,7 +129,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(SOCKET_BINDING_GROUP).set(socketBindingGroupName);
 
         try {
-            new ServerGroupAddHandler(master).execute(operationContext, operation);
+            operationContext.executeStep(ServerGroupAddHandler.INSTANCE, operation);
         } catch(RuntimeException e) {
             // MockOperationContext impl throws RuntimeException in case one of the steps
             // throws OperationFailedException
@@ -236,7 +236,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(VALUE).set(profileName);
 
         try {
-            new ServerGroupProfileWriteAttributeHandler(master).execute(operationContext, operation);
+            operationContext.executeStep(ServerGroupProfileWriteAttributeHandler.INSTANCE, operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -312,7 +312,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(VALUE).set(socketBindingGroupName);
 
         try {
-            new ServerGroupSocketBindingGroupWriteAttributeHandler(master).execute(operationContext, operation);
+            operationContext.executeStep(ServerGroupSocketBindingGroupWriteAttributeHandler.INSTANCE, operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {

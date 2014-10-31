@@ -21,15 +21,18 @@
 */
 package org.jboss.as.host.controller.operations;
 
-import org.jboss.as.controller.AttributeDefinition;
+import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.GROUP;
+import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE;
+import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.SOCKET_BINDING_GROUP;
+import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET;
+
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
-import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -38,28 +41,14 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
+public class ServerRestartRequiredServerConfigWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    public static final ModelOnlyWriteAttributeHandler SERVER_GROUP_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.GROUP);
-    public static final ModelOnlyWriteAttributeHandler SOCKET_BINDING_GROUP_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.SOCKET_BINDING_GROUP);
-    public static final ModelOnlyWriteAttributeHandler SOCKET_BINDING_PORT_OFFSET_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
-    public static final ModelOnlyWriteAttributeHandler SOCKET_BINDING_DEFAULT_INTERFACE_INSTANCE = new ModelOnlyWriteAttributeHandler(ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
+    public static OperationStepHandler INSTANCE = new ServerRestartRequiredServerConfigWriteAttributeHandler();
 
-    protected ServerRestartRequiredServerConfigWriteAttributeHandler(AttributeDefinition attributeDefinition) {
-        super(attributeDefinition);
+    protected ServerRestartRequiredServerConfigWriteAttributeHandler() {
+        super(GROUP, SOCKET_BINDING_GROUP, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE);
     }
 
-    public static ModelOnlyWriteAttributeHandler createGroupInstance(LocalHostControllerInfo hostControllerInfo) {
-        return SERVER_GROUP_INSTANCE;
-    }
-
-    public static ModelOnlyWriteAttributeHandler createSocketBindingGroupInstance(LocalHostControllerInfo hostControllerInfo) {
-        return SOCKET_BINDING_GROUP_INSTANCE;
-    }
-
-    public static ModelOnlyWriteAttributeHandler createDefaultSocketBindingInstance(LocalHostControllerInfo hostControllerInfo) {
-        return SOCKET_BINDING_DEFAULT_INTERFACE_INSTANCE;
-    }
 
     @Override
     protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,

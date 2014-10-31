@@ -132,7 +132,6 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
     private final ServerInventory serverInventory;
     private final PathManagerService pathManager;
-    private final LocalHostControllerInfo hostControllerInfo;
 
     /**
      * Creates a ServerConfigResourceDefinition.
@@ -149,7 +148,6 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
         this.serverInventory = serverInventory;
         this.pathManager = pathManager;
-        this.hostControllerInfo = hostControllerInfo;
     }
 
     @Override
@@ -159,10 +157,10 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
         resourceRegistration.registerReadWriteAttribute(AUTO_START, null, new ModelOnlyWriteAttributeHandler(AUTO_START));
         resourceRegistration.registerReadWriteAttribute(UPDATE_AUTO_START_WITH_SERVER_STATUS, null, new ModelOnlyWriteAttributeHandler(UPDATE_AUTO_START_WITH_SERVER_STATUS));
-        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createSocketBindingGroupInstance(hostControllerInfo));
-        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_DEFAULT_INTERFACE, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createDefaultSocketBindingInstance(hostControllerInfo));
-        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_PORT_OFFSET, null, ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createGroupInstance(hostControllerInfo));
+        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_DEFAULT_INTERFACE, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_PORT_OFFSET, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);
 
         // For compatibility, register these should-be-removed attributes, with no-op handlers
         resourceRegistration.registerReadWriteAttribute(PRIORITY, NoopOperationStepHandler.WITH_RESULT, NoopOperationStepHandler.WITHOUT_RESULT);
