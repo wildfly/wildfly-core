@@ -94,7 +94,6 @@ import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeRemotingManagementResourceDefinition;
 import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ProcessTypeHandler;
-import org.jboss.as.server.operations.RootResourceHack;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessReloadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
@@ -283,9 +282,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         resourceRegistration.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(WhoAmIOperation.DEFINITION, WhoAmIOperation.createOperation(authorizer), true);
-
-        //Hack to be able to access the registry for the jmx facade
-        resourceRegistration.registerOperationHandler(RootResourceHack.DEFINITION, RootResourceHack.INSTANCE);
 
         // Reload op available in standalone and domain
         if (isDomain) {

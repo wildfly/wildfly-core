@@ -29,10 +29,12 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -46,9 +48,9 @@ import org.jboss.as.server.DeployerChainAddHandler;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
-import org.jboss.as.server.operations.RootResourceHack;
 import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -83,6 +85,17 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     }
 
     @Override
+    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
+        super.performControllerInitialization(target, managementModel);
+        if (additionalInit.getProcessType().isServer()) {
+            final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
+            for (ModelControllerServiceInitialization init : sl) {
+                    init.initializeStandalone(target, managementModel);
+            }
+        }
+    }
+
+    @Override
     protected void initExtraModel(ManagementModel managementModel) {
         Resource rootResource = managementModel.getRootResource();
         ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
@@ -103,9 +116,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
 
         rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
 
-        //Hack to be able to access the registry for the jmx facade
-
-        rootRegistration.registerOperationHandler(RootResourceHack.DEFINITION, RootResourceHack.INSTANCE);
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
         controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);
