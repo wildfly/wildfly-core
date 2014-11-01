@@ -27,6 +27,7 @@ import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -126,6 +127,7 @@ public final class ManagementRemotingServices extends RemotingServices {
      * @param endpointName the endpoint name to install the services into
      * @param channelName the name of the channel
      * @param executorServiceName service name of the executor service to use in the operation handler service
+     * @param scheduledExecutorServiceName  service name of the scheduled executor service to use in the operation handler service
      */
     public static void installManagementChannelServices(
             final ServiceTarget serviceTarget,
@@ -133,7 +135,8 @@ public final class ManagementRemotingServices extends RemotingServices {
             final AbstractModelControllerOperationHandlerFactoryService operationHandlerService,
             final ServiceName modelControllerName,
             final String channelName,
-            ServiceName executorServiceName) {
+            final ServiceName executorServiceName,
+            final ServiceName scheduledExecutorServiceName) {
 
         final OptionMap options = OptionMap.EMPTY;
         final ServiceName operationHandlerName = endpointName.append(channelName).append(ModelControllerClientOperationHandlerFactoryService.OPERATION_HANDLER_NAME_SUFFIX);
@@ -141,6 +144,7 @@ public final class ManagementRemotingServices extends RemotingServices {
         serviceTarget.addService(operationHandlerName, operationHandlerService)
             .addDependency(modelControllerName, ModelController.class, operationHandlerService.getModelControllerInjector())
             .addDependency(executorServiceName, ExecutorService.class, operationHandlerService.getExecutorInjector())
+            .addDependency(scheduledExecutorServiceName, ScheduledExecutorService.class, operationHandlerService.getScheduledExecutorInjector())
             .setInitialMode(ACTIVE)
             .install();
 

@@ -40,6 +40,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.dmr.ModelNode;
@@ -129,16 +130,16 @@ public class RemoteProxyController implements ProxyController {
             }
 
             @Override
-            public void operationComplete(TransactionalProtocolClient.Operation operation, ModelNode result) {
+            public void operationComplete(TransactionalProtocolClient.Operation operation, OperationResponse response) {
                 try {
-                    control.operationCompleted(result);
+                    control.operationCompleted(response);
                 } finally {
                     // Make sure the handler is called before commit/rollback returns
                     completed.countDown();
                 }
             }
         };
-        Future<ModelNode> futureResult = null;
+        Future<OperationResponse> futureResult = null;
         try {
             // Translate the operation
             final ModelNode translated = translateOperationForProxy(original);

@@ -373,6 +373,9 @@ public interface ControllerClientLogger extends BasicLogger {
     @Message(id = 35, value = "Cannot delete temp file %s, will be deleted on exit")
     void cannotDeleteTempFile(String name);
 
+    @Message(id = 36, value = "Stream was closed")
+    IOException streamWasClosed();
+
     class LeakDescription extends Throwable {
         private static final long serialVersionUID = -7193498784746897578L;
 

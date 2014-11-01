@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.mgmt;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,7 +35,6 @@ import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementPongRequestHandler;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -43,8 +44,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Channel;
 import org.jboss.threads.JBossThreadFactory;
-
-import static java.security.AccessController.doPrivileged;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Operation handler responsible for requests coming in from server processes on the host controller.

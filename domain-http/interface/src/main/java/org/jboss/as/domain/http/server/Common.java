@@ -21,18 +21,18 @@
 */
 package org.jboss.as.domain.http.server;
 
-import io.undertow.io.IoCallback;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.server.handlers.ResponseCodeHandler;
-import io.undertow.util.Headers;
-import org.jboss.dmr.ModelNode;
+import static io.undertow.server.handlers.ResponseCodeHandler.HANDLE_404;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static io.undertow.server.handlers.ResponseCodeHandler.HANDLE_404;
+import io.undertow.io.IoCallback;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.ResponseCodeHandler;
+import io.undertow.util.Headers;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -54,8 +54,7 @@ public class Common {
     static final String TEXT_HTML = "text/html";
     static final int ONE_WEEK = 7 * 24 * 60 * 60;
 
-
-    static String UTF_8 = "utf-8";
+    static final String UTF_8 = "utf-8";
 
     static void sendError(HttpServerExchange exchange, boolean encode, String msg) {
         int errorCode = getErrorResponseCode(msg);

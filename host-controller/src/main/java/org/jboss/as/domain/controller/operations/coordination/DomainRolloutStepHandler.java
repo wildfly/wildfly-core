@@ -22,8 +22,6 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
-import org.jboss.as.controller.CompositeOperationHandler;
-import org.jboss.as.controller.TransformingProxyController;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONCURRENT_GROUPS;
@@ -44,9 +42,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
-import org.jboss.as.controller.remote.TransactionalProtocolClient;
-import org.jboss.as.controller.transform.OperationResultTransformer;
-import org.jboss.as.controller.transform.OperationTransformer;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.CONTROLLER_LOGGER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
@@ -62,13 +57,20 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
+import org.jboss.as.controller.remote.TransactionalProtocolClient;
+import org.jboss.as.controller.transform.OperationResultTransformer;
+import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.plan.RolloutPlanController;
 import org.jboss.as.domain.controller.plan.ServerTaskExecutor;
 import org.jboss.dmr.ModelNode;
@@ -152,14 +154,14 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                        finalizeOp(submittedTasks, preparedResults);
+                        finalizeOp(context, submittedTasks, preparedResults);
                     }
                 });
 
                 completeStepCalled = true;
             } finally {
                 if (!completeStepCalled) {
-                    finalizeOp(submittedTasks, preparedResults);
+                    finalizeOp(context, submittedTasks, preparedResults);
                 }
             }
         } else {
@@ -169,7 +171,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         }
     }
 
-    private void finalizeOp(final Map<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> submittedTasks,
+    private void finalizeOp(final OperationContext context, final Map<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> submittedTasks,
                             final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults) {
 
         boolean interrupted = false;
@@ -202,7 +204,15 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                             }
                         }
                     }
-                    final Future<ModelNode> future = executorService.submit(new ServerRequireRestartTask(identity, proxy, result));
+
+                    // This is a failure case, so we assume there are no streams associated with the response
+                    // Alternative is to require setting up streams for prepared responses. This would entail:
+                    // 1) setting up the response headers in AbstractOperationContext before calling the transaction control
+                    // 2) TransactionProtocolClient creating an OperationResponseProxy when it gets the prepared response
+                    // 3) Passing that OperationResponse through the various callbacks related to prepared responses
+                    // Doable, but I (BES) am not doing it now for such a corner case
+                    OperationResponse originalResponse = OperationResponse.Factory.createSimple(result);
+                    final Future<OperationResponse> future = executorService.submit(new ServerRequireRestartTask(identity, proxy, originalResponse));
                     // replace the existing future
                     submittedTasks.put(identity, new ServerTaskExecutor.ExecutedServerRequest(identity, future));
                 } catch (Exception ignore) {
@@ -217,12 +227,17 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             boolean patient = !interrupted;
             for (Map.Entry<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> entry : submittedTasks.entrySet()) {
                 final ServerTaskExecutor.ExecutedServerRequest request = entry.getValue();
-                final Future<ModelNode> future = request.getFinalResult();
+                final Future<OperationResponse> future = request.getFinalResult();
                 try {
-                    final ModelNode finalResult = future.isCancelled()
+                    final OperationResponse finalResponse = future.isCancelled()
                             ? getCancelledResult()
                             : patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
-                    final ModelNode transformedResult = request.transformResult(finalResult);
+                    final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
+
+                    // Make sure any streams associated with the remote response are properly
+                    // integrated with our response
+                    ResponseAttachmentInputStreamSupport.handleDomainOperationResponseStreams(context, transformedResult, finalResponse.getInputStreams());
+
                     domainOperationContext.addServerResult(entry.getKey(), transformedResult);
                 } catch (InterruptedException e) {
                     future.cancel(true);
@@ -247,10 +262,10 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         }
     }
 
-    private ModelNode getCancelledResult() {
+    private OperationResponse getCancelledResult() {
         ModelNode cancelled = new ModelNode();
         cancelled.get(OUTCOME).set(CANCELLED);
-        return cancelled;
+        return OperationResponse.Factory.createSimple(cancelled);
     }
 
     private void pushToServers(final OperationContext context, final Map<ServerIdentity,ServerTaskExecutor.ExecutedServerRequest> submittedTasks,

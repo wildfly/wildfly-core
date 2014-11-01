@@ -33,7 +33,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.jboss.as.controller.ExpressionResolver;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -47,6 +46,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -63,7 +63,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler implements OperationStepHandler {
+public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler {
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(GlobalOperationAttributes.NAME, GlobalOperationAttributes.INCLUDE_DEFAULTS)

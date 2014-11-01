@@ -4,6 +4,7 @@ import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFacto
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.server.ServerService;
 import org.jboss.as.server.Services;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
@@ -35,8 +36,8 @@ class NativeManagementServices {
                     new ModelControllerClientOperationHandlerFactoryService(),
                     Services.JBOSS_SERVER_CONTROLLER,
                     ManagementRemotingServices.MANAGEMENT_CHANNEL,
-                    Services.JBOSS_SERVER_EXECUTOR
-            );
+                    Services.JBOSS_SERVER_EXECUTOR,
+                    ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
 
         }
     }

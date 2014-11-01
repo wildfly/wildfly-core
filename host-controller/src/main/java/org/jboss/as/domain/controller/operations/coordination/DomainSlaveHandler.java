@@ -48,8 +48,10 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
+import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
@@ -127,9 +129,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
                         continue;
                     }
                     final ModelNode preparedResult = prepared.getPreparedResult();
-                    if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
-                        HOST_CONTROLLER_LOGGER.tracef("Preliminary result for remote host %s is %s", hostName, preparedResult);
-                    }
+                    HOST_CONTROLLER_LOGGER.tracef("Preliminary result for remote host %s is %s", hostName, preparedResult);
                     // See if we have to reject the result
                     final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
                     boolean reject = request.rejectOperation(preparedResult);
@@ -163,7 +163,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     final String hostName = entry.getKey();
                     try {
                         final HostControllerUpdateTask.ExecutedHostRequest request = entry.getValue();
-                        final ModelNode result = request.getFinalResult().get();
+                        final ModelNode result = request.getFinalResult().get().getResponseNode();
                         final ModelNode transformedResult = request.transformResult(result);
                         domainOperationContext.addHostControllerResult(hostName, transformedResult);
                     } catch (Exception e) {
@@ -226,13 +226,17 @@ public class DomainSlaveHandler implements OperationStepHandler {
             for(final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
                 final String hostName = prepared.getOperation().getName();
                 final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
-                final Future<ModelNode> future = prepared.getFinalResult();
+                final Future<OperationResponse> future = prepared.getFinalResult();
                 try {
-                    final ModelNode finalResult = patient ? future.get(): future.get(0, TimeUnit.MILLISECONDS);
-                    final ModelNode transformedResult = request.transformResult(finalResult);
+                    final OperationResponse finalResponse = patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
+                    final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
                     domainOperationContext.addHostControllerResult(hostName, transformedResult);
 
-                    HOST_CONTROLLER_LOGGER.tracef("Final result for remote host %s is %s", hostName, finalResult);
+                    // Make sure any streams associated with the remote response are properly
+                    // integrated with our response
+                    ResponseAttachmentInputStreamSupport.handleDomainOperationResponseStreams(context, transformedResult, finalResponse.getInputStreams());
+
+                    HOST_CONTROLLER_LOGGER.tracef("Final result for remote host %s is %s", hostName, finalResponse.getResponseNode());
 
                 } catch (InterruptedException e) {
                     interruptThread = true;

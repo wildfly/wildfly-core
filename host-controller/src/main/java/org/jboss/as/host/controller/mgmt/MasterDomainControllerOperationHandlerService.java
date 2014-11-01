@@ -33,11 +33,13 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProxyController.ProxyOperationControl;
-import org.jboss.as.controller.client.OperationAttachments;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandler;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
+import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
@@ -96,10 +98,10 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
         // Assemble the request handlers for the domain channel
         handler.addHandlerFactory(new HostControllerRegistrationHandler(handler, domainController, operationExecutor,
                 getExecutor(), runtimeIgnoreTransformationRegistry, slaveHostRegistrations));
-        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler));
+        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport()));
         handler.addHandlerFactory(new MasterDomainControllerOperationHandlerImpl(domainController, getExecutor()));
         handler.addHandlerFactory(pongRequestHandler);
-        handler.addHandlerFactory(new DomainTransactionalProtocolOperationHandler(txOperationExecutor, handler));
+        handler.addHandlerFactory(new DomainTransactionalProtocolOperationHandler(txOperationExecutor, handler, getResponseAttachmentSupport()));
         channel.receiveMessage(handler.getReceiver());
         return handler;
     }
@@ -109,17 +111,18 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 
         private volatile SlaveRequest activeSlaveRequest;
 
-        public DomainTransactionalProtocolOperationHandler(TransactionalOperationExecutor executor, ManagementChannelAssociation channelAssociation) {
-            super(null, channelAssociation);
+        public DomainTransactionalProtocolOperationHandler(TransactionalOperationExecutor executor, ManagementChannelAssociation channelAssociation,
+                                                           ResponseAttachmentInputStreamSupport responseAttachmentSupport) {
+            super(null, channelAssociation, responseAttachmentSupport);
             this.executor = executor;
         }
 
         @Override
-        protected ModelNode internalExecute(final ModelNode operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ProxyOperationControl control,
-                OperationAttachments attachments) {
+        protected OperationResponse internalExecute(final Operation operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ProxyOperationControl control) {
 
+            final ModelNode operationNode = operation.getOperation();
             final OperationStepHandler handler;
-            final String operationName = operation.require(OP).asString();
+            final String operationName = operationNode.require(OP).asString();
             if (operationName.equals(PullDownDataForServerConfigOnSlaveHandler.OPERATION_NAME)) {
                 handler = new PullDownDataForServerConfigOnSlaveHandler(
                         SlaveChannelAttachments.getHostName(context.getChannel()),
@@ -130,13 +133,13 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
             }
 
             Integer domainControllerLockId;
-            if (operation.get(OPERATION_HEADERS).hasDefined(DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID)) {
-                domainControllerLockId = operation.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).asInt();
+            if (operationNode.get(OPERATION_HEADERS).hasDefined(DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID)) {
+                domainControllerLockId = operationNode.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).asInt();
             } else {
                 domainControllerLockId = null;
             }
 
-            final Integer slaveLockId = operation.get(OPERATION_HEADERS, DomainControllerLockIdUtils.SLAVE_CONTROLLER_LOCK_ID).asInt();
+            final Integer slaveLockId = operationNode.get(OPERATION_HEADERS, DomainControllerLockIdUtils.SLAVE_CONTROLLER_LOCK_ID).asInt();
             if (domainControllerLockId == null) {
                 synchronized (this) {
                     SlaveRequest slaveRequest = this.activeSlaveRequest;
@@ -151,9 +154,11 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 
             try {
                 if (domainControllerLockId != null) {
-                    return executor.joinActiveOperation(operation, messageHandler, control, attachments, handler, domainControllerLockId);
+                    assert operation.getInputStreams().size() == 0; // we don't support associating streams with an active op
+                    ModelNode responseNode = executor.joinActiveOperation(operation.getOperation(), messageHandler, control, handler, domainControllerLockId);
+                    return OperationResponse.Factory.createSimple(responseNode);
                 } else {
-                    ModelNode result = executor.executeAndAttemptLock(operation, messageHandler, control, attachments, new OperationStepHandler() {
+                    return executor.executeAndAttemptLock(operation, messageHandler, control, new OperationStepHandler() {
                         @Override
                         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                             //Grab the lock id and store it
@@ -165,7 +170,6 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
                             context.stepCompleted();
                         }
                     });
-                    return result;
                 }
             } finally {
                 synchronized (this) {
@@ -182,9 +186,9 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
     }
 
     public interface TransactionalOperationExecutor {
-        ModelNode executeAndAttemptLock(ModelNode operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationAttachments attachments, OperationStepHandler step);
+        OperationResponse executeAndAttemptLock(Operation operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationStepHandler step);
 
-        ModelNode joinActiveOperation(ModelNode operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationAttachments attachments, OperationStepHandler step, int permit);
+        ModelNode joinActiveOperation(ModelNode operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationStepHandler step, int permit);
     }
 
     private final class SlaveRequest {

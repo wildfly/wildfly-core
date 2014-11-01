@@ -45,7 +45,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.client.OperationAttachments;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -86,11 +87,13 @@ import org.jboss.threads.AsyncFutureTask;
  */
 public class HostControllerRegistrationHandler implements ManagementRequestHandlerFactory {
 
-    private static final ModelNode READ_DOMAIN_MODEL = new ModelNode();
+    private static final Operation READ_DOMAIN_MODEL;
     static {
-        READ_DOMAIN_MODEL.get(ModelDescriptionConstants.OP).set(ReadMasterDomainModelHandler.OPERATION_NAME);
-        READ_DOMAIN_MODEL.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
-        READ_DOMAIN_MODEL.protect();
+        ModelNode mn = new ModelNode();
+        mn.get(ModelDescriptionConstants.OP).set(ReadMasterDomainModelHandler.OPERATION_NAME);
+        mn.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
+        mn.protect();
+        READ_DOMAIN_MODEL = OperationBuilder.create(mn).build();
     }
 
     private final ManagementChannelHandler handler;
@@ -155,24 +158,10 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
          * @param operation operation
          * @param handler the message handler
          * @param control the transaction control
-         * @param attachments the operation attachments
          * @param step the step to be executed
          * @return the result
          */
-        ModelNode execute(ModelNode operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationAttachments attachments, OperationStepHandler step);
-
-        /**
-         * Join an existing operation, which is currently being executed.
-         *
-         * @param operation the operation
-         * @param handler the message handler
-         * @param control the transaction control
-         * @param attachments the operation attachments
-         * @param step the step to be executed
-         * @param permit the operation permit to join
-         * @return the result
-         */
-        ModelNode joinActiveOperation(ModelNode operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationAttachments attachments, OperationStepHandler step, int permit);
+        ModelNode execute(Operation operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationStepHandler step);
 
     }
 
@@ -302,7 +291,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             registrationContext.processSubsystems(transformers, extensions);
             // Now run the read-domain model operation
             final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo.getHostName(), transformers, runtimeIgnoreTransformationRegistry);
-            context.addStep(READ_DOMAIN_MODEL, handler, OperationContext.Stage.MODEL);
+            context.addStep(READ_DOMAIN_MODEL.getOperation(), handler, OperationContext.Stage.MODEL);
             // Complete
             context.stepCompleted();
         }
@@ -408,7 +397,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 try {
                     // The domain model is going to be sent as part of the prepared notification
                     final OperationStepHandler handler = new HostRegistrationStepHandler(extensionRegistry.getTransformerRegistry(), this, runtimeIgnoreTransformationRegistry);
-                    ModelNode result = operationExecutor.execute(READ_DOMAIN_MODEL, OperationMessageHandler.logging, this, OperationAttachments.EMPTY, handler);
+                    ModelNode result = operationExecutor.execute(READ_DOMAIN_MODEL, OperationMessageHandler.logging, this, handler);
                     if (FAILED.equals(result.get(OUTCOME).asString())) {
                         failed(SlaveRegistrationException.ErrorCode.UNKNOWN, result.get(FAILURE_DESCRIPTION).asString());
                         return;

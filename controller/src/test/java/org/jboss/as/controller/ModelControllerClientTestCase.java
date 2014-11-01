@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,6 +45,7 @@ import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
 import org.jboss.as.controller.client.impl.InputStreamEntry;
 import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandler;
+import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.support.RemoteChannelPairSetup;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
@@ -87,7 +87,7 @@ public class ModelControllerClientTestCase {
                 @Override
                 public ManagementChannelHandler startReceiving(Channel channel) {
                     final ManagementChannelHandler support = new ManagementChannelHandler(channel, channels.getExecutorService());
-                    support.addHandlerFactory(new ModelControllerClientOperationHandler(controller, support));
+                    support.addHandlerFactory(new ModelControllerClientOperationHandler(controller, support, new ResponseAttachmentInputStreamSupport()));
                     channel.receiveMessage(support.getReceiver());
                     return support;
                 }
@@ -344,17 +344,12 @@ public class ModelControllerClientTestCase {
         }
     }
 
-    private static abstract class MockModelController implements ModelController {
+    private static abstract class MockModelController extends org.jboss.as.controller.MockModelController {
         protected volatile ModelNode operation;
         private final NotificationHandlerRegistration notificationRegistry = NotificationHandlerRegistration.Factory.create();
 
         ModelNode getOperation() {
             return operation;
-        }
-
-        @Override
-        public ModelControllerClient createClient(Executor executor) {
-            return null;
         }
 
         @Override
