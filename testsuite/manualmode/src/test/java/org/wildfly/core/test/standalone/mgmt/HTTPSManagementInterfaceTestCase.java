@@ -127,7 +127,7 @@ public class HTTPSManagementInterfaceTestCase {
         reloadServer();
     }
 
-    static void reloadServer() throws Exception {
+    public static void reloadServer() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext("remoting", TestSuiteEnvironment.getServerAddress(), 9999);
         try {
             ctx.connectController();
@@ -289,8 +289,7 @@ public class HTTPSManagementInterfaceTestCase {
 
     private static void serverTearDown(final ModelControllerClient client) throws Exception {
 
-        ModelNode operation = createOpNode("core-service=management/management-interface=native-interface",
-                ModelDescriptionConstants.REMOVE);
+        ModelNode operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.REMOVE);
         CoreUtils.applyUpdate(operation, client);
 
         operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.REMOVE);
