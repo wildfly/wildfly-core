@@ -50,6 +50,8 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -276,6 +278,52 @@ public class CoreUtils {
             // shut down the connection manager to ensure
             // immediate deallocation of all system resources
             httpclient.getConnectionManager().shutdown();
+        }
+    }
+
+    /**
+     * Returns response body for the given URL request as a String. It also checks if the returned HTTP status code is the
+     * expected one. If the server returns {@link HttpServletResponse#SC_UNAUTHORIZED} and username is provided, then a new
+     * request is created with the provided credentials (basic authentication).
+     *
+     * @param url URL to which the request should be made
+     * @param user Username (may be null)
+     * @param pass Password (may be null)
+     * @param expectedStatusCode expected status code returned from the requested server
+     * @return HTTP response body
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    public static String makeCallWithBasicAuthn(URL url, String user, String pass, int expectedStatusCode) throws IOException, URISyntaxException {
+        LOGGER.info("Requesting URL " + url);
+        final DefaultHttpClient httpClient = new DefaultHttpClient();
+        try {
+            final HttpGet httpGet = new HttpGet(url.toURI());
+            HttpResponse response = httpClient.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (401 != statusCode || StringUtils.isEmpty(user)) {
+                assertEquals("Unexpected HTTP response status code.", expectedStatusCode, statusCode);
+                return EntityUtils.toString(response.getEntity());
+            }
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("HTTP response was SC_UNAUTHORIZED, let's authenticate the user " + user);
+            }
+            HttpEntity entity = response.getEntity();
+            if (entity != null)
+                EntityUtils.consume(entity);
+
+            final UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, pass);
+            httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort()), credentials);
+
+            response = httpClient.execute(httpGet);
+            statusCode = response.getStatusLine().getStatusCode();
+            assertEquals("Unexpected status code returned after the authentication.", expectedStatusCode, statusCode);
+            return EntityUtils.toString(response.getEntity());
+        } finally {
+            // When HttpClient instance is no longer needed,
+            // shut down the connection manager to ensure
+            // immediate deallocation of all system resources
+            httpClient.getConnectionManager().shutdown();
         }
     }
 
