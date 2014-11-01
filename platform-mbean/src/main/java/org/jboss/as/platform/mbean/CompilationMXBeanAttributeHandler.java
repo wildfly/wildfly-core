@@ -61,7 +61,7 @@ class CompilationMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHa
                 throw unknownAttribute(operation);
             }
         } catch (UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
     }

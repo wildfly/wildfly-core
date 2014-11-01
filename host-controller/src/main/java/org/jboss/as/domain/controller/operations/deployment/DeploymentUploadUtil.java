@@ -140,6 +140,6 @@ class DeploymentUploadUtil {
     }
 
     private static OperationFailedException createFailureException(String msg) {
-        return new OperationFailedException(new ModelNode().set(msg));
+        return new OperationFailedException(msg);
     }
 }

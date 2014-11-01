@@ -76,10 +76,10 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
             List<ModelNode> list = value.asList();
             int size = list.size();
             if (size < min) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMinSize(size, parameterName, min)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinSize(size, parameterName, min));
             }
             else if (size > max) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMaxSize(size, parameterName, max)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxSize(size, parameterName, max));
             }
             else {
                 for (ModelNode element : list) {

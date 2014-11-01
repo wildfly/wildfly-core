@@ -113,7 +113,8 @@ public abstract class AbstractControllerTestBase {
     public ModelNode executeForResult(ModelNode operation) throws OperationFailedException {
         ModelNode rsp = getController().execute(operation, null, null, null);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
-            throw new OperationFailedException(rsp.get(FAILURE_DESCRIPTION));
+            ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
+            throw new OperationFailedException(fd.toString(), fd);
         }
         return rsp.get(RESULT);
     }

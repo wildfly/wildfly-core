@@ -77,7 +77,7 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
         Map<String, Set<String>> childAddresses = GlobalOperationHandlers.getChildAddresses(context, address, registry, resource, childType);
         Set<String> childNames = childAddresses.get(childType);
         if (childNames == null) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.unknownChildType(childType)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownChildType(childType));
         }
         // Sort the result
         childNames = new TreeSet<String>(childNames);

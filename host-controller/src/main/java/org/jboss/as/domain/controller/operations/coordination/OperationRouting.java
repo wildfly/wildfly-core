@@ -109,10 +109,10 @@ class OperationRouting {
             // Throw appropriate exception
             if (validAddress) {
                 // Bad operation name exception
-                throw new OperationFailedException(new ModelNode(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
             } else {
                 // Bad address exception
-                throw new OperationFailedException(new ModelNode(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
             }
         }
 

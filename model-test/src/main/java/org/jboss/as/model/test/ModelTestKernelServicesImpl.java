@@ -234,7 +234,8 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
     public ModelNode executeForResult(ModelNode operation, InputStream...inputStreams) throws OperationFailedException {
         ModelNode rsp = executeOperation(operation, inputStreams);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
-            throw new OperationFailedException(rsp.get(FAILURE_DESCRIPTION));
+            ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
+            throw new OperationFailedException(fd.toString(), fd);
         }
         return rsp.get(RESULT);
     }

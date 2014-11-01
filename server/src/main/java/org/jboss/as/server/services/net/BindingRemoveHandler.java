@@ -79,7 +79,7 @@ public class BindingRemoveHandler extends SocketBindingRemoveHandler {
             try {
                 BindingAddHandler.installBindingService(context, model, name);
             }catch (UnknownHostException e) {
-                throw new OperationFailedException(new ModelNode().set(e.toString()));
+                throw new OperationFailedException(e.toString());
             }
         }
     }

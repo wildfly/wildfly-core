@@ -44,7 +44,7 @@ public class PropertyValidator extends ModelTypeValidator {
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
             if (value.asProperty().getName().length() < 1) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMinLength(value.asProperty().getName(), parameterName, 1)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinLength(value.asProperty().getName(), parameterName, 1));
             }
             if (valueValidator != null) {
                 valueValidator.validateParameter(parameterName, value.asProperty().getValue());

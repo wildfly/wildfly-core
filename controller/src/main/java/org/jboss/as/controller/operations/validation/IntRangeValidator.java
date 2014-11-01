@@ -59,22 +59,22 @@ public class IntRangeValidator extends ModelTypeValidator implements MinMaxValid
         if (value.isDefined() && value.getType() != ModelType.EXPRESSION) {
             int val = value.asInt();
             if (val < min) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMinValue(val, parameterName, min)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinValue(val, parameterName, min));
             }
             else if (val > max) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMaxValue(val, parameterName, max)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxValue(val, parameterName, max));
             }
         }
     }
 
     @Override
     public Long getMin() {
-        return Long.valueOf(min);
+        return (long) min;
     }
 
     @Override
     public Long getMax() {
-        return Long.valueOf(max);
+        return (long) max;
     }
 
 }

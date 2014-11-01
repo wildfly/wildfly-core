@@ -81,7 +81,7 @@ public class ThreadMXBeanThreadInfoHandler implements OperationStepHandler {
                 result.set(PlatformMBeanUtil.getDetypedThreadInfo(info, mbean.isThreadCpuTimeSupported()));
             }
         } catch (SecurityException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
         context.stepCompleted();

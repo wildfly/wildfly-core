@@ -136,7 +136,7 @@ public class ProfileDescribeHandler implements OperationStepHandler {
                     } else {
                         errMsg = ControllerLogger.ROOT_LOGGER.noHandlerForOperation(opName, fullAddress);
                     }
-                    throw new OperationFailedException(new ModelNode(errMsg));
+                    throw new OperationFailedException(errMsg);
                 }
 
                 // Step to store subsystem ops in overall list

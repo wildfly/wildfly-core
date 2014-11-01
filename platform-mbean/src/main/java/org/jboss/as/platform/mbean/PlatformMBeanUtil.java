@@ -76,7 +76,7 @@ public class PlatformMBeanUtil {
         try {
             return new ObjectName(getObjectNameStringWithNameKey(base, escapedValue));
         } catch (MalformedObjectNameException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
     }
 
@@ -86,7 +86,7 @@ public class PlatformMBeanUtil {
         } catch (ReflectionException e) {
             Throwable t = e.getTargetException();
             if (t instanceof SecurityException || t instanceof UnsupportedOperationException) {
-                throw new OperationFailedException(new ModelNode().set(t.toString()));
+                throw new OperationFailedException(e.toString());
             } else if (t instanceof RuntimeException) {
                 throw (RuntimeException) t;
             } else {

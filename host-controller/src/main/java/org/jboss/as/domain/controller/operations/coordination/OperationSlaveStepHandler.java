@@ -114,7 +114,7 @@ public class OperationSlaveStepHandler {
         if (domainOp != null) {
             // Only require an existing registration if the domain op is not ignored
             if (originalRegistration == null) {
-                throw new OperationFailedException(new ModelNode(ControllerLogger.ROOT_LOGGER.noSuchResourceType(originalAddress)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(originalAddress));
             }
             addBasicStep(context, domainOp);
         }
@@ -140,7 +140,7 @@ public class OperationSlaveStepHandler {
         if(stepHandler != null) {
             context.addStep(operation, stepHandler, OperationContext.Stage.MODEL);
         } else {
-            throw new OperationFailedException(new ModelNode(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR)))));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR))));
         }
     }
 

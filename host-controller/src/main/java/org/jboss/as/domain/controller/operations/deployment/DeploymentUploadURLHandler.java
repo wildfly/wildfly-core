@@ -76,9 +76,9 @@ extends AbstractDeploymentUploadHandler {
             URL url = new URL(urlSpec);
             return url.openStream();
         } catch (MalformedURLException e) {
-            throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.invalidUrl(urlSpec, e.toString())));
+            throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidUrl(urlSpec, e.toString()));
         } catch (IOException e) {
-            throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.errorObtainingUrlStream(urlSpec, e.toString())));
+            throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.errorObtainingUrlStream(urlSpec, e.toString()));
         }
     }
 

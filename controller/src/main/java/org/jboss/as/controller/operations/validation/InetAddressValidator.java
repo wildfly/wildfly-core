@@ -45,9 +45,10 @@ public class InetAddressValidator extends ModelTypeValidator {
         if (value.isDefined() && value.getType() != ModelType.EXPRESSION) {
             String str = value.asString();
             try {
+                //noinspection ResultOfMethodCallIgnored
                 InetAddress.getByName(str);
             } catch (UnknownHostException e) {
-                throw new OperationFailedException(new ModelNode().set(e.toString()));
+                throw new OperationFailedException(e.toString());
             }
         }
     }

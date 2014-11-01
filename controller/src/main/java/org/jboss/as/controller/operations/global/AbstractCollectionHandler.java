@@ -69,9 +69,9 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
         final String attributeName = NAME.resolveModelAttribute(context, operationModel).asString();
         final AttributeAccess attributeAccess = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
         if (attributeAccess == null) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
         } else if (requiredReadWriteAccess && attributeAccess.getAccessType() != AttributeAccess.AccessType.READ_WRITE) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.attributeNotWritable(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeNotWritable(attributeName));
         }
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
 

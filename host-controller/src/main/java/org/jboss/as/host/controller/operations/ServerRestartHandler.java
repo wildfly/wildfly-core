@@ -60,7 +60,7 @@ public class ServerRestartHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
-            throw new OperationFailedException(new ModelNode(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode())));
+            throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
@@ -77,7 +77,7 @@ public class ServerRestartHandler implements OperationStepHandler {
 
                 final ServerStatus origStatus = serverInventory.determineServerStatus(serverName);
                 if (origStatus != ServerStatus.STARTED) {
-                    throw new OperationFailedException(new ModelNode(HostControllerLogger.ROOT_LOGGER.cannotRestartServer(serverName, origStatus)));
+                    throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotRestartServer(serverName, origStatus));
                 }
                 final ServerStatus status = serverInventory.restartServer(serverName, -1, model, blocking);
                 context.getResult().set(status.toString());

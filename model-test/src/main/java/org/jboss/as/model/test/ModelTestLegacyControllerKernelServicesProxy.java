@@ -180,7 +180,8 @@ public abstract class ModelTestLegacyControllerKernelServicesProxy {
     public ModelNode executeForResult(ModelNode operation, InputStream... inputStreams) throws OperationFailedException {
         ModelNode rsp = executeOperation(operation, inputStreams);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
-            throw new OperationFailedException(rsp.get(FAILURE_DESCRIPTION));
+            ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
+            throw new OperationFailedException(fd.toString(), fd);
         }
         return rsp.get(RESULT);
     }
@@ -191,6 +192,7 @@ public abstract class ModelTestLegacyControllerKernelServicesProxy {
             executeForResult(operation, inputStreams);
             Assert.fail("Should have given error");
         } catch (OperationFailedException expected) {
+            // ignore
         }
     }
 

@@ -81,7 +81,7 @@ public final class InterfaceCriteriaWriteHandler implements OperationStepHandler
             syntheticOp.get(attributeName).set(newValue);
             attributeDefinition.validateAndSet(syntheticOp, submodel);
         } else {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
         }
         if (updateRuntime) {
             // Require a reload
@@ -105,7 +105,7 @@ public final class InterfaceCriteriaWriteHandler implements OperationStepHandler
                 final String attributeName = definition.getName();
                 final boolean has = model.hasDefined(attributeName);
                 if(! has && isRequired(definition, model)) {
-                    throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.required(attributeName)));
+                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
                 }
                 if(has) {
                     // Just ignore 'false'
@@ -128,7 +128,7 @@ public final class InterfaceCriteriaWriteHandler implements OperationStepHandler
                                 }
                             }
                         }
-                        throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidAttributeCombo(attributeName, sb)));
+                        throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidAttributeCombo(attributeName, sb));
                     }
                 }
             }

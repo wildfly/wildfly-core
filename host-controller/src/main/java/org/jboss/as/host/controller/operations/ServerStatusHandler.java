@@ -73,7 +73,7 @@ public class ServerStatusHandler implements OperationStepHandler {
             context.getResult().set(status.toString());
             context.stepCompleted();
         } else {
-            throw new OperationFailedException(new ModelNode(HostControllerLogger.ROOT_LOGGER.failedToGetServerStatus()));
+            throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.failedToGetServerStatus());
         }
     }
 

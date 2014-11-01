@@ -64,11 +64,11 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
         final String attributeName = definition.getName();
         final boolean has = operation.has(attributeName);
         if(! has && definition.isRequired(operation)) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.required(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
         }
         if(has) {
             if(! definition.isAllowed(operation)) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalid(attributeName)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalid(attributeName));
             }
             definition.validateAndSet(operation, subModel);
         } else {
@@ -81,7 +81,7 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
         String name = getInterfaceName(operation);
         ParsedInterfaceCriteria parsed = getCriteria(context, operation);
         if (parsed.getFailureMessage() != null) {
-            throw new OperationFailedException(new ModelNode().set(parsed.getFailureMessage()));
+            throw new OperationFailedException(parsed.getFailureMessage());
         }
         performRuntime(context, operation, model, name, parsed);
     }

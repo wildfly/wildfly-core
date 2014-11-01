@@ -86,7 +86,7 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
 
         final DescribedOp describedOp = getDescribedOp(context, operationName, operation, !accessControl);
         if (describedOp == null || (context.getProcessType() == ProcessType.DOMAIN_SERVER && !describedOp.flags.contains(OperationEntry.Flag.RUNTIME_ONLY))) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.operationNotRegistered(operationName, PathAddress.pathAddress(operation.require(OP_ADDR)))));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.operationNotRegistered(operationName, PathAddress.pathAddress(operation.require(OP_ADDR))));
         } else {
             final ModelNode result = describedOp.description;
             Set<OperationEntry.Flag> flags = describedOp.flags;

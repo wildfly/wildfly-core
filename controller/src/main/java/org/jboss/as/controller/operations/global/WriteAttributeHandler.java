@@ -80,9 +80,9 @@ public class WriteAttributeHandler implements OperationStepHandler {
         }
         final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
         if (attributeAccess == null) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
         } else if (attributeAccess.getAccessType() != AttributeAccess.AccessType.READ_WRITE) {
-            throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.attributeNotWritable(attributeName)));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeNotWritable(attributeName));
         } else {
 
             // Authorize

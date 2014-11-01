@@ -179,7 +179,7 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
     }
 
     protected static OperationFailedException createFailureException(String msg) {
-        return new OperationFailedException(new ModelNode(msg));
+        return new OperationFailedException(msg);
     }
 
     protected static InputStream getInputStream(OperationContext context, ModelNode operation) throws OperationFailedException {

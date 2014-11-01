@@ -20,8 +20,8 @@ package org.jboss.as.controller.operations.validation;
 
 import java.util.List;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -81,10 +81,10 @@ public class MapValidator extends ModelTypeValidator implements ParameterValidat
             List<Property> list = value.asPropertyList();
             int size = list.size();
             if (size < min) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMinSize(size, parameterName, min)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinSize(size, parameterName, min));
             }
             else if (size > max) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMaxSize(size, parameterName, max)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxSize(size, parameterName, max));
             }
             else {
                 for (Property property : list) {

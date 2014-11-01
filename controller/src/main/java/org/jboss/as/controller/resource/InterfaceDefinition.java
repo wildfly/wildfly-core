@@ -374,7 +374,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
                         final ModelNode v = value.get(name);
                         if (NESTED_LIST_ATTRIBUTES.contains(def)) {
                             if (ModelType.LIST != v.getType()) {
-                                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidType(v.getType())));
+                                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidType(v.getType()));
                             }
                         } else {
                             def.getValidator().validateParameter(name, v);

@@ -51,10 +51,10 @@ abstract class AbstractDeploymentHandler {
     }
 
     protected static OperationFailedException createFailureException(String msg) {
-        return new OperationFailedException(new ModelNode().set(msg));
+        return new OperationFailedException(msg);
     }
 
     protected static OperationFailedException createFailureException(Throwable cause, String msg) {
-        return new OperationFailedException(cause, new ModelNode().set(msg));
+        return new OperationFailedException(cause, new ModelNode(msg));
     }
 }

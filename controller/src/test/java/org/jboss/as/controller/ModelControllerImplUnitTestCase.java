@@ -813,7 +813,7 @@ public class ModelControllerImplUnitTestCase {
 
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    throw new OperationFailedException(new ModelNode().set("OFE"));
+                    throw new OperationFailedException("OFE");
                 }
             }, OperationContext.Stage.RUNTIME);
 

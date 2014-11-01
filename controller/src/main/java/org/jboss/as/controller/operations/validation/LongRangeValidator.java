@@ -55,21 +55,21 @@ public class LongRangeValidator extends ModelTypeValidator implements MinMaxVali
         if (value.isDefined() && value.getType() != ModelType.EXPRESSION) {
             long val = value.asLong();
             if (val < min) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMinValue(val, parameterName, min)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinValue(val, parameterName, min));
             }
             else if (val > max) {
-                throw new OperationFailedException(new ModelNode().set(ControllerLogger.ROOT_LOGGER.invalidMaxValue(val, parameterName, max)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxValue(val, parameterName, max));
             }
         }
     }
 
     @Override
     public Long getMin() {
-        return Long.valueOf(min);
+        return min;
     }
 
     @Override
     public Long getMax() {
-        return Long.valueOf(max);
+        return max;
     }
 }

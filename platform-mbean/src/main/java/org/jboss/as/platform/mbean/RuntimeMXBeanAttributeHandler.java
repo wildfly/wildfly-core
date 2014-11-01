@@ -63,7 +63,7 @@ class RuntimeMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandle
                 throw unknownAttribute(operation);
             }
         } catch (SecurityException | UnsupportedOperationException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
     }

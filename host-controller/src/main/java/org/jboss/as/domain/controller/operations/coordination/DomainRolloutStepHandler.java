@@ -390,7 +390,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                         validateServerGroupPlan(found, prop);
                     }
                     else {
-                        throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlan(series, IN_SERIES)));
+                        throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlan(series, IN_SERIES));
                     }
                 }
             }
@@ -398,7 +398,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             Set<String> groups = new HashSet<String>(opsByGroup.keySet());
             groups.removeAll(found);
             if (!groups.isEmpty()) {
-                throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlan(groups)));
+                throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlan(groups));
             }
         }
         return rolloutPlan;
@@ -406,7 +406,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
     private void validateServerGroupPlan(Set<String> found, Property prop) throws OperationFailedException {
         if (!found.add(prop.getName())) {
-            throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlanGroupAlreadyExists(prop.getName())));
+            throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlanGroupAlreadyExists(prop.getName()));
         }
         ModelNode plan = prop.getValue();
         if (plan.hasDefined(MAX_FAILURE_PERCENTAGE)) {
@@ -415,13 +415,13 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             }
             int max = plan.get(MAX_FAILURE_PERCENTAGE).asInt();
             if (max < 0 || max > 100) {
-                throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlanRange(prop.getName(), MAX_FAILURE_PERCENTAGE, max)));
+                throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlanRange(prop.getName(), MAX_FAILURE_PERCENTAGE, max));
             }
         }
         if (plan.hasDefined(MAX_FAILED_SERVERS)) {
             int max = plan.get(MAX_FAILED_SERVERS).asInt();
             if (max < 0) {
-                throw new OperationFailedException(new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlanLess(prop.getName(), MAX_FAILED_SERVERS, max)));
+                throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.invalidRolloutPlanLess(prop.getName(), MAX_FAILED_SERVERS, max));
             }
         }
     }

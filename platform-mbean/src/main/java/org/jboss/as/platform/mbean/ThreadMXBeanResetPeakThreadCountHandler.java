@@ -54,7 +54,7 @@ public class ThreadMXBeanResetPeakThreadCountHandler implements OperationStepHan
         try {
             ManagementFactory.getThreadMXBean().resetPeakThreadCount();
         } catch (SecurityException e) {
-            throw new OperationFailedException(new ModelNode().set(e.toString()));
+            throw new OperationFailedException(e.toString());
         }
 
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
