@@ -82,9 +82,10 @@
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.16</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds>
-        <version.org.apache.httpcomponents.httpclient>4.2.1</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpclient>4.3.5</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.maven>3.2.1</version.org.apache.maven>
         <version.org.apache.xerces>2.9.1-jbossas-2</version.org.apache.xerces>
+        <version.org.bouncycastle>1.50</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.0.18</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
@@ -121,6 +122,7 @@
         <version.org.mockito>1.9.5</version.org.mockito>
         <version.org.picketbox>4.9.0.Beta1</version.org.picketbox>
         <version.org.slf4j>1.7.7.jbossorg-1</version.org.slf4j>
+        <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
         <version.org.wildfly.build-tools>1.0.0.Alpha3</version.org.wildfly.build-tools>
         <version.org.wildfly.legacy.test>1.0.0.Alpha2</version.org.wildfly.legacy.test>
@@ -147,7 +149,7 @@
             propagate these to the test when run
          -->
         <!-- The name of the root checkout folder to create org.jboss.model.test.classpath.cache under for subsystem-test and core-model-test -->
-        <org.jboss.model.test.cache.root>[pom.xml,testsuite-core]</org.jboss.model.test.cache.root>
+        <org.jboss.model.test.cache.root>[pom.xml,testsuite]</org.jboss.model.test.cache.root>
         <!-- Location relative to root that will be used for the cached legacy classpaths used by subsystem-test and core-model-test-->
         <org.jboss.model.test.classpath.cache>target/model-test-classpath-cache</org.jboss.model.test.classpath.cache>
     </properties>
@@ -182,7 +184,7 @@
         <module>server</module>
         <module>subsystem-test</module>
         <module>system-jmx</module>
-        <module>testsuite-core</module>
+        <module>testsuite</module>
         <module>threads</module>
         <module>version</module>
     </modules>
@@ -937,6 +939,14 @@
                </exclusions>
            </dependency>
 
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+                <scope>test</scope>
+            </dependency>
+
+
             <!-- This dependency needs to be managed due to the dependency convergence enforcer rule -->
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
@@ -1285,6 +1295,12 @@
                 <version>${version.org.slf4j}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.syslog4j</groupId>
+                <artifactId>syslog4j</artifactId>
+                <version>${version.org.syslog4j}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.eclipse.aether</groupId>
                 <artifactId>aether-api</artifactId>

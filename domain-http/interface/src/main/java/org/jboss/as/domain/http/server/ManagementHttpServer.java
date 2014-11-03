@@ -188,7 +188,7 @@ public class ManagementHttpServer {
             }
         }
 
-        HttpOpenListener openListener = new HttpOpenListener(new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096), 4096);
+        HttpOpenListener openListener = new HttpOpenListener(new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096));
 
         int secureRedirectPort = secureBindAddress != null ? secureBindAddress.getPort() : -1;
         // WFLY-2870 -- redirect not supported if bindAddress and secureBindAddress are using different InetAddress
