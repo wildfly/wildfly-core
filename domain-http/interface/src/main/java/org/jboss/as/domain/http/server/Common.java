@@ -66,7 +66,7 @@ public class Common {
         sendError(exchange, encode, msg, errorCode);
     }
 
-    private static void sendError(HttpServerExchange exchange, boolean encode, ModelNode msg, int errorCode) {
+    static void sendError(HttpServerExchange exchange, boolean encode, ModelNode msg, int errorCode) {
         if(encode) {
 
             try {
