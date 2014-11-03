@@ -101,6 +101,17 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
         tearDown(managementClient.getControllerClient());
     }
 
+    // just for compatibilty reasons until full is updated to newer core
+    @Deprecated
+    public void tearDown(final ModelControllerClient modelControllerClient, String containerId) throws Exception {
+            tearDown(modelControllerClient);
+    }
+
+    @Deprecated
+    public void setup(final ModelControllerClient modelControllerClient, String containerId) throws Exception {
+        setup(modelControllerClient);
+    }
+
     // Protected methods -----------------------------------------------------
 
     protected void setup(final ModelControllerClient modelControllerClient) throws Exception {
