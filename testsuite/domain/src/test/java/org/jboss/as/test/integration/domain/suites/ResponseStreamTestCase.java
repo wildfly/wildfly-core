@@ -36,8 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
+import java.io.LineNumberReader;
 import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
@@ -228,25 +227,29 @@ public class ResponseStreamTestCase {
 
     private void processResponseStream(OperationResponse response, String streamUUID, boolean forServer, boolean forMaster) throws IOException {
         OperationResponse.StreamEntry se = response.getInputStream(streamUUID);
-        Reader reader = new InputStreamReader(se.getStream());
-        StringWriter sw = new StringWriter();
-        char[] chars = new char[1024];
-        int read;
-        while ((read = reader.read(chars)) != -1) {
-            sw.write(chars, 0, read);
+
+        LineNumberReader reader = new LineNumberReader(new InputStreamReader(se.getStream()));
+
+        String expected = LogStreamExtension.getLogMessage(logMessageContent);
+        boolean readRegisteredServer = false;
+        boolean readRegisteredSlave = false;
+        boolean readExpected = false;
+        String read;
+        while ((read = reader.readLine()) != null) {
+            readRegisteredServer = readRegisteredServer || read.contains("Registering server");
+            readRegisteredSlave = readRegisteredSlave || read.contains("Registered remote slave host");
+            readExpected = readExpected || read.contains(expected);
         }
 
-        String log = sw.toString();
-        System.out.println(log);
         if (forServer) {
-            Assert.assertFalse(log.contains("Registering server"));
+            Assert.assertFalse(readRegisteredServer);
         } else if (forMaster) {
-            Assert.assertTrue(log.contains("Registered remote slave host"));
+            Assert.assertTrue(readRegisteredSlave);
         } else {
-            Assert.assertFalse(log.contains("Registered remote slave host"));
-            Assert.assertTrue(log.contains("Registering server"));
+            Assert.assertFalse(readRegisteredSlave);
+            Assert.assertTrue(readRegisteredServer);
         }
-        Assert.assertTrue(log.contains(LogStreamExtension.getLogMessage(logMessageContent)));
+        Assert.assertTrue(readExpected);
 
         reader.close();
     }

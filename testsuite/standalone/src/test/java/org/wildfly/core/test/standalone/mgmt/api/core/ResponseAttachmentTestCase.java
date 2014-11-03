@@ -30,8 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
+import java.io.LineNumberReader;
 import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
@@ -128,18 +127,15 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
             Assert.assertEquals(1, streams.size());
             OperationResponse.StreamEntry se = streams.get(0);
             Assert.assertEquals(uuid, se.getUUID());
-            Reader reader = new InputStreamReader(se.getStream());
-            StringWriter sw = new StringWriter();
-            char[] chars = new char[1024];
-            int read;
-            while ((read = reader.read(chars)) != -1) {
-                sw.write(chars, 0, read);
+            LineNumberReader reader = new LineNumberReader(new InputStreamReader(se.getStream()));
+            String read;
+            boolean readMessage = false;
+            String expected = LogStreamExtension.getLogMessage(logMessageContent);
+            while ((read = reader.readLine()) != null) {
+                readMessage = readMessage || read.contains(expected);
             }
 
-            String log = sw.toString();
-            System.out.println(log);
-            Assert.assertTrue(log.contains("[Standalone]"));
-            Assert.assertTrue(log.contains(LogStreamExtension.getLogMessage(logMessageContent)));
+            Assert.assertTrue("Did not see " + expected, readMessage);
 
         } finally {
             StreamUtils.safeClose(response);
