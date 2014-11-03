@@ -45,6 +45,7 @@ import org.jboss.as.domain.controller.operations.ServerGroupSocketBindingGroupWr
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentReplaceHandler;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
+import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
@@ -90,12 +91,20 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     private final boolean master;
     private final HostFileRepository fileRepository;
+    private final ContentRepository contentRepository;
     private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
 
     public ServerGroupResourceDefinition(final boolean master, final LocalHostControllerInfo hostInfo,
                                          final HostFileRepository fileRepository, final DomainControllerRuntimeIgnoreTransformationRegistry registry) {
+        this(master, hostInfo, fileRepository, null, registry);
+    }
+
+    public ServerGroupResourceDefinition(final boolean master, final LocalHostControllerInfo hostInfo,
+                                         final HostFileRepository fileRepository, final ContentRepository contentRepository,
+                                         final DomainControllerRuntimeIgnoreTransformationRegistry registry) {
         super(PATH, DomainResolver.getResolver(SERVER_GROUP, false), new ServerGroupAddHandler(master), new ServerGroupRemoveHandler(hostInfo));
         this.master = master;
+        this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
         this.runtimeIgnoreTransformationRegistry = registry;
     }
@@ -118,14 +127,14 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.SERVER_GROUP_REPLACE_DEPLOYMENT_DEFINITION, new ServerGroupDeploymentReplaceHandler(fileRepository));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.SERVER_GROUP_REPLACE_DEPLOYMENT_DEFINITION,  new ServerGroupDeploymentReplaceHandler(fileRepository, contentRepository));
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         DomainServerLifecycleHandlers.registerServerGroupHandlers(resourceRegistration);
         resourceRegistration.registerSubModel(JvmResourceDefinition.GLOBAL);
-        resourceRegistration.registerSubModel(DomainDeploymentResourceDefinition.createForServerGroup(fileRepository));
+        resourceRegistration.registerSubModel(DomainDeploymentResourceDefinition.createForServerGroup(fileRepository, contentRepository));
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_GROUP));
         resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, null, null));
     }

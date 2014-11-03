@@ -52,16 +52,16 @@ class DomainDeploymentResourceDefinition extends DeploymentResourceDefinition {
                 DeploymentRemoveHandler.createForMaster(contentRepository));
     }
 
-    public static DomainDeploymentResourceDefinition createForDomainSlave(boolean backupDC, HostFileRepository fileRepository) {
+    public static DomainDeploymentResourceDefinition createForDomainSlave(boolean backupDC, HostFileRepository fileRepository, ContentRepository contentRepository) {
         return new DomainDeploymentResourceDefinition(DeploymentResourceParent.DOMAIN,
                 DeploymentAttributes.DOMAIN_DEPLOYMENT_ADD_DEFINITION,
                 new DeploymentAddHandler(backupDC ? fileRepository : null),
-                DeploymentRemoveHandler.createForSlave(fileRepository));
+                DeploymentRemoveHandler.createForSlave(fileRepository, contentRepository));
     }
 
-    public static DomainDeploymentResourceDefinition createForServerGroup(HostFileRepository fileRepository) {
+    public static DomainDeploymentResourceDefinition createForServerGroup(HostFileRepository fileRepository, ContentRepository contentRepository) {
         return new DomainDeploymentResourceDefinition(DeploymentResourceParent.SERVER_GROUP, DeploymentAttributes.SERVER_GROUP_DEPLOYMENT_ADD_DEFINITION,
-                new ServerGroupDeploymentAddHandler(fileRepository), ServerGroupDeploymentRemoveHandler.INSTANCE);
+                new ServerGroupDeploymentAddHandler(fileRepository, contentRepository), new ServerGroupDeploymentRemoveHandler(contentRepository));
     }
 
     @Override
