@@ -24,13 +24,7 @@ package org.jboss.as.domain.management.connections.ldap;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
 
-import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -41,7 +35,6 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.operations.validation.URIValidator;
-import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
@@ -96,24 +89,6 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .setAllowNull(true)
             .setValidator(new URIValidator(true, true))
-            .setAttributeMarshaller(new AttributeMarshaller() {
-                @Override
-                public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                    if (resourceModel.hasDefined(attribute.getName())) {
-                        List<ModelNode> list = resourceModel.get(attribute.getName()).asList();
-                        if (list.size() > 0) {
-                            StringBuilder sb = new StringBuilder();
-                            for (ModelNode child : list) {
-                                if (sb.length() > 0) {
-                                    sb.append(" ");
-                                }
-                                sb.append(child.asString());
-                            }
-                            writer.writeAttribute(Attribute.HANDLES_REFERRALS_FOR.getLocalName(), sb.toString());
-                        }
-                    }
-                }
-            })
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {URL, SEARCH_DN, SEARCH_CREDENTIAL, SECURITY_REALM, INITIAL_CONTEXT_FACTORY, REFERRALS, HANDLES_REFERRALS_FOR};

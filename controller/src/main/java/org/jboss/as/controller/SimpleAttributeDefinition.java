@@ -168,7 +168,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
         try {
-            return parse(value);
+            return parse(this, this.getValidator(), value);
         } catch (OperationFailedException e) {
             throw new XMLStreamException(e.getFailureDescription().toString(), reader.getLocation());
         }
@@ -235,18 +235,18 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
         attributeMarshaller.marshallAsElement(this,resourceModel,marshallDefault,writer);
     }
 
-    private ModelNode parse(final String value) throws OperationFailedException  {
+    static ModelNode parse(AttributeDefinition attribute, ParameterValidator validator, final String value) throws OperationFailedException  {
         final String trimmed = value == null ? null : value.trim();
         ModelNode node;
         if (trimmed != null ) {
-            if (isAllowExpression()) {
+            if (attribute.isAllowExpression()) {
                 node = ParseUtils.parsePossibleExpression(trimmed);
             } else {
                 node = new ModelNode().set(trimmed);
             }
             if (node.getType() != ModelType.EXPRESSION) {
                 // Convert the string to the expected type
-                switch (getType()) {
+                switch (attribute.getType()) {
                     case BIG_DECIMAL:
                         node.set(node.asBigDecimal());
                         break;
@@ -270,15 +270,11 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                         break;
                 }
             }
-        }
-//        else if (getDefaultValue()!= null && getDefaultValue().isDefined()) {
-//            node = new ModelNode().set(getDefaultValue());
-//        }
-        else {
+        } else {
             node = new ModelNode();
         }
 
-        getValidator().validateParameter(getXmlName(), node);
+        validator.validateParameter(attribute.getXmlName(), node);
 
         return node;
     }

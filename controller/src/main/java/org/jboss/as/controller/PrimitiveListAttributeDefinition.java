@@ -41,7 +41,7 @@ import org.jboss.dmr.ModelType;
 public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     private final ModelType valueType;
 
-    protected PrimitiveListAttributeDefinition(final ListAttributeDefinition.Builder builder, ModelType valueType) {
+    PrimitiveListAttributeDefinition(final ListAttributeDefinition.Builder builder, ModelType valueType) {
         super(builder);
         this.valueType = valueType;
     }

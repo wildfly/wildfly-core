@@ -36,7 +36,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.NillableOrExpressionParameterValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -113,7 +112,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
 
         try {
-            return parse(value);
+            return SimpleAttributeDefinition.parse(this, elementValidator, value);
         } catch (OperationFailedException e) {
             throw new XMLStreamException(e.getFailureDescription().toString(), reader.getLocation());
         }
@@ -184,54 +183,9 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
                                                                       final ResourceDescriptionResolver resolver,
                                                                       final Locale locale, final ResourceBundle bundle);
 
-    private ModelNode parse(final String value) throws OperationFailedException  {
-
-        final String trimmed = value == null ? null : value.trim();
-        ModelNode node;
-        if (trimmed != null) {
-            if (isAllowExpression()) {
-                node = ParseUtils.parsePossibleExpression(trimmed);
-            } else {
-                node = new ModelNode().set(trimmed);
-            }
-            if (node.getType() != ModelType.EXPRESSION) {
-                // Convert the string to the expected type
-                switch (getType()) {
-                    case BIG_DECIMAL:
-                        node.set(node.asBigDecimal());
-                        break;
-                    case BIG_INTEGER:
-                        node.set(node.asBigInteger());
-                        break;
-                    case BOOLEAN:
-                        node.set(node.asBoolean());
-                        break;
-                    case BYTES:
-                        node.set(node.asBytes());
-                        break;
-                    case DOUBLE:
-                        node.set(node.asDouble());
-                        break;
-                    case INT:
-                        node.set(node.asInt());
-                        break;
-                    case LONG:
-                        node.set(node.asLong());
-                        break;
-                }
-            }
-        } else {
-            node = new ModelNode();
-        }
-
-        elementValidator.validateParameter(getXmlName(), node);
-
-        return node;
-    }
-
     @Override
     public void marshallAsElement(ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsElement(this,resourceModel,marshallDefault,writer);
+        attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
     }
 
     /**
@@ -283,6 +237,23 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      */
     protected ModelNode convertParameterElementExpressions(ModelNode parameterElement) {
         return isAllowExpression() ? convertStringExpression(parameterElement) : parameterElement;
+    }
+
+    /**
+     * parses whole value as list attribute and uses "," separator splitting list elements
+     * @deprecated in favour of using  {@link AttributeParser attribute parser}
+     * @param value String with "," separated string elements
+     * @param operation operation to with this list elements are added
+     * @param reader xml reader from where reading is be done
+     * @throws XMLStreamException
+     */
+    @Deprecated
+    public void parseAndSetParameter(String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
+        if (value != null) {
+            for (String element : value.split(",")) {
+                parseAndAddParameterElement(element.trim(), operation, reader);
+            }
+        }
     }
 
     public abstract static class Builder<BUILDER extends Builder, ATTRIBUTE extends ListAttributeDefinition>

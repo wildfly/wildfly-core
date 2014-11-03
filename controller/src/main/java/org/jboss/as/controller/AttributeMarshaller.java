@@ -81,4 +81,46 @@ public abstract class AttributeMarshaller {
     public boolean isMarshallableAsElement(){
         return false;
     }
+
+
+
+    private static class ListMarshaller extends DefaultAttributeMarshaller {
+        private final char delimiter;
+
+        private ListMarshaller(char delimiter) {
+            this.delimiter = delimiter;
+        }
+
+        @Override
+        public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
+
+            StringBuilder builder = new StringBuilder();
+            if (resourceModel.hasDefined(attribute.getName())) {
+                for (ModelNode p : resourceModel.get(attribute.getName()).asList()) {
+                    builder.append(p.asString()).append(delimiter);
+                }
+            }
+            if (builder.length() > 2) {
+                builder.setLength(builder.length() - 1);
+            }
+            if (builder.length() > 0) {
+                writer.writeAttribute(attribute.getXmlName(), builder.toString());
+            }
+        }
+    }
+
+    /**
+     * simple marshaller
+     */
+    public static final AttributeMarshaller SIMPLE = new DefaultAttributeMarshaller();
+
+    /**
+     * space delimited list marshaller
+     */
+    public static final AttributeMarshaller STRING_LIST = new ListMarshaller(' ');
+
+    /**
+     * comma delimited list marshaller
+     */
+    public static final AttributeMarshaller COMMA_STRING_LIST = new ListMarshaller(',');
 }
