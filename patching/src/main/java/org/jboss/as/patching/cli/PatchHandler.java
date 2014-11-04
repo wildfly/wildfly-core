@@ -27,6 +27,7 @@ import static java.lang.System.getSecurityManager;
 import static java.lang.System.getenv;
 import static java.security.AccessController.doPrivileged;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,8 +39,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-
-import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -321,6 +320,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
                 table.addLine(new String[]{"Identity name:", result.get(Constants.IDENTITY_NAME).asString()});
                 table.addLine(new String[]{"Identity version:", result.get(Constants.IDENTITY_VERSION).asString()});
                 table.addLine(new String[]{"Description:", result.get(Constants.DESCRIPTION).asString()});
+                if (result.hasDefined(Constants.LINK)) {
+                    table.addLine(new String[]{"Link:", result.get(Constants.LINK).asString()});
+                }
                 ctx.printLine(table.toString(false));
 
                 final ModelNode elements = result.get(Constants.ELEMENTS);
@@ -393,6 +395,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
         table.addLine(new String[]{"Identity name:", identity.getName()});
         table.addLine(new String[]{"Identity version:", identity.getVersion()});
         table.addLine(new String[]{"Description:", patch.getDescription() == null ? "n/a" : patch.getDescription()});
+        if (patch.getLink() != null) {
+            table.addLine(new String[]{"Link:", patch.getLink()});
+        }
         ctx.printLine(table.toString(false));
 
         if(verbose.isPresent(parsedLine)) {
