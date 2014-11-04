@@ -3275,4 +3275,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 379, value = "System boot is in process; execution of remote management operations is not currently available")
     String managementUnavailableDuringBoot();
+
+    @Message(id = 380, value="Attribute '%s' needs to be set or passed before attribute %s can be correctly set")
+    OperationFailedException requiredAttributeNotSet(String required, String name);
 }
