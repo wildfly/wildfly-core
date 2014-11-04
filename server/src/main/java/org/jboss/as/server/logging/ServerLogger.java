@@ -52,6 +52,7 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.services.security.VaultReaderException;
+import org.jboss.as.server.suspend.ServerActivity;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -1060,4 +1061,7 @@ public interface ServerLogger extends BasicLogger {
     @Message( id = 214, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
     OperationFailedException noSecurityRealmForSsl();
 
+    @LogMessage(level = ERROR)
+    @Message(id = 215, value = "Failed to resume activity %s. To resume normal operation it is recommended that you restart the server.")
+    void failedToResume(ServerActivity activity);
 }

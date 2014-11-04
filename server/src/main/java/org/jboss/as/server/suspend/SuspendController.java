@@ -17,7 +17,7 @@ import java.util.TimerTask;
  * servers operations.
  * <p/>
  * <p/>
- * In most cases this work is delegated to the {@link org.jboss.as.server.suspend.GlobalRequestController},
+ * In most cases this work is delegated to the request controller subsystem.
  * however for workflows that do no correspond directly to a request model a {@link ServerActivity} instance
  * can be registered directly with this controller.
  *
@@ -96,7 +96,11 @@ public class SuspendController implements Service<SuspendController> {
             listener.cancelled();
         }
         for (ServerActivity activity : activities) {
-            activity.resume();
+            try {
+                activity.resume();
+            } catch (Exception e) {
+                ServerLogger.ROOT_LOGGER.failedToResume(activity);
+            }
         }
         state = State.RUNNING;
     }
