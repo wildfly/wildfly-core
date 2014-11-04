@@ -51,7 +51,7 @@ import org.junit.Test;
 /**
  * Don't use core-model test for this. It does not support runtime, and more importantly for backwards compatibility the audit logger cannot be used
  *
- * @author: Kabir Khan
+ * @author Kabir Khan
  */
 public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerTestCase {
     public AuditLogHandlerBootEnabledTestCase() {

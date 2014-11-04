@@ -909,6 +909,7 @@ public abstract class AttributeDefinition {
         } else {
             validator.validateParameter(name, node);
         }
+
         return convertToExpectedType(node);
     }
 
