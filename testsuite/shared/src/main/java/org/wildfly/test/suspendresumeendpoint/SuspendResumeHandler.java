@@ -23,6 +23,7 @@ package org.wildfly.test.suspendresumeendpoint;
 
 import java.util.concurrent.CountDownLatch;
 
+import io.undertow.server.ExchangeCompletionListener;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 
@@ -33,7 +34,14 @@ public class SuspendResumeHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         if(exchange.getQueryParameters().containsKey(TestUndertowService.SKIP_GRACEFUL)) {
-            requestLatch.countDown();
+            //invoke the latch in a completion listener, to make sure the response is sent
+            exchange.addExchangeCompleteListener(new ExchangeCompletionListener() {
+                @Override
+                public void exchangeEvent(HttpServerExchange exchange, NextListener nextListener) {
+                    requestLatch.countDown();
+                    nextListener.proceed();
+                }
+            });
             return;
         }
 
