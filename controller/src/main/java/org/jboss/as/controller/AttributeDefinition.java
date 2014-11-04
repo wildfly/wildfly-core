@@ -411,6 +411,14 @@ public abstract class AttributeDefinition {
             operationObject.get(name).set(correctedValue);
         }
         ModelNode node = validateOperation(operationObject, true);
+        if (requires != null) {
+            for (String required : requires) {
+                if (!(operationObject.hasDefined(required) || model.hasDefined(required))){
+                    throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(required, getName());
+                }
+            }
+        }
+
         model.get(name).set(node);
     }
 
@@ -909,6 +917,7 @@ public abstract class AttributeDefinition {
         } else {
             validator.validateParameter(name, node);
         }
+
         return convertToExpectedType(node);
     }
 

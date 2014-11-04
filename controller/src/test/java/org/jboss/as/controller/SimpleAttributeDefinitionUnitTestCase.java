@@ -128,4 +128,45 @@ public class SimpleAttributeDefinitionUnitTestCase {
         }
 
     }
+
+    @Test
+    public void testRequires() throws OperationFailedException {
+        SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
+                //.setValidator(new IntRangeValidator(5, 10, false, false))
+                .setRequires("other")
+                .build();
+
+        SimpleAttributeDefinition other = new SimpleAttributeDefinitionBuilder("other", ModelType.STRING)
+                .build();
+
+        ModelNode operation = new ModelNode();
+        operation.get("test").set("some test value");
+        Assert.assertNotNull(ad.getValidator());
+        try {
+            ad.validateAndSet(operation, new ModelNode());
+            Assert.fail("Should have failed");
+        } catch (OperationFailedException e) {
+            //
+        }
+        try {//test if both attributes are present in operation
+            operation.get("other").set("other-value");
+            ad.validateAndSet(operation, new ModelNode());
+        } catch (OperationFailedException e) {
+            Assert.fail("Should have worked but it failed with " + e.getMessage());
+        }
+
+        //test if one attribute is set first and then the one that requires it
+        operation = new ModelNode();
+        ModelNode model = new ModelNode();
+        operation.get("other").set("other-value");
+        other.validateAndSet(operation, model); //must work
+        Assert.assertTrue("Should be set", model.hasDefined(other.getName()));
+        try {
+            operation.get("test").set("first attribute");
+            ad.validateAndSet(operation, model);
+        } catch (OperationFailedException e) {
+            Assert.fail("Should have worked but it failed with " + e.getMessage());
+        }
+
+    }
 }
