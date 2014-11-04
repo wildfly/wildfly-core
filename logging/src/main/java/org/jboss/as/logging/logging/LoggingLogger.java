@@ -456,7 +456,7 @@ public interface LoggingLogger extends BasicLogger {
      * @return the message.
      */
     @Message(id = 44, value = "Handler %s is attached to the following handlers and cannot be removed; %s")
-    String handlerAttachedToHandlers(String handlerName, Collection<String> handlers);
+    OperationFailedException handlerAttachedToHandlers(String handlerName, Collection<String> handlers);
 
     /**
      * A message indicating the handler is attached to the loggers.
@@ -467,7 +467,7 @@ public interface LoggingLogger extends BasicLogger {
      * @return the message.
      */
     @Message(id = 45, value = "Handler %s is attached to the following loggers and cannot be removed; %s")
-    String handlerAttachedToLoggers(String handlerName, Collection<String> loggers);
+    OperationFailedException handlerAttachedToLoggers(String handlerName, Collection<String> loggers);
 
     /**
      * A message indicating the handler cannot be attached to itself.
