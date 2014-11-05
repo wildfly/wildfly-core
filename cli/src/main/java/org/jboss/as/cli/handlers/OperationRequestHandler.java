@@ -206,9 +206,12 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
         ModelNode requestProps = opDescOutcome.get("result", "request-properties");
         for (Property prop : requestProps.asPropertyList()) {
             ModelNode typeDesc = prop.getValue().get("type");
-            if (typeDesc.getType() == ModelType.TYPE && typeDesc.asType() == ModelType.BYTES) {
+            if (typeDesc.getType() == ModelType.TYPE &&
+                    typeDesc.asType() == ModelType.BYTES &&
+                    request.hasDefined(prop.getName())) {
                 String filePath = request.get(prop.getName()).asString();
                 File localFile = new File(filePath);
+                if (!localFile.exists()) continue;
                 try {
                     request.get(prop.getName()).set(Util.readBytes(localFile));
                 } catch (OperationFormatException e) {
