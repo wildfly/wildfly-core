@@ -1999,9 +1999,9 @@ public class HostXml extends CommonXml {
         } else if (modelNode.hasDefined(REMOTE)) {
             writer.writeStartElement(Element.REMOTE.getLocalName());
             final ModelNode remote = modelNode.get(REMOTE);
+            RemoteDomainControllerAddHandler.PROTOCOL.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.HOST.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.PORT.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.PROTOCOL.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.SECURITY_REALM.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.USERNAME.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.marshallAsAttribute(remote, writer);
@@ -2056,9 +2056,9 @@ public class HostXml extends CommonXml {
                     final ModelNode staticDiscoveryOption = staticDiscoveryOptions.get(optionName);
                     writer.writeStartElement(element.getLocalName());
                     writeAttribute(writer, Attribute.NAME, optionName);
+                    StaticDiscoveryResourceDefinition.PROTOCOL.marshallAsAttribute(staticDiscoveryOption, writer);
                     StaticDiscoveryResourceDefinition.HOST.marshallAsAttribute(staticDiscoveryOption, writer);
                     StaticDiscoveryResourceDefinition.PORT.marshallAsAttribute(staticDiscoveryOption, writer);
-                    StaticDiscoveryResourceDefinition.PROTOCOL.marshallAsAttribute(staticDiscoveryOption, writer);
                     writer.writeEndElement();
                     break;
                 }

@@ -49,7 +49,7 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
 
     public static final SimpleAttributeDefinition PROTOCOL = RemoteDomainControllerAddHandler.PROTOCOL;
 
-    public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {HOST, PORT, PROTOCOL};
+    public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {PROTOCOL, HOST, PORT};
 
     public StaticDiscoveryResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
         super(PathElement.pathElement(STATIC_DISCOVERY), HostResolver.getResolver(STATIC_DISCOVERY),

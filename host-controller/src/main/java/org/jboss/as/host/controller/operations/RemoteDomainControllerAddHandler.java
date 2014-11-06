@@ -107,7 +107,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
-            .setParameters(PORT, HOST, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY, PROTOCOL)
+            .setParameters(PROTOCOL, PORT, HOST, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .build();
 
@@ -148,9 +148,9 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
         ModelNode dc = model.get(DOMAIN_CONTROLLER);
         ModelNode remoteDC = dc.get(REMOTE);
 
+        PROTOCOL.validateAndSet(operation, remoteDC);
         PORT.validateAndSet(operation, remoteDC);
         HOST.validateAndSet(operation, remoteDC);
-        PROTOCOL.validateAndSet(operation, remoteDC);
         USERNAME.validateAndSet(operation, remoteDC);
         IGNORE_UNUSED_CONFIG.validateAndSet(operation, remoteDC);
         ADMIN_ONLY_POLICY.validateAndSet(operation, remoteDC);
@@ -184,9 +184,9 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
 
     protected void initializeDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException {
         hostControllerInfo.setMasterDomainController(false);
+        ModelNode protocolNode = RemoteDomainControllerAddHandler.PROTOCOL.resolveModelAttribute(context, remoteDC);
         ModelNode hostNode = RemoteDomainControllerAddHandler.HOST.resolveModelAttribute(context, remoteDC);
         ModelNode portNode = RemoteDomainControllerAddHandler.PORT.resolveModelAttribute(context, remoteDC);
-        ModelNode protocolNode = RemoteDomainControllerAddHandler.PROTOCOL.resolveModelAttribute(context, remoteDC);
         if (hostNode.isDefined() && portNode.isDefined()) {
             String host =  hostNode.asString();
             int port = portNode.asInt();
