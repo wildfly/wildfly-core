@@ -1168,6 +1168,27 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
 
     }
 
+    protected void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+        switch (expectedNs) {
+            case DOMAIN_1_0:
+                throw unexpectedElement(reader);
+            case DOMAIN_1_1:
+            case DOMAIN_1_2:
+            case DOMAIN_1_3:
+            case DOMAIN_1_4:
+            case DOMAIN_1_5:
+                parseVault_1_1(reader, address, expectedNs, list);
+                break;
+            default:
+                if (expectedNs.getMajorVersion() == 2) {
+                    parseVault_1_1(reader, address, expectedNs, list);
+                } else {
+                    parseVault_1_6_and_3_0(reader, address, expectedNs, list);
+                }
+        }
+    }
+
+    // TODO - Once WFLY-3710 is committed make this method private.
     protected void parseVault_1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         final int vaultAttribCount = reader.getAttributeCount();
 
@@ -1209,12 +1230,14 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
         list.add(vault);
     }
 
+    // TODO - Once WFLY-3710 is committed delete this method.
     /** @deprecated kept for compatibility purposes with AppClientXml */
     @Deprecated
     protected final void parseVault_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         parseVault_1_6_and_3_0(reader, address, expectedNs, list);
     }
 
+    // TODO - Once WFLY-3710 is committed make this method private.
     protected void parseVault_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         final int vaultAttribCount = reader.getAttributeCount();
 
