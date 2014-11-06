@@ -71,7 +71,6 @@
         <module>shared</module>
         <module>test-runner</module>
         <module>standalone</module>
-        <module>manualmode</module>
     </modules>
 
 
@@ -348,6 +347,7 @@
             </activation>
             <modules>
                 <module>domain</module>
+                <module>manualmode</module>
             </modules>
         </profile>
 
@@ -423,6 +423,20 @@
                 <module>patching</module>
             </modules>
         </profile>
+
+        <!-- -Dts.manualmode -->
+        <profile>
+            <id>ts.integ.group.manualmode</id>
+            <activation>
+                <property>
+                    <name>ts.manualmode</name>
+                </property>
+            </activation>
+            <modules>
+                <module>manualmode</module>
+            </modules>
+        </profile>
+
 
 
     </profiles>
