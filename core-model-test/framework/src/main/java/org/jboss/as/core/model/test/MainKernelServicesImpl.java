@@ -120,7 +120,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
         DomainControllerRuntimeIgnoreTransformationRegistry registry = new DomainControllerRuntimeIgnoreTransformationRegistry();
         registry.initializeHost("host");
-        ModelNode result = internalExecute(new ModelNode(), new ReadMasterDomainModelHandler("host", transformers, registry)).getResponseNode();
+        ModelNode result = internalExecute(new ModelNode(), new ReadMasterDomainModelHandler("host", transformers, registry));
         if (FAILED.equals(result.get(OUTCOME).asString())) {
             throw new RuntimeException(result.get(FAILURE_DESCRIPTION).asString());
         }
