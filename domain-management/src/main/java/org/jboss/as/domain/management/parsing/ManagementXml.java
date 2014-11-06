@@ -3434,13 +3434,11 @@ public class ManagementXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case INCLUDE: {
-                    ModelNode includeAddr = addr.clone().add(INCLUDE);
-                    parseIncludeExclude(reader, includeAddr, expectedNs, list);
+                    parseIncludeExclude(reader, addr, INCLUDE, expectedNs, list);
                     break;
                 }
                 case EXCLUDE: {
-                    ModelNode excludeAddr = addr.clone().add(EXCLUDE);
-                    parseIncludeExclude(reader, excludeAddr, expectedNs, list);
+                    parseIncludeExclude(reader, addr, EXCLUDE, expectedNs, list);
                     break;
                 }
                 default: {
@@ -3450,7 +3448,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseIncludeExclude(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
+    private static void parseIncludeExclude(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final String incExcType, final Namespace expectedNs,
             final List<ModelNode> list) throws XMLStreamException {
         ParseUtils.requireNoAttributes(reader);
 
@@ -3459,11 +3457,11 @@ public class ManagementXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case GROUP: {
-                    parsePrincipal(reader, address, GROUP, expectedNs, list);
+                    parsePrincipal(reader, parentAddress, incExcType, GROUP, expectedNs, list);
                     break;
                 }
                 case USER: {
-                    parsePrincipal(reader, address, USER, expectedNs, list);
+                    parsePrincipal(reader, parentAddress, incExcType, USER, expectedNs, list);
                     break;
                 }
                 default: {
@@ -3473,7 +3471,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parsePrincipal(final XMLExtendedStreamReader reader, final ModelNode address, final String type,
+    private static void parsePrincipal(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final String incExcType, final String principalType,
             final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         String alias = null;
         String realm = null;
@@ -3481,7 +3479,7 @@ public class ManagementXml {
 
         ModelNode addOp = new ModelNode();
         addOp.get(OP).set(ADD);
-        addOp.get(TYPE).set(type);
+        addOp.get(TYPE).set(principalType);
 
         int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -3516,8 +3514,8 @@ public class ManagementXml {
             throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.NAME));
         }
 
-        String addrValue = alias == null ? generateAlias(type, name, realm) : alias;
-        ModelNode addAddr = address.clone().add(addrValue);
+        String addrValue = alias == null ? generateAlias(principalType, name, realm) : alias;
+        ModelNode addAddr = parentAddress.clone().add(incExcType, addrValue);
         addOp.get(OP_ADDR).set(addAddr);
         list.add(addOp);
 
