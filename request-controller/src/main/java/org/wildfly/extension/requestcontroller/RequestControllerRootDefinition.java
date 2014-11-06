@@ -32,6 +32,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -43,48 +44,56 @@ import org.jboss.dmr.ModelType;
  */
 class RequestControllerRootDefinition extends PersistentResourceDefinition {
 
-    static final PersistentResourceDefinition[] CHILDREN = {
-    };
-
-    private final RequestController requestController;
-
     public static final SimpleAttributeDefinition MAX_REQUESTS = SimpleAttributeDefinitionBuilder.create(Constants.MAX_REQUESTS, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(-1))
             .build();
 
+    public static final SimpleAttributeDefinition TRACK_INDIVIDUAL_ENDPOINTS = SimpleAttributeDefinitionBuilder.create(Constants.TRACK_INDIVIDUAL_ENDPOINTS, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
     public static final SimpleAttributeDefinition ACTIVE_REQUESTS = SimpleAttributeDefinitionBuilder.create(Constants.ACTIVE_REQUESTS, ModelType.INT, true)
             .setStorageRuntime()
             .build();
+    public static final RequestControllerRootDefinition INSTANCE = new RequestControllerRootDefinition(true);
 
-    public static final AttributeDefinition[] ATTRIBUTES = {
-            MAX_REQUESTS
-    };
+    private final boolean registerRuntimeOnly;
 
-    static final RequestControllerRootDefinition INSTANCE = new RequestControllerRootDefinition(new RequestController());
-
-    private RequestControllerRootDefinition(RequestController requestController) {
+    RequestControllerRootDefinition(boolean registerRuntimeOnly) {
         super(RequestControllerExtension.SUBSYSTEM_PATH,
                 RequestControllerExtension.getResolver(),
-                new RequestControllerSubsystemAdd(requestController),
+                new RequestControllerSubsystemAdd(getAttributeDefinitions(registerRuntimeOnly)),
                 ReloadRequiredRemoveStepHandler.INSTANCE);
-        this.requestController = requestController;
+        this.registerRuntimeOnly = registerRuntimeOnly;
     }
 
     @Override
     public Collection<AttributeDefinition> getAttributes() {
-        return Collections.<AttributeDefinition>singletonList(MAX_REQUESTS);
+        return getAttributeDefinitions(registerRuntimeOnly);
+    }
+
+    private static Collection<AttributeDefinition> getAttributeDefinitions(boolean registerRuntimeOnly) {
+        if(registerRuntimeOnly) {
+            return Arrays.asList(new AttributeDefinition[]{MAX_REQUESTS, TRACK_INDIVIDUAL_ENDPOINTS, ACTIVE_REQUESTS});
+        } else {
+            return Arrays.asList(new AttributeDefinition[]{MAX_REQUESTS, TRACK_INDIVIDUAL_ENDPOINTS});
+        }
     }
 
     @Override
     protected List<? extends PersistentResourceDefinition> getChildren() {
-        return Arrays.asList(CHILDREN);
+        return Collections.emptyList();
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        MaxRequestsWriteHandler handler = new MaxRequestsWriteHandler(MAX_REQUESTS, requestController);
+        MaxRequestsWriteHandler handler = new MaxRequestsWriteHandler(MAX_REQUESTS);
         resourceRegistration.registerReadWriteAttribute(MAX_REQUESTS, null, handler);
-        resourceRegistration.registerMetric(ACTIVE_REQUESTS, new ActiveRequestsReadHandler(requestController));
+        resourceRegistration.registerReadWriteAttribute(TRACK_INDIVIDUAL_ENDPOINTS, null, new ReloadRequiredWriteAttributeHandler(TRACK_INDIVIDUAL_ENDPOINTS));
+        if(registerRuntimeOnly) {
+            resourceRegistration.registerMetric(ACTIVE_REQUESTS, new ActiveRequestsReadHandler());
+        }
     }
 }

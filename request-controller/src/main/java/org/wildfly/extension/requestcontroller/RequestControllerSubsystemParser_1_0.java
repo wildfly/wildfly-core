@@ -47,7 +47,7 @@ class RequestControllerSubsystemParser_1_0 implements XMLStreamConstants, XMLEle
 
     private RequestControllerSubsystemParser_1_0() {
         xmlDescription = builder(RequestControllerRootDefinition.INSTANCE)
-                .addAttribute(RequestControllerRootDefinition.MAX_REQUESTS)
+                .addAttributes(RequestControllerRootDefinition.MAX_REQUESTS, RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS)
                 .build();
     }
 

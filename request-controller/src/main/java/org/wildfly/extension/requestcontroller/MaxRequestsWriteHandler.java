@@ -28,6 +28,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * Write handler for the max requests attribute
@@ -37,12 +38,10 @@ import org.jboss.dmr.ModelNode;
 class MaxRequestsWriteHandler extends AbstractWriteAttributeHandler<Void> {
 
     private final AttributeDefinition attributeDefinition;
-    private final RequestController requestController;
 
-    MaxRequestsWriteHandler(final AttributeDefinition attributeDefinition, final RequestController requestController) {
+    MaxRequestsWriteHandler(final AttributeDefinition attributeDefinition) {
         super(attributeDefinition);
         this.attributeDefinition = attributeDefinition;
-        this.requestController = requestController;
     }
 
     @Override
@@ -63,15 +62,16 @@ class MaxRequestsWriteHandler extends AbstractWriteAttributeHandler<Void> {
     }
 
     private void apply(final OperationContext context, final ModelNode model) throws OperationFailedException {
-
-        if (this.requestController == null) {
+        ServiceController<?> serviceController = context.getServiceRegistry(false).getService(RequestController.SERVICE_NAME);
+        if(serviceController == null) {
             return;
         }
+        RequestController requestController = (RequestController) serviceController.getService().getValue();
         final ModelNode modelNode = this.attributeDefinition.resolveModelAttribute(context, model);
         if(!modelNode.isDefined()) {
-            this.requestController.setMaxRequestCount(-1);
+            requestController.setMaxRequestCount(-1);
         } else {
-            this.requestController.setMaxRequestCount(modelNode.asInt());
+            requestController.setMaxRequestCount(modelNode.asInt());
         }
     }
 

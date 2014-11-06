@@ -48,6 +48,7 @@ public class ControlPoint {
     private final RequestController controller;
     private final String deployment;
     private final String entryPoint;
+    private final boolean trackIndividualControlPoints;
 
     /**
      * The number of active requests that are using this entry point
@@ -69,10 +70,11 @@ public class ControlPoint {
      */
     private int referenceCount = 0;
 
-    ControlPoint(RequestController controller, String deployment, String entryPoint) {
+    ControlPoint(RequestController controller, String deployment, String entryPoint, boolean trackIndividualControlPoints) {
         this.controller = controller;
         this.deployment = deployment;
         this.entryPoint = entryPoint;
+        this.trackIndividualControlPoints = trackIndividualControlPoints;
     }
 
     public String getEntryPoint() {
@@ -85,6 +87,8 @@ public class ControlPoint {
 
     /**
      * Pause the current entry point, and invoke the provided listener when all current requests have finished.
+     *
+     * If individual control point tracking is not enabled then the listener will be invoked straight away
      *
      * @param requestCountListener The listener to invoke
      */
@@ -124,19 +128,41 @@ public class ControlPoint {
         if (paused) {
             return RunResult.REJECTED;
         }
-        activeRequestCountUpdater.incrementAndGet(this);
-        RunResult runResult = controller.beginRequest();
+        if(trackIndividualControlPoints) {
+            activeRequestCountUpdater.incrementAndGet(this);
+        }
+        RunResult runResult = controller.beginRequest(false);
         if (runResult == RunResult.REJECTED) {
             decreaseRequestCount();
         }
         return runResult;
     }
 
+
+
+    /**
+     * This task should only be called by a thread that has already been accepted from an entry point. It is used when
+     * an existing running thread is about to offload to another thread, such as an executor service or async EJB.
+     *
+     * Note that this can still be rejected if the global request limit has been hit.
+     * <p/>
+     * If it returns {@code RUN} then the task should proceed as normal, and the {@link #requestComplete()} method
+     * must be called once the task is complete, usually via a try/finally construct.
+     */
+    public RunResult forceBeginRequest() throws Exception {
+        if(trackIndividualControlPoints) {
+            activeRequestCountUpdater.incrementAndGet(this);
+        }
+        return controller.beginRequest(true);
+    }
+
     /**
      * Called when a queued task is executed.
      */
     void beginExistingRequest() {
-        activeRequestCountUpdater.incrementAndGet(this);
+        if(trackIndividualControlPoints) {
+            activeRequestCountUpdater.incrementAndGet(this);
+        }
     }
 
     /**
@@ -150,12 +176,14 @@ public class ControlPoint {
     }
 
     private void decreaseRequestCount() {
-        int result = activeRequestCountUpdater.decrementAndGet(this);
-        if (paused && result == 0) {
-            ServerActivityCallback listener = listenerUpdater.get(this);
-            if (listener != null) {
-                if (listenerUpdater.compareAndSet(this, listener, null)) {
-                    listener.done();
+        if (trackIndividualControlPoints) {
+            int result = activeRequestCountUpdater.decrementAndGet(this);
+            if (paused && result == 0) {
+                ServerActivityCallback listener = listenerUpdater.get(this);
+                if (listener != null) {
+                    if (listenerUpdater.compareAndSet(this, listener, null)) {
+                        listener.done();
+                    }
                 }
             }
         }
@@ -180,7 +208,23 @@ public class ControlPoint {
      * @param rejectOnSuspend If the task should be rejected if the container is suspended, if this happens the timeout task is invoked immediately
      */
     public void queueTask(Runnable task, Executor taskExecutor, long timeout, Runnable timeoutTask, boolean rejectOnSuspend) {
-        controller.queueTask(this, task, taskExecutor, timeout, timeoutTask, rejectOnSuspend);
+        controller.queueTask(this, task, taskExecutor, timeout, timeoutTask, rejectOnSuspend, false);
+    }
+
+    /**
+     * Queues a task to run when the request controller allows it. This allows tasks not to be dropped when the max request
+     * limit has been hit. If the container has been suspended then this
+     * <p/>
+     * Note that the task will be run withing the context of a {@link #beginRequest()} call, if the task
+     * is executed there is no need to invoke on the control point again.
+     *
+     *
+     *
+     * @param task            The task to run
+     * @param taskExecutor    The executor to run the task in
+     */
+    public void forceQueueTask(Runnable task, Executor taskExecutor) {
+        controller.queueTask(this, task, taskExecutor, -1, null, false, true);
     }
 
     public boolean isPaused() {
