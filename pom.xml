@@ -158,8 +158,8 @@
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
-        <module>core-build</module>
-        <module>core-dist</module>
+        <module>build</module>
+        <module>dist</module>
         <module>core-feature-pack</module>
         <module>core-model-test</module>
         <module>core-security</module>
