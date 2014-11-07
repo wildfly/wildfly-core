@@ -151,6 +151,7 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestParser;
 import org.jboss.as.cli.operation.impl.DefaultPrefixFormatter;
 import org.jboss.as.cli.operation.impl.RolloutPlanCompleter;
+import org.jboss.as.cli.parsing.command.CommandFormat;
 import org.jboss.as.cli.parsing.operation.OperationFormat;
 import org.jboss.as.cli.util.FingerprintGenerator;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -1283,14 +1284,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void handleClose() {
-        if(parsedCmd.getFormat().equals(OperationFormat.INSTANCE) && "shutdown".equals(parsedCmd.getOperationName())) {
-            final String restart = parsedCmd.getPropertyValue("restart");
-            if(restart == null || !Util.TRUE.equals(restart)) {
-                disconnectController();
-                printLine("");
-                printLine("The connection to the controller has been closed as the result of the shutdown operation.");
-                printLine("(Although the command prompt will wrongly indicate connection until the next line is entered)");
-            } // else maybe still notify the listeners that the connection has been closed
+        // if the connection loss was triggered by an instruction to restart/reload
+        // then we don't disconnect yet
+        if(parsedCmd.getFormat() != null &&
+                (Util.RELOAD.equals(parsedCmd.getOperationName()) ||
+                Util.SHUTDOWN.equals(parsedCmd.getOperationName()) &&
+                (Util.TRUE.equals(parsedCmd.getPropertyValue(Util.RESTART)) ||
+                        // shutdown command handler decides whether to disconnect or not
+                        CommandFormat.INSTANCE.equals(parsedCmd.getFormat())))) {
+            // maybe still notify the listeners that the connection has been closed
+        } else {
+            disconnectController();
+            printLine("");
+            printLine("The connection to the controller has been lost.");
+            printLine("(Although the command prompt may still wrongly indicate connection until the next line is entered)");
         }
     }
 
