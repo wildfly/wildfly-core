@@ -61,6 +61,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 /**
@@ -137,6 +138,14 @@ public abstract class AbstractControllerTestBase {
         }
         return rsp;
     }
+
+    public ModelNode executeCheckForFailure(ModelNode operation) throws OperationFailedException {
+            ModelNode rsp = getController().execute(operation, null, null, null);
+            if (!FAILED.equals(rsp.get(OUTCOME).asString())) {
+                Assert.fail("Should have failed!");
+            }
+            return rsp;
+        }
 
     @Before
     public void setupController() throws InterruptedException {

@@ -51,7 +51,7 @@ public abstract class VersionedExtensionCommon implements Extension {
     public static final String IGNORED_SUBSYSTEM_NAME = "ignored-test-subsystem";
 
 
-    static AttributeDefinition TEST_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create("test-attribute", ModelType.STRING).build();
+    static AttributeDefinition TEST_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create("test-attribute", ModelType.STRING, true).build();
 
     protected static ResourceDefinition createResourceDefinition(final PathElement element) {
         return new SimpleResourceDefinition(element, new NonResolvingResourceDescriptionResolver(),
