@@ -58,9 +58,10 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        InputStream is = getClass().getResourceAsStream(PROPERTIES_RESOURCE);
+        InputStream is = getClass().getResourceAsStream("/" + PROPERTIES_RESOURCE);
         if (is != null) {
             try {
+                System.out.println("Properties found");
                 properties.load(is);
             } catch (IOException e) {
                 throw new StartException(e);

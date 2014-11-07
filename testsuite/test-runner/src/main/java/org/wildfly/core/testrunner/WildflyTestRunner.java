@@ -3,6 +3,7 @@ package org.wildfly.core.testrunner;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import javax.inject.Inject;
@@ -52,9 +53,9 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                             instance != null && !Modifier.isStatic(field.getModifiers()))) {
                         if (field.isAnnotationPresent(Inject.class)) {
                             field.setAccessible(true);
-                            if (field.getType() == ManagementClient.class) {
+                            if (field.getType() == ManagementClient.class && controller.isStarted()) {
                                 field.set(instance, controller.getClient());
-                            } else if (field.getType() == ModelControllerClient.class) {
+                            } else if (field.getType() == ModelControllerClient.class && controller.isStarted()) {
                                 field.set(instance, controller.getClient().getControllerClient());
                             } else if (field.getType() == ServerController.class) {
                                 field.set(instance, controller);
@@ -111,7 +112,9 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     }
 
     private void runTearDownTasks() {
-        for (ServerSetupTask task : serverSetupTasks) {
+        List<ServerSetupTask> reverseServerSetupTasks = new LinkedList<>(serverSetupTasks);
+        Collections.reverse(reverseServerSetupTasks);
+        for (ServerSetupTask task : reverseServerSetupTasks) {
             try {
                 task.tearDown(controller.getClient());
             } catch (Exception e) {
