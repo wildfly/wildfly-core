@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -50,6 +51,7 @@ public class CliLauncher {
         int exitCode = 0;
         CommandContext cmdCtx = null;
         boolean gui = false;
+        final List<String> systemPropertyKeys = new ArrayList<>();
         try {
             String argError = null;
             List<String> commands = null;
@@ -200,10 +202,23 @@ public class CliLauncher {
                             }
                         }
                     }
-                    for(Object prop : props.keySet()) {
-                        WildFlySecurityManager.setPropertyPrivileged((String) prop, (String) props.get(prop));
+                    for(String key : props.stringPropertyNames()) {
+                        if (!systemPropertyKeys.contains(key)) {
+                            WildFlySecurityManager.setPropertyPrivileged(key, props.getProperty(key));
+                        }
                     }
-                } else if(!(arg.startsWith("-D") || arg.equals("-XX:"))) {// skip system properties and jvm options
+                } else if (arg.startsWith("-D")) {
+                    final String prop = arg.substring(2);
+                    final int i = prop.indexOf('=');
+                    if (i > 0) {
+                        final String key = prop.substring(0, i);
+                        WildFlySecurityManager.setPropertyPrivileged(key, prop.substring(i + 1, prop.length()));
+                        systemPropertyKeys.add(key);
+                    } else {
+                        WildFlySecurityManager.setPropertyPrivileged(prop, "true");
+                        systemPropertyKeys.add(prop);
+                    }
+                } else if(!arg.equals("-XX:")) {// skip system properties and jvm options
                     // assume it's commands
                     if(file != null) {
                         argError = "Only one of '--file', '--commands' or '--command' can appear as the argument at a time: " + arg;

@@ -1,31 +1,8 @@
 @echo off
 setlocal ENABLEEXTENSIONS
-setlocal EnableDelayedExpansion
-
 rem -------------------------------------------------------------------------
 rem JBoss Admin CLI Script for Windows
 rem -------------------------------------------------------------------------
-
-set SYS_OPTS=
-set CLI_OPTS=
-for %%x in (%*) do (
-
-  if not defined varname (
-
-    echo %%x|FINDSTR /r /c:"^\-D" >nul
-    if not errorlevel 1 (
-      set varname=%%x
-    ) else (
-      set CLI_OPTS=!CLI_OPTS! %%x
-    )
-
-  ) else (
-
-    set SYS_OPTS=!SYS_OPTS! !varname!=%%x
-    set "varname="
-
-  )
-)
 
 rem $Id$
 
@@ -90,11 +67,11 @@ if errorlevel == 1 (
 ) else (
   echo logging.configuration already set in JAVA_OPTS
 )
-
-"%JAVA%" %JAVA_OPTS% %SYS_OPTS% ^
+"%JAVA%" %JAVA_OPTS% ^
     -jar "%JBOSS_RUNJAR%" ^
     -mp "%JBOSS_MODULEPATH%" ^
-     org.jboss.as.cli %CLI_OPTS%
+     org.jboss.as.cli ^
+     %*
 
 set /A RC=%errorlevel%
 :END
