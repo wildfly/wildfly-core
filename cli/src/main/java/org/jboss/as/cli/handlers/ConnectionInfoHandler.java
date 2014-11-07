@@ -92,7 +92,7 @@ public class ConnectionInfoHandler extends CommandHandlerWithHelp {
                         username = "result was not available.";
                     }
                 } else {
-                    System.out.println(Util.getFailureDescription(response));
+                    ctx.printLine(Util.getFailureDescription(response));
                 }
             } catch (IOException e) {
                 throw new CommandFormatException("Failed to get the AS release info: " + e.getLocalizedMessage());

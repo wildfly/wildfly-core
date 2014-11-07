@@ -23,8 +23,6 @@ package org.jboss.as.cli.impl;
 
 import static java.security.AccessController.doPrivileged;
 
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.CallbackHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,6 +32,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.net.ssl.SSLContext;
+import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.ControllerAddress;
@@ -96,10 +98,16 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
                 } catch (InterruptedException e) {}
                 try {
                     endpoint.close();
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                }
             }
         });
     }
+
+    private static final byte CLOSED = 0;
+    private static final byte CONNECTING = 1;
+    private static final byte CONNECTED = 2;
+    private static final byte LOST_CONNECTION = 3;
 
     private final Object lock = new Object();
 
@@ -111,7 +119,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
     private final ManagementChannelHandler channelAssociation;
     private ManagementClientChannelStrategy strategy;
     private final ProtocolChannelClient.Configuration channelConfig;
-    private boolean closed;
+    private final AtomicInteger state = new AtomicInteger(CLOSED);
 
     CLIModelControllerClient(final ControllerAddress address, CallbackHandler handler, int connectionTimeout,
             final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SSLContext sslContext,
@@ -153,18 +161,27 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
     }
 
     protected Channel getOrCreateChannel() throws IOException {
+        Channel ch = null;
         synchronized(lock) {
             if (strategy == null) {
-
                 final ProtocolChannelClient setup = ProtocolChannelClient.create(channelConfig);
                 final ChannelCloseHandler channelCloseHandler = new ChannelCloseHandler();
                 strategy = ManagementClientChannelStrategy.create(setup, channelAssociation, handler, saslOptions, sslContext,
                         channelCloseHandler);
                 channelCloseHandler.setOriginalStrategy(strategy);
             }
+            state.set(CONNECTING);
+            ch = strategy.getChannel();
+            // it could happen that the connection has been lost already
+            // in that case the channel close handler would change the state to LOST_CONNECTION
+            if(state.get() == LOST_CONNECTION) {
+                close(); // this will clean up things up here but the closed channel is still returned
+            } else {
+                state.set(CONNECTED);
+            }
             lock.notifyAll();
-            return strategy.getChannel();
         }
+        return ch;
     }
 
     public boolean isConnected() {
@@ -173,14 +190,14 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
 
     @Override
     public void close() throws IOException {
-        if(closed) {
+        if(state.get() == CLOSED) {
             return;
         }
         synchronized (lock) {
-            if(closed) {
+            if(state.get() == CLOSED) {
                 return;
             }
-            closed = true;
+            state.set(CLOSED);
             // Don't allow any new request
             channelAssociation.shutdown();
             // First close the channel and connection
@@ -219,10 +236,6 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
         }
 
         return response;
-    }
-
-    public boolean isClosed() {
-        return closed;
     }
 
     public void ensureConnected(long timeoutMillis) throws CommandLineException {
@@ -272,9 +285,13 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
 
         @Override
         public void handleClose(final Channel closed, final IOException exception) {
-            if(CLIModelControllerClient.this.closed) {
+            if(CLIModelControllerClient.this.state.get() == CLOSED) {
                 return;
             }
+            if(CLIModelControllerClient.this.state.compareAndSet(CONNECTING, LOST_CONNECTION)) {
+                return;
+            }
+
             synchronized(lock) {
                 if (strategy != null) {
                     if(strategy != originalStrategy) {
