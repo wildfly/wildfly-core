@@ -120,7 +120,7 @@
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.mockito>1.9.5</version.org.mockito>
-        <version.org.picketbox>4.9.0.Beta2</version.org.picketbox>
+        <version.org.picketbox>4.9.0.Beta1</version.org.picketbox>
         <version.org.slf4j>1.7.7.jbossorg-1</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
