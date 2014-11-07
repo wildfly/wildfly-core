@@ -22,9 +22,9 @@
 
 package org.jboss.as.controller.registry;
 
-import org.jboss.dmr.ModelNode;
-
 import java.util.ConcurrentModificationException;
+
+import org.jboss.dmr.ModelNode;
 
 /**
  * Standard {@link Resource} implementation.
@@ -64,7 +64,7 @@ class BasicResource extends AbstractModelResource implements Resource {
     @SuppressWarnings({"CloneDoesntCallSuperClone"})
     @Override
     public Resource clone() {
-        final BasicResource clone = new BasicResource();
+        final BasicResource clone = new BasicResource(isRuntime());
         for (;;) {
             try {
                 clone.writeModel(model);

@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 
@@ -43,7 +42,7 @@ public class DeploymentStatusHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ModelNode deployment = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
+        final ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
         final boolean isEnabled = ENABLED.resolveModelAttribute(context, deployment).asBoolean();
         final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, deployment).asString();
         context.addStep(new OperationStepHandler() {
