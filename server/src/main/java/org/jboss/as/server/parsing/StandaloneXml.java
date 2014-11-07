@@ -335,8 +335,7 @@ public class StandaloneXml extends CommonXml {
         }
 
         if (element == Element.VAULT) {
-            //Only 1.1 to 1.3 end up here, all of which use the same version of the vault
-            parseVault_1_1(reader, address, namespace, list);
+            parseVault(reader, address, namespace, list);
             element = nextElement(reader, namespace);
         }
 
@@ -445,24 +444,7 @@ public class StandaloneXml extends CommonXml {
         }
 
         if (element == Element.VAULT) {
-            switch (namespace) {
-                // Less than 1.4 does not end up here
-                case DOMAIN_1_4:
-                case DOMAIN_1_5: {
-                    parseVault_1_1(reader, address, namespace, list);
-                    break;
-                }
-                default: {
-                    switch (namespace.getMajorVersion()) {
-                        case 2:
-                            parseVault_1_1(reader, address, namespace, list);
-                            break;
-                        default:
-                            parseVault_1_6_and_3_0(reader, address, namespace, list);
-                            break;
-                    }
-                }
-            }
+            parseVault(reader, address, namespace, list);
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
