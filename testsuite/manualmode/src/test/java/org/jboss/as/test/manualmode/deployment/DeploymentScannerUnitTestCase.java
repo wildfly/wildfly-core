@@ -47,6 +47,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
@@ -111,8 +112,9 @@ public class DeploymentScannerUnitTestCase {
                 addDeploymentScanner();
                 try {
                     // Wait until deployed ...
-                    while (!exists(DEPLOYMENT_ONE)) {
-                        Thread.sleep(200);
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    while (!exists(DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
+                        Thread.sleep(100);
                     }
                     Assert.assertTrue(exists(DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
@@ -139,8 +141,6 @@ public class DeploymentScannerUnitTestCase {
 
                 } finally {
                     removeDeploymentScanner();
-                    ModelNode removeOperation = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
-                    client.execute(removeOperation);
                 }
 
             } finally {
@@ -151,29 +151,45 @@ public class DeploymentScannerUnitTestCase {
         }
     }
 
-    private ModelNode addDeploymentScanner() throws Exception {
+    private void addDeploymentScanner() throws Exception {
         ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
-        client.execute(addOp);
+        ModelNode result = executeOperation(addOp);
+        assertEquals("Unexpected outcome of adding the test deployment scanner extension: " + addOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
         addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "deployment-scanner")));
-        client.execute(addOp);
+        result = executeOperation(addOp);
+        assertEquals("Unexpected outcome of adding the test deployment scanner subsystem: " + addOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
         // add deployment scanner
         final ModelNode op = getAddDeploymentScannerOp();
-        final ModelNode result = executeOperation(op);
+        result = executeOperation(op);
         assertEquals("Unexpected outcome of adding the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-        return result;
     }
 
-    private ModelNode removeDeploymentScanner() throws Exception {
-        // remove deployment scanner
-        final ModelNode op = getRemoveDeploymentScannerOp();
-        final ModelNode result = executeOperation(op);
-        assertEquals("Unexpected outcome of removing the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-        ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
-        client.execute(removeOp);
-        removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "deployment-scanner")));
-        client.execute(removeOp);
-
-        return result;
+    private void removeDeploymentScanner() throws Exception {
+        boolean ok = false;
+        try {
+            // remove deployment scanner
+            final ModelNode op = getRemoveDeploymentScannerOp();
+            ModelNode result = executeOperation(op);
+            assertEquals("Unexpected outcome of removing the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
+            ok = true;
+        } finally {
+            try {
+                boolean wasOK = ok;
+                ok = false;
+                ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "deployment-scanner")));
+                ModelNode result = executeOperation(removeOp);
+                if (wasOK) {
+                    assertEquals("Unexpected outcome of removing the test deployment scanner subsystem: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
+                } // else don't override the previous assertion error in this finally block
+                ok = wasOK;
+            } finally {
+                ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
+                ModelNode result = executeOperation(removeOp);
+                if (ok) {
+                    assertEquals("Unexpected outcome of removing the test deployment scanner extension: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
+                }  // else don't override the previous assertion error in this finally block
+            }
+        }
     }
 
     private ModelNode executeOperation(ModelNode op) throws IOException {
