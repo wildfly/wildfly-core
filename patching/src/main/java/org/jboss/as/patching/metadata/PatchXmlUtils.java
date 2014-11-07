@@ -22,6 +22,7 @@
 
 package org.jboss.as.patching.metadata;
 
+import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
@@ -32,7 +33,6 @@ import static org.jboss.as.patching.metadata.ModuleItem.MAIN_SLOT;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -62,6 +62,7 @@ class PatchXmlUtils implements XMLStreamConstants {
         DESCRIPTION("description"),
         IDENTITY("identity"),
         REQUIRES("requires"),
+        LINK("link"),
         MISC_FILES("misc-files"),
         MODULES("modules"),
         NO_UPGRADE("no-upgrade"),
@@ -110,6 +111,7 @@ class PatchXmlUtils implements XMLStreamConstants {
         PATH("path"),
         SLOT("slot"),
         TO_VERSION("to-version"),
+        URL("url"),
         VERSION("version"),
 
 
@@ -147,6 +149,12 @@ class PatchXmlUtils implements XMLStreamConstants {
             writer.writeStartElement(Element.DESCRIPTION.name);
             writer.writeCharacters(description);
             writer.writeEndElement(); // description
+        }
+
+        String link = patch.getLink();
+        if (link != null) {
+            writer.writeEmptyElement(Element.LINK.name);
+            writer.writeAttribute(Attribute.URL.name, link);
         }
 
         // identity
@@ -345,6 +353,10 @@ class PatchXmlUtils implements XMLStreamConstants {
             switch (element) {
                 case DESCRIPTION:
                     patch.setDescription(reader.getElementText());
+                    break;
+                case LINK:
+                    final String link = readStringAttributeElement(reader, Attribute.URL.name);
+                    builder.setLink(link);
                     break;
                 case UPGRADE:
                     parseIdentity(reader, patch, Patch.PatchType.CUMULATIVE);
