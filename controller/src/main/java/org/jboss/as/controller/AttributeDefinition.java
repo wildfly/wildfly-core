@@ -415,7 +415,8 @@ public abstract class AttributeDefinition {
     }
 
     private ModelNode convertToExpectedType(final ModelNode node) {
-        if (node.getType() == type || node.getType() == ModelType.EXPRESSION || Util.isExpression(node.asString()) || !node.isDefined()) {
+        ModelType nodeType = node.getType();
+        if (nodeType == type || nodeType == ModelType.UNDEFINED || nodeType == ModelType.EXPRESSION || Util.isExpression(node.asString())) {
             return node;
         }
         switch (type) {
