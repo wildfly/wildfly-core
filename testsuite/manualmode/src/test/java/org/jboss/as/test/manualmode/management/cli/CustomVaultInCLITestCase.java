@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
+
 import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
@@ -39,10 +40,8 @@ import org.jboss.as.test.module.util.TestModule;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -57,7 +56,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CustomVaultInCLITestCase {
 
     private static Logger LOGGER = Logger.getLogger(CustomVaultInCLITestCase.class);

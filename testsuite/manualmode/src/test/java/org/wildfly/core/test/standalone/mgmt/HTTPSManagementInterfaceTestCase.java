@@ -37,6 +37,7 @@ import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+
 import javax.inject.Inject;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -62,11 +63,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
@@ -88,7 +87,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 @Category(CommonCriteria.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class HTTPSManagementInterfaceTestCase {
 
     public static Logger LOGGER = Logger.getLogger(HTTPSManagementInterfaceTestCase.class);
