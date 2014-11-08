@@ -54,6 +54,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -68,6 +69,7 @@ import org.wildfly.test.api.Authentication.CallbackHandler;
  */
 
 @RunWith(WildflyTestRunner.class)
+@ServerControl(manual = true)
 public class VaultPasswordsInCLITestCase {
 
     private static Logger LOGGER = Logger.getLogger(VaultPasswordsInCLITestCase.class);
