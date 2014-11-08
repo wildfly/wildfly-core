@@ -21,7 +21,7 @@ import org.junit.runners.model.InitializationError;
  */
 public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
-    private final ServerController controller = new ServerController();
+    private final ServerController controller;
     private final boolean automaticServerControl;
     private final List<ServerSetupTask> serverSetupTasks = new LinkedList<>();
 
@@ -38,6 +38,11 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         }else{
             automaticServerControl = true;
         }
+        if (automaticServerControl) {
+            controller = new DefaultServerController();
+        } else {
+            controller = new ManualModeServerController();
+        }
         startServerIfRequired();
         doInject(klass, null);
         prepareSetupTasks(klass);
@@ -52,12 +57,22 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                             instance != null && !Modifier.isStatic(field.getModifiers()))) {
                         if (field.isAnnotationPresent(Inject.class)) {
                             field.setAccessible(true);
-                            if (field.getType() == ManagementClient.class) {
-                                field.set(instance, controller.getClient());
-                            } else if (field.getType() == ModelControllerClient.class) {
-                                field.set(instance, controller.getClient().getControllerClient());
-                            } else if (field.getType() == ServerController.class) {
-                                field.set(instance, controller);
+                            if (automaticServerControl) {
+                                if (field.getType() == ManagementClient.class) {
+                                    field.set(instance, controller.getClient());
+                                } else if (field.getType() == ModelControllerClient.class) {
+                                    field.set(instance, controller.getClient().getControllerClient());
+                                } else if (field.getType() == ServerController.class) {
+                                    field.set(instance, controller);
+                                }
+                            } else {
+                                if (field.getType() == ManagementClient.class) {
+                                    throw new RuntimeException("Cannot inject ManagementClient in manual tests");
+                                } else if (field.getType() == ModelControllerClient.class) {
+                                    throw new RuntimeException("Cannot inject ModelControllerClient in manual tests");
+                                } else if (field.getType() == ServerController.class) {
+                                    field.set(instance, controller);
+                                }
                             }
                         }
                     }
@@ -84,6 +99,10 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                 super.testRunFinished(result);
                 if (automaticServerControl) {
                     controller.stop();
+                } else {
+                    if (controller.isStarted()) {
+                        throw new RuntimeException("Manual tests must be stopped by the test case");
+                    }
                 }
             }
         });
@@ -138,6 +157,83 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     private void startServerIfRequired() {
         if (automaticServerControl) {
             controller.start();
+        }
+    }
+
+    private static class DefaultServerController implements ServerController {
+        private static volatile Server SERVER = null;
+
+        @Override
+        public void start() {
+            Server server = SERVER;
+            if (server == null) {
+                synchronized (this) {
+                    server = SERVER;
+                    if (server == null) {
+                        server = SERVER = new Server();
+                    }
+                }
+                try {
+                    server.start();
+                } catch (final Throwable t) {
+                    // failed to start
+                    SERVER = null;
+                    throw t;
+                }
+            }
+        }
+
+        @Override
+        public void stop() {
+            final Server server = SERVER;
+            SERVER = null;
+            if (server != null) {
+                server.stop();
+            }
+        }
+
+        @Override
+        public boolean isStarted() {
+            return (SERVER != null);
+        }
+
+        @Override
+        public ManagementClient getClient() {
+            final Server server = SERVER;
+            if (server == null) {
+                throw new IllegalStateException("Server has not been started");
+            }
+            return server.getClient();
+        }
+    }
+
+    private static class ManualModeServerController implements ServerController {
+        private final Server server = new Server();
+        private volatile boolean started = false;
+
+        @Override
+        public void start() {
+            server.start();
+            started = true;
+        }
+
+        @Override
+        public void stop() {
+            server.stop();
+            started = false;
+        }
+
+        @Override
+        public boolean isStarted() {
+            return started;
+        }
+
+        @Override
+        public ManagementClient getClient() {
+            if (isStarted()) {
+                return server.getClient();
+            }
+            throw new IllegalStateException("Server has not been started");
         }
     }
 }

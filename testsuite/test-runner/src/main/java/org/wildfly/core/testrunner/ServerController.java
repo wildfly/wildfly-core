@@ -1,45 +1,36 @@
 package org.wildfly.core.testrunner;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
+ * An interface to control the lifecycle of a server
+ *
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class ServerController {
+public interface ServerController {
 
-    private static final AtomicBoolean started = new AtomicBoolean(false);
-    private static volatile Server server;
+    /**
+     * Starts the server
+     */
+    void start();
 
-    public void start() {
-        if (started.compareAndSet(false, true)) {
-            server = new Server();
-            try {
-                server.start();
-            } catch (final Throwable t) {
-                // failed to start
-                server = null;
-                started.set(false);
-                throw t;
-            }
-        }
-    }
+    /**
+     * Stops the server
+     */
+    void stop();
 
-    public void stop() {
-        if (server != null) {
-            try {
-                server.stop();
-            } finally {
-                server = null;
-                started.set(false);
-            }
-        }
-    }
+    /**
+     * Checks the state of the server and returns {@code true} if the server is running
+     *
+     * @return {@code true} if the server is running, otherwise {@code false}
+     */
+    boolean isStarted();
 
-    public boolean isStarted() {
-        return (server != null);
-    }
-
-    public ManagementClient getClient() {
-        return server.getClient();
-    }
+    /**
+     * Returns the management client used to connect to the running server
+     *
+     * @return the management client
+     *
+     * @throws java.lang.IllegalStateException if the server is stopped
+     */
+    ManagementClient getClient();
 }
