@@ -24,6 +24,7 @@ package org.jboss.as.controller;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -33,6 +34,7 @@ import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -302,6 +304,22 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT, rollbackOnRuntimeFailure);
     }
 
+    /** @deprecated internal use only  only for use by legacy test controllers */
+    @Deprecated
+    protected ModelNode internalExecute(final ModelNode operation, final OperationMessageHandler handler,
+                                        final ModelController.OperationTransactionControl control,
+                                        final OperationAttachments attachments, final OperationStepHandler prepareStep) {
+        OperationResponse or = controller.internalExecute(operation, handler, control, attachments, prepareStep, false);
+        ModelNode result = or.getResponseNode();
+        try {
+            or.close();
+        } catch (IOException e) {
+            ROOT_LOGGER.debugf(e, "Caught exception closing response to %s whose associated streams, " +
+                    "if any, were not wanted", operation);
+        }
+        return result;
+    }
+
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
         return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false);
     }
@@ -309,6 +327,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
                                                 final OperationStepHandler prepareStep, final boolean attemptLock) {
         return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock);
+    }
+
+    /**
+     * @deprecated internal use only and only by legacy test controllers
+     */
+    @Deprecated
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationAttachments attachments, final OperationStepHandler prepareStep, int lockPermit) {
+        return controller.executeReadOnlyOperation(operation, handler, control, prepareStep, lockPermit);
     }
 
     /**

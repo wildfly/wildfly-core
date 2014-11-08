@@ -173,7 +173,7 @@ class DomainApiHandler implements HttpHandler {
                         List<OperationResponse.StreamEntry> streamEntries = response.getInputStreams();
                         if (streamIndex >= streamEntries.size()) {
                             // invalid index
-                            Common.sendError(exchange, encode, HttpServerLogger.ROOT_LOGGER.invalidUseStreamAsResponseIndex(streamIndex, streamEntries.size()));
+                            Common.sendError(exchange, encode, new ModelNode(HttpServerLogger.ROOT_LOGGER.invalidUseStreamAsResponseIndex(streamIndex, streamEntries.size())), 400);
                         } else {
                             // writeResponse will close the response
                             closeResponse = false;

@@ -24,7 +24,6 @@ package org.jboss.as.domain.http.server.logging;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 
-import java.io.IOException;
 import java.net.InetAddress;
 
 import org.jboss.logging.BasicLogger;
@@ -92,9 +91,6 @@ public interface HttpServerLogger extends BasicLogger {
     @Message(id = 12, value = "A secure socket has been defined for the HTTP interface, however the referenced security realm is not supplying a SSLContext.")
     IllegalArgumentException sslRequestedNoSslContext();
 
-    @Message(id = 13, value = "Requests of Content-Type application/x-www-form-urlencoded must include a JSON or Base64 encoded operation associated with parameter 'dmr'")
-    IOException missingDMRParam();
-
-    @Message(id = 14, value = "Invalid useStreamIndex value '%d'. The operation response had %d streams attached.")
+    @Message(id = 13, value = "Invalid useStreamIndex value '%d'. The operation response had %d streams attached.")
     String invalidUseStreamAsResponseIndex(int index, int available);
 }

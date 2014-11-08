@@ -70,6 +70,7 @@ import org.wildfly.core.launcher.DomainCommandBuilder;
  */
 public class DomainLifecycleUtil {
 
+    public static final String SLAVE_HOST_USERNAME = "slave";
     public static final String SLAVE_HOST_PASSWORD = "slave_us3r_password";
 
     private static final ThreadFactory threadFactory = new AsyncThreadFactory();
@@ -167,7 +168,7 @@ public class DomainLifecycleUtil {
                 copyConfigFile(configuration.getMgmtUsersFile(), configDir, null);
             } else {
                 // No point backing up the file in a test scenario, just write what we need.
-                final String text = "slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
+                final String text = "slave=" + new UsernamePasswordHashUtil().generateHashedHexURP(SLAVE_HOST_USERNAME, "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
                 createFile(configDir.resolve("mgmt-users.properties"), text);
             }
             if (configuration.getMgmtGroupsFile() != null) {
