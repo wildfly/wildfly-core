@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.logmanager.Level;
 import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
@@ -122,6 +123,7 @@ public class Server {
             }
 
         } catch (Exception e) {
+            safeCloseClient();
             throw new RuntimeException("Could not start container", e);
         }
     }
@@ -132,7 +134,6 @@ public class Server {
             shutdownThread = null;
         }
         try {
-            client.close();
             if (process != null) {
                 Thread shutdown = new Thread(new Runnable() {
                     @Override
@@ -176,6 +177,8 @@ public class Server {
             } catch (Exception ignore) {
             }
             throw new RuntimeException("Could not stop container", e);
+        } finally {
+            safeCloseClient();
         }
     }
 
@@ -192,6 +195,18 @@ public class Server {
 
     public ManagementClient getClient() {
         return client;
+    }
+
+    private void safeCloseClient() {
+        try {
+            if (client != null) {
+                client.close();
+                client = null;
+            }
+        } catch (final Exception e) {
+            Logger.getLogger(this.getClass().getName()).log(Level.WARNING,
+                    "Caught exception closing ModelControllerClient", e);
+        }
     }
 
     /**
