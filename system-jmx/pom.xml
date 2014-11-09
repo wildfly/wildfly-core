@@ -29,12 +29,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.Alpha12-SNAPSHOT</version>
+        <version>1.0.0.Alpha12</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-system-jmx</artifactId>
-    <version>1.0.0.Alpha12-SNAPSHOT</version>
+    <version>1.0.0.Alpha12</version>
 
     <name>WildFly: System JMX Module</name>
 
