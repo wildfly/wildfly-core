@@ -147,7 +147,8 @@ final class OperationContextImpl extends AbstractOperationContext {
     // protected by "realRemovingControllers"
     private final Map<ServiceName, Step> removalSteps = new HashMap<ServiceName, Step>();
     private final OperationAttachments attachments;
-    /** Tracks whether any steps have gotten write access to the model */
+    /** Tracks the addresses associated with writes to the model.
+     * We use a map with dummy values just to take advantage of ConcurrentHashMap  */
     private final Map<PathAddress, Object> affectsModel;
     /** Resources that have had their services restarted, used by ALLOW_RESOURCE_SERVICE_RESTART This should be confined to a thread, so no sync needed */
     private Map<PathAddress, Object> restartedResources = Collections.emptyMap();
@@ -160,9 +161,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final long startTime = System.nanoTime();
     private volatile long exclusiveStartTime = -1;
 
+    /** Tracks whether any steps have gotten write access to  the resource tree */
+    private volatile boolean affectsResourceTree;
     /** Tracks whether any steps have gotten write access to the management resource registration*/
     private volatile boolean affectsResourceRegistration;
-    /** Tracks whether any steps have modify the capability registry */
+    /** Tracks whether any steps have gotten write access to the capability registry */
     private volatile boolean affectsCapabilityRegistry;
 
     private volatile ModelControllerImpl.ManagementModelImpl managementModel;
@@ -753,7 +756,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         checkHostServerGroupTracker(address);
         authorize(false, runtimeOnly ? READ_WRITE_RUNTIME : READ_WRITE_CONFIG);
-        ensureLocalRootResource(runtimeOnly);
+        ensureLocalRootResource();
         affectsModel.put(address, NULL);
         Resource resource = this.managementModel.getRootResource();
         for (PathElement element : address) {
@@ -820,7 +823,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         checkHostServerGroupTracker(absoluteAddress);
         authorizeAdd(runtimeOnly);
-        ensureLocalRootResource(runtimeOnly);
+        ensureLocalRootResource();
         affectsModel.put(absoluteAddress, NULL);
         Resource model = this.managementModel.getRootResource();
         final Iterator<PathElement> i = absoluteAddress.iterator();
@@ -879,7 +882,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         checkHostServerGroupTracker(address);
         authorize(false, runtimeOnly ? READ_WRITE_RUNTIME : READ_WRITE_CONFIG);
-        ensureLocalRootResource(runtimeOnly);
+        ensureLocalRootResource();
         affectsModel.put(address, NULL);
         Resource model = this.managementModel.getRootResource();
         final Iterator<PathElement> i = address.iterator();
@@ -908,7 +911,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public boolean isModelAffected() {
-        return affectsModel.size() > 0;
+        return affectsResourceTree;
     }
 
     @Override
@@ -1587,17 +1590,15 @@ final class OperationContextImpl extends AbstractOperationContext {
         return blockingTimeout;
     }
 
-    private void ensureLocalRootResource(boolean runtimeOnly) {
-        if ((!runtimeOnly && !isModelAffected()) || (runtimeOnly && !affectsRuntime)) {
+    private synchronized void ensureLocalRootResource() {
+        if (!affectsResourceTree) {
             takeWriteLock();
             managementModel = managementModel.cloneRootResource();
-            if (runtimeOnly) {
-                affectsRuntime = true;
-            }
+            affectsResourceTree = true;
         }
     }
 
-    private void ensureLocalManagementResourceRegistration() {
+    private synchronized void ensureLocalManagementResourceRegistration() {
         if (!affectsResourceRegistration) {
             takeWriteLock();
             // TODO call this if we decide to make the MRR cloneable
@@ -1606,7 +1607,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private void ensureLocalCapabilityRegistry() {
+    private synchronized void ensureLocalCapabilityRegistry() {
         if (!affectsCapabilityRegistry) {
             takeWriteLock();
             managementModel = managementModel.cloneCapabilityRegistry();
