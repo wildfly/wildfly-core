@@ -129,7 +129,8 @@ public class DeploymentScannerUnitTestCase {
                     container.start();
 
                     // Wait until started ...
-                    while (!isRunning()) {
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    while (!isRunning() && System.currentTimeMillis() < timeout) {
                         Thread.sleep(200);
                     }
 
@@ -138,6 +139,12 @@ public class DeploymentScannerUnitTestCase {
 
                     Assert.assertTrue(exists(DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
+
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    while (exists(DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
+                        Thread.sleep(200);
+                    }
+                    Assert.assertFalse(exists(DEPLOYMENT_TWO));
 
                 } finally {
                     removeDeploymentScanner();

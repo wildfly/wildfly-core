@@ -22,6 +22,27 @@
 
 package org.jboss.as.server.deployment.scanner;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
+import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileFilter;
@@ -56,27 +77,6 @@ import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
-import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
 
 /**
  * Service that monitors the filesystem for deployment content and if found deploys it.
@@ -113,7 +113,6 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private long scanInterval = 0;
     private volatile boolean scanEnabled = false;
     private volatile boolean firstScan = true;
-    private volatile boolean requireUndeploy = false;
     private ScheduledFuture<?> scanTask;
     private ScheduledFuture<?> rescanIncompleteTask;
     private ScheduledFuture<?> rescanUndeployTask;
@@ -147,7 +146,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
         @Override
         public void run() {
             try {
-                scan(false, deploymentOperations, false);
+                scan();
             } catch (Exception e) {
                 ROOT_LOGGER.scanException(e, deploymentDir.getAbsolutePath());
             }
@@ -332,201 +331,250 @@ class FileSystemDeploymentService implements DeploymentScanner {
         }
     }
 
-
-    void oneOffScan(final DeploymentOperations deploymentOperations) {
+    /** Perform a one-off scan during boot to establish deployment tasks to execute during boot */
+    void bootTimeScan(final DeploymentOperations deploymentOperations) {
         this.establishDeployedContentList(this.deploymentDir, deploymentOperations);
-        scan(true, deploymentOperations, false);
+        if (acquireScanLock()) {
+            ScanResult scanResult = null;
+            try {
+                scanResult = scan(true, deploymentOperations);
+            } finally {
+                try {
+                    if (scanResult != null && scanResult.requireUndeploy) {
+                        // run a quick rescan to undeploy failed deployment during boot
+                        synchronized (this) {
+                            if (scanEnabled) {
+                                rescanUndeployTask = scheduledExecutor.schedule(new UndeployScanRunnable(), 200, TimeUnit.MILLISECONDS);
+                            }
+                        }
+                    }
+                } finally {
+                    releaseScanLock();
+                }
+            }
+        }
     }
 
+    /** Perform a normal scan */
     void scan() {
-        scan(false, deploymentOperations, false);
+        if (acquireScanLock()) {
+            ScanResult scanResult = null;
+            try {
+                scanResult = scan(false, deploymentOperations);
+            } finally {
+                try {
+                    if (scanResult != null && scanResult.scheduleRescan) {
+                        synchronized (this) {
+                            if (scanEnabled) {
+                                rescanIncompleteTask = scheduledExecutor.schedule(scanRunnable, 200, TimeUnit.MILLISECONDS);
+                            }
+                        }
+                    }
+                } finally {
+                    releaseScanLock();
+                }
+            }
+        }
     }
 
     /**
+     * Perform a post-boot scan to remove any deployments added during boot that failed to deploy properly.
      * This method isn't private solely to allow a unit test in the same package to call it.
      */
-    void scan(boolean oneOffScan, final DeploymentOperations deploymentOperations, boolean forcedUndeployScan) {
+    void forcedUndeployScan() {
 
+        if (acquireScanLock()) {
+            try {
+                ROOT_LOGGER.tracef("Performing a post-boot forced undeploy scan for scan directory %s", deploymentDir.getAbsolutePath());
+                ScanContext scanContext = new ScanContext(deploymentOperations);
+
+                // Add remove actions to the plan for anything we count as
+                // deployed that we didn't find on the scan
+                for (Map.Entry<String, DeploymentMarker> missing : scanContext.toRemove.entrySet()) {
+                    // remove successful deployment and left will be removed
+                    if (scanContext.registeredDeployments.containsKey(missing.getKey())) {
+                        scanContext.registeredDeployments.remove(missing.getKey());
+                    }
+                }
+                Set<String> scannedDeployments = new HashSet<String>(scanContext.registeredDeployments.keySet());
+                scannedDeployments.removeAll(scanContext.persistentDeployments);
+
+                List<ScannerTask> scannerTasks = scanContext.scannerTasks;
+                for (String toUndeploy : scannedDeployments) {
+                    scannerTasks.add(new UndeployTask(toUndeploy, deploymentDir, scanContext.scanStartTime, true));
+                }
+
+                executeScannerTasks(scannerTasks, deploymentOperations, true, new ScanResult());
+
+                ROOT_LOGGER.tracef("Forced undeploy scan complete");
+            } catch (Exception e) {
+                ROOT_LOGGER.scanException(e, deploymentDir.getAbsolutePath());
+            } finally {
+                releaseScanLock();
+            }
+        }
+    }
+
+    private boolean acquireScanLock() {
         try {
             scanLock.lockInterruptibly();
+            return true;
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            return;
+            return false;
         }
+    }
 
-        boolean scheduleRescan = false;
-        try {
-            if (scanEnabled || oneOffScan) { // confirm the scan is still wanted
-                ROOT_LOGGER.tracef("Scanning directory %s for deployment content changes", deploymentDir.getAbsolutePath());
+    private void releaseScanLock() {
+        scanLock.unlock();
+    }
 
-                ScanContext scanContext = new ScanContext(deploymentOperations);
-                if (!forcedUndeployScan) { // skip directory scan since only undeployment required
-                    scanDirectory(deploymentDir, relativePath, scanContext);
+    private ScanResult scan(boolean oneOffScan, final DeploymentOperations deploymentOperations) {
+
+        ScanResult scanResult = new ScanResult();
+
+        if (scanEnabled || oneOffScan) { // confirm the scan is still wanted
+            ROOT_LOGGER.tracef("Scanning directory %s for deployment content changes", deploymentDir.getAbsolutePath());
+
+            ScanContext scanContext = new ScanContext(deploymentOperations);
+
+            scanDirectory(deploymentDir, relativePath, scanContext);
+
+            // WARN about markers with no associated content. Do this first in case any auto-deploy issue
+            // is due to a file that wasn't meant to be auto-deployed, but has a misspelled marker
+            ignoredMissingDeployments.retainAll(scanContext.ignoredMissingDeployments);
+            for (String deploymentName : scanContext.ignoredMissingDeployments) {
+                if (ignoredMissingDeployments.add(deploymentName)) {
+                    ROOT_LOGGER.deploymentNotFound(deploymentName);
                 }
+            }
 
-                // WARN about markers with no associated content. Do this first in case any auto-deploy issue
-                // is due to a file that wasn't meant to be auto-deployed, but has a misspelled marker
-                ignoredMissingDeployments.retainAll(scanContext.ignoredMissingDeployments);
-                for (String deploymentName : scanContext.ignoredMissingDeployments) {
-                    if (ignoredMissingDeployments.add(deploymentName)) {
-                        ROOT_LOGGER.deploymentNotFound(deploymentName);
-                    }
+            // Log INFO about non-auto-deploy files that have no marker files
+            noticeLogged.retainAll(scanContext.nonDeployable);
+            for (String fileName : scanContext.nonDeployable) {
+                if (noticeLogged.add(fileName)) {
+                    ROOT_LOGGER.deploymentTriggered(fileName, DO_DEPLOY);
                 }
+            }
 
-                // Log INFO about non-auto-deploy files that have no marker files
-                noticeLogged.retainAll(scanContext.nonDeployable);
-                for (String fileName : scanContext.nonDeployable) {
-                    if (noticeLogged.add(fileName)) {
-                        ROOT_LOGGER.deploymentTriggered(fileName, DO_DEPLOY);
-                    }
+            // Log ERROR about META-INF and WEB-INF dirs outside a deployment
+            illegalDirLogged.retainAll(scanContext.illegalDir);
+            for (String fileName : scanContext.illegalDir) {
+                if (illegalDirLogged.add(fileName)) {
+                    ROOT_LOGGER.invalidExplodedDeploymentDirectory(fileName, deploymentDir.getAbsolutePath());
                 }
+            }
 
-                // Log ERROR about META-INF and WEB-INF dirs outside a deployment
-                illegalDirLogged.retainAll(scanContext.illegalDir);
-                for (String fileName : scanContext.illegalDir) {
-                    if (illegalDirLogged.add(fileName)) {
-                        ROOT_LOGGER.invalidExplodedDeploymentDirectory(fileName, deploymentDir.getAbsolutePath());
-                    }
+            // Log about deleting exploded deployments without first triggering undeploy by deleting .deployed
+            prematureExplodedContentDeletionLogged.retainAll(scanContext.prematureExplodedDeletions);
+            for (String fileName : scanContext.prematureExplodedDeletions) {
+                if (prematureExplodedContentDeletionLogged.add(fileName)) {
+                    ROOT_LOGGER.explodedDeploymentContentDeleted(fileName, DEPLOYED);
                 }
+            }
 
-                // Log about deleting exploded deployments without first triggering undeploy by deleting .deployed
-                prematureExplodedContentDeletionLogged.retainAll(scanContext.prematureExplodedDeletions);
-                for (String fileName : scanContext.prematureExplodedDeletions) {
-                    if (prematureExplodedContentDeletionLogged.add(fileName)) {
-                        ROOT_LOGGER.explodedDeploymentContentDeleted(fileName, DEPLOYED);
-                    }
+            // Deal with any incomplete or non-scannable auto-deploy content
+            ScanStatus status = handleAutoDeployFailures(scanContext);
+            if (status != ScanStatus.PROCEED) {
+                if (status == ScanStatus.RETRY && scanInterval > 1000) {
+                    // schedule a non-repeating task to try again more quickly
+                    scanResult.scheduleRescan = true;
                 }
-
-                // Deal with any incomplete or non-scannable auto-deploy content
-                ScanStatus status = handleAutoDeployFailures(scanContext);
-                if (status != ScanStatus.PROCEED) {
-                    if (status == ScanStatus.RETRY && scanInterval > 1000) {
-                        // in finally block, schedule a non-repeating task to try again more quickly
-                        scheduleRescan = true;
-                    }
-                    return;
-                }
+            } else {
 
                 List<ScannerTask> scannerTasks = scanContext.scannerTasks;
 
                 // Add remove actions to the plan for anything we count as
                 // deployed that we didn't find on the scan
                 for (Map.Entry<String, DeploymentMarker> missing : scanContext.toRemove.entrySet()) {
-                    if (!forcedUndeployScan) {
-                        scannerTasks.add(new UndeployTask(missing.getKey(), missing.getValue().parentFolder, scanContext.scanStartTime, false));
-                    } else {
-                        // remove successful deployment and left will be removed
-                        if (scanContext.registeredDeployments.containsKey(missing.getKey())) {
-                            scanContext.registeredDeployments.remove(missing.getKey());
-                        }
-                    }
+                    scannerTasks.add(new UndeployTask(missing.getKey(), missing.getValue().parentFolder, scanContext.scanStartTime, false));
                 }
 
-                if (forcedUndeployScan) {
-                    Set<String> scannedDeployments = new HashSet<String>(scanContext.registeredDeployments.keySet());
-                    scannedDeployments.removeAll(scanContext.persistentDeployments);
-                    for (String toUndeploy : scannedDeployments) {
-                        scannerTasks.add(new UndeployTask(toUndeploy, deploymentDir, scanContext.scanStartTime, true));
-                    }
-                }
-                // Process the tasks
-                if (scannerTasks.size() > 0) {
-                    List<ModelNode> updates = new ArrayList<ModelNode>(scannerTasks.size());
+                executeScannerTasks(scannerTasks, deploymentOperations, oneOffScan, scanResult);
 
-                    for (ScannerTask task : scannerTasks) {
-                        task.recordInProgress(); // puts down .isdeploying, .isundeploying
-                        final ModelNode update = task.getUpdate();
-                        if (ROOT_LOGGER.isDebugEnabled()) {
-                            ROOT_LOGGER.debugf("Deployment scan of [%s] found update action [%s]", deploymentDir, update);
-                        }
-                        updates.add(update);
-                    }
-
-                    boolean first = true;
-                    while (!updates.isEmpty() && (first || !oneOffScan)) {
-                        first = false;
-
-                        final Future<ModelNode> futureResults = deploymentOperations.deploy(getCompositeUpdate(updates), scheduledExecutor);
-                        final ModelNode results;
-                        try {
-                            results = futureResults.get(deploymentTimeout, TimeUnit.SECONDS);
-                        } catch (TimeoutException e) {
-                            futureResults.cancel(true);
-                            final ModelNode failure = new ModelNode();
-                            failure.get(OUTCOME).set(FAILED);
-                            failure.get(FAILURE_DESCRIPTION).set(DeploymentScannerLogger.ROOT_LOGGER.deploymentTimeout(deploymentTimeout));
-                            for (ScannerTask task : scannerTasks) {
-                                task.handleFailureResult(failure);
-                            }
-                            break;
-                        } catch (Exception e) {
-                            ROOT_LOGGER.fileSystemDeploymentFailed(e);
-                            futureResults.cancel(true);
-                            final ModelNode failure = new ModelNode();
-                            failure.get(OUTCOME).set(FAILED);
-                            failure.get(FAILURE_DESCRIPTION).set(e.getMessage());
-                            for (ScannerTask task : scannerTasks) {
-                                task.handleFailureResult(failure);
-                            }
-                            break;
-                        }
-
-                        final List<ModelNode> toRetry = new ArrayList<ModelNode>();
-                        final List<ScannerTask> retryTasks = new ArrayList<ScannerTask>();
-                        if (results.hasDefined(RESULT)) {
-                            final List<Property> resultList = results.get(RESULT).asPropertyList();
-                            requireUndeploy = false;
-                            for (int i = 0; i < resultList.size(); i++) {
-                                final ModelNode result = resultList.get(i).getValue();
-                                final ScannerTask task = scannerTasks.get(i);
-                                final ModelNode outcome = result.get(OUTCOME);
-                                StringBuilder failureDesc = new StringBuilder();
-                                if (outcome.isDefined() && SUCCESS.equals(outcome.asString()) && handleCompositeResult(result, failureDesc)){
-                                    task.handleSuccessResult();
-                                } else if (outcome.isDefined() && CANCELLED.equals(outcome.asString())) {
-                                    toRetry.add(updates.get(i));
-                                    retryTasks.add(task);
-                                } else {
-                                    if (failureDesc.length() > 0) {
-                                        result.get(FAILURE_DESCRIPTION).set(failureDesc.toString());
-                                        requireUndeploy = true;
-                                    }
-                                    task.handleFailureResult(result);
-                                }
-                            }
-                            updates = toRetry;
-                            scannerTasks = retryTasks;
-                        } else {
-                            for (ScannerTask current : scannerTasks) {
-                                current.handleFailureResult(results);
-                            }
-                        }
-                    }
-                }
                 ROOT_LOGGER.tracef("Scan complete");
                 firstScan = false;
             }
-        } finally {
+        }
 
-            scanLock.unlock();
+        return scanResult;
+    }
 
-            if (scheduleRescan) {
-                synchronized (this) {
-                    if (scanEnabled && !oneOffScan) {
-                        rescanIncompleteTask = scheduledExecutor.schedule(scanRunnable, 200, TimeUnit.MILLISECONDS);
+    private void executeScannerTasks(List<ScannerTask> scannerTasks, DeploymentOperations deploymentOperations,
+                                     boolean oneOffScan, ScanResult scanResult) {
+        // Process the tasks
+        if (scannerTasks.size() > 0) {
+            List<ModelNode> updates = new ArrayList<ModelNode>(scannerTasks.size());
+
+            for (ScannerTask task : scannerTasks) {
+                task.recordInProgress(); // puts down .isdeploying, .isundeploying
+                final ModelNode update = task.getUpdate();
+                if (ROOT_LOGGER.isDebugEnabled()) {
+                    ROOT_LOGGER.debugf("Deployment scan of [%s] found update action [%s]", deploymentDir, update);
+                }
+                updates.add(update);
+            }
+
+            boolean first = true;
+            while (!updates.isEmpty() && (first || !oneOffScan)) {
+                first = false;
+
+                final Future<ModelNode> futureResults = deploymentOperations.deploy(getCompositeUpdate(updates), scheduledExecutor);
+                final ModelNode results;
+                try {
+                    results = futureResults.get(deploymentTimeout, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    futureResults.cancel(true);
+                    final ModelNode failure = new ModelNode();
+                    failure.get(OUTCOME).set(FAILED);
+                    failure.get(FAILURE_DESCRIPTION).set(DeploymentScannerLogger.ROOT_LOGGER.deploymentTimeout(deploymentTimeout));
+                    for (ScannerTask task : scannerTasks) {
+                        task.handleFailureResult(failure);
+                    }
+                    break;
+                } catch (Exception e) {
+                    ROOT_LOGGER.fileSystemDeploymentFailed(e);
+                    futureResults.cancel(true);
+                    final ModelNode failure = new ModelNode();
+                    failure.get(OUTCOME).set(FAILED);
+                    failure.get(FAILURE_DESCRIPTION).set(e.getMessage());
+                    for (ScannerTask task : scannerTasks) {
+                        task.handleFailureResult(failure);
+                    }
+                    break;
+                }
+
+                final List<ModelNode> toRetry = new ArrayList<ModelNode>();
+                final List<ScannerTask> retryTasks = new ArrayList<ScannerTask>();
+                if (results.hasDefined(RESULT)) {
+                    final List<Property> resultList = results.get(RESULT).asPropertyList();
+                    scanResult.requireUndeploy = false;
+                    for (int i = 0; i < resultList.size(); i++) {
+                        final ModelNode result = resultList.get(i).getValue();
+                        final ScannerTask task = scannerTasks.get(i);
+                        final ModelNode outcome = result.get(OUTCOME);
+                        StringBuilder failureDesc = new StringBuilder();
+                        if (outcome.isDefined() && SUCCESS.equals(outcome.asString()) && handleCompositeResult(result, failureDesc)){
+                            task.handleSuccessResult();
+                        } else if (outcome.isDefined() && CANCELLED.equals(outcome.asString())) {
+                            toRetry.add(updates.get(i));
+                            retryTasks.add(task);
+                        } else {
+                            if (failureDesc.length() > 0) {
+                                result.get(FAILURE_DESCRIPTION).set(failureDesc.toString());
+                                scanResult.requireUndeploy = true;
+                            }
+                            task.handleFailureResult(result);
+                        }
+                    }
+                    updates = toRetry;
+                    scannerTasks = retryTasks;
+                } else {
+                    for (ScannerTask current : scannerTasks) {
+                        current.handleFailureResult(results);
                     }
                 }
             }
-
-            if (requireUndeploy) {
-                // run a quick rescan to undeploy failed deployment during boot
-                synchronized (this) {
-                    if (scanEnabled && oneOffScan) {
-                        rescanUndeployTask = scheduledExecutor.schedule(new UndeployScanRunnable(), 200, TimeUnit.MILLISECONDS);
-                    }
-                }
-            }
-
         }
     }
 
@@ -534,11 +582,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
         @Override
         public void run() {
-            try {
-                scan(true, deploymentOperations, true);
-            } catch (Exception e) {
-                ROOT_LOGGER.scanException(e, deploymentDir.getAbsolutePath());
-            }
+            forcedUndeployScan();
         }
     }
 
@@ -1413,6 +1457,11 @@ class FileSystemDeploymentService implements DeploymentScanner {
             this.exception = exception;
             this.timestamp = timestamp;
         }
+    }
+
+    private static class ScanResult {
+        private boolean scheduleRescan;
+        private boolean requireUndeploy;
     }
 
     /**

@@ -148,7 +148,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
                     @Override
                     public void run() {
                         try {
-                            bootTimeScanner.oneOffScan(deploymentOps);
+                            bootTimeScanner.bootTimeScan(deploymentOps);
                         } catch (Throwable t){
                             DeploymentScannerLogger.ROOT_LOGGER.initialScanFailed(t);
                         } finally {
