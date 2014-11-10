@@ -34,6 +34,7 @@ import java.util.Map;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.junit.Assert;
 
 /**
  * @author Alexey Loubyansky
@@ -41,7 +42,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 public class CliScriptTestBase {
 
     private static final int CLI_PROC_TIMEOUT = 10000;
-    private static final int STATUS_CHECK_INTERVAL = 2000;
+    private static final int STATUS_CHECK_INTERVAL = 25;
 
     private String cliOutput;
 
@@ -133,6 +134,7 @@ public class CliScriptTestBase {
             try {
                 Thread.sleep(STATUS_CHECK_INTERVAL);
             } catch (InterruptedException e) {
+                fail("Interrupted");
             }
             runningTime += STATUS_CHECK_INTERVAL;
             readStream(cliOutBuf, cliStream);
