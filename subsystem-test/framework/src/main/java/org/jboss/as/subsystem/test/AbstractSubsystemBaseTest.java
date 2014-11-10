@@ -217,7 +217,9 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
 
     /**
      * Returns a set of child resources addresses that should not be removed directly. Rather they should be managed
-     * by their parent resource
+     * by their parent resource.
+     * <p/>
+     * The last element of each address is allowed to be a wildcard address.
      *
      * @return the set of child resource addresses
      * @see AbstractSubsystemTest#assertRemoveSubsystemResources(KernelServices, Set)
