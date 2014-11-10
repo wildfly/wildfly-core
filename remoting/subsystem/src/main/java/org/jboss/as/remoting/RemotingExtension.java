@@ -22,7 +22,6 @@
 
 package org.jboss.as.remoting;
 
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -69,13 +68,14 @@ public class RemotingExtension implements Extension {
     static final SensitiveTargetAccessConstraintDefinition REMOTING_SECURITY_DEF = new SensitiveTargetAccessConstraintDefinition(REMOTING_SECURITY);
 
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 2;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 3;
     private static final int MANAGEMENT_API_MINOR_VERSION = 1;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
     private static final ModelVersion VERSION_1_1 = ModelVersion.create(1, 1);
     private static final ModelVersion VERSION_1_2 = ModelVersion.create(1, 2);
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
+    private static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1);
 
     @Override
     public void initialize(ExtensionContext context) {
@@ -117,17 +117,18 @@ public class RemotingExtension implements Extension {
     private void registerTransformers(SubsystemRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
+        // Current 3.1.0 to 2.1.0
+        buildTransformers_2_1(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_2_1));
 
-
-        //Current 2.1.0 to 1.3.0
-        buildTransformers_1_3(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_1_3));
+        //2.1.0 to 1.3.0
+        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_3));
 
         //1.3.0 to 1.2.0 (do nothing)
 
         //1.2.0 to 1.1.0
         buildTransformers_1_1(chainedBuilder.createBuilder(VERSION_1_2, VERSION_1_1));
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_1, VERSION_1_2, VERSION_1_3});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_1, VERSION_1_2, VERSION_1_3, VERSION_2_1});
     }
 
     private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
@@ -164,6 +165,18 @@ public class RemotingExtension implements Extension {
         builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(Protocol.REMOTE.toString())), RemoteOutboundConnectionResourceDefinition.PROTOCOL)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL);
+    }
+
+    private void buildTransformers_2_1(ResourceTransformationDescriptionBuilder builder) {
+        builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(ConnectorCommon.SASL_PROTOCOL.getDefaultValue()), ConnectorCommon.SASL_PROTOCOL)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SERVER_NAME);
+
+        builder.addChildResource(HttpConnectorResource.PATH).getAttributeBuilder()
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(ConnectorCommon.SASL_PROTOCOL.getDefaultValue()), ConnectorCommon.SASL_PROTOCOL)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SERVER_NAME);
     }
 
     private static ResourceTransformationDescriptionBuilder endpointTransform(ResourceTransformationDescriptionBuilder parent) {

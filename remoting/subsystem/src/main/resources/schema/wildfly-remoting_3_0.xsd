@@ -245,20 +245,23 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="connector">
+    <xs:complexType name="abstractConnector" abstract="true">
         <xs:annotation>
             <xs:documentation>
             <![CDATA[
-                The configuration of a Remoting connector.
+                The base configuration of a Remoting connector.
 
                 The "name" attribute specifies the unique name of this connector.
-
-                The "socket-binding" attribute specifies the name (or names) of the socket binding(s) to attach to.
 
                 The optional nested "sasl" element contains the SASL authentication configuration for this connector.
 
                 The optional nested "authentication-provider" element contains the name of the authentication provider to
                 use for incoming connections.
+                
+                The optional server-name attribute specifies the server name that should be used in the initial exchange with
+                the client and within the SASL mechanisms used for authentication.
+
+                The optional sasl-protocol attribute specifies the protocol that should be used within the SASL mechanisms. 
             ]]>
             </xs:documentation>
         </xs:annotation>
@@ -267,9 +270,27 @@
             <xs:element name="authentication-provider" type="ref" minOccurs="0"/>
             <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:all>
-        <xs:attribute name="socket-binding" type="name-list" use="required"/>
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="security-realm" type="xs:string" use="optional"/>
+        <xs:attribute name="server-name" type="xs:string" use="optional" />
+        <xs:attribute name="sasl-protocol" type="xsd:string" default="remote" />
+    </xs:complexType>
+    
+    <xs:complexType name="connector">
+        <xs:annotation>
+            <xs:documentation>
+            <![CDATA[
+                The configuration of a Remoting connector.
+
+                The "socket-binding" attribute specifies the name (or names) of the socket binding(s) to attach to.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="abstractConnector">
+                <xs:attribute name="socket-binding" type="name-list" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="http-connector">
@@ -278,25 +299,15 @@
             <![CDATA[
                 The configuration of a Remoting HTTP upgrade based connector.
 
-                The "name" attribute specifies the unique name of this connector.
-
                 The "connector-ref" specifies the name of the Undertow http connector to use.
-
-                The optional nested "sasl" element contains the SASL authentication configuration for this connector.
-
-                The optional nested "authentication-provider" element contains the name of the authentication provider to
-                use for incoming connections.
             ]]>
             </xs:documentation>
         </xs:annotation>
-        <xs:all>
-            <xs:element name="sasl" type="sasl" minOccurs="0"/>
-            <xs:element name="authentication-provider" type="ref" minOccurs="0"/>
-            <xs:element name="properties" type="properties" minOccurs="0"/>
-        </xs:all>
-        <xs:attribute name="connector-ref" type="name-list" use="required"/>
-        <xs:attribute name="name" type="xs:string" use="required"/>
-        <xs:attribute name="security-realm" type="xs:string" use="optional"/>
+        <xs:complexContent>
+            <xs:extension base="abstractConnector">
+                <xs:attribute name="connector-ref" type="name-list" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="sasl">

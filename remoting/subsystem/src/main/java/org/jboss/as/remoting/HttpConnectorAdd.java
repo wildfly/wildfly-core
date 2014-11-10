@@ -47,7 +47,8 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
     static final HttpConnectorAdd INSTANCE = new HttpConnectorAdd();
 
     private HttpConnectorAdd() {
-        super(HttpConnectorResource.CONNECTOR_REF, HttpConnectorResource.AUTHENTICATION_PROVIDER, HttpConnectorResource.SECURITY_REALM );
+        super(HttpConnectorResource.CONNECTOR_REF, HttpConnectorResource.AUTHENTICATION_PROVIDER, HttpConnectorResource.SECURITY_REALM,
+                ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
     }
 
     @Override

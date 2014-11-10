@@ -21,25 +21,6 @@
  */
 package org.jboss.as.remoting;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
-import org.wildfly.security.manager.WildFlySecurityManager;
-import org.xnio.Option;
-import org.xnio.OptionMap;
-import org.xnio.Options;
-import org.xnio.Sequence;
-import org.xnio.sasl.SaslQop;
-import org.xnio.sasl.SaslStrength;
-
 import static org.jboss.as.remoting.CommonAttributes.INCLUDE_MECHANISMS;
 import static org.jboss.as.remoting.CommonAttributes.POLICY;
 import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
@@ -59,6 +40,26 @@ import static org.jboss.as.remoting.SaslPolicyResource.PASS_CREDENTIALS;
 import static org.jboss.as.remoting.SaslResource.REUSE_SESSION_ATTRIBUTE;
 import static org.jboss.as.remoting.SaslResource.SERVER_AUTH_ATTRIBUTE;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.remoting.logging.RemotingLogger;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
+import org.jboss.remoting3.RemotingOptions;
+import org.wildfly.security.manager.WildFlySecurityManager;
+import org.xnio.Option;
+import org.xnio.OptionMap;
+import org.xnio.Options;
+import org.xnio.Sequence;
+import org.xnio.sasl.SaslQop;
+import org.xnio.sasl.SaslStrength;
+
 /**
  * @author Stuart Douglas
  */
@@ -69,6 +70,13 @@ public class ConnectorUtils {
         OptionMap.Builder builder = OptionMap.builder();
         builder.set(Options.TCP_NODELAY, true);
         builder.set(Options.REUSE_ADDRESSES, true);
+
+        builder.set(RemotingOptions.SASL_PROTOCOL, ConnectorCommon.SASL_PROTOCOL.resolveModelAttribute(context, fullModel).asString());
+        ModelNode serverName = ConnectorCommon.SERVER_NAME.resolveModelAttribute(context, fullModel);
+        if (serverName.isDefined()) {
+            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
+        }
+
         ModelNode properties = fullModel.get(PROPERTY);
         if (properties.isDefined() && properties.asInt() > 0) {
             addOptions(context, properties, builder);

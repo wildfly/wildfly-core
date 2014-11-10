@@ -21,6 +21,10 @@
  */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
+import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
+import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
+
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -31,8 +35,6 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
-
-import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 
 /**
  * @author Stuart Douglas
@@ -67,9 +69,11 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(AUTHENTICATION_PROVIDER,
-                CONNECTOR_REF, SECURITY_REALM);
+                CONNECTOR_REF, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL);
         resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_PROVIDER, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(CONNECTOR_REF, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SERVER_NAME, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SASL_PROTOCOL, null, writeHandler);
     }
 }

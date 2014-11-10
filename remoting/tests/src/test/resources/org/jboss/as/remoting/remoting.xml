@@ -19,7 +19,7 @@
         server-name="test"
         sasl-protocol="bar"
     />
-    <connector name="remoting-connector" socket-binding="remoting">
+    <connector name="remoting-connector" socket-binding="remoting" sasl-protocol="myProto" server-name="myServer">
         <authentication-provider name="blah"/>
         <properties>
            <property name="TCP_NODELAY" value="true"/>
@@ -45,7 +45,7 @@
             </properties>
         </sasl>
     </connector>
-    <http-connector name="http-connector" connector-ref="http">
+    <http-connector name="http-connector" connector-ref="http" sasl-protocol="myProto" server-name="myServer">
         <authentication-provider name="blah"/>
         <properties>
             <property name="TCP_NODELAY" value="true"/>
