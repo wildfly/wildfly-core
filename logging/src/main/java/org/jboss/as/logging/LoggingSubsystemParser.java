@@ -153,7 +153,7 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                                     namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3)
                                 throw unexpectedElement(reader);
                             final String value = ParseUtils.readStringAttributeElement(reader, Attribute.VALUE.getLocalName());
-                            LoggingRootResource.ADD_LOGGING_API_DEPENDENCIES.parseAndSetParameter(value, subsystemAddOp, reader);
+                            LoggingResourceDefinition.ADD_LOGGING_API_DEPENDENCIES.parseAndSetParameter(value, subsystemAddOp, reader);
                             break;
                         }
                         case USE_DEPLOYMENT_LOGGING_CONFIG:{
@@ -162,7 +162,7 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                                     namespace == Namespace.LOGGING_1_4)
                                 throw unexpectedElement(reader);
                             final String value = ParseUtils.readStringAttributeElement(reader, Attribute.VALUE.getLocalName());
-                            LoggingRootResource.USE_DEPLOYMENT_LOGGING_CONFIG.parseAndSetParameter(value, subsystemAddOp, reader);
+                            LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG.parseAndSetParameter(value, subsystemAddOp, reader);
                             break;
                         }
                         case LOGGER: {
