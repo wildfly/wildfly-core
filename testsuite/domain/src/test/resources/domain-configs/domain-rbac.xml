@@ -62,7 +62,7 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.0">
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:remoting:2.0"/>
+            <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
         </profile>
 
         <profile name="profile-b">
@@ -73,7 +73,7 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.0">
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:remoting:2.0"/>
+            <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
         </profile>
 
         <profile name="profile-shared">
@@ -84,7 +84,7 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.0">
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:remoting:2.0"/>
+            <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
         </profile>
     </profiles>
 

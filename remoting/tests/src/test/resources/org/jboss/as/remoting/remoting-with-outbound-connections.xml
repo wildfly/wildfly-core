@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:remoting:2.0">
+<subsystem xmlns="urn:jboss:domain:remoting:3.0">
     <connector name="test-connector" socket-binding="test"/>
 
         <outbound-connections>
