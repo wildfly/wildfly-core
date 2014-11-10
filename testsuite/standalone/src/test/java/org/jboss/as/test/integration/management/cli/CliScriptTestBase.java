@@ -41,7 +41,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 public class CliScriptTestBase {
 
     private static final int CLI_PROC_TIMEOUT = 10000;
-    private static final int STATUS_CHECK_INTERVAL = 2000;
+    private static final int STATUS_CHECK_INTERVAL = 25;
 
     private String cliOutput;
 
