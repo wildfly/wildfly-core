@@ -123,6 +123,8 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
                                 op.get(OPERATION_HEADERS).remove(CALLER_TYPE);
                             }
                         }
+
+                        HOST_CONTROLLER_LOGGER.tracef("Server ops for %s -- %s", domainOp, ops);
                         return ops;
                     }
                 };
@@ -158,10 +160,11 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
                                      final ModelNode localResult, final ModelNode overallResult) {
 
         ModelNode domainResult = hostControllerExecutionSupport.getFormattedDomainResult(localResult);
+
         overallResult.setEmptyObject();
         overallResult.get(DOMAIN_RESULTS).set(domainResult);
 
-        ModelNode serverOpsNode = overallResult.get(SERVER_OPERATIONS);
+        ModelNode serverOpsNode = new ModelNode();
 
         // Group servers with the same ops together to save bandwidth
         final Map<ModelNode, Set<ServerIdentity>> bundled = new HashMap<ModelNode, Set<ServerIdentity>>();
@@ -182,5 +185,7 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
             }
             setNode.get(OP).set(entry.getKey());
         }
+
+        overallResult.get(SERVER_OPERATIONS).set(serverOpsNode);
     }
 }

@@ -49,7 +49,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
@@ -142,7 +141,7 @@ interface HostControllerExecutionSupport {
             final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
             if (address.size() > 0) {
                 PathElement first = address.getElement(0);
-                if (HOST.equals(first.getKey())) {
+                if (HOST.equals(first.getKey()) && !first.isMultiTarget()) {
                     targetHost = first.getValue();
                     if (address.size() > 1 && RUNNING_SERVER.equals(address.getElement(1).getKey())) {
                         runningServerTarget = address.getElement(1);
@@ -169,10 +168,10 @@ interface HostControllerExecutionSupport {
                 final Resource domainModel = domainModelProvider.getDomainModel();
                 final Resource hostModel = domainModel.getChild(PathElement.pathElement(HOST, targetHost));
                 if (runningServerTarget.isMultiTarget()) {
-                    // TODO WFLY-723
-                    throw DomainControllerLogger.ROOT_LOGGER.unsupportedWildcardOperation();
+                    return new DomainOpExecutionSupport(operation, PathAddress.EMPTY_ADDRESS);
                 } else {
                     final String serverName = runningServerTarget.getValue();
+                    // TODO prevent NPE
                     final String serverGroup = hostModel.getChild(PathElement.pathElement(SERVER_CONFIG, serverName)).getModel().require(GROUP).asString();
                     final ServerIdentity serverIdentity = new ServerIdentity(targetHost, serverGroup, serverName);
                     result = new DirectServerOpExecutionSupport(serverIdentity, runningServerOp);
@@ -348,7 +347,6 @@ interface HostControllerExecutionSupport {
 
             @Override
             public ModelNode getFormattedDomainResult(ModelNode resultNode) {
-
                 ModelNode allSteps = new ModelNode();
                 int resultStep = 0;
                 for (int i = 0; i < steps.size(); i++) {

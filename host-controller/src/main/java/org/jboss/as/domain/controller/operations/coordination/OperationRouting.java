@@ -33,11 +33,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
@@ -68,41 +68,17 @@ class OperationRouting {
                                                          final ImmutableManagementResourceRegistration rootRegistration) throws OperationFailedException {
         Set<OperationEntry.Flag> result = null;
         boolean validAddress = false;
+
+        OperationEntry ope = rootRegistration.getOperationEntry(address, operationName);
+        if (ope != null) {
+            return ope.getFlags();
+        }
+
         ImmutableManagementResourceRegistration targetReg = rootRegistration.getSubModel(address);
         if (targetReg != null) {
             validAddress = true;
             OperationEntry opE = targetReg.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
             result = opE == null ? null : opE.getFlags();
-        }
-
-        if (result == null && address.size() > 0) {
-            // For wildcard elements, check specific registrations where the same OSH is used
-            // for all such registrations
-            PathElement pe = address.getLastElement();
-            if (pe.isWildcard()) {
-                String type = pe.getKey();
-                PathAddress parent = address.subAddress(0, address.size() - 1);
-                Set<PathElement> children = rootRegistration.getChildAddresses(parent);
-                if (children != null) {
-                    Set<OperationEntry.Flag> found = null;
-                    for (PathElement child : children) {
-                        if (type.equals(child.getKey())) {
-                            validAddress = true;
-                            OperationEntry oe = rootRegistration.getOperationEntry(parent.append(child), operationName);
-                            Set<OperationEntry.Flag> flags = oe == null ? null : oe.getFlags();
-                            if (flags == null || (found != null && !found.equals(flags))) {
-                                // Not all children have the same flags; give up
-                                found = null;
-                                validAddress = false; // treat this as the address not being valid
-                                break;
-                            }
-                            // We have a candidate flag set
-                            found = flags;
-                        }
-                    }
-                    result = found;
-                }
-            }
         }
 
         if (result == null) {
@@ -133,7 +109,7 @@ class OperationRouting {
         boolean compositeOp = false;
         if (address.size() > 0) {
             PathElement first = address.getElement(0);
-            if (HOST.equals(first.getKey())) {
+            if (HOST.equals(first.getKey()) && !first.isMultiTarget()) {
                 targetHost = first.getValue();
             }
         } else {
@@ -265,5 +241,14 @@ class OperationRouting {
 
     public boolean isLocalCallNeeded(final String localHostName) {
         return localHostName.equals(singleHost) || hosts.size() == 0 || hosts.contains(localHostName);
+    }
+
+    @Override
+    public String toString() {
+        return "OperationRouting{" +
+                "singleHost='" + singleHost + '\'' +
+                ", hosts=" + hosts +
+                ", twoStep=" + twoStep +
+                '}';
     }
 }

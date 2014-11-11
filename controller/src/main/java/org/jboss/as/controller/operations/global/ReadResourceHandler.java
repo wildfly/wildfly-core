@@ -251,7 +251,6 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         final Resource resource = nullSafeReadResource(context, registry);
 
         final Map<String, Set<String>> childrenByType = registry != null ? GlobalOperationHandlers.getChildAddresses(context, address, registry, resource, null) : Collections.<String, Set<String>>emptyMap();
-
         if (!attributesOnly) {
             // Next, process child resources
             for (Map.Entry<String, Set<String>> entry : childrenByType.entrySet()) {

@@ -52,8 +52,8 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -205,11 +205,19 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         } else if (provider.getServer() == null) {
             String hostName = provider.getHost();
             boolean forMaster = hostName.equals(domainOperationContext.getLocalHostInfo().getLocalHostName());
-            ModelNode hostResponse = forMaster ? domainOperationContext.getCoordinatorResult()
-                    : domainOperationContext.getHostControllerResults().get(hostName);
-                result = getHostControllerResult(hostResponse, stepLabels);
+            ModelNode hostResponse;
+            if (hostName.equals("*")) {
+                hostResponse = domainOperationContext.getCoordinatorResult();
+            } else {
+                hostResponse = forMaster ? domainOperationContext.getCoordinatorResult()  : domainOperationContext.getHostControllerResults().get(hostName);
+            }
+            result = getHostControllerResult(hostResponse, stepLabels);
         } else {
-            result = domainOperationContext.getServerResult(provider.getHost(), provider.getServer(), stepLabels);
+            if (provider.getServer().equals("*")) {
+                result = getHostControllerResult(domainOperationContext.getCoordinatorResult(), stepLabels);
+            } else {
+                result = domainOperationContext.getServerResult(provider.getHost(), provider.getServer(), stepLabels);
+            }
         }
 
         return result == null ? new ModelNode() : result;

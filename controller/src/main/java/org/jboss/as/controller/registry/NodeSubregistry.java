@@ -137,6 +137,11 @@ final class NodeSubregistry {
             result = searchControl.getWildCardRegistry().getOperationEntry(searchControl.getIterator(), operationName, inherited);
         }
 
+        // If there is no concrete registry and wildcard query
+        if (result == null && child.equals("*")) {
+            return inherited;
+        }
+
         return result;
     }
 
