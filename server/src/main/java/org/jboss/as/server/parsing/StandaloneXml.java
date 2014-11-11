@@ -745,6 +745,42 @@ public class StandaloneXml extends CommonXml {
         }
     }
 
+    private void parseHttpManagementInterfaceAttributes3_0(XMLExtendedStreamReader reader,ModelNode addOp) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case SASL_PROTOCOL: {
+                        HttpManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SECURITY_REALM: {
+                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SERVER_NAME: {
+                        HttpManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case CONSOLE_ENABLED: {
+                        HttpManagementResourceDefinition.CONSOLE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case HTTP_UPGRADE_ENABLED: {
+                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+    }
+
     private void parseNativeManagementInterfaceAttributes2_0(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -765,16 +801,54 @@ public class StandaloneXml extends CommonXml {
         }
     }
 
+    private void parseNativeManagementInterfaceAttributes3_0(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case SASL_PROTOCOL: {
+                        NativeManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SECURITY_REALM: {
+                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SERVER_NAME: {
+                        NativeManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+    }
+
     private void parseManagementInterface2_0(XMLExtendedStreamReader reader, ModelNode address, boolean http, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
         final ModelNode operationAddress = address.clone();
         operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
 
         // Handle attributes
-        if (http) {
-            parseHttpManagementInterfaceAttributes2_0(reader, addOp);
-        } else {
-            parseNativeManagementInterfaceAttributes2_0(reader, addOp);
+        switch (expectedNs.getMajorVersion()) {
+            case 2:
+                if (http) {
+                    parseHttpManagementInterfaceAttributes2_0(reader, addOp);
+                } else {
+                    parseNativeManagementInterfaceAttributes2_0(reader, addOp);
+                }
+                break;
+            default:
+                if (http) {
+                    parseHttpManagementInterfaceAttributes3_0(reader, addOp);
+                } else {
+                    parseNativeManagementInterfaceAttributes3_0(reader, addOp);
+                }
         }
 
         // Handle elements
@@ -1359,6 +1433,8 @@ public class StandaloneXml extends CommonXml {
 
             writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
             NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
+            NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
+            NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
 
             if (NativeManagementResourceDefinition.INTERFACE.isMarshallable(protocol)) {
                 writer.writeEmptyElement(Element.SOCKET.getLocalName());
@@ -1378,6 +1454,9 @@ public class StandaloneXml extends CommonXml {
 
             writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
             HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
+
             boolean consoleEnabled = protocol.get(ModelDescriptionConstants.CONSOLE_ENABLED).asBoolean(true);
             if (!consoleEnabled) {
                 HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
