@@ -1688,7 +1688,8 @@ public class FileSystemDeploymentServiceUnitTestCase {
         ts.controller.externallyDeployed.add("foo.war");
         ts.controller.addCompositeSuccessResponse(1);
         assertThat(ts.controller.deployed.size() , is(2));
-        ts.testee.scan(true, new DefaultDeploymentOperations(sc), true);
+        //ts.testee.scan(true, new DefaultDeploymentOperations(sc), true);
+        ts.testee.forcedUndeployScan();
         assertThat(ts.controller.deployed.size() , is(1)); //Only non persistent deployments should be undeployed.
         assertThat(ts.controller.deployed.keySet(), hasItems("foo.war"));
     }
