@@ -35,10 +35,11 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -83,7 +84,7 @@ public class ServerAddHandler extends AbstractAddStepHandler {
         context.addStep(runningServerAdd, new OperationStepHandler() {
             @Override
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                context.createResource(PathAddress.EMPTY_ADDRESS);
+                context.addResource(PathAddress.EMPTY_ADDRESS, PlaceholderResource.INSTANCE);
                 context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
