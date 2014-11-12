@@ -34,6 +34,8 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
@@ -49,6 +51,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
@@ -108,21 +111,37 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void testMonitorAddWithWriteAttributeSensitivity() throws Exception {
-        testAddWithWriteAttributeSensitivity(StandardRole.MONITOR, false);
+    public void testMonitorAddWithWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithWriteAttributeSensitivity(StandardRole.MONITOR, false, true);
     }
 
     @Test
-    public void testMaintainerAddWithWriteAttributeSensitivity() throws Exception {
-        testAddWithWriteAttributeSensitivity(StandardRole.MAINTAINER, false);
+    public void testMaintainerAddWithWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithWriteAttributeSensitivity(StandardRole.MAINTAINER, false, true);
     }
 
     @Test
-    public void testAdministratorAddWithWriteAttributeSensitivity() throws Exception {
-        testAddWithWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true);
+    public void testAdministratorAddWithWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, true);
     }
 
-    private void testAddWithWriteAttributeSensitivity(StandardRole role, boolean success) throws Exception {
+    @Test
+    public void testMonitorAddWithWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithWriteAttributeSensitivity(StandardRole.MONITOR, false, false);
+    }
+
+    @Test
+    public void testMaintainerAddWithWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithWriteAttributeSensitivity(StandardRole.MAINTAINER, false, false);
+    }
+
+    @Test
+    public void testAdministratorAddWithWriteAttributeSensitivityUndefined() throws Exception {
+        // This should fail not due to authz but because the attribute isn't defined
+        testAddWithWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, false, false);
+    }
+
+    private void testAddWithWriteAttributeSensitivity(StandardRole role, boolean success, boolean defineAttribute) throws Exception {
         ChildResourceDefinition def = new ChildResourceDefinition(ONE);
         def.addAttribute("test", WRITE_CONSTRAINT);
         rootRegistration.registerSubModel(def);
@@ -132,7 +151,9 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         rootResource.registerChild(ONE_A, resourceA);
 
         ModelNode op = Util.createAddOperation(ONE_B_ADDR);
-        op.get("test").set("b");
+        if (defineAttribute) {
+            op.get("test").set("b");
+        }
         op.get(OPERATION_HEADERS, "roles").set(role.toString());
         if (success) {
             executeForResult(op);
@@ -185,21 +206,36 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void testMonitorAddWithAllowNullWriteAttributeSensitivity() throws Exception {
-        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.MONITOR, false);
+    public void testMonitorAddWithAllowNullWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.MONITOR, false, false);
     }
 
     @Test
-    public void testMaintainerAddWithAllowNullWriteAttributeSensitivity() throws Exception {
-        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.MAINTAINER, true);
+    public void testMaintainerAddWithAllowNullWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.MAINTAINER, true, false);
     }
 
     @Test
-    public void testAdministratorAddWithAllowNullWriteAttributeSensitivity() throws Exception {
-        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true);
+    public void testAdministratorAddWithAllowNullWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, false);
     }
 
-    private void testAddWithAllowNullWriteAttributeSensitivity(StandardRole role, boolean success) throws Exception {
+    @Test
+    public void testMonitorAddWithAllowNullWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.MONITOR, false, true);
+    }
+
+    @Test
+    public void testMaintainerAddWithAllowNullWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.MAINTAINER, false, true);
+    }
+
+    @Test
+    public void testAdministratorAddWithAllowNullWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithAllowNullWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, true);
+    }
+
+    private void testAddWithAllowNullWriteAttributeSensitivity(StandardRole role, boolean success, boolean defineAttribute) throws Exception {
         ChildResourceDefinition def = new ChildResourceDefinition(ONE);
         def.addAttribute("test", true, null, null, WRITE_CONSTRAINT);
         rootRegistration.registerSubModel(def);
@@ -209,6 +245,9 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         rootResource.registerChild(ONE_A, resourceA);
 
         ModelNode op = Util.createAddOperation(ONE_B_ADDR);
+        if (defineAttribute) {
+            op.get("test").set("b");
+        }
         op.get(OPERATION_HEADERS, "roles").set(role.toString());
         if (success) {
             executeForResult(op);
@@ -218,21 +257,51 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void testMonitorAddWithDefaultValueWriteAttributeSensitivity() throws Exception {
-        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.MONITOR, false);
+    public void testResourceConstraintTrumpsAttribute() throws OperationFailedException {
+        ChildResourceDefinition def = new ChildResourceDefinition(ONE, WRITE_CONSTRAINT);
+        def.addAttribute("test", true, null, null, WRITE_CONSTRAINT);
+        rootRegistration.registerSubModel(def);
+
+        Resource resourceA = Resource.Factory.create();
+        resourceA.getModel().get("test").set("a");
+        rootResource.registerChild(ONE_A, resourceA);
+
+        ModelNode op = Util.createAddOperation(ONE_B_ADDR);
+        op.get(OPERATION_HEADERS, "roles").set(StandardRole.MAINTAINER.toString());
+        executeForFailure(op);
     }
 
     @Test
-    public void testMaintainerAddWithDefaultValueWriteAttributeSensitivity() throws Exception {
-        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.MAINTAINER, false);
+    public void testMonitorAddWithDefaultValueWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.MONITOR, false, false);
     }
 
     @Test
-    public void testAdministratorAddWithDefaultValueWriteAttributeSensitivity() throws Exception {
-        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true);
+    public void testMaintainerAddWithDefaultValueWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.MAINTAINER, false, false);
     }
 
-    private void testAddWithDefaultValueWriteAttributeSensitivity(StandardRole role, boolean success) throws Exception {
+    @Test
+    public void testAdministratorAddWithDefaultValueWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, false);
+    }
+
+    @Test
+    public void testMonitorAddWithDefaultValueWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.MONITOR, false, false);
+    }
+
+    @Test
+    public void testMaintainerAddWithDefaultValueWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.MAINTAINER, false, true);
+    }
+
+    @Test
+    public void testAdministratorAddWithDefaultValueWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithDefaultValueWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, true);
+    }
+
+    private void testAddWithDefaultValueWriteAttributeSensitivity(StandardRole role, boolean success, boolean defineAttribute) throws Exception {
         ChildResourceDefinition def = new ChildResourceDefinition(ONE);
         def.addAttribute("test", true, null, new ModelNode("b"), WRITE_CONSTRAINT);
         rootRegistration.registerSubModel(def);
@@ -242,6 +311,9 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         rootResource.registerChild(ONE_A, resourceA);
 
         ModelNode op = Util.createAddOperation(ONE_B_ADDR);
+        if (defineAttribute) {
+            op.get("test").set("b");
+        }
         op.get(OPERATION_HEADERS, "roles").set(role.toString());
         if (success) {
             executeForResult(op);
@@ -251,21 +323,36 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void testMonitorAddWithSignificantNullWriteAttributeSensitivity() throws Exception {
-        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.MONITOR, false);
+    public void testMonitorAddWithSignificantNullWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.MONITOR, false, false);
     }
 
     @Test
-    public void testMaintainerAddWithSignificantNullWriteAttributeSensitivity() throws Exception {
-        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.MAINTAINER, false);
+    public void testMaintainerAddWithSignificantNullWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.MAINTAINER, false, false);
     }
 
     @Test
-    public void testAdministratorAddWithSignificantNullWriteAttributeSensitivity() throws Exception {
-        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true);
+    public void testAdministratorAddWithSignificantNullWriteAttributeSensitivityUndefined() throws Exception {
+        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, false);
     }
 
-    private void testAddWithSignificantNullWriteAttributeSensitivity(StandardRole role, boolean success) throws Exception {
+    @Test
+    public void testMonitorAddWithSignificantNullWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.MONITOR, false, true);
+    }
+
+    @Test
+    public void testMaintainerAddWithSignificantNullWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.MAINTAINER, false, true);
+    }
+
+    @Test
+    public void testAdministratorAddWithSignificantNullWriteAttributeSensitivityDefined() throws Exception {
+        testAddWithSignificantNullWriteAttributeSensitivity(StandardRole.ADMINISTRATOR, true, true);
+    }
+
+    private void testAddWithSignificantNullWriteAttributeSensitivity(StandardRole role, boolean success, boolean defineAttribute) throws Exception {
         ChildResourceDefinition def = new ChildResourceDefinition(ONE);
         def.addAttribute("test", true, Boolean.TRUE, null, WRITE_CONSTRAINT);
         rootRegistration.registerSubModel(def);
@@ -275,6 +362,9 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         rootResource.registerChild(ONE_A, resourceA);
 
         ModelNode op = Util.createAddOperation(ONE_B_ADDR);
+        if (defineAttribute) {
+            op.get("test").set("b");
+        }
         op.get(OPERATION_HEADERS, "roles").set(role.toString());
         if (success) {
             executeForResult(op);
@@ -328,7 +418,7 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         }
 
         void addAttribute(String name, AccessConstraintDefinition...constraints) {
-            addAttribute(name, true, null, null, constraints);
+            addAttribute(name, false, null, null, constraints);
         }
 
         void addAttribute(String name, boolean allowNull, Boolean nullSignificant, ModelNode defaultValue, AccessConstraintDefinition...constraints) {
@@ -351,6 +441,13 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
             for (AttributeDefinition attribute : attributes) {
                 resourceRegistration.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
             }
+        }
+
+        @Override
+        protected void registerAddOperation(ManagementResourceRegistration registration, OperationStepHandler handler, OperationEntry.Flag... flags) {
+            // Use an add handler that knows about our attributes
+            OperationStepHandler addHandler = new AbstractAddStepHandler(attributes){};
+            super.registerAddOperation(registration, addHandler, flags);
         }
 
         @Override
