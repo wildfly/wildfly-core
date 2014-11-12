@@ -2159,6 +2159,15 @@
             <xs:element name="ignored-resources" type="ignored-resourcesType" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="discovery-options" type="discovery-optionsType" minOccurs="0"/>
         </xs:sequence>
+        <xs:attribute name="protocol" type="remote-protocol-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                     The remote domain controller's protocol. If not set, a discovery option must be provided,
+                    or the --cached-dc startup option must be used, or the --admin-only startup option must be used
+                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="host" type="xs:string" use="optional" >
             <xs:annotation>
                 <xs:documentation>
@@ -2172,15 +2181,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The remote domain controller's port. If not set, a discovery option must be provided,
-                    or the --cached-dc startup option must be used, or the --admin-only startup option must be used
-                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="protocol" type="remote-protocol-type" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                     The remote domain controller's protocol. If not set, a discovery option must be provided,
                     or the --cached-dc startup option must be used, or the --admin-only startup option must be used
                     with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
                 </xs:documentation>
@@ -2344,6 +2344,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="protocol" type="remote-protocol-type" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                     The remote domain controller's protocol.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="host" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
@@ -2355,13 +2362,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The remote domain controller's port.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="protocol" type="remote-protocol-type" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                     The remote domain controller's protocol.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

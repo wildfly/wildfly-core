@@ -170,6 +170,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
     public static final ObjectTypeAttributeDefinition DC_REMOTE = new ObjectTypeAttributeDefinition.Builder(
                 ModelDescriptionConstants.REMOTE,
+                RemoteDomainControllerAddHandler.PROTOCOL,
                 RemoteDomainControllerAddHandler.HOST,
                 RemoteDomainControllerAddHandler.PORT,
                 RemoteDomainControllerAddHandler.USERNAME,
