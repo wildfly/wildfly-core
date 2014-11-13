@@ -69,7 +69,7 @@ public class RemotingExtension implements Extension {
 
 
     private static final int MANAGEMENT_API_MAJOR_VERSION = 3;
-    private static final int MANAGEMENT_API_MINOR_VERSION = 1;
+    private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
     private static final ModelVersion VERSION_1_1 = ModelVersion.create(1, 1);
@@ -117,7 +117,7 @@ public class RemotingExtension implements Extension {
     private void registerTransformers(SubsystemRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        // Current 3.1.0 to 2.1.0
+        // Current 3.0.0 to 2.1.0
         buildTransformers_2_1(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_2_1));
 
         //2.1.0 to 1.3.0
