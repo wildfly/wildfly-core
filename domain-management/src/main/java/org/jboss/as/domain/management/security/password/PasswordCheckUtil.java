@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.management.security.password;
 
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.security.password.PasswordCheckResult.Result;
 import org.jboss.as.domain.management.security.password.simple.SimplePasswordStrengthChecker;
 
@@ -61,7 +62,8 @@ public class PasswordCheckUtil {
     public List<PasswordRestriction> passwordValuesRestrictions = new ArrayList<PasswordRestriction>();
     private CompoundRestriction compountRestriction = null;
 
-    private PasswordCheckUtil(final File configFile) {
+    private PasswordCheckUtil(final File configFile, final RestrictionLevel level) {
+        this.level = level;
         if (configFile != null && configFile.exists()) {
             try {
                 Properties configProperties = new Properties();
@@ -70,6 +72,8 @@ public class PasswordCheckUtil {
                 initRestrictionLevel(configProperties);
                 // strength
                 initDefaultStrength(configProperties);
+                // match username
+                initMustNotMatchUsername(configProperties);
                 // checker
                 initStrengthChecker(configProperties);
                 // name restrictions
@@ -82,8 +86,6 @@ public class PasswordCheckUtil {
                 initMinDigit(configProperties);
                 // symbol
                 initMinSymbol(configProperties);
-                // match username
-                initMustNotMatchUsername(configProperties);
             } catch (IOException e) {
                 simple();
             }
@@ -98,7 +100,15 @@ public class PasswordCheckUtil {
     }
 
     public static PasswordCheckUtil create(final File configFile) {
-        return new PasswordCheckUtil(configFile);
+        return new PasswordCheckUtil(configFile, null);
+    }
+
+    public static PasswordCheckUtil create(RestrictionLevel level) {
+        return new PasswordCheckUtil(null, level);
+    }
+
+    private boolean must() {
+        return RestrictionLevel.REJECT == level;
     }
 
     /**
@@ -112,7 +122,7 @@ public class PasswordCheckUtil {
             }
 
             String[] values = forbiddens.split(",");
-            this.passwordValuesRestrictions.add(new ValueRestriction(values, level == RestrictionLevel.REJECT));
+            this.passwordValuesRestrictions.add(new ValueRestriction(values, must()));
         } catch (Exception e) {
             // log?
         }
@@ -202,7 +212,7 @@ public class PasswordCheckUtil {
     private void initMustNotMatchUsername(Properties props) {
         try {
             if (Boolean.parseBoolean(props.getProperty(_PROPERTY_MATCH_USERNAME))) {
-                passwordValuesRestrictions.add(new UsernamePasswordMatch(level == RestrictionLevel.REJECT));
+                passwordValuesRestrictions.add(new UsernamePasswordMatch(must()));
             }
         } catch (Exception e) {
             // log
@@ -254,7 +264,7 @@ public class PasswordCheckUtil {
                 }
             } else {
                 resultAction = Result.WARN;
-                resultMessage = DomainManagementLogger.ROOT_LOGGER.passwordNotStrongEnough(strength.toString(), this.acceptable.toString());
+                resultMessage = ROOT_LOGGER.passwordNotStrongEnough(strength.toString(), this.acceptable.toString());
             }
         } else {
             if (strongEnough) {
@@ -270,7 +280,7 @@ public class PasswordCheckUtil {
                     resultMessage = strengthResult.getRestrictionFailures().get(0).getMessage();
                 } else {
                     resultAction = Result.REJECT;
-                    resultMessage = DomainManagementLogger.ROOT_LOGGER.passwordNotStrongEnough(strength.toString(), this.acceptable.toString());
+                    resultMessage = ROOT_LOGGER.passwordNotStrongEnough(strength.toString(), this.acceptable.toString());
                 }
             }
         }
@@ -297,23 +307,26 @@ public class PasswordCheckUtil {
 
     public void createLengthRestriction(int minLength) {
         if (minLength > 0) {
-            addToCompointRestriction(new LengthRestriction(minLength));
+            addToCompointRestriction(new LengthRestriction(minLength, must()));
         }
     }
 
     public PasswordRestriction createAlphaRestriction(int minAlpha) {
         return createRegExRestriction(minAlpha, SimplePasswordStrengthChecker.REGEX_ALPHA,
-                DomainManagementLogger.ROOT_LOGGER.passwordMustHaveAlphaInfo(minAlpha), DomainManagementLogger.ROOT_LOGGER.passwordMustHaveAlpha(minAlpha));
+                ROOT_LOGGER.passwordMustHaveAlphaInfo(minAlpha), must() ? ROOT_LOGGER.passwordMustHaveAlpha(minAlpha)
+                        : ROOT_LOGGER.passwordShouldHaveAlpha(minAlpha));
     }
 
     public PasswordRestriction createDigitRestriction(int minDigit) {
         return createRegExRestriction(minDigit, SimplePasswordStrengthChecker.REGEX_DIGITS,
-                DomainManagementLogger.ROOT_LOGGER.passwordMustHaveDigitInfo(minDigit), DomainManagementLogger.ROOT_LOGGER.passwordMustHaveDigit(minDigit));
+                ROOT_LOGGER.passwordMustHaveDigitInfo(minDigit), must() ? ROOT_LOGGER.passwordMustHaveDigit(minDigit)
+                        : ROOT_LOGGER.passwordShouldHaveDigit(minDigit));
     }
 
     public PasswordRestriction createSymbolRestriction(int minSymbol) {
         return createRegExRestriction(minSymbol, SimplePasswordStrengthChecker.REGEX_SYMBOLS,
-                DomainManagementLogger.ROOT_LOGGER.passwordMustHaveSymbolInfo(minSymbol), DomainManagementLogger.ROOT_LOGGER.passwordMustHaveSymbol(minSymbol));
+                ROOT_LOGGER.passwordMustHaveSymbolInfo(minSymbol), must() ? ROOT_LOGGER.passwordMustHaveSymbol(minSymbol)
+                        : ROOT_LOGGER.passwordShouldHaveSymbol(minSymbol));
     }
 
     private PasswordRestriction createRegExRestriction(int minChar, String regex, String requirementsMessage,

@@ -47,7 +47,7 @@ public class UsernamePasswordMatch implements PasswordRestriction {
     @Override
     public void validate(String userName, String password) throws PasswordValidationException {
         if (userName.equals(password)) {
-            throw DomainManagementLogger.ROOT_LOGGER.passwordUsernameMatchError();
+            throw must ? DomainManagementLogger.ROOT_LOGGER.passwordUsernameMatchError() : DomainManagementLogger.ROOT_LOGGER.passwordUsernameShouldNotMatch();
         }
     }
 

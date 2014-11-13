@@ -40,8 +40,11 @@ public class ValueRestriction implements PasswordRestriction {
 
     private final String requirementsMessage;
 
+    private final boolean must;
+
     public ValueRestriction(final String[] forbiddenValues, final boolean must) {
         this.forbiddenValues = new HashSet<String>(Arrays.asList(forbiddenValues));
+        this.must = must;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < forbiddenValues.length; i++) {
             sb.append(forbiddenValues[i]);
@@ -60,7 +63,7 @@ public class ValueRestriction implements PasswordRestriction {
     @Override
     public void validate(String userName, String password) throws PasswordValidationException {
         if (forbiddenValues.contains(password)) {
-            throw DomainManagementLogger.ROOT_LOGGER.passwordMustNotBeEqual(password);
+            throw must ? DomainManagementLogger.ROOT_LOGGER.passwordMustNotBeEqual(password) : DomainManagementLogger.ROOT_LOGGER.passwordShouldNotBeEqual(password);
         }
     }
 

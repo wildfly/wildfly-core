@@ -346,14 +346,6 @@ public interface DomainManagementLogger extends BasicLogger {
     String passwordMisMatch();
 
     /**
-     * The error message if the username and password are equal.
-     *
-     * @return a {@link String} for the message.
-     */
-    @Message(id = 27, value = "Username must not match the password.")
-    String usernamePasswordMatch();
-
-    /**
      * The error message if the username is not alpha numeric
      *
      * @return a {@link String} for the message.
@@ -1050,6 +1042,56 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = 96, value = "No protocols in common, supported=(%s), requested=(%s)")
     StartException noProtocolsInCommon(String supported, String requested);
+
+    /**
+     * The error message for password which has forbidden value.
+     *
+     * @param password - password value.
+     *
+     * @return a {@link PasswordValidationException} for the message.
+     */
+    @Message(id = 97, value = "Password should not be equal to '%s', this value is restricted.")
+    PasswordValidationException passwordShouldNotBeEqual(String password);
+
+    /**
+     * Error message if the password and username match.
+     *
+     * @return an {@link PasswordValidationException} for the error.
+     */
+    @Message(id = 98, value = "The password should be different from the username")
+    PasswordValidationException passwordUsernameShouldNotMatch();
+
+    /**
+     * The error message for password which is not long enough.
+     * @param desiredLength - desired length of password.
+     * @return a {@link PasswordValidationException} for the message.
+     */
+    @Message(id = 99, value = "Password should have at least %s characters!")
+    PasswordValidationException passwordShouldHaveXCharacters(int desiredLength);
+
+    /**
+     * The error message for password which has not enough alpha numerical values.
+     * @param minAlpha - minimum alpha numerical values.
+     * @return a {@link String} for the message.
+     */
+    @Message(id = 100, value = "Password should have at least %d alphanumeric character.")
+    String passwordShouldHaveAlpha(int minAlpha);
+
+    /**
+     * The error message for password which has not enough digit.
+     * @param minDigit - minimum digit values.
+     * @return a {@link String} for the message.
+     */
+    @Message(id = 101, value = "Password should have at least %d digit.")
+    String passwordShouldHaveDigit(int minDigit);
+
+    /**
+     * The error message for password which has not enough symbol.
+     * @param minSymbol - minimum symbol values.
+     * @return a {@link String} for the message.
+     */
+    @Message(id = 102, value = "Password should have at least %s non-alphanumeric symbol.")
+    String passwordShouldHaveSymbol(int minSymbol);
 
     /**
      * Information message saying the username and password must be different.

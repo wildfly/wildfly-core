@@ -37,6 +37,7 @@ import org.jboss.as.domain.management.security.password.LengthRestriction;
 import org.jboss.as.domain.management.security.password.PasswordCheckUtil;
 import org.jboss.as.domain.management.security.password.PasswordRestriction;
 import org.jboss.as.domain.management.security.password.PasswordStrengthCheckResult;
+import org.jboss.as.domain.management.security.password.RestrictionLevel;
 import org.jboss.as.domain.management.security.password.ValueRestriction;
 
 /**
@@ -47,11 +48,11 @@ public class SimplePasswordStrengthCheckerTestCase {
     private Keyboard keyboard = new SimpleKeyboard();
     private Dictionary dictionary = new SimpleDictionary();
 
-    public static final PasswordCheckUtil PCU = PasswordCheckUtil.create(null);
+    public static final PasswordCheckUtil PCU = PasswordCheckUtil.create(RestrictionLevel.REJECT);
     public static final PasswordRestriction ALPHA_RESTRICTION = PCU.createAlphaRestriction(1);
     public static final PasswordRestriction SYMBOL_RESTRICTION = PCU.createSymbolRestriction(1);
     public static final PasswordRestriction DIGIT_RESTRICTION = PCU.createDigitRestriction(1);
-    public static final LengthRestriction LENGTH_RESTRICTION = new LengthRestriction(8);
+    public static final LengthRestriction LENGTH_RESTRICTION = new LengthRestriction(8, true);
 
     @Test
     public void testLengthRestriction() {
