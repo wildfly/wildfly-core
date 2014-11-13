@@ -1898,7 +1898,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="server-name" type="xs:String" use="optional">
+        <xs:attribute name="server-name" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Where Remoting is accepting incomming connection the initial exchange and the authentication
