@@ -25,11 +25,14 @@ package org.jboss.as.protocol;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
+import org.jboss.remoting3.RemotingOptions;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 import org.xnio.Options;
+
 import static org.xnio.Options.SASL_POLICY_NOANONYMOUS;
 import static org.xnio.Options.SASL_POLICY_NOPLAINTEXT;
+
 import org.xnio.Property;
 import org.xnio.Sequence;
 
@@ -37,6 +40,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -137,6 +141,7 @@ public class ProtocolConnectionUtils {
         builder.set(Options.SASL_PROPERTIES, Sequence.of(tempProperties));
         builder.set(Options.SSL_ENABLED, configuration.isSslEnabled());
         builder.set(Options.SSL_STARTTLS, configuration.isUseStartTLS());
+        builder.set(RemotingOptions.SASL_PROTOCOL, "remote");
         return builder.getMap();
     }
 
