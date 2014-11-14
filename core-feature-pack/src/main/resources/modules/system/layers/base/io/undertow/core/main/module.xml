@@ -31,5 +31,11 @@
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
         <module name="sun.jdk"/>
+            <system export="true">
+                <paths>
+                    <!-- Needed for HTTP2 and SPDY support-->
+                    <path name="org/eclipse/jetty/alpn"/>
+                </paths>
+            </system>
     </dependencies>
 </module>
