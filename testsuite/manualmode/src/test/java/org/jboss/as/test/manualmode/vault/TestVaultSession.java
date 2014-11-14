@@ -184,6 +184,7 @@ final class TestVaultSession {
         options.put(PicketBoxSecurityVault.SALT, salt);
         options.put(PicketBoxSecurityVault.ITERATION_COUNT, Integer.toString(iterationCount));
         options.put(PicketBoxSecurityVault.ENC_FILE_DIR, encryptionDirectory);
+        options.put(PicketBoxSecurityVault.CREATE_KEYSTORE, Boolean.TRUE.toString());
         return options;
     }
 
