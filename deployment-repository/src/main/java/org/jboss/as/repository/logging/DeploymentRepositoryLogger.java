@@ -22,6 +22,7 @@
 
 package org.jboss.as.repository.logging;
 
+import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
@@ -60,7 +61,7 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
 
     @LogMessage(level = WARN)
     @Message(id = 3, value = "Cannot delete temp file %s, will be deleted on exit")
-    void cannotDeleteTempFile(String path);
+    void cannotDeleteTempFile(@Cause Throwable cause, String path);
 
     /**
      * Creates an exception indicating a failure to create the directory represented by the {@code path} parameter.
@@ -70,7 +71,7 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
      * @return an {@link IllegalStateException} for the error.
      */
     @Message(id = 4, value = "Cannot create directory %s")
-    IllegalStateException cannotCreateDirectory(String path);
+    IllegalStateException cannotCreateDirectory(@Cause Throwable cause, String path);
 
     /**
      * Creates an exception indicating the inability to obtain SHA-1.
@@ -116,4 +117,8 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 9, value = "Content %s is obsolete and will be removed")
     void obsoleteContentCleaned(String contentIdentifier);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 10, value = "Couldn't delete content %s")
+    void contentDeletionError(@Cause Throwable cause, String name);
 }

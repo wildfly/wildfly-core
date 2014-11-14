@@ -27,9 +27,7 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -86,17 +84,6 @@ public class ContentRepositoryTest {
                 out.write(buffer, 0, length);
             }
             return out.toString("UTF-8");
-        }
-    }
-
-    private void copyFileContent(File src, File target) throws Exception {
-        try (InputStream in = new FileInputStream(src);
-             OutputStream out = new FileOutputStream(target)) {
-            byte[] buffer = new byte[8];
-            int length = 8;
-            while ((length = in.read(buffer, 0, length)) > 0) {
-                out.write(buffer, 0, length);
-            }
         }
     }
 
@@ -203,9 +190,35 @@ public class ContentRepositoryTest {
         assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(emptyParent.getAbsolutePath()), is(true));
     }
 
+    /**
+     * Test that an empty dir will be removed during cleaning.
+     */
+    @Test
+    public void testCleanEmptyGrandParentDir() throws Exception {
+        File emptyGrandParent = new File(rootDir, "ae");
+        emptyGrandParent.mkdir();
+        assertThat(emptyGrandParent.exists(), is(true));
+        Map<String, Set<String>>  result = repository.cleanObsoleteContent(); //Mark content for deletion
+        assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(1));
+        assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(0));
+        assertThat(result.get(ContentRepository.MARKED_CONTENT).contains(emptyGrandParent.getAbsolutePath()), is(true));
+        Thread.sleep(10);
+        result = repository.cleanObsoleteContent();
+        assertThat(emptyGrandParent.exists(), is(false));
+        assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(1));
+        assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(0));
+        assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(emptyGrandParent.getAbsolutePath()), is(true));
+
+    }
+
+    /**
+     * Test that an dir not empty with no content will not be removed during cleaning.
+     */
+    @Test
     public void testNotEmptyDir() throws Exception {
-        Path overlay = rootDir.toPath().resolve("ae").resolve("ffacd15b0f66d5081a93407d3ff5e3c65a71").resolve("overlay.xhtml");
-        Path content = rootDir.toPath().resolve("ae").resolve("ffacd15b0f66d5081a93407d3ff5e3c65a71").resolve("content");
+        Path parentDir = rootDir.toPath().resolve("ae").resolve("ffacd15b0f66d5081a93407d3ff5e3c65a71");
+        Path overlay = parentDir.resolve("overlay.xhtml");
+        Path content = parentDir.resolve("content");
         Files.createDirectories(overlay.getParent());
         try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
             Files.copy(stream, overlay);
@@ -215,14 +228,14 @@ public class ContentRepositoryTest {
             Map<String, Set<String>> result = repository.cleanObsoleteContent(); //Mark content for deletion
             assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(1));
             assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(0));
-            assertThat(result.get(ContentRepository.MARKED_CONTENT).contains(overlay.toFile().getAbsolutePath()), is(true));
+            assertThat(result.get(ContentRepository.MARKED_CONTENT).contains(parentDir.toFile().getAbsolutePath()), is(true));
             Thread.sleep(10);
             result = repository.cleanObsoleteContent();
-            assertThat(Files.exists(overlay), is(true));
             assertThat(Files.exists(content), is(false));
+            assertThat(Files.exists(overlay), is(true));
             assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(0));
             assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(1));
-            assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(overlay.toFile().getAbsolutePath()), is(true));
+            assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(parentDir.toFile().getAbsolutePath()), is(true));
         } finally {
             Files.deleteIfExists(overlay);
             Files.deleteIfExists(overlay.getParent());

@@ -19,16 +19,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.repository;
 
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -153,6 +153,7 @@ public interface ContentRepository {
 
         /**
          * Default implementation of {@link ContentRepository}.
+         *
          * @author John Bailey
          */
         private static class ContentRepositoryImpl implements ContentRepository, Service<ContentRepository> {
@@ -171,13 +172,11 @@ public interface ContentRepository {
                 if (repoRoot.exists()) {
                     if (!repoRoot.isDirectory()) {
                         throw DeploymentRepositoryLogger.ROOT_LOGGER.notADirectory(repoRoot.getAbsolutePath());
-                    }
-                    else if (!repoRoot.canWrite()) {
+                    } else if (!repoRoot.canWrite()) {
                         throw DeploymentRepositoryLogger.ROOT_LOGGER.directoryNotWritable(repoRoot.getAbsolutePath());
                     }
-                }
-                else if (!repoRoot.mkdirs()) {
-                    throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(repoRoot.getAbsolutePath());
+                } else if (!repoRoot.mkdirs()) {
+                    throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(null, repoRoot.getAbsolutePath());
                 }
                 this.repoRoot = repoRoot;
                 this.obsolescenceTimeout = obsolescenceTimeout;
@@ -191,8 +190,8 @@ public interface ContentRepository {
             @Override
             public byte[] addContent(InputStream stream) throws IOException {
                 byte[] sha1Bytes;
-                File tmp = File.createTempFile(CONTENT, "tmp", repoRoot);
-                FileOutputStream fos = new FileOutputStream(tmp);
+                Path tmp = Files.createTempFile(repoRoot.toPath(), CONTENT, ".tmp");
+                OutputStream fos = Files.newOutputStream(tmp);
                 synchronized (messageDigest) {
                     messageDigest.reset();
                     try {
@@ -204,26 +203,26 @@ public interface ContentRepository {
                             dos.write(bytes, 0, read);
                         }
                         fos.flush();
-                        fos.getFD().sync();
                         fos.close();
                         fos = null;
-                    }
-                    finally {
+                    } finally {
                         safeClose(fos);
                     }
                     sha1Bytes = messageDigest.digest();
                 }
-                final File realFile = getDeploymentContentFile(sha1Bytes, true);
-                if(hasContent(sha1Bytes)) {
+                final Path realFile = getDeploymentContentFile(sha1Bytes, true);
+                if (hasContent(sha1Bytes)) {
                     // we've already got this content
-                    if (!tmp.delete()) {
-                        DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(tmp.getName());
-                        tmp.deleteOnExit();
+                    try {
+                        Files.deleteIfExists(tmp);
+                    } catch (IOException ioex) {
+                        DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(ioex, tmp.toAbsolutePath().toString());
+                        tmp.toFile().deleteOnExit();
                     }
-                    DeploymentRepositoryLogger.ROOT_LOGGER.debugf("Content was already present in repository at location %s", realFile.getAbsolutePath());
+                    DeploymentRepositoryLogger.ROOT_LOGGER.debugf("Content was already present in repository at location %s", realFile.toAbsolutePath().toString());
                 } else {
                     moveTempToPermanent(tmp, realFile);
-                    DeploymentRepositoryLogger.ROOT_LOGGER.contentAdded(realFile.getAbsolutePath());
+                    DeploymentRepositoryLogger.ROOT_LOGGER.contentAdded(realFile.toAbsolutePath().toString());
                 }
 
                 return sha1Bytes;
@@ -243,9 +242,10 @@ public interface ContentRepository {
 
             @Override
             public VirtualFile getContent(byte[] hash) {
-                if (hash == null)
+                if (hash == null) {
                     throw DeploymentRepositoryLogger.ROOT_LOGGER.nullVar("hash");
-                return VFS.getChild(getDeploymentContentFile(hash, true).toURI());
+                }
+                return VFS.getChild(getDeploymentContentFile(hash, true).toUri());
             }
 
             @Override
@@ -255,104 +255,89 @@ public interface ContentRepository {
 
             @Override
             public boolean hasContent(byte[] hash) {
-                return getDeploymentContentFile(hash).exists();
+                Path content = getDeploymentContentFile(hash);
+                return Files.exists(getDeploymentContentFile(hash));
             }
 
-            protected File getRepoRoot() {
-                return repoRoot;
+            protected Path getRepoRoot() {
+                return repoRoot.toPath();
             }
 
-            protected File getDeploymentContentFile(byte[] deploymentHash) {
+            protected Path getDeploymentContentFile(byte[] deploymentHash) {
                 return getDeploymentContentFile(deploymentHash, false);
             }
 
-            private File getDeploymentContentFile(byte[] deploymentHash, boolean validate) {
-                final File hashDir = getDeploymentHashDir(deploymentHash, validate);
-                return new File(hashDir, CONTENT);
+            private Path getDeploymentContentFile(byte[] deploymentHash, boolean validate) {
+                final Path hashDir = getDeploymentHashDir(deploymentHash, validate);
+                return hashDir.resolve(CONTENT);
             }
 
-            protected File getDeploymentHashDir(final byte[] deploymentHash, final boolean validate) {
+            protected Path getDeploymentHashDir(final byte[] deploymentHash, final boolean validate) {
                 final String sha1 = HashUtil.bytesToHexString(deploymentHash);
-                final String partA = sha1.substring(0,2);
+                final String partA = sha1.substring(0, 2);
                 final String partB = sha1.substring(2);
-                final File base = new File(getRepoRoot(), partA);
+                final Path base = getRepoRoot().resolve(partA);
                 if (validate) {
                     validateDir(base);
                 }
-                final File hashDir = new File(base, partB);
-                if (validate && !hashDir.exists() && !hashDir.mkdirs()) {
-                    throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(hashDir.getAbsolutePath());
+                final Path hashDir = base.resolve(partB);
+                if (validate && !Files.exists(hashDir)) {
+                    try {
+                        Files.createDirectories(hashDir);
+                    } catch (IOException ioex) {
+                        throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(ioex, hashDir.toAbsolutePath().toString());
+                    }
                 }
                 return hashDir;
             }
 
-            protected void validateDir(File dir) {
-                if (!dir.exists()) {
-                    if (!dir.mkdirs()) {
-                        throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(dir.getAbsolutePath());
+            protected void validateDir(Path dir) {
+                if (!Files.exists(dir)) {
+                    try {
+                        Files.createDirectories(dir);
+                    } catch (IOException ioex) {
+                        throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(ioex, dir.toAbsolutePath().toString());
                     }
-                } else if (!dir.isDirectory()) {
-                    throw DeploymentRepositoryLogger.ROOT_LOGGER.notADirectory(dir.getAbsolutePath());
-                } else if (!dir.canWrite()) {
-                    throw DeploymentRepositoryLogger.ROOT_LOGGER.directoryNotWritable(dir.getAbsolutePath());
+                } else if (!Files.isDirectory(dir)) {
+                    throw DeploymentRepositoryLogger.ROOT_LOGGER.notADirectory(dir.toAbsolutePath().toString());
+                } else if (!Files.isWritable(dir)) {
+                    throw DeploymentRepositoryLogger.ROOT_LOGGER.directoryNotWritable(dir.toAbsolutePath().toString());
                 }
             }
 
-            private void moveTempToPermanent(File tmpFile, File permanentFile) throws IOException {
-
-                if (!tmpFile.renameTo(permanentFile)) {
+            private void moveTempToPermanent(Path tmpFile, Path permanentFile) throws IOException {
+                Path localTmp = permanentFile.resolveSibling("tmp");
+                try {
+                    Files.move(tmpFile, permanentFile);
+                } catch (IOException ioex) {
                     // AS7-3574. Try to avoid writing the permanent file bit by bit in we crash in the middle.
                     // Copy tmpFile to another tmpfile in the same dir as the permanent file (and thus same filesystem)
                     // and see then if we can rename it.
-                    File localTmp = new File(permanentFile.getParent(), "tmp");
+                    Files.copy(tmpFile, localTmp);
                     try {
-                        copyFile(tmpFile, localTmp);
-                        if (!localTmp.renameTo(permanentFile)) {
-                            // No luck; need to copy
-                            copyFile(localTmp, permanentFile);
-                        }
-                    } catch (IOException e) {
-                        if (permanentFile.exists()) {
-                            permanentFile.delete();
-                        }
-                        throw e;
-                    } catch (RuntimeException e) {
-                        if (permanentFile.exists()) {
-                            permanentFile.delete();
-                        }
-                        throw e;
-
-                    } finally {
-                        if (!tmpFile.delete()) {
-                            DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(tmpFile.getName());
-                            tmpFile.deleteOnExit();
-                        }
-                        if (localTmp.exists() && !localTmp.delete()) {
-                            DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(localTmp.getName());
-                            localTmp.deleteOnExit();
+                        Files.move(localTmp, permanentFile);
+                    } catch (IOException ex) {
+                        // No luck; need to copy
+                        try {
+                            Files.copy(localTmp, permanentFile);
+                        } catch (IOException e) {
+                            Files.deleteIfExists(permanentFile);
+                            throw e;
                         }
                     }
-                }
-            }
-
-            private void copyFile(File src, File dest) throws IOException {
-                FileOutputStream fos = null;
-                FileInputStream fis = null;
-                try {
-                    fos = new FileOutputStream(dest);
-                    fis = new FileInputStream(src);
-                    byte[] bytes = new byte[8192];
-                    int read;
-                    while ((read = fis.read(bytes)) > -1) {
-                        fos.write(bytes, 0, read);
-                    }
-                    fos.flush();
-                    fos.getFD().sync();
-                    fos.close();
-                    fos = null;
                 } finally {
-                    safeClose(fos);
-                    safeClose(fis);
+                    try {
+                        Files.deleteIfExists(tmpFile);
+                    } catch (IOException ioex) {
+                        DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(ioex, tmpFile.toString());
+                        tmpFile.toFile().deleteOnExit();
+                    }
+                    try {
+                        Files.deleteIfExists(localTmp);
+                    } catch (IOException ioex) {
+                        DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(ioex, localTmp.toString());
+                        localTmp.toFile().deleteOnExit();
+                    }
                 }
             }
 
@@ -368,25 +353,25 @@ public interface ContentRepository {
                         contentHashReferences.remove(reference.getHexHash());
                     }
                 }
-
-                File file = getDeploymentContentFile(reference.getHash(), true);
-                if(!file.delete()) {
-                    DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(file.getName());
-                    file.deleteOnExit();
+                Path file = getDeploymentContentFile(reference.getHash(), true);
+                try {
+                    Files.deleteIfExists(file);
+                } catch (IOException ex) {
+                    DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, file.toString());
                 }
-                File parent = file.getParentFile();
-                if (!parent.delete()) {
-                    DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(parent.getName());
-                    parent.deleteOnExit();
+                Path parent = file.getParent();
+                try {
+                    Files.deleteIfExists(parent);
+                } catch (IOException ex) {
+                    DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, parent.toString());
                 }
-                parent = parent.getParentFile();
-                if (parent.list().length == 0) {
-                    if (!parent.delete()) {
-                        DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteTempFile(parent.getName());
-                        parent.deleteOnExit();
-                    }
+                Path grandParent = parent.getParent();
+                try {
+                    Files.deleteIfExists(grandParent);
+                } catch (IOException ex) {
+                    DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, grandParent.toString());
                 }
-                DeploymentRepositoryLogger.ROOT_LOGGER.contentRemoved(file.getAbsolutePath());
+                DeploymentRepositoryLogger.ROOT_LOGGER.contentRemoved(file.toAbsolutePath().toString());
             }
 
             /**
@@ -443,10 +428,15 @@ public interface ContentRepository {
                 for (File rootHash : rootHashes) {
                     if (rootHash.isDirectory()) {
                         File[] complementaryHashes = rootHash.listFiles();
-                        for (File complementaryHash : complementaryHashes) {
-                            String hash = rootHash.getName() + complementaryHash.getName();
-                            ContentReference reference = new ContentReference(complementaryHash.getAbsolutePath(), hash);
+                        if (complementaryHashes == null || complementaryHashes.length == 0) {
+                            ContentReference reference = new ContentReference(rootHash.getAbsolutePath(), rootHash.getName());
                             localReferences.add(reference);
+                        } else {
+                            for (File complementaryHash : complementaryHashes) {
+                                String hash = rootHash.getName() + complementaryHash.getName();
+                                ContentReference reference = new ContentReference(complementaryHash.getAbsolutePath(), hash);
+                                localReferences.add(reference);
+                            }
                         }
                     }
                 }
@@ -454,10 +444,10 @@ public interface ContentRepository {
             }
 
             protected static void safeClose(final Closeable closeable) {
-                if(closeable != null) {
+                if (closeable != null) {
                     try {
                         closeable.close();
-                    } catch(Exception ignore) {
+                    } catch (Exception ignore) {
                         //
                     }
                 }
