@@ -93,7 +93,7 @@
             <expose-expression-model/>
             <remoting-connector/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:remoting:2.0">
+        <subsystem xmlns="urn:jboss:domain:remoting:3.0">
             <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:threads:1.1"/>

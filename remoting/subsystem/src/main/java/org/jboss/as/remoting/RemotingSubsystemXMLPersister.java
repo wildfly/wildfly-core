@@ -36,7 +36,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import static org.jboss.as.remoting.CommonAttributes.*;
 
 /**
- * Persister for remoting subsystem 2.0 version
+ * Persister for remoting subsystem 3.0 version
  *
  * @author Jaikiran Pai
  * @author Stuart Douglas
@@ -161,8 +161,9 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         if (node.hasDefined(SECURITY_REALM)) {
             writer.writeAttribute(Attribute.SECURITY_REALM.getLocalName(), node.require(SECURITY_REALM).asString());
         }
+        ConnectorCommon.SERVER_NAME.marshallAsAttribute(node, writer);
+        ConnectorCommon.SASL_PROTOCOL.marshallAsAttribute(node, writer);
         ConnectorResource.AUTHENTICATION_PROVIDER.marshallAsElement(node, writer);
-
 
         if (node.hasDefined(PROPERTY)) {
             writeProperties(writer, node.get(PROPERTY));
@@ -182,7 +183,9 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         if (node.hasDefined(SECURITY_REALM)) {
             HttpConnectorResource.SECURITY_REALM.marshallAsAttribute(node, writer);
         }
-        ConnectorResource.AUTHENTICATION_PROVIDER.marshallAsElement(node, writer);
+        ConnectorCommon.SERVER_NAME.marshallAsAttribute(node, writer);
+        ConnectorCommon.SASL_PROTOCOL.marshallAsAttribute(node, writer);
+        HttpConnectorResource.AUTHENTICATION_PROVIDER.marshallAsElement(node, writer);
 
         if (node.hasDefined(PROPERTY)) {
             writeProperties(writer, node.get(PROPERTY));

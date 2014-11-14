@@ -22,6 +22,8 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
+import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
+import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
 
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
@@ -71,9 +73,12 @@ public class ConnectorResource extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(AUTHENTICATION_PROVIDER,
-                SOCKET_BINDING, SECURITY_REALM);
+                SOCKET_BINDING, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL);
         resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_PROVIDER, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SERVER_NAME, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SASL_PROTOCOL, null, writeHandler);
     }
+
 }

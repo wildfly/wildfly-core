@@ -166,7 +166,7 @@ public interface DiscardAttributeChecker {
         final ModelNode[] values;
 
         /**
-         * Constructor. Discards if the attribite value is either undefined or matches one of the
+         * Constructor. Discards if the attribute value is either undefined or matches one of the
          * allowed values;
          *
          * @param values the allowed values
@@ -177,7 +177,7 @@ public interface DiscardAttributeChecker {
         }
 
         /**
-         * Constructor. Discards if the attribite value if it matches one of the
+         * Constructor. Discards if the attribute value if it matches one of the
          * passed in values;
          *
          * @param discardExpressions {@code true} if the attribute should be discarded if expressions are used
