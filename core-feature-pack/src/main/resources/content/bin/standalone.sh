@@ -20,6 +20,16 @@ do
               SERVER_OPTS="$SERVER_OPTS '$1'"
           fi
           ;;
+      -secmgr)
+          SECMGR="true"
+          ;;
+      -Djava.security.manager)
+          SECMGR="true"
+          ;;
+      -Djava.security.manager=*)
+          echo "WARNING: Security manager enabled without custom security manager. Value"
+          SECMGR="true"
+          ;;
       --)
           shift
           break;;
@@ -283,6 +293,19 @@ if [ "x$JBOSS_MODULEPATH" = "x" ]; then
     JBOSS_MODULEPATH="$JBOSS_HOME/modules"
 fi
 
+# Process the JAVA_OPTS and fail the script of a java.security.manager was found
+SECURITY_MANAGER_SET=`echo $JAVA_OPTS | $GREP "java\.security\.manager"`
+if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
+    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
+    exit 1
+fi
+
+# Set up the module arguments
+MODULE_OPTS=""
+if [ "$SECMGR" = "true" ]; then
+    MODULE_OPTS="$MODULE_OPTS -secmgr";
+fi
+
 # Display our environment
 echo "========================================================================="
 echo ""
@@ -304,6 +327,7 @@ while true; do
          \"-Dorg.jboss.boot.log.file="$JBOSS_LOG_DIR"/server.log\" \
          \"-Dlogging.configuration=file:"$JBOSS_CONFIG_DIR"/logging.properties\" \
          -jar \""$JBOSS_HOME"/jboss-modules.jar\" \
+         $MODULE_OPTS \
          -mp \""${JBOSS_MODULEPATH}"\" \
          org.jboss.as.standalone \
          -Djboss.home.dir=\""$JBOSS_HOME"\" \
@@ -316,6 +340,7 @@ while true; do
          \"-Dorg.jboss.boot.log.file="$JBOSS_LOG_DIR"/server.log\" \
          \"-Dlogging.configuration=file:"$JBOSS_CONFIG_DIR"/logging.properties\" \
          -jar \""$JBOSS_HOME"/jboss-modules.jar\" \
+         $MODULE_OPTS \
          -mp \""${JBOSS_MODULEPATH}"\" \
          org.jboss.as.standalone \
          -Djboss.home.dir=\""$JBOSS_HOME"\" \

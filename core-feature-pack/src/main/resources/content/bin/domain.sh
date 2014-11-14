@@ -3,9 +3,31 @@
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"
+SERVER_OPTS=""
 
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
+
+# Process passed in parameters
+while [ "$#" -gt 0 ]
+do
+    case "$1" in
+      -secmgr)
+          SECMGR="true"
+          ;;
+      -Djava.security.manager)
+          SECMGR="true"
+          ;;
+      -Djava.security.manager=*)
+          echo "WARNING: Turning on the securty manager, but ignoring the value: $1"
+          SECMGR="true"
+          ;;
+       *)
+          SERVER_OPTS="$SERVER_OPTS \"$1\""
+          ;;
+    esac
+    shift
+done
 
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
@@ -115,7 +137,7 @@ fi
 
 if $linux || $solaris; then
     # consolidate the host-controller and command line opts
-    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $@"
+    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $SERVER_OPTS"
     # process the host-controller options
     for var in $HOST_CONTROLLER_OPTS
     do
@@ -136,7 +158,7 @@ fi
 # No readlink -m on BSD
 if $darwin; then
     # consolidate the host-controller and command line opts
-    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $@"
+    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $SERVER_OPTS"
     # process the host-controller options
     for var in $HOST_CONTROLLER_OPTS
     do
@@ -181,6 +203,24 @@ if $cygwin; then
     JBOSS_MODULEPATH=`cygpath --path --windows "$JBOSS_MODULEPATH"`
 fi
 
+# Process the PROCESS_CONTROLLER_JAVA_OPTS failing if the java.security.manager is set.
+SECURITY_MANAGER_SET=`echo $PROCESS_CONTROLLER_JAVA_OPTS | $GREP "java\.security\.manager"`
+if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
+    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
+    exit 1
+fi
+SECURITY_MANAGER_SET=`echo $HOST_CONTROLLER_JAVA_OPTS | $GREP "java\.security\.manager"`
+if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
+    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
+    exit 1
+fi
+
+# Set up the module arguments
+MODULE_OPTS=""
+if [ "$SECMGR" = "true" ]; then
+    MODULE_OPTS="$MODULE_OPTS -secmgr";
+fi
+
 # Display our environment
 echo "========================================================================="
 echo ""
@@ -202,10 +242,12 @@ while true; do
          \"-Dorg.jboss.boot.log.file="$JBOSS_LOG_DIR"/process-controller.log\" \
          \"-Dlogging.configuration=file:"$JBOSS_CONFIG_DIR"/logging.properties\" \
          -jar \""$JBOSS_HOME"/jboss-modules.jar\" \
+         $MODULE_OPTS \
          -mp \""${JBOSS_MODULEPATH}"\" \
          org.jboss.as.process-controller \
          -jboss-home \""$JBOSS_HOME"\" \
          -jvm \"$JAVA_FROM_JVM\" \
+         $MODULE_OPTS \
          -mp \""${JBOSS_MODULEPATH}"\" \
          -- \
          \"-Dorg.jboss.boot.log.file="$JBOSS_LOG_DIR"/host-controller.log\" \
@@ -213,7 +255,7 @@ while true; do
          $HOST_CONTROLLER_JAVA_OPTS \
          -- \
          -default-jvm \"$JAVA_FROM_JVM\" \
-         '"$@"'
+         "$SERVER_OPTS"
       JBOSS_STATUS=$?
    else
       # Execute the JVM in the background
@@ -221,10 +263,12 @@ while true; do
          \"-Dorg.jboss.boot.log.file="$JBOSS_LOG_DIR"/process-controller.log\" \
          \"-Dlogging.configuration=file:"$JBOSS_CONFIG_DIR"/logging.properties\" \
          -jar \""$JBOSS_HOME"/jboss-modules.jar\" \
+         $MODULE_OPTS \
          -mp \""${JBOSS_MODULEPATH}"\" \
          org.jboss.as.process-controller \
          -jboss-home \""$JBOSS_HOME"\" \
          -jvm \"$JAVA_FROM_JVM\" \
+         $MODULE_OPTS \
          -mp \""${JBOSS_MODULEPATH}"\" \
          -- \
          \"-Dorg.jboss.boot.log.file="$JBOSS_LOG_DIR"/host-controller.log\" \
@@ -232,7 +276,7 @@ while true; do
          $HOST_CONTROLLER_JAVA_OPTS \
          -- \
          -default-jvm \"$JAVA_FROM_JVM\" \
-         '"$@"' "&"
+         "$SERVER_OPTS" "&"
       JBOSS_PID=$!
       # Trap common signals and relay them to the jboss process
       trap "kill -HUP  $JBOSS_PID" HUP

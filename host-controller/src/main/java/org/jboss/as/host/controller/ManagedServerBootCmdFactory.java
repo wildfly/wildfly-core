@@ -262,6 +262,10 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         command.add(getAbsolutePath(environment.getHomeDir(), "jboss-modules.jar"));
         command.add("-mp");
         command.add(environment.getModulePath());
+        // Enable the security manager if required
+        if (environment.isSecurityManagerEnabled()){
+            command.add("-secmgr");
+        }
         command.add("org.jboss.as.server");
 
         return command;

@@ -199,6 +199,8 @@ public final class Main {
         Map<String, String> hostSystemProperties = getHostSystemProperties();
         ProductConfig productConfig;
         String modulePath = null;
+        // Note the java.security.manager shouldn't be set, but we'll check to ensure the security manager gets enabled
+        boolean securityManagerEnabled = System.getSecurityManager() != null || hostSystemProperties.containsKey("java.security.manager");
 
         final int argsLength = args.length;
         for (int i = 0; i < argsLength; i++) {
@@ -375,8 +377,11 @@ public final class Main {
                         name = arg.substring(2, idx);
                         value = arg.substring(idx + 1, arg.length());
                     }
-                    WildFlySecurityManager.setPropertyPrivileged(name, value);
-                    hostSystemProperties.put(name, value);
+                    // Skip -Djava.security.manager, we don't want that added as a system property
+                    if (!"java.security.manager".equals(name)) {
+                        WildFlySecurityManager.setPropertyPrivileged(name, value);
+                        hostSystemProperties.put(name, value);
+                    }
                 } else if (arg.startsWith(CommandLineConstants.PUBLIC_BIND_ADDRESS)) {
 
                     int idx = arg.indexOf('=');
@@ -421,6 +426,9 @@ public final class Main {
                     if (modulePath == null) {
                         return null;
                     }
+                } else if (arg.equals(CommandLineConstants.SECMGR)) {
+                    // Enable the security manager
+                    securityManagerEnabled = true;
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
                     return null;
@@ -433,7 +441,7 @@ public final class Main {
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.HOME_DIR, null), hostSystemProperties);
         return new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath, pmAddress, pmPort,
                 pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM,
-                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc, productConfig);
+                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc, productConfig, securityManagerEnabled);
     }
 
     private static String parseValue(final String arg, final String key) {

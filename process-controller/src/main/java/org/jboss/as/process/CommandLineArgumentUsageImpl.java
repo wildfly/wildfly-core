@@ -92,6 +92,9 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
 
         addArguments(CommandLineConstants.OLD_SHORT_VERSION, CommandLineConstants.SHORT_VERSION, CommandLineConstants.VERSION);
         instructions.add(ProcessLogger.ROOT_LOGGER.argVersion());
+
+        addArguments(CommandLineConstants.SECMGR);
+        instructions.add(ProcessLogger.ROOT_LOGGER.argSecMgr());
     }
 
     public static void printUsage(final PrintStream out) {
