@@ -373,7 +373,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 final ModelNode response = new ModelNode();
                 response.get(OUTCOME).set(FAILED);
                 response.get(FAILURE_DESCRIPTION).set(message);
-                ControllerLogger.MGMT_OP_LOGGER.tracef("sending pre-prepare failed response for %d  --- interrupted: %s", getOperationId(), Thread.currentThread().isInterrupted());
+                ControllerLogger.MGMT_OP_LOGGER.tracef("sending pre-prepare failed response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
                 try {
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_FAILED, response);
                 } catch (IOException ignored) {
@@ -408,7 +408,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 assert !prepared;
                 assert activeTx == null;
                 assert responseChannel != null;
-                ControllerLogger.MGMT_OP_LOGGER.tracef("sending prepared response for %d  --- interrupted: %s", getOperationId(), Thread.currentThread().isInterrupted());
+                ControllerLogger.MGMT_OP_LOGGER.tracef("sending prepared response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
                 try {
                     // 2) send the operation-prepared notification (just clear response info)
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_PREPARED, result);
@@ -459,7 +459,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 completed(OperationResponse.Factory.createSimple(response));
             } else {
                 assert responseChannel != null;
-                ControllerLogger.MGMT_OP_LOGGER.tracef("sending pre-prepare failed response for %d  --- interrupted: %s", getOperationId(), Thread.currentThread().isInterrupted());
+                ControllerLogger.MGMT_OP_LOGGER.tracef("sending pre-prepare failed response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
                 try {
                     // 2) send the operation-failed message (done)
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_FAILED, response);
@@ -474,7 +474,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         synchronized void completed(final OperationResponse response) {
             assert prepared;
             assert responseChannel != null;
-            ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response for %d  --- interrupted: %s", getOperationId(), Thread.currentThread().isInterrupted());
+            ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
 
             streamSupport.registerStreams(operation.getOperationId(), response.getInputStreams());
 
