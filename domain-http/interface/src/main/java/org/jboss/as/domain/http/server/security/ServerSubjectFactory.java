@@ -39,6 +39,8 @@ import org.jboss.as.domain.management.SubjectIdentity;
  */
 public class ServerSubjectFactory implements GSSAPIServerSubjectFactory {
 
+    private static final String HTTP_PROTOCOL = "HTTP";
+
     private final SecurityRealm securityRealm;
     private final RealmIdentityManager realmIdentityManager;
 
@@ -49,7 +51,7 @@ public class ServerSubjectFactory implements GSSAPIServerSubjectFactory {
 
     @Override
     public Subject getSubjectForHost(String hostName) throws GeneralSecurityException {
-        SubjectIdentity subjectIdentity = securityRealm.getSubjectIdentity(hostName, false);
+        SubjectIdentity subjectIdentity = securityRealm.getSubjectIdentity(HTTP_PROTOCOL, hostName);
         if (subjectIdentity != null) {
             realmIdentityManager.setCurrentSubjectIdentity(subjectIdentity);
         }

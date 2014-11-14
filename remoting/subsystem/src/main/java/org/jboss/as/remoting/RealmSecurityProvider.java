@@ -64,7 +64,9 @@ import org.jboss.remoting3.security.SimpleUserInfo;
 import org.jboss.remoting3.security.UserInfo;
 import org.jboss.remoting3.security.UserPrincipal;
 import org.jboss.sasl.callback.DigestHashCallback;
+import org.jboss.sasl.gssapi.SubjectIdentity;
 import org.jboss.sasl.callback.VerifyPasswordCallback;
+import org.jboss.sasl.gssapi.SubjectFactory;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 import org.xnio.Property;
@@ -90,10 +92,12 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
     static final String SASL_OPT_PRE_DIGESTED_PROPERTY = "org.jboss.sasl.digest.pre_digested";
     static final String SASL_OPT_LOCAL_DEFAULT_USER = "jboss.sasl.local-user.default-user";
     static final String SASL_OPT_LOCAL_USER_CHALLENGE_PATH = "jboss.sasl.local-user.challenge-path";
+    static final String SASL_OPT_SUBJECT_FACTORY = "org.jboss.sasl.gssapi.subject_factory";
 
     static final String ANONYMOUS = "ANONYMOUS";
     static final String DIGEST_MD5 = "DIGEST-MD5";
     static final String EXTERNAL = "EXTERNAL";
+    static final String GSSAPI = "GSSAPI";
     static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
     static final String PLAIN = "PLAIN";
 
@@ -132,6 +136,11 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
                 if (tokensDir != null) {
                     properties.add(Property.of(SASL_OPT_LOCAL_USER_CHALLENGE_PATH, tokensDir));
                 }
+            }
+
+            if (authMechs.contains(AuthMechanism.KERBEROS)) {
+                mechanisms.add(GSSAPI);
+                properties.add(Property.of(SASL_OPT_SUBJECT_FACTORY, new RealmSubjectFactory()));
             }
 
             if (authMechs.contains(AuthMechanism.DIGEST)) {
@@ -284,6 +293,8 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
             realmCallbackHandler = new RealmCallbackHandler(realm.getAuthorizingCallbackHandler(AuthMechanism.DIGEST));
         } else if (PLAIN.equals(mechanismName)) {
             realmCallbackHandler = new RealmCallbackHandler(realm.getAuthorizingCallbackHandler(AuthMechanism.PLAIN));
+        } else if (GSSAPI.equals(mechanismName)) {
+            realmCallbackHandler = new RealmCallbackHandler(realm.getAuthorizingCallbackHandler(AuthMechanism.KERBEROS));
         } else {
             return null;
         }
@@ -400,6 +411,30 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
 
             return new RealmSubjectUserInfo(sui);
         }
+    }
+
+    private class RealmSubjectFactory implements SubjectFactory {
+
+        @Override
+        public SubjectIdentity getSubjectIdentity(String protocol, String serverName) {
+            final org.jboss.as.domain.management.SubjectIdentity identity = realm.getSubjectIdentity(protocol, serverName);
+            if (identity != null) {
+                return new SubjectIdentity() {
+
+                    @Override
+                    public Subject getSubject() {
+                        return identity.getSubject();
+                    }
+
+                    @Override
+                    public void dispose() {
+                        identity.logout();
+                    }
+                };
+            }
+            return null;
+        }
+
     }
 
     private static class RealmSubjectUserInfo implements SubjectUserInfo, UserInfo, UniqueIdUserInfo {

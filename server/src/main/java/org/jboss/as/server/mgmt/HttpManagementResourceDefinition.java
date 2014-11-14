@@ -49,6 +49,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -120,7 +121,22 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
             .setDefaultValue(new ModelNode(false))
             .build();
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING,CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED};
+
+    public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build(); // TODO - We need some nice access constraints.
+
+    public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
+            .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build(); // TODO - We need some nice access constraints.
+
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURITY_REALM, SOCKET_BINDING,
+                                                                                                 SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME};
 
     public static final HttpManagementResourceDefinition INSTANCE = new HttpManagementResourceDefinition();
 

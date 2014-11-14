@@ -454,11 +454,17 @@
                     <xs:annotation>
                         <xs:documentation>
                             Reference to an individual keytab.
-
-                            On receipt of an incoming request the host name will be extracted from the request and the keytab to be used will be selected as follows: -
-                              1 - Iterate the list of keytabs and identify one where the host name is listed in the for-hosts attribute.
-                              2 - Iterate the list of keytabs and compare the host name against the host extracted from the request.
-                              3 - Use the keytab where for-hosts is set to '*'.
+                            
+                            On handling the authentication for an incoming request two pieces of information are known, the protocol and the name of the host 
+                            this server is acting as.  For HTTP requests the protocol will always be HTTP, for requests over Remoting by default the protocol will
+                            be 'remote' although this can be overridden.
+                            
+                            At the time authentication is going to be handled the keytab will be selected as follows: -
+                             1 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching protocol/hostname.
+                             2 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching hostname.
+                             3 - Iterate the list of keytabs and identify one where the name of the principal matches matches protocol/hostname.
+                             4 - Iterate the list of keytabs and identify one where the hostname portion of the principal matches the hostname of the request.
+                             5 - Use the keytab where for-hosts is set to '*'.
                               
                             If no match is found no keytab will be selected and Kerberos will not be available for communication as that host.
                         </xs:documentation>
@@ -1883,7 +1889,26 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="sasl-protocol" type="xs:string" use="optional" default="remote">
+            <xs:annotation>
+                <xs:documentation>
+                    Where Remoting is accepting incomming connections part of the authentication process
+                    advertises the name of the protocol in use, by default this is 'remote' but this attribute
+                    can be set if an alternative is required.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="server-name" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Where Remoting is accepting incomming connection the initial exchange and the authentication
+                    process both advertise the name of the server, by default this is derived from the address Remoting
+                    is listening on but this attribute can be set to override the name.
+                 </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
+    
 
     <xs:complexType name="host-native-management-interfaceType">
         <xs:annotation>
