@@ -33,13 +33,13 @@ public class PasswordRestrictionsTestCase {
 
     @Test(expected = PasswordValidationException.class)
     public void testLengthRestrictionFail() throws PasswordValidationException {
-        LengthRestriction lr = new LengthRestriction(2);
+        LengthRestriction lr = new LengthRestriction(2, true);
         lr.validate("", "1");
     }
 
     @Test
     public void testLengthRestrictionPass() throws PasswordValidationException {
-        LengthRestriction lr = new LengthRestriction(2);
+        LengthRestriction lr = new LengthRestriction(2, true);
         lr.validate("", "12");
     }
 
