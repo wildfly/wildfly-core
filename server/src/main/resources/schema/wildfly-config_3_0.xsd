@@ -1973,7 +1973,7 @@
                     <xs:element name="socket" type="host-http-management-socketType"/>
                 </xs:sequence>
                 <xs:attribute name="console-enabled" type="xs:boolean" use="optional" default="true"/>
-                <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="true"/>
+                <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="false"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -2128,7 +2128,7 @@
                     <xs:element name="socket-binding" type="http-management-socket-binding-refType"/>
                 </xs:choice>
                 <xs:attribute name="console-enabled" type="xs:boolean" use="optional" default="true"/>
-                <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="true"/>
+                <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="false"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
