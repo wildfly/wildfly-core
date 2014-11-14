@@ -31,14 +31,14 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.Alpha13</version>
+        <version>1.0.0.Alpha14-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-testsuite-shared</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0.Alpha13</version>
+    <version>1.0.0.Alpha14-SNAPSHOT</version>
 
     <name>WildFly Core Test Suite: Shared</name>
 
