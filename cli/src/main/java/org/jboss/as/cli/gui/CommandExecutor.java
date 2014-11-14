@@ -21,11 +21,15 @@ package org.jboss.as.cli.gui;
 import java.awt.Cursor;
 import java.io.File;
 import java.io.IOException;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -37,9 +41,9 @@ import org.jboss.dmr.Property;
  */
 public class CommandExecutor {
 
-    private CliGuiContext cliGuiCtx;
-    private ModelControllerClient client;
-    private CommandContext cmdCtx;
+    private final CliGuiContext cliGuiCtx;
+    private final ModelControllerClient client;
+    private final CommandContext cmdCtx;
 
     public CommandExecutor(CliGuiContext cliGuiCtx) {
         this.cliGuiCtx = cliGuiCtx;
@@ -69,7 +73,7 @@ public class CommandExecutor {
      */
     public synchronized ModelNode doCommand(String command) throws CommandFormatException, IOException {
         ModelNode request = cmdCtx.buildRequest(command);
-        return execute(request, isSlowCommand(command));
+        return execute(request, isSlowCommand(command)).getResponseNode();
     }
 
     /**
@@ -83,7 +87,7 @@ public class CommandExecutor {
     public synchronized Response doCommandFullResponse(String command) throws CommandFormatException, IOException {
         ModelNode request = cmdCtx.buildRequest(command);
         boolean replacedBytes = replaceFilePathsWithBytes(request);
-        ModelNode response = execute(request, isSlowCommand(command) || replacedBytes);
+        OperationResponse response = execute(request, isSlowCommand(command) || replacedBytes);
         return new Response(command, request, response);
     }
 
@@ -94,7 +98,7 @@ public class CommandExecutor {
         String opName = opDesc.get("operation").asString();
         opDesc.get("operation").set("read-operation-description");
         opDesc.get("name").set(opName);
-        ModelNode response = execute(opDesc, false);
+        ModelNode response = execute(opDesc, false).getResponseNode();
         ModelNode requestProps = response.get("result", "request-properties");
         for (Property prop : requestProps.asPropertyList()) {
             ModelNode typeDesc = prop.getValue().get("type");
@@ -115,12 +119,12 @@ public class CommandExecutor {
         return didReplacement;
     }
 
-    private ModelNode execute(ModelNode request, boolean useWaitCursor) throws IOException {
+    private OperationResponse execute(ModelNode request, boolean useWaitCursor) throws IOException {
         try {
             if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             }
-            return client.execute(request);
+            return client.executeOperation(OperationBuilder.create(request).build(), OperationMessageHandler.DISCARD);
         } finally {
             if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getDefaultCursor());
@@ -130,18 +134,18 @@ public class CommandExecutor {
 
     private boolean isSlowCommand(String command) {
         return command.startsWith("deploy") ||
-               command.startsWith("/subsystem=logging/:read-log-file");
+               command.contains(":read-log-file");
     }
 
     public static class Response {
-        private String command;
-        private ModelNode dmrRequest;
-        private ModelNode dmrResponse;
+        private final OperationResponse response;
+        private final String command;
+        private final ModelNode dmrRequest;
 
-        Response(String command, ModelNode dmrRequest, ModelNode dmrResponse) {
+        Response(String command, ModelNode dmrRequest, OperationResponse response) {
             this.command = command;
-            this.dmrRequest = dmrRequest;
-            this.dmrResponse = dmrResponse;
+            this.dmrRequest = dmrRequest.clone();
+            this.response = response;
         }
 
         public String getCommand() {
@@ -153,9 +157,14 @@ public class CommandExecutor {
         }
 
         public ModelNode getDmrResponse() {
-            return dmrResponse;
+            return response.getResponseNode();
+        }
+
+        public OperationResponse getOperationResponse() {
+            return response;
         }
 
     }
+
 
 }
