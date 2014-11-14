@@ -107,6 +107,10 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 /**
  * Bits of parsing and marshalling logic that are common across more than one of standalone.xml, domain.xml and host.xml.
  *
+ * Note: On adding version specific parse methods to this class these MUST be private and the existing non-versioned method
+ * handle the version switch.  This class is used by WildFly so we need to ensure the methods made accessible are those
+ * that can be used and will not be renamed.
+ *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
@@ -1188,8 +1192,7 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
         }
     }
 
-    // TODO - Once WFLY-3710 is committed make this method private.
-    protected void parseVault_1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseVault_1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         final int vaultAttribCount = reader.getAttributeCount();
 
         ModelNode vault = new ModelNode();
@@ -1230,15 +1233,7 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
         list.add(vault);
     }
 
-    // TODO - Once WFLY-3710 is committed delete this method.
-    /** @deprecated kept for compatibility purposes with AppClientXml */
-    @Deprecated
-    protected final void parseVault_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
-        parseVault_1_6_and_3_0(reader, address, expectedNs, list);
-    }
-
-    // TODO - Once WFLY-3710 is committed make this method private.
-    protected void parseVault_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseVault_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         final int vaultAttribCount = reader.getAttributeCount();
 
         ModelNode vault = new ModelNode();
