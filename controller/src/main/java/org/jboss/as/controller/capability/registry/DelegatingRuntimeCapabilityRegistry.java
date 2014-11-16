@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import org.jboss.as.controller.PathAddress;
+
 /**
  * {@link RuntimeCapabilityRegistry} implementation that simply delegates to another
  * {@link RuntimeCapabilityRegistry}. Intended as a convenience class to allow overriding
@@ -81,13 +83,13 @@ public class DelegatingRuntimeCapabilityRegistry implements RuntimeCapabilityReg
     }
 
     @Override
-    public void removeCapabilityRequirement(RequirementRegistration requirementRegistration) {
+    public void removeCapabilityRequirement(RuntimeRequirementRegistration requirementRegistration) {
         getDelegate().removeCapabilityRequirement(requirementRegistration);
     }
 
     @Override
-    public RuntimeCapabilityRegistration removeCapability(String capability, CapabilityContext context) {
-        return getDelegate().removeCapability(capability, context);
+    public RuntimeCapabilityRegistration removeCapability(String capability, CapabilityContext context, PathAddress registrationPoint) {
+        return getDelegate().removeCapability(capability, context, registrationPoint);
     }
 
     @Override
