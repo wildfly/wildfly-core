@@ -126,14 +126,14 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build(); // TODO - We need some nice access constraints.
+            .build();
 
     public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build(); // TODO - We need some nice access constraints.
+            .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURITY_REALM, SOCKET_BINDING,
                                                                                                  SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME};
