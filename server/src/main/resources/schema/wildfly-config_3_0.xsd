@@ -837,8 +837,6 @@
                 <xs:annotation>
                     <xs:documentation>
                         Configuration to enable Kerberos authentication.
-                        
-                        Currently only supported for HTTP.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element> 
