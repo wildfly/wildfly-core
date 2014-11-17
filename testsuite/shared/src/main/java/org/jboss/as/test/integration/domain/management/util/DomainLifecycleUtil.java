@@ -148,6 +148,11 @@ public class DomainLifecycleUtil {
                         .addProcessControllerJavaOptions(javaOpts);
             }
 
+            final String jbossArgs = System.getProperty("jboss.domain.server.args");
+            if (jbossArgs != null) {
+                commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
+            }
+
             // Set the Java Home for the servers
             if (configuration.getJavaHome() != null) {
                 commandBuilder.setServerJavaHome(configuration.getJavaHome());
