@@ -109,7 +109,9 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
         return this;
     }
 
-    public boolean isReady() {
+    @Override
+    public boolean isReadyForHttpChallenge() {
+        // Can't check so assume it is ready.
         return true;
     }
 

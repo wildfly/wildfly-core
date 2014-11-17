@@ -54,7 +54,7 @@ abstract class RealmReadinessHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        if (securityRealm == null || securityRealm.isReady() || clientCertPotentiallyPossible(exchange)) {
+        if (securityRealm == null || securityRealm.isReadyForHttpChallenge() || clientCertPotentiallyPossible(exchange)) {
             next.handleRequest(exchange);
         } else {
             try {
