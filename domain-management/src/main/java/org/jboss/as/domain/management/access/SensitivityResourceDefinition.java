@@ -272,6 +272,16 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
         }
 
         @Override
+        public boolean isRuntime() {
+            if(includeAddressable && classification.getConfiguredRequiresAccessPermission() != null ||
+                    classification.getConfiguredRequiresReadPermission() != null ||
+                    classification.getConfiguredRequiresWritePermission() != null) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
         public void writeModel(ModelNode newModel) {
 
             // Called on a slave host controller during boot
