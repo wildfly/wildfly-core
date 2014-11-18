@@ -24,6 +24,7 @@ package org.jboss.as.cli;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.jboss.as.cli.impl.CommandCandidatesProvider;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -80,6 +81,8 @@ public class CommandCompleter implements CommandLineCompleter {
             candidates.add(OperationFormat.INSTANCE.getAddressOperationSeparator());
             return 0;
         }
+
+        buffer = Pattern.compile("/+").matcher(buffer).replaceAll("/");
 
         final DefaultCallbackHandler parsedCmd = (DefaultCallbackHandler) ctx.getParsedCommandLine();
         try {
