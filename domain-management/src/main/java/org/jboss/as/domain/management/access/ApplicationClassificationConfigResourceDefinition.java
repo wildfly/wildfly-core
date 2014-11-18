@@ -173,6 +173,11 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
         }
 
         @Override
+        public boolean isRuntime() {
+            return applicationType.getConfiguredApplication() != null;
+        }
+
+        @Override
         public boolean isModelDefined() {
             return true;
         }
