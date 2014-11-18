@@ -314,10 +314,14 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(PathResourceDefinition.createNamed(pathManager));
         ResourceDefinition domainDeploymentDefinition = isMaster
                 ? DomainDeploymentResourceDefinition.createForDomainMaster(contentRepo)
-                : DomainDeploymentResourceDefinition.createForDomainSlave(environment.isBackupDomainFiles(), fileRepository);
+                : DomainDeploymentResourceDefinition.createForDomainSlave(environment.isBackupDomainFiles(), fileRepository, contentRepo);
         resourceRegistration.registerSubModel(domainDeploymentDefinition);
         resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(true, contentRepo, fileRepository));
-        resourceRegistration.registerSubModel(new ServerGroupResourceDefinition(isMaster, hostControllerInfo, fileRepository, runtimeIgnoreTransformationRegistry));
+        if(isMaster || environment.isBackupDomainFiles()) {
+            resourceRegistration.registerSubModel(new ServerGroupResourceDefinition(isMaster, hostControllerInfo, fileRepository, runtimeIgnoreTransformationRegistry));
+        } else { //We need a contentRepository as adding a /deployment=* won't reference it.
+            resourceRegistration.registerSubModel(new ServerGroupResourceDefinition(isMaster, hostControllerInfo, fileRepository, contentRepo, runtimeIgnoreTransformationRegistry));
+        }
 
 
         //TODO socket-binding-group currently lives in controller and the child RDs live in domain so they currently need passing in from here

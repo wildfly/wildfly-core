@@ -173,7 +173,7 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
                                 continue;
                             } else if (type.equals(MANAGEMENT_CLIENT_CONTENT) && element.getValue().equals(ROLLOUT_PLANS)) {
                                 // Needs a specialized resource type
-                                temp = new ManagedDMRContentTypeResource(element, ROLLOUT_PLAN, null, contentRepository);
+                                temp = new ManagedDMRContentTypeResource(element, ROLLOUT_PLAN , null, contentRepository);
                                 context.addResource(resourceAddress, temp);
                             }
                         }

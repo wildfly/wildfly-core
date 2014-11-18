@@ -1072,4 +1072,16 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 215, value = "Failed to resume activity %s. To resume normal operation it is recommended that you restart the server.")
     void failedToResume(ServerActivity activity);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 216, value = "Error cleaning obsolete content %s ")
+    void failedToCleanObsoleteContent(String failure);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 217, value = "Error cleaning obsolete content")
+    void failedToCleanObsoleteContent(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 218, value = "Error stopping content repository cleaner")
+    void failedToStopRepositoryCleaner(@Cause Exception e);
 }
