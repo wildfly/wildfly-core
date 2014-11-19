@@ -304,7 +304,9 @@ public class RequestController implements Service<RequestController>, ServerActi
     public void setMaxRequestCount(int maxRequestCount) {
         this.maxRequestCount = maxRequestCount;
         while (!taskQueue.isEmpty() && (activeRequestCount < maxRequestCount || maxRequestCount < 0)) {
-            runQueuedTask(false);
+            if(!runQueuedTask(false)) {
+                break;
+            }
         }
     }
 
@@ -371,12 +373,12 @@ public class RequestController implements Service<RequestController>, ServerActi
      *
      * @param hasPermit If the caller has already called {@link #beginRequest(boolean force)}
      */
-    private void runQueuedTask(boolean hasPermit) {
+    private boolean runQueuedTask(boolean hasPermit) {
         QueuedTask task = null;
         if(!hasPermit) {
             if(!paused) {
                 if (beginRequest(false) == RunResult.REJECTED) {
-                    return;
+                    return false;
                 }
                 task = taskQueue.poll();
             } else {
@@ -394,11 +396,11 @@ public class RequestController implements Service<RequestController>, ServerActi
                 //was never guarenteed. if we push them back onto the front we will need to just go through them again
                 taskQueue.addAll(storage);
                 if(task == null) {
-                    return;
+                    return false;
                 }
                 //after all that we are at the max request limit anyway
                 if (beginRequest(true) == RunResult.REJECTED) {
-                    return;
+                    return false;
                 }
             }
         }
@@ -406,8 +408,10 @@ public class RequestController implements Service<RequestController>, ServerActi
             if(!task.runRequest()) {
                 decrementRequestCount();
             }
+            return true;
         } else {
             decrementRequestCount();
+            return false;
         }
     }
 
