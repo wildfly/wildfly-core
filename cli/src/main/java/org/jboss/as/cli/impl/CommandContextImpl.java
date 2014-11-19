@@ -170,6 +170,10 @@ import org.xnio.http.RedirectException;
  */
 class CommandContextImpl implements CommandContext, ModelControllerClientFactory.ConnectionCloseHandler {
 
+    public static final boolean isLoggingGloballyEnabled = (System.getProperty("logging.configuration") != null) || // jboss logging set
+                                                           (System.getProperty("log4j.configuration") != null) || // log4j logging set
+                                                           (System.getProperty("java.util.logging.config.file") != null); // jdk logging set
+
     private static final Logger log = Logger.getLogger(CommandContext.class);
 
     /** the cli configuration */
@@ -697,7 +701,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         } else {
             logLevel = Level.INFO;
         }
-        if(log.isEnabled(logLevel)) {
+        if(log.isEnabled(logLevel) && isLoggingGloballyEnabled) {
             log.log(logLevel, message);
         }
 
