@@ -226,7 +226,7 @@ public class GuiMain {
         tabs.addTab("Command Builder", mgtModel);
 
         ManagementModelNode loggingSubsys = mgtModel.findNode("/subsystem=logging/");
-        if (loggingSubsys != null && cliGuiCtx.isStandalone()) {
+        if (loggingSubsys != null && cliGuiCtx.isStandalone() && ServerLogsPanel.isLogDownloadAvailable(cliGuiCtx)) {
             tabs.addTab("Server Logs", new ServerLogsPanel(cliGuiCtx, loggingSubsys));
         }
         tabs.addTab("Output", output);
