@@ -153,6 +153,9 @@ public class DomainTestUtils {
        final ModelNode ret = modelControllerClient.execute(op);
 
        if (! SUCCESS.equals(ret.get(OUTCOME).asString())) {
+           System.out.println("Failed operation:");
+           System.out.println(op);
+           System.out.println("Response:");
            System.out.println(ret);
            throw new MgmtOperationException("Management operation failed.", op, ret);
        }
