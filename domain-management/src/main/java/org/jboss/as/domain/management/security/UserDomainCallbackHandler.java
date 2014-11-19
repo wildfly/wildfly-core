@@ -90,7 +90,8 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
         return Collections.singletonMap(DIGEST_PLAIN_TEXT, Boolean.TRUE.toString());
     }
 
-    public boolean isReady() {
+    @Override
+    public boolean isReadyForHttpChallenge() {
         return true;
     }
 
