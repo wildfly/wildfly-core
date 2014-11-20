@@ -28,8 +28,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jboss.as.controller.HashUtil;
 
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
@@ -128,6 +131,17 @@ public final class DeploymentUtils {
         return hashes;
     }
 
+    public static Set<String> getDeploymentHexHash(ModelNode deployment){
+        Set<String> hashes = new HashSet<String>();
+        if (deployment.hasDefined(CONTENT)) {
+            for (ModelNode contentElement : deployment.get(CONTENT).asList()) {
+                if (contentElement.hasDefined(HASH)) {
+                    hashes.add(HashUtil.bytesToHexString(contentElement.get(HASH).asBytes()));
+                }
+            }
+        }
+        return hashes;
+    }
     /**
      * Set the enabled-time{stamp} attribute of deployment to the current timestamp. Useful to track the deployment enable events.
      *

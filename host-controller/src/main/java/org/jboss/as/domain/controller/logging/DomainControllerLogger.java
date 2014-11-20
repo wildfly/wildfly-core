@@ -25,6 +25,7 @@ package org.jboss.as.domain.controller.logging;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONCURRENT_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -727,4 +728,7 @@ public interface DomainControllerLogger extends BasicLogger {
     @Message(id = 72, value = "Caught IOException reading uploaded deployment content")
     OperationFailedException caughtIOExceptionUploadingContent(@Cause IOException cause);
 
+    @LogMessage(level = WARN)
+    @Message(id = 73, value = "%s deployment has been re-deployed, its content will not be removed. You will need to restart it.")
+    void undeployingDeploymentHasBeenRedeployed(String deploymentName);
 }
