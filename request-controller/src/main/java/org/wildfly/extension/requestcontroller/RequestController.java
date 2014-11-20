@@ -77,6 +77,12 @@ public class RequestController implements Service<RequestController>, ServerActi
     @SuppressWarnings("unused")
     private volatile ServerActivityCallback listener = null;
 
+    private final boolean trackIndividualControlPoints;
+
+    public RequestController(boolean trackIndividualControlPoints) {
+        this.trackIndividualControlPoints = trackIndividualControlPoints;
+    }
+
     @Override
     public void preSuspend(ServerActivityCallback listener) {
         listener.done();
@@ -201,11 +207,11 @@ public class RequestController implements Service<RequestController>, ServerActi
         return new RequestControllerState(paused, activeRequestCount, maxRequestCount, eps);
     }
 
-    RunResult beginRequest() {
+    RunResult beginRequest(boolean force) {
         int maxRequests = maxRequestCount;
         int active = activeRequestCountUpdater.get(this);
         boolean success = false;
-        while ((maxRequests <= 0 || active < maxRequests) && !paused) {
+        while ((maxRequests <= 0 || active < maxRequests) && (!paused || force)) {
             if (activeRequestCountUpdater.compareAndSet(this, active, active + 1)) {
                 success = true;
                 break;
@@ -217,7 +223,7 @@ public class RequestController implements Service<RequestController>, ServerActi
             //this is necessary because there is a race between checking paused and updating active requests
             //if this happens we just call requestComplete(), as the listener can only be invoked once it does not
             //matter if it has already been invoked
-            if(paused) {
+            if(!force && paused) {
                 requestComplete();
                 return RunResult.REJECTED;
             }
@@ -226,7 +232,6 @@ public class RequestController implements Service<RequestController>, ServerActi
             return RunResult.REJECTED;
         }
     }
-
 
     void requestComplete() {
         runQueuedTask(true);
@@ -262,7 +267,7 @@ public class RequestController implements Service<RequestController>, ServerActi
         ControlPointIdentifier id = new ControlPointIdentifier(deploymentName, entryPointName);
         ControlPoint ep = entryPoints.get(id);
         if (ep == null) {
-            ep = new ControlPoint(this, deploymentName, entryPointName);
+            ep = new ControlPoint(this, deploymentName, entryPointName, trackIndividualControlPoints);
             entryPoints.put(id, ep);
         }
         ep.increaseReferenceCount();
@@ -342,14 +347,14 @@ public class RequestController implements Service<RequestController>, ServerActi
         return activeRequestCount;
     }
 
-    void queueTask(ControlPoint controlPoint, Runnable task, Executor taskExecutor, long timeout, Runnable timeoutTask, boolean rejectOnSuspend) {
+    void queueTask(ControlPoint controlPoint, Runnable task, Executor taskExecutor, long timeout, Runnable timeoutTask, boolean rejectOnSuspend, boolean forceRun) {
         if(paused) {
-            if(rejectOnSuspend) {
+            if(rejectOnSuspend && !forceRun) {
                 taskExecutor.execute(timeoutTask);
                 return;
             }
         }
-        QueuedTask queuedTask = new QueuedTask(taskExecutor, task, timeoutTask, controlPoint);
+        QueuedTask queuedTask = new QueuedTask(taskExecutor, task, timeoutTask, controlPoint, forceRun);
         taskQueue.add(queuedTask);
         runQueuedTask(false);
         if(queuedTask.isQueued()) {
@@ -364,15 +369,39 @@ public class RequestController implements Service<RequestController>, ServerActi
      *
      * Note that this will decrement the request count if there are no queued tasks to be run
      *
-     * @param hasPermit If the caller has already called {@link #beginRequest()}
+     * @param hasPermit If the caller has already called {@link #beginRequest(boolean force)}
      */
     private void runQueuedTask(boolean hasPermit) {
+        QueuedTask task = null;
         if(!hasPermit) {
-            if(beginRequest() == RunResult.REJECTED) {
-                return;
+            if(!paused) {
+                if (beginRequest(false) == RunResult.REJECTED) {
+                    return;
+                }
+                task = taskQueue.poll();
+            } else {
+                //the container is suspended, but we still need to run any force queued tasks
+                List<QueuedTask> storage = new ArrayList<>();
+                while (task == null && !taskQueue.isEmpty()) {
+                    QueuedTask tmp = taskQueue.poll();
+                    if(tmp.forceRun) {
+                        task = tmp;
+                    } else {
+                        storage.add(tmp);
+                    }
+                }
+                //this screws the order somewhat, but the container is suspending anyway, and the order
+                //was never guarenteed. if we push them back onto the front we will need to just go through them again
+                taskQueue.addAll(storage);
+                if(task == null) {
+                    return;
+                }
+                //after all that we are at the max request limit anyway
+                if (beginRequest(true) == RunResult.REJECTED) {
+                    return;
+                }
             }
         }
-        QueuedTask task = taskQueue.poll();
         if(task != null) {
             if(!task.runRequest()) {
                 decrementRequestCount();
@@ -423,17 +452,19 @@ public class RequestController implements Service<RequestController>, ServerActi
         private final Runnable task;
         private final Runnable cancelTask;
         private final ControlPoint controlPoint;
+        private final boolean forceRun;
 
         //0 == queued
         //1 == run
         //2 == cancelled
         private final AtomicInteger state = new AtomicInteger(0);
 
-        private QueuedTask(Executor executor, Runnable task, Runnable cancelTask, ControlPoint controlPoint) {
+        private QueuedTask(Executor executor, Runnable task, Runnable cancelTask, ControlPoint controlPoint, boolean forceRun) {
             this.executor = executor;
             this.task = task;
             this.cancelTask = cancelTask;
             this.controlPoint = controlPoint;
+            this.forceRun = forceRun;
         }
 
         @Override

@@ -30,4 +30,5 @@ package org.wildfly.extension.requestcontroller;
 interface Constants {
     String MAX_REQUESTS = "max-requests";
     String ACTIVE_REQUESTS = "active-requests";
+    String TRACK_INDIVIDUAL_ENDPOINTS = "track-individual-endpoints";
 }

@@ -41,5 +41,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="max-requests" type="xs:int" default="-1" />
+        <xs:attribute name="track-individual-endpoints" type="xs:boolean" default="false" />
     </xs:complexType>
 </xs:schema>

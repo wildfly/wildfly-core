@@ -26,6 +26,7 @@ import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * Reads handler for active requests
@@ -34,15 +35,15 @@ import org.jboss.dmr.ModelNode;
  */
 class ActiveRequestsReadHandler extends AbstractRuntimeOnlyHandler {
 
-    private final RequestController requestController;
-
-    ActiveRequestsReadHandler(final RequestController requestController) {
-        this.requestController = requestController;
-    }
-
     @Override
     protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-        context.getResult().set(requestController.getActiveRequestCount());
+        ServiceController<?> service = context.getServiceRegistry(false).getService(RequestController.SERVICE_NAME);
+        if(service != null) {
+            RequestController requestController = (RequestController) service.getService().getValue();
+            context.getResult().set(requestController.getActiveRequestCount());
+        } else {
+            context.getResult().set(-1);
+        }
         context.stepCompleted();
     }
 }

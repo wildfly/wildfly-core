@@ -25,6 +25,7 @@
 package org.wildfly.extension.requestcontroller;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
@@ -34,6 +35,8 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 
+import java.util.Collection;
+
 
 /**
  * Handler responsible for adding the subsystem resource to the model
@@ -42,11 +45,8 @@ import org.jboss.dmr.ModelNode;
  */
 class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
-    private final RequestController requestController;
-
-    RequestControllerSubsystemAdd(RequestController requestController) {
-        super(RequestControllerRootDefinition.ATTRIBUTES);
-        this.requestController = requestController;
+    RequestControllerSubsystemAdd(Collection<AttributeDefinition> attributeDefinitions) {
+        super(attributeDefinitions);
     }
 
     /**
@@ -65,6 +65,10 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
         }, OperationContext.Stage.RUNTIME);
 
         int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, resource.getModel()).asInt();
+        boolean trackIndividual = RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS.resolveModelAttribute(context, resource.getModel()).asBoolean();
+
+        RequestController requestController = new RequestController(trackIndividual);
+
         requestController.setMaxRequestCount(maxRequests);
 
         context.getServiceTarget().addService(RequestController.SERVICE_NAME, requestController)
