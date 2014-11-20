@@ -314,16 +314,21 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    AbstractResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator) {
+    ManagementResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator) {
         // BES 2011/06/14 I do not see why the IAE makes sense, so...
 //        if (!iterator.hasNext()) {
 //            return this;
 //        }
 //        throw new IllegalArgumentException("Can't get child registrations of a proxy");
-        while (iterator.hasNext())
-            iterator.next();
+        PathAddress childAddress = null;
+        if (iterator.hasNext()) {
+            childAddress = getPathAddress();
+            while (iterator.hasNext()) {
+                childAddress = childAddress.append(iterator.next());
+            }
+        }
         checkPermission();
-        return this;
+        return childAddress == null ? this : new ChildRegistration(childAddress);
     }
 
     @Override
@@ -354,5 +359,68 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     @Override
     protected void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
         throw ControllerLogger.ROOT_LOGGER.proxyHandlerAlreadyRegistered(getLocationString());
+    }
+
+    /**
+     * Registration meant to represent a child registration on the proxied process.
+     * Differs from ProxyControllerRegistration in that it never provides locally
+     * registered handlers or attributes. See WFCORE-229.
+     */
+    private class ChildRegistration extends DelegatingManagementResourceRegistration {
+        private final PathAddress pathAddress;
+
+        public ChildRegistration(PathAddress pathAddress) {
+            super(ProxyControllerRegistration.this);
+            this.pathAddress = pathAddress;
+        }
+
+        @Override
+        public OperationEntry getOperationEntry(PathAddress address, String operationName) {
+            checkPermission();
+            return ProxyControllerRegistration.this.operationEntry;
+        }
+
+        @Override
+        public OperationStepHandler getOperationHandler(PathAddress address, String operationName) {
+            return getOperationEntry(address, operationName).getOperationHandler();
+        }
+
+        @Override
+        public DescriptionProvider getOperationDescription(PathAddress address, String operationName) {
+            return getOperationEntry(address, operationName).getDescriptionProvider();
+        }
+
+        @Override
+        public Set<OperationEntry.Flag> getOperationFlags(PathAddress address, String operationName) {
+            return getOperationEntry(address, operationName).getFlags();
+        }
+
+        @Override
+        public Set<String> getAttributeNames(PathAddress address) {
+            checkPermission();
+            return Collections.emptySet();
+        }
+
+        @Override
+        public AttributeAccess getAttributeAccess(PathAddress address, String attributeName) {
+            checkPermission();
+            return null;
+        }
+
+        @Override
+        public ManagementResourceRegistration getOverrideModel(String name) {
+            checkPermission();
+            return null;
+        }
+
+        @Override
+        public ManagementResourceRegistration getSubModel(PathAddress address) {
+            if (address.size() == 0) {
+                return this;
+            }
+            return new ChildRegistration(pathAddress.append(address));
+        }
+
+        // For all other methods, ProxyControllerRegistration behavior is ok, so delegate
     }
 }

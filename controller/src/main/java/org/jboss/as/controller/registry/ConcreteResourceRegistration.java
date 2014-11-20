@@ -145,9 +145,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (isRuntimeOnly()) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodel();
         }
-        final AbstractResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
-        if (existing != null && existing.getValueString().equals(address.getValue())) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getLocationString());
+        final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
+        if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
+            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
         }
         final String key = address.getKey();
         final NodeSubregistry child = getOrCreateSubregistry(key);
@@ -402,9 +402,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerProxyController(final PathElement address, final ProxyController controller) throws IllegalArgumentException {
-        final AbstractResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
-        if (existing != null && existing.getValueString().equals(address.getValue())) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getLocationString());
+        final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
+        if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
+            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
         }
         getOrCreateSubregistry(address.getKey()).registerProxyController(address.getValue(), controller);
     }
@@ -603,7 +603,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    AbstractResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator) {
+    ManagementResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator) {
         if (! iterator.hasNext()) {
             checkPermission();
             return this;

@@ -47,6 +47,13 @@ public interface ImmutableManagementResourceRegistration {
     RuntimePermission ACCESS_PERMISSION = new RuntimePermission("canAccessManagementResourceRegistration");
 
     /**
+     * Gets the address under which we are registered.
+     *
+     * @return the address. Will not be {@code null}
+     */
+    PathAddress getPathAddress();
+
+    /**
      * Gets whether this model node only exists in the runtime and has no representation in the
      * persistent configuration model.
      *

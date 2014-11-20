@@ -54,6 +54,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     }
 
     @Override
+    public PathAddress getPathAddress() {
+        return delegate.getPathAddress();
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         return delegate.isRuntimeOnly();
     }

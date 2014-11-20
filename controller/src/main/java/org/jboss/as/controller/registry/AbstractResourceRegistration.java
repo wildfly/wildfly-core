@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -44,6 +43,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.dmr.ModelNode;
@@ -409,7 +409,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         return getSubRegistration(address);
     }
 
-    final AbstractResourceRegistration getSubRegistration(PathAddress address) {
+    final ManagementResourceRegistration getSubRegistration(PathAddress address) {
 
 
         if (parent != null) {
@@ -421,18 +421,10 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     }
 
-    abstract AbstractResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator);
-
-    public final String getValueString() {
-        return valueString;
-    }
+    abstract ManagementResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator);
 
     final String getLocationString() {
-        if (parent == null) {
-            return "";
-        } else {
-            return parent.getLocationString() + valueString + ")";
-        }
+        return getPathAddress().toCLIStyleString();
     }
 
     final void getInheritedOperations(final Map<String, OperationEntry> providers, boolean skipSelf) {
@@ -527,7 +519,8 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         throw ControllerLogger.ROOT_LOGGER.resourceRegistrationIsNotAnAlias();
     }
 
-    PathAddress getPathAddress() {
+    @Override
+    public PathAddress getPathAddress() {
         return pathAddress;
     }
 
