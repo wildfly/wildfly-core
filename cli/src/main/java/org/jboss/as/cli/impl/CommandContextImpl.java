@@ -349,6 +349,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         shutdownHook = new CliShutdownHook.Handler() {
             @Override
             public void shutdown() {
+                if (CommandContextImpl.this.console != null) {
+                    CommandContextImpl.this.console.interrupt();
+                }
                 terminateSession();
             }};
         CliShutdownHook.add(shutdownHook);

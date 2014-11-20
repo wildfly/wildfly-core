@@ -72,6 +72,13 @@ public interface Console {
 
     int getTerminalHeight();
 
+    /**
+     * Interrupts blocking readLine method.
+     *
+     * Added as solution to BZ-1149099.
+     */
+    void interrupt();
+
     static final class Factory {
 
         public static Console getConsole(CommandContext ctx) throws CliInitializationException {
@@ -203,7 +210,16 @@ public interface Console {
                     return console.getTerminalSize().getHeight();
                 }
 
-            class HistoryImpl implements CommandHistory {
+                @Override
+                public void interrupt() {
+                    try {
+                        Settings.getInstance().getInputStream().close(); // BZ-1149099 - enables interruption of active prompt
+                    } catch (IOException e) {
+                        //
+                    }
+                }
+
+                class HistoryImpl implements CommandHistory {
 
                 @SuppressWarnings("unchecked")
                 @Override
