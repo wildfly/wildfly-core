@@ -60,6 +60,27 @@ public class ServerLogsPanel extends JPanel {
         add(makeButtonPanel(), BorderLayout.SOUTH);
     }
 
+    /**
+     * Does the server support log downloads?
+     *
+     * @param cliGuiCtx The context.
+     * @return <code>true</code> if the server supports log downloads,
+     *         <code>false</code> otherwise.
+     */
+    public static boolean isLogDownloadAvailable(CliGuiContext cliGuiCtx) {
+        ModelNode readOps = null;
+        try {
+            readOps = cliGuiCtx.getExecutor().doCommand("/subsystem=logging/:read-operation-names");
+        } catch (CommandFormatException | IOException e) {
+            return false;
+        }
+        if (!readOps.get("result").isDefined()) return false;
+        for (ModelNode op:  readOps.get("result").asList()) {
+            if (op.asString().equals("list-log-files")) return true;
+        }
+        return false;
+    }
+
     private JPanel makeButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(new ViewWithCLIButton());
