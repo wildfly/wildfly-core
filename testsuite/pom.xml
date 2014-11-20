@@ -116,6 +116,11 @@
         <!-- Additional JVM args, like those for EC2. -->
         <jvm.args.other>-server</jvm.args.other>
 
+        <!-- Standalone server arguments -->
+        <jboss.args></jboss.args>
+        <!-- Domain server argument -->
+        <jboss.domain.server.args></jboss.domain.server.args>
+
 
         <!-- Logging config -->
         <testLogToFile>true</testLogToFile>
@@ -288,6 +293,8 @@
                             <jboss.home>${basedir}/target/wildfly-core</jboss.home>
                             <org.wildfly.test.kill-servers-before-test>${org.wildfly.test.kill-servers-before-test}</org.wildfly.test.kill-servers-before-test>
                             <management.address>${management.address}</management.address>
+                            <jboss.args>${jboss.args}</jboss.args>
+                            <jboss.domain.server.args>${jboss.domain.server.args}</jboss.domain.server.args>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -389,18 +396,19 @@
             </properties>
         </profile>
 
-
-
-        <!-- Security Manager Other -->
+        <!-- Security manager. -->
         <profile>
-            <id>ts.security.manager.other</id>
+            <id>ts.security.manager</id>
             <activation>
                 <property>
-                    <name>security.manager.other</name>
+                    <name>security.manager</name>
                 </property>
             </activation>
             <properties>
-                <jvm.args.securityManagerOther>${security.manager.other}</jvm.args.securityManagerOther>
+                <!-- Standalone security manager argument -->
+                <jboss.args>-secmgr</jboss.args>
+                <!-- Domain security manager argument -->
+                <jboss.domain.server.args>-secmgr</jboss.domain.server.args>
             </properties>
         </profile>
         <!-- -Dts.patching -->

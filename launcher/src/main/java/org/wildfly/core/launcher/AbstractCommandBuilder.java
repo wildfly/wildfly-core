@@ -450,7 +450,11 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      */
     public T addServerArgument(final String arg) {
         if (arg != null) {
-            serverArgs.add(arg);
+            if (SECURITY_MANAGER_ARG.equals(arg)) {
+                setUseSecurityManager(true);
+            } else {
+                serverArgs.add(arg);
+            }
         }
         return getThis();
     }
