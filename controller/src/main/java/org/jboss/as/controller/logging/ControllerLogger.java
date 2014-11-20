@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.logging;
 
+import static org.jboss.logging.annotations.Message.NONE;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
@@ -52,7 +53,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller._private.OperationCancellationException;
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.notification.Notification;
@@ -3221,8 +3221,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 361, value = "Capabilities cannot be queried in stage '%s'; they are not available until stage '%s'.")
     IllegalStateException capabilitiesNotAvailable(OperationContext.Stage currentStage, OperationContext.Stage runtime);
 
-    @Message(id = 362, value = "Capability '%s' is already registered.")
-    IllegalStateException capabilityAlreadyRegistered(RuntimeCapability capability);
+    @Message(id = 362, value = "Capabilities required by resource '%s' are not available:")
+    String requiredCapabilityMissing(String demandingAddress);
 
     @Message(id = 363, value = "Capability '%s' is already registered in context '%s.")
     IllegalStateException capabilityAlreadyRegisteredInContext(String capability, String context);
@@ -3242,20 +3242,22 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 368, value = "Cannot remove capability '%s' from context '%s' as it is required by other capabilities:")
     String cannotRemoveRequiredCapabilityInContext(String capability, String context);
 
-    @Message(id = 369, value = "capability '%s' requires it for address '%s'")
-    String requirementPointSimple(String capability, String requestingAddress);
-
-    @Message(id = 370, value = "capability '%s' requires it for attribute '%s' at address '%s'")
-    String requirementPointFull(String capability, String attribute, String requestingAddress);
-
-    @Message(id = 371, value = "Required capabilities are not available:")
+    @Message(id = 369, value = "Required capabilities are not available:")
     String requiredCapabilityMissing();
 
-    @Message(id = 372, value = "    %s")
+    @Message(id = NONE, value = "capability '%s' requires it for address '%s'")
+    String requirementPointSimple(String capability, String requestingAddress);
+
+    @Message(id = NONE, value = "capability '%s' requires it for attribute '%s' at address '%s'")
+    String requirementPointFull(String capability, String attribute, String requestingAddress);
+
+    @Message(id = NONE, value = "    %s")
     String formattedCapabilityName(String capability);
 
-    @Message(id = 373, value = "    %s in context '%s'")
+    @Message(id = NONE, value = "    %s in context '%s'")
     String formattedCapabilityId(String capability, String context);
+
+    // TODO use 370-373 for the next messages!
 
     @Message(id = 374, value = "Unable to resolve expressions at this location.")
     OperationFailedException unableToResolveExpressions();
@@ -3278,4 +3280,6 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 380, value="Attribute '%s' needs to be set or passed before attribute '%s' can be correctly set")
     OperationFailedException requiredAttributeNotSet(String required, String name);
+
+    // TODO use 370-373 for the next messages!
 }

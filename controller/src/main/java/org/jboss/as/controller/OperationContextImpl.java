@@ -279,7 +279,11 @@ final class OperationContextImpl extends AbstractOperationContext {
                             msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointFull(reg.getDependentName(), rp.getAttribute(), rp.getAddress().toCLIStyleString()));
                         }
                     }
-                    guilty.response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    String msgString = msg.toString();
+                    guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    if (isBooting()) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
+                        ControllerLogger.ROOT_LOGGER.error(guilty.address.toCLIStyleString() + " -- " + msgString);
+                    }
                 } else {
                     // Problem wasn't a capability removal.
                     // See what step(s) added this requirement
@@ -297,17 +301,31 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
             // Change the response for all steps that added an unfulfilled requirement
             for (Map.Entry<Step, Set<CapabilityId>> entry : missingForStep.entrySet()) {
-                ModelNode response = entry.getKey().response;
-                if (!response.hasDefined(FAILURE_DESCRIPTION)) {
-                    StringBuilder msg = new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
-                    for (CapabilityId id : entry.getValue()) {
-                        if (ignoreContext) {
-                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName()));
-                        } else {
-                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getContext().getName()));
-                        }
+                Step step = entry.getKey();
+                ModelNode response = step.response;
+                // only overwrite reponse failure-description if there isn't one
+                StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
+                        ? null
+                        : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
+                StringBuilder bootMsg = isBooting()
+                        ? new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString()))
+                        : null;
+                for (CapabilityId id : entry.getValue()) {
+                    String formattedCapability = ignoreContext
+                            ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
+                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getContext().getName());
+                    if (msg != null) {
+                        msg = msg.append('\n').append(formattedCapability);
                     }
+                    if (bootMsg != null) {
+                        bootMsg = bootMsg.append(System.lineSeparator()).append(formattedCapability);
+                    }
+                }
+                if (msg != null) {
                     response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                }
+                if (bootMsg != null) {
+                    ControllerLogger.ROOT_LOGGER.error(bootMsg.toString());
                 }
             }
         }
