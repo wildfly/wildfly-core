@@ -646,18 +646,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         try {
             handle(line);
         } catch(Throwable t) {
-            final StringBuilder buf = new StringBuilder();
-            buf.append(t.getLocalizedMessage());
-            Throwable t1 = t.getCause();
-            while(t1 != null) {
-                if(t1.getLocalizedMessage() != null) {
-                    buf.append(": ").append(t1.getLocalizedMessage());
-                } else {
-                    buf.append(": ").append(t1.getClass().getName());
-                }
-                t1 = t1.getCause();
-            }
-            error(buf.toString());
+            error(Util.getMessagesFromThrowable(t));
         }
     }
 

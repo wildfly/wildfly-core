@@ -132,7 +132,7 @@ public class VaultPasswordsInCLITestCase {
     public void testWrongVaultPassword() throws InterruptedException, IOException {
 
         String cliOutput = CustomCLIExecutor.execute(WRONG_VAULT_PASSWORD_FILE, TESTING_OPERATION);
-        assertThat("Password should be wrong", cliOutput, containsString("CliInitializationException"));
+        assertThat("Password should be wrong", cliOutput, containsString("Keystore was tampered with, or password was incorrect"));
 
     }
 
