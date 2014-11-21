@@ -84,7 +84,7 @@ public class ResolveExpressionHandler implements OperationStepHandler {
                 } catch (SecurityException e) {
                     throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(toResolve, e));
                 } catch (IllegalStateException e) {
-                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve, e));
+                    throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve.asString());
                 }
             }
         }, OperationContext.Stage.RUNTIME);
