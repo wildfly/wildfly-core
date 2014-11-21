@@ -27,12 +27,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
@@ -164,12 +164,6 @@ abstract class TransformationRule {
                 return immutable ? new ProtectedModelResource<Resource>(resource) : resource;
             }
             return null;
-        }
-
-        @Override
-        @Deprecated
-        public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-            return delegate.resolveExpressions(node);
         }
 
         @Override

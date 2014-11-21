@@ -310,11 +310,6 @@ public class OperationTransformationTestCase {
         }
 
         @Override
-        public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-            return node;
-        }
-
-        @Override
         public TransformersLogger getLogger() {
             return TransformersLogger.getLogger(getTarget());
         }
@@ -369,12 +364,6 @@ public class OperationTransformationTestCase {
         @Override
         public Resource readResourceFromRoot(PathAddress address) {
             return null;
-        }
-
-        @Override
-        @Deprecated
-        public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-            return node.resolve();
         }
 
         @Override

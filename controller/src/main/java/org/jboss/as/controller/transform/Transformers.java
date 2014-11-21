@@ -109,7 +109,7 @@ public interface Transformers {
         }
 
         public static ResourceTransformationContext create(TransformationTarget target, Resource model, ImmutableManagementResourceRegistration registration, ExpressionResolver resolver, RunningMode runningMode, ProcessType type) {
-            return ResourceTransformationContextImpl.create(target, model, registration, resolver, runningMode, type, false);
+            return ResourceTransformationContextImpl.create(target, model, registration, runningMode, type, false);
         }
     }
 

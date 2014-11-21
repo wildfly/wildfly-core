@@ -289,12 +289,6 @@ public class HostInfoUnitTestCase {
         }
 
         @Override
-        @Deprecated
-        public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-            return null;
-        }
-
-        @Override
         public TransformersLogger getLogger() {
             return null;
         }

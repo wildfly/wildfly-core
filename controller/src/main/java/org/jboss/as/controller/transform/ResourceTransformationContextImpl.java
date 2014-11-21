@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import java.util.Iterator;
 import java.util.Set;
 
-import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -60,14 +59,13 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         final Resource root = Resource.Factory.create();
         final Resource original = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true);
         final ImmutableManagementResourceRegistration registration = context.getRootResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS);
-        final ExpressionResolver expressionResolver = TransformerExpressionResolver.create(context, target.getTargetType());
-        final OriginalModel originalModel = new OriginalModel(original, context.getRunningMode(), context.getProcessType(), target, registration, expressionResolver);
+        final OriginalModel originalModel = new OriginalModel(original, context.getRunningMode(), context.getProcessType(), target, registration);
         return new ResourceTransformationContextImpl(root, current, read, originalModel, skipRuntimeIgnoreCheck);
     }
 
-    static ResourceTransformationContext create(TransformationTarget target, Resource model, ImmutableManagementResourceRegistration registration, ExpressionResolver resolver, RunningMode runningMode, ProcessType type, boolean skipRuntimeIgnoreCheck) {
+    static ResourceTransformationContext create(TransformationTarget target, Resource model, ImmutableManagementResourceRegistration registration, RunningMode runningMode, ProcessType type, boolean skipRuntimeIgnoreCheck) {
         final Resource root = Resource.Factory.create();
-        final OriginalModel originalModel = new OriginalModel(model, runningMode, type, target, registration, resolver);
+        final OriginalModel originalModel = new OriginalModel(model, runningMode, type, target, registration);
         return new ResourceTransformationContextImpl(root, PathAddress.EMPTY_ADDRESS, originalModel, skipRuntimeIgnoreCheck);
     }
 
@@ -97,7 +95,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         assert originalModel.target instanceof TransformationTargetImpl : "Wrong target";
         TransformationTargetImpl tgt = (TransformationTargetImpl)originalModel.target;
         TransformationTargetImpl targetCopy = tgt.copyWithplaceholderResolver(placeholderResolver);
-        OriginalModel originalModelCopy = new OriginalModel(originalModel.original, originalModel.mode, originalModel.type, targetCopy, originalModel.registration, originalModel.expressionResolver);
+        OriginalModel originalModelCopy = new OriginalModel(originalModel.original, originalModel.mode, originalModel.type, targetCopy, originalModel.registration);
         return new ResourceTransformationContextImpl(this, originalModelCopy);
     }
 
@@ -106,7 +104,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         TransformationTargetImpl tgt = (TransformationTargetImpl)originalModel.target;
         TransformationTargetImpl targetCopy = tgt.copyWithplaceholderResolver(placeholderResolver);
         final OriginalModel originalModelCopy = new OriginalModel(root, originalModel.mode,
-                originalModel.type, targetCopy, originalModel.registration, originalModel.expressionResolver);
+                originalModel.type, targetCopy, originalModel.registration);
         ResourceTransformationContext copy = new ResourceTransformationContextImpl(this, originalModelCopy);
         Resource root = copy.getTransformedRoot();
         if (current.size() > 0) {
@@ -316,11 +314,6 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     }
 
     @Override
-    public ModelNode resolveExpressions(final ModelNode node) throws OperationFailedException {
-        return originalModel.expressionResolver.resolveExpressions(node);
-    }
-
-    @Override
     public Resource getTransformedRoot() {
         return root;
     }
@@ -363,15 +356,13 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         private final ProcessType type;
         private final TransformationTarget target;
         private final ImmutableManagementResourceRegistration registration;
-        private final ExpressionResolver expressionResolver;
 
-        OriginalModel(Resource original, RunningMode mode, ProcessType type, TransformationTarget target, ImmutableManagementResourceRegistration registration, ExpressionResolver expressionResolver) {
+        OriginalModel(Resource original, RunningMode mode, ProcessType type, TransformationTarget target, ImmutableManagementResourceRegistration registration) {
             this.original = original;
             this.mode = mode;
             this.type = type;
             this.target = target;
             this.registration = registration;
-            this.expressionResolver = expressionResolver;
         }
 
         Resource get(final PathAddress address) {
