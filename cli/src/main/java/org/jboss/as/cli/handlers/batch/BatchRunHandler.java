@@ -41,6 +41,7 @@ import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -67,9 +68,22 @@ public class BatchRunHandler extends BaseOperationCommand {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
 
+        final boolean v = verbose.isPresent(ctx.getParsedCommandLine());
+
+        final ModelNode response;
         boolean failed = false;
         try {
-            super.doHandle(ctx);
+            final ModelNode request = buildRequest(ctx);
+
+            final ModelControllerClient client = ctx.getModelControllerClient();
+            try {
+                response = client.execute(request);
+            } catch(Exception e) {
+                throw new CommandFormatException("Failed to perform operation: " + e.getLocalizedMessage());
+            }
+            if (!Util.isSuccess(response)) {
+                throw new CommandFormatException(Util.getFailureDescription(response));
+            }
         } catch(CommandLineException e) {
             failed = true;
             throw new CommandLineException("The batch failed with the following error "
@@ -80,6 +94,13 @@ public class BatchRunHandler extends BaseOperationCommand {
                     ctx.getBatchManager().discardActiveBatch();
                 }
             }
+        }
+
+        if(v) {
+            ctx.printLine(response.toString());
+        } else {
+            ctx.printLine("The batch executed successfully");
+            super.handleResponse(ctx, response, true);
         }
     }
 
@@ -155,12 +176,7 @@ public class BatchRunHandler extends BaseOperationCommand {
 
     @Override
     protected void handleResponse(CommandContext ctx, ModelNode response, boolean composite) throws CommandLineException {
-        if(verbose.isPresent(ctx.getParsedCommandLine())) {
-            ctx.printLine(response.toString());
-        } else {
-            ctx.printLine("The batch executed successfully");
-            super.handleResponse(ctx, response, composite);
-        }
+        throw new UnsupportedOperationException();
     }
 
     @Override
