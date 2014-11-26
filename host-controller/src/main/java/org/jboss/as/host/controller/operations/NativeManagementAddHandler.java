@@ -33,6 +33,9 @@ import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.remoting3.RemotingOptions;
+import org.xnio.OptionMap;
+import org.xnio.OptionMap.Builder;
 
 /**
  * @author Emanuel Muckenhuber
@@ -65,7 +68,8 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         final boolean onDemand = context.isBooting();
         NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(false), onDemand);
 
-        installNativeManagementServices(serviceTarget, hostControllerInfo);
+        OptionMap options = createConnectorOptions(context, model);
+        installNativeManagementServices(serviceTarget, hostControllerInfo, options);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -76,7 +80,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         hostControllerInfo.setNativeManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
     }
 
-    public static void installNativeManagementServices(final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo) {
+    public static void installNativeManagementServices(final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo, final OptionMap options) {
 
         String nativeSecurityRealm = hostControllerInfo.getNativeManagementSecurityRealm();
 
@@ -84,8 +88,20 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
                 NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
 
         ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), nativeSecurityRealm, NativeManagementServices.CONNECTION_OPTIONS);
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), nativeSecurityRealm, options);
+    }
 
+    private static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {
+        Builder builder = OptionMap.builder();
+
+        builder.addAll(NativeManagementServices.CONNECTION_OPTIONS);
+        builder.set(RemotingOptions.SASL_PROTOCOL, NativeManagementResourceDefinition.SASL_PROTOCOL.resolveModelAttribute(context, model).asString());
+        ModelNode serverName = NativeManagementResourceDefinition.SERVER_NAME.resolveModelAttribute(context, model);
+        if (serverName.isDefined()) {
+            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
+        }
+
+        return builder.getMap();
     }
 
 }
