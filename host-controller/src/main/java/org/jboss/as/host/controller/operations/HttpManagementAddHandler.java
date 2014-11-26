@@ -28,6 +28,7 @@ import static org.jboss.as.host.controller.resources.HttpManagementResourceDefin
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -60,7 +61,9 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
+import org.xnio.OptionMap.Builder;
 
 /**
  * A handler that activates the HTTP management API.
@@ -101,7 +104,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         // DomainModelControllerService requires this service
         final boolean onDemand = context.isBooting();
         boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, onDemand, httpUpgrade, context.getServiceRegistry(false));
+        OptionMap options = createConnectorOptions(context, model);
+        installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, onDemand, httpUpgrade, context.getServiceRegistry(false), options);
     }
 
     @Override
@@ -124,7 +128,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
     public static void installHttpManagementServices(final RunningMode runningMode, final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo,
                                                      final HostControllerEnvironment environment,
-                                                     boolean onDemand, boolean httpUpgrade, final ServiceRegistry serviceRegistry) {
+                                                     boolean onDemand, boolean httpUpgrade, final ServiceRegistry serviceRegistry, final OptionMap options) {
 
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
         int port = hostControllerInfo.getHttpManagementPort();
@@ -193,8 +197,21 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
-            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, OptionMap.EMPTY);
+            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, options);
         }
 
     }
+
+    static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {
+        Builder builder = OptionMap.builder();
+
+        builder.set(RemotingOptions.SASL_PROTOCOL, HttpManagementResourceDefinition.SASL_PROTOCOL.resolveModelAttribute(context, model).asString());
+        ModelNode serverName = HttpManagementResourceDefinition.SERVER_NAME.resolveModelAttribute(context, model);
+        if (serverName.isDefined()) {
+            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
+        }
+
+        return builder.getMap();
+    }
+
 }

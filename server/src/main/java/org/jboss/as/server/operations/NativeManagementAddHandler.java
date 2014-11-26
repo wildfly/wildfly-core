@@ -40,12 +40,15 @@ import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
+import org.xnio.OptionMap.Builder;
 
 /**
  * The Add handler for the Native Interface when running a standalone server.
@@ -153,7 +156,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
         RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath);
 //        final OptionMap options = OptionMap.builder().set(RemotingOptions.HEARTBEAT_INTERVAL, 30000).set(Options.READ_TIMEOUT, 65000).getMap();
-        final OptionMap options = OptionMap.EMPTY;
+        final OptionMap options = createConnectorOptions(context, model);
         if (socketBindingServiceName == null) {
             ManagementRemotingServices.installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR, interfaceSvcName, port, options);
@@ -163,6 +166,18 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
                     socketBindingServiceName, options);
         }
 
+    }
+
+    private static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {
+        Builder builder = OptionMap.builder();
+
+        builder.set(RemotingOptions.SASL_PROTOCOL, NativeManagementResourceDefinition.SASL_PROTOCOL.resolveModelAttribute(context, model).asString());
+        ModelNode serverName = NativeManagementResourceDefinition.SERVER_NAME.resolveModelAttribute(context, model);
+        if (serverName.isDefined()) {
+            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
+        }
+
+        return builder.getMap();
     }
 
 }
