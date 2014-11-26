@@ -70,6 +70,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     private boolean operationComplete;
     private String operationName;
     private OperationRequestAddress address;
+    private boolean addressChanged;
     private Map<String, String> props = Collections.emptyMap();
     private List<String> otherArgs = Collections.emptyList();
     private String outputTarget;
@@ -150,6 +151,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         operationComplete = false;
         operationName = null;
         address = null;
+        addressChanged = false;
         props = Collections.emptyMap();
         otherArgs = Collections.emptyList();
         outputTarget = null;
@@ -491,7 +493,10 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     }
 
     @Override
-    public void rootNode(int index) {
+    public void rootNode(int index) throws OperationFormatException {
+        if(addressChanged) {
+            throw new OperationFormatException("Can't reset to root in the middle of the path @" + index);
+        }
         if(address == null) {
             address = new DefaultOperationRequestAddress();
         } else {
@@ -499,6 +504,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         }
         separator = SEPARATOR_NONE;
         lastChunkIndex = index;
+        addressChanged = true;
     }
 
     @Override
@@ -509,6 +515,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         address.toParentNode();
         separator = SEPARATOR_NONE;
         lastChunkIndex = index;
+        addressChanged = true;
     }
 
     @Override
@@ -519,6 +526,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         address.toNodeType();
         separator = SEPARATOR_NONE;
         lastChunkIndex = index;
+        addressChanged = true;
     }
 
     @Override
@@ -528,6 +536,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         } else {
             this.validatedNodeName(index, nodeName);
         }
+        addressChanged = true;
     }
 
     @Override
@@ -537,6 +546,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         } else {
             this.validatedNodeType(index, nodeType);
         }
+        addressChanged = true;
     }
 
     @Override
@@ -552,6 +562,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
             nodeType(index, typeOrName);
         }
         separator = SEPARATOR_NONE;
+        addressChanged = true;
     }
 
     @Override

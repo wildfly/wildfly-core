@@ -36,7 +36,7 @@ public interface CommandLineParser {
 
         void start(String operationString);
 
-        void rootNode(int index);
+        void rootNode(int index) throws OperationFormatException;
 
         void parentNode(int index);
 
