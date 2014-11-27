@@ -91,6 +91,8 @@ public class GlobalOperationHandlers {
         root.registerOperationHandler(ReadChildrenResourcesHandler.DEFINITION, ReadChildrenResourcesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadOperationNamesHandler.DEFINITION, ReadOperationNamesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadOperationDescriptionHandler.DEFINITION, ReadOperationDescriptionHandler.INSTANCE, true);
+        root.registerOperationHandler(QueryOperationHandler.DEFINITION, QueryOperationHandler.INSTANCE, true);
+
         //map operations
         root.registerOperationHandler(MapOperations.MAP_PUT_DEFINITION, MapOperations.MAP_PUT_HANDLER, true);
         root.registerOperationHandler(MapOperations.MAP_GET_DEFINITION, MapOperations.MAP_GET_HANDLER, true);
@@ -101,6 +103,8 @@ public class GlobalOperationHandlers {
         root.registerOperationHandler(ListOperations.LIST_REMOVE_DEFINITION, ListOperations.LIST_REMOVE_HANDLER, true);
         root.registerOperationHandler(ListOperations.LIST_GET_DEFINITION, ListOperations.LIST_GET_HANDLER, true);
         root.registerOperationHandler(ListOperations.LIST_CLEAR_DEFINITION, ListOperations.LIST_CLEAR_HANDLER, true);
+
+
 
         root.registerOperationHandler(ReadResourceDescriptionHandler.CheckResourceAccessHandler.DEFINITION, new OperationStepHandler() {
             @Override
@@ -119,9 +123,9 @@ public class GlobalOperationHandlers {
 
         if (processType != ProcessType.DOMAIN_SERVER) {
             root.registerOperationHandler(org.jboss.as.controller.operations.global.WriteAttributeHandler.DEFINITION,
-                                          org.jboss.as.controller.operations.global.WriteAttributeHandler.INSTANCE, true);
+                    org.jboss.as.controller.operations.global.WriteAttributeHandler.INSTANCE, true);
             root.registerOperationHandler(org.jboss.as.controller.operations.global.UndefineAttributeHandler.DEFINITION,
-                                          org.jboss.as.controller.operations.global.UndefineAttributeHandler.INSTANCE, true);
+                    org.jboss.as.controller.operations.global.UndefineAttributeHandler.INSTANCE, true);
         }
     }
 
@@ -145,8 +149,19 @@ public class GlobalOperationHandlers {
             FAKE_OPERATION = resolve;
         }
 
+        private static final FilterPredicate DEFAULT_PREDICATE = new FilterPredicate() {
+            @Override
+            public boolean appliesTo(ModelNode item) {
+                return !item.isDefined()
+                        || !item.hasDefined(OP_ADDR);
+            }
+        };
+
         private final FilteredData filteredData;
+
         private final boolean ignoreMissingResource;
+
+        private final FilterPredicate predicate;
 
         protected AbstractMultiTargetHandler() {
             this(null, false);
@@ -159,6 +174,13 @@ public class GlobalOperationHandlers {
         protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource) {
             this.filteredData = filteredData;
             this.ignoreMissingResource = ignoreMissingResource;
+            this.predicate = DEFAULT_PREDICATE;
+        }
+
+        protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource, FilterPredicate predicate) {
+            this.filteredData = filteredData;
+            this.ignoreMissingResource = ignoreMissingResource;
+            this.predicate = predicate;
         }
 
         protected FilteredData getFilteredData() {
@@ -176,13 +198,16 @@ public class GlobalOperationHandlers {
                 // The final result should be a list of executed operations
                 final ModelNode result = context.getResult().setEmptyList();
                 // Trick the context to give us the model-root
-                context.addStep(new ModelNode(), FAKE_OPERATION.clone(), new ModelAddressResolver(operation, result, localFilteredData,
-                        new OperationStepHandler() {
-                    @Override
-                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                        doExecute(context, operation, localFilteredData, true);
-                    }
-                }), OperationContext.Stage.MODEL, true);
+                context.addStep(new ModelNode(), FAKE_OPERATION.clone(),
+                        new ModelAddressResolver(operation, result, localFilteredData,
+                                new OperationStepHandler() {
+                                    @Override
+                                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                                        doExecute(context, operation, localFilteredData, true);
+                                    }
+                                }, predicate),
+                        OperationContext.Stage.MODEL, true
+                );
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
@@ -213,19 +238,26 @@ public class GlobalOperationHandlers {
         abstract void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException;
     }
 
+    interface FilterPredicate {
+        boolean appliesTo(ModelNode result);
+    }
+
     public static final class ModelAddressResolver implements OperationStepHandler {
 
         private final ModelNode operation;
         private final ModelNode result;
         private final FilteredData filteredData;
+        private final FilterPredicate predicate;
         private final OperationStepHandler handler; // handler bypassing further wildcard resolution
 
         public ModelAddressResolver(final ModelNode operation, final ModelNode result,
                                     final FilteredData filteredData,
-                                    final OperationStepHandler delegate) {
+                                    final OperationStepHandler delegate,
+                                    final FilterPredicate predicate) {
             this.operation = operation;
             this.result = result;
             this.handler = delegate;
+            this.predicate = predicate;
             this.filteredData = filteredData;
         }
 
@@ -243,10 +275,11 @@ public class GlobalOperationHandlers {
                         boolean replace = false;
                         ModelNode replacement = new ModelNode().setEmptyList();
                         for (ModelNode item : result.asList()) {
-                            if (item.isDefined() && item.hasDefined(OP_ADDR)) {
-                                replacement.add(item);
-                            } else {
+                            if (predicate.appliesTo(item)) {
+                                // item will be skipped and the result amended
                                 replace = true;
+                            } else {
+                                replacement.add(item);
                             }
                         }
                         if (replace) {
@@ -751,16 +784,16 @@ public class GlobalOperationHandlers {
         // Recursive value carries through unchanged
         nextOp.get(RECURSIVE.getName()).set(op.get(RECURSIVE.getName()));
         switch(recursiveDepthValue) {
-        case -1:
-            // Undefined stays undefined
-            nextOp.get(RECURSIVE_DEPTH.getName()).set(op.get(RECURSIVE_DEPTH.getName()));
-            break;
-        case 0:
-            nextOp.get(RECURSIVE_DEPTH.getName()).set(recursiveDepthValue);
-            break;
-        default:
-            nextOp.get(RECURSIVE_DEPTH.getName()).set(recursiveDepthValue - 1);
-            break;
+            case -1:
+                // Undefined stays undefined
+                nextOp.get(RECURSIVE_DEPTH.getName()).set(op.get(RECURSIVE_DEPTH.getName()));
+                break;
+            case 0:
+                nextOp.get(RECURSIVE_DEPTH.getName()).set(recursiveDepthValue);
+                break;
+            default:
+                nextOp.get(RECURSIVE_DEPTH.getName()).set(recursiveDepthValue - 1);
+                break;
         }
     }
 

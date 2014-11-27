@@ -18,8 +18,6 @@
  */
 package org.jboss.as.host.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
@@ -49,6 +47,8 @@ import org.jboss.as.host.controller.operations.RemoteDomainControllerRemoveHandl
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.services.security.AbstractVaultReader;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 
 /**
  * Utility for creating the root element and populating the {@link org.jboss.as.controller.registry.ManagementResourceRegistration}
