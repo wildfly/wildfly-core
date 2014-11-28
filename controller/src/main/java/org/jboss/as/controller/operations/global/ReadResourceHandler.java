@@ -237,6 +237,11 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
                 // child type has no children until we add one
                 nonExistentChildTypes.add(childType);
+                if(!aliases && (entry.getValue() == null || entry.getValue().isEmpty())) {
+                    if(isGlobalAlias(registry, childType)) {
+                        nonExistentChildTypes.remove(childType);
+                    }
+                }
 
                 for (String child : entry.getValue()) {
                     PathElement childPE = PathElement.pathElement(childType, child);
@@ -349,6 +354,27 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         }
 
         context.stepCompleted();
+    }
+
+    private boolean isSquatterResource(final ImmutableManagementResourceRegistration registry, final String key) {
+        return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(key))) == null;
+    }
+
+    private boolean isGlobalAlias(final ImmutableManagementResourceRegistration registry, final String childName) {
+        if(isSquatterResource(registry, childName)) {
+            Set<PathElement> childrenPath = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+            boolean found = false;
+            boolean alias = true;
+            for(PathElement childPath : childrenPath) {
+                if(childPath.getKey().equals(childName)) {
+                    found = true;
+                    ImmutableManagementResourceRegistration squatterRegistration = registry.getSubModel(PathAddress.pathAddress(childPath));
+                    alias = alias && (squatterRegistration != null && squatterRegistration.isAlias());
+                }
+            }
+            return (found && alias);
+        }
+        return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childName))).isAlias();
     }
 
     private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData, ImmutableManagementResourceRegistration registry, String attributeName, Map<String, ModelNode> responseMap) {
