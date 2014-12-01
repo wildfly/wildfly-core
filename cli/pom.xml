@@ -159,14 +159,24 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>sun.jdk</groupId>
-            <artifactId>jconsole</artifactId>
-            <version>jdk</version>
-            <scope>system</scope>
-            <systemPath>${java.home}/../lib/jconsole.jar</systemPath>
-        </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>jconsole</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>sun.jdk</groupId>
+                    <artifactId>jconsole</artifactId>
+                    <version>jdk</version>
+                    <scope>system</scope>
+                    <systemPath>${java.home}/../lib/jconsole.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>
