@@ -26,7 +26,7 @@ public class Server {
 
     static final String JBOSS_HOME = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
     static final String MODULE_PATH = System.getProperty("module.path");
-    static final String JVM_ARGS = System.getProperty("jvm.args", "-Xmx512m -XX:MaxPermSize=256m");
+    static final String JVM_ARGS = System.getProperty("jvm.args", "-Xmx512m");
     static final String JBOSS_ARGS = System.getProperty("jboss.args");
     static final String JAVA_HOME = System.getProperty("java.home", System.getenv("JAVA_HOME"));
     static final String SERVER_CONFIG = System.getProperty("server.config", "standalone.xml");
