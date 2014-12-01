@@ -44,6 +44,14 @@ public class TestUtils {
         return SimpleAttributeDefinitionBuilder.create(name, type).build();
     }
 
+    public static AttributeDefinition createAttribute(String name, ModelType type, boolean runtimeOnly) {
+        SimpleAttributeDefinitionBuilder attribute = SimpleAttributeDefinitionBuilder.create(name, type);
+        if (runtimeOnly) {
+            attribute.setStorageRuntime();
+        }
+        return attribute.build();
+    }
+
     public static AttributeDefinition createMetric(String name, ModelType type) {
         return SimpleAttributeDefinitionBuilder.create(name, type).setStorageRuntime().build();
     }
