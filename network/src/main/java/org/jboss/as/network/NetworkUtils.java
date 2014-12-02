@@ -289,6 +289,26 @@ public class NetworkUtils {
 
     /**
      * Formats input address. For IPV4 returns simply host address, for IPV6 formats address according to <a
+     * href="http://tools.ietf.org/html/rfc5952">RFC5952</a> rules. It embeds IPV6 address in '[', ']'.
+     *
+     * @param inet
+     * @return
+     */
+    public static String formatIPAddressForURI(InetAddress inet){
+        if(inet == null){
+            throw new IllegalArgumentException();
+        }
+        if(inet instanceof Inet4Address){
+            return inet.getHostAddress();
+        } else if (inet instanceof Inet6Address){
+            return '[' + formatAddress(inet) + ']';
+        } else {
+            return inet.getHostAddress();
+        }
+    }
+
+    /**
+     * Formats input address. For IPV4 returns simply host address, for IPV6 formats address according to <a
      * href="http://tools.ietf.org/html/rfc5952">RFC5952</a> rules. It does not embed IPV6 address in '[', ']', since those are part of IPV6 URI literal.
      *
      * @param inet
@@ -296,7 +316,7 @@ public class NetworkUtils {
      */
     public static String formatAddress(InetAddress inet){
         if(inet == null){
-            throw new NullPointerException();
+            throw new IllegalArgumentException();
         }
         if(inet instanceof Inet4Address){
             return inet.getHostAddress();
