@@ -2423,11 +2423,10 @@ public interface ControllerLogger extends BasicLogger {
      * or environment variable.
      *
      * @param toResolve  the node being resolved
-     * @param e the SecurityException
      * @return an {@link OperationFailedException} for the caller
      */
-    @Message(id = 211, value = "Cannot resolve expression '%s' -- %s")
-    String cannotResolveExpression(ModelNode toResolve, IllegalStateException e);
+    @Message(id = 211, value = "Cannot resolve expression '%s'")
+    OperationFailedException cannotResolveExpression(String toResolve);
 
     /**
      * Creates an exception indicating the resource is a duplicate.
@@ -3257,7 +3256,10 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = NONE, value = "    %s in context '%s'")
     String formattedCapabilityId(String capability, String context);
 
-    // TODO use 370-373 for the next messages!
+    @Message(id = 370, value="Incomplete expression: %s")
+    OperationFailedException incompleteExpression(String expression);
+
+    // TODO use 371-373 for the next messages!
 
     @Message(id = 374, value = "Unable to resolve expressions at this location.")
     OperationFailedException unableToResolveExpressions();
@@ -3281,5 +3283,5 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 380, value="Attribute '%s' needs to be set or passed before attribute '%s' can be correctly set")
     OperationFailedException requiredAttributeNotSet(String required, String name);
 
-    // TODO use 370-373 for the next messages!
+    // TODO use 371-373 for the next messages!
 }
