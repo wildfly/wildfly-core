@@ -29,12 +29,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 
+import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestAddress.Node;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestParser;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -609,7 +611,7 @@ public class AddressOnlyParsingTestCase {
     }
 
     @Test
-    public void testTest() throws Exception {
+    public void testDataSourceName() throws Exception {
 
         DefaultCallbackHandler handler = new DefaultCallbackHandler();
 
@@ -627,5 +629,64 @@ public class AddressOnlyParsingTestCase {
         node = nodes.next();
         assertEquals("data-source", node.getType());
         assertEquals("java:/H2DS", node.getName());
+    }
+
+    @Test
+    public void testRootCharInTheMiddle() throws Exception {
+
+        OperationRequestAddress prefix = new DefaultOperationRequestAddress();
+        prefix.toNode("a", "b");
+        DefaultCallbackHandler handler = new DefaultCallbackHandler(prefix);
+
+        parser.parse("/", handler);
+
+        assertTrue(handler.hasAddress());
+        assertFalse(handler.hasOperationName());
+        assertFalse(handler.hasProperties());
+        assertFalse(handler.endsOnAddressOperationNameSeparator());
+        assertFalse(handler.endsOnPropertyListStart());
+        assertFalse(handler.endsOnPropertySeparator());
+        assertFalse(handler.endsOnPropertyValueSeparator());
+        assertTrue(handler.endsOnNodeSeparator());
+        assertFalse(handler.endsOnNodeTypeNameSeparator());
+        assertFalse(handler.isRequestComplete());
+
+        OperationRequestAddress address = handler.getAddress();
+        address.isEmpty();
+
+        try {
+            handler.reset();
+            parser.parse("//", handler);
+            Assert.fail("Shouldn't allow root character in the middle of the path");
+        } catch(CommandFormatException e) {
+            // expected
+        }
+
+        try {
+            handler.reset();
+            parser.parse("/a/", handler);
+            Assert.fail("Shouldn't allow root character in the middle of the path");
+        } catch(CommandFormatException e) {
+            // expected
+        }
+
+        handler.reset();
+        parser.parse("/a=b/", handler);
+
+        try {
+            handler.reset();
+            parser.parse("/a=b//", handler);
+            Assert.fail("Shouldn't allow root character in the middle of the path");
+        } catch(CommandFormatException e) {
+            // expected
+        }
+
+        try {
+            handler.reset();
+            parser.parse("/a=b//a=b", handler);
+            Assert.fail("Shouldn't allow root character in the middle of the path");
+        } catch(CommandFormatException e) {
+            // expected
+        }
     }
 }
