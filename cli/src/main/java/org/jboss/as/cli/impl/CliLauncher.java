@@ -268,7 +268,7 @@ public class CliLauncher {
             cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, true, connect, connectionTimeout);
             cmdCtx.interact();
         } catch(Throwable t) {
-            t.printStackTrace();
+            System.out.println(Util.getMessagesFromThrowable(t));
             exitCode = 1;
         } finally {
             if((cmdCtx != null) && !gui) {

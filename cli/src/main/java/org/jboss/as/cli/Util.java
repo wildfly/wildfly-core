@@ -1087,4 +1087,25 @@ public class Util {
         }
         return request;
     }
+
+    public static String getMessagesFromThrowable(Throwable t){
+        final StringBuilder buf = new StringBuilder();
+
+        if (t.getLocalizedMessage() != null) {
+            buf.append(t.getLocalizedMessage());
+        } else {
+            buf.append(t.getClass().getName());
+        }
+
+        Throwable t1 = t.getCause();
+        while (t1 != null) {
+            if (t1.getLocalizedMessage() != null) {
+                buf.append(": ").append(t1.getLocalizedMessage());
+            } else {
+                buf.append(": ").append(t1.getClass().getName());
+            }
+            t1 = t1.getCause();
+        }
+        return buf.toString();
+    }
 }

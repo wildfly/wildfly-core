@@ -122,7 +122,7 @@ public class CustomVaultInCLITestCase {
         String cliOutput = CustomCLIExecutor.execute(WRONG_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " server-state");
 
         assertThat("Password should be wrong", cliOutput, containsString("Password is: " + WRONG_PASSWORD));
-        assertThat("CLI shouldn't successfully initialize ", cliOutput, containsString("CliInitializationException"));
+        assertThat("CLI shouldn't successfully initialize ", cliOutput, containsString("Keystore was tampered with, or password was incorrect"));
 
     }
 
