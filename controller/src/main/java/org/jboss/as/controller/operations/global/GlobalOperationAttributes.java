@@ -51,6 +51,11 @@ class GlobalOperationAttributes {
     .setDefaultValue(new ModelNode(false))
     .build();
 
+    static final SimpleAttributeDefinition INCLUDE_SINGLETONS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_SINGLETONS, ModelType.BOOLEAN)
+    .setAllowNull(true)
+    .setDefaultValue(new ModelNode(false))
+    .build();
+
     static final SimpleAttributeDefinition INCLUDE_RUNTIME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_RUNTIME, ModelType.BOOLEAN)
     .setAllowNull(true)
     .setDefaultValue(new ModelNode(false))

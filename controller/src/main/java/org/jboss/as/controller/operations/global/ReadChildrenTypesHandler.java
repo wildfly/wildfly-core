@@ -25,9 +25,6 @@ package org.jboss.as.controller.operations.global;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_TYPES_OPERATION;
 
-import java.util.Set;
-import java.util.TreeSet;
-
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -43,6 +40,12 @@ import org.jboss.dmr.ModelType;
 
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
 
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_SINGLETONS;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+
 
 /**
  * {@link org.jboss.as.controller.OperationStepHandler} querying the child types of a given node.
@@ -53,7 +56,7 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 public class ReadChildrenTypesHandler implements OperationStepHandler {
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_TYPES_OPERATION, ControllerResolver.getResolver("global"))
-            .setParameters(INCLUDE_ALIASES)
+            .setParameters(INCLUDE_ALIASES, INCLUDE_SINGLETONS)
             .setReadOnly()
             .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
@@ -69,15 +72,29 @@ public class ReadChildrenTypesHandler implements OperationStepHandler {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(PathAddress.pathAddress(operation.get(OP_ADDR))));
         }
         final boolean aliases = INCLUDE_ALIASES.resolveModelAttribute(context, operation).asBoolean(false);
-        Set<String> childTypes = new TreeSet<String>(registry.getChildNames(PathAddress.EMPTY_ADDRESS));
+        final boolean singletons = INCLUDE_SINGLETONS.resolveModelAttribute(context, operation).asBoolean(false);
+        Set<PathElement> childTypes = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        Set<String> children = new TreeSet<String>();
+        for (final PathElement child : childTypes) {
+            PathAddress relativeAddr = PathAddress.pathAddress(child);
+            ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
+            boolean isSingletonResource = childReg == null || !child.isWildcard();
+            if (aliases || (isSingletonResource || !childReg.isAlias())) {
+                if(singletons && isSingletonResource)  {
+                    if (child.isWildcard()) {
+                        children.add(child.getKey());
+                    } else {
+                        children.add(child.getKey() + '=' + child.getValue());
+                    }
+                } else {
+                    children.add(child.getKey());
+                }
+            }
+        }
         final ModelNode result = context.getResult();
         result.setEmptyList();
-        for (final String key : childTypes) {
-            PathAddress relativeAddr = PathAddress.pathAddress(PathElement.pathElement(key));
-            ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
-            if (aliases || (childReg == null || !childReg.isAlias())) {
-                result.add(key);
-            }
+        for(String child : children) {
+           result.add(child);
         }
         context.stepCompleted();
     }
