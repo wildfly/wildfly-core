@@ -47,9 +47,10 @@ if "x%JAVA_HOME%" == "x" (
 )
 
 rem Find jboss-modules.jar, or we can't continue
-set "JBOSS_RUNJAR=%JBOSS_HOME%\jboss-modules.jar"
-if not exist "%JBOSS_RUNJAR%" (
-  echo Could not locate "%JBOSS_RUNJAR%".
+if exist "%JBOSS_HOME%\jboss-modules.jar" (
+    set "RUNJAR=%JBOSS_HOME%\jboss-modules.jar"
+) else (
+  echo Could not locate "%JBOSS_HOME%\jboss-modules.jar".
   echo Please check that you are in the bin directory when running this script.
   goto END
 )
@@ -62,10 +63,8 @@ if "x%JBOSS_MODULEPATH%" == "x" (
 rem Uncomment to override standalone and domain user location
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djboss.server.config.user.dir=..\standalone\configuration -Djboss.domain.config.user.dir=..\domain\configuration"
 
-set "JAVA_OPTS=%JAVA_OPTS%"
-
 "%JAVA%" %JAVA_OPTS% ^
-    -jar "%JBOSS_RUNJAR%" ^
+    -jar "%JBOSS_HOME%\jboss-modules.jar" ^
     -mp "%JBOSS_MODULEPATH%" ^
      org.jboss.as.domain-add-user ^
      %*

@@ -28,23 +28,23 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
+setlocal EnableDelayedExpansion
 rem check for the security manager system property
-echo(%SERVER_OPTS% | findstr /r /c:"^-Djava.security.manager" > nul
+echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel == 1 (
-	set SECMGR=true
+    echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
+    GOTO :EOF
 )
+setlocal DisableDelayedExpansion
 
-rem Read command-line args.
+rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
-if "%1" == "" (
+if "%~1" == "" (
    goto MAIN
-) else if "%1" == "--debug" (
+) else if "%~1" == "--debug" (
    goto READ-DEBUG-PORT
-) else if "%1" == "-secmgr" (
+) else if "%~1" == "-secmgr" (
    set SECMGR=true
-) else (
-   rem This doesn't work as Windows splits on = and spaces by default
-   rem set SERVER_OPTS=%SERVER_OPTS% %1
 )
 shift
 goto READ-ARGS
@@ -52,7 +52,7 @@ goto READ-ARGS
 :READ-DEBUG-PORT
 set "DEBUG_MODE=true"
 set DEBUG_ARG="%2"
-if not "x%DEBUG_ARG" == "x" (
+if not %DEBUG_ARG% == "" (
    if x%DEBUG_ARG:-=%==x%DEBUG_ARG% (
       shift
       set DEBUG_PORT=%DEBUG_ARG%
@@ -172,53 +172,41 @@ if exist "%JBOSS_HOME%\jboss-modules.jar" (
 rem Setup JBoss specific properties
 
 rem Setup directories, note directories with spaces do not work
+setlocal EnableDelayedExpansion
 set "CONSOLIDATED_OPTS=%JAVA_OPTS% %SERVER_OPTS%"
-:DIRLOOP
-echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.base.dir" > nul && (
-  for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
-    for /f %%i IN ("%%b") DO set "JBOSS_BASE_DIR=%%~fi"
-  )
-)
-echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.config.dir" > nul && (
-  for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
-    for /f %%i IN ("%%b") DO set "JBOSS_CONFIG_DIR=%%~fi"
-  )
-)
-echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.log.dir" > nul && (
-  for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
-    for /f %%i IN ("%%b") DO set "JBOSS_LOG_DIR=%%~fi"
-  )
-)
-
-for /f "tokens=1* delims= " %%i IN ("%CONSOLIDATED_OPTS%") DO (
-  if %%i == "" (
-    goto ENDDIRLOOP
-  ) else (
-    set CONSOLIDATED_OPTS=%%j
-    GOTO DIRLOOP
-  )
-)
-
-:ENDDIRLOOP
-
-rem check the JAVA_OPTS
-set "X_JAVA_OPTS=%JAVA_OPTS%"
-:JAVAOPTLOOP
-rem fail if the -Djava.security.manager is set, can't find a reliable way to filter this out
-echo(%X_JAVA_OPTS% | findstr /r /c:"^-Djava.security.manager" > nul && (
-  echo ERROR: Cannot start server with -Djava.security.manager. Use the option -secmgr or set the SECMGR=true environment variable
-  GOTO END_NO_PAUSE
+set baseDirFound=false
+set configDirFound=false
+set logDirFound=false
+for %%a in (!CONSOLIDATED_OPTS!) do (
+   if !baseDirFound! == true (
+      set "JBOSS_BASE_DIR=%%~a"
+      set baseDirFound=false
+   )
+   if !configDirFound! == true (
+      set "JBOSS_CONFIG_DIR=%%~a"
+      set configDirFound=false
+   )
+   if !logDirFound! == true (
+      set "JBOSS_LOG_DIR=%%~a"
+      set logDirFound=false
+   )
+   if "%%~a" == "-Djboss.server.base.dir" (
+       set baseDirFound=true
+   )
+   if "%%~a" == "-Djboss.server.config.dir" (
+       set configDirFound=true
+   )
+   if "%%~a" == "-Djboss.server.log.dir" (
+       set logDirFound=true
+   )
 )
 
-for /f "tokens=1* delims= " %%i IN ("%X_JAVA_OPTS%") DO (
-  if %%i == "" (
-    goto ENDJAVAOPTLOOP
-  ) else (
-    set X_JAVA_OPTS=%%j
-    GOTO JAVAOPTLOOP
-  )
+rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
+echo(!JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > nul && (
+    echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
+    GOTO :EOF
 )
-:ENDJAVAOPTLOOP
+setlocal DisableDelayedExpansion
 
 rem Set default module root paths
 if "x%JBOSS_MODULEPATH%" == "x" (
