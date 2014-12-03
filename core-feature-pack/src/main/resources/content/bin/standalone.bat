@@ -83,6 +83,8 @@ if /i "%RESOLVED_JBOSS_HOME%" NEQ "%SANITIZED_JBOSS_HOME%" (
    echo.
    echo       JBOSS_HOME: "%JBOSS_HOME%"
    echo.
+   rem 2 seconds pause
+   ping 127.0.0.1 -n 3 > nul
 )
 
 rem Read an optional configuration file.
@@ -112,8 +114,9 @@ set DIRNAME=
 rem Setup JBoss specific properties
 set "JAVA_OPTS=-Dprogram.name=%PROGNAME% %JAVA_OPTS%"
 
+if "%JVM_NAME%"=="" set JVM_NAME=java.exe
 if "x%JAVA_HOME%" == "x" (
-  set  JAVA=java
+  set  JAVA=%JVM_NAME%
   echo JAVA_HOME is not set. Unexpected results may occur.
   echo Set JAVA_HOME to the directory of your local JDK to avoid this message.
 ) else (
@@ -121,8 +124,8 @@ if "x%JAVA_HOME%" == "x" (
     echo JAVA_HOME "%JAVA_HOME%" path doesn't exist
     goto END
   ) else (
-    echo Setting JAVA property to "%JAVA_HOME%\bin\java"
-    set "JAVA=%JAVA_HOME%\bin\java"
+    echo Setting JAVA property to "%JAVA_HOME%\bin\%JVM_NAME%"
+    set "JAVA=%JAVA_HOME%\bin\%JVM_NAME%"
   )
 )
 
@@ -173,21 +176,13 @@ rem Setup JBoss specific properties
 
 rem Setup directories, note directories with spaces do not work
 set "CONSOLIDATED_OPTS=%JAVA_OPTS% %SERVER_OPTS%"
+SET FIRST_PARAM=
+
 :DIRLOOP
-echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.base.dir" > nul && (
-  for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
-    for /f %%i IN ("%%b") DO set "JBOSS_BASE_DIR=%%~fi"
-  )
-)
-echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.config.dir" > nul && (
-  for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
-    for /f %%i IN ("%%b") DO set "JBOSS_CONFIG_DIR=%%~fi"
-  )
-)
-echo(("%CONSOLIDATED_OPTS%") | findstr /r /c:"^-Djboss.server.log.dir" > nul && (
-  for /f "tokens=1,2* delims==" %%a IN ("%CONSOLIDATED_OPTS%") DO (
-    for /f %%i IN ("%%b") DO set "JBOSS_LOG_DIR=%%~fi"
-  )
+for /f "tokens=1,2* delims==" %%a IN ("%FIRST_PARAM%") DO (
+   if "%%a" == "-Djboss.server.base.dir" for /f %%i IN ("%%b") DO set "JBOSS_BASE_DIR=%%~fi"
+   if "%%a" == "-Djboss.server.config.dir" for /f %%i IN ("%%b") DO set "JBOSS_CONFIG_DIR=%%~fi"
+   if "%%a" == "-Djboss.server.log.dir" for /f %%i IN ("%%b") DO set "JBOSS_LOG_DIR=%%~fi"
 )
 
 for /f "tokens=1* delims= " %%i IN ("%CONSOLIDATED_OPTS%") DO (
@@ -195,6 +190,7 @@ for /f "tokens=1* delims= " %%i IN ("%CONSOLIDATED_OPTS%") DO (
     goto ENDDIRLOOP
   ) else (
     set CONSOLIDATED_OPTS=%%j
+	set FIRST_PARAM=%%i
     GOTO DIRLOOP
   )
 )
