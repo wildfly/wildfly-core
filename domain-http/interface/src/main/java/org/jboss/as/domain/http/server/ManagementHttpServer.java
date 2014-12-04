@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import io.undertow.protocols.ssl.UndertowXnioSsl;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
@@ -88,7 +89,6 @@ import org.xnio.StreamConnection;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
-import org.xnio.ssl.JsseXnioSsl;
 import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
@@ -149,7 +149,7 @@ public class ManagementHttpServer {
                     serverOptionsBuilder.set(SSL_CLIENT_AUTH_MODE, sslClientAuthMode);
                 }
                 OptionMap secureOptions = serverOptionsBuilder.getMap();
-                XnioSsl xnioSsl = new JsseXnioSsl(worker.getXnio(), secureOptions, sslContext);
+                XnioSsl xnioSsl = new UndertowXnioSsl(worker.getXnio(), secureOptions, sslContext);
                 secureServer = xnioSsl.createSslConnectionServer(worker, secureAddress, acceptListener, secureOptions);
                 secureServer.resumeAccepts();
             }
