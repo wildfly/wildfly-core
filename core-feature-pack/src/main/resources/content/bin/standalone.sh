@@ -16,18 +16,13 @@ do
           shift
           if [ -n "$1" ] && [ "${1#*-}" = "$1" ]; then
               DEBUG_PORT=$1
-          else
-              SERVER_OPTS="$SERVER_OPTS '$1'"
           fi
           ;;
+      -Djava.security.manager*)
+          echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
+          exit 1
+          ;;
       -secmgr)
-          SECMGR="true"
-          ;;
-      -Djava.security.manager)
-          SECMGR="true"
-          ;;
-      -Djava.security.manager=*)
-          echo "WARNING: Security manager enabled without custom security manager. Value"
           SECMGR="true"
           ;;
       --)
@@ -53,7 +48,7 @@ darwin=false;
 linux=false;
 solaris=false;
 freebsd=false;
-
+other=false
 case "`uname`" in
     CYGWIN*)
         cygwin=true
@@ -70,6 +65,9 @@ case "`uname`" in
         ;;
     SunOS*)
         solaris=true
+        ;;
+    *)
+        other=true
         ;;
 esac
 
@@ -173,14 +171,14 @@ if [ "x$JBOSS_MODULEPATH" = "x" ]; then
     JBOSS_MODULEPATH="$JBOSS_HOME/modules"
 fi
 
-if $linux || $solaris; then
+if $linux; then
     # consolidate the server and command line opts
     CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
     # process the standalone options
     for var in $CONSOLIDATED_OPTS
     do
        # Remove quotes
-       p=`echo $var | tr -d '"'`
+       p=`echo $var | tr -d "'"`
        case $p in
          -Djboss.server.base.dir=*)
               JBOSS_BASE_DIR=`readlink -m ${p#*=}`
@@ -195,15 +193,37 @@ if $linux || $solaris; then
     done
 fi
 
-# No readlink -m on BSD
-if $darwin || $freebsd; then
+if $solaris; then
     # consolidate the server and command line opts
     CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
     # process the standalone options
     for var in $CONSOLIDATED_OPTS
     do
        # Remove quotes
-       p=`echo $var | tr -d '"'`
+       p=`echo $var | tr -d "'"`
+      case $p in
+        -Djboss.server.base.dir=*)
+             JBOSS_BASE_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -Djboss.server.log.dir=*)
+             JBOSS_LOG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -Djboss.server.config.dir=*)
+             JBOSS_CONFIG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+      esac
+    done
+fi
+
+# No readlink -m on BSD
+if $darwin || $freebsd || $other ; then
+    # consolidate the server and command line opts
+    CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
+    # process the standalone options
+    for var in $CONSOLIDATED_OPTS
+    do
+       # Remove quotes
+       p=`echo $var | tr -d "'"`
        case $p in
          -Djboss.server.base.dir=*)
               JBOSS_BASE_DIR=`cd ${p#*=} ; pwd -P`
@@ -296,7 +316,7 @@ fi
 # Process the JAVA_OPTS and fail the script of a java.security.manager was found
 SECURITY_MANAGER_SET=`echo $JAVA_OPTS | $GREP "java\.security\.manager"`
 if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
-    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
+    echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
     exit 1
 fi
 

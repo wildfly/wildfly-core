@@ -3,7 +3,6 @@
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"
-SERVER_OPTS=""
 
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
@@ -15,15 +14,12 @@ do
       -secmgr)
           SECMGR="true"
           ;;
-      -Djava.security.manager)
-          SECMGR="true"
-          ;;
       -Djava.security.manager=*)
-          echo "WARNING: Turning on the securty manager, but ignoring the value: $1"
-          SECMGR="true"
+          echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
+          exit 1
           ;;
-       *)
-          SERVER_OPTS="$SERVER_OPTS \"$1\""
+      *)
+          SERVER_OPTS="$SERVER_OPTS '$1'"
           ;;
     esac
     shift
@@ -34,6 +30,7 @@ cygwin=false;
 darwin=false;
 linux=false;
 solaris=false;
+other=false;
 case "`uname`" in
     CYGWIN*)
         cygwin=true
@@ -48,6 +45,9 @@ case "`uname`" in
         ;;
     SunOS*)
         solaris=true
+        ;;
+    *)
+        other=true
         ;;
 esac
 
@@ -135,42 +135,68 @@ if [ "x$JBOSS_MODULEPATH" = "x" ]; then
     JBOSS_MODULEPATH="$JBOSS_HOME/modules"
 fi
 
-if $linux || $solaris; then
+if $linux; then
     # consolidate the host-controller and command line opts
     HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $SERVER_OPTS"
     # process the host-controller options
     for var in $HOST_CONTROLLER_OPTS
     do
-      case $var in
+       # Remove quotes
+      p=`echo $var | tr -d "'"`
+      case $p in
         -Djboss.domain.base.dir=*)
-             JBOSS_BASE_DIR=`readlink -m ${var#*=}`
+             JBOSS_BASE_DIR=`readlink -m ${p#*=}`
              ;;
         -Djboss.domain.log.dir=*)
-             JBOSS_LOG_DIR=`readlink -m ${var#*=}`
+             JBOSS_LOG_DIR=`readlink -m ${p#*=}`
              ;;
         -Djboss.domain.config.dir=*)
-             JBOSS_CONFIG_DIR=`readlink -m ${var#*=}`
+             JBOSS_CONFIG_DIR=`readlink -m ${p#*=}`
              ;;
       esac
     done
 fi
 
-# No readlink -m on BSD
-if $darwin; then
+if $solaris; then
     # consolidate the host-controller and command line opts
     HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $SERVER_OPTS"
     # process the host-controller options
     for var in $HOST_CONTROLLER_OPTS
     do
-      case $var in
+       # Remove quotes
+      p=`echo $var | tr -d "'"`
+      case $p in
         -Djboss.domain.base.dir=*)
-             JBOSS_BASE_DIR=`cd ${var#*=} ; pwd -P`
+             JBOSS_BASE_DIR=`echo $p | awk -F= '{print $2}'`
              ;;
         -Djboss.domain.log.dir=*)
-             JBOSS_LOG_DIR=`cd ${var#*=} ; pwd -P`
+             JBOSS_LOG_DIR=`echo $p | awk -F= '{print $2}'`
              ;;
         -Djboss.domain.config.dir=*)
-             JBOSS_CONFIG_DIR=`cd ${var#*=} ; pwd -P`
+             JBOSS_CONFIG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+      esac
+    done
+fi
+
+# No readlink -m on BSD and possibly other distros
+if $darwin || $other ; then
+    # consolidate the host-controller and command line opts
+    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $SERVER_OPTS"
+    # process the host-controller options
+    for var in $HOST_CONTROLLER_OPTS
+    do
+       # Remove quotes
+       p=`echo $var | tr -d "'"`
+       case $p in
+        -Djboss.domain.base.dir=*)
+             JBOSS_BASE_DIR=`cd ${p#*=} ; pwd -P`
+             ;;
+        -Djboss.domain.log.dir=*)
+             JBOSS_LOG_DIR=`cd ${p#*=} ; pwd -P`
+             ;;
+        -Djboss.domain.config.dir=*)
+             JBOSS_CONFIG_DIR=`cd ${p#*=} ; pwd -P`
              ;;
       esac
     done
@@ -203,15 +229,11 @@ if $cygwin; then
     JBOSS_MODULEPATH=`cygpath --path --windows "$JBOSS_MODULEPATH"`
 fi
 
-# Process the PROCESS_CONTROLLER_JAVA_OPTS failing if the java.security.manager is set.
+# If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
+# Note that HOST_CONTROLLER_JAVA_OPTS will not need to be handled here
 SECURITY_MANAGER_SET=`echo $PROCESS_CONTROLLER_JAVA_OPTS | $GREP "java\.security\.manager"`
 if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
-    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
-    exit 1
-fi
-SECURITY_MANAGER_SET=`echo $HOST_CONTROLLER_JAVA_OPTS | $GREP "java\.security\.manager"`
-if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
-    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
+    echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
     exit 1
 fi
 
@@ -230,7 +252,7 @@ echo "  JBOSS_HOME: $JBOSS_HOME"
 echo ""
 echo "  JAVA: $JAVA"
 echo ""
-echo "  JAVA_OPTS: $JAVA_OPTS"
+echo "  JAVA_OPTS: $PROCESS_CONTROLLER_JAVA_OPTS"
 echo ""
 echo "========================================================================="
 echo ""
