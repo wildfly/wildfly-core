@@ -30,12 +30,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -50,6 +50,9 @@ import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.gui.CliGuiContext;
+import org.jboss.as.cli.gui.CommandExecutor.Response;
+import org.jboss.as.controller.client.OperationResponse.StreamEntry;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -210,7 +213,7 @@ public class DownloadServerLogDialog extends JDialog implements ActionListener, 
     }
 
     class DownloadLogTask extends SwingWorker<Void, Void> {
-        private File selectedFile;
+        private final File selectedFile;
 
         public DownloadLogTask(File selectedFile) {
             this.selectedFile = selectedFile;
@@ -218,44 +221,40 @@ public class DownloadServerLogDialog extends JDialog implements ActionListener, 
 
         @Override
         public Void doInBackground() {
-            PrintStream out = null;
             try {
-                out = new PrintStream(new BufferedOutputStream(new FileOutputStream(selectedFile)));
-                int linesToRead = 5000;
-                int skip = 0;
-                List<ModelNode> dataLines = null;
-                long bytesRead = 0;
-                long bytesReadOldValue = 0;
-                int lineSepLength = System.getProperty("line.separator").length();
+                String command = "/subsystem=logging/log-file=" + fileName + ":read-attribute(name=stream)";
+                final Response response = cliGuiCtx.getExecutor().doCommandFullResponse(command);
+                final ModelNode outcome = response.getDmrResponse();
+                if (!Operations.isSuccessfulOutcome(outcome)) {
+                    cancel(false);
+                    String error = "Failure at server: " + Operations.getFailureDescription(outcome).asString();
+                    JOptionPane.showMessageDialog(cliGuiCtx.getMainWindow(), error, "Download Failed", JOptionPane.ERROR_MESSAGE);
+                    return null;
+                }
 
-                do {
-                    String command = "/subsystem=logging/:read-log-file(name=" + fileName + ",lines=" + linesToRead + ",skip=" + skip + ",tail=false)";
-                    ModelNode result = cliGuiCtx.getExecutor().doCommand(command);
-                    if (result.get("outcome").asString().equals("failed")) {
-                        cancel(false);
-                        String error = "Failure at server: " + result.get("failure-description").toString();
-                        JOptionPane.showMessageDialog(cliGuiCtx.getMainWindow(), error, "Download Failed", JOptionPane.ERROR_MESSAGE);
-                        return null;
+                // Get the UUID of the stream
+                final String uuid = Operations.readResult(outcome).asString();
+
+                // Should only be a single entry
+                final byte[] buffer = new byte[512];
+                try (
+                        final StreamEntry entry = response.getOperationResponse().getInputStream(uuid);
+                        final InputStream in = entry.getStream();
+                        final OutputStream out = Files.newOutputStream(selectedFile.toPath(), StandardOpenOption.CREATE);
+                ) {
+                    int bytesRead = 0;
+                    int len;
+                    while ((len = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, len);
+                        final int oldValue = bytesRead;
+                        bytesRead += len;
+                        firePropertyChange("bytesRead", oldValue, bytesRead);
+                        setProgress(Math.max(Math.round(((float) bytesRead / (float) fileSize) * 100), 100));
                     }
-
-                    dataLines = result.get("result").asList();
-                    for (ModelNode line : dataLines) {
-                        String strLine = line.asString();
-                        bytesRead += strLine.length() + lineSepLength;
-                        out.println(strLine);
-                    }
-                    skip += linesToRead;
-
-                    setProgress(Math.min(Math.round(((float)bytesRead / (float)fileSize)*100), 100));
-                    firePropertyChange("bytesRead", bytesReadOldValue, bytesRead);
-                    bytesReadOldValue = bytesRead;
-                } while ((dataLines.size() == linesToRead) && !isCancelled());
+                }
             } catch (IOException | CommandFormatException ex) {
                 throw new RuntimeException(ex);
             } finally {
-                if (out != null) {
-                    out.close();
-                }
 
                 if (isCancelled()) {
                     selectedFile.delete();

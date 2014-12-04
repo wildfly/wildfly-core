@@ -23,10 +23,13 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.gui.component.ServerLogsTable;
 import org.jboss.as.cli.gui.component.ServerLogsTableModel;
@@ -40,14 +43,12 @@ import org.jboss.dmr.ModelNode;
  */
 public class ServerLogsPanel extends JPanel {
 
-    private ServerLogsTable table;
-    private ServerLogsTableModel tableModel;
-    private CliGuiContext cliGuiCtx;
-    private ManagementModelNode loggingSubsys;
+    private final ServerLogsTable table;
+    private final ServerLogsTableModel tableModel;
+    private final CliGuiContext cliGuiCtx;
 
-    public ServerLogsPanel(CliGuiContext cliGuiCtx, ManagementModelNode loggingSubsys) {
+    public ServerLogsPanel(final CliGuiContext cliGuiCtx) {
         this.cliGuiCtx = cliGuiCtx;
-        this.loggingSubsys = loggingSubsys;
 
         setLayout(new BorderLayout());
         this.table = new ServerLogsTable();
@@ -58,6 +59,15 @@ public class ServerLogsPanel extends JPanel {
         JScrollPane scroller = new JScrollPane(table);
         add(scroller, BorderLayout.CENTER);
         add(makeButtonPanel(), BorderLayout.SOUTH);
+        // Add double click listener for table row
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(final MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    drawDownloadDialog();
+                }
+            }
+        });
     }
 
     /**
@@ -70,20 +80,19 @@ public class ServerLogsPanel extends JPanel {
     public static boolean isLogDownloadAvailable(CliGuiContext cliGuiCtx) {
         ModelNode readOps = null;
         try {
-            readOps = cliGuiCtx.getExecutor().doCommand("/subsystem=logging/:read-operation-names");
+            readOps = cliGuiCtx.getExecutor().doCommand("/subsystem=logging:read-children-types");
         } catch (CommandFormatException | IOException e) {
             return false;
         }
         if (!readOps.get("result").isDefined()) return false;
         for (ModelNode op:  readOps.get("result").asList()) {
-            if (op.asString().equals("list-log-files")) return true;
+            if ("log-file".equals(op.asString())) return true;
         }
         return false;
     }
 
     private JPanel makeButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new ViewWithCLIButton());
         buttonPanel.add(new DownloadButton());
         buttonPanel.add(new RefreshButton());
         return buttonPanel;
@@ -97,34 +106,10 @@ public class ServerLogsPanel extends JPanel {
         return (Long)table.getValueAt(table.getSelectedRow(), 2);
     }
 
-    private class ViewWithCLIButton extends JButton {
-        private String description;
-        private ModelNode requestProperties;
-
-        public ViewWithCLIButton() {
-            super("View with CLI");
-            retrieveOpDescription();
-
-            addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    OperationDialog opDialog = new OperationDialog(cliGuiCtx, loggingSubsys, "read-log-file", description, requestProperties);
-                    opDialog.setValue("name", getSelectedFileName());
-                    opDialog.setLocationRelativeTo(cliGuiCtx.getMainWindow());
-                    opDialog.setVisible(true);
-                }
-            });
-        }
-
-        private void retrieveOpDescription() {
-            try {
-                ModelNode result = cliGuiCtx.getExecutor().doCommand("/subsystem=logging/:read-operation-description(name=read-log-file)");
-                this.description = result.get("result", "description").asString();
-                this.requestProperties = result.get("result", "request-properties");
-            } catch (IOException | CommandFormatException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    private void drawDownloadDialog() {
+        DownloadServerLogDialog dialog = new DownloadServerLogDialog(cliGuiCtx, getSelectedFileName(), getSelectedFileSize());
+        dialog.setLocationRelativeTo(cliGuiCtx.getMainWindow());
+        dialog.setVisible(true);
     }
 
     private class DownloadButton extends JButton {
@@ -133,9 +118,7 @@ public class ServerLogsPanel extends JPanel {
             addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    DownloadServerLogDialog dialog = new DownloadServerLogDialog(cliGuiCtx, getSelectedFileName(), getSelectedFileSize());
-                    dialog.setLocationRelativeTo(cliGuiCtx.getMainWindow());
-                    dialog.setVisible(true);
+                    drawDownloadDialog();
                 }
             });
         }
