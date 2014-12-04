@@ -59,6 +59,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jboss.metadata</groupId>
+            <artifactId>jboss-metadata-common</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.slf4j</groupId>
             <artifactId>slf4j-jboss-logmanager</artifactId>
         </dependency>
@@ -77,5 +82,6 @@
             <groupId>org.wildfly.legacy.test</groupId>
             <artifactId>wildfly-legacy-spi</artifactId>
         </dependency>
+
     </dependencies>
 </project>
