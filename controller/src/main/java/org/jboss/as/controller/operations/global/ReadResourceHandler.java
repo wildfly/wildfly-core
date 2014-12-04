@@ -356,12 +356,12 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         context.stepCompleted();
     }
 
-    private boolean isSquatterResource(final ImmutableManagementResourceRegistration registry, final String key) {
+    private boolean isSingletonResource(final ImmutableManagementResourceRegistration registry, final String key) {
         return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(key))) == null;
     }
 
     private boolean isGlobalAlias(final ImmutableManagementResourceRegistration registry, final String childName) {
-        if(isSquatterResource(registry, childName)) {
+        if(isSingletonResource(registry, childName)) {
             Set<PathElement> childrenPath = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
             boolean found = false;
             boolean alias = true;
