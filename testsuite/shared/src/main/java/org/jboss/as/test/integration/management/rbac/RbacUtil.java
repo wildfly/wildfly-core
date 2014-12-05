@@ -93,6 +93,7 @@ public class RbacUtil {
         // prevent instantiation
     }
 
+
     public static ModelNode executeOperation(ModelControllerClient client, ModelNode operation, Outcome expectedOutcome)
         throws IOException {
         ModelNode result = client.execute(operation);

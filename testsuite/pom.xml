@@ -351,6 +351,19 @@
             </modules>
         </profile>
 
+        <!-- -Dts.rbac -->
+        <profile>
+            <id>ts.integ.group.rbac</id>
+            <activation>
+                <property>
+                    <name>ts.rbac</name>
+                </property>
+            </activation>
+            <modules>
+                <module>rbac</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>all-modules.module.profile</id>
             <activation>
@@ -359,6 +372,7 @@
                 </property>
             </activation>
             <modules>
+                <module>rbac</module>
                 <module>domain</module>
             </modules>
         </profile>

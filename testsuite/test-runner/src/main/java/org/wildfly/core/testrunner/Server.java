@@ -8,12 +8,11 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
-import org.jboss.logmanager.Level;
+import org.jboss.logging.Logger;
 import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
@@ -34,6 +33,9 @@ public class Server {
     static final int MANAGEMENT_PORT = Integer.getInteger("management.port", 9990);
     static final String MANAGEMENT_ADDRESS = System.getProperty("management.address", "localhost");
     static final String MANAGEMENT_PROTOCOL = System.getProperty("management.protocol", "http-remoting");
+
+    static final String SERVER_DEBUG = "wildfly.debug";
+    static final int SERVER_DEBUG_PORT = Integer.getInteger("wildfly.debug.port", 8787);
 
     private final Logger log = Logger.getLogger(Server.class.getName());
     private Thread shutdownThread;
@@ -69,6 +71,9 @@ public class Server {
             if (JVM_ARGS != null) {
                 commandBuilder.setJavaOptions(JVM_ARGS.split("\\s+"));
             }
+            if(Boolean.getBoolean(SERVER_DEBUG)) {
+                commandBuilder.setDebug(true, SERVER_DEBUG_PORT);
+            }
 
             //we are testing, of course we want assertions and set-up some other defaults
             commandBuilder.addJavaOption("-ea")
@@ -79,7 +84,7 @@ public class Server {
                 commandBuilder.addServerArguments(JBOSS_ARGS.split("\\s+"));
             }
 
-            log.info("Starting container with: " + commandBuilder.build());
+            log.infof("Starting container with: {0}", commandBuilder.build());
             process = Launcher.of(commandBuilder)
                     // Redirect the output and error stream to a file
                     .setRedirectErrorStream(true)
@@ -204,8 +209,7 @@ public class Server {
                 client = null;
             }
         } catch (final Exception e) {
-            Logger.getLogger(this.getClass().getName()).log(Level.WARNING,
-                    "Caught exception closing ModelControllerClient", e);
+            Logger.getLogger(this.getClass().getName()).warnf(e, "Caught exception closing ModelControllerClient");
         }
     }
 
@@ -224,6 +228,7 @@ public class Server {
             this.target = target;
         }
 
+        @Override
         public void run() {
             final InputStream source = this.source;
             try {
