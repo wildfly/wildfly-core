@@ -27,6 +27,7 @@ package org.wildfly.extension.io;
 import java.io.IOException;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -50,6 +51,18 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("io-1.1.xml");
+    }
+
+    @Override
+    protected String getSubsystemXsdPath() throws IOException {
+        return "schema/wildfly-io_1_1.xsd";
+    }
+
+    @Override
+    protected String[] getSubsystemTemplatePaths() throws IOException {
+        return new String[] {
+                "/subsystem-templates/io.xml"
+        };
     }
 
     @Test

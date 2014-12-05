@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import org.jboss.as.controller.Extension;
@@ -34,6 +35,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
@@ -60,6 +62,43 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      */
     protected abstract String getSubsystemXml() throws IOException;
 
+    /**
+     * Get the path of the subsystem XML Schema (such as <code>"schema/wildfly-io_1_1.xsd"</code> for the IO subsystem)
+     *
+     * If the returned value is not null, the subsystem's XML will be validated against this schema in #testSchema
+     *
+     * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
+     * In that case, you will have to make sure that the corresponding expressions have resolved properties
+     * returned by #getResolvedProperties.
+     */
+    protected String getSubsystemXsdPath() throws IOException {
+        return null;
+    }
+
+    /**
+     * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO subsystem).
+     *
+     * If the returned value is not null, the template &lt;subsystem&gt; element will be validated against this schema
+     * returned by #getSubsystemXsdPath in #testSchemaOfSubsystemTemplates.
+     *
+     * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
+     * In that case, you will have to make sure that the corresponding expressions have resolved properties
+     * returned by #getResolvedProperties.
+     */
+    protected String[] getSubsystemTemplatePaths() throws IOException {
+        return new String[0];
+    }
+
+    /**
+     * Return the properties to use to resolve any expressions in the subsystem's XML prior to its XSD validation.
+     *
+     * If the XML contains an expression instead of a valid type (e.g. a boolean or a int), the XSD validation will
+     * fail. To make sure the XML is valid (except for those expressions), this method can be used to resolve any such
+     * expressions in the XML before the validation process.
+     */
+    protected Properties getResolvedProperties() {
+        return new Properties();
+    }
 
     /**
      * Get the subsystem xml with the given id as a string.
@@ -79,6 +118,30 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     @Test
     public void testSubsystem() throws Exception {
         standardSubsystemTest(null);
+    }
+
+    @Test
+    public void testSchema() throws Exception {
+        String xsd = getSubsystemXsdPath();
+        Assume.assumeTrue("Override getSubsystemXsdPath() to activate the validation of the subsystem's XML",
+                xsd != null);
+
+        SchemaValidator.validateXML(getSubsystemXml(), xsd, getResolvedProperties());
+    }
+
+    @Test
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        String xsd = getSubsystemXsdPath();
+        Assume.assumeTrue("Override getSubsystemXsdPath() to activate the validation of the subsystem's XML",
+                xsd != null);
+        String[] templates = getSubsystemTemplatePaths();
+        Assume.assumeTrue("Override getSubsystemTemplatePaths() to activate the validation of the subsystem templates",
+                templates != null && templates.length > 0);
+
+        for (String template : templates) {
+            String content = readResource(template);
+            SchemaValidator.validateXML(content, "subsystem", xsd, getResolvedProperties());
+        }
     }
 
     /**
