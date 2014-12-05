@@ -142,7 +142,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         PERSISTENT.validateAndSet(operation, deploymentModel);
 
         // ENABLED stays as is if not present in operation
+        boolean wasDeployed = true;
         if (operation.hasDefined(ENABLED.getName())) {
+            wasDeployed = ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean();
             ENABLED.validateAndSet(operation, deploymentModel);
         }
 
@@ -150,6 +152,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
             DeploymentHandlerUtil.replace(context, deploymentModel, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
             DeploymentUtils.enableAttribute(deploymentModel);
+        } else if (wasDeployed) {
+            DeploymentHandlerUtil.undeploy(context, name, runtimeName, vaultReader);
+            DeploymentUtils.disableAttribute(deploymentModel);
         }
 
         context.completeStep(new OperationContext.ResultHandler() {

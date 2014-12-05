@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.domain.controller.operations.deployment.AbstractDeploymentHandler.createFailureException;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -154,10 +155,15 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         // Update server groups
         final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS);
         if (root.hasChild(PathElement.pathElement(SERVER_GROUP))) {
+            ModelNode enabled = correctedOperation.get(ENABLED.getName());
             for (final Resource.ResourceEntry serverGroupResource : root.getChildren(SERVER_GROUP)) {
                 Resource deploymentResource = serverGroupResource.getChild(deploymentPath);
                 if (deploymentResource != null) {
-                    deploymentResource.getModel().get(RUNTIME_NAME).set(runtimeName);
+                    ModelNode groupDeploymentModel = deploymentResource.getModel();
+                    groupDeploymentModel.get(RUNTIME_NAME).set(runtimeName);
+                    if (enabled.isDefined()) {
+                        groupDeploymentModel.get(ENABLED.getName()).set(enabled);
+                    }
                 }
             }
         }
