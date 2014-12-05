@@ -104,6 +104,7 @@
         <version.org.jboss.logmanager.jboss-logmanager>2.0.0.Beta1</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.1.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>1.4.10.Final</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.metadata.jboss-metadata-common>8.1.2.Final</version.org.jboss.metadata.jboss-metadata-common>
         <version.org.jboss.modules.jboss-modules>1.4.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.4.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>4.0.5.Final</version.org.jboss.remoting>
@@ -1114,6 +1115,12 @@
                 <groupId>org.jboss.marshalling</groupId>
                 <artifactId>jboss-marshalling-river</artifactId>
                 <version>${version.org.jboss.marshalling.jboss-marshalling}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.metadata</groupId>
+                <artifactId>jboss-metadata-common</artifactId>
+                <version>${version.org.jboss.metadata.jboss-metadata-common}</version>
             </dependency>
 
             <dependency>
