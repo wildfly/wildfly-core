@@ -30,6 +30,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
@@ -46,6 +49,16 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author Alexey Loubyansky
  */
 public class CliLauncher {
+
+    // We never want the JDK ConsoleHandler to be active
+    static {
+        Logger rootLogger = Logger.getLogger("");
+        for(Handler handler : rootLogger.getHandlers()) {
+            if (handler instanceof ConsoleHandler) {
+                rootLogger.removeHandler(handler);
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
