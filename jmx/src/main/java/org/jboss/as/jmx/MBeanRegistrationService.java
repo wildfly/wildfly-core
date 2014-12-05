@@ -27,6 +27,7 @@ import static org.jboss.as.jmx.logging.JmxLogger.ROOT_LOGGER;
 import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -102,7 +103,9 @@ public class MBeanRegistrationService<T> implements Service<Void> {
                 throw ROOT_LOGGER.mbeanRegistrationFailed(e, name);
             }
         } finally {
-            for (SetupAction action : setupActions) {
+            ListIterator<SetupAction> it = setupActions.listIterator(setupActions.size());
+            while (it.hasPrevious()) {
+                SetupAction action = it.previous();
                 action.teardown(Collections.<String, Object>emptyMap());
             }
         }
@@ -128,7 +131,9 @@ public class MBeanRegistrationService<T> implements Service<Void> {
                 ROOT_LOGGER.unregistrationFailure(e, objectName);
             }
         } finally {
-            for (SetupAction action : setupActions) {
+            ListIterator<SetupAction> it = setupActions.listIterator(setupActions.size());
+            while (it.hasPrevious()) {
+                SetupAction action = it.previous();
                 action.teardown(Collections.<String, Object>emptyMap());
             }
         }
