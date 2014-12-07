@@ -73,14 +73,19 @@ public class PersistentResourceXMLDescription {
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attributeName = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
+            boolean used = false;
             if (wildcard && NAME.equals(attributeName)) {
                 name = value;
-            } else if (attributes.containsKey(attributeName)) {
+                used = true;
+            }
+            if (attributes.containsKey(attributeName)) {
                 AttributeDefinition def = attributes.get(attributeName);
                 AttributeParser parser = attributeParsers.containsKey(attributeName)? attributeParsers.get(attributeName) : def.getParser();
                 assert parser != null;
                 parser.parseAndSetParameter(def,value,op,reader);
-            } else {
+                used = true;
+            }
+            if (!used) {
                 throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
             }
         }
