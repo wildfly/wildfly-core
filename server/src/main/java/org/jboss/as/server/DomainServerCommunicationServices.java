@@ -86,9 +86,9 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
         final ServiceName endpointName = managementSubsystemEndpoint ? RemotingServices.SUBSYSTEM_ENDPOINT : ManagementRemotingServices.MANAGEMENT_ENDPOINT;
         final EndpointService.EndpointType endpointType = managementSubsystemEndpoint ? EndpointService.EndpointType.SUBSYSTEM : EndpointService.EndpointType.MANAGEMENT;
         try {
-            // TODO see if we can figure out a way to work in the vault resolver instead of having to use ExpressionResolver.DEFAULT
+            // TODO see if we can figure out a way to work in the vault resolver instead of having to use ExpressionResolver.SIMPLE
             @SuppressWarnings("deprecation")
-            final OptionMap options = EndpointConfigFactory.create(ExpressionResolver.DEFAULT, endpointConfig, DEFAULTS);
+            final OptionMap options = EndpointConfigFactory.create(ExpressionResolver.SIMPLE, endpointConfig, DEFAULTS);
             ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, endpointName, WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null), endpointType, options);
 
             // Install the communication services

@@ -66,16 +66,6 @@ public interface ExpressionResolver {
     ExpressionResolver TEST_RESOLVER = SIMPLE;
 
     /**
-     * Default {@code ExpressionResolver} that can only resolve from system properties
-     * and environment variables.
-     * Should not be used for production code as it does not support resolution from a security vault.
-     *
-     * @deprecated use {@link #TEST_RESOLVER} for test cases
-     */
-    @Deprecated
-    ExpressionResolver DEFAULT = SIMPLE;
-
-    /**
      * An expression resolver that will not throw an {@code OperationFailedException} when it encounters an
      * unresolvable expression, instead simply returning that expression. Should not be used for most product
      * resolution use cases as it does not support resolution from a security vault.
