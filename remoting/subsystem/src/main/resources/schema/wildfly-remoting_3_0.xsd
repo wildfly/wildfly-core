@@ -340,7 +340,7 @@
         <xs:all>
             <xs:element name="include-mechanisms" type="name-listType" minOccurs="0"/>
             <xs:element name="qop" type="qop-listType" minOccurs="0"/>
-            <xs:element name="strength" type="strength" minOccurs="0"/>
+            <xs:element name="strength" type="strength-listType" minOccurs="0"/>
             <xs:element name="reuse-session" type="boolean-element" minOccurs="0"/>
             <xs:element name="server-auth" type="boolean-element" minOccurs="0"/>
             <xs:element name="policy" type="policy" minOccurs="0"/>
@@ -449,7 +449,18 @@
         </xs:list>
     </xs:simpleType>
 
-    <xs:simpleType name="strength">
+    <xs:complexType name="strength-listType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                An element specifying a strength list.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="strength-list" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="strength-list">
         <xs:annotation>
             <xs:documentation>
             <![CDATA[
