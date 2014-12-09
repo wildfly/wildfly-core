@@ -255,17 +255,30 @@ public class ManagementClient implements AutoCloseable, Closeable {
         return executeForResult(operation);
     }
 
-    private ModelNode executeForResult(final ModelNode operation) throws Exception {
-        final ModelNode result = client.execute(operation);
-        checkSuccessful(result, operation);
-        return result.get(RESULT);
+    /**
+     * Executes an operation and returns the result. If the operation was not successful an
+     * {@link UnsuccessfulOperationException}
+     * will be thrown.
+     *
+     * @param operation The operation
+     * @return The result
+     * @throws UnsuccessfulOperationException if the operation failed
+     */
+    public ModelNode executeForResult(final ModelNode operation) throws UnsuccessfulOperationException {
+        try {
+            final ModelNode result = client.execute(operation);
+            checkSuccessful(result, operation);
+            return result.get(RESULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void checkSuccessful(final ModelNode result,
-                                 final ModelNode operation) throws UnSuccessfulOperationException {
+                                 final ModelNode operation) throws UnsuccessfulOperationException {
         if (!SUCCESS.equals(result.get(OUTCOME).asString())) {
             logger.error("Operation " + operation + " did not succeed. Result was " + result);
-            throw new UnSuccessfulOperationException(result.get(
+            throw new UnsuccessfulOperationException(result.get(
                     FAILURE_DESCRIPTION).toString());
         }
     }
@@ -323,17 +336,6 @@ public class ManagementClient implements AutoCloseable, Closeable {
             }
         }
         return ejbUri;
-    }
-
-    //-------------------------------------------------------------------------------------||
-    // Helper classes ---------------------------------------------------------------------||
-    //-------------------------------------------------------------------------------------||
-    private static class UnSuccessfulOperationException extends Exception {
-        private static final long serialVersionUID = 1L;
-
-        public UnSuccessfulOperationException(String message) {
-            super(message);
-        }
     }
 
     private class MBeanConnectionProxy implements MBeanServerConnection {
