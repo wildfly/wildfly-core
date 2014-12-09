@@ -21,6 +21,7 @@
  */
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BOOT_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
@@ -90,10 +91,10 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         this.hostModel = hostModel;
         this.environment = environment;
         this.expressionResolver = expressionResolver;
-        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName));
+        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), expressionResolver, true);
         this.directoryGrouping = resolveDirectoryGrouping(hostModel, expressionResolver);
         final String serverGroupName = serverModel.require(GROUP).asString();
-        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName));
+        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName), expressionResolver, true);
 
         String serverVMName = null;
         ModelNode serverVM = null;
@@ -129,20 +130,49 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         final ModelNode hostVM = jvmName != null ? hostModel.get(JVM, jvmName) : null;
 
         this.jvmElement = new JvmElement(jvmName,
-                resolveExpressions(hostVM),
-                resolveExpressions(groupVM),
-                resolveExpressions(serverVM));
+                resolveNilableExpressions(hostVM, expressionResolver, false),
+                resolveNilableExpressions(groupVM, expressionResolver, false),
+                resolveNilableExpressions(serverVM, expressionResolver, false));
+    }
+
+    private static ModelNode resolveNilableExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {
+        return unresolved == null ? null : resolveExpressions(unresolved, expressionResolver, excludePostBootSystemProps);
     }
 
     /**
      * Resolve expressions in the given model (if there are any)
+     *
+     * @param unresolved node with possibly unresolved expressions. Cannot be {@code null}
+     * @param expressionResolver resolver to use. Cannot be {@code null}
+     * @param excludePostBootSystemProps {@code true} if child system-property nodes should be checked
+     *                                               for the 'boot-time' attribute, with resolution being
+     *                                               skipped if that is set to 'false'. WFCORE-450
+     *
+     * @return a clone of {@code unresolved} with all expression resolved
      */
-    private ModelNode resolveExpressions(final ModelNode unresolved) {
-        if (unresolved == null) {
-            return null;
+    static ModelNode resolveExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {
+
+        ModelNode toResolve = unresolved.clone();
+        ModelNode sysProps = null;
+        if (excludePostBootSystemProps && toResolve.hasDefined(SYSTEM_PROPERTY)) {
+            sysProps = toResolve.remove(SYSTEM_PROPERTY);
         }
         try {
-            return expressionResolver.resolveExpressions(unresolved.clone());
+            ModelNode result = expressionResolver.resolveExpressions(toResolve);
+            if (sysProps != null) {
+                ModelNode resolvedSysProps = new ModelNode().setEmptyObject();
+                for (Property property : sysProps.asPropertyList()) {
+                    ModelNode val = property.getValue();
+                    boolean bootTime = SystemPropertyResourceDefinition.BOOT_TIME.resolveModelAttribute(expressionResolver, val).asBoolean();
+                    if (bootTime) {
+                        val.get(VALUE).set(SystemPropertyResourceDefinition.VALUE.resolveModelAttribute(expressionResolver, val));
+                    }
+                    // store the resolved boot-time to save re-resolving later
+                    val.get(BOOT_TIME).set(bootTime);
+                    resolvedSysProps.get(property.getName()).set(val);
+                }
+            }
+            return result;
         } catch (OperationFailedException e) {
             // Fail
             throw new IllegalStateException(e.getMessage(), e);
