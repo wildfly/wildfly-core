@@ -88,7 +88,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
                            final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller71x version) {
         // Fails in core-model-test transformation testing if ExpressionResolver.TEST_RESOLVER is used because not present in 7.1.x
         super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.DEFAULT);
+                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -102,7 +102,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
             final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, Controller72x version) {
         super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null, ExpressionResolver.DEFAULT);
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -116,7 +116,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
             final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller72x version) {
         super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.DEFAULT);
+                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -148,7 +148,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
             final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller80x version) {
         // Fails in core-model-test transformation testing if ExpressionResolver.TEST_RESOLVER is used because not present in 7.1.x
         super(processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.DEFAULT);
+         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -178,7 +178,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
             final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller90x version) {
         super(processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.DEFAULT);
+         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
