@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.domain.management.security.ManagementUtil;
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -50,7 +51,9 @@ import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
 
-/**
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
+
+    /**
  * Tests for suspend/resume functionality
  */
 @RunWith(WildflyTestRunner.class)
@@ -94,11 +97,17 @@ public class SuspendResumeTestCase {
             Thread.sleep(1000); //nasty, but we need to make sure the HTTP request has started
 
             ModelNode op = new ModelNode();
-            op.get(ModelDescriptionConstants.OP).set("suspend");
+            op.get(OP).set("suspend");
             managementClient.getControllerClient().execute(op);
+
+            op = new ModelNode();
+            op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            op.get(NAME).set(SUSPEND_STATE);
+            Assert.assertEquals("SUSPENDING", managementClient.executeForResult(op).asString());
 
             HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
+            Assert.assertEquals("SUSPENDED", managementClient.executeForResult(op).asString());
 
             final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
             try {
@@ -110,7 +119,7 @@ public class SuspendResumeTestCase {
             }
 
             op = new ModelNode();
-            op.get(ModelDescriptionConstants.OP).set("resume");
+            op.get(OP).set("resume");
             managementClient.getControllerClient().execute(op);
 
             Assert.assertEquals(SuspendResumeHandler.TEXT, HttpRequest.get(address, 60, TimeUnit.SECONDS));
@@ -119,7 +128,7 @@ public class SuspendResumeTestCase {
             executorService.shutdown();
 
             ModelNode op = new ModelNode();
-            op.get(ModelDescriptionConstants.OP).set("resume");
+            op.get(OP).set("resume");
             managementClient.getControllerClient().execute(op);
         }
 
