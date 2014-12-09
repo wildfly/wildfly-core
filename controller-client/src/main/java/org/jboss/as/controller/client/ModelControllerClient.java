@@ -31,7 +31,6 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 
-import org.jboss.as.controller.client.impl.ClientConfigurationImpl;
 import org.jboss.as.controller.client.impl.RemotingModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
@@ -148,7 +147,7 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final InetAddress address, final int port) {
-            return create(ClientConfigurationImpl.create(address, port));
+            return create(ModelControllerClientConfiguration.Factory.create(address, port));
         }
 
         /**
@@ -160,7 +159,7 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final String protocol, final InetAddress address, final int port) {
-            return create(ClientConfigurationImpl.create(protocol, address, port));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, address, port));
         }
 
         /**
@@ -172,7 +171,7 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final InetAddress address, final int port, final CallbackHandler handler) {
-            return create(ClientConfigurationImpl.create(address, port, handler));
+            return create(ModelControllerClientConfiguration.Factory.create(address, port, handler));
         }
 
 
@@ -186,7 +185,7 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final String protocol, final InetAddress address, final int port, final CallbackHandler handler) {
-            return create(ClientConfigurationImpl.create(protocol, address, port, handler));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, address, port, handler));
         }
 
         /**
@@ -199,7 +198,7 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final InetAddress address, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) {
-            return create(ClientConfigurationImpl.create(address, port, handler, saslOptions));
+            return create(ModelControllerClientConfiguration.Factory.create(address, port, handler, saslOptions));
         }
 
         /**
@@ -213,7 +212,7 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final String protocol, final InetAddress address, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) {
-            return create(ClientConfigurationImpl.create(protocol, address, port, handler, saslOptions));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, address, port, handler, saslOptions));
         }
 
         /**
@@ -225,7 +224,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(hostName, port));
+            return create(ModelControllerClientConfiguration.Factory.create(hostName, port));
         }
 
         /**
@@ -238,7 +237,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(protocol, hostName, port));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port));
         }
 
         /**
@@ -251,7 +250,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(hostName, port, handler));
+            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler));
         }
 
         /**
@@ -265,7 +264,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(protocol, hostName, port, handler));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler));
         }
 
         /**
@@ -279,7 +278,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(hostName, port, handler, sslContext));
+            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler, sslContext));
         }
 
         /**
@@ -294,7 +293,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(protocol, hostName, port, handler, sslContext));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, sslContext));
         }
 
         /**
@@ -308,7 +307,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(hostName, port, handler, sslContext, connectionTimeout));
+            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler, sslContext, connectionTimeout));
         }
 
         /**
@@ -323,7 +322,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(protocol, hostName, port, handler, sslContext, connectionTimeout));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, sslContext, connectionTimeout));
         }
 
         /**
@@ -339,7 +338,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout, final Map<String, String> saslOptions) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(protocol, hostName, port, handler, sslContext, connectionTimeout, saslOptions));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, sslContext, connectionTimeout, saslOptions));
         }
 
         /**
@@ -353,7 +352,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(hostName, port, handler, saslOptions));
+            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler, saslOptions));
         }
 
         /**
@@ -368,7 +367,7 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) throws UnknownHostException {
-            return create(ClientConfigurationImpl.create(protocol, hostName, port, handler, saslOptions));
+            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, saslOptions));
         }
 
         /**
