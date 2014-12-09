@@ -301,7 +301,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
-        return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT, rollbackOnRuntimeFailure);
+        return boot(bootOperations, rollbackOnRuntimeFailure, ModelControllerImpl.getMutableRootResourceRegistrationProvider());
+    }
+
+    protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure,
+            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
+        return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
+                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider);
     }
 
     /** @deprecated internal use only  only for use by legacy test controllers */

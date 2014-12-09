@@ -400,7 +400,8 @@ class ModelControllerImpl implements ModelController {
     }
 
     boolean boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
-              final boolean rollbackOnRuntimeFailure) {
+              final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) {
+
         final Integer operationID = random.nextInt();
 
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
@@ -413,7 +414,7 @@ class ModelControllerImpl implements ModelController {
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
-        BootOperations bootOperations = organizeBootOperations(bootList, operationID);
+        BootOperations bootOperations = organizeBootOperations(bootList, operationID, parallelBootRootResourceRegistrationProvider);
         for (ParsedBootOp initialOp : bootOperations.initialOps) {
             context.addBootStep(initialOp);
         }
@@ -472,16 +473,19 @@ class ModelControllerImpl implements ModelController {
      *
      * @param bootList the list of boot operations
      * @param lockPermit lockPermit to use in any {@link org.jboss.as.controller.ParallelBootOperationContext}
+     * @param parallelBootRootResourceRegistrationProvider the root resource registration provider used for the parallel extension add handler. If {@code null} the default one will be used
      * @return data structure organizing the boot ops for initial execution and post-extension-add execution
      */
-    private BootOperations organizeBootOperations(List<ModelNode> bootList, final int lockPermit) {
+    private BootOperations organizeBootOperations(List<ModelNode> bootList, final int lockPermit, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) {
 
         final List<ParsedBootOp> initialOps = new ArrayList<ParsedBootOp>();
         List<ParsedBootOp> postExtensionOps = null;
         boolean invalid = false;
         boolean sawExtensionAdd = false;
-        ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
-        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, getMutableRootResourceRegistrationProvider());
+        final ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
+        final MutableRootResourceRegistrationProvider parallellBRRRProvider = parallelBootRootResourceRegistrationProvider != null ?
+                parallelBootRootResourceRegistrationProvider : getMutableRootResourceRegistrationProvider();
+        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, parallellBRRRProvider);
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
                 ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit) : null;
         boolean registeredParallelSubsystemHandler = false;

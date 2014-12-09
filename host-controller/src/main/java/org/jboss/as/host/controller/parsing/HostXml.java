@@ -54,6 +54,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
@@ -71,14 +72,18 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.RunningMode;
@@ -90,7 +95,9 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.host.controller.discovery.DiscoveryOptionResourceDefinition;
@@ -110,6 +117,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -126,6 +134,7 @@ public class HostXml extends CommonXml {
     private final String defaultHostControllerName;
     private final RunningMode runningMode;
     private final boolean isCachedDc;
+    private final ExtensionRegistry extensionRegistry;
     private final ExtensionXml extensionXml;
 
     public HostXml(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
@@ -133,6 +142,7 @@ public class HostXml extends CommonXml {
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;
+        this.extensionRegistry = extensionRegistry;
         extensionXml = new ExtensionXml(loader, executorService, extensionRegistry);
     }
 
@@ -144,20 +154,21 @@ public class HostXml extends CommonXml {
             throw unexpectedElement(reader);
         }
         Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        switch (readerNS) {
-            case DOMAIN_1_0: {
-                readHostElement_1_0(reader, address, operationList);
-                break;
-            }
-            default:
-                // Instead of having to list the remaining versions we just check it is actually a valid version.
-                for (Namespace current : Namespace.domainValues()) {
-                    if (readerNS.equals(current)) {
-                        readHostElement_1_1(readerNS, reader, address, operationList);
-                        return;
-                    }
+        if (readerNS == DOMAIN_1_0) {
+            readHostElement_1_0(reader, address, operationList);
+
+        } else if (readerNS.getMajorVersion() == 1 || readerNS.getMajorVersion() == 2) {
+            readHostElement_1_1(readerNS, reader, address, operationList);
+
+        } else {
+            // Instead of having to list the remaining versions we just check it is actually a valid version.
+            for (Namespace current : Namespace.domainValues()) {
+                if (readerNS.equals(current)) {
+                    readHostElement_3_0(readerNS, reader, address, operationList);
+                    return;
                 }
-                throw unexpectedElement(reader);
+            }
+            throw unexpectedElement(reader);
         }
     }
 
@@ -258,6 +269,8 @@ public class HostXml extends CommonXml {
             writer.writeEmptyElement(Element.SERVERS.getLocalName());
             HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
         }
+
+        writeHostProfile(writer, context);
 
         writer.writeEndElement();
         writeNewLine(writer);
@@ -422,10 +435,117 @@ public class HostXml extends CommonXml {
         // Handle elements: sequence
 
         Element element = nextElement(reader, namespace);
-        if (element == Element.EXTENSIONS) {
-            if (namespace.compareTo(Namespace.DOMAIN_3_0) < 0) {
-                throw ParseUtils.unexpectedElement(reader);
+        if (element == Element.SYSTEM_PROPERTIES) {
+            parseSystemProperties(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.PATHS) {
+            parsePaths(reader, address, namespace, list, true);
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.VAULT) {
+            parseVault(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.MANAGEMENT) {
+            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
+            managementXml.parseManagement(reader, address, namespace, list, true);
+            element = nextElement(reader, namespace);
+        } else {
+            throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
+        }
+        if (element == Element.DOMAIN_CONTROLLER) {
+            parseDomainController(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
+        }
+        final Set<String> interfaceNames = new HashSet<String>();
+        if (element == Element.INTERFACES) {
+            parseInterfaces(reader, interfaceNames, address, namespace, list, true);
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.JVMS) {
+            parseJvms(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.SERVERS) {
+            switch (namespace) {
+                case DOMAIN_1_1:
+                    parseServers_1_0(reader, address, namespace, list);
+                    break;
+                default:
+                    parseServers_1_2(reader, address, namespace, list);
+                    break;
             }
+            element = nextElement(reader, namespace);
+        }
+        if (element != null) {
+            throw unexpectedElement(reader);
+        }
+
+    }
+
+
+    private void readHostElement_3_0(final Namespace namespace, final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
+            throws XMLStreamException {
+        String hostName = null;
+
+        // Deffer adding the namespaces and schema locations until after the host has been created.
+        List<ModelNode> namespaceOperations = new LinkedList<ModelNode>();
+        parseNamespaces(reader, address, namespaceOperations);
+
+        // attributes
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            switch (Namespace.forUri(reader.getAttributeNamespace(i))) {
+                case NONE: {
+                    final String value = reader.getAttributeValue(i);
+                    final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                    switch (attribute) {
+                        case NAME: {
+                            hostName = value;
+                            break;
+                        }
+                        default:
+                            throw unexpectedAttribute(reader, i);
+                    }
+                    break;
+                }
+                case XML_SCHEMA_INSTANCE: {
+                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
+                        case SCHEMA_LOCATION: {
+                            parseSchemaLocations(reader, address, namespaceOperations, i);
+                            break;
+                        }
+                        case NO_NAMESPACE_SCHEMA_LOCATION: {
+                            // todo, jeez
+                            break;
+                        }
+                        default: {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                    }
+                    break;
+                }
+                default:
+                    throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        // The following also updates the address parameter so this address can be used for future operations
+        // in the context of this host.
+        addLocalHost(address, list, hostName);
+        // The namespace operations were created before the host name was known, the address can now be updated
+        // to the local host specific address.
+        for (ModelNode operation : namespaceOperations) {
+            operation.get(OP_ADDR).set(address);
+            list.add(operation);
+        }
+
+        // Content
+        // Handle elements: sequence
+
+        Element element = nextElement(reader, namespace);
+        if (element == Element.EXTENSIONS) {
             extensionXml.parseExtensions(reader, address, namespace, list);
             element = nextElement(reader, namespace);
         }
@@ -470,6 +590,10 @@ public class HostXml extends CommonXml {
                     parseServers_1_2(reader, address, namespace, list);
                     break;
             }
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.PROFILE) {
+            parseHostProfile(reader, address, list);
             element = nextElement(reader, namespace);
         }
         if (element != null) {
@@ -2073,6 +2197,46 @@ public class HostXml extends CommonXml {
 
     }
 
+    private void parseHostProfile(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+        // Attributes
+        requireNoAttributes(reader);
+
+        // Content
+        final Map<String, List<ModelNode>> profileOps = new LinkedHashMap<String, List<ModelNode>>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            if (Element.forName(reader.getLocalName()) != Element.SUBSYSTEM) {
+                throw unexpectedElement(reader);
+            }
+            String namespace = reader.getNamespaceURI();
+            if (profileOps.containsKey(namespace)) {
+                throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("subsystem", reader.getLocation());
+            }
+            // parse subsystem
+            final List<ModelNode> subsystems = new ArrayList<ModelNode>();
+            reader.handleAny(subsystems);
+
+            profileOps.put(namespace, subsystems);
+        }
+
+        // Let extensions modify the profile
+        Set<ProfileParsingCompletionHandler> completionHandlers = extensionRegistry.getProfileParsingCompletionHandlers();
+        for (ProfileParsingCompletionHandler completionHandler : completionHandlers) {
+            completionHandler.handleProfileParsingCompletion(profileOps, list);
+        }
+
+        for (List<ModelNode> subsystems : profileOps.values()) {
+            for (final ModelNode update : subsystems) {
+                // Process relative subsystem path address
+                final ModelNode subsystemAddress = address.clone();
+                for (final Property path : update.get(OP_ADDR).asPropertyList()) {
+                    subsystemAddress.add(path.getName(), path.getValue().asString());
+                }
+                update.get(OP_ADDR).set(subsystemAddress);
+                list.add(update);
+            }
+        }
+    }
+
     private void writeDomainController(final XMLExtendedStreamWriter writer, final ModelNode modelNode, ModelNode ignoredResources,
             ModelNode discoveryOptionsOrdering, ModelNode staticDiscoveryOptions, ModelNode discoveryOptions) throws XMLStreamException {
         writer.writeStartElement(Element.DOMAIN_CONTROLLER.getLocalName());
@@ -2216,6 +2380,34 @@ public class HostXml extends CommonXml {
 
             writer.writeEndElement();
         }
+    }
+
+    private void writeHostProfile(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+            throws XMLStreamException {
+
+        final ModelNode profileNode = context.getModelNode();
+        // In case there are no subsystems defined
+        if (!profileNode.hasDefined(SUBSYSTEM)) {
+            return;
+        }
+
+        writer.writeStartElement(Element.PROFILE.getLocalName());
+        Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
+        if (subsystemNames.size() > 0) {
+            String defaultNamespace = writer.getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX);
+            for (String subsystemName : subsystemNames) {
+                try {
+                    ModelNode subsystem = profileNode.get(SUBSYSTEM, subsystemName);
+                    XMLElementWriter<SubsystemMarshallingContext> subsystemWriter = context.getSubsystemWriter(subsystemName);
+                    if (subsystemWriter != null) { // FIXME -- remove when extensions are doing the registration
+                        subsystemWriter.writeContent(writer, new SubsystemMarshallingContext(subsystem, writer));
+                    }
+                } finally {
+                    writer.setDefaultNamespace(defaultNamespace);
+                }
+            }
+        }
+        writer.writeEndElement();
     }
 
     private class ManagementXmlDelegate extends ManagementXml.Delegate {

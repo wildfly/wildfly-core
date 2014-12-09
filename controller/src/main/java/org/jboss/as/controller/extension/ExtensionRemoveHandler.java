@@ -38,6 +38,11 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = REMOVE;
     private final ExtensionRegistry extensionRegistry;
     private final ExtensionRegistryType extensionRegistryType;
+
+    /**
+     * For a server or domain.xml extension, this will be the root resource registration.<br/>
+     * For a host.xml extension, this will be the host resource registration
+     */
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
@@ -60,7 +65,7 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 
         final ManagementResourceRegistration rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
-        extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module, rootRegistration);
+        extensionRegistry.removeExtension(context.readResourceFromRoot(rootRegistration.getPathAddress()), module, rootRegistration);
 
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override

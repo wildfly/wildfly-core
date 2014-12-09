@@ -98,7 +98,7 @@ public class HostModelUtil {
         root.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
     }
 
-    public static void createHostRegistry(final String hostName,
+    public static ManagementResourceRegistration createHostRegistry(final String hostName,
                                           final ManagementResourceRegistration root, final HostControllerConfigurationPersister configurationPersister,
                                           final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
                                           final HostFileRepository localFileRepository,
@@ -132,5 +132,6 @@ public class HostModelUtil {
                 configurationPersister, contentRepository, remoteFileRepository, extensionRegistry, ignoredRegistry, pathManager);
         hostRegistration.registerOperationHandler(RemoteDomainControllerAddHandler.DEFINITION, remoteDcAddHandler);
         hostRegistration.registerOperationHandler(RemoteDomainControllerRemoveHandler.DEFINITION, RemoteDomainControllerRemoveHandler.INSTANCE);
+        return hostRegistration;
     }
 }

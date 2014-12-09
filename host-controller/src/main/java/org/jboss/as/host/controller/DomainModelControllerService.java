@@ -72,6 +72,7 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -92,6 +93,7 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
@@ -210,6 +212,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private volatile ServerInventory serverInventory;
 
     private volatile ScheduledExecutorService pingScheduler;
+    private volatile ManagementResourceRegistration hostModelRegistration;
 
 
     static ServiceController<ModelController> addService(final ServiceTarget serviceTarget,
@@ -545,7 +548,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
             ModelNode addHostOp = hostBootOps.remove(0);
             ok = boot(Collections.singletonList(addHostOp), true);
-            ok = ok && boot(hostBootOps, true);
+
+            //Pass in a custom mutable root resource registration provider for the remaining host model ops boot
+            //This will be used to make sure that any extensions added in parallel get registered in the host model
+            ok = ok && boot(hostBootOps, true, new MutableRootResourceRegistrationProvider() {
+                public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
+                    return hostModelRegistration;
+                }
+            });
 
             final RunningMode currentRunningMode = runningModeControl.getRunningMode();
 
@@ -844,10 +854,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     @Override
     public void registerHostModel(String hostName, ManagementResourceRegistration root) {
-        HostModelUtil.createHostRegistry(hostName, root, hostControllerConfigurationPersister, environment, runningModeControl,
-                localFileRepository, hostControllerInfo, new DelegatingServerInventory(), remoteFileRepository, contentRepository,
-                this, hostExtensionRegistry, extensionRegistry, vaultReader, ignoredRegistry, processState, pathManager, authorizer,
-                getAuditLogger(), getBootErrorCollector());
+        hostModelRegistration =
+                HostModelUtil.createHostRegistry(hostName, root, hostControllerConfigurationPersister, environment, runningModeControl,
+                        localFileRepository, hostControllerInfo, new DelegatingServerInventory(), remoteFileRepository, contentRepository,
+                        this, hostExtensionRegistry, extensionRegistry, vaultReader, ignoredRegistry, processState, pathManager, authorizer,
+                        getAuditLogger(), getBootErrorCollector());
     }
 
 

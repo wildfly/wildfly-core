@@ -46,6 +46,10 @@ public class ExtensionAddHandler implements OperationStepHandler {
     private final ExtensionRegistry extensionRegistry;
     private final boolean parallelBoot;
     private final ExtensionRegistryType extensionRegistryType;
+    /**
+     * For a server or domain.xml extension, this will be the root resource registration.<br/>
+     * For a host.xml extension, this will be the host resource registration
+     */
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
@@ -100,6 +104,14 @@ public class ExtensionAddHandler implements OperationStepHandler {
         initializeExtension(extensionRegistry, module, rootRegistration, extensionRegistryType);
     }
 
+    /**
+     * Initialise an extension module's extensions in the extension registry
+     *
+     * @param extensionRegistry the extension registry
+     * @param module the name of the module containing the extensions
+     * @param rootRegistration The parent registration of the extensions. For a server or domain.xml extension, this will be the root resource registration. For a host.xml extension, this will be the host resource registration
+     * @param extensionRegistryType The type of the registry
+     */
     static void initializeExtension(ExtensionRegistry extensionRegistry, String module,
                                     ManagementResourceRegistration rootRegistration,
                                     ExtensionRegistryType extensionRegistryType) {

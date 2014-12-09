@@ -93,7 +93,12 @@ import org.jboss.staxmapper.XMLMapper;
 
 /**
  * A registry for information about {@link org.jboss.as.controller.Extension}s to the core application server.
- *
+ * In server/standalone mode there will be one extension registry for the whole server process. In domain mode,
+ * there will be:
+ * <ul>
+ *      <li>One extension registry for extensions in the domain model</li>
+ *      <li>One extension registry for extension in the host model</li>
+ * </ul>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class ExtensionRegistry {
@@ -276,10 +281,18 @@ public class ExtensionRegistry {
      * @throws IllegalStateException if the extension still has subsystems present in {@code rootResource} or its children
      */
     public void removeExtension(Resource rootResource, String moduleName, ManagementResourceRegistration rootRegistration) throws IllegalStateException {
-        // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
-        // doesn't add the profile mrr even in HC-based tests
-        ManagementResourceRegistration profileReg = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
-        if (profileReg == null) {
+        final ManagementResourceRegistration profileReg;
+        if (rootRegistration.getPathAddress().size() == 0) {
+            //domain or server extension
+            // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
+            // doesn't add the profile mrr even in HC-based tests
+            ManagementResourceRegistration reg = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
+            if (reg == null) {
+                reg = rootRegistration;
+            }
+            profileReg = reg;
+        } else {
+            //host model extension
             profileReg = rootRegistration;
         }
         ManagementResourceRegistration deploymentsReg = processType.isServer() ? rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT))) : null;
@@ -416,6 +429,7 @@ public class ExtensionRegistry {
         private final boolean allowSupplement;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
+        private final ExtensionRegistryType extensionRegistryType;
 
         private ExtensionContextImpl(String extensionName, ManagementResourceRegistration profileResourceRegistration,
                                      ManagementResourceRegistration deploymentsResourceRegistration, PathManager pathManager,
@@ -436,6 +450,7 @@ public class ExtensionRegistry {
             } else {
                 this.deploymentsRegistration = null;
             }
+            this.extensionRegistryType = extensionRegistryType;
         }
 
         @Override
@@ -469,7 +484,7 @@ public class ExtensionRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             return new SubsystemRegistrationImpl(name, version,
-                    profileRegistration, deploymentsRegistration);
+                    profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName);
         }
 
         @Override
@@ -532,6 +547,7 @@ public class ExtensionRegistry {
 
         private ModelVersion version;
         private boolean deprecated = false;
+        private volatile boolean hostCapable;
         private final List<String> parsingNamespaces = new ArrayList<String>();
 
         @Override
@@ -569,6 +585,15 @@ public class ExtensionRegistry {
         private void setDeprecated(boolean deprecated) {
             this.deprecated = deprecated;
         }
+
+
+        private void setHostCapable() {
+            hostCapable = true;
+        }
+
+        public boolean isHostCapable() {
+            return hostCapable;
+        }
     }
 
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
@@ -576,21 +601,37 @@ public class ExtensionRegistry {
         private final ModelVersion version;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
+        private final ExtensionRegistryType extensionRegistryType;
+        private final String extensionModuleName;
+        private volatile boolean hostCapable;
+        private volatile boolean modelsRegistered;
 
         private SubsystemRegistrationImpl(String name, ModelVersion version,
                                           ManagementResourceRegistration profileRegistration,
-                                          ManagementResourceRegistration deploymentsRegistration) {
+                                          ManagementResourceRegistration deploymentsRegistration,
+                                          ExtensionRegistryType extensionRegistryType,
+                                          String extensionModuleName) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             this.deploymentsRegistration = deploymentsRegistration;
             this.version = version;
+            this.extensionRegistryType = extensionRegistryType;
+            this.extensionModuleName = extensionModuleName;
+        }
+
+        @Override
+        public void setHostCapable() {
+            if (modelsRegistered) {
+                throw ControllerLogger.ROOT_LOGGER.registerHostCapableMustHappenFirst(name);
+            }
+            hostCapable = true;
         }
 
         @Override
         public ManagementResourceRegistration registerSubsystemModel(ResourceDefinition resourceDefinition) {
             assert resourceDefinition != null : "resourceDefinition is null";
-
+            checkHostCapable();
             return profileRegistration.registerSubModel(resourceDefinition);
         }
 
@@ -611,22 +652,30 @@ public class ExtensionRegistry {
 
         @Override
         public TransformersSubRegistration registerModelTransformers(final ModelVersionRange range, final ResourceTransformer subsystemTransformer) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, range, subsystemTransformer);
         }
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, placeholder);
         }
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, false);
         }
 
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
         }
 
@@ -642,6 +691,12 @@ public class ExtensionRegistry {
         @Override
         public ModelVersion getSubsystemVersion() {
             return version;
+        }
+
+        private void checkHostCapable() {
+            if (extensionRegistryType == ExtensionRegistryType.HOST && !hostCapable) {
+                throw ControllerLogger.ROOT_LOGGER.nonHostCapableSubsystemInHostModel(name, extensionModuleName);
+            }
         }
     }
 
