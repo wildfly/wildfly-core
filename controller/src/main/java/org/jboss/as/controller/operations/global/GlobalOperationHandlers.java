@@ -24,6 +24,7 @@ package org.jboss.as.controller.operations.global;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE;
@@ -314,7 +315,8 @@ public class GlobalOperationHandlers {
             if (registration.isRemote()) {
                 // make sure the target address does not contain the unresolved elements of the address
                 final ModelNode remoteOp = operation.clone();
-                remoteOp.get(OP_ADDR).set(base.append(remaining).toModelNode());
+                final PathAddress fullAddress = base.append(remaining);
+                remoteOp.get(OP_ADDR).set(fullAddress.toModelNode());
                 // Temp remote result
                 final ModelNode resultItem = new ModelNode();
 
@@ -323,36 +325,58 @@ public class GlobalOperationHandlers {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         try {
-                            // Execute the proxy step handler
-                            delegate.execute(context, operation);
+                            // Execute the proxy step handler in a separate step
+                            // so we have the final response available to our ResultHandler
+                            ControllerLogger.MGMT_OP_LOGGER.tracef("sending ModelAddressResolver request %s to remote process using %s",
+                                    operation, delegate);
 
-                            // If there are multiple targets remaining, the result should be a list
-                            if (remaining.isMultiTarget()) {
-                                if (resultItem.get(RESULT).getType() == ModelType.LIST) {
-                                    for (final ModelNode rr : resultItem.get(RESULT).asList()) {
-                                        // Create a new result entry
-                                        final ModelNode nr = result.add();
-                                        final PathAddress address = PathAddress.pathAddress(rr.get(OP_ADDR));
-                                        // Check whether the result of the remote target contains part of the base address
-                                        // this might happen for hosts
-                                        int max = Math.min(base.size(), address.size());
-                                        int match = 0;
-                                        for (int i = 0; i < max; i++) {
-                                            final PathElement eb = base.getElement(i);
-                                            final PathElement ea = address.getElement(i);
-                                            if (eb.getKey().equals(ea.getKey())) {
-                                                match = i + 1;
+                            context.addStep(delegate, OperationContext.Stage.MODEL, true);
+
+                            context.completeStep(new OperationContext.ResultHandler() {
+
+                                @Override
+                                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                                    ControllerLogger.MGMT_OP_LOGGER.tracef("ModelAddressResolver response from remote process is %s",
+                                            resultItem);
+
+                                    // If there are multiple targets remaining, the result should be a list
+                                    if (remaining.isMultiTarget()) {
+                                        if (resultItem.get(RESULT).getType() == ModelType.LIST) {
+                                            for (final ModelNode rr : resultItem.get(RESULT).asList()) {
+                                                // Create a new result entry
+                                                final ModelNode nr = result.add();
+                                                final PathAddress address = PathAddress.pathAddress(rr.get(OP_ADDR));
+                                                // Check whether the result of the remote target contains part of the base address
+                                                // this might happen for hosts
+                                                int max = Math.min(base.size(), address.size());
+                                                int match = 0;
+                                                for (int i = 0; i < max; i++) {
+                                                    final PathElement eb = base.getElement(i);
+                                                    final PathElement ea = address.getElement(i);
+                                                    if (eb.getKey().equals(ea.getKey())) {
+                                                        match = i + 1;
+                                                    }
+                                                }
+                                                final PathAddress resolvedAddress = base.append(address.subAddress(match));
+                                                ControllerLogger.MGMT_OP_LOGGER.tracef("recording multi-target ModelAddressResolver response " +
+                                                        "to %s at %s", fullAddress, resolvedAddress);
+                                                nr.get(OP_ADDR).set(resolvedAddress.toModelNode());
+                                                nr.get(OUTCOME).set(rr.get(OUTCOME));
+                                                nr.get(RESULT).set(rr.get(RESULT));
                                             }
                                         }
-                                        nr.get(OP_ADDR).set(base.append(address.subAddress(match)).toModelNode());
-                                        nr.get(RESULT).set(rr.get(RESULT));
+                                    } else {
+                                        ControllerLogger.MGMT_OP_LOGGER.tracef("recording non-multi-target ModelAddressResolver response " +
+                                                "to %s", fullAddress);
+                                        final ModelNode nr = result.add();
+                                        nr.get(OP_ADDR).set(fullAddress.toModelNode());
+                                        nr.get(OUTCOME).set(resultItem.get(OUTCOME));
+                                        nr.get(RESULT).set(resultItem.get(RESULT));
                                     }
+
+                                    // FIXME record ACCESS_CONTROL response header data!
                                 }
-                            } else {
-                                final ModelNode nr = result.add();
-                                nr.get(OP_ADDR).set(base.append(remaining).toModelNode());
-                                nr.get(RESULT).set(resultItem.get(RESULT));
-                            }
+                            });
                         } catch (Resource.NoSuchResourceException e) {
                             // just discard the result to avoid leaking the inaccessible address
                         }
@@ -423,6 +447,7 @@ public class GlobalOperationHandlers {
                 newOp.get(OP_ADDR).set(base.toModelNode());
 
                 final ModelNode resultItem = this.result.add();
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Added ModelAddressResolver result item for %s", base);
                 final ModelNode resultAddress = resultItem.get(OP_ADDR);
 
                 final OperationStepHandler wrapper = new OperationStepHandler() {
@@ -433,6 +458,7 @@ public class GlobalOperationHandlers {
                             context.completeStep(new OperationContext.ResultHandler() {
                                 @Override
                                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                                    ControllerLogger.MGMT_OP_LOGGER.tracef("ModelAddressResolver result for %s is %s", base, resultItem);
                                     if (resultItem.hasDefined(RESULT)) {
                                         resultAddress.set(base.toModelNode());
                                     } else {

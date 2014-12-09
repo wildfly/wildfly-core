@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -43,8 +44,8 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
@@ -81,7 +82,9 @@ public class OperationCoordinatorStepHandler {
     void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         // Determine routing
-        OperationRouting routing = OperationRouting.determineRouting(context, operation, localHostControllerInfo);
+        OperationRouting routing = OperationRouting.determineRouting(context, operation, localHostControllerInfo, hostProxies.keySet());
+
+        HOST_CONTROLLER_LOGGER.trace(routing);
 
         if (!localHostControllerInfo.isMasterDomainController()
                 && !routing.isLocalOnly(localHostControllerInfo.getLocalHostName())) {
@@ -97,7 +100,13 @@ public class OperationCoordinatorStepHandler {
             // Execute direct (which will proxy the request to the intended HC) and let the remote HC coordinate
             // any two step process (if there is one)
             configureDomainUUID(operation);
-            executeDirect(context, operation);
+            // See if this is a composite; if so use the two step path to avoid breaking it locally into multiple
+            // steps that get invoked piecemeal on the target host
+            if (COMPOSITE.equals(operation.get(OP).asString()) && PathAddress.pathAddress(operation.get(OP_ADDR)).size() == 0) {
+                executeTwoPhaseOperation(context, operation, routing);
+            } else {
+                executeDirect(context, operation);
+            }
         }
         else if (!routing.isTwoStep()) {
             // It's a domain or host level op (probably a read) that does not require bringing in other hosts or servers

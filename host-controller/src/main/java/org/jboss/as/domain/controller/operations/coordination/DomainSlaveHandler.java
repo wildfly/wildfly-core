@@ -232,6 +232,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     ResponseAttachmentInputStreamSupport.handleDomainOperationResponseStreams(context, transformedResult, finalResponse.getInputStreams());
 
                     HOST_CONTROLLER_LOGGER.tracef("Final result for remote host %s is %s", hostName, finalResponse.getResponseNode());
+                    HOST_CONTROLLER_LOGGER.tracef("Transformed result from host %s is %s", hostName, transformedResult);
 
                 } catch (InterruptedException e) {
                     interruptThread = true;
