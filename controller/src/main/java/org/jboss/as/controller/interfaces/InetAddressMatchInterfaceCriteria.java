@@ -27,8 +27,6 @@ package org.jboss.as.controller.interfaces;
 
 import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV4_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV6_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INET_ADDRESS;
 
 import java.net.Inet6Address;
@@ -113,7 +111,7 @@ public class InetAddressMatchInterfaceCriteria extends AbstractInterfaceCriteria
             InetAddress toMatch = getAddress();
             // One time only warn against use of wildcard addresses
             if (!anyLocalLogged && toMatch.isAnyLocalAddress()) {
-                SERVER_LOGGER.invalidWildcardAddress(this.address, INET_ADDRESS, ANY_ADDRESS, ANY_IPV4_ADDRESS, ANY_IPV6_ADDRESS);
+                SERVER_LOGGER.invalidWildcardAddress(this.address, INET_ADDRESS, ANY_ADDRESS);
                 anyLocalLogged = true;
             }
 

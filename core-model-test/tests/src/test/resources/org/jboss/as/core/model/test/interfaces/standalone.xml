@@ -5,7 +5,7 @@
             <inet-address value="127.0.0.1"/>
         </interface>
         <interface name="external">
-            <any-ipv4-address/>
+            <any-address/>
         </interface>
         <interface name="internal">
             <multicast/>

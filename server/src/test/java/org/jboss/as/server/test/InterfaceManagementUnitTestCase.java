@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -152,36 +155,8 @@ public class InterfaceManagementUnitTestCase {
         {
             // any-address is not valid with the normal criteria
             final ModelNode operation = base.clone();
-            operation.get("any-address").set(true);
+            operation.get(ANY_ADDRESS).set(true);
             populateCritieria(operation, Nesting.TOP);
-            executeForNonServiceFailure(client, operation);
-        }
-        {
-            // any-ipv4-address is not valid with the normal criteria
-            final ModelNode operation = base.clone();
-            operation.get("any-ipv4-address").set(true);
-            populateCritieria(operation, Nesting.TOP);
-            executeForNonServiceFailure(client, operation);
-        }
-        {
-            // any-ipv6-address is not valid with the normal criteria
-            final ModelNode operation = base.clone();
-            operation.get("any-ipv6-address").set(true);
-            populateCritieria(operation, Nesting.TOP);
-            executeForNonServiceFailure(client, operation);
-        }
-        {
-            // Mixing any-xxx-address criteria is not legal
-            final ModelNode operation = base.clone();
-            operation.get("any-ipv6-address").set(true);
-            operation.get("any-ipv4-address").set(true);
-            executeForNonServiceFailure(client, operation);
-        }
-        {
-            // Mixing any-xxx-address criteria is not legal
-            final ModelNode operation = base.clone();
-            operation.get("any-address").set(true);
-            operation.get("any-ipv4-address").set(true);
             executeForNonServiceFailure(client, operation);
         }
         // Disabled. See https://github.com/wildfly/wildfly-core/commit/ae0ca95c42b481ef519246b9a6eab2b50c48472e
@@ -208,11 +183,11 @@ public class InterfaceManagementUnitTestCase {
             final ModelNode operation = new ModelNode();
             operation.get(ModelDescriptionConstants.OP).set("add");
             operation.get(ModelDescriptionConstants.OP_ADDR).set(address);
-            operation.get("any-address").set(true);
+            operation.get(ANY_ADDRESS).set(true);
 
             executeForResult(client, operation);
             final ModelNode resource = readResource(client, operation.get(ModelDescriptionConstants.OP_ADDR));
-            Assert.assertTrue(resource.get("any-address").asBoolean());
+            Assert.assertTrue(resource.get(ANY_ADDRESS).asBoolean());
         }
         {
             final ModelNode composite = new ModelNode();
@@ -221,7 +196,7 @@ public class InterfaceManagementUnitTestCase {
             final ModelNode one = composite.get(ModelDescriptionConstants.STEPS).add();
             one.get(ModelDescriptionConstants.OP).set("write-attribute");
             one.get(ModelDescriptionConstants.OP_ADDR).set(address);
-            one.get(ModelDescriptionConstants.NAME).set("any-address");
+            one.get(ModelDescriptionConstants.NAME).set(ANY_ADDRESS);
             one.get(ModelDescriptionConstants.VALUE);
 
             final ModelNode two = composite.get(ModelDescriptionConstants.STEPS).add();
@@ -232,7 +207,7 @@ public class InterfaceManagementUnitTestCase {
 
             executeForResult(client, composite);
             final ModelNode resource = readResource(client, address);
-            Assert.assertFalse(resource.hasDefined("any-address"));
+            Assert.assertFalse(resource.hasDefined(ANY_ADDRESS));
             Assert.assertEquals("127.0.0.1", resource.get("inet-address").asString());
         }
     }
@@ -479,6 +454,7 @@ public class InterfaceManagementUnitTestCase {
             if (! result.hasDefined("outcome") && ! ModelDescriptionConstants.FAILED.equals(result.get("outcome").asString())) {
                 Assert.fail("Operation outcome is " + result.get("outcome").asString());
             }
+            System.out.println("Failure for " + operation + "\n is:\n" + result);
             Assert.assertFalse(result.toString(), result.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).toString().contains(ControllerLogger.MGMT_OP_LOGGER.failedServices()));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -496,9 +472,10 @@ public class InterfaceManagementUnitTestCase {
     private static void executeForServiceFailure(final ModelControllerClient client, final ModelNode operation) {
         try {
             final ModelNode result = client.execute(operation);
-            if (! result.hasDefined("outcome") && ! ModelDescriptionConstants.FAILED.equals(result.get("outcome").asString())) {
-                Assert.fail("Operation outcome is " + result.get("outcome").asString());
+            if (! result.hasDefined(OUTCOME) && ! ModelDescriptionConstants.FAILED.equals(result.get(OUTCOME).asString())) {
+                Assert.fail("Operation outcome is " + result.get(OUTCOME).asString());
             }
+            System.out.println("Failure for " + operation + "\n is:\n" + result);
             Assert.assertTrue(result.toString(), result.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).toString().contains(ControllerLogger.MGMT_OP_LOGGER.failedServices()));
         } catch (IOException e) {
             throw new RuntimeException(e);

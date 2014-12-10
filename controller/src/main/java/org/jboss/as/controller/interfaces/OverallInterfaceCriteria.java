@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.interfaces;
 
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -42,6 +43,9 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * that meet them all.
  */
 public final class OverallInterfaceCriteria implements InterfaceCriteria {
+    // java.net properties
+    static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
+    static final String PREFER_IPV6_ADDRESSES = "java.net.preferIPv6Addresses";
 
     private static final long serialVersionUID = -5417786897309925997L;
 
@@ -103,9 +107,8 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
 
     private Map<NetworkInterface, Set<InetAddress>> pruneIPTypes(Map<NetworkInterface, Set<InetAddress>> candidates) {
 
-        Boolean preferIPv4Stack = getBoolean("java.net.preferIPv4Stack");
-        Boolean preferIPv6Stack = (preferIPv4Stack != null && !preferIPv4Stack.booleanValue())
-                ? Boolean.TRUE : getBoolean("java.net.preferIPv6Addresses");
+        Boolean preferIPv4Stack = getBoolean(PREFER_IPV4_STACK);
+        Boolean preferIPv6Stack = (preferIPv4Stack != null && !preferIPv4Stack) ? Boolean.TRUE : getBoolean(PREFER_IPV6_ADDRESSES);
 
         if (preferIPv4Stack == null && preferIPv6Stack == null) {
             // No meaningful user input
@@ -117,8 +120,8 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
         for (Map.Entry<NetworkInterface, Set<InetAddress>> entry : candidates.entrySet()) {
             Set<InetAddress> good = null;
             for (InetAddress address : entry.getValue()) {
-                if ((preferIPv4Stack != null && preferIPv4Stack.booleanValue() && address instanceof Inet4Address)
-                        || (preferIPv6Stack != null && preferIPv6Stack.booleanValue() && address instanceof Inet6Address)) {
+                if ((preferIPv4Stack != null && preferIPv4Stack && address instanceof Inet4Address)
+                        || (preferIPv6Stack != null && preferIPv6Stack && address instanceof Inet6Address)) {
                     if (good == null) {
                         good = new HashSet<InetAddress>();
                         result.put(entry.getKey(), good);

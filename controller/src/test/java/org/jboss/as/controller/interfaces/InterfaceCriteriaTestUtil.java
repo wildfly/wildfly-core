@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller.interfaces;
 
+import static org.jboss.as.controller.interfaces.OverallInterfaceCriteria.PREFER_IPV4_STACK;
+import static org.jboss.as.controller.interfaces.OverallInterfaceCriteria.PREFER_IPV6_ADDRESSES;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -46,8 +49,8 @@ public class InterfaceCriteriaTestUtil {
     static final Set<NetworkInterface> allInterfaces;
     static final Map<NetworkInterface, Set<InetAddress>> allCandidates;
 
-    private static final boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack");
-    private static final boolean preferIPv6Stack = Boolean.getBoolean("java.net.preferIPv6Addresses");
+    private static final boolean preferIPv4Stack = Boolean.getBoolean(PREFER_IPV4_STACK);
+    private static final boolean preferIPv6Stack = Boolean.getBoolean(PREFER_IPV6_ADDRESSES);
 
     static {
 

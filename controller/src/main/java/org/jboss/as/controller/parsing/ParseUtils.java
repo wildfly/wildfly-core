@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 
@@ -483,5 +484,16 @@ public final class ParseUtils {
 
     public static String getWarningMessage(final String msg, final Location location) {
         return ControllerLogger.ROOT_LOGGER.parsingProblem(location.getLineNumber(), location.getColumnNumber(), msg);
+    }
+
+    /**
+     * Get an exception reporting a missing, required XML attribute.
+     * @param reader the stream reader
+     * @param supportedElement the element that is to be used in place of the unsupported one.
+     * @return the exception
+     */
+    public static XMLStreamException unsupportedElement(final XMLExtendedStreamReader reader, String supportedElement) {
+        return ControllerLogger.ROOT_LOGGER.unsupportedElement(
+                new QName(reader.getNamespaceURI(), reader.getLocalName(),reader.getPrefix()), reader.getLocation(), supportedElement);
     }
 }
