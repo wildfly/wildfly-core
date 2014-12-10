@@ -29,8 +29,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
@@ -62,22 +64,32 @@ public class DefaultResourceAddDescriptionProvider implements DescriptionProvide
         result.get(OPERATION_NAME).set(ADD);
         result.get(DESCRIPTION).set(descriptionResolver.getOperationDescription(ADD, locale, bundle));
 
-        final ModelNode params = result.get(REQUEST_PROPERTIES).setEmptyObject();
-
+        // Sort the attribute descriptions based on attribute group and then attribute name
         Set<String> attributeNames = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
+
+        Map<AttributeDefinition.NameAndGroup, ModelNode> sortedDescriptions = new TreeMap<>();
         for (String attr : attributeNames)  {
             AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
             if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
                 AttributeDefinition def = attributeAccess.getAttributeDefinition();
                 if (def != null) {
                     if (!def.isResourceOnly()){
-                        def.addOperationParameterDescription(result, ADD, descriptionResolver, locale, bundle);
+                        ModelNode attrDesc = new ModelNode();
+                        // def will add the description to attrDesc under "request-properties" => { attr
+                        def.addOperationParameterDescription(attrDesc, ADD, descriptionResolver, locale, bundle);
+                        sortedDescriptions.put(new AttributeDefinition.NameAndGroup(def), attrDesc.get(REQUEST_PROPERTIES, attr));
                     }
                 } else {
                     // Just stick in a placeholder;
-                    params.get(attr);
+                    sortedDescriptions.put(new AttributeDefinition.NameAndGroup(attr), new ModelNode());
                 }
             }
+        }
+
+        // Store the sorted descriptions into the overall result
+        final ModelNode params = result.get(REQUEST_PROPERTIES).setEmptyObject();
+        for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : sortedDescriptions.entrySet()) {
+            params.get(entry.getKey().getName()).set(entry.getValue());
         }
 
         //This is auto-generated so don't add any access constraints

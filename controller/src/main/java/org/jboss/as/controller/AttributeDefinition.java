@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -966,5 +967,75 @@ public abstract class AttributeDefinition {
 
     public AttributeParser getParser() {
         return parser;
+    }
+
+    /**
+     * Simple {@code Comparable} that encapsulates the name of an attribute and any attribute group,
+     * ordering first one group (null group first) and then one attribute name.
+     *
+     * @author Brian Stansberry (c) 2014 Red Hat Inc.
+     */
+    public static final class NameAndGroup implements Comparable<NameAndGroup> {
+
+        private final String name;
+        private final String group;
+
+        public NameAndGroup(AttributeDefinition ad) {
+            this(ad.getName(), ad.getAttributeGroup());
+        }
+
+        public NameAndGroup(String name) {
+            this.name = name;
+            this.group = null;
+        }
+
+        public NameAndGroup(String name, String group) {
+            this.name = name;
+            this.group = group;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getGroup() {
+            return group;
+        }
+
+        @Override
+        public int compareTo(NameAndGroup o) {
+
+            if (group == null) {
+                if (o.group != null) {
+                    return -1;
+                }
+            } else if (o.group == null) {
+                return 1;
+            } else {
+                int groupComp = group.compareTo(o.group);
+                if (groupComp != 0) {
+                    return groupComp;
+                }
+            }
+            return name.compareTo(o.name);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NameAndGroup that = (NameAndGroup) o;
+
+            return Objects.equals(this.group, that.group) && name.equals(that.name);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name.hashCode();
+            result = 31 * result + (group != null ? group.hashCode() : 0);
+            return result;
+        }
     }
 }
