@@ -206,9 +206,11 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         // We wouldn't call read-resource if the recursive=false
         final Map<String, ModelNode> directChildren = new HashMap<String, ModelNode>();
         // Attributes of AccessType.METRIC
-        final Map<String, ModelNode> metrics = queryRuntime ? new HashMap<String, ModelNode>() : Collections.<String, ModelNode>emptyMap();
-        // Non-AccessType.METRIC attributes with a special read handler registered
-        final Map<String, ModelNode> otherAttributes = new HashMap<String, ModelNode>();
+        final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics = queryRuntime
+                ? new HashMap<AttributeDefinition.NameAndGroup, ModelNode>()
+                : Collections.<AttributeDefinition.NameAndGroup, ModelNode>emptyMap();
+        // Non-AccessType.METRIC attributes
+        final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes = new HashMap<>();
         // Child resources recursively read
         final Map<PathElement, ModelNode> childResources = recursive ? new LinkedHashMap<PathElement, ModelNode>() : Collections.<PathElement, ModelNode>emptyMap();
 
@@ -313,9 +315,11 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             if ((aliases || !access.getFlags().contains(AttributeAccess.Flag.ALIAS))
                     && (queryRuntime || access.getStorageType() == AttributeAccess.Storage.CONFIGURATION)) {
 
-                Map<String, ModelNode> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
+                Map<AttributeDefinition.NameAndGroup, ModelNode> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
 
-                addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, attributeName, responseMap);
+                AttributeDefinition ad = access.getAttributeDefinition();
+                AttributeDefinition.NameAndGroup nag = ad == null ? new AttributeDefinition.NameAndGroup(attributeName) : new AttributeDefinition.NameAndGroup(ad);
+                addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, responseMap);
 
             }
         }
@@ -324,9 +328,10 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         final ModelNode model = resource.getModel();
         if (model.isDefined()) {
             for (String key : model.keys()) {
+                AttributeDefinition.NameAndGroup nag = new AttributeDefinition.NameAndGroup(key);
                 // Skip children and attributes already handled
-                if (!otherAttributes.containsKey(key) && !childrenByType.containsKey(key) && !metrics.containsKey(key)) {
-                    addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, key, otherAttributes);
+                if (!otherAttributes.containsKey(nag) && !childrenByType.containsKey(key) && !metrics.containsKey(nag)) {
+                    addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, otherAttributes);
                 }
             }
         }
@@ -341,12 +346,13 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
             if (nodeDescription.isDefined() && nodeDescription.hasDefined(ATTRIBUTES)) {
                 for (String key : nodeDescription.get(ATTRIBUTES).keys()) {
+                    AttributeDefinition.NameAndGroup nag = new AttributeDefinition.NameAndGroup(key);
                     if ((!childrenByType.containsKey(key)) &&
-                            !otherAttributes.containsKey(key) &&
-                            !metrics.containsKey(key) &&
+                            !otherAttributes.containsKey(nag) &&
+                            !metrics.containsKey(nag) &&
                             nodeDescription.get(ATTRIBUTES).hasDefined(key) &&
                             nodeDescription.get(ATTRIBUTES, key).hasDefined(DEFAULT)) {
-                        addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, key, otherAttributes);
+                        addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, otherAttributes);
                     }
                 }
             }
@@ -376,7 +382,9 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childName))).isAlias();
     }
 
-    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData, ImmutableManagementResourceRegistration registry, String attributeName, Map<String, ModelNode> responseMap) {
+    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData,
+                                      ImmutableManagementResourceRegistration registry,
+                                      AttributeDefinition.NameAndGroup attributeKey, Map<AttributeDefinition.NameAndGroup, ModelNode> responseMap) {
         // See if there was an override registered for the standard :read-attribute handling (unlikely!!!)
         OperationStepHandler overrideHandler = registry.getOperationHandler(PathAddress.EMPTY_ADDRESS, READ_ATTRIBUTE_OPERATION);
         if (overrideHandler != null &&
@@ -387,12 +395,12 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
         OperationStepHandler readAttributeHandler = new ReadAttributeHandler(localFilteredData, overrideHandler, (resolve && resolvable));
 
-        final ModelNode attributeOperation = Util.getReadAttributeOperation(address, attributeName);
+        final ModelNode attributeOperation = Util.getReadAttributeOperation(address, attributeKey.getName());
         attributeOperation.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).set(defaults);
         attributeOperation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).set(resolve);
 
         final ModelNode attrResponse = new ModelNode();
-        responseMap.put(attributeName, attrResponse);
+        responseMap.put(attributeKey, attrResponse);
 
         context.addStep(attrResponse, attributeOperation, readAttributeHandler, OperationContext.Stage.MODEL, true);
     }
@@ -431,8 +439,8 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
         private final PathAddress address;
         private final Map<String, ModelNode> directChildren;
-        private final Map<String, ModelNode> metrics;
-        private final Map<String, ModelNode> otherAttributes;
+        private final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics;
+        private final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes;
         private final Map<PathElement, ModelNode> childResources;
         private final Set<String> nonExistentChildTypes;
         private final FilteredData filteredData;
@@ -456,8 +464,8 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
          * @param filteredData     information about resources and attributes that were filtered
          */
         private ReadResourceAssemblyHandler(final PathAddress address,
-                                            final Map<String, ModelNode> metrics,
-                                            final Map<String, ModelNode> otherAttributes, final Map<String, ModelNode> directChildren,
+                                            final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics,
+                                            final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes, final Map<String, ModelNode> directChildren,
                                             final Map<PathElement, ModelNode> childResources, final Set<String> nonExistentChildTypes, FilteredData filteredData) {
             this.address = address;
             this.metrics = metrics;
@@ -471,10 +479,10 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-            Map<String, ModelNode> sortedAttributes = new TreeMap<String, ModelNode>();
+            Map<AttributeDefinition.NameAndGroup, ModelNode> sortedAttributes = new TreeMap<>();
             Map<String, ModelNode> sortedChildren = new TreeMap<String, ModelNode>();
             boolean failed = false;
-            for (Map.Entry<String, ModelNode> entry : otherAttributes.entrySet()) {
+            for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : otherAttributes.entrySet()) {
                 ModelNode value = entry.getValue();
                 if (!value.has(FAILURE_DESCRIPTION)) {
                     sortedAttributes.put(entry.getKey(), value.get(RESULT));
@@ -508,7 +516,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 for (String nonExistentChildType : nonExistentChildTypes) {
                     sortedChildren.put(nonExistentChildType, new ModelNode());
                 }
-                for (Map.Entry<String, ModelNode> metric : metrics.entrySet()) {
+                for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> metric : metrics.entrySet()) {
                     ModelNode value = metric.getValue();
                     if (!value.has(FAILURE_DESCRIPTION)) {
                         sortedAttributes.put(metric.getKey(), value.get(RESULT));
@@ -519,8 +527,8 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
                 final ModelNode result = context.getResult();
                 result.setEmptyObject();
-                for (Map.Entry<String, ModelNode> entry : sortedAttributes.entrySet()) {
-                    result.get(entry.getKey()).set(entry.getValue());
+                for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : sortedAttributes.entrySet()) {
+                    result.get(entry.getKey().getName()).set(entry.getValue());
                 }
 
                 for (Map.Entry<String, ModelNode> entry : sortedChildren.entrySet()) {
