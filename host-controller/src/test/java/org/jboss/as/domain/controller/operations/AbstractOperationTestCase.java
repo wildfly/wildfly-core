@@ -664,6 +664,11 @@ public abstract class AbstractOperationTestCase {
         public void emit(Notification notification) {
             // no-op
         }
+
+        @Override
+        public boolean isDefaultRequiresRuntime() {
+            return false;
+        }
     }
 
     Resource createRootResource() {

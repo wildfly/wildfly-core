@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RELOAD;
@@ -39,6 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_UPDATE_SKIPPED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -1063,6 +1065,24 @@ abstract class AbstractOperationContext implements OperationContext {
     @Override
     public Environment getCallEnvironment() {
         return callEnvironment;
+    }
+
+
+    @Override
+    public boolean isDefaultRequiresRuntime() {
+        if (getProcessType().isServer()) {
+            return isNormalServer();
+        } else if (getProcessType() == ProcessType.HOST_CONTROLLER) {
+            return isHostCapableAddress();
+        }
+        return false;
+    }
+
+    private boolean isHostCapableAddress() {
+        if (activeStep.address.size() >= 2 && activeStep.address.getElement(0).getKey().equals(HOST) && activeStep.address.getElement(1).getKey().equals(SUBSYSTEM)) {
+            return true;
+        }
+        return false;
     }
 
     class Step {

@@ -290,10 +290,10 @@ class ModelControllerImpl implements ModelController {
 
         final ModelNode headers = operation.has(OPERATION_HEADERS) ? operation.get(OPERATION_HEADERS) : null;
         final boolean rollbackOnFailure = headers == null || !headers.hasDefined(ROLLBACK_ON_RUNTIME_FAILURE) || headers.get(ROLLBACK_ON_RUNTIME_FAILURE).asBoolean();
-        final EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnFailure ? EnumSet.of(OperationContextImpl.ContextFlag.ROLLBACK_ON_FAIL) : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
+        final EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnFailure ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL) : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
         final boolean restartResourceServices = headers != null && headers.hasDefined(ALLOW_RESOURCE_SERVICE_RESTART) && headers.get(ALLOW_RESOURCE_SERVICE_RESTART).asBoolean();
         if (restartResourceServices) {
-            contextFlags.add(OperationContextImpl.ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
+            contextFlags.add(AbstractOperationContext.ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
         }
         final ModelNode blockingTimeoutConfig = headers != null && headers.hasDefined(BLOCKING_TIMEOUT) ? headers.get(BLOCKING_TIMEOUT) : null;
 
@@ -405,9 +405,9 @@ class ModelControllerImpl implements ModelController {
         final Integer operationID = random.nextInt();
 
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
-                ? EnumSet.of(OperationContextImpl.ContextFlag.ROLLBACK_ON_FAIL)
+                ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
-        final OperationContextImpl context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
+        final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
                 hostServerGroupTracker, null, null, notificationSupport);
@@ -427,7 +427,7 @@ class ModelControllerImpl implements ModelController {
         if (resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
 
             // Success. Now any extension handlers are registered. Continue with remaining ops
-            final OperationContextImpl postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
+            final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport);

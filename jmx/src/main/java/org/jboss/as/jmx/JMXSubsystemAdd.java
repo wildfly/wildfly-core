@@ -54,6 +54,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
 
     static void launchServices(OperationContext context, ModelNode model, ManagedAuditLogger auditLoggerInfo,
                                JmxAuthorizer authorizer) throws OperationFailedException {
+
         // Add the MBean service
         String resolvedDomain = getDomainName(context, model, CommonAttributes.RESOLVED);
         String expressionsDomain = getDomainName(context, model, CommonAttributes.EXPRESSION);

@@ -132,7 +132,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
     }
 
     protected boolean requiresRuntime(OperationContext context) {
-        return context.isNormalServer();
+        return context.isDefaultRequiresRuntime();
     }
 
     private List<PathElement> getChildren(Resource resource) {

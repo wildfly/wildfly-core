@@ -22,9 +22,9 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -250,7 +250,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
      * @return {@code true} if a runtime stage handler should be added; {@code false} otherwise.
      */
     protected boolean requiresRuntime(OperationContext context) {
-        return context.isNormalServer() && !context.isBooting();
+        return context.isDefaultRequiresRuntime() && !context.isBooting();
     }
 
     /**

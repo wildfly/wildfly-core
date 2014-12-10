@@ -886,6 +886,14 @@ public interface OperationContext extends ExpressionResolver {
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType);
 
     /**
+     * Whether normally this operation would require a runtime step. It returns {@code true in the following cases}
+     * <ul>
+     *  <li>The process is a server, and it is running in NORMAL (i.e. not admin-only) mode.</li>
+     *  <li>The process is a HC, and the address of the operation is a subsystem in the host model or a child thereof</li>
+     */
+    boolean isDefaultRequiresRuntime();
+
+    /**
      * The stage at which a step should apply.
      */
     enum Stage {
