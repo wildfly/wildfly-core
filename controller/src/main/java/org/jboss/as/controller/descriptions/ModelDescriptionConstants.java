@@ -59,6 +59,7 @@ public class ModelDescriptionConstants {
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTE = "attribute";
+    public static final String ATTRIBUTE_GROUP = "attribute-group";
     public static final String ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION = "attribute-value-written";
     public static final String ATTRIBUTES = "attributes";
     public static final String ATTRIBUTES_ONLY = "attributes-only";

@@ -65,6 +65,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected AccessConstraintDefinition[] accessConstraints;
     protected Boolean nullSignficant;
     protected AttributeParser parser;
+    protected String attributeGroup;
 
     /**
      * Creates a builder for an attribute with the give name and type. Equivalent to
@@ -494,6 +495,19 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return (BUILDER) this;
     }
 
+    /**
+     * Sets the name of the attribute group with which this attribute is associated.
+     *
+     * @param attributeGroup the attribute group name. Cannot be an empty string but can be {@code null}
+     *                       if the attribute is not associated with a group.
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setAttributeGroup(String attributeGroup) {
+        assert attributeGroup == null || attributeGroup.length() > 0;
+        this.attributeGroup = attributeGroup;
+        return (BUILDER) this;
+    }
+
     public String getName() {
         return name;
     }
@@ -576,6 +590,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
 
     public AttributeParser getParser() {
         return parser;
+    }
+
+    public String getAttributeGroup() {
+        return attributeGroup;
     }
 
     private String[] copyStrings(String[] toCopy) {

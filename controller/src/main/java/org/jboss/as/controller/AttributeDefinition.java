@@ -82,6 +82,7 @@ public abstract class AttributeDefinition {
     private final List<AccessConstraintDefinition> accessConstraints;
     private final Boolean nilSignificant;
     private final AttributeParser parser;
+    private final String attributeGroup;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Expected to be a common use case; no one-offs.
@@ -97,7 +98,7 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignficant(), toCopy.getParser(),
-                wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -110,7 +111,7 @@ public abstract class AttributeDefinition {
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, wrapFlags(flags));
+                nilSignificant, parser, null, wrapFlags(flags));
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
@@ -164,7 +165,7 @@ public abstract class AttributeDefinition {
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final EnumSet<AttributeAccess.Flag> flags) {
+                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -193,6 +194,7 @@ public abstract class AttributeDefinition {
         this.accessConstraints = accessConstraints;
         this.deprecationData = deprecationData;
         this.nilSignificant = nilSignificant;
+        this.attributeGroup = attributeGroup;
     }
 
     /**
@@ -278,6 +280,15 @@ public abstract class AttributeDefinition {
      */
     public ModelNode getDefaultValue() {
         return defaultValue.isDefined() ? defaultValue : null;
+    }
+
+    /**
+     * Gets the name of the attribute group with which this attribute is associated, if any.
+     *
+     * @return the name of the group, or {@code null} if the attribute is not associated with a group
+     */
+    public String getAttributeGroup() {
+        return attributeGroup;
     }
 
     /**
@@ -754,6 +765,9 @@ public abstract class AttributeDefinition {
         final ModelNode result = new ModelNode();
         result.get(ModelDescriptionConstants.TYPE).set(type);
         result.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
+        if (attributeGroup != null) {
+            result.get(ModelDescriptionConstants.ATTRIBUTE_GROUP).set(attributeGroup);
+        }
         result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(isAllowExpression());
         if (forOperation) {
             result.get(ModelDescriptionConstants.REQUIRED).set(!isAllowNull());
