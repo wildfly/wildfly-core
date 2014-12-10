@@ -3257,9 +3257,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 370, value="Incomplete expression: %s")
     OperationFailedException incompleteExpression(String expression);
 
-    // TODO use 371-373 for the next messages!
     @Message(id = 371, value="The element '%s' is no longer supported, please use '%s' instead")
     XMLStreamException unsupportedElement(QName name, @Param Location location, String supportedElement);
+
+    @Message(id = 372, value="List attribute '%s' contains duplicates, which are not allowed")
+    String duplicateElementsInList(String name);
+
+    // TODO use 373 for the next message!
 
     @Message(id = 374, value = "Unable to resolve expressions at this location.")
     OperationFailedException unableToResolveExpressions();
@@ -3283,5 +3287,5 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 380, value="Attribute '%s' needs to be set or passed before attribute '%s' can be correctly set")
     OperationFailedException requiredAttributeNotSet(String required, String name);
 
-    // TODO use 371-373 for the next messages!
+    // TODO use 373 for the next message!
 }

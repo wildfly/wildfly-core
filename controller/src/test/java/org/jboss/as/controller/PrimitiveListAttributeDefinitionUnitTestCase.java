@@ -130,7 +130,7 @@ public class PrimitiveListAttributeDefinitionUnitTestCase {
 
         // List can contain at most 2 items. The value of the item can not be > 256
         ParameterValidator ev = new IntRangeValidator(1, 256, false, false);
-        ListValidator lv = new ListValidator(ev, false, 1, 2);
+        ListValidator lv = new ListValidator(ev, false, 1, 2, true);
         PrimitiveListAttributeDefinition original = PrimitiveListAttributeDefinition.Builder.of("test", ModelType.STRING)
                 .setListValidator(lv)
                 .build();
