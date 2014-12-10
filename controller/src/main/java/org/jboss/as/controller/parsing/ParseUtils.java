@@ -23,6 +23,8 @@
 package org.jboss.as.controller.parsing;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.dmr.ModelType.PROPERTY;
+import static org.jboss.dmr.ModelType.STRING;
 
 import java.lang.reflect.Array;
 import java.util.Collections;
@@ -464,6 +466,51 @@ public final class ParseUtils {
         } catch (NumberFormatException nfe) {
             throw ControllerLogger.ROOT_LOGGER.invalidAttributeValueInt(nfe, stringValue, reader.getAttributeName(index), reader.getLocation());
         }
+    }
+
+    public static ModelNode parseAttributeValue(final String value, final boolean isExpressionAllowed, final ModelType attributeType) {
+        final String trimmed = value == null ? null : value.trim();
+        ModelNode node;
+        if (trimmed != null) {
+            if (isExpressionAllowed && isExpression(trimmed)) {
+                node = new ModelNode(new ValueExpression(trimmed));
+            } else {
+                if(attributeType == STRING || attributeType == PROPERTY) {
+                    node = new ModelNode().set(value);
+                } else {
+                    node = new ModelNode().set(trimmed);
+                }
+            }
+            if (node.getType() != ModelType.EXPRESSION) {
+                // Convert the string to the expected type
+                switch (attributeType) {
+                    case BIG_DECIMAL:
+                        node.set(node.asBigDecimal());
+                        break;
+                    case BIG_INTEGER:
+                        node.set(node.asBigInteger());
+                        break;
+                    case BOOLEAN:
+                        node.set(node.asBoolean());
+                        break;
+                    case BYTES:
+                        node.set(node.asBytes());
+                        break;
+                    case DOUBLE:
+                        node.set(node.asDouble());
+                        break;
+                    case INT:
+                        node.set(node.asInt());
+                        break;
+                    case LONG:
+                        node.set(node.asLong());
+                        break;
+                }
+            }
+        } else {
+            node = new ModelNode();
+        }
+        return node;
     }
 
     public static boolean isExpression(String value) {

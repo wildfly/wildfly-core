@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -230,52 +231,17 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * {@inheritDoc}
      *
      * This implementation marshalls the attribute value as text content of the element.
+     * @param marshallDefault
+     * @throws javax.xml.stream.XMLStreamException
      */
+    @Override
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         attributeMarshaller.marshallAsElement(this,resourceModel,marshallDefault,writer);
     }
 
     static ModelNode parse(AttributeDefinition attribute, ParameterValidator validator, final String value) throws OperationFailedException  {
-        final String trimmed = value == null ? null : value.trim();
-        ModelNode node;
-        if (trimmed != null ) {
-            if (attribute.isAllowExpression()) {
-                node = ParseUtils.parsePossibleExpression(trimmed);
-            } else {
-                node = new ModelNode().set(trimmed);
-            }
-            if (node.getType() != ModelType.EXPRESSION) {
-                // Convert the string to the expected type
-                switch (attribute.getType()) {
-                    case BIG_DECIMAL:
-                        node.set(node.asBigDecimal());
-                        break;
-                    case BIG_INTEGER:
-                        node.set(node.asBigInteger());
-                        break;
-                    case BOOLEAN:
-                        node.set(node.asBoolean());
-                        break;
-                    case BYTES:
-                        node.set(node.asBytes());
-                        break;
-                    case DOUBLE:
-                        node.set(node.asDouble());
-                        break;
-                    case INT:
-                        node.set(node.asInt());
-                        break;
-                    case LONG:
-                        node.set(node.asLong());
-                        break;
-                }
-            }
-        } else {
-            node = new ModelNode();
-        }
-
+        ModelNode node = ParseUtils.parseAttributeValue(value, attribute.isAllowExpression(), attribute.getType());
         validator.validateParameter(attribute.getXmlName(), node);
-
         return node;
     }
 }
