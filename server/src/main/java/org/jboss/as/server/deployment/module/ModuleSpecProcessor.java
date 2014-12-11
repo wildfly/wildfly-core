@@ -244,8 +244,10 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         }
         // TODO: servlet context temp dir FilePermission
 
-        specBuilder.setPermissionCollection(
-                new FactoryPermissionCollection(permFactories.toArray(new PermissionFactory[permFactories.size()])));
+        FactoryPermissionCollection permissionCollection = new FactoryPermissionCollection(permFactories.toArray(new PermissionFactory[permFactories.size()]));
+
+        specBuilder.setPermissionCollection(permissionCollection);
+        deploymentUnit.putAttachment(Attachments.MODULE_PERMISSIONS, permissionCollection);
 
         final DelegatingClassFileTransformer delegatingClassFileTransformer = new DelegatingClassFileTransformer();
         specBuilder.setClassFileTransformer(delegatingClassFileTransformer);

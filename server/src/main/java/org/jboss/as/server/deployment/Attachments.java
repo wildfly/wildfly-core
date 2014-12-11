@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment;
 
+import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -266,6 +267,11 @@ public final class Attachments {
      * This list includes the current deployment, which under normal circumstances will be the first item in the list
      */
     public static final AttachmentKey<AttachmentList<DeploymentUnit>> ACCESSIBLE_SUB_DEPLOYMENTS = AttachmentKey.createList(DeploymentUnit.class);
+
+    /**
+     * The module's permission collection
+     */
+    public static final AttachmentKey<PermissionCollection> MODULE_PERMISSIONS = AttachmentKey.create(PermissionCollection.class);
 
     //
     // POST_MODULE
