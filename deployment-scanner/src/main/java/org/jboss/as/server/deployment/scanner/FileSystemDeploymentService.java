@@ -43,6 +43,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileFilter;
@@ -63,6 +65,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
+import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ControlledProcessStateService;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.operations.common.Util;
@@ -127,6 +131,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private final Map<File, IncompleteDeploymentStatus> incompleteDeployments = new HashMap<File, IncompleteDeploymentStatus>();
 
     private final ScheduledExecutorService scheduledExecutor;
+    private final ControlledProcessStateService processStateService;
     private volatile DeploymentOperations.Factory deploymentOperationsFactory;
     private volatile DeploymentOperations deploymentOperations;
 
@@ -140,6 +145,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
     private final String relativeTo;
     private final String relativePath;
+    private final PropertyChangeListener propertyChangeListener;
 
     private class DeploymentScanRunnable implements Runnable {
 
@@ -156,7 +162,9 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private final DeploymentScanRunnable scanRunnable = new DeploymentScanRunnable();
 
     FileSystemDeploymentService(final String relativeTo, final File deploymentDir, final File relativeToDir,
-                                final DeploymentOperations.Factory deploymentOperationsFactory, final ScheduledExecutorService scheduledExecutor)
+                                final DeploymentOperations.Factory deploymentOperationsFactory,
+                                final ScheduledExecutorService scheduledExecutor,
+                                final ControlledProcessStateService processStateService)
             throws OperationFailedException {
         if (scheduledExecutor == null) {
             throw DeploymentScannerLogger.ROOT_LOGGER.nullVar("scheduledExecutor");
@@ -177,7 +185,26 @@ class FileSystemDeploymentService implements DeploymentScanner {
         this.deploymentDir = deploymentDir;
         this.deploymentOperationsFactory = deploymentOperationsFactory;
         this.scheduledExecutor = scheduledExecutor;
-
+        this.processStateService = processStateService;
+        if(processStateService != null) {
+            this.propertyChangeListener = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if (ControlledProcessState.State.RUNNING == evt.getNewValue()) {
+                         synchronized (this) {
+                            if (scanEnabled) {
+                                scheduledExecutor.execute(new UndeployScanRunnable());
+                            }
+                        }
+                    } else if (ControlledProcessState.State.STOPPING == evt.getNewValue()) {
+                        processStateService.removePropertyChangeListener(propertyChangeListener);
+                    }
+                }
+            };
+            this.processStateService.addPropertyChangeListener(propertyChangeListener);
+        } else {
+            this.propertyChangeListener = null;
+        }
         if (relativeToDir != null) {
             String fullDir = deploymentDir.getAbsolutePath();
             String relDir = relativeToDir.getAbsolutePath();
@@ -332,22 +359,10 @@ class FileSystemDeploymentService implements DeploymentScanner {
     void bootTimeScan(final DeploymentOperations deploymentOperations) {
         this.establishDeployedContentList(this.deploymentDir, deploymentOperations);
         if (acquireScanLock()) {
-            ScanResult scanResult = null;
             try {
-                scanResult = scan(true, deploymentOperations);
+                scan(true, deploymentOperations);
             } finally {
-                try {
-                    if (scanResult != null && scanResult.requireUndeploy) {
-                        // run a quick rescan to undeploy failed deployment during boot
-                        synchronized (this) {
-                            if (scanEnabled) {
-                                rescanUndeployTask = scheduledExecutor.schedule(new UndeployScanRunnable(), 200, TimeUnit.MILLISECONDS);
-                            }
-                        }
-                    }
-                } finally {
-                    releaseScanLock();
-                }
+                releaseScanLock();
             }
         }
     }
@@ -580,6 +595,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
         @Override
         public void run() {
             forcedUndeployScan();
+            processStateService.removePropertyChangeListener(propertyChangeListener);
         }
     }
 

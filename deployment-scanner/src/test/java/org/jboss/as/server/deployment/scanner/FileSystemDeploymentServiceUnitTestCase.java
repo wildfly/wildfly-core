@@ -1763,7 +1763,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     }
 
     private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor) throws OperationFailedException {
-        final FileSystemDeploymentService testee = new FileSystemDeploymentService(null, tmpDir, null, sc, executor);
+        final FileSystemDeploymentService testee = new FileSystemDeploymentService(null, tmpDir, null, sc, executor, null);
         testee.startScanner(new DefaultDeploymentOperations(sc));
         return new TesteeSet(testee, sc);
     }
