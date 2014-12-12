@@ -345,4 +345,7 @@ public interface ProtocolLogger extends BasicLogger {
     @Message(id = 58, value = "%s cancelled task before execution began")
     void cancelledAsyncTaskBeforeRun(String asyncTaskRunner);
 
+    @LogMessage(level = INFO)
+    @Message(id = 59, value = "You are using a deprecated way to set the client bind address. Please use the \"--bind\" parameter on the CLI instead of the %s system property.")
+    void deprecatedCLIConfiguration(String systemPropName);
 }

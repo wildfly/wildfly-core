@@ -49,6 +49,7 @@ class ProtocolConfigurationFactory {
         } else  {
             configuration.setUri(new URI(client.getProtocol() + "://" + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort()));
         }
+        configuration.setClientBindAddress(client.getClientBindAddress());
         configuration.setOptionMap(DEFAULT_OPTIONS);
         final long timeout = client.getConnectionTimeout();
         if(timeout > 0) {

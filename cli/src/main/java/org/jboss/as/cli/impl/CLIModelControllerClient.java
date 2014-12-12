@@ -124,7 +124,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
 
     CLIModelControllerClient(final ControllerAddress address, CallbackHandler handler, int connectionTimeout,
             final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SSLContext sslContext,
-            ProtocolTimeoutHandler timeoutHandler) throws IOException {
+            ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
         this.handler = handler;
         this.sslContext = sslContext;
         this.closeHandler = closeHandler;
@@ -141,6 +141,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
         }, executorService, this);
 
         channelConfig = new ProtocolChannelClient.Configuration();
+        channelConfig.setClientBindAddress(clientBindAddress);
         this.saslOptions = saslOptions;
         channelConfig.setSaslOptions(saslOptions);
         try {

@@ -30,6 +30,7 @@ import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
+import org.jboss.as.controller.client.impl.ClientConfigurationImpl;
 
 import org.jboss.as.controller.client.impl.RemotingModelControllerClient;
 import org.jboss.dmr.ModelNode;
@@ -147,7 +148,10 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final InetAddress address, final int port) {
-            return create(ModelControllerClientConfiguration.Factory.create(address, port));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHostName(address.getHostAddress())
+                    .setPort(port)
+                    .build());
         }
 
         /**
@@ -159,7 +163,11 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final String protocol, final InetAddress address, final int port) {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, address, port));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHostName(address.getHostAddress())
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .build());
         }
 
         /**
@@ -171,7 +179,11 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final InetAddress address, final int port, final CallbackHandler handler) {
-            return create(ModelControllerClientConfiguration.Factory.create(address, port, handler));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(address.getHostAddress())
+                    .setPort(port)
+                    .build());
         }
 
 
@@ -185,7 +197,12 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final String protocol, final InetAddress address, final int port, final CallbackHandler handler) {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, address, port, handler));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(address.getHostAddress())
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .build());
         }
 
         /**
@@ -198,7 +215,11 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final InetAddress address, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) {
-            return create(ModelControllerClientConfiguration.Factory.create(address, port, handler, saslOptions));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(address.getHostAddress())
+                    .setPort(port)
+                    .build());
         }
 
         /**
@@ -212,7 +233,13 @@ public interface ModelControllerClient extends Closeable {
          * @return A model controller client
          */
         public static ModelControllerClient create(final String protocol, final InetAddress address, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, address, port, handler, saslOptions));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(address.getHostAddress())
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .setSaslOptions(saslOptions)
+                    .build());
         }
 
         /**
@@ -224,7 +251,10 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(hostName, port));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .build());
         }
 
         /**
@@ -237,7 +267,11 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .build());
         }
 
         /**
@@ -250,7 +284,11 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .build());
         }
 
         /**
@@ -264,7 +302,12 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .build());
         }
 
         /**
@@ -278,7 +321,12 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler, sslContext));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setSslContext(sslContext)
+                    .build());
         }
 
         /**
@@ -293,7 +341,13 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, sslContext));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .setSslContext(sslContext)
+                    .build());
         }
 
         /**
@@ -303,11 +357,18 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
+         * @param connectionTimeout
          * @return A model controller client
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler, sslContext, connectionTimeout));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setConnectionTimeout(connectionTimeout)
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setSslContext(sslContext)
+                    .build());
         }
 
         /**
@@ -322,7 +383,14 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, sslContext, connectionTimeout));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setConnectionTimeout(connectionTimeout)
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .setSslContext(sslContext)
+                    .build());
         }
 
         /**
@@ -333,12 +401,47 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
+         * @param connectionTimeout
          * @param saslOptions Additional options to be passed to the SASL mechanism.
          * @return A model controller client
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout, final Map<String, String> saslOptions) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, sslContext, connectionTimeout, saslOptions));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setConnectionTimeout(connectionTimeout)
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .setSaslOptions(saslOptions)
+                    .setSslContext(sslContext)
+                    .build());
+        }
+        /**
+         * Create a client instance for a remote address and port and CallbackHandler.
+         *
+         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param hostName   the remote host
+         * @param port       the port
+         * @param handler    CallbackHandler to obtain authentication information for the call.
+         * @param sslContext a pre-initialised SSLContext
+         * @param connectionTimeout
+         * @param saslOptions Additional options to be passed to the SASL mechanism.
+         * @param clientBindAddress the address to which the client will bind.
+         * @return A model controller client
+         * @throws UnknownHostException if the host cannot be found
+         */
+        public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout, final Map<String, String> saslOptions, final String clientBindAddress) throws UnknownHostException {
+            return create(new ClientConfigurationImpl.Builder()
+                    .setClientBindAddress(clientBindAddress)
+                    .setConnectionTimeout(connectionTimeout)
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .setSaslOptions(saslOptions)
+                    .setSslContext(sslContext)
+                    .build());
         }
 
         /**
@@ -352,7 +455,12 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(hostName, port, handler, saslOptions));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setSaslOptions(saslOptions)
+                    .build());
         }
 
         /**
@@ -367,7 +475,13 @@ public interface ModelControllerClient extends Closeable {
          * @throws UnknownHostException if the host cannot be found
          */
         public static ModelControllerClient create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) throws UnknownHostException {
-            return create(ModelControllerClientConfiguration.Factory.create(protocol, hostName, port, handler, saslOptions));
+            return create(new ClientConfigurationImpl.Builder()
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setProtocol(protocol)
+                    .setSaslOptions(saslOptions)
+                    .build());
         }
 
         /**
