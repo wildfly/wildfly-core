@@ -1088,4 +1088,8 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 219, value = "%s deployment has been re-deployed, its content will not be removed. You will need to restart it.")
     void undeployingDeploymentHasBeenRedeployed(String deploymentName);
+
+    @LogMessage(level = INFO)
+    @Message(id = 220, value = "Server shutdown has been requested.")
+    void shutdownHookInvoked();
 }
