@@ -26,6 +26,7 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.logging.ServerLogger;
@@ -44,8 +45,10 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ManagementResourceRegistration mutableRegistration;
     private Resource resource;
     private final AbstractVaultReader vaultReader;
+    private final PathManager pathManager;
 
-    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final AbstractVaultReader vaultReader) {
+    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final AbstractVaultReader vaultReader, PathManager pathManager) {
+        this.pathManager = pathManager;
         if (deploymentRoot == null) throw ServerLogger.ROOT_LOGGER.deploymentRootRequired();
         this.deploymentRoot = deploymentRoot;
         if (parent == null) throw ServerLogger.ROOT_LOGGER.subdeploymentsRequireParent();
@@ -66,6 +69,7 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(DeploymentModelUtils.DEPLOYMENT_RESOURCE, resource);
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, parent.getAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX));
+        deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManager);
 
         // For compatibility only
         addSVH(deploymentUnit);

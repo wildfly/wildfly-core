@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Manifest;
 
 import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
 import org.jboss.as.server.deployment.module.ExtensionInfo;
@@ -105,6 +106,8 @@ public final class Attachments {
     //
     // STRUCTURE
     //
+
+    public static final AttachmentKey<PathManager> PATH_MANAGER = AttachmentKey.create(PathManager.class);
 
     public static final AttachmentKey<DeploymentOverlayIndex> DEPLOYMENT_OVERLAY_INDEX = AttachmentKey.create(DeploymentOverlayIndex.class);
     /**
