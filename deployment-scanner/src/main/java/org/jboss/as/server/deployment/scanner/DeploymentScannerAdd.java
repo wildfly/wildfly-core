@@ -49,6 +49,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jboss.as.controller.ControlledProcessStateService;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -117,7 +118,8 @@ class DeploymentScannerAdd implements OperationStepHandler {
                     relativePath = new File(pathManager.getPathEntry(relativeTo).resolvePath());
                 }
 
-                bootTimeScanner = new FileSystemDeploymentService(relativeTo, new File(pathName), relativePath, null, scheduledExecutorService);
+                bootTimeScanner = new FileSystemDeploymentService(relativeTo, new File(pathName), relativePath, null, scheduledExecutorService,
+                        (ControlledProcessStateService) context.getServiceRegistry(false).getService(ControlledProcessStateService.SERVICE_NAME).getValue());
                 bootTimeScanner.setAutoDeployExplodedContent(autoDeployExp);
                 bootTimeScanner.setAutoDeployZippedContent(autoDeployZip);
                 bootTimeScanner.setAutoDeployXMLContent(autoDeployXml);

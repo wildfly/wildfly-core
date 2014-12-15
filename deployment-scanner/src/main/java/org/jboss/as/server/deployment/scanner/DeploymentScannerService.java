@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment.scanner;
 import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.jboss.as.controller.ControlledProcessStateService;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.services.path.PathManager;
@@ -67,6 +68,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
     private final InjectedValue<ModelController> controllerValue = new InjectedValue<ModelController>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorValue = new InjectedValue<ScheduledExecutorService>();
+    private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private volatile PathManager.Callback.Handle callbackHandle;
 
     public static ServiceName getServiceName(String repositoryName) {
@@ -99,6 +101,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
                 .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.controllerValue)
                 .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS)
+                .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateServiceValue)
                 .addInjection(service.scheduledExecutorValue, scheduledExecutorService)
                 .setInitialMode(Mode.ACTIVE)
                 .install();
@@ -146,7 +149,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 }
 
                 final FileSystemDeploymentService scanner = new FileSystemDeploymentService(relativeTo, new File(pathName),
-                        relativePath, factory, scheduledExecutorValue.getValue());
+                        relativePath, factory, scheduledExecutorValue.getValue(), controlledProcessStateServiceValue.getValue());
 
                 scanner.setScanInterval(unit.toMillis(interval));
                 scanner.setAutoDeployExplodedContent(autoDeployExploded);
