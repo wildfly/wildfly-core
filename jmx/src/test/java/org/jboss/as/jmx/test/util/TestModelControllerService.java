@@ -42,7 +42,7 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
-import org.jboss.msc.service.ServiceTarget;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -93,14 +93,17 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     }
 
     @Override
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
-        super.performControllerInitialization(target, managementModel);
-        if (processType.isServer()) {
-            final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-            for (ModelControllerServiceInitialization init : sl) {
-                init.initializeStandalone(target, managementModel);
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
+        final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
+        return new ModelControllerServiceInitializationParams(sl) {
+            @Override
+            public String getHostName() {
+                return null;
             }
-        }
+        };
     }
 
+    @Override
+    protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
+    }
 }

@@ -73,6 +73,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -549,6 +550,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
             ModelNode addHostOp = hostBootOps.remove(0);
             ok = boot(Collections.singletonList(addHostOp), true);
 
+            // Add the controller initialization operation
+            hostBootOps.add(registerModelControllerServiceInitializationBootStep(context));
+
             //Pass in a custom mutable root resource registration provider for the remaining host model ops boot
             //This will be used to make sure that any extensions added in parallel get registered in the host model
             ok = ok && boot(hostBootOps, true, new MutableRootResourceRegistrationProvider() {
@@ -571,8 +575,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     installDiscoveryService(serviceTarget, discoveryOptions);
                 }
 
-                // Run the initialization
-                runPerformControllerInitialization(context);
 
                 if (!hostControllerInfo.isMasterDomainController() && !environment.isUseCachedDc()) {
 
@@ -775,15 +777,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
     }
 
+
     @Override
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
-        //
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
         final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-        final String hostName = hostControllerInfo.getLocalHostName();
-        for (ModelControllerServiceInitialization init : sl) {
-            init.initializeHost(target, managementModel, hostName);
-            init.initializeDomain(target, managementModel);
-        }
+        return new ModelControllerServiceInitializationParams(sl) {
+
+            @Override
+            public String getHostName() {
+                return hostControllerInfo.getLocalHostName();
+            }
+        };
     }
 
     private void establishServerInventory(Future<ServerInventory> future) {

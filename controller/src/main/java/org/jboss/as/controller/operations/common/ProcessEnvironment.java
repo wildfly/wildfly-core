@@ -29,14 +29,15 @@ import java.net.UnknownHostException;
 import java.util.UUID;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -158,14 +159,20 @@ public abstract class ProcessEnvironment {
             }
 
             final String processName = resolved;
-            context.completeStep(new OperationContext.ResultHandler() {
+
+            if (booting) {
+                context.addStep(new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        ProcessEnvironment.this.setProcessName(processName);
+                    }
+                }, Stage.RUNTIME);
+            }
+
+            context.completeStep(new OperationContext.RollbackHandler() {
                 @Override
-                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                    if (resultAction == OperationContext.ResultAction.KEEP) {
-                        if (booting) {
-                            ProcessEnvironment.this.setProcessName(processName);
-                        }
-                    } else if (!booting) {
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    if (!booting) {
                         context.revertReloadRequired();
                     }
                 }

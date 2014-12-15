@@ -1679,6 +1679,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         return context;
     }
 
+    ManagementModel getManagementModel() {
+        return managementModel;
+    }
 
     class ContextServiceTarget implements ServiceTarget {
 

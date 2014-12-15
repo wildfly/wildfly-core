@@ -54,7 +54,6 @@ import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
 import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -89,14 +88,17 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     }
 
     @Override
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
-        super.performControllerInitialization(target, managementModel);
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
         if (additionalInit.getProcessType().isServer()) {
             final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-            for (ModelControllerServiceInitialization init : sl) {
-                    init.initializeStandalone(target, managementModel);
-            }
+            return new ModelControllerServiceInitializationParams(sl) {
+                @Override
+                public String getHostName() {
+                    return null;
+                }
+            };
         }
+        return null;
     }
 
     @Override
