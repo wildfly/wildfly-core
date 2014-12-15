@@ -26,13 +26,14 @@ import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URL;
 import java.util.Properties;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -44,7 +45,7 @@ import javax.xml.validation.SchemaFactory;
 import org.jboss.metadata.property.PropertiesPropertyResolver;
 import org.jboss.metadata.property.PropertyReplacer;
 import org.jboss.metadata.property.PropertyReplacers;
-import org.junit.Assert;
+import org.jboss.util.xml.JBossEntityResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -82,7 +83,7 @@ public class SchemaValidator {
     /**
      * Validate subtrees of the XML content against the XSD.
      *
-     * Only substrees starting from the given elementRoot will be validated against the schema.
+     * Only subtrees starting from the given elementRoot will be validated against the schema.
      */
     static void validateXML(String xmlContent, String elementRoot, String xsdPath, Properties resolvedProperties) throws Exception {
         // build an input source from the XML content
@@ -109,13 +110,13 @@ public class SchemaValidator {
     static void validateXML(String xmlContent, String xsdPath, Properties resolvedProperties) throws Exception {
         String resolvedXml = resolveAllExpressions(xmlContent, resolvedProperties);
 
-        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource(xsdPath);
-
-        Assert.assertNotNull("No XSD found for resource at " + xsdPath, xsdURL);
+        InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(xsdPath);
+        final Source source = new StreamSource(stream);
 
         SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         schemaFactory.setErrorHandler(ERROR_HANDLER);
-        Schema schema = schemaFactory.newSchema(xsdURL);
+        schemaFactory.setResourceResolver(new JBossEntityResolver());
+        Schema schema = schemaFactory.newSchema(source);
         javax.xml.validation.Validator validator = schema.newValidator();
         validator.setErrorHandler(ERROR_HANDLER);
         validator.setFeature("http://apache.org/xml/features/validation/schema", true);
@@ -123,14 +124,14 @@ public class SchemaValidator {
     }
 
     /**
-     * Subystem XML can contain expressions for simple XSD types (boolean, long, etc.) that
+     * Subsystem XML can contain expressions for simple XSD types (boolean, long, etc.) that
      * prevents to validate it against the schema.
      *
      * For XML validation, the XML is read and any expression is resolved (they must have a default value to
      * be properly resolved).
      */
     private static String resolveAllExpressions(String xmlContent, Properties resolvedProperties) throws IOException {
-        PropertyReplacer replacer = PropertyReplacers.resolvingReplacer(new PropertiesPropertyResolver(resolvedProperties));
+        PropertyReplacer replacer = PropertyReplacers.resolvingExpressionReplacer(new PropertiesPropertyResolver(resolvedProperties));
         StringBuilder out = new StringBuilder();
 
         try( BufferedReader reader = new BufferedReader(new StringReader(xmlContent)) ) {

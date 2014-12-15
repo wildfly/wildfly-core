@@ -63,15 +63,17 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     protected abstract String getSubsystemXml() throws IOException;
 
     /**
-     * Get the path of the subsystem XML Schema (such as <code>"schema/wildfly-io_1_1.xsd"</code> for the IO subsystem)
+     * Get the pathc of the subsystem XML Schema.
      *
-     * If the returned value is not null, the subsystem's XML will be validated against this schema in #testSchema
+     * If the returned value is not null, the subsystem's XML will be validated against these schemas in #testSchema
+     *
+     * By default, this method returns an null (thus disabling the #testSchema and #testSchemaOfSubsystemTemplates tests).
      *
      * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
      * returned by #getResolvedProperties.
      */
-    protected String getSubsystemXsdPath() throws IOException {
+    protected String getSubsystemXsdPath() throws Exception {
         return null;
     }
 
@@ -79,7 +81,7 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO subsystem).
      *
      * If the returned value is not null, the template &lt;subsystem&gt; element will be validated against this schema
-     * returned by #getSubsystemXsdPath in #testSchemaOfSubsystemTemplates.
+     * returned by #getSubsystemXsdPaths in #testSchemaOfSubsystemTemplates.
      *
      * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
@@ -122,25 +124,24 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
 
     @Test
     public void testSchema() throws Exception {
-        String xsd = getSubsystemXsdPath();
-        Assume.assumeTrue("Override getSubsystemXsdPath() to activate the validation of the subsystem's XML",
-                xsd != null);
-
-        SchemaValidator.validateXML(getSubsystemXml(), xsd, getResolvedProperties());
+        String schemaPath = getSubsystemXsdPath();
+        Assume.assumeTrue("getSubsystemXsdPath() has been overridden to disable the validation of the subsystem templates",
+                schemaPath != null);
+        SchemaValidator.validateXML(getSubsystemXml(), schemaPath, getResolvedProperties());
     }
 
     @Test
     public void testSchemaOfSubsystemTemplates() throws Exception {
-        String xsd = getSubsystemXsdPath();
-        Assume.assumeTrue("Override getSubsystemXsdPath() to activate the validation of the subsystem's XML",
-                xsd != null);
+        String schemaPath = getSubsystemXsdPath();
+        Assume.assumeTrue("getSubsystemXsdPath() has been overridden to disable the validation of the subsystem templates",
+                schemaPath != null);
         String[] templates = getSubsystemTemplatePaths();
         Assume.assumeTrue("Override getSubsystemTemplatePaths() to activate the validation of the subsystem templates",
                 templates != null && templates.length > 0);
 
         for (String template : templates) {
             String content = readResource(template);
-            SchemaValidator.validateXML(content, "subsystem", xsd, getResolvedProperties());
+            SchemaValidator.validateXML(content, "subsystem", schemaPath, getResolvedProperties());
         }
     }
 

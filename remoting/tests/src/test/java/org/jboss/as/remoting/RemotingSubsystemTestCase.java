@@ -91,6 +91,18 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
+    protected String getSubsystemXsdPath() throws Exception {
+        return "schema/wildfly-remoting_3_0.xsd";
+    }
+
+    @Override
+    protected String[] getSubsystemTemplatePaths() throws IOException {
+        return new String[] {
+                "/subsystem-templates/remoting.xml"
+        };
+    }
+
+    @Override
     protected String getSubsystemXml(String resource) throws IOException {
         return readResource(resource);
     }

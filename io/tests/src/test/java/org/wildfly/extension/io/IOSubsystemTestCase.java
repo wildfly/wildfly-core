@@ -27,7 +27,6 @@ package org.wildfly.extension.io;
 import java.io.IOException;
 
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -54,7 +53,7 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws IOException {
+    protected String getSubsystemXsdPath() throws Exception {
         return "schema/wildfly-io_1_1.xsd";
     }
 
