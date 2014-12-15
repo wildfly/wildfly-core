@@ -24,8 +24,6 @@ package org.wildfly.core.test.standalone.mgmt;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV4_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV6_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
@@ -50,6 +48,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.parsing.Element.LINK_LOCAL_ADDRESS;
+import static org.jboss.as.controller.parsing.Element.LOOPBACK;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -335,21 +335,21 @@ public class BasicOperationsUnitTestCase {
         any.get(NAME).set(ANY_ADDRESS);
         any.get(VALUE).set(false);
 
-        final ModelNode any6 = base.clone();
-        any6.get(NAME).set(ANY_IPV6_ADDRESS) ;
-        any6.get(VALUE).set(false);
+        final ModelNode linkLocalAddress = base.clone();
+        linkLocalAddress.get(NAME).set(LINK_LOCAL_ADDRESS.getLocalName()) ;
+        linkLocalAddress.get(VALUE).set(false);
 
-        final ModelNode any4 = base.clone();
-        any4.get(NAME).set(ANY_IPV4_ADDRESS);
-        any4.get(VALUE).set(true);
+        final ModelNode loopBack = base.clone();
+        loopBack.get(NAME).set(LOOPBACK.getLocalName());
+        loopBack.get(VALUE).set(true);
 
         final ModelNode composite = new ModelNode();
         composite.get(OP).set(COMPOSITE);
         composite.get(OP_ADDR).setEmptyList();
 
         composite.get(STEPS).add(any);
-        composite.get(STEPS).add(any6);
-        composite.get(STEPS).add(any4);
+        composite.get(STEPS).add(linkLocalAddress);
+        composite.get(STEPS).add(loopBack);
 
         execute(composite);
 

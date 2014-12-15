@@ -245,14 +245,12 @@ public interface ControllerLogger extends BasicLogger {
      * @param address        the wildcard address.
      * @param inetAddress    the inet-address tag.
      * @param anyAddress     the any-address tag.
-     * @param anyIpv4Address the any-ipv4-address tag.
-     * @param anyIpv6Address the any-ipv6-address tag.
      */
     @LogMessage(level = WARN)
     @Message(id = 11, value = "Address %1$s is a wildcard address, which will not match against any specific address. Do not use " +
             "the '%2$s' configuration element to specify that an interface should use a wildcard address; " +
-            "use '%3$s', '%4$s', or '%5$s'")
-    void invalidWildcardAddress(String address, String inetAddress, String anyAddress, String anyIpv4Address, String anyIpv6Address);
+            "use '%3$s'")
+    void invalidWildcardAddress(String address, String inetAddress, String anyAddress);
 
     /**
      * Logs an error message indicating no handler for the step operation, represented by the {@code stepOpName}
@@ -3260,6 +3258,8 @@ public interface ControllerLogger extends BasicLogger {
     OperationFailedException incompleteExpression(String expression);
 
     // TODO use 371-373 for the next messages!
+    @Message(id = 371, value="The element '%s' is no longer supported, please use '%s' instead")
+    XMLStreamException unsupportedElement(QName name, @Param Location location, String supportedElement);
 
     @Message(id = 374, value = "Unable to resolve expressions at this location.")
     OperationFailedException unableToResolveExpressions();

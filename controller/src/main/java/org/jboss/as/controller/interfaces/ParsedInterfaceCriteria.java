@@ -24,8 +24,6 @@ package org.jboss.as.controller.interfaces;
 
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV4_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_IPV6_ADDRESS;
 import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
 
 import java.net.InetAddress;
@@ -54,44 +52,30 @@ import org.jboss.dmr.Property;
  */
 public final class ParsedInterfaceCriteria {
 
-    private static final ParsedInterfaceCriteria ANY = new ParsedInterfaceCriteria(false, false, true);
-    private static final ParsedInterfaceCriteria V4 = new ParsedInterfaceCriteria(true, false, false);
-    private static final ParsedInterfaceCriteria V6 = new ParsedInterfaceCriteria(false, true, false);
+    private static final ParsedInterfaceCriteria ANY = new ParsedInterfaceCriteria(true);
 
     private final String failureMessage;
-    private final boolean anyLocalV4;
-    private final boolean anyLocalV6;
     private final boolean anyLocal;
     private final Set<InterfaceCriteria> criteria = new HashSet<InterfaceCriteria>();
 
     private ParsedInterfaceCriteria(final String failureMessage) {
         this.failureMessage = failureMessage;
-        this.anyLocal = anyLocalV4 = anyLocalV6 = false;
+        this.anyLocal = false;
     }
 
-    private ParsedInterfaceCriteria(final boolean anyLocalV4, final boolean anyLocalV6, final boolean anyLocal) {
+    private ParsedInterfaceCriteria(final boolean anyLocal) {
         this.failureMessage = null;
         this.anyLocal = anyLocal;
-        this.anyLocalV4 = anyLocalV4;
-        this.anyLocalV6 = anyLocalV6;
     }
 
     private ParsedInterfaceCriteria(final Set<InterfaceCriteria> criteria) {
         this.failureMessage = null;
-        this.anyLocal = anyLocalV4 = anyLocalV6 = false;
+        this.anyLocal = false;
         this.criteria.addAll(criteria);
     }
 
     public String getFailureMessage() {
         return failureMessage;
-    }
-
-    public boolean isAnyLocalV4() {
-        return anyLocalV4;
-    }
-
-    public boolean isAnyLocalV6() {
-        return anyLocalV6;
     }
 
     public boolean isAnyLocal() {
@@ -114,10 +98,6 @@ public final class ParsedInterfaceCriteria {
         final ParsedInterfaceCriteria parsed;
         if(subModel.hasDefined(ANY_ADDRESS) && subModel.get(ANY_ADDRESS).asBoolean(false)) {
             parsed = ParsedInterfaceCriteria.ANY;
-        } else if(subModel.hasDefined(ANY_IPV4_ADDRESS) && subModel.get(ANY_IPV4_ADDRESS).asBoolean(false)) {
-            parsed = ParsedInterfaceCriteria.V4;
-        } else if(subModel.hasDefined(ANY_IPV6_ADDRESS) && subModel.get(ANY_IPV6_ADDRESS).asBoolean(false)) {
-            parsed = ParsedInterfaceCriteria.V6;
         } else {
             try {
                 final List<Property> nodes = subModel.asPropertyList();
@@ -129,12 +109,7 @@ public final class ParsedInterfaceCriteria {
                         if (nodes.size() > 1) {
                             SERVER_LOGGER.wildcardAddressDetected();
                         }
-                        WildcardInetAddressInterfaceCriteria wc = (WildcardInetAddressInterfaceCriteria) criterion;
-                        switch(wc.getVersion()) {
-                            case V4: return ParsedInterfaceCriteria.V4;
-                            case V6: return ParsedInterfaceCriteria.V6;
-                            default: return ParsedInterfaceCriteria.ANY;
-                        }
+                        return ParsedInterfaceCriteria.ANY;
                     }
                     else if (criterion != null) {
                         criteriaSet.add(criterion);
@@ -148,8 +123,7 @@ public final class ParsedInterfaceCriteria {
                 return new ParsedInterfaceCriteria(e.getMessage());
             }
         }
-        if (specified && parsed.getFailureMessage() == null && ! parsed.isAnyLocal() && ! parsed.isAnyLocalV4()
-                && ! parsed.isAnyLocalV6() && parsed.getCriteria().size() == 0) {
+        if (specified && parsed.getFailureMessage() == null && ! parsed.isAnyLocal() && parsed.getCriteria().size() == 0) {
             return new ParsedInterfaceCriteria(ControllerLogger.ROOT_LOGGER.noInterfaceCriteria());
         }
         return parsed;

@@ -32,7 +32,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
  * @created 26.1.12 22:47
  */
 public class InetAddressUtil {
-
     private static final int MAX_GROUP_LENGTH = 4;
     private static final int IPV6_LEN = 8;
 

@@ -3082,8 +3082,6 @@
         </xs:annotation>
         <xs:choice>
             <xs:element name="any-address" type="any-addressType"/>
-            <xs:element name="any-ipv6-address" type="any-ipv6-addressType"/>
-            <xs:element name="any-ipv4-address" type="any-ipv4-addressType"/>
             <xs:choice maxOccurs="unbounded">
                 <xs:element name="inet-address" type="inet-addressType"/>
                 <xs:element name="loopback" type="loopbackType"/>
@@ -3259,36 +3257,6 @@
                 Empty element indicating that part of the selection criteria
                 for an interface should be whether or not an address associated
                 with it is link-local.
-            </xs:documentation>
-        </xs:annotation>
-    </xs:complexType>
-
-    <xs:complexType name="any-ipv6-addressType">
-        <xs:annotation>
-            <xs:documentation>
-                Empty element indicating that sockets using this interface
-                should be bound to the IPv6 wildcard address (::).
-
-                Deprecated. The name of this type implies sockets will be
-                reachable only via IPv6 addresses and not via IPv4, but this
-                is not the case. Since using any-addressType provides the same effect,
-                this any-ipv6-addressType will be removed in a future release.
-            </xs:documentation>
-        </xs:annotation>
-    </xs:complexType>
-
-    <xs:complexType name="any-ipv4-addressType">
-        <xs:annotation>
-            <xs:documentation>
-                Empty element indicating that sockets using this interface
-                should be bound to the IPv4 wildcard address (0.0.0.0).
-
-                Deprecated. In the absence of -Djava.net.preferIPv4Stack=true,
-                the JVM cannot be instructed to bind a socket to all IPv4 addresses,
-                but only to IPv4 addresses, so the intended semantic cannot be
-                obtained via this setting alone. Since using any-addressType
-                and setting -Djava.net.preferIPv4Stack=true provides the same effect,
-                this any-ipv4-addressType will be removed in a future release.
             </xs:documentation>
         </xs:annotation>
     </xs:complexType>

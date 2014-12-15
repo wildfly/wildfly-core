@@ -21,6 +21,8 @@
  */
 package org.jboss.as.server.services.net;
 
+import static org.jboss.as.process.CommandLineConstants.PREFER_IPV4_STACK;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -37,7 +39,6 @@ import java.util.Set;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.interfaces.OverallInterfaceCriteria;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
@@ -66,34 +67,23 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
     private NetworkInterfaceBinding interfaceBinding;
 
     private final String name;
-    private final boolean anyLocalV4;
-    private final boolean anyLocalV6;
     private final boolean anyLocal;
     private final OverallInterfaceCriteria criteria;
 
     public static Service<NetworkInterfaceBinding> create(String name, ParsedInterfaceCriteria criteria) {
-        return new NetworkInterfaceService(name, criteria.isAnyLocalV4(), criteria.isAnyLocalV6(), criteria.isAnyLocal(),
-                                           criteria.getCriteria());
+        return new NetworkInterfaceService(name, criteria.isAnyLocal(), criteria.getCriteria());
     }
 
-    public NetworkInterfaceService(final String name, final boolean anyLocalV4, final boolean anyLocalV6,
-            final boolean anyLocal, final Set<InterfaceCriteria> criteria) {
+    public NetworkInterfaceService(final String name,  final boolean anyLocal, final Set<InterfaceCriteria> criteria) {
         this.name = name;
-        this.anyLocalV4 = anyLocalV4;
-        this.anyLocalV6 = anyLocalV6;
         this.anyLocal = anyLocal;
         this.criteria = new OverallInterfaceCriteria(name, criteria);
     }
 
     public synchronized void start(StartContext arg0) throws StartException {
         log.debug("Starting NetworkInterfaceService\n");
-        // WFLY-184 Reject any-ipv6-address config if java.net.preferIPv4Stack=true
-        if (anyLocalV6 && Boolean.parseBoolean(WildFlySecurityManager.getEnvPropertyPrivileged("java.net.preferIPv4Stack", "false"))) {
-            throw ControllerLogger.ROOT_LOGGER.invalidAnyIPv6();
-        }
-
         try {
-            this.interfaceBinding = createBinding(anyLocalV4, anyLocalV6, anyLocal, criteria);
+            this.interfaceBinding = createBinding(anyLocal, criteria);
         } catch (Exception e) {
             throw new StartException(e);
         }
@@ -105,17 +95,11 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
 
     public static NetworkInterfaceBinding createBinding(ParsedInterfaceCriteria criteria) throws SocketException,
             UnknownHostException {
-        return createBinding(criteria.isAnyLocalV4(), criteria.isAnyLocalV6(), criteria.isAnyLocal(),
-                new OverallInterfaceCriteria(null, criteria.getCriteria()));
+        return createBinding(criteria.isAnyLocal(), new OverallInterfaceCriteria(null, criteria.getCriteria()));
     }
 
-    static NetworkInterfaceBinding createBinding(final boolean anyLocalV4, final boolean anyLocalV6,
-                                                 final boolean anyLocal, final OverallInterfaceCriteria criteria) throws SocketException, UnknownHostException {
-        if (anyLocalV4) {
-            return getNetworkInterfaceBinding(IPV4_ANYLOCAL);
-        } else if (anyLocalV6) {
-            return getNetworkInterfaceBinding(IPV6_ANYLOCAL);
-        } else if (anyLocal) {
+    static NetworkInterfaceBinding createBinding(final boolean anyLocal, final OverallInterfaceCriteria criteria) throws SocketException, UnknownHostException {
+        if (anyLocal) {
             return getNetworkInterfaceBinding(isPreferIPv4Stack() ? IPV4_ANYLOCAL : IPV6_ANYLOCAL);
         } else {
             return resolveInterface(criteria);
@@ -176,6 +160,6 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
     }
 
     private static boolean isPreferIPv4Stack() {
-        return Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged("java.net.preferIPv4Stack", "false"));
+        return Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(PREFER_IPV4_STACK, "false"));
     }
 }

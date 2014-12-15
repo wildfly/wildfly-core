@@ -26,6 +26,7 @@ import static org.jboss.as.controller.PathAddress.pathAddress;
 import static org.jboss.as.controller.PathElement.pathElement;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLASSIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE;
@@ -79,7 +80,7 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
                 .build();
 
         ModelNode operation = Util.createOperation(ADD, pathAddress(INTERFACE, FOO));
-        operation.get("any-ipv4-address").set(true);
+        operation.get(ANY_ADDRESS).set(true);
         executeWithRoles(operation, StandardRole.SUPERUSER);
     }
 
@@ -236,7 +237,7 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
 
     private ModelNode addInterface(StandardRole role) {
         ModelNode operation = Util.createOperation(ADD, pathAddress(INTERFACE, "test" + (counter++)));
-        operation.get("any-ipv4-address").set(true);
+        operation.get(ANY_ADDRESS).set(true);
         return executeWithRoles(operation, role);
     }
 

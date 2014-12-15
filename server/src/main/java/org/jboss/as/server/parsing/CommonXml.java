@@ -444,10 +444,16 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
         requireNamespace(reader, expectedNs);
         Element element = Element.forName(reader.getLocalName());
         switch (element) {
-            case ANY_ADDRESS:
             case ANY_IPV4_ADDRESS:
             case ANY_IPV6_ADDRESS: {
-                interfaceModel.get(element.getLocalName()).set(true);
+                if(expectedNs.getMajorVersion() >= 3) {
+                    throw ParseUtils.unexpectedElement(reader);
+                } else {
+                  throw ParseUtils.unsupportedElement(reader, Element.ANY_ADDRESS.getLocalName());
+                }
+            }
+            case ANY_ADDRESS: {
+                interfaceModel.get(Element.ANY_ADDRESS.getLocalName()).set(true);
                 requireNoContent(reader); // consume this element
                 requireNoContent(reader); // consume rest of criteria (no further content allowed)
                 return;
@@ -1360,10 +1366,6 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
             // <any-* /> is just handled at the root
             if (iface.get(Element.ANY_ADDRESS.getLocalName()).asBoolean(false)) {
                 writer.writeEmptyElement(Element.ANY_ADDRESS.getLocalName());
-            } else if (iface.get(Element.ANY_IPV4_ADDRESS.getLocalName()).asBoolean(false)) {
-                writer.writeEmptyElement(Element.ANY_IPV4_ADDRESS.getLocalName());
-            } else if (iface.get(Element.ANY_IPV6_ADDRESS.getLocalName()).asBoolean(false)) {
-                writer.writeEmptyElement(Element.ANY_IPV6_ADDRESS.getLocalName());
             } else {
                 // Write the other criteria elements
                 writeInterfaceCriteria(writer, iface, false);
@@ -1430,6 +1432,10 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
                 writer.writeEndElement();
                 break;
             case NAME:
+                // not a criteria element; ignore
+                break;
+            case ANY_ADDRESS:
+                assert property.getValue().asBoolean(false) == false;
                 // not a criteria element; ignore
                 break;
             default: {
