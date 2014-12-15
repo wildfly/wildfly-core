@@ -3,7 +3,7 @@ SYNOPSIS
     deploy ((file_path | --url=deployment_url)
                [--script=script_name] [--name=deployment_name]
                [--runtime-name=deployment_runtime_name]
-               [--force | --disabled] [--unmanaged])
+               [--force] [--disabled] [--unmanaged])
            | --name=deployment_name
            [--server-groups=group_name (,group_name)* | --all-server-groups]
            [--headers={operation_header (;operation_header)*}]
@@ -62,7 +62,10 @@ ARGUMENTS
                      specified in the command arguments.
 
  --disabled       - indicates that the deployment has to be added to the
-                    repository disabled.
+                    repository disabled. Not supported in a managed domain.
+                    If used in combination with the '--force' or '-f' argument
+                    and the existing deployment is not disabled, the existing
+                    deployment will be undeployed.
 
  --unmanaged      - if this argument is not specified, the deployment content
                     will be copied (i.e. uploaded) to the server's deployment

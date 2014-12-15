@@ -315,7 +315,11 @@ public class DeploymentAttributes {
             .build();
 
     //Full replace deployment definition
-    public static final Map<String, AttributeDefinition> FULL_REPLACE_DEPLOYMENT_ATTRIBUTES = createAttributeMap(NAME, RUNTIME_NAME_NILLABLE, CONTENT_ALL);
+
+    private static final AttributeDefinition FULL_REPLACE_ENABLED = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
+            .setAllowExpression(ENABLED.isAllowExpression())
+            .build();
+    public static final Map<String, AttributeDefinition> FULL_REPLACE_DEPLOYMENT_ATTRIBUTES = createAttributeMap(NAME, RUNTIME_NAME_NILLABLE, CONTENT_ALL, ENABLED);
     public static final OperationDefinition FULL_REPLACE_DEPLOYMENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.FULL_REPLACE_DEPLOYMENT, DEPLOYMENT_RESOLVER)
             .setParameters(FULL_REPLACE_DEPLOYMENT_ATTRIBUTES.values().toArray(new AttributeDefinition[FULL_REPLACE_DEPLOYMENT_ATTRIBUTES.size()]))
             .addAccessConstraint(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT)
