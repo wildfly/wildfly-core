@@ -30,6 +30,7 @@ import org.jboss.as.cli.parsing.arguments.ArgumentValueInitialState;
 import org.jboss.as.cli.parsing.arguments.ArgumentValueState;
 import org.jboss.as.cli.parsing.arguments.CompositeState;
 import org.jboss.as.cli.parsing.arguments.NonObjectArgumentValueState;
+import org.jboss.as.cli.util.CLIExpressionResolver;
 import org.jboss.dmr.ModelNode;
 
 
@@ -46,7 +47,7 @@ public interface ArgumentValueConverter {
                 return new ModelNode();
             }
             if(ctx.isResolveParameterValues()) {
-                value = Util.resolveProperties(value);
+                value = CLIExpressionResolver.resolveOrOriginal(value);
             }
             try {
                 return ModelNode.fromString(value);
@@ -65,7 +66,7 @@ public interface ArgumentValueConverter {
                 return new ModelNode();
             }
             if(ctx.isResolveParameterValues()) {
-                value = Util.resolveProperties(value);
+                value = CLIExpressionResolver.resolveOrOriginal(value);
             }
             ModelNode toSet = null;
             try {

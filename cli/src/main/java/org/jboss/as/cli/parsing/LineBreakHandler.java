@@ -30,8 +30,13 @@ import org.jboss.as.cli.Util;
  */
 public class LineBreakHandler implements CharacterHandler {
 
-    private final boolean fallbackToEscape;
+    private final Boolean fallbackToEscape;
     private final boolean leaveOnLnBreak;
+
+    public LineBreakHandler(boolean leaveOnLnBreak) {
+        this.leaveOnLnBreak = leaveOnLnBreak;
+        this.fallbackToEscape = null;
+    }
 
     public LineBreakHandler(boolean leaveOnLnBreak, boolean fallbackToEscape) {
         this.leaveOnLnBreak = leaveOnLnBreak;
@@ -47,7 +52,16 @@ public class LineBreakHandler implements CharacterHandler {
                     ctx.leaveState();
                     ctx.advanceLocation(Util.LINE_SEPARATOR.length());
                 }
-            } else if(fallbackToEscape){
+                return;
+            }
+
+            if(fallbackToEscape == null) {
+                // the escape will be handled in doHandle() impl
+                doHandle(ctx);
+                return;
+            }
+
+            if(fallbackToEscape){
                 ctx.enterState(EscapeCharacterState.INSTANCE);
             } else {
                 ctx.enterState(EscapeCharacterState.KEEP_ESCAPE);

@@ -216,6 +216,9 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
             }
             if((byte)(flag & ESCAPE) > 0) {
                 buf.append(ch);
+                if(trimToSize >= 0) {
+                    trimToSize = -1;
+                }
             } else
             // trim whitespaces unless in quotes
             if((byte)(flag & QUOTES) > 0) {
