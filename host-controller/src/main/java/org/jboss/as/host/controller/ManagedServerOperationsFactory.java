@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.host.controller.ManagedServerBootCmdFactory.resolveExpressions;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADVANCED_FILTER;
@@ -175,7 +177,6 @@ public final class ManagedServerOperationsFactory {
     private final String serverGroupName;
     private final String profileName;
     private final DomainController domainController;
-    private final ExpressionResolver expressionResolver;
 
     ManagedServerOperationsFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel,
                                    final DomainController domainController, final ExpressionResolver expressionResolver) {
@@ -183,27 +184,11 @@ public final class ManagedServerOperationsFactory {
         this.domainModel = domainModel;
         this.hostModel = hostModel;
         this.domainController = domainController;
-        this.expressionResolver = expressionResolver;
-        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName));
+        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), expressionResolver, true);
 
         this.serverGroupName = serverModel.require(GROUP).asString();
-        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName));
+        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName), expressionResolver, true);
         this.profileName = serverGroup.require(PROFILE).asString();
-    }
-
-    /**
-     * Resolve expressions in the given model (if there are any)
-     */
-    private ModelNode resolveExpressions(final ModelNode unresolved) {
-        if (unresolved == null) {
-            return null;
-        }
-        try {
-            return expressionResolver.resolveExpressions(unresolved.clone());
-        } catch (OperationFailedException e) {
-            // Fail
-            throw new IllegalStateException(e.getMessage(), e);
-        }
     }
 
     ModelNode getBootUpdates() {
