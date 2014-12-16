@@ -27,6 +27,7 @@ import java.util.Deque;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.util.CLIExpressionResolver;
 
 
 /**
@@ -110,7 +111,6 @@ public class StateParser {
         private final Deque<ParsingState> stack = new ArrayDeque<ParsingState>();
 
         String input;
-        int variableCorrection;
         String originalInput;
         int location;
         char ch;
@@ -128,7 +128,6 @@ public class StateParser {
             ch = input.charAt(0);
             originalInput = input;
             location = 0;
-            variableCorrection = 0;
 
             initialState.getEnterHandler().handle(this);
 
@@ -153,12 +152,16 @@ public class StateParser {
         @Override
         public void resolveExpression(boolean systemProperty, boolean exceptionIfNotResolved)
             throws UnresolvedExpressionException {
+
             final char firstChar = input.charAt(location);
             if(firstChar == '$') {
                 final int inputLength = input.length();
                 if (inputLength - 1 > location && input.charAt(location + 1) == '{') {
                     if (systemProperty) {
-                        substituteSystemProperty(exceptionIfNotResolved);
+                        final String[] inputRef = new String[]{input};
+                        CLIExpressionResolver.resolveProperty(inputRef, location, exceptionIfNotResolved);
+                        input = inputRef[0];
+                        ch = input.charAt(location);
                     }
                 } else {
                     substituteVariable(exceptionIfNotResolved);
@@ -187,7 +190,6 @@ public class StateParser {
             if (endQuote < input.length() - 1) {
                 buf.append(input.substring(endQuote + 1));
             }
-            variableCorrection += resolved.length() - cmd.length() - 2;
             input = buf.toString();
             ch = input.charAt(location);
         }
@@ -242,31 +244,8 @@ public class StateParser {
                 if (endIndex < input.length()) {
                     buf.append(input.substring(endIndex));
                 }
-                variableCorrection += value.length() - name.length() - 1;
                 input = buf.toString();
                 ch = input.charAt(location);
-            }
-        }
-
-        private void substituteSystemProperty(boolean exceptionIfNotResolved) throws UnresolvedExpressionException {
-            final int endBrace = input.indexOf('}', location + 1);
-            if(endBrace - location - 2 <= 0) {
-                return;
-            }
-            final String prop = input.substring(location, endBrace + 1);
-            final String resolved = Util.resolveProperties(prop);
-            if (!resolved.equals(prop)) {
-                StringBuilder buf = new StringBuilder(input.length() - prop.length() + resolved.length());
-                buf.append(input.substring(0, location)).append(resolved);
-                if (endBrace < input.length() - 1) {
-                    buf.append(input.substring(endBrace + 1));
-                }
-                variableCorrection += resolved.length() - prop.length();
-                input = buf.toString();
-                ch = input.charAt(location);
-                return;
-            } else if(exceptionIfNotResolved) {
-                throw new UnresolvedExpressionException(prop, "Unrecognized system property " + prop);
             }
         }
 
@@ -342,7 +321,7 @@ public class StateParser {
 
         @Override
         public int getLocation() {
-            return location - variableCorrection;
+            return location;
         }
 
         @Override
@@ -361,14 +340,11 @@ public class StateParser {
 
         @Override
         public String getInput() {
-            return originalInput;
+            return input;
         }
 
         @Override
         public void advanceLocation(int offset) throws IndexOutOfBoundsException {
-//            if(location + offset >= input.length()) {
-//                throw new IndexOutOfBoundsException("Location=" + location + ", offset=" + offset + ", length=" + input.length());
-//            }
             if(isEndOfContent()) {
                 throw new IndexOutOfBoundsException("Location=" + location + ", offset=" + offset + ", length=" + input.length());
             }
