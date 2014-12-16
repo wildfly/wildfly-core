@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  *
@@ -34,6 +35,18 @@ import org.junit.Test;
  * @version $Revision: 1.1 $
  */
 public class JvmOptionsBuilderUnitTestCase {
+    public static final int JVM_MAJOR_VERSION;
+
+    static {
+        int vmVersion;
+        try {
+            String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
+            vmVersion = Integer.valueOf(vmVersionStr.substring(2));
+        } catch (Exception e) {
+            vmVersion = 7;
+        }
+        JVM_MAJOR_VERSION = vmVersion;
+    }
 
     @Test
     public void testNoOptionsSun() {
@@ -129,9 +142,13 @@ public class JvmOptionsBuilderUnitTestCase {
         List<String> command = new ArrayList<String>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
 
-        Assert.assertEquals(2, command.size());
-        Assert.assertTrue(command.contains("-XX:PermSize=32M"));
-        Assert.assertTrue(command.contains("-XX:MaxPermSize=64M"));
+        if (JVM_MAJOR_VERSION < 8) {
+            Assert.assertEquals(2, command.size());
+            Assert.assertTrue(command.contains("-XX:PermSize=32M"));
+            Assert.assertTrue(command.contains("-XX:MaxPermSize=64M"));
+        }else{
+            Assert.assertEquals(0, command.size());
+        }
     }
 
     @Test
@@ -293,11 +310,11 @@ public class JvmOptionsBuilderUnitTestCase {
         List<String> command = new ArrayList<String>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
 
-        Assert.assertEquals(type == JvmType.SUN ? 10 : 8, command.size());
+        Assert.assertEquals((type == JvmType.SUN  && JVM_MAJOR_VERSION < 8)? 10 : 8, command.size());
         Assert.assertTrue(command.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n"));
         Assert.assertTrue(command.contains("-Xms28M"));
         Assert.assertTrue(command.contains("-Xmx96M"));
-        if (type == JvmType.SUN) {
+        if (type == JvmType.SUN && JVM_MAJOR_VERSION < 8) {
             Assert.assertTrue(command.contains("-XX:PermSize=32M"));
             Assert.assertTrue(command.contains("-XX:MaxPermSize=64M"));
         }

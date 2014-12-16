@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  *
@@ -167,6 +168,19 @@ public class JvmOptionsBuilderFactory {
     }
 
     private static class SunJvmOptionsBuilder extends JvmOptionsBuilder {
+        public static final int JVM_MAJOR_VERSION;
+
+        static {
+            int vmVersion;
+            try {
+                String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
+                vmVersion = Integer.valueOf(vmVersionStr.substring(2));
+            } catch (Exception e) {
+                vmVersion = 7;
+            }
+            JVM_MAJOR_VERSION = vmVersion;
+        }
+
 
         public SunJvmOptionsBuilder(JvmType type) {
             super(type);
@@ -174,6 +188,7 @@ public class JvmOptionsBuilderFactory {
 
         @Override
         void addPermGen(JvmElement jvmElement, List<String> command) {
+            if (JVM_MAJOR_VERSION >= 8) return; //java 8 doesn't have prem gen anymore. jdk9 fails if it is set.
             String permgen = jvmElement.getPermgenSize();
             String maxPermgen = jvmElement.getMaxPermgen();
             if (maxPermgen == null && permgen != null) {
