@@ -43,6 +43,7 @@ import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.test.deployment.DeploymentScannerSetupTask;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
