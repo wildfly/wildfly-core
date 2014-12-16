@@ -27,11 +27,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REL
 import static org.jboss.as.controller.services.path.PathResourceDefinition.READ_ONLY;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManagerService.PathEventContextImpl;
@@ -58,7 +57,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
     protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName,
                                     ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
         // Guard against updates to read-only paths
-        final String pathName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
+        final String pathName = context.getCurrentAddressValue();
         if (model.getModel().get(READ_ONLY.getName()).asBoolean(false)) {
             throw ControllerLogger.ROOT_LOGGER.cannotModifyReadOnlyPath(pathName);
         }
@@ -78,7 +77,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                            ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<PathUpdate> handbackHolder) throws OperationFailedException {
-        final String pathName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
+        final String pathName = context.getCurrentAddressValue();
         final PathEntry pathEntry = pathManager.getPathEntry(pathName);
         final PathEntry backup = new PathEntry(pathEntry);
 
@@ -103,7 +102,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                          ModelNode valueToRestore, ModelNode valueToRevert, PathUpdate handback) throws OperationFailedException {
-        final String pathName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
+        final String pathName = context.getCurrentAddressValue();
         final PathEntry backup = handback.backup;
         final PathEventContextImpl pathEventContext = handback.context;
         if (pathEventContext.isInstallServices()) {

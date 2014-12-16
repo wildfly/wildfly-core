@@ -22,9 +22,8 @@
 
 package org.jboss.as.controller.operations.common;
 
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,7 +32,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -44,6 +42,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -76,7 +75,7 @@ public class XmlMarshallingHandler implements OperationStepHandler{
 
     @Override
     public void execute(OperationContext context, ModelNode operation) {
-        final PathAddress pa = PathAddress.pathAddress(PathAddress.pathAddress(operation.require(OP_ADDR)));
+        final PathAddress pa = context.getCurrentAddress();
 
         AuthorizationResult authResult = context.authorize(operation, EFFECTS);
         if (authResult.getDecision() != AuthorizationResult.Decision.PERMIT) {
@@ -102,8 +101,7 @@ public class XmlMarshallingHandler implements OperationStepHandler{
             throw e;
         } catch (Exception e) {
             // Log this
-            MGMT_OP_LOGGER.failedExecutingOperation(e, operation.require(ModelDescriptionConstants.OP),
-                    PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)));
+            MGMT_OP_LOGGER.failedExecutingOperation(e, operation.require(ModelDescriptionConstants.OP), pa);
             context.getFailureDescription().set(e.toString());
         }
         context.stepCompleted();

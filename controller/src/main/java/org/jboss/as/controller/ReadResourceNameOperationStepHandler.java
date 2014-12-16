@@ -22,8 +22,6 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -43,8 +41,7 @@ public class ReadResourceNameOperationStepHandler implements OperationStepHandle
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final String name = address.getLastElement().getValue();
+        final String name = context.getCurrentAddressValue();
 
         context.getResult().set(name);
 

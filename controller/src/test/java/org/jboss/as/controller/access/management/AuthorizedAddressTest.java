@@ -425,6 +425,16 @@ public class AuthorizedAddressTest {
         }
 
         @Override
+        public PathAddress getCurrentAddress() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public String getCurrentAddressValue() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
         public AuthorizationResult authorize(ModelNode operation) {
             String address = operation.get(OP_ADDR).asString();
             if(authorizedAddress.contains(address)) {

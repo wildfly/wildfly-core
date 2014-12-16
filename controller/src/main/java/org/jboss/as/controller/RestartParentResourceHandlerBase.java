@@ -21,8 +21,6 @@
  */
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import java.util.NoSuchElementException;
 
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -56,7 +54,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-                    PathAddress address = getParentAddress(PathAddress.pathAddress(operation.require(OP_ADDR)));
+                    PathAddress address = getParentAddress(context.getCurrentAddress());
                     ServiceName serviceName = getParentServiceName(address);
                     final ServiceController<?> service = serviceName != null ?
                             context.getServiceRegistry(false).getService(serviceName) : null;
@@ -85,7 +83,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                             if (reloadRequired) {
                                 context.revertReloadRequired();
                             } else if (invalidatedParentModel != null) {
-                                recoverServices(context, operation, invalidatedParentModel);
+                                recoverServices(context, invalidatedParentModel);
                             }
                         }
                     });
@@ -196,8 +194,8 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
         return Util.getParentAddressByKey(address, parentKeyName);
     }
 
-    private void recoverServices(final OperationContext context, final ModelNode operation, final ModelNode invalidatedParentModel) {
-        PathAddress address = getParentAddress(PathAddress.pathAddress(operation.require(OP_ADDR)));
+    private void recoverServices(final OperationContext context, final ModelNode invalidatedParentModel) {
+        PathAddress address = getParentAddress(context.getCurrentAddress());
         ServiceName serviceName = getParentServiceName(address);
 
         ModelNode parentModel = getOriginalModel(context, address);

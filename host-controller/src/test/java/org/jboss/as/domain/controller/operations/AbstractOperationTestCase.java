@@ -273,6 +273,19 @@ public abstract class AbstractOperationTestCase {
             fail("Should not have added step");
         }
 
+        @Override
+        public PathAddress getCurrentAddress() {
+            return operationAddress;
+        }
+
+        @Override
+        public String getCurrentAddressValue() {
+            if (operationAddress.size() == 0) {
+                throw new IllegalStateException();
+            }
+            return operationAddress.getLastElement().getValue();
+        }
+
         public InputStream getAttachmentStream(int index) {
             return null;
         }

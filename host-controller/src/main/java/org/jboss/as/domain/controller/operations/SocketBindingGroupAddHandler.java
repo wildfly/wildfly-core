@@ -18,8 +18,10 @@
  */
 package org.jboss.as.domain.controller.operations;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHandler;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -39,10 +41,10 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
      * {@inheritDoc}
      */
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        super.populateModel(operation, model);
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.populateModel(context, operation, resource);
         /* This will be reintroduced for 7.2.0, leave commented out
-        SocketBindingGroupResourceDefinition.INCLUDES.validateAndSet(operation, model);
+        SocketBindingGroupResourceDefinition.INCLUDES.validateAndSet(operation, resource.getModel());
         */
     }
 

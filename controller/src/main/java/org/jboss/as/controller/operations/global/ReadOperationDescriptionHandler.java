@@ -21,9 +21,9 @@
  */
 
 package org.jboss.as.controller.operations.global;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
@@ -34,7 +34,6 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 import java.util.Locale;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -49,6 +48,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -86,7 +86,7 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
 
         final DescribedOp describedOp = getDescribedOp(context, operationName, operation, !accessControl);
         if (describedOp == null || (context.getProcessType() == ProcessType.DOMAIN_SERVER && !describedOp.flags.contains(OperationEntry.Flag.RUNTIME_ONLY))) {
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.operationNotRegistered(operationName, PathAddress.pathAddress(operation.require(OP_ADDR))));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.operationNotRegistered(operationName, context.getCurrentAddress()));
         } else {
             final ModelNode result = describedOp.description;
             Set<OperationEntry.Flag> flags = describedOp.flags;
@@ -106,7 +106,7 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
             result.get(RUNTIME_ONLY).set(runtimeOnly);
 
             if (accessControl) {
-                final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+                final PathAddress address = context.getCurrentAddress();
                 ModelNode operationToCheck = Util.createOperation(operationName, address);
                 operationToCheck.get(OPERATION_HEADERS).set(operation.get(OPERATION_HEADERS));
                 AuthorizationResult authorizationResult = context.authorizeOperation(operationToCheck);
@@ -129,7 +129,7 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
                 result = new DescribedOp(operationEntry, locale);
             }
         } else if (lenient) {
-            PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            PathAddress address = context.getCurrentAddress();
             if (address.size() > 0) {
                 // For wildcard elements, check specific registrations where the same OSH is used
                 // for all such registrations

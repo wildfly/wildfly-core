@@ -22,8 +22,6 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import java.util.Collection;
 import java.util.NoSuchElementException;
 
@@ -55,7 +53,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<ModelNode> handbackHolder) throws OperationFailedException {
 
-        PathAddress address = getParentAddress(PathAddress.pathAddress(operation.require(OP_ADDR)));
+        PathAddress address = getParentAddress(context.getCurrentAddress());
         ServiceName serviceName = getParentServiceName(address);
         ServiceController<?> service = serviceName != null ?
                              context.getServiceRegistry(false).getService(serviceName) : null;
@@ -162,7 +160,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
             return;
         }
 
-        PathAddress address = getParentAddress(PathAddress.pathAddress(operation.require(OP_ADDR)));
+        PathAddress address = getParentAddress(context.getCurrentAddress());
         ServiceName serviceName = getParentServiceName(address);
 
         ModelNode parentModel = getOriginalModel(context, address);

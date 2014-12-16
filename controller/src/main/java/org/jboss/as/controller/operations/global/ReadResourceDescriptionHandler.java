@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -75,6 +74,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.AliasEntry;
@@ -147,7 +147,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final PathAddress address = context.getCurrentAddress();
         if (getAccessControlContext() == null && address.isMultiTarget()) {
             executeMultiTarget(context, operation);
         } else {
@@ -410,7 +410,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                 new OperationStepHandler() {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+                        final PathAddress address = context.getCurrentAddress();
                         ReadResourceDescriptionAccessControlContext accessControlContext = getAccessControlContext() == null ? new ReadResourceDescriptionAccessControlContext(address, null) : getAccessControlContext();
                         // step handler bypassing further wildcard resolution
                         doExecute(context, operation, accessControlContext);
@@ -424,7 +424,8 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                     Map<PathAddress, ModelNode> failures = new HashMap<PathAddress, ModelNode>();
                     for (ModelNode resultItem : result.asList()) {
                         if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
-                            final PathAddress failedAddress = PathAddress.pathAddress(operation.require(OP_ADDR));
+                            // TODO WFCORE-441 why use this operation's address? Seems like a bug
+                            final PathAddress failedAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
                             ModelNode failedDesc = resultItem.get(FAILURE_DESCRIPTION);
                             failures.put(failedAddress, failedDesc);
                         }
@@ -509,9 +510,10 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                     if (operations != null) {
                         ModelNode ops = new ModelNode();
                         ops.setEmptyObject();
+                        PathAddress currentAddress = context.getCurrentAddress();
                         for (Map.Entry<String, ModelNode> entry : operations.entrySet()) {
 
-                            ModelNode operationToCheck = Util.createOperation(entry.getKey(), PathAddress.pathAddress(operation.require(OP_ADDR)));
+                            ModelNode operationToCheck = Util.createOperation(entry.getKey(), currentAddress);
 
                             ModelNode operationResult = new ModelNode();
 

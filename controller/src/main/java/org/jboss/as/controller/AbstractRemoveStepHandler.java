@@ -79,7 +79,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
                             } catch (Exception e) {
                                 MGMT_OP_LOGGER.errorRevertingOperation(e, getClass().getSimpleName(),
                                     operation.require(ModelDescriptionConstants.OP).asString(),
-                                    PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)));
+                                    context.getCurrentAddress());
                             }
                         }
                     });

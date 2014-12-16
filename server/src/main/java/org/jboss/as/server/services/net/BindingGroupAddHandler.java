@@ -66,8 +66,8 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
     @Override
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
 
+        super.populateModel(context, operation, resource);
         final ModelNode model = resource.getModel();
-        populateModel(operation, model);
 
         SocketBindingGroupResourceDefinition.PORT_OFFSET.validateAndSet(operation, model);
 

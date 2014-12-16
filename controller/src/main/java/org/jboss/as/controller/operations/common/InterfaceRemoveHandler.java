@@ -19,12 +19,9 @@
 package org.jboss.as.controller.operations.common;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.dmr.ModelNode;
 
 /**
  * Handler for the path resource remove operation.
@@ -41,12 +38,5 @@ public class InterfaceRemoveHandler extends AbstractRemoveStepHandler {
      * Create the InterfaceRemoveHandler
      */
     protected InterfaceRemoveHandler() {
-    }
-
-
-    protected String getInterfaceName(ModelNode operation) {
-        final ModelNode opAddr = operation.require(OP_ADDR);
-        PathAddress address = PathAddress.pathAddress(opAddr);
-        return address.getLastElement().getValue();
     }
 }

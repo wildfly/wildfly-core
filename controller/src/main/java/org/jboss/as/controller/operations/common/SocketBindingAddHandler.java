@@ -19,8 +19,6 @@
 package org.jboss.as.controller.operations.common;
 
 
-import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.OperationFailedException;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_MAPPINGS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIXED_PORT;
@@ -28,10 +26,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MULTICAST_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MULTICAST_PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 
+import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
@@ -75,11 +76,11 @@ public class SocketBindingAddHandler extends AbstractAddStepHandler {
     protected SocketBindingAddHandler() {
     }
 
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+    @Override
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        String name = address.getLastElement().getValue();
-        model.get(NAME).set(name);
+        ModelNode model = resource.getModel();
+        model.get(NAME).set(context.getCurrentAddressValue());
 
         AbstractSocketBindingResourceDefinition.INTERFACE.validateAndSet(operation, model);
         AbstractSocketBindingResourceDefinition.PORT.validateAndSet(operation, model);

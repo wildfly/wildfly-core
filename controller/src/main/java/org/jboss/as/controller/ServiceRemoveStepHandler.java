@@ -1,7 +1,5 @@
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -30,7 +28,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
         if (context.isResourceServiceRestartAllowed()) {
-            final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+            final PathAddress address = context.getCurrentAddress();
             final String name = address.getLastElement().getValue();
             context.removeService(serviceName(name, address));
         } else {
