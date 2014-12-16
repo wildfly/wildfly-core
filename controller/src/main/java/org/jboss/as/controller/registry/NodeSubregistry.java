@@ -82,7 +82,7 @@ final class NodeSubregistry {
         final AbstractResourceRegistration newRegistry = new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, runtimeOnly);
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(), elementValue);
+            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
         }
         return newRegistry;
     }
@@ -91,7 +91,7 @@ final class NodeSubregistry {
         final ProxyControllerRegistration newRegistry = new ProxyControllerRegistration(elementValue, this, proxyController);
         final AbstractResourceRegistration appearingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (appearingRegistry != null) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(), elementValue);
+            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
         }
         //register(elementValue, newRegistry);
         return newRegistry;
@@ -106,7 +106,7 @@ final class NodeSubregistry {
         final AliasResourceRegistration newRegistry = new AliasResourceRegistration(elementValue, this, aliasEntry, target);
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(), elementValue);
+            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
         }
         return newRegistry;
     }
@@ -172,8 +172,8 @@ final class NodeSubregistry {
         }
     }
 
-    String getLocationString() {
-        return parent.getLocationString() + "(" + keyName + " => ";
+    private String getLocationString(String value) {
+        return parent.getPathAddress().append(keyName, value).toCLIStyleString();
     }
 
     DescriptionProvider getModelDescription(final ListIterator<PathElement> iterator, final String child) {
@@ -297,12 +297,12 @@ final class NodeSubregistry {
         return result;
     }
 
-    AbstractResourceRegistration getResourceRegistration(final ListIterator<PathElement> iterator, final String child) {
+    ManagementResourceRegistration getResourceRegistration(final ListIterator<PathElement> iterator, final String child) {
 
         final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
 
         // First search the non-wildcard child; if not found, search the wildcard child
-        AbstractResourceRegistration result = null;
+        ManagementResourceRegistration result = null;
 
         if (searchControl.getSpecifiedRegistry() != null) {
             result = searchControl.getSpecifiedRegistry().getResourceRegistration(searchControl.getIterator());

@@ -272,7 +272,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    AbstractResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator) {
+    ManagementResourceRegistration getResourceRegistration(ListIterator<PathElement> iterator) {
         if (!iterator.hasNext()) {
             return this;
         }

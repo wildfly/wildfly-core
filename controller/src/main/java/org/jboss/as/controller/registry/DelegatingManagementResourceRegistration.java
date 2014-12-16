@@ -91,6 +91,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public PathAddress getPathAddress() {
+        return getDelegate().getPathAddress();
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         return getDelegate().isRuntimeOnly();
     }

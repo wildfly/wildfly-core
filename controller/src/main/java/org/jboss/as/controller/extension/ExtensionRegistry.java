@@ -666,6 +666,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public PathAddress getPathAddress() {
+            return deployments.getPathAddress();
+        }
+
+        @Override
         public boolean isRuntimeOnly() {
             return deployments.isRuntimeOnly();
         }

@@ -934,6 +934,11 @@ final class SubsystemTestDelegate {
     private final ManagementResourceRegistration MOCK_RESOURCE_REG = new ManagementResourceRegistration() {
 
         @Override
+        public PathAddress getPathAddress() {
+            return PathAddress.EMPTY_ADDRESS;
+        }
+
+        @Override
         public boolean isRuntimeOnly() {
             return false;
         }
