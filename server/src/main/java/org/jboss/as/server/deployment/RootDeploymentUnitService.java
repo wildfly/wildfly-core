@@ -26,6 +26,7 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.inject.Injector;
@@ -40,6 +41,7 @@ import org.jboss.vfs.VirtualFile;
  */
 final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final InjectedValue<DeploymentMountProvider> serverDeploymentRepositoryInjector = new InjectedValue<DeploymentMountProvider>();
+    private final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<PathManager>();
     private final String name;
     private final String managementName;
     final InjectedValue<VirtualFile> contentsInjector = new InjectedValue<VirtualFile>();
@@ -84,6 +86,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(DeploymentModelUtils.DEPLOYMENT_RESOURCE, resource);
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, deploymentOverlays);
+        deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManagerInjector.getValue());
 
         // Attach the deployment repo
         deploymentUnit.putAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY, serverDeploymentRepositoryInjector.getValue());
@@ -96,6 +99,10 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
 
     Injector<DeploymentMountProvider> getServerDeploymentRepositoryInjector() {
         return serverDeploymentRepositoryInjector;
+    }
+
+    InjectedValue<PathManager> getPathManagerInjector() {
+        return pathManagerInjector;
     }
 
     @SuppressWarnings("deprecation")

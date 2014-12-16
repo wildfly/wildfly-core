@@ -27,6 +27,7 @@ import java.util.List;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.service.ServiceController;
@@ -60,7 +61,8 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             final ImmutableManagementResourceRegistration registration = deploymentUnit.getAttachment(DeploymentModelUtils.REGISTRATION_ATTACHMENT);
             final ManagementResourceRegistration mutableRegistration =  deploymentUnit.getAttachment(DeploymentModelUtils.MUTABLE_REGISTRATION_ATTACHMENT);
             final AbstractVaultReader vaultReader = deploymentUnit.getAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY);
-            final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration, mutableRegistration, resource, vaultReader);
+            final PathManager pathManager = deploymentUnit.getAttachment(Attachments.PATH_MANAGER);
+            final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration, mutableRegistration, resource, vaultReader, pathManager);
 
             final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
 
