@@ -99,6 +99,7 @@ import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
+import org.jboss.as.server.operations.SuspendStateReadHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
@@ -268,6 +269,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getProcessNameWriteHandler());
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.HOST_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
+        hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
     }
 
 

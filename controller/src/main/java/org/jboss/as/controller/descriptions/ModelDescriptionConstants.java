@@ -423,6 +423,7 @@ public class ModelDescriptionConstants {
     public static final String SUCCESS = "success";
     public static final String SUSPEND = "suspend";
     public static final String SUSPEND_SERVERS = "suspend-servers";
+    public static final String SUSPEND_STATE = "suspend-state";
     public static final String SYSLOG_FORMAT = "syslog-format";
     public static final String SYSLOG_HANDLER = "syslog-handler";
     public static final String SYSTEM_PROPERTY = "system-property";

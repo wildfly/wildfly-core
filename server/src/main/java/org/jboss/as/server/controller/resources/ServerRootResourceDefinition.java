@@ -105,6 +105,7 @@ import org.jboss.as.server.operations.ServerShutdownHandler;
 import org.jboss.as.server.operations.ServerSuspendHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.SetServerGroupHostHandler;
+import org.jboss.as.server.operations.SuspendStateReadHandler;
 import org.jboss.as.server.services.net.BindingGroupAddHandler;
 import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
 import org.jboss.as.server.services.net.NetworkInterfaceRuntimeHandler;
@@ -114,6 +115,7 @@ import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelType;
 /**
  *
@@ -187,6 +189,12 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .setValidator(new EnumValidator<RunningMode>(RunningMode.class, false, false))
             .setStorageRuntime()
             .build();
+
+    public static final AttributeDefinition SUSPEND_STATE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_STATE, ModelType.STRING)
+            .setValidator(new EnumValidator<SuspendController.State>(SuspendController.State.class, false, false))
+            .setStorageRuntime()
+            .build();
+
 
     private final boolean isDomain;
     private final ContentRepository contentRepository;
@@ -346,6 +354,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(SERVER_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, ProcessTypeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
+        resourceRegistration.registerReadOnlyAttribute(SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
 
 
         resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_MAJOR_VERSION, null);

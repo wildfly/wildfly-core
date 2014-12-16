@@ -122,6 +122,10 @@ public class SuspendController implements Service<SuspendController> {
     public synchronized void stop(StopContext stopContext) {
     }
 
+    public State getState() {
+        return state;
+    }
+
     synchronized void activityPaused() {
         --outstandingCount;
         handlePause();
