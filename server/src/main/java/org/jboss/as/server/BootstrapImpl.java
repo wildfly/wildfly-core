@@ -222,6 +222,7 @@ final class BootstrapImpl implements Bootstrap {
                 }
             } finally {
                 if (sc != null) {
+                    ServerLogger.ROOT_LOGGER.shutdownHookInvoked();
                     final CountDownLatch latch = new CountDownLatch(1);
                     sc.addTerminateListener(new ServiceContainer.TerminateListener() {
                         @Override
