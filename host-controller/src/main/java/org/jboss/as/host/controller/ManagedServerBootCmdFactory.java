@@ -410,7 +410,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                     break;
                 case BY_SERVER:
                 default:
-                    result = dir.getAbsolutePath();
+                    result = getAbsolutePath(dir, serverName);
                     break;
             }
         }
