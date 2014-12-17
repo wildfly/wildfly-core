@@ -18,6 +18,7 @@
  */
 package org.jboss.as.controller.operations.validation;
 
+import java.util.HashSet;
 import java.util.List;
 
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -36,6 +37,7 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
     private final int min;
     private final int max;
     private final ParameterValidator elementValidator;
+    private final boolean allowDuplicates;
 
     /**
      * Constructs a new {@code ListValidator}
@@ -43,7 +45,7 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
      * @param elementValidator validator for list elements
      */
     public ListValidator(ParameterValidator elementValidator) {
-        this(elementValidator, false, 1, Integer.MAX_VALUE);
+        this(elementValidator, false, 1, Integer.MAX_VALUE, false);
     }
 
     /**
@@ -51,22 +53,40 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
      * @param nullable {@code true} if the model node for the list can be {@code null} or {@link ModelType#UNDEFINED}
      */
     public ListValidator(ParameterValidator elementValidator, boolean nullable) {
-        this(elementValidator, nullable, 1, Integer.MAX_VALUE);
+        this(elementValidator, nullable, 1, Integer.MAX_VALUE, false);
+    }
+/**
+     * @param elementValidator validator for list elements
+     * @param nullable {@code true} if the model node for the list can be {@code null} or {@link ModelType#UNDEFINED}
+     */
+    public ListValidator(ParameterValidator elementValidator, boolean nullable,boolean allowDuplicates) {
+        this(elementValidator, nullable, 1, Integer.MAX_VALUE, allowDuplicates);
     }
 
     /**
      * @param elementValidator validator for list elements
-     * @param nullable {@code true} if the model node for the list can be {@code null} or {@link ModelType#UNDEFINED}
-     * @param minSize minimum number of elements in the list
-     * @param maxSize maximum number of elements in the list
+     * @param nullable         {@code true} if the model node for the list can be {@code null} or {@link ModelType#UNDEFINED}
+     * @param minSize          minimum number of elements in the list
+     * @param maxSize          maximum number of elements in the list
      */
     public ListValidator(ParameterValidator elementValidator, boolean nullable, int minSize, int maxSize) {
+        this(elementValidator, nullable, minSize, maxSize, true);
+    }
+
+    /**
+     * @param elementValidator validator for list elements
+     * @param nullable         {@code true} if the model node for the list can be {@code null} or {@link ModelType#UNDEFINED}
+     * @param minSize          minimum number of elements in the list
+     * @param maxSize          maximum number of elements in the list
+     * @param allowDuplicates  validate duplicates in list or not
+     */
+    public ListValidator(ParameterValidator elementValidator, boolean nullable, int minSize, int maxSize, boolean allowDuplicates) {
         super(ModelType.LIST, nullable, false, true);
-        if (elementValidator == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator");
+        if (elementValidator == null) { throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator"); }
         this.min = minSize;
         this.max = maxSize;
         this.elementValidator = elementValidator;
+        this.allowDuplicates = allowDuplicates;
     }
 
     @Override
@@ -82,6 +102,15 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxSize(size, parameterName, max));
             }
             else {
+                if (!allowDuplicates){
+                    HashSet<ModelNode> dups = new HashSet<>();
+                    for (ModelNode element : list) {
+                        if (!dups.add(element)){
+                            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.duplicateElementsInList(parameterName));
+                        }
+                    }
+                    dups.clear();
+                }
                 for (ModelNode element : list) {
                     elementValidator.validateParameter(parameterName, element);
                 }

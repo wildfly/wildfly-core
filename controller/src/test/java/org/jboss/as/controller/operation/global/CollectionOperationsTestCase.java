@@ -52,6 +52,7 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
 
     private static final StringListAttributeDefinition LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder("my-list-attribute")
             .setAllowNull(true)
+            .setAllowDuplicates(false)
             .build();
     private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("my-map-attribute", true)
             .setAllowNull(true)
@@ -281,5 +282,19 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
 
         list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
         Assert.assertTrue(list.isEmpty());
+
+        op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("one");
+        executeCheckNoFailure(op);
+
+        list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
+        Assert.assertEquals(1, list.size());
+
+        /*op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("one");*/
+        executeCheckForFailure(op); //duplicates not allowed
+
     }
 }
