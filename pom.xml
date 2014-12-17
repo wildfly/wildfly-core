@@ -126,7 +126,7 @@
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
         <version.org.wildfly.build-tools>1.0.0.Alpha3</version.org.wildfly.build-tools>
-        <version.org.wildfly.legacy.test>1.0.0.Alpha2</version.org.wildfly.legacy.test>
+        <version.org.wildfly.legacy.test>1.0.0.Alpha4-SNAPSHOT</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.manager>1.1.2.Final</version.org.wildfly.security.manager>
         <version.org.wildfly.checkstyle-config>1.0.0.Final</version.org.wildfly.checkstyle-config>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
