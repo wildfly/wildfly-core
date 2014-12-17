@@ -25,6 +25,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -515,10 +517,26 @@ class TestModelControllerService extends ModelTestModelControllerService {
             final ExtensibleConfigurationPersister persister = new NullConfigurationPersister();
             final HostFileRepository hostFileRepository = createHostFileRepository();
             final DomainController domainController = new MockDomainController();
-
-            DomainRootDefinition domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
+            DomainRootDefinition domainDefinition = null;
+            Constructor<?>[] constructors = DomainRootDefinition.class.getConstructors();
+            if(constructors.length == 1 && constructors[0].getParameterCount() == 10) { // For EAP 6.2 compatibility
+                try {
+                    domainDefinition = (DomainRootDefinition) constructors[0].newInstance(domainController, env, persister, injectedContentRepository.getValue(),
+                            hostFileRepository, true, info, extensionRegistry, null, pathManagerService);
+                } catch (InstantiationException ex) {
+                    throw new RuntimeException(ex);
+                } catch (IllegalAccessException ex) {
+                    throw new RuntimeException(ex);
+                } catch (IllegalArgumentException ex) {
+                    throw new RuntimeException(ex);
+                } catch (InvocationTargetException ex) {
+                    throw new RuntimeException(ex);
+                }
+            } else {
+                domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
                     hostFileRepository, true, info, extensionRegistry, null, pathManagerService, null, authorizer, null,
                     getMutableRootResourceRegistrationProvider());
+            }
             domainDefinition.initialize(rootRegistration);
             rootResourceDefinition.setDelegate(domainDefinition);
 
