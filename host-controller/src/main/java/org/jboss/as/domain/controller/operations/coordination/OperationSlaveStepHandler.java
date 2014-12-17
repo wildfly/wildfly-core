@@ -152,9 +152,15 @@ class OperationSlaveStepHandler {
             if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
                 context.addStep(localReponse, operation, entry.getOperationHandler(), OperationContext.Stage.MODEL);
             } else {
+                final OperationStepHandler wrapper;
                 // For slave host controllers wrap the operation handler to synchronize missing configuration
-                final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-                final OperationStepHandler wrapper = SyncModelOperationHandlerWrapper.wrapHandler(localHostControllerInfo.getLocalHostName(), operationName, address, entry);
+                // TODO better configuration of ignore unaffected configuration
+                if (localHostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
+                    final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+                    wrapper = SyncModelOperationHandlerWrapper.wrapHandler(localHostControllerInfo.getLocalHostName(), operationName, address, entry);
+                } else {
+                    wrapper = entry.getOperationHandler();
+                }
                 context.addStep(localReponse, operation, wrapper, OperationContext.Stage.MODEL);
             }
         } else {
