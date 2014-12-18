@@ -26,15 +26,20 @@ package org.wildfly.extension.io;
 
 import java.io.IOException;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
+import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Test;
+import org.xnio.OptionMap;
 import org.xnio.Options;
+import org.xnio.Sequence;
 import org.xnio.XnioWorker;
 
 /**
@@ -59,7 +64,7 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[] {
+        return new String[]{
                 "/subsystem-templates/io.xml"
         };
     }
@@ -88,6 +93,28 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
                 return RunningMode.NORMAL;
             }
         };
+    }
+
+    protected static final OptionAttributeDefinition ENABLED_PROTOCOLS = OptionAttributeDefinition.builder("enabled-protocols", Options.SSL_ENABLED_PROTOCOLS)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setAllowExpression(true)
+            .build();
+
+    @Test
+    public void testSequence() throws Exception {
+        OptionMap.Builder builder = OptionMap.builder();
+        ModelNode model = new ModelNode();
+        ModelNode operation = new ModelNode();
+        operation.get(ENABLED_PROTOCOLS.getName()).set("TLSv1, TLSv1.1, TLSv1.2");
+        ENABLED_PROTOCOLS.validateAndSet(operation, model);
+        ENABLED_PROTOCOLS.resolveOption(ExpressionResolver.SIMPLE, model, builder);
+        Sequence<String> protocols = builder.getMap().get(Options.SSL_ENABLED_PROTOCOLS);
+        Assert.assertEquals(3, protocols.size());
+        Assert.assertEquals("TLSv1", protocols.get(0));
+        Assert.assertEquals("TLSv1.1", protocols.get(1));
+        Assert.assertEquals("TLSv1.2", protocols.get(2));
+
     }
 
 }
