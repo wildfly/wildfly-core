@@ -28,7 +28,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.ParsedCommandLine;
@@ -55,6 +54,16 @@ public class PropertyReplacementTestCase {
     private static final String OP_PROP_PROP_NAME = "test.prop-name";
     private static final String OP_PROP_PROP_VALUE = "test-prop";
 
+    private static final String PROP_PART1_NAME = "test.p1";
+    private static final String PROP_PART1_VALUE = "test";
+    private static final String PROP_PART2_NAME = "test.p2";
+    private static final String PROP_PART2_VALUE = "op-name";
+
+    private static final String PROP_RECURSIVE_NAME = "test.prop.recursive";
+    private static final String PROP_RECURSIVE_VALUE = "${" + OP_PROP_NAME + "}";
+
+    private static final String ENV_PROP_NAME = "env.test.prop";
+    private static final String ENV_PROP_VALUE = "sysprop";
 
     @BeforeClass
     public static void setup() {
@@ -62,6 +71,13 @@ public class PropertyReplacementTestCase {
         WildFlySecurityManager.setPropertyPrivileged(NODE_NAME_PROP_NAME, NODE_NAME_PROP_VALUE);
         WildFlySecurityManager.setPropertyPrivileged(OP_PROP_NAME, OP_PROP_VALUE);
         WildFlySecurityManager.setPropertyPrivileged(OP_PROP_PROP_NAME, OP_PROP_PROP_VALUE);
+
+        WildFlySecurityManager.setPropertyPrivileged(PROP_PART1_NAME, PROP_PART1_VALUE);
+        WildFlySecurityManager.setPropertyPrivileged(PROP_PART2_NAME, PROP_PART2_VALUE);
+
+        WildFlySecurityManager.setPropertyPrivileged(PROP_RECURSIVE_NAME, PROP_RECURSIVE_VALUE);
+
+        WildFlySecurityManager.setPropertyPrivileged(ENV_PROP_NAME, ENV_PROP_VALUE);
     }
 
     @AfterClass
@@ -70,6 +86,23 @@ public class PropertyReplacementTestCase {
         WildFlySecurityManager.clearPropertyPrivileged(NODE_NAME_PROP_NAME);
         WildFlySecurityManager.clearPropertyPrivileged(OP_PROP_NAME);
         WildFlySecurityManager.clearPropertyPrivileged(OP_PROP_PROP_NAME);
+
+        WildFlySecurityManager.clearPropertyPrivileged(PROP_PART1_NAME);
+        WildFlySecurityManager.clearPropertyPrivileged(PROP_PART2_NAME);
+
+        WildFlySecurityManager.clearPropertyPrivileged(PROP_RECURSIVE_NAME);
+    }
+
+    @Test
+    public void testRecursiveReplacement() throws Exception {
+        final ParsedCommandLine parsed = parse("${" + PROP_RECURSIVE_NAME + "}");
+        assertEquals(OP_PROP_VALUE, parsed.getOperationName());
+    }
+
+    @Test
+    public void testNestedReplacement() throws Exception {
+        final ParsedCommandLine parsed = parse("${${" + PROP_PART1_NAME + "}.${" + PROP_PART2_NAME + "}}");
+        assertEquals(OP_PROP_VALUE, parsed.getOperationName());
     }
 
     @Test
