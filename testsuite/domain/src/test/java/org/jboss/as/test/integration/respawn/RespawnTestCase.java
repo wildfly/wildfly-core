@@ -112,7 +112,7 @@ public class RespawnTestCase {
         // TODO this should not be necessary
         domainConfigDir.mkdirs();
 
-        if (File.pathSeparatorChar == ':'){
+        if (File.pathSeparatorChar == ':') {
             processUtil = new UnixProcessUtil();
         } else {
             processUtil = new WindowsProcessUtil();
@@ -153,11 +153,13 @@ public class RespawnTestCase {
         args.add("-jvm");
         args.add(processUtil.getJavaCommand());
         args.add("--");
-        if(localRepo != null) {
+        if (localRepo != null) {
             args.add("-Dlocal.maven.repo.path=" + localRepo);
         }
         args.add("-Dorg.jboss.boot.log.file=" + masterDirPath + "/log/host-controller.log");
         args.add("-Dlogging.configuration=file:" + jbossHome + "/domain/configuration/logging.properties");
+        args.add("-Djboss.boot.server.log.level=TRACE");
+        args.add("-Djboss.boot.server.log.console.level=TRACE");
         args.add("-Djboss.test.host.master.address=" + address);
         TestSuiteEnvironment.getIpv6Args(args);
         args.add("-Xms64m");
@@ -170,7 +172,7 @@ public class RespawnTestCase {
         args.add("--domain-config=" + domainXml.getName());
         args.add("-Djboss.test.host.master.address=" + address);
         args.add("-Djboss.domain.base.dir=" + masterDir.getAbsolutePath());
-        if(localRepo != null) {
+        if (localRepo != null) {
             args.add("-Dlocal.maven.repo.path=" + localRepo);
         }
         args.add("--interprocess-hc-address");
@@ -184,8 +186,8 @@ public class RespawnTestCase {
     }
 
     @AfterClass
-    public static void destroyProcessController(){
-        if (processController != null){
+    public static void destroyProcessController() {
+        if (processController != null) {
             processController.shutdown();
             processController = null;
         }
@@ -255,7 +257,7 @@ public class RespawnTestCase {
         //Read HC model until there are no servers
         long start = System.currentTimeMillis();
         long timeout = start + TIMEOUT;
-        long minCheckPeriod =  start + 5000;
+        long minCheckPeriod = start + 5000;
         while (true) {
             Thread.sleep(500);
             if (lookupServerInModel(MASTER, SERVER_ONE) || lookupServerInModel(MASTER, SERVER_TWO)) {
@@ -274,7 +276,6 @@ public class RespawnTestCase {
         System.out.println("reloaded out of admin-only; waiting for servers");
         //Wait for servers
         readHostControllerServers();
-
 
         //Check all processes are the same
         List<RunningProcess> reloaded = waitForAllProcesses();
@@ -385,7 +386,6 @@ public class RespawnTestCase {
         }
     }
 
-
     private RunningProcess findProcess(List<RunningProcess> processes, String name) {
         RunningProcess proc = null;
         for (RunningProcess cur : processes) {
@@ -397,7 +397,6 @@ public class RespawnTestCase {
         Assert.assertNotNull(proc);
         return proc;
     }
-
 
     private void executeReloadOperation(Boolean restartServers, Boolean adminOnly) throws Exception {
         ModelNode operation = new ModelNode();
@@ -473,7 +472,7 @@ public class RespawnTestCase {
 
         try {
             final ModelNode result = getControllerClient().execute(operation);
-            if (result.get(OUTCOME).asString().equals(SUCCESS)){
+            if (result.get(OUTCOME).asString().equals(SUCCESS)) {
                 final ModelNode model = result.require(RESULT);
                 if (model.hasDefined(NAME) && model.get(NAME).asString().equals(server)) {
                     return true;
@@ -509,10 +508,10 @@ public class RespawnTestCase {
         do {
             Thread.sleep(200);
             runningProcesses = processUtil.getRunningProcesses();
-            if (processUtil.containsProcesses(runningProcesses, requiredNames)){
+            if (processUtil.containsProcesses(runningProcesses, requiredNames)) {
                 return runningProcesses;
             }
-        } while(System.currentTimeMillis() < time);
+        } while (System.currentTimeMillis() < time);
         Assert.fail("Did not have all running processes " + runningProcesses);
         return null;
     }
@@ -523,22 +522,22 @@ public class RespawnTestCase {
         do {
             Thread.sleep(200);
             runningProcesses = processUtil.getRunningProcesses();
-            for (Iterator<RunningProcess> it = runningProcesses.iterator() ; it.hasNext() ; ) {
+            for (Iterator<RunningProcess> it = runningProcesses.iterator(); it.hasNext();) {
                 RunningProcess proc = it.next();
                 if (excludedProcessIds.contains(proc.getProcessId())) {
                     it.remove();
                 }
             }
-            if (processUtil.containsProcesses(runningProcesses, HOST_CONTROLLER, SERVER_ONE, SERVER_TWO)){
+            if (processUtil.containsProcesses(runningProcesses, HOST_CONTROLLER, SERVER_ONE, SERVER_TWO)) {
                 return runningProcesses;
             }
-        } while(System.currentTimeMillis() < time);
+        } while (System.currentTimeMillis() < time);
         Assert.fail("Did not have all running processes " + runningProcesses);
         return null;
 
     }
 
-    private static void copyFile(File file, File directory) throws IOException{
+    private static void copyFile(File file, File directory) throws IOException {
         File tgt = new File(directory, file.getName());
         if (tgt.exists()) {
             if (!tgt.delete()) {
@@ -571,36 +570,36 @@ public class RespawnTestCase {
 
         List<String> initialProcessIds;
 
-        ProcessUtil(){
+        ProcessUtil() {
             initialProcessIds = getInitialProcessIds();
         }
 
-        List<String> getInitialProcessIds(){
+        List<String> getInitialProcessIds() {
             List<String> processes = listProcesses();
             List<String> ids = new ArrayList<String>();
-            for (String proc : processes){
+            for (String proc : processes) {
                 ids.add(parseProcessId(proc));
             }
             return ids;
         }
 
-        String parseProcessId(String proc){
+        String parseProcessId(String proc) {
             proc = proc.trim();
             int i = proc.indexOf(' ');
             return proc.substring(0, i);
         }
 
-        List<RunningProcess> getRunningProcesses(){
+        List<RunningProcess> getRunningProcesses() {
             List<RunningProcess> running = new ArrayList<RunningProcess>();
             List<String> processes = listProcesses();
-            for (String proc : processes){
+            for (String proc : processes) {
                 String id = parseProcessId(proc);
-                if (!initialProcessIds.contains(id)){
-                    if (proc.contains(SERVER_ONE)){
+                if (!initialProcessIds.contains(id)) {
+                    if (proc.contains(SERVER_ONE)) {
                         running.add(new RunningProcess(id, SERVER_ONE));
-                    } else if (proc.contains(SERVER_TWO)){
+                    } else if (proc.contains(SERVER_TWO)) {
                         running.add(new RunningProcess(id, SERVER_TWO));
-                    } else if (proc.contains(HOST_CONTROLLER) && !proc.contains(PROCESS_CONTROLLER)){
+                    } else if (proc.contains(HOST_CONTROLLER) && !proc.contains(PROCESS_CONTROLLER)) {
                         running.add(new RunningProcess(id, HOST_CONTROLLER));
                     }
                 }
@@ -621,7 +620,7 @@ public class RespawnTestCase {
             try {
                 String line;
                 while ((line = input.readLine()) != null) {
-                    if (line.contains("jboss-modules.jar")){
+                    if (line.contains("jboss-modules.jar")) {
                         processes.add(line);
                     }
 
@@ -649,10 +648,10 @@ public class RespawnTestCase {
                     throw new RuntimeException(e);
                 }
                 List<RunningProcess> runningProcesses = processUtil.getRunningProcesses();
-                if (processUtil.getProcessById(runningProcesses, process.getProcessId()) == null){
+                if (processUtil.getProcessById(runningProcesses, process.getProcessId()) == null) {
                     return;
                 }
-            } while(System.currentTimeMillis() < time);
+            } while (System.currentTimeMillis() < time);
 
             Assert.fail("Did not kill process " + process + " " + processUtil.getRunningProcesses());
         }
@@ -663,34 +662,34 @@ public class RespawnTestCase {
 
         abstract String getKillCommand(RunningProcess process);
 
-        private boolean containsProcesses(List<RunningProcess> runningProcesses, String...names){
-            for (String name : names){
+        private boolean containsProcesses(List<RunningProcess> runningProcesses, String... names) {
+            for (String name : names) {
                 boolean found = false;
                 for (RunningProcess proc : runningProcesses) {
-                    if (proc.getProcess().equals(name)){
+                    if (proc.getProcess().equals(name)) {
                         found = true;
                         continue;
                     }
                 }
-                if (!found){
+                if (!found) {
                     return false;
                 }
             }
             return true;
         }
 
-        private RunningProcess getProcess(List<RunningProcess> runningProcesses, String name){
-            for (RunningProcess proc : runningProcesses){
-                if (proc.getProcess().equals(name)){
+        private RunningProcess getProcess(List<RunningProcess> runningProcesses, String name) {
+            for (RunningProcess proc : runningProcesses) {
+                if (proc.getProcess().equals(name)) {
                     return proc;
                 }
             }
             return null;
         }
 
-        private RunningProcess getProcessById(List<RunningProcess> runningProcesses, String id){
-            for (RunningProcess proc : runningProcesses){
-                if (proc.getProcessId().equals(id)){
+        private RunningProcess getProcessById(List<RunningProcess> runningProcesses, String id) {
+            for (RunningProcess proc : runningProcesses) {
+                if (proc.getProcessId().equals(id)) {
                     return proc;
                 }
             }
@@ -699,19 +698,20 @@ public class RespawnTestCase {
     }
 
     private static class UnixProcessUtil extends ProcessUtil {
+
         @Override
         String[] getJpsCommand() {
             final File jreHome = new File(System.getProperty("java.home"));
             Assert.assertTrue("JRE home not found. File: " + jreHome.getAbsoluteFile(), jreHome.exists());
-            if (System.getProperty("java.vendor.url","whatever").contains("ibm.com")) {
-                return new String[] { "sh", "-c", "ps -ef | awk '{$1=\"\"; print $0}'" };
+            if (System.getProperty("java.vendor.url", "whatever").contains("ibm.com")) {
+                return new String[]{"sh", "-c", "ps -ef | awk '{$1=\"\"; print $0}'"};
             } else {
                 File jpsExe = new File(jreHome, "bin/jps");
                 if (!jpsExe.exists()) {
                     jpsExe = new File(jreHome, "../bin/jps");
                 }
                 Assert.assertTrue("JPS executable not found. File: " + jpsExe, jpsExe.exists());
-                return new String[] { jpsExe.getAbsolutePath(), "-lv" };
+                return new String[]{jpsExe.getAbsolutePath(), "-lv"};
             }
         }
 
@@ -737,7 +737,7 @@ public class RespawnTestCase {
                 jpsExe = new File(jreHome, "../bin/jps.exe");
             }
             Assert.assertTrue("JPS executable not found. File: " + jpsExe, jpsExe.exists());
-            return new String[] { jpsExe.getAbsolutePath(), "-lv" };
+            return new String[]{jpsExe.getAbsolutePath(), "-lv"};
         }
 
         @Override
@@ -752,6 +752,7 @@ public class RespawnTestCase {
     }
 
     private static class RunningProcess {
+
         final String processId;
         final String process;
 
