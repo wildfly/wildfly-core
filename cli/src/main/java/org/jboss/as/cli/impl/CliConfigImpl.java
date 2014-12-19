@@ -42,6 +42,7 @@ import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.SSLConfig;
+import org.jboss.as.cli.util.CLIExpressionResolver;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.logging.Logger;
 import org.jboss.staxmapper.XMLElementReader;
@@ -870,10 +871,14 @@ class CliConfigImpl implements CliConfig {
         }
 
         private String getPassword(CLIVaultReader vaultReader, String str) throws XMLStreamException {
-            try {
-                return vaultReader.retrieve(str);
-            } catch (GeneralSecurityException e) {
-                throw new XMLStreamException("Failed to retrieve from vault '" + str + "'", e);
+            if(vaultReader.isVaultFormat(str)) {
+                try {
+                    return vaultReader.retrieve(str);
+                } catch (GeneralSecurityException e) {
+                    throw new XMLStreamException("Failed to retrieve from vault '" + str + "'", e);
+                }
+            } else {
+                return CLIExpressionResolver.resolveOrOriginal(str);
             }
         }
 

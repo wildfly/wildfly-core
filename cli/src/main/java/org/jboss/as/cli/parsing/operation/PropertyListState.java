@@ -62,7 +62,7 @@ public class PropertyListState extends DefaultParsingState {
                     ctx.enterState(propState);
                 }
             }});
-        setDefaultHandler(new LineBreakHandler(false, false){
+        setDefaultHandler(new LineBreakHandler(false){
             @Override
             protected void doHandle(ParsingContext ctx) throws CommandFormatException {
                 ctx.enterState(propState);
