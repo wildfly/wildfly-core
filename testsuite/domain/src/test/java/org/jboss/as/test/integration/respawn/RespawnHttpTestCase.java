@@ -159,6 +159,8 @@ public class RespawnHttpTestCase {
             args.add("-Dlocal.maven.repo.path=" + localRepo);
         }
         args.add("-Dorg.jboss.boot.log.file=" + masterDirPath + "/log/host-controller.log");
+        args.add("-Djboss.boot.server.log.level=TRACE");
+        args.add("-Djboss.boot.server.log.console.level=TRACE");
         args.add("-Dlogging.configuration=file:" + jbossHome + "/domain/configuration/logging.properties");
         args.add("-Djboss.test.host.master.address=" + address);
         TestSuiteEnvironment.getIpv6Args(args);
