@@ -32,6 +32,7 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
+import org.jboss.as.cli.util.CLIExpressionResolver;
 
 /**
  *
@@ -75,25 +76,33 @@ public class EchoVariableHandler extends CommandHandlerWithHelp {
      */
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
-        final List<String> values = ctx.getParsedCommandLine().getOtherProperties();
-
-        if(values.isEmpty()) {
-            final List<String> pairs;
-            final Collection<String> defined = ctx.getVariables();
-            if(defined.isEmpty()) {
-                return;
-            }
-            pairs = new ArrayList<String>(defined.size());
-            for(String var : defined) {
-                pairs.add(var + '=' + ctx.getVariable(var));
-            }
-            Collections.sort(pairs);
-            for(String pair : pairs) {
-                ctx.printLine(pair);
-            }
-        } else {
-            ctx.printColumns(values);
+        final ParsedCommandLine line = ctx.getParsedCommandLine();
+        String result = line.getSubstitutedLine().substring(line.getOperationName().length()).trim();
+        if(ctx.isResolveParameterValues()) {
+            result = CLIExpressionResolver.resolve(result);
         }
+        // apply escape rules
+        int i = result.indexOf('\\');
+        if(i >= 0) {
+            final StringBuilder buf = new StringBuilder(result.length() - 1);
+            buf.append(result.substring(0, i));
+            boolean escaped = true;
+            while(++i < result.length()) {
+                if(escaped) {
+                    buf.append(result.charAt(i));
+                    escaped = false;
+                } else {
+                    final char c = result.charAt(i);
+                    if(c == '\\') {
+                        escaped = true;
+                    } else {
+                        buf.append(c);
+                    }
+                }
+            }
+            result = buf.toString();
+        }
+        ctx.printLine(result);
     }
 
     @Override
