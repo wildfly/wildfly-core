@@ -77,6 +77,9 @@ public class TransformersTestParameter extends ClassloaderParameter {
             }
             data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_0));
             data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_1));
+            data.add(new TransformersTestParameter(ModelVersion.create(1, 5, 0), ModelTestControllerVersion.EAP_6_2_0));
+            data.add(new TransformersTestParameter(ModelVersion.create(1, 6, 0), ModelTestControllerVersion.EAP_6_3_0));
+
         }
 
 

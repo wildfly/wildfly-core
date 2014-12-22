@@ -46,7 +46,7 @@ class ServerGroupTransformers {
 
         //////////////////////////////////
         //The EAP/AS 7.x chains
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_4);
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_6);
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
         builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3)
