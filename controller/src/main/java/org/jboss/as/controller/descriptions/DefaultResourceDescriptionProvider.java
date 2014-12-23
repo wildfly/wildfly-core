@@ -31,8 +31,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DeprecationData;
@@ -81,19 +83,28 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
 
         AccessConstraintDescriptionProviderUtil.addAccessConstraints(result, registration.getAccessConstraints(), locale);
 
-        final ModelNode attributes = result.get(ATTRIBUTES).setEmptyObject();
-
+        // Sort the attribute descriptions based on attribute group and then attribute name
         Set<String> attributeNames = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
+
+        Map<AttributeDefinition.NameAndGroup, ModelNode> sortedDescriptions = new TreeMap<>();
         for (String attr : attributeNames)  {
             AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
             AttributeDefinition def = attributeAccess.getAttributeDefinition();
             if (def != null) {
-                def.addResourceAttributeDescription(result, descriptionResolver, locale, bundle);
+                ModelNode attrDesc = new ModelNode();
+                // def will add the description to attrDesc under "attributes" => { attr
+                def.addResourceAttributeDescription(attrDesc, descriptionResolver, locale, bundle);
+                sortedDescriptions.put(new AttributeDefinition.NameAndGroup(def), attrDesc.get(ATTRIBUTES, attr));
             } else {
-                // Just stick in a placeholder;
-                attributes.get(attr);
+                // Just store a placeholder
+                sortedDescriptions.put(new AttributeDefinition.NameAndGroup(attr), new ModelNode());
             }
+        }
 
+        // Store the sorted descriptions into the overall result
+        final ModelNode attributes = result.get(ATTRIBUTES).setEmptyObject();
+        for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : sortedDescriptions.entrySet()) {
+            attributes.get(entry.getKey().getName()).set(entry.getValue());
         }
 
         result.get(OPERATIONS); // placeholder
@@ -122,4 +133,5 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
         deprecated.get(ModelDescriptionConstants.REASON);
         return deprecated;
     }
+
 }
