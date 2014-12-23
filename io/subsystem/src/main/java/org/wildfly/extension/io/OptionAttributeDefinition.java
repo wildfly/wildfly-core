@@ -67,7 +67,7 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
             } else if (optionType.isEnum()) {
                 builder.set(option, option.parseValue(value.asString(), option.getClass().getClassLoader()));
             }else if (option.getClass().getSimpleName().equals("SequenceOption")) {
-                builder.setSequence(option, value.asString().split(","));
+                builder.setSequence(option, value.asString().split("\\s*,\\s*"));
             } else if (getType() == ModelType.STRING) {
                 builder.set(option, value.asString());
             } else {
