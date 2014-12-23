@@ -638,7 +638,8 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
 
     protected void parseSocketBindingGroupRef(final XMLExtendedStreamReader reader, final ModelNode addOperation,
                                               final SimpleAttributeDefinition socketBindingGroup,
-                                              final SimpleAttributeDefinition portOffset) throws XMLStreamException {
+                                              final SimpleAttributeDefinition portOffset,
+                                              final SimpleAttributeDefinition defaultInterface) throws XMLStreamException {
         // Handle attributes
         boolean gotRef = false;
         final int count = reader.getAttributeCount();
@@ -656,6 +657,13 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
                     }
                     case PORT_OFFSET: {
                         portOffset.parseAndSetParameter(value, addOperation, reader);
+                        break;
+                    }
+                    case DEFAULT_INTERFACE: {
+                        if(defaultInterface == null) {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        defaultInterface.parseAndSetParameter(value, addOperation, reader);
                         break;
                     }
                     default:

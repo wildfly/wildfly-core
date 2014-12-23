@@ -40,6 +40,7 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.InterfaceDefinition;
@@ -83,6 +84,12 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, true)
             .build();
 
+    public static final SimpleAttributeDefinition SOCKET_BINDING_DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setXmlName(Attribute.DEFAULT_INTERFACE.getLocalName())
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+            .build();
+
     public static final SimpleAttributeDefinition SOCKET_BINDING_PORT_OFFSET = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
@@ -115,7 +122,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     /** The attributes that can be written by the {@code add} operation */
-    public static final List<SimpleAttributeDefinition> WRITABLE_ATTRIBUTES = Arrays.asList(AUTO_START, SOCKET_BINDING_GROUP, SOCKET_BINDING_PORT_OFFSET, GROUP);
+    public static final List<SimpleAttributeDefinition> WRITABLE_ATTRIBUTES = Arrays.asList(AUTO_START, SOCKET_BINDING_GROUP, SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, GROUP);
 
     private final ServerInventory serverInventory;
     private final PathManagerService pathManager;
@@ -145,6 +152,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
         resourceRegistration.registerReadWriteAttribute(AUTO_START, null, new ModelOnlyWriteAttributeHandler(AUTO_START));
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createSocketBindingGroupInstance(hostControllerInfo));
+        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_DEFAULT_INTERFACE, null, ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_DEFAULT_INTERFACE_INSTANCE);
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_PORT_OFFSET, null, ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE);
         resourceRegistration.registerReadWriteAttribute(GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createGroupInstance(hostControllerInfo));
 

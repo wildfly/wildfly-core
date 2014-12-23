@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -91,6 +92,7 @@ public class ServerAddHandler extends AbstractAddStepHandler {
 
         final String group = model.require(GROUP).asString();
         final String socketBindingGroup = model.hasDefined(SOCKET_BINDING_GROUP) ? model.get(SOCKET_BINDING_GROUP).asString() : null;
+        final String defaultInterface = model.hasDefined(SOCKET_BINDING_DEFAULT_INTERFACE) ? model.get(SOCKET_BINDING_DEFAULT_INTERFACE).asString() : null;
         final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
 
         //Check for missing data and pull it down if necessary
@@ -115,6 +117,9 @@ public class ServerAddHandler extends AbstractAddStepHandler {
         if (missingData) {
             String serverName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
             pullDownMissingDataFromDc(context, serverName, group, socketBindingGroup);
+        }
+        if(defaultInterface != null) {
+            System.out.println("We a an overiden default interface");
         }
     }
 

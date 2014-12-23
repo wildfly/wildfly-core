@@ -51,6 +51,7 @@ import org.jboss.dmr.ModelNode;
 public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
     public static final ServerRestartRequiredServerConfigWriteAttributeHandler SOCKET_BINDING_PORT_OFFSET_INSTANCE = new SocketBindingPortOffsetHandler();
+    public static final ServerRestartRequiredServerConfigWriteAttributeHandler SOCKET_BINDING_DEFAULT_INTERFACE_INSTANCE = new SocketBindingDefaultInterfaceHandler();
 
     private final AttributeDefinition attributeDefinition;
 
@@ -144,6 +145,17 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
         }
     }
 
+    private static class SocketBindingDefaultInterfaceHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
+
+        public SocketBindingDefaultInterfaceHandler() {
+            super(ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
+        }
+
+        @Override
+        protected void validateReferencedNewValueExists(OperationContext context, ModelNode operation, ModelNode currentValue, ModelNode resolvedValue) throws OperationFailedException {
+            // our attribute is not a model reference
+        }
+    }
 
     private static class SocketBindingPortOffsetHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
 
