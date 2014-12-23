@@ -989,10 +989,6 @@ public class Util {
         return commands;
     }
 
-    public static String resolveProperties(String s) {
-        return StringPropertyReplacer.replaceProperties(s);
-    }
-
     public static byte[] readBytes(File f) throws OperationFormatException {
         byte[] bytes;
         FileInputStream is = null;
