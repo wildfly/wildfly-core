@@ -492,10 +492,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         AbstractResourceRegistration root = rootInvocation == null ? this : rootInvocation.root;
         PathAddress myaddr = rootInvocation == null ? PathAddress.EMPTY_ADDRESS : rootInvocation.pathAddress;
 
-        assert alias.getTarget() instanceof AbstractResourceRegistration : "Unknown alias type";
-
-        AbstractResourceRegistration tgtReg = (AbstractResourceRegistration)alias.getTarget();
-        PathAddress targetAddress = tgtReg.parent == null ? PathAddress.EMPTY_ADDRESS : tgtReg.getRootInvocation().pathAddress;
+        PathAddress targetAddress = alias.getTarget().getPathAddress();
         alias.setAddresses(targetAddress, myaddr.append(address));
         AbstractResourceRegistration target = (AbstractResourceRegistration)root.getSubModel(alias.getTargetAddress());
         if (target == null) {
