@@ -1212,4 +1212,7 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 155, value = "JVM version '%s' unknown, unpredicted behavior may occur")
     void jvmVersionUnknown(String jvmVersion);
+
+    @Message(id = 156, value = "failed to resolve interface %s")
+    OperationFailedException failedToResolveInterface(String name);
 }

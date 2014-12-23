@@ -36,6 +36,11 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     }
 
     @Test
+    public void testSocketBindingDefaultInterface() throws Exception {
+        doHostXml("host-with-default-interface.xml");
+    }
+
+    @Test
     public void testWFLY75() throws Exception {
         doRemoteHostXml("host-remote-domain-manager.xml");
     }

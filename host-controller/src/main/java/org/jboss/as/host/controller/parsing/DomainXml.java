@@ -805,8 +805,14 @@ public class DomainXml extends CommonXml {
                         break;
                     }
                     case SOCKET_BINDING_GROUP: {
-                        parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
-                                ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
+                        if(expectedNs.compareTo(Namespace.DOMAIN_3_0) >= 0) {
+                            parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
+                                ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET,
+                                ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
+                        } else {
+                             parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
+                                ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET, null);
+                        }
                         break;
                     }
                     case DEPLOYMENTS: {
@@ -1078,6 +1084,7 @@ public class DomainXml extends CommonXml {
             writer.writeStartElement(Element.SOCKET_BINDING_GROUP.getLocalName());
             ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.marshallAsAttribute(group, writer);
             ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET.marshallAsAttribute(group, writer);
+            ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE.marshallAsAttribute(group, writer);
             writer.writeEndElement();
         }
 

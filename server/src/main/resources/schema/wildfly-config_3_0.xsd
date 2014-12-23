@@ -2464,6 +2464,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="default-interface" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    Name of an interface that should be used as the interface for
+                    any sockets that do not explicitly declare one, overiding the one defined
+                    in the socket-binding-group referenced.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="extensionsType">
@@ -3016,6 +3027,17 @@
                     Increment to apply to the base port values defined in the
                     referenced socket group to derive the values to use on this
                     server.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="default-interface" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    Name of an interface that should be used as the interface for
+                    any sockets that do not explicitly declare one, overiding the one defined
+                    in the socket-binding-group referenced.
+                ]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
