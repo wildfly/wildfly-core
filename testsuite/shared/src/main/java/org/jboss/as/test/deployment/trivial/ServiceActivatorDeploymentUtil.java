@@ -63,7 +63,11 @@ public class ServiceActivatorDeploymentUtil {
     }
 
     public static void createServiceActivatorDeployment(File destination, Map<String, String> properties) throws IOException {
-        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        createServiceActivatorDeploymentArchive(destination.getName(), properties).as(ZipExporter.class).exportTo(destination);
+    }
+
+    public static JavaArchive createServiceActivatorDeploymentArchive(String name, Map<String, String> properties) throws IOException {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, name);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
         if (properties != null && properties.size() > 0) {
@@ -77,8 +81,7 @@ public class ServiceActivatorDeploymentUtil {
             archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc\n"), "MANIFEST.MF");
             archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         }
-
-        archive.as(ZipExporter.class).exportTo(destination);
+        return archive;
     }
 
     public static void validateProperties(ModelControllerClient client) throws IOException, MgmtOperationException {
