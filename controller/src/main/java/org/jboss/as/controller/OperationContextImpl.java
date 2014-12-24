@@ -2354,7 +2354,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             model.get(CALLER_THREAD).set(initiatingThread.getName());
             ModelNode accessMechanismNode = model.get(ACCESS_MECHANISM);
             if (accessMechanism != null) {
-                accessMechanismNode.set(accessMechanismNode.toString());
+                accessMechanismNode.set(accessMechanism.toString());
             }
             model.get(EXECUTION_STATUS).set(getExecutionStatus());
             model.get(RUNNING_TIME).set(System.nanoTime() - startTime);
