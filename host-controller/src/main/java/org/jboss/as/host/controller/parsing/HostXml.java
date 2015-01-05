@@ -49,6 +49,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
@@ -1894,7 +1895,8 @@ public class HostXml extends CommonXml {
                         throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
                     }
                     parseSocketBindingGroupRef(reader, serverAddOperation, ServerConfigResourceDefinition.SOCKET_BINDING_GROUP,
-                            ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET);
+                            ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET,
+                            ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
                     sawSocketBinding = true;
                     break;
                 }
@@ -2022,6 +2024,10 @@ public class HostXml extends CommonXml {
                 switch (attribute) {
                     case SOCKET_BINDING_GROUP: {
                         ServerConfigResourceDefinition.SOCKET_BINDING_GROUP.parseAndSetParameter(value, serverAddOperation, reader);
+                        break;
+                    }
+                    case DEFAULT_INTERFACE: {
+                        ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE.parseAndSetParameter(value, serverAddOperation, reader);
                         break;
                     }
                     case PORT_OFFSET: {
@@ -2171,10 +2177,11 @@ public class HostXml extends CommonXml {
                     break; // TODO just write the first !?
                 }
             }
-            if (server.hasDefined(SOCKET_BINDING_GROUP) || server.hasDefined(SOCKET_BINDING_PORT_OFFSET)) {
+            if (server.hasDefined(SOCKET_BINDING_GROUP) || server.hasDefined(SOCKET_BINDING_PORT_OFFSET) || server.hasDefined(SOCKET_BINDING_DEFAULT_INTERFACE)) {
                 writer.writeStartElement(Element.SOCKET_BINDINGS.getLocalName());
                 ServerConfigResourceDefinition.SOCKET_BINDING_GROUP.marshallAsAttribute(server, writer);
                 ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET.marshallAsAttribute(server, writer);
+                ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE.marshallAsAttribute(server, writer);
                 writer.writeEndElement();
             }
 
