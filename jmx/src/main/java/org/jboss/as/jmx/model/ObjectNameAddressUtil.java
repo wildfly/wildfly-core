@@ -148,7 +148,7 @@ class ObjectNameAddressUtil {
             PathAddress childAddress = PathAddress.pathAddress(
                     replaceEscapedCharactersInKey(entry.getKey()),
                     replaceEscapedCharactersInValue(entry.getValue()));
-            ImmutableManagementResourceRegistration subModel = registry.getSubModel(address);
+            ImmutableManagementResourceRegistration subModel = registry.getSubModel(childAddress);
             if (subModel != null) {
                 Map<String, String> childProps = new HashMap<String, String>(properties);
                 childProps.remove(entry.getKey());
