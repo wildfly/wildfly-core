@@ -21,7 +21,10 @@
 */
 package org.jboss.as.jmx.model;
 
+import static org.jboss.as.controller.PathElement.pathElement;
+
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +32,10 @@ import javax.management.ObjectName;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -46,10 +53,10 @@ public class ObjectNameAddressUtilTestCase {
     static final String TWO = "two";
     static final String COMPLEX_KEY = "*";
     static final String COMPLEX_VALUE = "\":=*?\n {}[] \":=*?\n";
-    static final PathElement TOP_ONE = PathElement.pathElement(TOP, ONE);
-    static final PathElement BOTTOM_TWO = PathElement.pathElement(BOTTOM, TWO);
-    static final PathElement TOP_COMPLEX_VALUE = PathElement.pathElement(TOP, COMPLEX_VALUE);
-    static final PathElement COMPLEX_KEY_ONE = PathElement.pathElement(COMPLEX_KEY, ONE);
+    static final PathElement TOP_ONE = pathElement(TOP, ONE);
+    static final PathElement BOTTOM_TWO = pathElement(BOTTOM, TWO);
+    static final PathElement TOP_COMPLEX_VALUE = pathElement(TOP, COMPLEX_VALUE);
+    static final PathElement COMPLEX_KEY_ONE = pathElement(COMPLEX_KEY, ONE);
 
     static final Resource rootResource;
     static{
@@ -85,6 +92,32 @@ public class ObjectNameAddressUtilTestCase {
         Assert.assertNotNull(on);
         PathAddress resolved = ObjectNameAddressUtil.resolvePathAddress("jboss.as", rootResource, on);
         Assert.assertEquals(pathAddress, resolved);
+    }
+
+    @Test
+    public void testToPathAddress() {
+
+        NonResolvingResourceDescriptionResolver resolver = new NonResolvingResourceDescriptionResolver();
+
+        DescriptionProvider provider = new DescriptionProvider() {
+            @Override
+            public ModelNode getModelDescription(Locale locale) {
+                return new ModelNode();
+            }
+        };
+        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.create(provider);
+        ManagementResourceRegistration subsystemRegistration = rootRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subsystem", "foo"), resolver));
+        ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("resource", "resourceA"), resolver));
+        ManagementResourceRegistration subresourceRegistration = resourceRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subresource", "resourceB"), resolver));
+
+        PathAddress pathAddress = PathAddress.pathAddress("subsystem", "foo")
+                .append("resource", "resourceA")
+                .append("subresource", "resourceB");
+        ObjectName on = ObjectNameAddressUtil.createObjectName("jboss.as", pathAddress);
+
+        PathAddress convertedAddress = ObjectNameAddressUtil.toPathAddress("jboss.as", rootRegistration, on);
+        Assert.assertNotNull(convertedAddress);
+        Assert.assertEquals(pathAddress, convertedAddress);
     }
 
     private static class TestResource implements Resource {
