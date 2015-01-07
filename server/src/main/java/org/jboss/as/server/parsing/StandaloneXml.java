@@ -774,6 +774,12 @@ public class StandaloneXml extends CommonXml {
                         HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
+                    case ALLOWED_ORIGINS: {
+                        for (String origin : reader.getListAttributeValue(i)) {
+                            HttpManagementResourceDefinition.ALLOWED_ORIGINS.parseAndAddParameterElement(origin, addOp, reader);
+                        }
+                        break;
+                    }
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -1462,6 +1468,7 @@ public class StandaloneXml extends CommonXml {
                 HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
             }
             HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.ALLOWED_ORIGINS.marshallAsElement(protocol, writer);
 
             if (HttpManagementResourceDefinition.INTERFACE.isMarshallable(protocol)) {
                 writer.writeEmptyElement(Element.SOCKET.getLocalName());

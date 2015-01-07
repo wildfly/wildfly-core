@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.ALLOWED_ORIGINS;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTPS_PORT;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTP_PORT;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.INTERFACE;
@@ -31,9 +32,10 @@ import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_B
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.addValidatingHandler;
 
 import java.util.Arrays;
-import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
+import java.util.List;
+import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -169,6 +171,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         int securePort = -1;
 
         final ModelNode interfaceModelNode = validateResolvedModel(INTERFACE, context, model);
+        final List<String> allowedOrigins = ALLOWED_ORIGINS.unwrap(context, model);
         if (interfaceModelNode.isDefined()) {
             // Legacy config
             String interfaceName = interfaceModelNode.asString();
@@ -177,7 +180,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             port = portNode.isDefined() ? portNode.asInt() : -1;
             final ModelNode securePortNode = HTTPS_PORT.resolveModelAttribute(context, model);
             securePort = securePortNode.isDefined() ? securePortNode.asInt() : -1;
-
             // Log the config
             if (securePort > -1) {
                 if (port > -1) {
@@ -240,7 +242,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(SocketBindingManagerImpl.SOCKET_BINDING_MANAGER, SocketBindingManager.class, undertowService.getSocketBindingManagerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
-                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue());
+                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
+                .addInjection(undertowService.getAllowedOriginsInjector(), allowedOrigins);
 
         if (interfaceSvcName != null) {
             undertowBuilder.addDependency(interfaceSvcName, NetworkInterfaceBinding.class, undertowService.getInterfaceInjector())

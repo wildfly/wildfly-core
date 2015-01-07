@@ -45,6 +45,7 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -160,6 +161,11 @@ public abstract class AbstractOperationTestCase {
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return false;
+        }
+
+        @Override
+        public Collection<String> getAllowedOrigins() {
+            return Collections.EMPTY_LIST;
         }
     };
 

@@ -58,6 +58,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private volatile String nativeManagementSecurityRealm;
     private volatile String httpManagementSecurityRealm;
     private volatile AdminOnlyDomainConfigPolicy adminOnlyDomainConfigPolicy = AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG;
+    private volatile List<String> allowedOrigins = new ArrayList<String>();
 
     /** Constructor solely for test cases */
     public LocalHostControllerInfoImpl(final ControlledProcessState processState, final String localHostName) {
@@ -135,6 +136,16 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     }
 
     @Override
+    public List<String> getAllowedOrigins() {
+        return allowedOrigins;
+    }
+
+    void setAllowedOrigins(List<String> allowedOrigins) {
+        this.allowedOrigins.clear();
+        this.allowedOrigins.addAll(allowedOrigins);
+    }
+
+    @Override
     public List<DiscoveryOption> getRemoteDomainControllerDiscoveryOptions() {
         return remoteDiscoveryOptions;
     }
@@ -195,7 +206,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     void setRemoteDomainControllerSecurityRealm(String remoteSecurityRealm) {
         this.remoteSecurityRealm = remoteSecurityRealm;
     }
-
 
     void addRemoteDomainControllerDiscoveryOption(DiscoveryOption discoveryOption) {
         this.remoteDiscoveryOptions.add(discoveryOption);

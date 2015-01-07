@@ -35,6 +35,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertEquals;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -526,6 +528,11 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return true;
+        }
+
+        @Override
+        public Collection<String> getAllowedOrigins() {
+            return Collections.EMPTY_LIST;
         }
     }
 

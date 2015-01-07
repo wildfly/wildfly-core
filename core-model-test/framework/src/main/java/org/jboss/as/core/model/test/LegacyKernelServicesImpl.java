@@ -33,6 +33,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.controller.ControlledProcessState.State;
@@ -263,6 +265,11 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
             @Override
             public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
                 return false;
+            }
+
+            @Override
+            public Collection<String> getAllowedOrigins() {
+                return Collections.EMPTY_LIST;
             }
 
         });

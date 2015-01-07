@@ -704,6 +704,12 @@ public class HostXml extends CommonXml {
                         HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
+                    case ALLOWED_ORIGINS: {
+                        for (String origin : reader.getListAttributeValue(i)) {
+                            HttpManagementResourceDefinition.ALLOWED_ORIGINS.parseAndAddParameterElement(origin, addOp, reader);
+                        }
+                        break;
+                    }
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -2272,6 +2278,7 @@ public class HostXml extends CommonXml {
             HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.ALLOWED_ORIGINS.marshallAsElement(protocol, writer);
             HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
 
