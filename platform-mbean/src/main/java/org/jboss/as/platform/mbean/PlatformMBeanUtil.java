@@ -53,7 +53,7 @@ public class PlatformMBeanUtil {
             String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
             vmVersion = Integer.valueOf(vmVersionStr.substring(2));
         } catch (Exception e) {
-            vmVersion = 6;
+            vmVersion = 7;
         }
         JVM_MAJOR_VERSION = vmVersion;
     }

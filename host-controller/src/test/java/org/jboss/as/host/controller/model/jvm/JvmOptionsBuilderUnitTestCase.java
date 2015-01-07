@@ -24,6 +24,8 @@ package org.jboss.as.host.controller.model.jvm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,7 +43,12 @@ public class JvmOptionsBuilderUnitTestCase {
         int vmVersion;
         try {
             String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
-            vmVersion = Integer.valueOf(vmVersionStr.substring(2));
+            Matcher matcher = Pattern.compile("^1\\.(\\d+)$").matcher(vmVersionStr); //match 1.<number>
+            if (matcher.find()) {
+                vmVersion = Integer.valueOf(matcher.group(1));
+            } else {
+                throw new RuntimeException("Unknown version of jvm "+vmVersionStr);
+            }
         } catch (Exception e) {
             vmVersion = 7;
         }
@@ -61,7 +68,7 @@ public class JvmOptionsBuilderUnitTestCase {
     private void testNoOptions(JvmType type) {
         JvmElement element = JvmElementTestUtils.create(type);
 
-        List<String> command = new ArrayList<String>();
+        List<String> command = new ArrayList<>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
 
         Assert.assertEquals(0, command.size());

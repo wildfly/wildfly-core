@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
@@ -44,7 +46,7 @@ public class JvmOptionsBuilderFactory {
 
     private static final Map<JvmType, JvmOptionsBuilder> BUILDERS;
     static {
-        Map<JvmType, JvmOptionsBuilder> map = new HashMap<JvmType, JvmOptionsBuilder>();
+        Map<JvmType, JvmOptionsBuilder> map = new HashMap<>();
         map.put(JvmType.SUN, new SunJvmOptionsBuilder(JvmType.SUN));
         map.put(JvmType.IBM, new IbmJvmOptionsBuilder(JvmType.IBM));
         BUILDERS = Collections.unmodifiableMap(map);
@@ -174,7 +176,13 @@ public class JvmOptionsBuilderFactory {
             int vmVersion;
             try {
                 String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
-                vmVersion = Integer.valueOf(vmVersionStr.substring(2));
+                Matcher matcher = Pattern.compile("^1\\.(\\d+)$").matcher(vmVersionStr); //match 1.<number>
+                if (matcher.find()) {
+                    vmVersion = Integer.valueOf(matcher.group(1));
+                } else {
+                    HostControllerLogger.ROOT_LOGGER.jvmVersionUnknown(vmVersionStr);
+                    vmVersion = 7;
+                }
             } catch (Exception e) {
                 vmVersion = 7;
             }
