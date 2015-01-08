@@ -53,6 +53,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected MeasurementUnit measurementUnit;
     protected String[] alternatives;
     protected String[] requires;
+    protected ModelNode[] allowedValues;
     protected ParameterCorrector corrector;
     protected ParameterValidator validator;
     protected boolean validateNull = true;
@@ -508,6 +509,46 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return (BUILDER) this;
     }
 
+    /**
+     * Sets allowed values for attribute
+     *
+     * @param allowedValues values that are legal as part in this attribute
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setAllowedValues(ModelNode ... allowedValues) {
+        assert allowedValues!= null;
+        this.allowedValues = allowedValues;
+        return (BUILDER) this;
+    }
+
+    /**
+     * Sets allowed values for attribute
+     *
+     * @param allowedValues values that are legal as part in this attribute
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setAllowedValues(String ... allowedValues) {
+        assert allowedValues!= null;
+        this.allowedValues = new ModelNode[allowedValues.length];
+        for (int i = 0; i < allowedValues.length; i++) {
+            this.allowedValues[i] = new ModelNode(allowedValues[i]);
+        }
+        return (BUILDER) this;
+    }/**
+     * Sets allowed values for attribute
+     *
+     * @param allowedValues values that are legal as part in this attribute
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setAllowedValues(int ... allowedValues) {
+        assert allowedValues!= null;
+        this.allowedValues = new ModelNode[allowedValues.length];
+        for (int i = 0; i < allowedValues.length; i++) {
+            this.allowedValues[i] = new ModelNode(allowedValues[i]);
+        }
+        return (BUILDER) this;
+    }
+
     public String getName() {
         return name;
     }
@@ -594,6 +635,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
 
     public String getAttributeGroup() {
         return attributeGroup;
+    }
+
+    public ModelNode[] getAllowedValues() {
+        return allowedValues;
     }
 
     private String[] copyStrings(String[] toCopy) {

@@ -73,6 +73,7 @@ public abstract class AttributeDefinition {
     private final MeasurementUnit measurementUnit;
     private final String[] alternatives;
     private final String[] requires;
+    private final ModelNode[] allowedValues;
     private final ParameterCorrector valueCorrector;
     private final ParameterValidator validator;
     private final boolean validateNull;
@@ -99,7 +100,7 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignficant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -112,7 +113,7 @@ public abstract class AttributeDefinition {
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, wrapFlags(flags));
+                nilSignificant, parser, null, null, wrapFlags(flags));
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
@@ -166,7 +167,7 @@ public abstract class AttributeDefinition {
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, final EnumSet<AttributeAccess.Flag> flags) {
+                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -196,6 +197,7 @@ public abstract class AttributeDefinition {
         this.deprecationData = deprecationData;
         this.nilSignificant = nilSignificant;
         this.attributeGroup = attributeGroup;
+        this.allowedValues = allowedValues;
     }
 
     /**
@@ -361,6 +363,14 @@ public abstract class AttributeDefinition {
      */
     public EnumSet<AttributeAccess.Flag> getFlags() {
         return EnumSet.copyOf(flags);
+    }
+
+    /**
+     * returns array with all allowed values
+     * @return allowed values
+     */
+    public List<ModelNode> getAllowedValues() {
+        return Arrays.asList(this.allowedValues);
     }
 
     /**
@@ -836,7 +846,11 @@ public abstract class AttributeDefinition {
      * @param validator the validator to get the allowed values from
      */
     protected void addAllowedValuesToDescription(ModelNode result, ParameterValidator validator) {
-        if (validator instanceof AllowedValuesValidator) {
+        if (allowedValues != null) {
+            for (ModelNode allowedValue : allowedValues) {
+                result.get(ModelDescriptionConstants.ALLOWED).add(allowedValue);
+            }
+        } else if (validator instanceof AllowedValuesValidator) {
             AllowedValuesValidator avv = (AllowedValuesValidator) validator;
             List<ModelNode> allowed = avv.getAllowedValues();
             if (allowed != null) {
