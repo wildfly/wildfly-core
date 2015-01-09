@@ -23,6 +23,7 @@ package org.jboss.as.controller;
 
 import java.util.List;
 
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -43,7 +44,7 @@ public class SimpleAttributeDefinitionUnitTestCase {
     }
 
     @Test
-    public void testAllowedValues() {
+    public void testAllowedValuesWithValidator() {
         SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
                 .setValidator(new EnumValidator<TestEnum>(TestEnum.class, false, false, TestEnum.A, TestEnum.B))
                 .build();
@@ -63,6 +64,26 @@ public class SimpleAttributeDefinitionUnitTestCase {
         Assert.assertTrue(pv instanceof AllowedValuesValidator);
         allowed = ((AllowedValuesValidator) pv).getAllowedValues();
         Assert.assertNull(allowed);
+    }
+
+    @Test
+    public void testAllowedValues() {
+        SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
+                .setAllowedValues("A","B")
+                .build();
+
+        List<ModelNode> allowed = ad.getAllowedValues();
+        Assert.assertNotNull(allowed);
+        Assert.assertEquals(2, allowed.size());
+        Assert.assertTrue(allowed.contains(new ModelNode("A")));
+        Assert.assertTrue(allowed.contains(new ModelNode("B")));
+
+        ModelNode model = ad.getNoTextDescription(false);
+        allowed = model.get(ModelDescriptionConstants.ALLOWED).asList();
+        Assert.assertNotNull(allowed);
+        Assert.assertEquals(2, allowed.size());
+        Assert.assertTrue(allowed.contains(new ModelNode("A")));
+        Assert.assertTrue(allowed.contains(new ModelNode("B")));
     }
 
     @Test
