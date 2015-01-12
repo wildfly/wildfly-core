@@ -28,6 +28,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -116,14 +117,23 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
         }
 
         @Override
-        protected void populateModel(OperationContext context, ModelNode operation, Resource resource)
+        protected void populateModel(OperationContext context, ModelNode operation, final Resource resource)
                 throws OperationFailedException {
-            HandlerUtil.checkNoOtherHandlerWithTheSameName(context, operation);
-            String formatterName = operation.get(FORMATTER.getName()).asString();
-            if (!HandlerUtil.lookForFormatter(context, PathAddress.pathAddress(operation.require(OP_ADDR)), formatterName)) {
-                throw DomainManagementLogger.ROOT_LOGGER.noFormatterCalled(formatterName);
-            }
+
             super.populateModel(context, operation, resource);
+
+            // Cross-resource model validation in a separate step
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    HandlerUtil.checkNoOtherHandlerWithTheSameName(context);
+                    String formatterName = resource.getModel().get(FORMATTER.getName()).asString();
+                    if (!HandlerUtil.lookForFormatter(context, context.getCurrentAddress(), formatterName)) {
+                        throw DomainManagementLogger.ROOT_LOGGER.noFormatterCalled(formatterName);
+                    }
+                    context.stepCompleted();
+                }
+            }, OperationContext.Stage.MODEL);
         }
 
         protected boolean requiresRuntime(OperationContext context){

@@ -23,7 +23,6 @@ package org.jboss.as.domain.management.audit;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JSON_FORMATTER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
 
 import org.jboss.as.controller.OperationContext;
@@ -32,7 +31,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.dmr.ModelNode;
 
 /**
  *
@@ -40,8 +38,8 @@ import org.jboss.dmr.ModelNode;
  */
 public class HandlerUtil {
 
-    static void checkNoOtherHandlerWithTheSameName(OperationContext context, ModelNode operation) throws OperationFailedException {
-        PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+    static void checkNoOtherHandlerWithTheSameName(OperationContext context) throws OperationFailedException {
+        PathAddress address = context.getCurrentAddress();
         PathAddress parentAddress = address.subAddress(0, address.size() - 1);
         Resource resource = context.readResourceFromRoot(parentAddress);
 
