@@ -28,17 +28,16 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
 
+import org.jboss.aesh.complete.CompleteOperation;
+import org.jboss.aesh.complete.Completion;
+import org.jboss.aesh.console.Config;
 import org.jboss.aesh.console.ConsoleOutput;
+import org.jboss.aesh.console.Prompt;
+import org.jboss.aesh.console.settings.Settings;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandHistory;
 import org.jboss.as.cli.CommandLineCompleter;
-
-import org.jboss.aesh.complete.CompleteOperation;
-import org.jboss.aesh.complete.Completion;
-import org.jboss.aesh.console.Config;
-import org.jboss.aesh.console.Prompt;
-import org.jboss.aesh.console.settings.Settings;
 
 /**
  *
@@ -71,6 +70,20 @@ public interface Console {
     int getTerminalWidth();
 
     int getTerminalHeight();
+
+    /**
+     * Checks whether the tab-completion is enabled.
+     *
+     * @return  true if tab-completion is enabled, false - otherwise
+     */
+    boolean isCompletionEnabled();
+
+    /**
+     * Enables or disables the tab-completion.
+     *
+     * @param completionEnabled  true will enable the tab-completion, false will disable it
+     */
+    void setCompletionEnabled(boolean completionEnabled);
 
     /**
      * Interrupts blocking readLine method.
@@ -208,6 +221,16 @@ public interface Console {
                 @Override
                 public int getTerminalHeight() {
                     return console.getTerminalSize().getHeight();
+                }
+
+                @Override
+                public boolean isCompletionEnabled() {
+                    return !Settings.getInstance().isDisableCompletion();
+                }
+
+                @Override
+                public void setCompletionEnabled(boolean completionEnabled) {
+                    Settings.getInstance().setDisableCompletion(!completionEnabled);
                 }
 
                 @Override
