@@ -28,7 +28,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
@@ -255,6 +255,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     /** this object saves information to be used in ConnectionInfoHandler */
     private ConnectionInfoBean connInfoBean;
 
+    private final CLIPrintStream cliPrintStream;
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -275,6 +277,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         password = null;
         disableLocalAuth = false;
         clientBindAddress = null;
+        cliPrintStream = new CLIPrintStream();
         initSSLContext();
         initJaasConfig();
         addShutdownHook();
@@ -299,13 +302,14 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         resolveParameterValues = config.isResolveParameterValues();
         silent = config.isSilent();
+        cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
         initCommands();
 
         initSSLContext();
         initJaasConfig();
-        if (configuration.isInitConsole() || configuration.getConsoleInput() != null || configuration.getConsoleOutput() != null) {
+        if (configuration.isInitConsole() || configuration.getConsoleInput() != null) {
             cmdCompleter = new CommandCompleter(cmdRegistry);
-            initBasicConsole(configuration.getConsoleInput(), configuration.getConsoleOutput());
+            initBasicConsole(configuration.getConsoleInput());
             console.addCompleter(cmdCompleter);
             this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
         } else {
@@ -329,16 +333,16 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         CliShutdownHook.add(shutdownHook);
     }
 
-    protected void initBasicConsole(InputStream consoleInput, OutputStream consoleOutput) throws CliInitializationException {
-        copyConfigSettingsToConsole(consoleInput, consoleOutput);
+    protected void initBasicConsole(InputStream consoleInput) throws CliInitializationException {
+        copyConfigSettingsToConsole(consoleInput);
         this.console = Console.Factory.getConsole(this);
     }
 
-    private void copyConfigSettingsToConsole(InputStream consoleInput, OutputStream consoleOutput) {
+    private void copyConfigSettingsToConsole(InputStream consoleInput) {
         if(consoleInput != null)
             Settings.getInstance().setInputStream(consoleInput);
-        if(consoleOutput != null)
-            Settings.getInstance().setStdOut(consoleOutput);
+
+        Settings.getInstance().setStdOut(cliPrintStream);
 
         Settings.getInstance().setHistoryDisabled(!config.isHistoryEnabled());
         Settings.getInstance().setHistoryFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
@@ -700,7 +704,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 console.print(message);
                 console.printNewLine();
             } else { // non-interactive mode
-                System.out.println(message);
+                cliPrintStream.println(message);
             }
         }
     }
@@ -720,7 +724,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private String readLine(String prompt, boolean password, boolean disableHistory) throws CommandLineException {
         if (console == null) {
-            initBasicConsole(null, null);
+            initBasicConsole(null);
         }
 
         boolean useHistory = console.isUseHistory();
@@ -763,7 +767,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 console.printColumns(col);
             } else { // non interactive mode
                 for (String item : col) {
-                    System.out.println(item);
+                    cliPrintStream.println(item);
                 }
             }
         }
@@ -1124,7 +1128,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     public CommandHistory getHistory() {
         if(console == null) {
             try {
-                initBasicConsole(null, null);
+                initBasicConsole(null);
             } catch (CliInitializationException e) {
                 throw new IllegalStateException("Failed to initialize console.", e);
             }
@@ -1326,7 +1330,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     public int getTerminalWidth() {
         if(console == null) {
             try {
-                this.initBasicConsole(null, null);
+                this.initBasicConsole(null);
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 80;
@@ -1339,7 +1343,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     public int getTerminalHeight() {
         if(console == null) {
             try {
-                this.initBasicConsole(null, null);
+                this.initBasicConsole(null);
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 24;
@@ -1800,5 +1804,16 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     public ConnectionInfo getConnectionInfo() {
         return connInfoBean;
+    }
+
+    @Override
+    public void captureOutput(PrintStream captor) {
+        assert captor != null;
+        cliPrintStream.captureOutput(captor);
+    }
+
+    @Override
+    public void releaseOutput() {
+        cliPrintStream.releaseOutput();
     }
 }
