@@ -170,6 +170,7 @@
         <module>deployment-scanner</module>
         <module>domain-http</module>
         <module>domain-management</module>
+        <module>embedded</module>
         <module>host-controller</module>
         <module>logging</module>
         <module>management-client-content</module>
