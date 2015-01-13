@@ -35,51 +35,21 @@ public final class LocaleResolver {
     private LocaleResolver(){};
 
     static Locale resolveLocale(String unparsed) throws IllegalArgumentException {
-        int len = unparsed.length();
-        if ( len < 1 ) {
+        Locale locale = forLanguageTag(unparsed);
+
+        if ( "".equals(locale.getLanguage()) ) {
             throw new IllegalArgumentException(unparsed);
         }
 
-        if (len != 2 && len != 5 && len < 7) {
-            throw new IllegalArgumentException(unparsed);
-        }
-
-        char char0 = unparsed.charAt(0);
-        char char1 = unparsed.charAt(1);
-        if (char0 < 'a' || char0 > 'z' || char1 < 'a' || char1 > 'z') {
-            throw new IllegalArgumentException(unparsed);
-        }
-        if (len == 2) {
-            return replaceByRootLocaleIfLanguageIsEnglish(new Locale(unparsed, ""));
-        }
-
-        if (!isLocaleSeparator(unparsed.charAt(2))) {
-            throw new IllegalArgumentException(unparsed);
-        }
-
-        char char3 = unparsed.charAt(3);
-        if (isLocaleSeparator(char3)) {
-            // no country
-            return replaceByRootLocaleIfLanguageIsEnglish(new Locale(unparsed.substring(0, 2), "", unparsed.substring(4)));
-        }
-
-        char char4 = unparsed.charAt(4);
-        if (char3 < 'A' || char3 > 'Z' || char4 < 'A' || char4 > 'Z') {
-            throw new IllegalArgumentException(unparsed);
-        }
-
-        if (len == 5) {
-            return replaceByRootLocaleIfLanguageIsEnglish(new Locale(unparsed.substring(0, 2), unparsed.substring(3)));
-        }
-
-        if (!isLocaleSeparator(unparsed.charAt(5))) {
-            throw new IllegalArgumentException(unparsed);
-        }
-        return replaceByRootLocaleIfLanguageIsEnglish(new Locale(unparsed.substring(0, 2), unparsed.substring(3, 5), unparsed.substring(6)));
+        return replaceByRootLocaleIfLanguageIsEnglish(locale);
     }
 
-    private static boolean isLocaleSeparator(char ch) {
-        return ch == '-' || ch == '_';
+    private static Locale forLanguageTag(String unparsed) {
+        try {
+            return Locale.forLanguageTag(unparsed);
+        } catch ( StringIndexOutOfBoundsException  e ) {
+            throw new IllegalArgumentException(unparsed);
+        }
     }
 
     /**
