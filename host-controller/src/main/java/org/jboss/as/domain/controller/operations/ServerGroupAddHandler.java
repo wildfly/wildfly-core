@@ -60,54 +60,59 @@ public class ServerGroupAddHandler implements OperationStepHandler {
             attr.validateAndSet(operation, model);
         }
 
-        // Validate the profile reference.
-
-        // Future proofing: We resolve the profile in Stage.MODEL even though system properties may not be available yet
-        // solely because currently the attribute doesn't support expressions. In the future if system properties
-        // can safely be resolved in stage model, this profile attribute can be changed and this will still work.
-        boolean reloadRequired = false;
-        final String profile = PROFILE.resolveModelAttribute(context, model).asString();
-        try {
-            context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(PROFILE.getName(), profile)));
-        } catch (Exception e) {
-            if (master) {
-                throw DomainControllerLogger.ROOT_LOGGER.noProfileCalled(profile);
-            } else {
-                //We are a slave HC and we don't have the socket-binding-group required, so put the slave into reload-required
-                reloadRequired = true;
-                context.reloadRequired();
-            }
-        }
-
-        final String socketBindingGroup;
-        if (operation.hasDefined(SOCKET_BINDING_GROUP.getName())) {
-            socketBindingGroup =  SOCKET_BINDING_GROUP.resolveModelAttribute(context, model).asString();
-            try {
-                context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP.getName(), socketBindingGroup)));
-            } catch (NoSuchElementException e) {
-                if (master) {
-                    throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.unknown(SOCKET_BINDING_GROUP.getName(), socketBindingGroup));
-                } else {
-                    //We are a slave HC and we don't have the socket-binding-group required, so put the slave into reload-required
-                    reloadRequired = true;
-                    context.reloadRequired();
-                }
-            }
-        } else {
-            socketBindingGroup = null;
-        }
-
-        final boolean revertReloadRequiredOnRollback = reloadRequired;
-        context.completeStep(new OperationContext.ResultHandler() {
+        // Validate the references.
+        context.addStep(operation, new OperationStepHandler() {
             @Override
-            public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                if (resultAction == ResultAction.ROLLBACK) {
-                    if (revertReloadRequiredOnRollback){
-                        context.revertReloadRequired();
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                // Future proofing: We resolve the profile in Stage.MODEL even though system properties may not be available yet
+                // solely because currently the attribute doesn't support expressions. In the future if system properties
+                // can safely be resolved in stage model, this profile attribute can be changed and this will still work.
+                boolean reloadRequired = false;
+                final String profile = PROFILE.resolveModelAttribute(context, model).asString();
+                try {
+                    context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(PROFILE.getName(), profile)));
+                } catch (Exception e) {
+                    if (master) {
+                        throw DomainControllerLogger.ROOT_LOGGER.noProfileCalled(profile);
+                    } else {
+                        //We are a slave HC and we don't have the socket-binding-group required, so put the slave into reload-required
+                        reloadRequired = true;
+                        context.reloadRequired();
                     }
                 }
-            }
-        });
+
+                final String socketBindingGroup;
+                if (operation.hasDefined(SOCKET_BINDING_GROUP.getName())) {
+                    socketBindingGroup =  SOCKET_BINDING_GROUP.resolveModelAttribute(context, model).asString();
+                    try {
+                        context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP.getName(), socketBindingGroup)));
+                    } catch (NoSuchElementException e) {
+                        if (master) {
+                            throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.unknown(SOCKET_BINDING_GROUP.getName(), socketBindingGroup));
+                        } else {
+                            //We are a slave HC and we don't have the socket-binding-group required, so put the slave into reload-required
+                            reloadRequired = true;
+                            context.reloadRequired();
+                        }
+                    }
+                } else {
+                    socketBindingGroup = null;
+                }
+
+                final boolean revertReloadRequiredOnRollback = reloadRequired;
+                context.completeStep(new OperationContext.ResultHandler() {
+                    @Override
+                    public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        if (resultAction == ResultAction.ROLLBACK) {
+                            if (revertReloadRequiredOnRollback){
+                                context.revertReloadRequired();
+                            }
+                        }
+                    }
+                });
+            }}, OperationContext.Stage.MODEL);
+
+        context.stepCompleted();
     }
 
     protected boolean requiresRuntime(OperationContext context) {

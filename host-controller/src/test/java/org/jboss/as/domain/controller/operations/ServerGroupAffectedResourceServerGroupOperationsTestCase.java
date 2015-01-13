@@ -127,7 +127,17 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(PROFILE).set(profileName);
         operation.get(SOCKET_BINDING_GROUP).set(socketBindingGroupName);
 
-        new ServerGroupAddHandler(master).execute(operationContext, operation);
+        try {
+            new ServerGroupAddHandler(master).execute(operationContext, operation);
+        } catch(RuntimeException e) {
+            // MockOperationContext impl throws RuntimeException in case one of the steps
+            // throws OperationFailedException
+            final Throwable t = e.getCause();
+            if(t instanceof OperationFailedException) {
+                throw (OperationFailedException)t;
+            }
+            throw e;
+        }
 
         if (master && (badProfile || badSocketBindingGroup)) {
             Assert.fail();
@@ -331,6 +341,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         private boolean reloadRequired;
         private boolean rollback;
         private OperationStepHandler nextStep;
+        private ModelNode nextStepOp;
 
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
             super(root, booting, operationAddress);
@@ -350,7 +361,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
                 try {
                     OperationStepHandler step = nextStep;
                     nextStep = null;
-                    step.execute(this, null);
+                    step.execute(this, nextStepOp);
                 } catch (OperationFailedException e) {
                     throw new RuntimeException(e);
                 }
@@ -370,8 +381,12 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         }
 
         public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
-            nextStep = step;
+            addStep(null, step, stage);
         }
 
+        public void addStep(ModelNode operation, OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
+            nextStep = step;
+            nextStepOp = operation;
+        }
     }
 }
