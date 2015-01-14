@@ -71,7 +71,6 @@ public class ServerStatusHandler implements OperationStepHandler {
 
         if(status != null) {
             context.getResult().set(status.toString());
-            context.stepCompleted();
         } else {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.failedToGetServerStatus());
         }

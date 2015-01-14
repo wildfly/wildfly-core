@@ -66,7 +66,6 @@ public class SubsystemDescriptionDump implements OperationStepHandler {
         PathAddress profileAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.PROFILE));
         ImmutableManagementResourceRegistration profileRegistration = context.getResourceRegistration().getSubModel(profileAddress);
         dumpManagementResourceRegistration(profileRegistration, extensionRegistry, path);
-        context.stepCompleted();
     }
 
     public static void dumpManagementResourceRegistration(final ImmutableManagementResourceRegistration profileRegistration,

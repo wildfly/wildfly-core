@@ -104,7 +104,6 @@ public class XmlMarshallingHandler implements OperationStepHandler{
             MGMT_OP_LOGGER.failedExecutingOperation(e, operation.require(ModelDescriptionConstants.OP), pa);
             context.getFailureDescription().set(e.toString());
         }
-        context.stepCompleted();
     }
 
     protected PathAddress getBaseAddress() {

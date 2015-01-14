@@ -55,7 +55,5 @@ public class ManagedDMRContentWriteAttributeHandler implements OperationStepHand
         final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         // IMPORTANT: Use writeModel, as this is what causes the content to be flushed to the content repo!
         resource.writeModel(model);
-
-        context.stepCompleted();
     }
 }

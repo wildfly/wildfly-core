@@ -78,7 +78,6 @@ public class ServerGroupRemoveHandler extends AbstractRemoveStepHandler {
                     if (!foundServer.isEmpty()) {
                         throw DomainControllerLogger.ROOT_LOGGER.cannotRemoveUsedServerGroup(serverGroup, foundServer);
                     }
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.VERIFY);
         }

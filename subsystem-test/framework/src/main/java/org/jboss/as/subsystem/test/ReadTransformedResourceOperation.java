@@ -97,7 +97,6 @@ class ReadTransformedResourceOperation implements OperationStepHandler {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 ModelNode transformed = transformReadResourceResult(context, readResourceResult, subsystem);
                 context.getResult().set(transformed);
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
@@ -108,6 +107,5 @@ class ReadTransformedResourceOperation implements OperationStepHandler {
         op.get(RECURSIVE).set(true);
         op.get(INCLUDE_DEFAULTS).set(includeDefaults);
         context.addStep(readResourceResult, op, ReadResourceHandler.INSTANCE, OperationContext.Stage.MODEL, true);
-        context.stepCompleted();
     }
 }

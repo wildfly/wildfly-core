@@ -85,7 +85,6 @@ public class ServerAddHandler extends AbstractAddStepHandler {
             @Override
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 context.addResource(PathAddress.EMPTY_ADDRESS, PlaceholderResource.INSTANCE);
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
@@ -145,10 +144,8 @@ public class ServerAddHandler extends AbstractAddStepHandler {
                                 throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(socketBindingGroupName);
                             }
                         }
-                        context.stepCompleted();
                     }
                 }, Stage.MODEL);
-                context.stepCompleted();
             }
         }, Stage.MODEL);
     }

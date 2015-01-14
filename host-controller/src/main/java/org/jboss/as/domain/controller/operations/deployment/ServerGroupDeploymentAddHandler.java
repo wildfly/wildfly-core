@@ -99,8 +99,6 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
                 validateRuntimeNames(name, context, address);
             }
         }, OperationContext.Stage.MODEL);
-
-        context.stepCompleted();
     }
 
     private void validateRuntimeNames(String deploymentName, OperationContext context, PathAddress address) throws OperationFailedException {
@@ -126,8 +124,6 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
                 }
             }
         }
-
-        context.stepCompleted();
     }
 
     private static String getRuntimeName(String name, ModelNode deployment, ModelNode domainDeployment) {

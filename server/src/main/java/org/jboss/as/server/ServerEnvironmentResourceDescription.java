@@ -181,8 +181,6 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
             if (equals(name, TEMP_DIR)) {
                 set(result, environment.getServerTempDir());
             }
-
-            context.stepCompleted();
         }
 
         private void set(final ModelNode node, final String value) {

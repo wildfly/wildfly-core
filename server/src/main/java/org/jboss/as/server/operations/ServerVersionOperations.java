@@ -46,8 +46,6 @@ public class ServerVersionOperations {
             } else if (attr.equals(ModelDescriptionConstants.SCHEMA_LOCATIONS)) {
                 getAttributeValueOrDefault(ServerRootResourceDefinition.SCHEMA_LOCATIONS, context);
             }
-
-            context.stepCompleted();
         }
 
         private void getAttributeValueOrDefault(AttributeDefinition def, OperationContext context) throws OperationFailedException {

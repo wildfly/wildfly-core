@@ -83,7 +83,6 @@ public final class LocalPatchOperationStepHandler implements OperationStepHandle
             final ModelNode failureDescription = context.getFailureDescription();
             PatchOperationTarget.formatFailedResponse(e, failureDescription);
             installationManager.clearRestartRequired();
-            context.stepCompleted();
         }
     }
 

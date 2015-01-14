@@ -219,7 +219,7 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
 
     @Test
     public void readChildrenTypes() throws Exception {
-        ModelNode op = createOperation(READ_CHILDREN_TYPES_OPERATION);        
+        ModelNode op = createOperation(READ_CHILDREN_TYPES_OPERATION);
         op.get(INCLUDE_ALIASES).set(true);
         ModelNode result = executeForResult(op);
         List<ModelNode> list = result.asList();
@@ -776,7 +776,6 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.getResult().set("runtime");
-            context.stepCompleted();
         }
     }
 
@@ -804,7 +803,6 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.getResult().set(value);
-            context.stepCompleted();
         }
     }
 
@@ -843,7 +841,6 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
             ModelNode aliasOp = operation.clone();
             aliasOp.get(NAME).set(targetAttribute);
             context.addStep(aliasOp, step, Stage.MODEL, true);
-            context.stepCompleted();
         }
 
 

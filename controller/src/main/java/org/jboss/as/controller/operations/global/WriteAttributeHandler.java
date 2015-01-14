@@ -150,11 +150,8 @@ public class WriteAttributeHandler implements OperationStepHandler {
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         // aggregate data from the 2 read-attribute operations
                         emitAttributeValueWrittenNotification(context, address, attributeName, oldValue.get(RESULT), newValue.get(RESULT));
-                        context.stepCompleted();
                     }
                 }, currentStage);
-
-                context.stepCompleted();
             }
         }
     }

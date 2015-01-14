@@ -110,7 +110,5 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

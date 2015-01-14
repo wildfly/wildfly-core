@@ -145,7 +145,6 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
                 context.setRollbackOnly();
             }
         }
-        context.stepCompleted();
     }
 
     private static ModelNode getServiceFailureDescription(final StartException exception) {

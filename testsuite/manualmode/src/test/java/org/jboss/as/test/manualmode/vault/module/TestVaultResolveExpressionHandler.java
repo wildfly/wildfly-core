@@ -52,10 +52,8 @@ public class TestVaultResolveExpressionHandler implements OperationStepHandler {
             public void execute(OperationContext context, ModelNode operation)
                     throws OperationFailedException {
                 context.getResult().set(context.resolveExpressions(operation.get(TestVaultResolveExpressionHandler.PARAM_EXPRESSION.getName())));
-                context.stepCompleted();
             }
         }, Stage.RUNTIME);
-        context.stepCompleted();
     }
 
 }

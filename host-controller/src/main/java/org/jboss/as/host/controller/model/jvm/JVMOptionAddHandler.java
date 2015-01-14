@@ -70,7 +70,5 @@ final class JVMOptionAddHandler implements OperationStepHandler {
             }
         }
         model.get(JvmAttributes.JVM_OPTIONS).add(option);
-
-        context.stepCompleted();
     }
 }

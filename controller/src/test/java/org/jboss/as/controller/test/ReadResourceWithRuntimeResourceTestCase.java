@@ -105,7 +105,6 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.getResult().set(-1);
-                context.stepCompleted();
             }
         });
         runtimeResource.setRuntimeOnly(true);
@@ -120,8 +119,6 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
                 model.get("subsystem", "mysubsystem", "resource", "A").setEmptyObject();
 
                 createModel(context, model);
-
-                context.stepCompleted();
             }
         });
     }

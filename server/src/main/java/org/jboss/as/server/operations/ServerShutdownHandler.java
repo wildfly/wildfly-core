@@ -140,8 +140,6 @@ public class ServerShutdownHandler implements OperationStepHandler {
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     private final class ShutdownAction extends AtomicBoolean {

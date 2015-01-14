@@ -910,7 +910,6 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             } else {
                 context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             }
-            context.stepCompleted();
         }
     }
 

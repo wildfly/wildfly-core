@@ -125,7 +125,6 @@ public class OperationCoordinatorStepHandler {
         // the ability to do this is being disabled until it's clear that it's
         // not a problem
         context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.masterDomainControllerOnlyOperation(operation.get(OP).asString(), PathAddress.pathAddress(operation.get(OP_ADDR))));
-        context.stepCompleted();
     }
 
     /**
@@ -201,8 +200,6 @@ public class OperationCoordinatorStepHandler {
 
         // Finally, the step to formulate and execute the 2nd phase rollout plan
         context.addStep(new DomainRolloutStepHandler(hostProxies, serverProxies, overallContext, rolloutPlan, getExecutorService()), OperationContext.Stage.DOMAIN);
-
-        context.stepCompleted();
     }
 
     static void configureDomainUUID(ModelNode operation) {

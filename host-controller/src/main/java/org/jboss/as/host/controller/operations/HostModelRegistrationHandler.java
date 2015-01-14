@@ -129,8 +129,6 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
 
         // Create the empty discovery options resource
         context.createResource(hostAddress.append(PathElement.pathElement(CORE_SERVICE, DISCOVERY_OPTIONS)));
-
-        context.stepCompleted();
     }
 
     private static void initCoreModel(final ModelNode root, HostControllerEnvironment environment) {

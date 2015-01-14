@@ -326,7 +326,6 @@ public abstract class ModelTestModelControllerService extends AbstractController
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 resourceRef.set(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
                 context.getResult().setEmptyObject();
-                context.stepCompleted();
             }
         });
         Resource rootResource = resourceRef.get();

@@ -59,7 +59,6 @@ abstract class AccessAuthorizationRolesHandler implements OperationStepHandler {
         for (String role : list) {
             result.add(role);
         }
-        context.stepCompleted();
     }
 
     abstract Set<String> getRolesList();

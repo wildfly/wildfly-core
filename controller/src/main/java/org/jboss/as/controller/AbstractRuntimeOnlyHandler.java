@@ -53,8 +53,6 @@ public abstract class AbstractRuntimeOnlyHandler implements OperationStepHandler
                 executeRuntimeStep(context, operation);
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     /**

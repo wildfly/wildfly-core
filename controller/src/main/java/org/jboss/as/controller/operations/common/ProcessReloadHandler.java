@@ -96,8 +96,6 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     protected abstract ReloadContext<T> initializeReloadContext(OperationContext context, ModelNode operation) throws OperationFailedException;

@@ -82,8 +82,6 @@ public class PlatformLoggingMXBeanGetLoggerLevelHandler implements OperationStep
         } catch (JMException e) {
             throw new RuntimeException(e);
         }
-
-        context.stepCompleted();
     }
 
 }

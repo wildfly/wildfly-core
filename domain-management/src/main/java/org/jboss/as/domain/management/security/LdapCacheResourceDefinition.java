@@ -267,13 +267,9 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
                         } else if (CONTAINS.equals(operationName)) {
                             contains(context, operation);
                         }
-
-                        context.stepCompleted();
                     }
                 }, Stage.RUNTIME);
             }
-
-            context.stepCompleted();
         }
 
         public abstract void flushCache(OperationContext context, ModelNode operation) throws OperationFailedException;
@@ -453,8 +449,6 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
                 String realmName = ManagementUtil.getSecurityRealmName(operation);
                 throw DomainManagementLogger.ROOT_LOGGER.multipleCacheConfigurationsDefined(realmName);
             }
-
-            context.stepCompleted();
 
         }
     }

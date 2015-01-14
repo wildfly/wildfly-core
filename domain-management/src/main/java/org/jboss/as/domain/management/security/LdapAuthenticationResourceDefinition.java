@@ -146,8 +146,6 @@ public class LdapAuthenticationResourceDefinition extends LdapResourceDefinition
                     final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
                     final ModelNode model = resource.getModel();
                     validateAttributeCombination(model);
-
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.MODEL);
             super.execute(context, operation);

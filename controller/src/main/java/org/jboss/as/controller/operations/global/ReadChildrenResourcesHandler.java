@@ -128,8 +128,6 @@ public class ReadChildrenResourcesHandler implements OperationStepHandler {
             resources.put(childPath, rrRsp);
             context.addStep(rrRsp, readResOp, rrHandler, OperationContext.Stage.MODEL, true);
         }
-
-        context.stepCompleted();
     }
 
     /**
@@ -195,12 +193,8 @@ public class ReadChildrenResourcesHandler implements OperationStepHandler {
                             context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
                         }
                     }
-
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.VERIFY);
-
-            context.stepCompleted();
         }
     }
 }

@@ -191,7 +191,6 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
             if (result != null) {
                 context.getResult().set(result);
             }
-            context.stepCompleted();
         }
     }
 
@@ -221,7 +220,6 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
                 //TODO i18n
                 throw new IllegalStateException();
             }
-            context.stepCompleted();
         }
 
         private Boolean readValue(OperationContext context, ModelNode value, AttributeDefinition definition) throws OperationFailedException {

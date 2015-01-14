@@ -362,7 +362,6 @@ public class ReadAttributeTestCase extends AbstractRbacTestBase {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.getResult().set(value);
-            context.stepCompleted();
         }
     }
 }

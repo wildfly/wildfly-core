@@ -74,7 +74,5 @@ public class ManagedDMRContentStoreHandler implements OperationStepHandler {
 
         // IMPORTANT: Use writeModel, as this is what causes the content to be flushed to the content repo!
         resource.writeModel(model);
-
-        context.stepCompleted();
     }
 }

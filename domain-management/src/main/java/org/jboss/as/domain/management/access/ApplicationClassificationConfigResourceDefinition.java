@@ -111,7 +111,6 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
             if (result != null) {
                 context.getResult().set(result);
             }
-            context.stepCompleted();
         }
     }
 
@@ -132,7 +131,6 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
                 //TODO i18n
                 throw new IllegalStateException();
             }
-            context.stepCompleted();
         }
 
         private Boolean readValue(OperationContext context, ModelNode value, AttributeDefinition definition) throws OperationFailedException {

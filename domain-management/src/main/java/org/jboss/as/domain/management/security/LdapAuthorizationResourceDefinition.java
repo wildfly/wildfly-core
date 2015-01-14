@@ -149,8 +149,6 @@ public class LdapAuthorizationResourceDefinition extends LdapResourceDefinition 
                 throw DomainManagementLogger.ROOT_LOGGER.multipleGroupSearchConfigurationsDefined(realmName, invalid);
             }
 
-            context.stepCompleted();
-
         }
     }
 

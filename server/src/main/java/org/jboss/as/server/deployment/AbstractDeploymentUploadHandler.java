@@ -80,8 +80,6 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
         catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.caughtIOExceptionUploadingContent(e);
         }
-
-        context.stepCompleted();
     }
 
     protected abstract InputStream getContentInputStream(OperationContext context, ModelNode operation) throws IOException, OperationFailedException;

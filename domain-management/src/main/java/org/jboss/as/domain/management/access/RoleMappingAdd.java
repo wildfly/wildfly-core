@@ -77,8 +77,6 @@ public class RoleMappingAdd implements OperationStepHandler {
         RoleMappingResourceDefinition.INCLUDE_ALL.validateAndSet(operation, model);
 
         registerRuntimeAdd(context, roleName.toUpperCase(Locale.ENGLISH));
-
-        context.stepCompleted();
     }
 
     private void registerRuntimeAdd(final OperationContext context, final String roleName) {

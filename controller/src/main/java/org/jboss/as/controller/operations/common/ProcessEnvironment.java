@@ -184,8 +184,6 @@ public abstract class ProcessEnvironment {
             } else {
                 context.getResult().set(ProcessEnvironment.this.getProcessName());
             }
-
-            context.stepCompleted();
         }
     }
 }

@@ -138,8 +138,6 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-
-        context.stepCompleted();
     }
 
 

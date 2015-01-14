@@ -68,8 +68,6 @@ public class ThreadMXBeanFindDeadlockedThreadsHandler implements OperationStepHa
         } catch (SecurityException e) {
             throw new OperationFailedException(e.toString());
         }
-
-        context.stepCompleted();
     }
 
 }

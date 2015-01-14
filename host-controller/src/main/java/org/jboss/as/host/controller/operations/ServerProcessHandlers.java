@@ -75,8 +75,6 @@ public abstract class ServerProcessHandlers implements OperationStepHandler {
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     abstract void doExecute(String serverName);

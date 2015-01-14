@@ -166,8 +166,6 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             if (model.hasDefined(SECURITY_REALM.getName()) == false && model.hasDefined(HTTPS_PORT.getName())) {
                 throw ROOT_LOGGER.noSecurityRealmForSsl();
             }
-
-            context.stepCompleted();
         }
 
     }

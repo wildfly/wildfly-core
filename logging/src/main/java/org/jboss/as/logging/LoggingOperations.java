@@ -132,7 +132,6 @@ final class LoggingOperations {
             if (filter.isDefined()) {
                 context.getResult().set(Filters.filterSpecToFilter(filter.asString()));
             }
-            context.stepCompleted();
         }
     }
 
@@ -168,8 +167,6 @@ final class LoggingOperations {
                         configurationPersistence.rollback();
                     }
                 });
-            } else {
-                context.stepCompleted();
             }
         }
 
@@ -205,7 +202,6 @@ final class LoggingOperations {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                         performRuntime(context, operation, logContextConfiguration, name, model);
-                        context.stepCompleted();
                     }
                 }, Stage.RUNTIME);
             }
@@ -239,7 +235,6 @@ final class LoggingOperations {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                         performRuntime(context, operation, logContextConfiguration, name, model);
-                        context.stepCompleted();
                     }
                 }, Stage.RUNTIME);
             }
@@ -274,7 +269,6 @@ final class LoggingOperations {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                         performRuntime(context, operation, logContextConfiguration, name, model);
-                        context.stepCompleted();
                     }
                 }, Stage.RUNTIME);
             }

@@ -76,7 +76,6 @@ public class ServerRemoveHandler extends AbstractRemoveStepHandler {
             @Override
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 context.removeResource(PathAddress.EMPTY_ADDRESS);
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
@@ -92,7 +91,6 @@ public class ServerRemoveHandler extends AbstractRemoveStepHandler {
                 if (controller != null) {
                     context.getFailureDescription().set(HostControllerLogger.ROOT_LOGGER.serverStillRunning(serverName));
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.RUNTIME);
 

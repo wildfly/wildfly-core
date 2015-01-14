@@ -83,8 +83,6 @@ public class PlatformLoggingMXBeanGetParentLoggerNameHandler implements Operatio
         } catch (JMException e) {
             throw new RuntimeException(e);
         }
-
-        context.stepCompleted();
     }
 
 }

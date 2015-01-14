@@ -46,6 +46,5 @@ public final class ServiceVerificationHandler extends AbstractServiceListener<Ob
 
     public void execute(final OperationContext context, final ModelNode operation) {
         // no-op
-        context.stepCompleted();
     }
 }

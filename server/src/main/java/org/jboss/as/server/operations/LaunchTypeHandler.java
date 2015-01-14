@@ -44,6 +44,5 @@ public class LaunchTypeHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         context.getResult().set(launchType.toString());
-        context.stepCompleted();
     }
 }

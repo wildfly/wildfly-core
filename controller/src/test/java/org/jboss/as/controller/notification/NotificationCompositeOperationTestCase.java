@@ -79,7 +79,6 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
                         if (failOperation) {
                             throw new OperationFailedException("failed operation");
                         }
-                        context.stepCompleted();
                     }
                 }
         );

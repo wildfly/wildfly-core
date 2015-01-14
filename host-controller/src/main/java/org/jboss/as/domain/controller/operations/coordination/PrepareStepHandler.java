@@ -150,7 +150,6 @@ public class PrepareStepHandler  implements OperationStepHandler {
                 context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
             }
         }
-        context.stepCompleted();
     }
 
     private static OperationStepHandler resolveWildcardOperationHandler(final PathAddress address, final String operationName,

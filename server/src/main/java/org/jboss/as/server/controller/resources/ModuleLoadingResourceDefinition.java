@@ -136,8 +136,6 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
             } catch (PrivilegedActionException e) {
                 throw new IllegalStateException(e.getCause());
             }
-
-            context.stepCompleted();
         }
 
         private static void storeRepoRoots(final ModelNode list) throws NoSuchFieldException, IllegalAccessException {
@@ -198,11 +196,8 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
                     } catch (PrivilegedActionException e) {
                         throw new OperationFailedException(e.getCause());
                     }
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.RUNTIME);
-
-            context.stepCompleted();
         }
     }
 

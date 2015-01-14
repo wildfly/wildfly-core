@@ -137,7 +137,6 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
                     context.addStep(addOp, handler, Stage.MODEL, true);
                 }
             }
-            context.stepCompleted();
         }
     }
 
@@ -148,7 +147,6 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
             context.getResult().set(resource.hasChild(PathElement.pathElement(CommonAttributes.EXPOSE_MODEL, CommonAttributes.RESOLVED)));
-            context.stepCompleted();
         }
 
     }

@@ -68,7 +68,5 @@ public class OperatingSystemMXBeanReadResourceHandler implements OperationStepHa
 
         final ModelNode store = result.get(PlatformMBeanConstants.OBJECT_NAME.getName());
         OperatingSystemMXBeanAttributeHandler.storeResult(PlatformMBeanConstants.OBJECT_NAME.getName(), store);
-
-        context.stepCompleted();
     }
 }

@@ -108,14 +108,12 @@ public class HostConnectionResourceDefinition extends SimpleResourceDefinition {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 slaveHosts.pruneExpired();
-                context.stepCompleted();
             }
         });
         resourceRegistration.registerOperationHandler(PRUNE_DISCONNECTED_DEF, new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 slaveHosts.pruneDisconnected();
-                context.stepCompleted();
             }
         });
 
@@ -140,7 +138,6 @@ public class HostConnectionResourceDefinition extends SimpleResourceDefinition {
                         break;
                 }
             }
-            context.stepCompleted();
         }
     }
 

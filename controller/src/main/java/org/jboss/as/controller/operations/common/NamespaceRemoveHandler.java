@@ -88,6 +88,5 @@ public class NamespaceRemoveHandler implements OperationStepHandler {
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.namespaceNotFound(prefix));
         }
-        context.stepCompleted();
     }
 }

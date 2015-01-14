@@ -55,6 +55,5 @@ public class NoopOperationStepHandler implements OperationStepHandler {
         if (setResult) {
             context.getResult();
         }
-        context.stepCompleted();
     }
 }

@@ -157,10 +157,8 @@ public class BootErrorCollector {
                         bootErrors.add(bootError);
                     }
                     context.getResult().set(bootErrors);
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.RUNTIME);
-            context.stepCompleted();
         }
 
         private void secureOperationAddress(OperationContext context, ModelNode bootError) throws OperationFailedException {

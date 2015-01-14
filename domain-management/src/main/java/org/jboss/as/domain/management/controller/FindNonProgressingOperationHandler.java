@@ -85,6 +85,5 @@ public class FindNonProgressingOperationHandler implements OperationStepHandler 
                 break;
             }
         }
-        context.stepCompleted();
     }
 }

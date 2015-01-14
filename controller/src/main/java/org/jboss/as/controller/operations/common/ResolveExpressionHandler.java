@@ -89,7 +89,5 @@ public class ResolveExpressionHandler implements OperationStepHandler {
                 }
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

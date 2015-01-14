@@ -79,6 +79,5 @@ public class AuthorizationValidatingHandler implements OperationStepHandler {
             Set<String> invalid = new HashSet<String>(children);
             throw DomainManagementLogger.ROOT_LOGGER.multipleAuthorizationConfigurationsDefined(realmName, invalid);
         }
-        context.stepCompleted();
     }
 }

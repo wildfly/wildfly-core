@@ -83,8 +83,6 @@ public class ThreadMXBeanThreadInfoHandler implements OperationStepHandler {
         } catch (SecurityException e) {
             throw new OperationFailedException(e.toString());
         }
-
-        context.stepCompleted();
     }
 
 }

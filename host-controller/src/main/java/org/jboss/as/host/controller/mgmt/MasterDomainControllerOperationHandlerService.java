@@ -167,7 +167,6 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
                                 activeSlaveRequest = new SlaveRequest(domainControllerLockId);
                             }
                             context.addStep(operation, handler, OperationContext.Stage.MODEL);
-                            context.stepCompleted();
                         }
                     });
                 }

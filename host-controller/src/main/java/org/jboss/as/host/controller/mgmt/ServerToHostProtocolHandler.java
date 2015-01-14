@@ -233,7 +233,6 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
                 }
             } catch (IOException e) {
                 context.getFailureDescription().set(e.getMessage());
-                context.stepCompleted();
                 return;
             }
 

@@ -150,8 +150,6 @@ public class DeploymentAddHandler implements OperationStepHandler {
                     }
                 }
             });
-        } else {
-            context.stepCompleted();
         }
     }
 
@@ -174,8 +172,6 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 }
             }
         }
-
-        context.stepCompleted();
     }
 
     private static String getRuntimeName(String name, ModelNode deployment) {

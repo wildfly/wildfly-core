@@ -197,7 +197,6 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             invoked = true;
-            context.stepCompleted();
         }
     }
 
@@ -247,7 +246,6 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
             invoked = true;
             long l = operation.get("param1").resolve().asLong() + context.readResource(PathAddress.EMPTY_ADDRESS).getModel().get("int").asInt() + operation.get("param3", "test").resolve().asInt();
             context.getResult().set(operation.get("param2").resolve().asList().get(0).asString() + l);
-            context.stepCompleted();
         }
 
         private static class IntAllowedValuesValidator extends ModelTypeValidator implements AllowedValuesValidator{
@@ -279,7 +277,6 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.getResult().set(operation.get("param1"));
-            context.stepCompleted();
         }
 
     }

@@ -107,12 +107,9 @@ public class DeployerChainAddHandler implements OperationStepHandler {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
                     context.addStep(new FinalRuntimeStepHandler(), OperationContext.Stage.RUNTIME);
-
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-        context.stepCompleted();
     }
 
 

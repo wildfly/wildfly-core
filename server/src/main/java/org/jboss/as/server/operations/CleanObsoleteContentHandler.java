@@ -84,7 +84,6 @@ public class CleanObsoleteContentHandler implements OperationStepHandler {
                 context.getResult().get(ContentRepository.DELETED_CONTENT).add(obsoleteContent);
             }
         }
-        context.stepCompleted();
     }
 
 }

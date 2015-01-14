@@ -150,8 +150,6 @@ public class DeploymentAddHandler implements OperationStepHandler {
                     }
                 }
             });
-        } else {
-            context.stepCompleted();
         }
     }
 

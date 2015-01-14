@@ -145,7 +145,6 @@ public class LogStreamExtension implements Extension {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            context.stepCompleted();
         }
 
         private void logPropValue(OperationContext context) {

@@ -65,8 +65,6 @@ public class RoleMappingRemove implements OperationStepHandler {
         RbacSanityCheckOperation.addOperation(context);
 
         registerRuntimeRemove(context, roleName.toUpperCase(Locale.ENGLISH));
-
-        context.stepCompleted();
     }
 
     private void registerRuntimeRemove(final OperationContext context, final String roleName) {

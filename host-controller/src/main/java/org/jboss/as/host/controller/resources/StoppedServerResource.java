@@ -69,7 +69,6 @@ public class StoppedServerResource extends SimpleResourceDefinition {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.getResult().set("STOPPED");
-                context.stepCompleted();
             }
         });
 

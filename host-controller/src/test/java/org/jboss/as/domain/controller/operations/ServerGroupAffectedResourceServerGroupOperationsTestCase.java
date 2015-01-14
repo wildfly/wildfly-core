@@ -338,22 +338,27 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         }
 
         void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {
-            OperationStepHandler next = nextStep;
             handler.execute(this, operation);
             if (nextStep != null) {
-                stepCompleted();
+                completed();
             }
         }
 
+        @Override
         public void completeStep(ResultHandler resultHandler) {
             if (nextStep != null) {
-                stepCompleted();
+                completed();
             } else if (rollback) {
                 resultHandler.handleResult(ResultAction.ROLLBACK, this, null);
             }
         }
 
+        @Override
         public void stepCompleted() {
+            completed();
+        }
+
+        private void completed() {
             if (nextStep != null) {
                 try {
                     OperationStepHandler step = nextStep;

@@ -252,7 +252,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 final String failureDescription = DomainControllerLogger.ROOT_LOGGER.slaveAlreadyRegistered(registrationContext.hostName);
                 registrationContext.failed(SlaveRegistrationException.ErrorCode.HOST_ALREADY_EXISTS, failureDescription);
                 context.getFailureDescription().set(failureDescription);
-                context.stepCompleted();
                 return;
             }
             // Read the extensions (with recursive true, otherwise the entries are runtime=true - which are going to be ignored for transformation)
@@ -293,8 +292,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             // Now run the read-domain model operation
             final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo.getHostName(), transformers, runtimeIgnoreTransformationRegistry);
             context.addStep(READ_DOMAIN_MODEL.getOperation(), handler, OperationContext.Stage.MODEL);
-            // Complete
-            context.stepCompleted();
         }
     }
 

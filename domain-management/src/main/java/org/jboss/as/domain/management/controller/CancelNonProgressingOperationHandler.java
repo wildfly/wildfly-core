@@ -109,7 +109,6 @@ public class CancelNonProgressingOperationHandler implements OperationStepHandle
             });
         } else {
             context.getFailureDescription().set(DomainManagementLogger.ROOT_LOGGER.noNonProgressingOperationFound(TimeUnit.NANOSECONDS.toSeconds(timeout)));
-            context.stepCompleted();
         }
     }
 }

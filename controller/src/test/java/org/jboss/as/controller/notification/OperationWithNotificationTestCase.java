@@ -65,7 +65,6 @@ public class OperationWithNotificationTestCase extends AbstractControllerTestBas
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         Notification notification = new Notification(MY_NOTIFICATION_TYPE, PathAddress.pathAddress(operation.get(OP_ADDR)), "notification message");
                         context.emit(notification);
-                        context.stepCompleted();
                     }
                 }
         );

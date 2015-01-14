@@ -84,8 +84,6 @@ public class PrincipalAdd implements OperationStepHandler {
         validateUniqueness(context, roleName, roleAddress, principalType, realm, name);
 
         registerRuntimeAdd(context, roleName.toUpperCase(Locale.ENGLISH), principalType, name, realm);
-
-        context.stepCompleted();
     }
 
     private void validateUniqueness(final OperationContext context, final String roleName, final PathAddress roleAddress,

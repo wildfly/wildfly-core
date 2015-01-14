@@ -52,7 +52,6 @@ public final class LocalShowHistoryHandler implements OperationStepHandler {
             final PatchableTarget.TargetInfo info = installationManager.getIdentity().loadTargetInfo();
             final ModelNode result =  PatchingHistory.Factory.getHistory(installationManager, info);
             context.getResult().set(result);
-            context.stepCompleted();
         } catch (Throwable t) {
             PatchLogger.ROOT_LOGGER.debugf(t, "failed to get history");
             throw PatchLogger.ROOT_LOGGER.failedToShowHistory(t);

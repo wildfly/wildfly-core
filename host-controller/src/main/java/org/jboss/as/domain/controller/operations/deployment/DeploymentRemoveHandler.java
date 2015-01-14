@@ -89,7 +89,7 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
                             try {
                                 newHashes = DeploymentUtils.getDeploymentHexHash(context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel());
                             } catch (NoSuchResourceException ex) {
-                                newHashes = Collections.EMPTY_SET;
+                                newHashes = Collections.emptySet();
                             }
                             removeContent(address, newHashes, deploymentHashes);
                         }
@@ -97,8 +97,6 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     protected void checkCanRemove(OperationContext context, ModelNode operation) throws OperationFailedException {

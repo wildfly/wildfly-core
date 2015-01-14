@@ -168,7 +168,6 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
                 model.get("profile", "profilType", "subsystem", "subsystem1", BIGINT_ATT_NAME).set(new BigInteger("100"));
                 model.get("profile", "profilType", "subsystem", "subsystem1", BIGDEC_ATT_NAME).set(new BigDecimal("10.0"));
                 createModel(context, model);
-                context.stepCompleted();
             }
         }
         );

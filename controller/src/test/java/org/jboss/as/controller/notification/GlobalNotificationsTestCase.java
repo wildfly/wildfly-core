@@ -147,15 +147,11 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.getResult().set(runtimeAttributeValue);
-
-                        context.stepCompleted();
                     }
                 },  new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         runtimeAttributeValue = operation.get(VALUE).asLong();
-
-                        context.stepCompleted();
                     }
                 })
                 .build();

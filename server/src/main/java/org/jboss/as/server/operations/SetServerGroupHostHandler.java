@@ -59,6 +59,5 @@ public class SetServerGroupHostHandler implements OperationStepHandler {
 
         ServerRootResourceDefinition.SERVER_GROUP.validateAndSet(operation, model);
         ServerRootResourceDefinition.HOST.validateAndSet(operation, model);
-        context.stepCompleted();
     }
 }
