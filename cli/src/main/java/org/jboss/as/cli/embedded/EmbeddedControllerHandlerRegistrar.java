@@ -25,6 +25,7 @@ package org.jboss.as.cli.embedded;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.embedded.StandaloneServer;
 
@@ -53,10 +54,10 @@ public class EmbeddedControllerHandlerRegistrar {
         modular = obj != null;
     }
 
-    public static void registerEmbeddedCommands(CommandRegistry commandRegistry) {
+    public static void registerEmbeddedCommands(CommandRegistry commandRegistry, CommandContext ctx) {
         if (modular) {
-            AtomicReference<StandaloneServer> serverReference = new AtomicReference<>();
-            commandRegistry.registerHandler(EmbedServerHandler.create(serverReference), "embed-server");
+            AtomicReference<EmbeddedServerLaunch> serverReference = new AtomicReference<>();
+            commandRegistry.registerHandler(EmbedServerHandler.create(serverReference, ctx), "embed-server");
             commandRegistry.registerHandler(new StopEmbeddedServerHandler(serverReference), "stop-embedded-server");
         }
     }

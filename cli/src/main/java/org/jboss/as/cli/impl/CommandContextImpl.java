@@ -164,6 +164,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.sasl.callback.DigestHashCallback;
+import org.jboss.stdio.SimpleStdioContextSelector;
+import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.http.RedirectException;
 
@@ -257,6 +259,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private final CLIPrintStream cliPrintStream;
 
+    // Store a ref to the default input stream aesh will use before we do any manipulation of stdin
+    private InputStream stdIn = Settings.getInstance().getInputStream();
+    private StdioContext initialStdIOContext;
+    private boolean uninstallIO;
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -267,6 +274,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.operationCandidatesProvider = null;
         this.cmdCompleter = null;
         operationHandler = new OperationRequestHandler();
+        initStdIO();
         initCommands();
         config = CliConfigImpl.load(this);
         addressResolver = ControllerAddressResolver.newInstance(config, null);
@@ -303,6 +311,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         resolveParameterValues = config.isResolveParameterValues();
         silent = config.isSilent();
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
+        initStdIO();
         initCommands();
 
         initSSLContext();
@@ -339,15 +348,35 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     private void copyConfigSettingsToConsole(InputStream consoleInput) {
-        if(consoleInput != null)
-            Settings.getInstance().setInputStream(consoleInput);
 
+        Settings.getInstance().setInputStream(consoleInput == null ? stdIn : consoleInput);
         Settings.getInstance().setStdOut(cliPrintStream);
 
         Settings.getInstance().setHistoryDisabled(!config.isHistoryEnabled());
         Settings.getInstance().setHistoryFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
         Settings.getInstance().setHistorySize(config.getHistoryMaxSize());
         Settings.getInstance().setEnablePipelineAndRedirectionParser(false);
+    }
+
+    private void initStdIO() {
+        this.initialStdIOContext = StdioContext.getStdioContext();
+        try {
+            StdioContext.install();
+            this.uninstallIO = true;
+        } catch (IllegalStateException e) {
+            this.uninstallIO = false;
+        }
+    }
+
+    private void restoreStdIO() {
+        if (uninstallIO) {
+            try {
+                StdioContext.uninstall();
+            } catch (IllegalStateException ignored) {
+                // someone else must have uninstalled
+            }
+        }
+        StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(this.initialStdIOContext));
     }
 
     private void initCommands() {
@@ -434,7 +463,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
         // Embedded server/host, if we are running in a modular environment
-        EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry);
+        EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
 
         registerExtraHandlers();
     }
@@ -670,6 +699,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if(!terminate) {
             terminate = true;
             disconnectController();
+            restoreStdIO();
             if (shutdownHook != null) {
                 CliShutdownHook.remove(shutdownHook);
             }

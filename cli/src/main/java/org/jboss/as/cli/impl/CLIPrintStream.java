@@ -35,16 +35,18 @@ import java.util.Locale;
  */
 final class CLIPrintStream extends PrintStream {
 
+    private static final ThreadLocal<Boolean> entered = new ThreadLocal<Boolean>();
+
     private final PrintStream baseDelegate;
     private volatile PrintStream delegate;
 
     CLIPrintStream() {
-        super(new ByteArrayOutputStream(), false);
+        super(new ByteArrayOutputStream(), true);
         this.delegate = this.baseDelegate = System.out;
     }
 
     CLIPrintStream(OutputStream consoleOutput) {
-        super(new ByteArrayOutputStream(), false);
+        super(new ByteArrayOutputStream(), true);
         assert consoleOutput != null;
         this.delegate = this.baseDelegate = new PrintStream(consoleOutput);
     }
@@ -65,158 +67,375 @@ final class CLIPrintStream extends PrintStream {
         this.delegate = baseDelegate;
     }
 
-    @Override
     public void flush() {
-        delegate.flush();
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.flush();
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
     public void close() {
-        delegate.close();
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.close();
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
     public boolean checkError() {
-        return delegate.checkError();
+        if (entered.get() != null) {
+            return false;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.checkError();
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void write(int b) {
-        delegate.write(b);
+    public void write(final int b) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.write(b);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void write(byte[] buf, int off, int len) {
-        delegate.write(buf, off, len);
+    public void write(final byte[] buf, final int off, final int len) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.write(buf, off, len);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(boolean b) {
-        delegate.print(b);
+    public void print(final boolean b) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(b);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(char c) {
-        delegate.print(c);
+    public void print(final char c) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(c);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(int i) {
-        delegate.print(i);
+    public void print(final int i) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(i);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(long l) {
-        delegate.print(l);
+    public void print(final long l) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(l);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(float f) {
-        delegate.print(f);
+    public void print(final float f) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(f);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(double d) {
-        delegate.print(d);
+    public void print(final double d) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(d);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(char[] s) {
-        delegate.print(s);
+    public void print(final char[] s) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(s);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(String s) {
-        delegate.print(s);
+    public void print(final String s) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(s);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void print(Object obj) {
-        delegate.print(obj);
+    public void print(final Object obj) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.print(obj);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
     public void println() {
-        delegate.println();
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println();
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(boolean x) {
-        delegate.println(x);
+    public void println(final boolean x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(char x) {
-        delegate.println(x);
+    public void println(final char x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(int x) {
-        delegate.println(x);
+    public void println(final int x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(long x) {
-        delegate.println(x);
+    public void println(final long x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(float x) {
-        delegate.println(x);
+    public void println(final float x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(double x) {
-        delegate.println(x);
+    public void println(final double x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(char[] x) {
-        delegate.println(x);
+    public void println(final char[] x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(String x) {
-        delegate.println(x);
+    public void println(final String x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public void println(Object x) {
-        delegate.println(x);
+    public void println(final Object x) {
+        if (entered.get() != null) {
+            return;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            delegate.println(x);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream printf(String format, Object... args) {
-        return delegate.printf(format, args);
+    public PrintStream printf(final String format, final Object... args) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.printf(format, args);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream printf(Locale l, String format, Object... args) {
-        return delegate.printf(l, format, args);
+    public PrintStream printf(final Locale l, final String format, final Object... args) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.printf(l, format, args);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream format(String format, Object... args) {
-        return delegate.format(format, args);
+    public PrintStream format(final String format, final Object... args) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.format(format, args);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream format(Locale l, String format, Object... args) {
-        return delegate.format(l, format, args);
+    public PrintStream format(final Locale l, final String format, final Object... args) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.format(l, format, args);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream append(CharSequence csq) {
-        return delegate.append(csq);
+    public PrintStream append(final CharSequence csq) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.append(csq);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream append(CharSequence csq, int start, int end) {
-        return delegate.append(csq, start, end);
+    public PrintStream append(final CharSequence csq, final int start, final int end) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.append(csq, start, end);
+        } finally {
+            entered.remove();
+        }
     }
 
-    @Override
-    public PrintStream append(char c) {
-        return delegate.append(c);
+    public PrintStream append(final char c) {
+        if (entered.get() != null) {
+            return this;
+        }
+        try {
+            entered.set(Boolean.TRUE);
+            return delegate.append(c);
+        } finally {
+            entered.remove();
+        }
     }
 }
