@@ -230,7 +230,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set(profileName);
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        operationContext.executeStep(new ServerGroupProfileWriteAttributeHandler(master, null), operation);
 
         if (master && badProfile) {
             //master will throw an exception
@@ -304,7 +304,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(NAME).set(SOCKET_BINDING_GROUP);
         operation.get(VALUE).set(socketBindingGroupName);
 
-        new ServerGroupSocketBindingGroupWriteAttributeHandler(master, null).execute(operationContext, operation);
+        operationContext.executeStep(new ServerGroupSocketBindingGroupWriteAttributeHandler(master, null), operation);
 
         if (master && badSocketBindingGroup) {
             //master will throw an exception
@@ -335,6 +335,14 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
             super(root, booting, operationAddress);
             this.rollback = rollback;
+        }
+
+        void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {
+            OperationStepHandler next = nextStep;
+            handler.execute(this, operation);
+            if (nextStep != null) {
+                stepCompleted();
+            }
         }
 
         public void completeStep(ResultHandler resultHandler) {
