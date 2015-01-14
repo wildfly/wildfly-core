@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
         //DeploymentOverlayTestCase.class,
         DirectoryGroupingByTypeTestCase.class,
         ExtensionManagementTestCase.class,
+        HcExtensionAndSubsystemManagementTestCase.class,
         IgnoredResourcesTestCase.class,
         ManagementAccessTestCase.class,
         ManagementClientContentTestCase.class,

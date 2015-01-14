@@ -27,6 +27,7 @@ package org.jboss.as.test.integration.domain.extension;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
@@ -37,6 +38,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -69,9 +71,11 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
         @Override
         protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
             NAME.validateAndSet(operation, model);
+        }
 
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource)
+                throws OperationFailedException {
         }
     }
-
-
 }
