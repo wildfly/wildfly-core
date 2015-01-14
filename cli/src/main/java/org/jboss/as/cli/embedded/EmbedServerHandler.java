@@ -22,18 +22,30 @@
 
 package org.jboss.as.cli.embedded;
 
+import java.io.PrintStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
+import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
+import org.jboss.as.cli.handlers.FilenameTabCompleter;
+import org.jboss.as.cli.handlers.SimpleTabCompleter;
+import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.embedded.EmbeddedServerFactory;
 import org.jboss.as.embedded.ServerStartException;
 import org.jboss.as.embedded.StandaloneServer;
+import org.jboss.logmanager.LogContext;
+import org.jboss.logmanager.LogContextSelector;
+import org.jboss.stdio.NullOutputStream;
+import org.jboss.stdio.SimpleStdioContextSelector;
+import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -43,15 +55,22 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 class EmbedServerHandler extends CommandHandlerWithHelp {
 
-    private ArgumentWithValue arg;
-    private final AtomicReference<StandaloneServer> serverReference;
+    private static final String ECHO = "echo";
+    private static final String DISCARD_STDOUT = "discard";
 
-    static EmbedServerHandler create(AtomicReference<StandaloneServer> serverReference) {
+    private final AtomicReference<EmbeddedServerLaunch> serverReference;
+    private ArgumentWithValue jbossHome;
+    private ArgumentWithValue stdOutHandling;
+
+    static EmbedServerHandler create(AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
-        result.arg = new ArgumentWithValue(result, 0, "--jboss-home");
+        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
+        result.stdOutHandling = new ArgumentWithValue(result, new SimpleTabCompleter(new String[]{ECHO, DISCARD_STDOUT}), "--std-out");
         return result;
     }
-    private EmbedServerHandler(AtomicReference<StandaloneServer> serverReference) {
+
+    private EmbedServerHandler(AtomicReference<EmbeddedServerLaunch> serverReference) {
         super("embed-server", false);
         assert serverReference != null;
         this.serverReference = serverReference;
@@ -86,19 +105,45 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             }
         }
 
-        StandaloneServer server = EmbeddedServerFactory.create(configuration.getJbossHome(), configuration.getModulePath(), null);
+        final EnvironmentRestorer restorer = new EnvironmentRestorer();
+        boolean ok = false;
         try {
+            if (!ECHO.equalsIgnoreCase(stdOutHandling.getValue(parsedCmd))) {
+                PrintStream nullStream = new UncloseablePrintStream(NullOutputStream.getInstance());
+                StdioContext currentContext = restorer.getStdioContext();
+                StdioContext newContext = StdioContext.create(currentContext.getIn(), nullStream, currentContext.getErr());
+                StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(newContext));
+            }
+
+            // Create our own LogContext
+            final LogContext embeddedLogContext = LogContext.create();
+            LogContext.setLogContextSelector(new LogContextSelector() {
+                @Override
+                public LogContext getLogContext() {
+                    return embeddedLogContext;
+                }
+            });
+
+            StandaloneServer server = EmbeddedServerFactory.create(configuration.getJbossHome(), configuration.getModulePath(), null);
             server.start();
-            serverReference.set(server);
+            serverReference.set(new EmbeddedServerLaunch(server, restorer));
             ctx.bindClient(server.getModelControllerClient());
             // TODO wait for start
+            ok = true;
         } catch (ServerStartException e) {
             throw new CommandLineException("Cannot start embedded server", e);
+        } finally {
+            if (!ok) {
+                restorer.restoreEnvironment();
+            } else {
+                // Just put back the LogContextSelector
+                //restorer.restoreLogContextSelector();
+            }
         }
     }
 
     private String getJBossHome(final ParsedCommandLine parsedCmd) throws CommandLineException {
-        String jbossHome = arg.getValue(parsedCmd);
+        String jbossHome = this.jbossHome.getValue(parsedCmd);
         if (jbossHome == null) {
             jbossHome = WildFlySecurityManager.getEnvPropertyPrivileged("JBOSS_HOME", null);
             if (jbossHome == null) {

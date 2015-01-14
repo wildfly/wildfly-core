@@ -1,6 +1,7 @@
 SYNOPSIS
 
    embed-server [--jboss-home=rootdir]
+                [--stdout=discard|echo]
 
 DESCRIPTION
 
@@ -18,3 +19,17 @@ ARGUMENTS
                      environment variable JBOSS_HOME will be used.
                      Must be specified if the environment variable
                      JBOSS_HOME is not set.
+
+ --std-out         - How to handle output to System.out from the
+                     embedded server. Legal values are "discard"
+                     and "echo". The "discard" value indicates
+                     that writes to System.out from the server
+                     should be discarded. The "echo" value means
+                     writes should be handled and appear as part
+                     of the CLI's own output to System.out. The
+                     default value is "discard". If "echo" is
+                     chosen and the CLI is running an interactive
+                     session, the user should recognize that
+                     asynchronous output from the server may
+                     interfere with the normal appearance of
+                     the CLI prompt.
