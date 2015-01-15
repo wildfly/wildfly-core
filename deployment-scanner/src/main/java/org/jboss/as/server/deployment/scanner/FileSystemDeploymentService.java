@@ -681,6 +681,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 final String deploymentName = fileName.substring(0, fileName.length() - markerStatus.length());
 
                 if (FAILED_DEPLOY.equals(markerStatus)) {
+                    scanContext.reattemptFailedDeployments.add(deploymentName);
                     ROOT_LOGGER.reattemptingFailedDeployment(deploymentName);
                 }
 
@@ -709,7 +710,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
                     if (!isAutoDeployDisabled(child)) {
                         long timestamp = getDeploymentTimestamp(child);
                         synchronizeScannerStatus(scanContext, directory, fileName, timestamp);
-                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp)) {
+                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.reattemptFailedDeployments.contains(fileName)) {
                             continue;
                         }
 
@@ -742,7 +743,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 if (autoDeployXml) {
                     if (!isAutoDeployDisabled(child)) {
                         long timestamp = getDeploymentTimestamp(child);
-                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp)) {
+                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.reattemptFailedDeployments.contains(fileName)) {
                             continue;
                         }
 
@@ -1436,6 +1437,10 @@ class FileSystemDeploymentService implements DeploymentScanner {
          * Exploded deployment content removed without first removing the .deployed marker
          */
         private final HashSet<String> prematureExplodedDeletions = new HashSet<String>();
+        /**
+         * Failed deployments to reattempt in next firstScan during boot
+         */
+        private final HashSet<String> reattemptFailedDeployments = new HashSet<String>();
         /**
          * Auto-deployable files detected by the scan where ZipScanner threw a NonScannableZipException
          */
