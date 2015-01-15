@@ -44,6 +44,5 @@ class ActiveRequestsReadHandler extends AbstractRuntimeOnlyHandler {
         } else {
             context.getResult().set(-1);
         }
-        context.stepCompleted();
     }
 }

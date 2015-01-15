@@ -123,7 +123,5 @@ public class ServerStartHandler implements OperationStepHandler {
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

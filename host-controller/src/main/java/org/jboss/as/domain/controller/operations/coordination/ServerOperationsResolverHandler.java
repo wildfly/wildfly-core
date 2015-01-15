@@ -132,8 +132,6 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
                 HOST_CONTROLLER_LOGGER.tracef("%s responseNode is %s", getClass().getSimpleName(), overallResult);
             }
         }
-
-        context.stepCompleted();
     }
 
     private Map<Set<ServerIdentity>, ModelNode> getServerOperations(OperationContext context, ModelNode domainOp, PathAddress domainOpAddress, boolean pushToServers) {

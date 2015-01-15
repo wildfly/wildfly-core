@@ -63,8 +63,6 @@ public class ScopedRoleRequiredHandler implements OperationStepHandler {
         if (hostScopedRoles.contains(roleName) == false && serverGroupScopedRoles.contains(roleName) == false) {
             throw DomainManagementLogger.ROOT_LOGGER.invalidRoleNameDomain(roleName);
         }
-
-        context.stepCompleted();
     }
 
     static void addOperation(OperationContext context, String roleName) {

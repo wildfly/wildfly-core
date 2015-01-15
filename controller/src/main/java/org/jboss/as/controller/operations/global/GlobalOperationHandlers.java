@@ -335,7 +335,6 @@ public class GlobalOperationHandlers {
                             resultAddress.set(base.toModelNode());
                         } catch (NoSuchResourceException e) {
                             // just discard the result to avoid leaking the inaccessible address
-                            context.stepCompleted();
                         }
                     }
                 };
@@ -361,7 +360,6 @@ public class GlobalOperationHandlers {
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
             execute(address, PathAddress.EMPTY_ADDRESS, context);
-            context.stepCompleted();
         }
 
         void execute(final PathAddress address, PathAddress base, final OperationContext context) {

@@ -71,11 +71,8 @@ public class ServerResumeHandler implements OperationStepHandler {
                 context.getServiceRegistry(true);
 
                 serverInventory.resumeServer(serverName);
-                context.stepCompleted();
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     static OperationDefinition getOperationDefinition() {

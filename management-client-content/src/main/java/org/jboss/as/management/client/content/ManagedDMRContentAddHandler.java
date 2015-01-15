@@ -57,7 +57,5 @@ public class ManagedDMRContentAddHandler extends AbstractAddStepHandler {
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);
         // IMPORTANT: Use writeModel, as this is what causes the content to be flushed to the content repo!
         resource.writeModel(model);
-
-        context.stepCompleted();
     }
 }

@@ -65,8 +65,6 @@ public class ReadContentHandler implements OperationStepHandler {
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.failedToLoadFile(file, e);
         }
-
-        context.stepCompleted();
     }
 
 

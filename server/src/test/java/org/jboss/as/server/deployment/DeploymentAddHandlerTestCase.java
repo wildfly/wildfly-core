@@ -74,7 +74,7 @@ public class DeploymentAddHandlerTestCase {
         operation.get("content").get(0).get("path").set("test.war");
         handler.execute(context, operation);
         Mockito.verify(context).addStep(Mockito.any(OperationStepHandler.class), OperationContext.Stage.RUNTIME);
-        Mockito.verify(context).stepCompleted();
+        //Mockito.verify(context).stepCompleted();
 
     }
 

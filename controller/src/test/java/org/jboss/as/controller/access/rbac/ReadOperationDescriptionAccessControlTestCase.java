@@ -338,7 +338,7 @@ public class ReadOperationDescriptionAccessControlTestCase extends AbstractContr
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            context.stepCompleted();
+            // no-op
         }
     }
 }

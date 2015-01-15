@@ -696,7 +696,6 @@ public class DetailedOperationsTestCase extends AbstractRbacTestBase {
             }
 
             context.getResult().set(new Random().nextInt());
-            context.stepCompleted();
         }
     }
 }

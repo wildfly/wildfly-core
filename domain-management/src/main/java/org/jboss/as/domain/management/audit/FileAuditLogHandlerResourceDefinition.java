@@ -131,7 +131,6 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
                     if (!HandlerUtil.lookForFormatter(context, context.getCurrentAddress(), formatterName)) {
                         throw DomainManagementLogger.ROOT_LOGGER.noFormatterCalled(formatterName);
                     }
-                    context.stepCompleted();
                 }
             }, OperationContext.Stage.MODEL);
         }

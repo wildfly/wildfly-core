@@ -90,7 +90,6 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-        context.stepCompleted();
     }
 
     /**

@@ -92,8 +92,6 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
                 }
 
                 SocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
-
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL);
     }

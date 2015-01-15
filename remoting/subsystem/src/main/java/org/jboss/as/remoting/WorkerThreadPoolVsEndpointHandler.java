@@ -86,7 +86,5 @@ class WorkerThreadPoolVsEndpointHandler implements OperationStepHandler {
             // users can read the default config attribute values
             context.addResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH), Resource.Factory.create());
         }
-
-        context.stepCompleted();
     }
 }

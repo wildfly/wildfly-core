@@ -48,7 +48,6 @@ public abstract class AbstractDeploymentChainStep implements OperationStepHandle
 
     public final void execute(final OperationContext context, final ModelNode operation) {
         execute(TARGET);
-        context.stepCompleted();
     }
 
     /**

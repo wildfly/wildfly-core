@@ -93,8 +93,6 @@ public class SchemaLocationRemoveHandler implements OperationStepHandler {
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.schemaNotFound(uri));
         }
-
-        context.stepCompleted();
     }
 
 }

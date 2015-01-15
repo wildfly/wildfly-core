@@ -70,7 +70,5 @@ final class JVMOptionRemoveHandler implements OperationStepHandler {
                 }
             }
         }
-
-        context.stepCompleted();
     }
 }

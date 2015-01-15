@@ -166,7 +166,6 @@ public class SystemPropertyAddHandler implements OperationStepHandler{
                     // Should not be possible -- see initial assert
                     throw new RuntimeException(resolutionFailure);
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.VERIFY);
     }

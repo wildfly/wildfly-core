@@ -108,7 +108,6 @@ public class AccessConstraintAppliesToResourceDefinition extends SimpleResourceD
             AccessConstraintAppliesToResource resource =
                     (AccessConstraintAppliesToResource) context.readResource(PathAddress.EMPTY_ADDRESS);
             setResult(context, resource.constraintUtilization);
-            context.stepCompleted();
         }
 
         abstract void setResult(OperationContext context, AccessConstraintUtilization constraintUtilization);

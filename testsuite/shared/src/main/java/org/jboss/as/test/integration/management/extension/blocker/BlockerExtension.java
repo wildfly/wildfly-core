@@ -218,7 +218,6 @@ public class BlockerExtension implements Extension {
                             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                                 context.getFailureDescription().set("rollback");
                                 context.setRollbackOnly();
-                                context.stepCompleted();
                             }
                         }, OperationContext.Stage.MODEL);
                         break;
@@ -236,9 +235,6 @@ public class BlockerExtension implements Extension {
                         }
                     }
                 });
-            } else {
-
-                context.stepCompleted();
             }
         }
 
@@ -262,7 +258,6 @@ public class BlockerExtension implements Extension {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 block(blockTime);
-                context.stepCompleted();
             }
         }
     }

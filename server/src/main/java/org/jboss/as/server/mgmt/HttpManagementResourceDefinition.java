@@ -203,8 +203,6 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
                     && (model.hasDefined(SECURE_SOCKET_BINDING.getName()) || model.hasDefined(HTTPS_PORT.getName()))) {
                 throw ROOT_LOGGER.noSecurityRealmForSsl();
             }
-
-            context.stepCompleted();
         }
 
     }

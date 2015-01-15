@@ -163,12 +163,8 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
         } else {
             try {
                 doExecuteInternal(context, operation, accessControlContext);
-            } catch (NoSuchResourceException nsre) {
+            } catch (NoSuchResourceException | UnauthorizedException nsre) {
                 context.getResult().set(new ModelNode());
-                context.stepCompleted();
-            } catch (UnauthorizedException ue) {
-                context.getResult().set(new ModelNode());
-                context.stepCompleted();
             }
         }
     }
@@ -526,7 +522,6 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                 }
             }
             accessControlResult.set(result);
-            context.stepCompleted();
         }
 
         private void addResourceAuthorizationResults(ModelNode result, ResourceAuthorization authResp) {
@@ -687,7 +682,6 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                 }
             }
             context.getResult().set(nodeDescription);
-            context.stepCompleted();
         }
     }
 
@@ -838,11 +832,9 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                 } catch (NoSuchResourceException e){
                     //Mark it as not accessible so that the assembly handler can remove it
                     context.getResult().set(PROXY_NO_SUCH_RESOURCE);
-                    context.stepCompleted();
                 } catch (UnauthorizedException e) {
                     //We were not allowed to read it, the assembly handler should still allow people to see it
                     context.getResult().set(new ModelNode());
-                    context.stepCompleted();
                 }
             }
         }

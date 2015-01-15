@@ -147,7 +147,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 PathAddress pa = context.getCurrentAddress();
                 filteredData.addReadRestrictedAttribute(pa, operation.get(NAME).asString());
                 context.getResult().set(new ModelNode());
-                context.stepCompleted();
             }
         }
     }
@@ -188,8 +187,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                     }
                 }
             }
-            // Complete the step for the unregistered attribute case
-            context.stepCompleted();
         } else if (attributeAccess.getReadHandler() == null) {
             final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode subModel = resource.getModel();
@@ -208,8 +205,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                     context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
                 }
             }
-            // Complete the step for the "registered attribute but default read handler" case
-            context.stepCompleted();
         } else {
             OperationStepHandler handler = attributeAccess.getReadHandler();
             ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
@@ -218,7 +213,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
-            // no context.completeStep() here as that's the read handler's job
         }
     }
 
@@ -251,7 +245,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                     PathAddress pa = context.getCurrentAddress();
                     filteredData.addReadRestrictedAttribute(pa, operation.get(NAME).asString());
                     context.getResult().set(new ModelNode());
-                    context.stepCompleted();
                 }
             }
         }
@@ -263,8 +256,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 context.getResult().clear();
                 throw ControllerLogger.ROOT_LOGGER.unauthorized(operation.require(OP).asString(), context.getCurrentAddress(), authorizationResult.getExplanation());
             }
-
-            context.stepCompleted();
         }
     }
 
@@ -292,7 +283,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             // simply returning them unresolved.
             ModelNode resolved = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(result);
             context.getResult().set(resolved);
-            context.stepCompleted();
         }
     }
 }

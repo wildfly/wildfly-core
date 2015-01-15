@@ -541,7 +541,6 @@ public class BasicRbacTestCase extends AbstractRbacTestBase {
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.getServiceRegistry(modify); // causes read-runtime/write-runtime auth, otherwise ignored
             context.getResult().set(new Random().nextInt());
-            context.stepCompleted();
         }
     }
 }

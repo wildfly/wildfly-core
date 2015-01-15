@@ -70,10 +70,7 @@ public class ServerReloadHandler implements OperationStepHandler {
 
                 final ServerStatus status = serverInventory.reloadServer(serverName, blocking);
                 context.getResult().set(status.toString());
-                context.stepCompleted();
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

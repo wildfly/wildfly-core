@@ -90,8 +90,6 @@ public class SpecifiedInterfaceResolveHandler implements OperationStepHandler {
         } catch (UnknownHostException e) {
             throw ServerLogger.ROOT_LOGGER.cannotResolveInterface(e, e);
         }
-
-        context.stepCompleted();
     }
 
     private void validateAndSet(final AttributeDefinition definition, final ModelNode operation, final ModelNode subModel) throws OperationFailedException {

@@ -82,8 +82,6 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
             }
         }
         // else this is a slave domain controller and we should ignore this operation
-
-        context.stepCompleted();
     }
 
     protected abstract InputStream getContentInputStream(OperationContext context, ModelNode operation) throws OperationFailedException;

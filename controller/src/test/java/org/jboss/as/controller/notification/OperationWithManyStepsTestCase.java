@@ -102,8 +102,6 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
                                 if (failSecondStep) {
                                     throw new OperationFailedException("2nd step failed");
                                 }
-
-                                context.stepCompleted();
                             }
                         }, RUNTIME);
 
@@ -111,7 +109,6 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
                             context.getFailureDescription().set("rolled back");
                             context.setRollbackOnly();
                         }
-                        context.stepCompleted();
                     }
                 }
         );

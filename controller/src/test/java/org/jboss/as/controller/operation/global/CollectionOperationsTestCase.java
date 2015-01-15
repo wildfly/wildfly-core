@@ -92,7 +92,6 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.getResult().set(runtimeMapAttributeValue);
-                        context.stepCompleted();
                     }
                 }, new AbstractWriteAttributeHandler() {
                     @Override
@@ -110,7 +109,6 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.getResult().set(runtimeMapAttributeValue);
-                        context.stepCompleted();
                     }
                 }, new AbstractWriteAttributeHandler() {
                     @Override

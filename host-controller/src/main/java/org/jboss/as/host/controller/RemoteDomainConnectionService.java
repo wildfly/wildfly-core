@@ -720,7 +720,6 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
-            context.stepCompleted();
         }
     }
 

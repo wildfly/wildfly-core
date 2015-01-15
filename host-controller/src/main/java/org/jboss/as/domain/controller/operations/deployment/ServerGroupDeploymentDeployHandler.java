@@ -42,6 +42,5 @@ public class ServerGroupDeploymentDeployHandler implements OperationStepHandler 
 
     public void execute(OperationContext context, ModelNode operation) {
         context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel().get(ENABLED.getName()).set(true);
-        context.stepCompleted();
     }
 }

@@ -90,8 +90,6 @@ public class RbacSanityCheckOperation implements OperationStepHandler {
                         throw DomainManagementLogger.ROOT_LOGGER.inconsistentRbacConfiguration();
                     }
 
-                    context.stepCompleted();
-
                     return null;
                 }
             });

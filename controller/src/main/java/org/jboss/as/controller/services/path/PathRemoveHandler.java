@@ -120,7 +120,5 @@ public class PathRemoveHandler implements OperationStepHandler {
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-
-        context.stepCompleted();
     }
 }

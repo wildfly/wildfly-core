@@ -64,10 +64,7 @@ public class DeploymentStatusHandler implements OperationStepHandler {
                         result.set(NO_METRICS);
                     }
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

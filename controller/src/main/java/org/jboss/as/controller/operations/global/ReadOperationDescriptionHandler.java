@@ -116,7 +116,6 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
 
             context.getResult().set(result);
         }
-        context.stepCompleted();
     }
 
     private static DescribedOp getDescribedOp(OperationContext context, String operationName, ModelNode operation, boolean lenient) throws OperationFailedException {

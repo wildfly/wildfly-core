@@ -93,7 +93,6 @@ import org.jboss.as.controller.TestModelControllerService;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -650,7 +649,6 @@ public abstract class AbstractProxyControllerTest {
                     mainModel.get("profile", "profileA").get(NAME).set("Profile A");
 
                     AbstractControllerTestBase.createModel(context, mainModel);
-                    context.stepCompleted();
                 }
             });
 
@@ -678,7 +676,7 @@ public abstract class AbstractProxyControllerTest {
                     new OperationStepHandler() {
                         @Override
                         public void execute(OperationContext context, ModelNode operation) {
-                            context.stepCompleted();
+                            // no-op
                         }
                     },
                     true
@@ -694,7 +692,6 @@ public abstract class AbstractProxyControllerTest {
                             proxyModel.get("serverchild", "svrA", "child", "childA", "value").set("childValue");
 
                             AbstractControllerTestBase.createModel(context, proxyModel);
-                            context.stepCompleted();
                         }
                     }
             );

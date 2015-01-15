@@ -74,8 +74,6 @@ public class PrincipalRemove implements OperationStepHandler {
         }
 
         registerRuntimeRemove(context, roleName.toUpperCase(Locale.ENGLISH), principalType, name, realm);
-
-        context.stepCompleted();
     }
 
     private void registerRuntimeRemove(final OperationContext context, final String roleName,

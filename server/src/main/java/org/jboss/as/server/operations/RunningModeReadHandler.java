@@ -44,7 +44,6 @@ public class RunningModeReadHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         context.getResult().set(runningModeControl.getRunningMode().name());
-        context.stepCompleted();
     }
 
 

@@ -82,7 +82,5 @@ public class ServerResumeHandler implements OperationStepHandler {
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

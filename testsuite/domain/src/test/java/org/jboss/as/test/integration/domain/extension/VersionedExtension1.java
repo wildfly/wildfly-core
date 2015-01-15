@@ -56,7 +56,6 @@ public class VersionedExtension1 extends VersionedExtensionCommon {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.getResult().set(true);
-                context.stepCompleted();
             }
         });
 

@@ -81,7 +81,6 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
                 final ModelNode model = resource.getModel();
                 model.get("test-attribute").set("test");
                 context.getResult().set(model);
-                context.stepCompleted();
             }
         });
 
@@ -94,7 +93,6 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.getResult().set(true);
-                context.stepCompleted();
             }
         });
 

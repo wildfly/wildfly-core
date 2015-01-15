@@ -62,7 +62,5 @@ public class ResolveExpressionOnHostHandler implements OperationStepHandler {
 
         // Just validate. The real work happens on the servers
         ResolveExpressionHandler.EXPRESSION.validateOperation(operation);
-
-        context.stepCompleted();
     }
 }

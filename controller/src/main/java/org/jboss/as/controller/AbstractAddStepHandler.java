@@ -137,7 +137,6 @@ public class AbstractAddStepHandler implements OperationStepHandler {
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-        context.stepCompleted();
     }
 
     /**

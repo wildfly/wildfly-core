@@ -175,10 +175,8 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
                                 throw HostControllerLogger.ROOT_LOGGER.noSocketBindingGroupCalled(socketBindingGroupName);
                             }
                         }
-                        context.stepCompleted();
                     }
                 }, Stage.MODEL);
-                context.stepCompleted();
             }
         }, Stage.MODEL);
     }

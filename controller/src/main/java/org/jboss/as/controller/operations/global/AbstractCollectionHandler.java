@@ -87,7 +87,6 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
             writeOperation.get(ModelDescriptionConstants.VALUE).set(model);
             context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL);
         }
-        context.stepCompleted();
     }
 
     abstract void updateModel(final OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException;

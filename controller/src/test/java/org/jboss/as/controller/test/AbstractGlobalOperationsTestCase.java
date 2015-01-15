@@ -150,8 +150,6 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                         model.get("profile", "profileC", "subsystem", "subsystem5", "name").set("Test");
 
                         createModel(context, model);
-
-                        context.stepCompleted();
                     }
                 }
         );
@@ -212,7 +210,6 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
             @Override
             public void execute(OperationContext context, ModelNode operation) {
                 context.getResult().set("Overridden by special read handler");
-                context.stepCompleted();
             }
         });
 
@@ -253,7 +250,6 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         @Override
         public void execute(final OperationContext context, final ModelNode operation) {
             context.getResult().set(random.nextInt());
-            context.stepCompleted();
         }
 
     }

@@ -124,7 +124,6 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
             } else if (attr.equals(DISABLED_DUE_TO_FAILURE.getName())) {
                 context.getResult().set(auditLogger.getHandlerDisabledDueToFailure(handlerName));
             }
-            context.stepCompleted();
         }
     }
 
@@ -138,7 +137,6 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
         @Override
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
             auditLogger.recycleHandler(Util.getNameFromAddress(operation.require(OP_ADDR)));
-            context.stepCompleted();
         }
     }
 

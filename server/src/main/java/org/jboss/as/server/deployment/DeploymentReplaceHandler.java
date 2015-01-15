@@ -130,8 +130,6 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
 
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(deployNode.require(CONTENT));
         DeploymentHandlerUtil.replace(context, replaceNode, runtimeName, name, replacedName, vaultReader, contents);
-
-        context.stepCompleted();
     }
 
     protected void addFromHash(ContentReference reference) throws OperationFailedException {

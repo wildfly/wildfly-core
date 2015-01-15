@@ -171,7 +171,6 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                context.stepCompleted();
             }
         };
         resourceRegistration.registerReadOnlyAttribute(STREAM, streamHandler);

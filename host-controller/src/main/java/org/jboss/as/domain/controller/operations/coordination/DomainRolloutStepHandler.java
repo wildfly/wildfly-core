@@ -108,7 +108,6 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         if (context.hasFailureDescription()) {
             // abort
             context.setRollbackOnly();
-            context.stepCompleted();
             return;
         }
 

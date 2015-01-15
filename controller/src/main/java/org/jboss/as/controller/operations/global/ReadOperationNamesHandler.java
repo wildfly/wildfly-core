@@ -109,6 +109,5 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
             result.setEmptyList();
         }
         context.getResult().set(result);
-        context.stepCompleted();
     }
 }

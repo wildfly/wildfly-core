@@ -57,7 +57,5 @@ public class ManagedDMRContentTypeAddHandler implements OperationStepHandler {
         // Create and add the specialized resource type we use for this resource tree
         ManagedDMRContentTypeResource resource = new ManagedDMRContentTypeResource(address, childType, hash, contentRepository);
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);
-
-        context.stepCompleted();
     }
 }

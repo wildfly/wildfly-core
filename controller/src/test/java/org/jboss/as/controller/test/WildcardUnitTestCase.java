@@ -101,8 +101,6 @@ public class WildcardUnitTestCase extends AbstractControllerTestBase {
                     model.get("host", "B", "server", "three", "subsystem", "web", "connector", "default", "6").setEmptyObject();
 
                     createModel(context, model);
-
-                    context.stepCompleted();
                 }
             });
 

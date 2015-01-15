@@ -103,8 +103,6 @@ public class ThreadMXBeanThreadInfosHandler implements OperationStepHandler {
         } catch (SecurityException e) {
             throw new OperationFailedException(e.toString());
         }
-
-        context.stepCompleted();
     }
 
     private long[] getIds(final ModelNode operation) throws OperationFailedException {

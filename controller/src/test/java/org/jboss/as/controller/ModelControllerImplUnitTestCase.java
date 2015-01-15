@@ -676,8 +676,6 @@ public class ModelControllerImplUnitTestCase {
 
             context.createResource(CHILD_ONE).getModel().set(child1);
             context.createResource(CHILD_TWO).getModel().set(child2);
-
-            context.stepCompleted();
         }
     }
 
@@ -962,8 +960,6 @@ public class ModelControllerImplUnitTestCase {
                     });
                 }
             }, OperationContext.Stage.RUNTIME);
-
-            context.stepCompleted();
         }
     }
 
@@ -1091,7 +1087,6 @@ public class ModelControllerImplUnitTestCase {
             final String type = operation.require("type").asString();
             final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(type)));
             context.getResult().set(Resource.Tools.readModel(resource));
-            context.stepCompleted();
         }
 
     }

@@ -59,8 +59,6 @@ public class RoleMappingNotRequiredHandler implements OperationStepHandler {
         if (roleMappings.contains(roleName)) {
             throw DomainManagementLogger.ROOT_LOGGER.roleMappingRemaining(roleName);
         }
-
-        context.stepCompleted();
     }
 
     static void addOperation(OperationContext context, String roleName) {

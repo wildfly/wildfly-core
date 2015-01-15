@@ -249,7 +249,12 @@ public interface OperationContext extends ExpressionResolver {
      * So a {@link Stage#MODEL} handler typically can be uninterested in the result of the overall operation and can
      * use this method.
      * </p>
+     *
+     * @deprecated invoking this method is unnecessary since if an {@code OperationStepHandler} does not call one of
+     *             the {@link #completeStep(org.jboss.as.controller.OperationContext.ResultHandler) variants} from its
+     *             {@code execute} method, a no-op {@code ResultHandler} will automatically be registered
      */
+    @Deprecated
     void stepCompleted();
 
     /**

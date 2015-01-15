@@ -104,7 +104,6 @@ public class ValidateAddressOperationHandler implements OperationStepHandler {
                 final OperationStepHandler proxyHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, OPERATION_NAME);
                 if(proxyHandler != null) {
                     context.addStep(newOperation, proxyHandler, OperationContext.Stage.MODEL, true);
-                    context.stepCompleted();
                     return;
                 }
 
@@ -114,7 +113,6 @@ public class ValidateAddressOperationHandler implements OperationStepHandler {
                 // Invalid
                 context.getResult().get(VALID).set(false);
                 context.getResult().get(PROBLEM).set(ControllerLogger.ROOT_LOGGER.childResourceNotFound(next));
-                context.stepCompleted();
                 return;
             }
         }
@@ -125,7 +123,6 @@ public class ValidateAddressOperationHandler implements OperationStepHandler {
         } else {
             context.getResult().get(VALID).set(true);
         }
-        context.stepCompleted();
     }
 
     private AuthorizationResult authorize(OperationContext context, PathAddress address, ModelNode operation) {

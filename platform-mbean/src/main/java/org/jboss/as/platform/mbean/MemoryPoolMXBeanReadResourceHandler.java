@@ -80,8 +80,5 @@ public class MemoryPoolMXBeanReadResourceHandler implements OperationStepHandler
         }
         final ModelNode store = result.get(PlatformMBeanConstants.OBJECT_NAME.getName());
         MemoryPoolMXBeanAttributeHandler.storeResult(PlatformMBeanConstants.OBJECT_NAME.getName(), store, memoryPoolMXBean, memPoolName);
-
-
-        context.stepCompleted();
     }
 }

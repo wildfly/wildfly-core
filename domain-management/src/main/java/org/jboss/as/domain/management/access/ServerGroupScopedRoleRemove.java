@@ -78,7 +78,5 @@ class ServerGroupScopedRoleRemove implements OperationStepHandler {
                 });
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 }

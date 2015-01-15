@@ -84,8 +84,6 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
             ParsedBootOp op = extensionAdds.get(i);
             context.addStep(op.response, op.operation, op.handler, OperationContext.Stage.MODEL, true);
         }
-
-        context.stepCompleted();
     }
 
     private OperationStepHandler getParallelExtensionInitializeStep() {
@@ -122,8 +120,6 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
                     long elapsed = System.currentTimeMillis() - start;
                     MGMT_OP_LOGGER.debugf("Initialized extensions in [%d] ms", elapsed);
                 }
-
-                context.stepCompleted();
             }
         };
     }

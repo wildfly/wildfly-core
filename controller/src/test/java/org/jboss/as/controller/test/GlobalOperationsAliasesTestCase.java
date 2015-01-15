@@ -116,8 +116,6 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter3", "thing3").set("squatter");
 
                 createModel(context, model);
-
-                context.stepCompleted();
             }
         }
         );
@@ -258,7 +256,6 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
             @Override
             public void execute(OperationContext context, ModelNode operation) {
                 context.getResult().set("Overridden by special read handler");
-                context.stepCompleted();
             }
         });
 

@@ -114,7 +114,6 @@ public class ProfileDescribeHandler implements OperationStepHandler {
                     }
                     context.getResult().set(result);
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
@@ -152,7 +151,6 @@ public class ProfileDescribeHandler implements OperationStepHandler {
                                 }
                             }
                         }
-                        context.stepCompleted();
                     }
                 }, OperationContext.Stage.MODEL, true);
 
@@ -176,7 +174,5 @@ public class ProfileDescribeHandler implements OperationStepHandler {
                 context.addStep(includeRsp, newOp, INSTANCE, OperationContext.Stage.MODEL, true);
             }
         }
-
-        context.stepCompleted();
     }
 }

@@ -214,7 +214,6 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
             } else if (equals(name, HOST_NAME)) {
                 set(result, environment.getHostName());
             }
-            context.stepCompleted();
         }
 
         private void set(final ModelNode node, final int value) {

@@ -55,7 +55,5 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
 
         DeploymentHandlerUtil.undeploy(context, managementName, deploymentUnitName, vaultReader);
         DeploymentUtils.disableAttribute(model);
-
-        context.stepCompleted();
     }
 }

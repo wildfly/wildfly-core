@@ -741,6 +741,10 @@ abstract class AbstractOperationContext implements OperationContext {
                 ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(step.handler.getClass());
                 try {
                     step.handler.execute(this, step.operation);
+                    if (step.resultHandler == null) {
+                        // Add a default one
+                        completeStep(ResultHandler.NOOP_RESULT_HANDLER);
+                    }
                     // AS7-6046
                     if (isErrorLoggingNecessary() && step.hasFailed()) {
                         MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
@@ -776,7 +780,7 @@ abstract class AbstractOperationContext implements OperationContext {
                                 step.response.get(FAILURE_DESCRIPTION));
                     }
 
-                    stepCompleted();
+                    completeStep(ResultHandler.NOOP_RESULT_HANDLER);
                 } else {
                     // Handler threw OCE after calling completeStep()
                     // Throw it on and let standard error handling deal with it

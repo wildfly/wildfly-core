@@ -71,7 +71,5 @@ public class SecureOperationReadHandler implements OperationStepHandler {
             // Programming error
             throw new IllegalStateException();
         }
-
-        context.stepCompleted();
     }
 }

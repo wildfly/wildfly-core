@@ -69,8 +69,6 @@ public class IsCallerInRoleOperation implements OperationStepHandler {
             Set<String> operationHeaderRoles = RunAsRoleMapper.getOperationHeaderRoles(operation);
             result.set(isCallerInRole(roleName, context.getCaller(), context.getCallEnvironment(), operationHeaderRoles));
         }
-
-        context.stepCompleted();
     }
 
     private boolean isCallerInRole(String roleName, Caller caller, Environment callEnvironment, Set<String> operationHeaderRoles) {

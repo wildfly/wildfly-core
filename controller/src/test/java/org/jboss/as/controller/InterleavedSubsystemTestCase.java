@@ -181,8 +181,6 @@ public class InterleavedSubsystemTestCase {
                     ReloadRequiredRemoveStepHandler.INSTANCE
             );
             rootRegistration.registerSubModel(subsystemResource);
-
-            context.stepCompleted();
         }
     }
 

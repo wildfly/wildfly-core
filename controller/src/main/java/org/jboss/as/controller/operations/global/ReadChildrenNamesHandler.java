@@ -106,7 +106,5 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
         if (fd != null) {
             context.getResponseHeaders().get(ACCESS_CONTROL).set(fd.toModelNode());
         }
-
-        context.stepCompleted();
     }
 }

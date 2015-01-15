@@ -93,6 +93,5 @@ public class ReadChildrenTypesHandler implements OperationStepHandler {
         for(String child : children) {
            result.add(child);
         }
-        context.stepCompleted();
     }
 }

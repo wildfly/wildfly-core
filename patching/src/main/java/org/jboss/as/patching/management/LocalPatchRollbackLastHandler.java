@@ -80,7 +80,6 @@ public class LocalPatchRollbackLastHandler implements OperationStepHandler {
             final ModelNode failureDescription = context.getFailureDescription();
             PatchOperationTarget.formatFailedResponse(e, failureDescription);
             installationManager.clearRestartRequired();
-            context.stepCompleted();
         } finally {
             //
         }

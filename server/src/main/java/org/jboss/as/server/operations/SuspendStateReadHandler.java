@@ -46,7 +46,6 @@ public class SuspendStateReadHandler implements OperationStepHandler {
         if(sc != null) {
             context.getResult().set(sc.getValue().getState().name());
         }
-        context.stepCompleted();
     }
 
 

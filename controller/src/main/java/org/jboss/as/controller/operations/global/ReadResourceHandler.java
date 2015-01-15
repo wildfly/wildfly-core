@@ -174,13 +174,11 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
                 filteredData.addAccessRestrictedResource(pa);
                 context.getResult().set(new ModelNode());
-                context.stepCompleted();
             } catch (UnauthorizedException ue) {
                 // Just report the failure to the filter and complete normally
                 PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
                 filteredData.addReadRestrictedResource(pa);
                 context.getResult().set(new ModelNode());
-                context.stepCompleted();
             }
         }
     }
@@ -357,8 +355,6 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 }
             }
         }
-
-        context.stepCompleted();
     }
 
     private boolean isSingletonResource(final ImmutableManagementResourceRegistration registry, final String key) {
@@ -550,8 +546,6 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
                 }
             }
-
-            context.stepCompleted();
         }
     }
 }

@@ -547,7 +547,6 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.getResult().set(TYPE_STANDALONE);
-                context.stepCompleted();
             }
         }, AttributeAccess.Storage.RUNTIME);
 

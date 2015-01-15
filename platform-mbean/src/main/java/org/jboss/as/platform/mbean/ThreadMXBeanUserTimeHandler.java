@@ -67,7 +67,5 @@ public class ThreadMXBeanUserTimeHandler implements OperationStepHandler {
         } catch (UnsupportedOperationException e) {
             throw new OperationFailedException(e.toString());
         }
-
-        context.stepCompleted();
     }
 }

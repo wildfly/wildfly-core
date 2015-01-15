@@ -84,11 +84,8 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 if(timeout!= 0) {
                     serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout > 0 ? timeout * 1000 : timeout);
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.RUNTIME);
-
-        context.stepCompleted();
     }
 
     static OperationDefinition getOperationDefinition() {

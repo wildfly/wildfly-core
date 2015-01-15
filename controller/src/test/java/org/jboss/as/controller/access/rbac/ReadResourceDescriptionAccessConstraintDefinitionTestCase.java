@@ -282,7 +282,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
             resourceRegistration.registerOperationHandler(CUSTOM_OPERATION, new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    context.stepCompleted();
+                    // no-op
                 }
             });
         }

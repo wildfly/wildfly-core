@@ -44,7 +44,5 @@ public class ReadResourceNameOperationStepHandler implements OperationStepHandle
         final String name = context.getCurrentAddressValue();
 
         context.getResult().set(name);
-
-        context.stepCompleted();
     }
 }
