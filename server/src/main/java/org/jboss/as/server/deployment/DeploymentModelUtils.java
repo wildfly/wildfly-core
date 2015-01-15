@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -102,7 +103,9 @@ public class DeploymentModelUtils {
             } else {
                 Resource toRegister = desired;
                 if(toRegister == null){
-                    toRegister = Resource.Factory.create();
+                    toRegister = Resource.Factory.create(true);
+                }else if (!toRegister.isRuntime()){
+                    throw ControllerLogger.ROOT_LOGGER.deploymentResourceMustBeRuntimeOnly();
                 }
                 parent.registerChild(element, toRegister);
                 return toRegister;

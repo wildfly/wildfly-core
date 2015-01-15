@@ -767,14 +767,6 @@ public class ExtensionRegistry {
             return deployments.getAccessConstraints();
         }
 
-        @SuppressWarnings("deprecation")
-        @Override
-        public ManagementResourceRegistration registerSubModel(PathElement address, DescriptionProvider descriptionProvider) {
-            ManagementResourceRegistration depl = deployments.registerSubModel(address, descriptionProvider);
-            ManagementResourceRegistration subdepl = subdeployments.registerSubModel(address, descriptionProvider);
-            return new DeploymentManagementResourceRegistration(depl, subdepl);
-        }
-
         @Override
         public ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition) {
             ManagementResourceRegistration depl = deployments.registerSubModel(resourceDefinition);

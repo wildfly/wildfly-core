@@ -1039,11 +1039,6 @@ final class SubsystemTestDelegate {
         }
 
         @Override
-        public ManagementResourceRegistration registerSubModel(PathElement address, DescriptionProvider descriptionProvider) {
-            return MOCK_RESOURCE_REG;
-        }
-
-        @Override
         public ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition) {
             return MOCK_RESOURCE_REG;
         }
