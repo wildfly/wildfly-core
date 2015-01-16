@@ -21,16 +21,6 @@
  */
 package org.jboss.as.patching.tests;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.List;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
-
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.installation.PatchableTarget;
@@ -46,10 +36,20 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
+
+import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
 
 /**
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
@@ -71,10 +71,10 @@ public class PatchModuleInvalidationWithRenamingFailureTestCase extends Abstract
     @Test
     @BMRule(name = "Test renaming failure",
             targetClass = "java.io.File",
-            targetMethod = "isInvalid",
-            targetLocation = "AT EXIT",
-            condition = "\"SimpleResource.jar.patched\".equals($0.getName())",
-            action = "return true"
+            targetMethod = "renameTo",
+            targetLocation = "AT ENTRY",
+            condition = "\"SimpleResource.jar.patched\".equals($1.getName())",
+            action = "return false"
     )
     public void test() throws Exception {
         final PatchingTestBuilder test = createDefaultBuilder();
