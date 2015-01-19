@@ -40,6 +40,7 @@ import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingProfileDeploymentProcessor;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
+import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
@@ -52,10 +53,12 @@ import org.jboss.logmanager.config.LogContextConfiguration;
 class LoggingSubsystemAdd extends AbstractAddStepHandler {
 
     private final PathManager pathManager;
+    private final WildFlyLogContextSelector contextSelector;
 
-    LoggingSubsystemAdd(final PathManager pathManager) {
+    LoggingSubsystemAdd(final PathManager pathManager, final WildFlyLogContextSelector contextSelector) {
         super(LoggingResourceDefinition.ATTRIBUTES);
         this.pathManager = pathManager;
+        this.contextSelector = contextSelector;
     }
 
     @Override
@@ -79,8 +82,8 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
                     processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_LOGGING, new LoggingDependencyDeploymentProcessor());
                 }
                 processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.POST_MODULE, Phase.POST_MODULE_LOGGING_CONFIG,
-                        new LoggingConfigDeploymentProcessor(LoggingExtension.CONTEXT_SELECTOR, LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG.getName(), useLoggingConfig));
-                processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.POST_MODULE, Phase.POST_MODULE_LOGGING_PROFILE, new LoggingProfileDeploymentProcessor(LoggingExtension.CONTEXT_SELECTOR));
+                        new LoggingConfigDeploymentProcessor(contextSelector, LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG.getName(), useLoggingConfig));
+                processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.POST_MODULE, Phase.POST_MODULE_LOGGING_PROFILE, new LoggingProfileDeploymentProcessor(contextSelector));
             }
         }, Stage.RUNTIME);
 
