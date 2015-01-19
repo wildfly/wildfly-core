@@ -71,7 +71,9 @@ public class LoggingExtension implements Extension {
 
     static final PathElement LOGGING_PROFILE_PATH = PathElement.pathElement(CommonAttributes.LOGGING_PROFILE);
 
-    static final WildFlyLogContextSelector CONTEXT_SELECTOR = WildFlyLogContextSelector.Factory.create();
+    /** @deprecated only present for use by an integration test hack */
+    @Deprecated
+    static WildFlyLogContextSelector CONTEXT_SELECTOR = WildFlyLogContextSelector.Factory.create();
 
     static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
@@ -137,6 +139,7 @@ public class LoggingExtension implements Extension {
         };
     }
 
+
     @Override
     public void initialize(final ExtensionContext context) {
         // The logging subsystem requires JBoss Log Manager to be used
@@ -144,7 +147,11 @@ public class LoggingExtension implements Extension {
         if (!java.util.logging.LogManager.getLogManager().getClass().getName().equals(org.jboss.logmanager.LogManager.class.getName())) {
             throw LoggingLogger.ROOT_LOGGER.extensionNotInitialized();
         }
-        LogContext.setLogContextSelector(CONTEXT_SELECTOR);
+        final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.Factory.create();
+        LogContext.setLogContextSelector(contextSelector);
+        // Support a testsuite hack
+        CONTEXT_SELECTOR = contextSelector;
+
         // Install STDIO context selector
         StdioContext.setStdioContextSelector(new LogContextStdioContextSelector(StdioContext.getStdioContext()));
 
@@ -153,7 +160,7 @@ public class LoggingExtension implements Extension {
             final ModuleLoader moduleLoader = Module.forClass(LoggingExtension.class).getModuleLoader();
             for (ModuleIdentifier moduleIdentifier : LOGGING_API_MODULES) {
                 try {
-                    CONTEXT_SELECTOR.addLogApiClassLoader(moduleLoader.loadModule(moduleIdentifier).getClassLoader());
+                    contextSelector.addLogApiClassLoader(moduleLoader.loadModule(moduleIdentifier).getClassLoader());
                 } catch (Throwable ignore) {
                     // ignore
                 }
@@ -170,7 +177,7 @@ public class LoggingExtension implements Extension {
         if (context.getProcessType().isServer()) {
             pathManager = context.getPathManager();
         }
-        final LoggingResourceDefinition rootResource = new LoggingResourceDefinition(pathManager);
+        final LoggingResourceDefinition rootResource = new LoggingResourceDefinition(pathManager, contextSelector);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(rootResource);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, DESCRIBE_HANDLER);
         // Register root sub-models
