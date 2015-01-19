@@ -139,6 +139,9 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     }
 
     private void startServerIfRequired() {
+        if (Boolean.getBoolean("wildfly.testrunner.force-manual-server-server-control") && automaticServerControl){
+            throw new RuntimeException("Test runner configuration requires @ServerControl(manual=true)");
+        }
         if (automaticServerControl) {
             controller.start();
         }

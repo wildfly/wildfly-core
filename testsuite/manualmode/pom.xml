@@ -116,6 +116,7 @@
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <jboss.home>${wildfly.home}</jboss.home>
                                 <module.path>${wildfly.home}/modules/</module.path>
+                                <wildfly.testrunner.force-manual-server-server-control>true</wildfly.testrunner.force-manual-server-server-control>
                                 <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                                 <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                                 <javax.net.ssl.trustStore>${basedir}/src/test/resources/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
