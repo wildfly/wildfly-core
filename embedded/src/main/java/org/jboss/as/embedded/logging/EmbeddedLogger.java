@@ -183,4 +183,10 @@ public interface EmbeddedLogger extends BasicLogger {
 
     @Message(id = 22, value = "Cannot invoke '%s' on standalone server")
     IllegalStateException cannotInvokeStandaloneServer(@Cause Throwable cause, String methodName);
+
+    @Message(id = 23, value = "The embedded server is stopping and invocations on the ModelControllerClient are not available")
+    IllegalStateException processIsStopping();
+
+    @Message(id = 24, value = "The embedded server is reloading and invocations on the ModelControllerClient are not yet available")
+    IllegalStateException processIsReloading();
 }

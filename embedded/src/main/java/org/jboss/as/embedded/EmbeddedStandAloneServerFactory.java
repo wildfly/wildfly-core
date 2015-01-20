@@ -22,6 +22,8 @@
 
 package org.jboss.as.embedded;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -37,15 +39,20 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentPlan;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanResult;
@@ -112,10 +119,22 @@ public class EmbeddedStandAloneServerFactory {
 
         StandaloneServer standaloneServer = new StandaloneServer() {
 
+            private final PropertyChangeListener processStateListener = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if ("currentState".equals(evt.getPropertyName())) {
+                        ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
+                        establishModelControllerClient(newState);
+                    }
+                }
+            };
             private ServiceContainer serviceContainer;
             private ServerDeploymentManager serverDeploymentManager;
             private Context context;
+            private ControlledProcessState.State currentProcessState;
             private ModelControllerClient modelControllerClient;
+            private ExecutorService executorService;
+            private ControlledProcessStateService controlledProcessStateService;
 
             @Override
             public void deploy(File file) throws IOException, ExecutionException, InterruptedException {
@@ -146,8 +165,13 @@ public class EmbeddedStandAloneServerFactory {
             }
 
             @Override
-            public ModelControllerClient getModelControllerClient() {
-                return modelControllerClient;
+            public synchronized ModelControllerClient getModelControllerClient() {
+                return modelControllerClient == null ? null : new DelegatingModelControllerClient(new DelegatingModelControllerClient.DelegateProvider() {
+                    @Override
+                    public ModelControllerClient getDelegate() {
+                        return getActiveModelControllerClient();
+                    }
+                });
             }
 
             @Override
@@ -189,11 +213,13 @@ public class EmbeddedStandAloneServerFactory {
 
                     serviceContainer = future.get();
 
+                    executorService = Executors.newCachedThreadPool();
+
                     @SuppressWarnings("unchecked")
-                    final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getRequiredService(Services.JBOSS_SERVER_CONTROLLER);
-                    final ModelController controller = controllerService.getValue();
-                    serverDeploymentManager = new ModelControllerServerDeploymentManager(controller);
-                    modelControllerClient = controller.createClient(Executors.newCachedThreadPool());
+                    final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
+                    controlledProcessStateService = processStateServiceValue.getValue();
+                    controlledProcessStateService.addPropertyChangeListener(processStateListener);
+                    establishModelControllerClient(controlledProcessStateService.getCurrentState());
 
                     context = new InitialContext();
                 } catch (RuntimeException rte) {
@@ -223,6 +249,29 @@ public class EmbeddedStandAloneServerFactory {
                         serviceContainer.awaitTermination();
                     } catch (RuntimeException rte) {
                         throw rte;
+                    } catch (InterruptedException ite) {
+                        ite.printStackTrace();
+                        Thread.currentThread().interrupt();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                if (controlledProcessStateService != null) {
+                    controlledProcessStateService.removePropertyChangeListener(processStateListener);
+                    controlledProcessStateService = null;
+                }
+                if (executorService != null) {
+                    try {
+                        executorService.shutdown();
+
+                        // 10 secs is arbitrary, but if the service container is terminated,
+                        // no good can happen from waiting for ModelControllerClient requests to complete
+                        executorService.awaitTermination(10, TimeUnit.SECONDS);
+                    } catch (RuntimeException rte) {
+                        throw rte;
+                    } catch (InterruptedException ite) {
+                        ite.printStackTrace();
+                        Thread.currentThread().interrupt();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -239,6 +288,43 @@ public class EmbeddedStandAloneServerFactory {
             @Override
             public ServiceController<?> getService(ServiceName serviceName) {
                 return serviceContainer != null ? serviceContainer.getService(serviceName) : null;
+            }
+
+            private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
+                ModelControllerClient newClient = null;
+                if (state != ControlledProcessState.State.STOPPING && serviceContainer != null) {
+                    @SuppressWarnings("unchecked")
+                    final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getService(Services.JBOSS_SERVER_CONTROLLER);
+                    if (controllerService != null) {
+                        final ModelController controller = controllerService.getValue();
+                        serverDeploymentManager = new ModelControllerServerDeploymentManager(controller);
+                        newClient = controller.createClient(executorService);
+                    } // else TODO use some sort of timeout and poll. A non-stopping server should install a ModelController very quickly
+                }
+                modelControllerClient = newClient;
+                currentProcessState = state;
+            }
+
+            private synchronized ModelControllerClient getActiveModelControllerClient() {
+                switch (currentProcessState) {
+                    case STOPPING: {
+                        throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
+                    }
+                    case STARTING: {
+                        if (modelControllerClient == null) {
+                            // Service wasn't available when we got the ControlledProcessState
+                            // state change notification; try again
+                            establishModelControllerClient(currentProcessState);
+                            if (modelControllerClient == null) {
+                                throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
+                            }
+                        }
+                        // fall through
+                    }
+                    default: {
+                        return modelControllerClient;
+                    }
+                }
             }
         };
         return standaloneServer;
