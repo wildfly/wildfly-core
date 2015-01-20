@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandRegistry;
-import org.jboss.as.embedded.StandaloneServer;
 
 /**
  * Registers handlers for the embedded ops if the CLI is running in an embedded environment.

@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
-import org.jboss.as.embedded.StandaloneServer;
 
 /**
  * Handler for the "stop-embedded-server" command.
