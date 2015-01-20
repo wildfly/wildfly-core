@@ -22,7 +22,9 @@
 
 package org.jboss.as.cli.embedded;
 
+import java.io.File;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,6 +45,7 @@ import org.jboss.as.embedded.ServerStartException;
 import org.jboss.as.embedded.StandaloneServer;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.LogContextSelector;
+import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
@@ -61,12 +64,20 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private final AtomicReference<EmbeddedServerLaunch> serverReference;
     private ArgumentWithValue jbossHome;
     private ArgumentWithValue stdOutHandling;
+    private ArgumentWithValue adminOnly;
+    private ArgumentWithValue serverConfig;
+    private ArgumentWithValue dashC;
 
     static EmbedServerHandler create(AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
         result.stdOutHandling = new ArgumentWithValue(result, new SimpleTabCompleter(new String[]{ECHO, DISCARD_STDOUT}), "--std-out");
+        result.serverConfig = new ArgumentWithValue(result, "--server-config");
+        result.dashC = new ArgumentWithValue(result, "-c");
+        result.dashC.addCantAppearAfter(result.serverConfig);
+        result.serverConfig.addCantAppearAfter(result.dashC);
+        result.adminOnly = new ArgumentWithValue(result, SimpleTabCompleter.BOOLEAN, "--admin-only");
         return result;
     }
 
@@ -93,12 +104,19 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     protected void doHandle(CommandContext ctx) throws CommandLineException {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
-        EmbeddedContainerConfiguration configuration = new EmbeddedContainerConfiguration();
-        final String jbossHome = getJBossHome(parsedCmd);
-        configuration.setJbossHome(jbossHome);
-        configuration.validate();
-        final List<String> args = parsedCmd.getOtherProperties();
+        final File jbossHome = getJBossHome(parsedCmd);
+        String xml = serverConfig.getValue(parsedCmd);
+        if (xml == null) {
+            xml = dashC.getValue(parsedCmd);
+        }
+        boolean adminOnlySetting = true;
+        String adminProp = adminOnly.getValue(parsedCmd);
+        if (adminProp != null && "false".equalsIgnoreCase(adminProp)) {
+            adminOnlySetting = false;
+        }
 
+
+        final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
             if (args.size() != 1) {
                 throw new CommandFormatException("The command expects only one argument but got " + args);
@@ -124,7 +142,16 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 }
             });
 
-            StandaloneServer server = EmbeddedServerFactory.create(configuration.getJbossHome(), configuration.getModulePath(), null);
+            List<String> cmdsList = new ArrayList<>();
+            if (xml != null && xml.trim().length() > 0) {
+                cmdsList.add("--server-config=" + xml.trim());
+            }
+            if (adminOnlySetting) {
+                cmdsList.add("--admin-only");
+            }
+            String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
+
+            StandaloneServer server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             server.start();
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
             ctx.bindClient(server.getModelControllerClient());
@@ -142,14 +169,27 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         }
     }
 
-    private String getJBossHome(final ParsedCommandLine parsedCmd) throws CommandLineException {
+    private File getJBossHome(final ParsedCommandLine parsedCmd) throws CommandLineException {
         String jbossHome = this.jbossHome.getValue(parsedCmd);
-        if (jbossHome == null) {
+        if (jbossHome == null || jbossHome.length() == 0) {
             jbossHome = WildFlySecurityManager.getEnvPropertyPrivileged("JBOSS_HOME", null);
-            if (jbossHome == null) {
+            if (jbossHome == null || jbossHome.length() == 0) {
                 throw new CommandLineException("Missing configuration value for --jboss-home and environment variable JBOSS_HOME is not set");
             }
+            return validateJBossHome(jbossHome, "environment variable JBOSS_HOME");
+        } else {
+            return validateJBossHome(jbossHome, "argument --jboss-home");
         }
-        return jbossHome;
+    }
+
+    private static File validateJBossHome(String jbossHome, String source) throws CommandLineException {
+
+        File f = new File(jbossHome);
+        if (!f.exists()) {
+            throw new CommandLineException(String.format("File %s specified by %s does not exist", jbossHome, source));
+        } else if (!f.isDirectory()) {
+            throw new CommandLineException(String.format("File %s specified by %s is not a directory", jbossHome, source));
+        }
+        return f;
     }
 }

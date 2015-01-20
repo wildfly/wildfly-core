@@ -99,8 +99,12 @@ public class EmbeddedServerFactory {
     }
 
     public static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir) {
+        return create(moduleLoader, jbossHomeDir, new String[0]);
+    }
+
+    public static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdArgs) {
         String bundlePath = jbossHomeDir.getAbsolutePath() + File.separator + "bundles";
-        return create(moduleLoader, jbossHomeDir, bundlePath, new String[0]);
+        return create(moduleLoader, jbossHomeDir, bundlePath, cmdArgs);
     }
 
     private static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir, String bundlePath, String[] cmdargs) {
