@@ -63,8 +63,33 @@
             <artifactId>log4j</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-deployment-scanner</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.syslog4j</groupId>
             <artifactId>syslog4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-submit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-install</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-bmunit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -121,9 +146,11 @@
                             <!-- Parameters to test cases. -->
                             <systemPropertyVariables combine.children="append">
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                                <byteman.server.ipaddress>${node0}</byteman.server.ipaddress>
+                                <byteman.server.port>9091</byteman.server.port>
                                 <jboss.home>${wildfly.home}</jboss.home>
                                 <module.path>${wildfly.home}/modules/</module.path>
-                                <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
+                                <jvm.args>-javaagent:${org.jboss.byteman:byteman:jar}=port:9091,boot:${org.jboss.byteman:byteman:jar},sys:${org.wildfly.core:wildfly-core-testsuite-shared:jar} -Dorg.jboss.byteman.transform.all -Dorg.jboss.byteman.verbose=true -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                                 <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                                 <javax.net.ssl.trustStore>${basedir}/src/test/resources/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
                                 <javax.net.ssl.keyStore>${basedir}/src/test/resources/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
@@ -131,7 +158,17 @@
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
                             </systemPropertyVariables>
                         </configuration>
-
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>properties</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
 
                     <plugin>

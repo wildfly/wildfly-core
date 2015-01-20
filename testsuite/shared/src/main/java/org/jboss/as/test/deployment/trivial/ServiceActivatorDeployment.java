@@ -76,8 +76,6 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         } else {
             properties.setProperty(DEFAULT_SYS_PROP_NAME, DEFAULT_SYS_PROP_VALUE);
         }
-
-
         for (String name : properties.stringPropertyNames()) {
             System.setProperty(name, properties.getProperty(name));
         }

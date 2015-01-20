@@ -1,5 +1,23 @@
-/**
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2015, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
  *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.as.server.deployment.scanner;
 
@@ -46,6 +64,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -1700,6 +1721,43 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertThat(ts.controller.deployed.keySet(), hasItems("foo.war"));
     }
 
+    @Test
+    public void testUncleanShutdown() throws Exception {
+        File deployment = new File(tmpDir, "foo.war");
+        final File deployed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYED);
+        final File failed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.FAILED_DEPLOY);
+        final File deploying = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYING);
+        final DiscardTaskExecutor myWaitingExecutor = new DiscardTaskExecutor(true) {
+            @Override
+            public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+                return new WaitingFuture<T>(50000, tCallable);
+            }
+        };
+        MockServerController sc = new MockServerController(myWaitingExecutor);
+        final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc);
+        final DiscardTaskExecutor myExecutor = new DiscardTaskExecutor(true);
+        final TesteeSet ts = createTestee(sc, myExecutor, ops);
+        ts.testee.setAutoDeployZippedContent(true);
+        sc.addCompositeSuccessResponse(1);
+        testSupport.createZip(deployment, 0, false, false, true, true);
+        Future<Boolean> lockDone = Executors.newSingleThreadExecutor().submit(new Callable<Boolean>() {
+             @Override
+            public Boolean call() throws Exception {
+                 try {
+                     while (!ops.ready) {//Waiting for deployment to start.
+                         Thread.sleep(100);
+                     }
+                     ts.testee.stopScanner();
+                     return true;
+                 } catch (InterruptedException ex) {
+                     throw new RuntimeException(ex);
+                 }
+            }
+        });
+        ts.testee.setScanInterval(10000);
+        lockDone.get(60000, TimeUnit.MILLISECONDS);
+    }
+
     /**
     * WFCORE-210
     */
@@ -1763,10 +1821,15 @@ public class FileSystemDeploymentServiceUnitTestCase {
     }
 
     private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor) throws OperationFailedException {
+        return createTestee(sc, executor, new DefaultDeploymentOperations(sc));
+    }
+
+    private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor, DeploymentOperations ops) throws OperationFailedException {
         final FileSystemDeploymentService testee = new FileSystemDeploymentService(null, tmpDir, null, sc, executor, null);
-        testee.startScanner(new DefaultDeploymentOperations(sc));
+        testee.startScanner(ops);
         return new TesteeSet(testee, sc);
     }
+
 
     private File createFile(String fileName) throws IOException {
         return createFile(tmpDir, fileName);
@@ -1890,7 +1953,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
         @Override
         public void close() throws IOException {
-            throw new UnsupportedOperationException();
+            executorService.shutdown();
         }
 
         @Override
@@ -2106,8 +2169,14 @@ public class FileSystemDeploymentServiceUnitTestCase {
     private static class DiscardTaskExecutor extends ScheduledThreadPoolExecutor {
 
         private final List<Runnable> tasks = new ArrayList<Runnable>();
+        private final boolean allowRejection;
         private DiscardTaskExecutor() {
+            this(false);
+        }
+
+        private DiscardTaskExecutor(boolean mayShutdown ) {
             super(0);
+            this.allowRejection = mayShutdown;
         }
 
         @Override
@@ -2118,6 +2187,9 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
         @Override
         public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+            if (allowRejection && (isShutdown() || isTerminating())) {
+                throw new RejectedExecutionException("DiscardTaskExecutor has shutdown we can't run " + tCallable);
+            }
             return new CallOnGetFuture<T>(tCallable);
         }
 
@@ -2163,12 +2235,12 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Status await() throws InterruptedException {
+        public AsyncFuture.Status await() throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Status await(long timeout, TimeUnit unit) throws InterruptedException {
+        public AsyncFuture.Status await(long timeout, TimeUnit unit) throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
@@ -2183,22 +2255,22 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Status awaitUninterruptibly() {
+        public AsyncFuture.Status awaitUninterruptibly() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Status awaitUninterruptibly(long timeout, TimeUnit unit) {
+        public AsyncFuture.Status awaitUninterruptibly(long timeout, TimeUnit unit) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Status getStatus() {
+        public AsyncFuture.Status getStatus() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <A> void addListener(Listener<? super T, A> listener, A attachment) {
+        public <A> void addListener(AsyncFuture.Listener<? super T, A> listener, A attachment) {
             throw new UnsupportedOperationException();
         }
 
@@ -2221,6 +2293,51 @@ public class FileSystemDeploymentServiceUnitTestCase {
             assertEquals( "Should use the configured timeout", expectedTimeout, l);
             throw new TimeoutException();
         }
+    }
+
+    private static class WaitingFuture<T> extends CallOnGetFuture<T> {
+        private final long duration;
+        private WaitingFuture(long duration, Callable<T> callable) {
+            super(callable);
+            this.duration = duration;
+        }
+
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            Thread.sleep(duration);
+            return super.get();
+        }
+    }
+
+    private static class BlockingDeploymentOperations implements DeploymentOperations {
+        private volatile boolean ready = false;
+        private final DefaultDeploymentOperations delegate;
+
+        BlockingDeploymentOperations(final ModelControllerClient controllerClient) {
+            delegate = new DefaultDeploymentOperations(controllerClient);
+        }
+
+        @Override
+        public Future<ModelNode> deploy(final ModelNode operation, ScheduledExecutorService scheduledExecutor) {
+            ready = true;
+            return delegate.deploy(operation, null);
+        }
+
+        @Override
+        public Map<String, Boolean> getDeploymentsStatus() {
+            return delegate.getDeploymentsStatus();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        @Override
+        public Set<String> getPersistentDeployments() {
+            return delegate.getPersistentDeployments();
+        }
+
     }
 
     private static byte[] randomHash() {
