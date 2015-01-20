@@ -304,6 +304,7 @@ public class ExtensionRegistry {
             transformerRegistry = TransformerRegistry.Factory.create();
             extensions.clear();
             reverseMap.clear();
+            subsystemsInfo.clear();
         }
     }
 

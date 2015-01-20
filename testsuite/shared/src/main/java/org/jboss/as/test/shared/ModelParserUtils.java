@@ -293,8 +293,9 @@ public class ModelParserUtils {
 
     //TODO use HostInitializer & TestModelControllerService
     private static ModelNode loadHostModel(final ServiceContainer serviceContainer, final File file) throws Exception {
+        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null);
         final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "host");
-        final HostXml parser = new HostXml("host-controller", RunningMode.NORMAL, false);
+        final HostXml parser = new HostXml("host-controller", RunningMode.NORMAL, false, Module.getBootModuleLoader(), null, extensionRegistry);
         final XmlConfigurationPersister persister = new XmlConfigurationPersister(file, rootElement, parser, parser);
         for (Namespace namespace : Namespace.domainValues()) {
             if (namespace != Namespace.CURRENT) {

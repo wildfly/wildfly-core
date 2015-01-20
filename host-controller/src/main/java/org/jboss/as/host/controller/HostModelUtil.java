@@ -106,6 +106,7 @@ public class HostModelUtil {
                                           final HostFileRepository remoteFileRepository,
                                           final ContentRepository contentRepository,
                                           final DomainController domainController,
+                                          final ExtensionRegistry hostExtensionRegistry,
                                           final ExtensionRegistry extensionRegistry,
                                           final AbstractVaultReader vaultReader,
                                           final IgnoredDomainResourceRegistry ignoredRegistry,
@@ -119,7 +120,7 @@ public class HostModelUtil {
                 new HostResourceDefinition(hostName, configurationPersister,
                         environment, runningModeControl, localFileRepository,
                         hostControllerInfo, serverInventory, remoteFileRepository,
-                        contentRepository, domainController, extensionRegistry,
+                        contentRepository, domainController, hostExtensionRegistry,
                         vaultReader, ignoredRegistry, processState, pathManager, authorizer, auditLogger, bootErrorCollector));
 
         //TODO See if some of all these parameters can come from domain controller
