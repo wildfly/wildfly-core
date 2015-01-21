@@ -347,7 +347,9 @@ public class DomainTestSupport {
         return domainSlaveLifecycleUtil;
     }
 
-    public DomainControllerClientConfig getSharedClientConfiguration() { return sharedClientConfig; }
+    public DomainControllerClientConfig getSharedClientConfiguration() {
+        return sharedClientConfig;
+    }
 
     public void start() {
         domainMasterLifecycleUtil.start();
