@@ -220,8 +220,26 @@ public class ExtensionRegistry {
      * @param isMasterDomainController set to {@code true} if we are the master domain controller, in which case transformers get registered
      *
      * @return  the {@link ExtensionContext}.  Will not return {@code null}
+     *
+     * @deprecated use {@link #getExtensionContext(String, ManagementResourceRegistration, ExtensionRegistryType)}. Main code should be using this, but this is left behind in case any tests need to use this code.
      */
+    @Deprecated
     public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, boolean isMasterDomainController) {
+        ExtensionRegistryType type = isMasterDomainController ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
+        return getExtensionContext(moduleName, rootRegistration, type);
+    }
+
+    /**
+     * Gets an {@link ExtensionContext} for use when handling an {@code add} operation for
+     * a resource representing an {@link org.jboss.as.controller.Extension}.
+     *
+     * @param moduleName the name of the extension's module. Cannot be {@code null}
+     * @param rootRegistration the root management resource registration
+     * @param extensionRegistryType the type of registry we are working on, which has an effect on things like whether extensions get registered etc.
+     *
+     * @return  the {@link ExtensionContext}.  Will not return {@code null}
+     */
+    public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, ExtensionRegistryType extensionRegistryType) {
         // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
         // doesn't add the profile mrr even in HC-based tests
         ManagementResourceRegistration profileRegistration = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
@@ -233,7 +251,7 @@ public class ExtensionRegistry {
         // Hack to restrict extra data to specified extension(s)
         boolean allowSupplement = legallySupplemented.contains(moduleName);
         ManagedAuditLogger al = allowSupplement ? auditLogger : null;
-        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, isMasterDomainController, al);
+        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, extensionRegistryType, al);
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
@@ -401,11 +419,11 @@ public class ExtensionRegistry {
 
         private ExtensionContextImpl(String extensionName, ManagementResourceRegistration profileResourceRegistration,
                                      ManagementResourceRegistration deploymentsResourceRegistration, PathManager pathManager,
-                                     boolean registerTransformers, ManagedAuditLogger auditLogger) {
+                                     ExtensionRegistryType extensionRegistryType, ManagedAuditLogger auditLogger) {
             assert pathManager != null || !processType.isServer() : "pathManager is null";
             this.pathManager = pathManager;
             this.extension = getExtensionInfo(extensionName);
-            this.registerTransformers = registerTransformers;
+            this.registerTransformers = extensionRegistryType == ExtensionRegistryType.MASTER;
             this.auditLogger = auditLogger;
             this.allowSupplement = auditLogger != null;
             this.profileRegistration = profileResourceRegistration;

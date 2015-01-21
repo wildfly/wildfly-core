@@ -73,6 +73,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -243,7 +244,7 @@ final class SubsystemTestDelegate {
 
 
         Extension extension = mainExtension.getClass().newInstance();
-        extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, false));
+        extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
 
         ConfigurationPersister.PersistenceResource resource = persister.store(model, Collections.<PathAddress>emptySet());
         resource.commit();

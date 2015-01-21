@@ -51,6 +51,7 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResourceDefinition;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.InterfaceAddHandler;
@@ -78,8 +79,8 @@ import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.controller.transform.SubsystemDescriptionDump;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
 import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
 import org.jboss.as.domain.controller.operations.ApplyRemoteMasterDomainModelHandler;
@@ -339,7 +340,8 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
                 PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS), new RolloutPlanValidator(), DomainResolver.getResolver(ROLLOUT_PLANS), DomainResolver.getResolver(ROLLOUT_PLAN)));
 
         // Extensions
-        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, true, !isMaster, rootResourceRegistrationProvider));
+        ExtensionRegistryType registryType = isMaster ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
+        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, true, registryType, rootResourceRegistrationProvider));
 
 
         // Initialize the domain transformers

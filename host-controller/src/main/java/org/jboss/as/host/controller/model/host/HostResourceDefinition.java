@@ -40,6 +40,7 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResourceDefinition;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
@@ -333,7 +334,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         //Extensions
         hostRegistration.registerSubModel(new ExtensionResourceDefinition(hostExtensionRegistry, true,
-                false,
+                ExtensionRegistryType.HOST,
                 new MutableRootResourceRegistrationProvider() {
                     @Override
                     public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {

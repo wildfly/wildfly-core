@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionAddHandler;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -162,7 +163,7 @@ public class InterleavedSubsystemTestCase {
         private final ManagementResourceRegistration rootRegistration;
 
         private FakeExtensionAddHandler(ManagementResourceRegistration rootRegistration, MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
-            super(new ExtensionRegistry(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null), false, false, rootResourceRegistrationProvider);
+            super(new ExtensionRegistry(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null), false, ExtensionRegistryType.SERVER, rootResourceRegistrationProvider);
             this.rootRegistration = rootRegistration;
         }
 

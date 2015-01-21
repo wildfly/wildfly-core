@@ -72,6 +72,7 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -806,7 +807,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();
-        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", rootRegistration, false));
+        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", rootRegistration, ExtensionRegistryType.SLAVE));
 
         Resource coreManagementResource = Resource.Factory.create();
         rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, coreManagementResource);

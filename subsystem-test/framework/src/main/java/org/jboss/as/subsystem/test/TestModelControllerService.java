@@ -39,6 +39,7 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -126,7 +127,8 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
 
     @Override
     protected void preBoot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) {
-        mainExtension.initialize(extensionRegistry.getExtensionContext("Test", getRootRegistration(), registerTransformers));
+        mainExtension.initialize(extensionRegistry.getExtensionContext("Test", getRootRegistration(),
+                registerTransformers ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE));
     }
 
     protected void postBoot() {

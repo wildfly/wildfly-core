@@ -52,10 +52,10 @@ public class ExtensionResourceDefinition extends SimpleResourceDefinition {
     private final List<AccessConstraintDefinition> accessConstraints;
 
     public ExtensionResourceDefinition(final ExtensionRegistry extensionRegistry, final boolean parallelBoot,
-                                       final boolean isMasterDomainController, final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
+                                       final ExtensionRegistryType extensionRegistryType, final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         super(PathElement.pathElement(EXTENSION), ControllerResolver.getResolver(EXTENSION),
-                new ExtensionAddHandler(extensionRegistry, parallelBoot, isMasterDomainController, rootResourceRegistrationProvider),
-                new ExtensionRemoveHandler(extensionRegistry, isMasterDomainController, rootResourceRegistrationProvider),
+                new ExtensionAddHandler(extensionRegistry, parallelBoot, extensionRegistryType, rootResourceRegistrationProvider),
+                new ExtensionRemoveHandler(extensionRegistry, extensionRegistryType, rootResourceRegistrationProvider),
                 OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.EXTENSIONS.wrapAsList();
     }
