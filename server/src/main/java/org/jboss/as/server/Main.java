@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.logging.ServerLogger;
@@ -118,9 +119,10 @@ public final class Main {
     public static ServerEnvironment determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType) {
         final int argsLength = args.length;
         String serverConfig = null;
-        String initialServerConfig = null;
         RunningMode runningMode = RunningMode.NORMAL;
         ProductConfig productConfig;
+        ConfigurationFile.InteractionPolicy configInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
+        boolean removeConfig = false;
         for (int i = 0; i < argsLength; i++) {
             final String arg = args[i];
             try {
@@ -134,26 +136,40 @@ public final class Main {
                     return null;
                 } else if (CommandLineConstants.SERVER_CONFIG.equals(arg) || CommandLineConstants.SHORT_SERVER_CONFIG.equals(arg)
                         || CommandLineConstants.OLD_SERVER_CONFIG.equals(arg)) {
+                    assertSingleConfig(serverConfig);
                     serverConfig = args[++i];
                 } else if (arg.startsWith(CommandLineConstants.SERVER_CONFIG)) {
+                    assertSingleConfig(serverConfig);
                     serverConfig = parseValue(arg, CommandLineConstants.SERVER_CONFIG);
                     if (serverConfig == null) {
                         return null;
                     }
                 } else if (arg.startsWith(CommandLineConstants.SHORT_SERVER_CONFIG)) {
+                    assertSingleConfig(serverConfig);
                     serverConfig = parseValue(arg, CommandLineConstants.SHORT_SERVER_CONFIG);
                     if (serverConfig == null) {
                         return null;
                     }
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_SERVER_CONFIG)) {
-                    initialServerConfig = parseValue(arg, CommandLineConstants.READ_ONLY_SERVER_CONFIG);
-                    if (initialServerConfig == null) {
+                    assertSingleConfig(serverConfig);
+                    serverConfig = parseValue(arg, CommandLineConstants.READ_ONLY_SERVER_CONFIG);
+                    if (serverConfig == null) {
                         return null;
                     }
+                    configInteractionPolicy = ConfigurationFile.InteractionPolicy.READ_ONLY;
                 } else if (arg.startsWith(CommandLineConstants.OLD_SERVER_CONFIG)) {
                     serverConfig = parseValue(arg, CommandLineConstants.OLD_SERVER_CONFIG);
                     if (serverConfig == null) {
                         return null;
+                    }
+                } else if (arg.startsWith("--internal-empty-config")) {
+                    assert launchType == ServerEnvironment.LaunchType.EMBEDDED;
+                    configInteractionPolicy = removeConfig ? ConfigurationFile.InteractionPolicy.DISCARD : ConfigurationFile.InteractionPolicy.NEW;
+                } else if (arg.startsWith("--internal-remove-config")) {
+                    assert launchType == ServerEnvironment.LaunchType.EMBEDDED;
+                    removeConfig = true;
+                    if (configInteractionPolicy == ConfigurationFile.InteractionPolicy.NEW) {
+                        configInteractionPolicy = ConfigurationFile.InteractionPolicy.DISCARD;
                     }
                 } else if (CommandLineConstants.PROPERTIES.equals(arg) || CommandLineConstants.OLD_PROPERTIES.equals(arg)
                         || CommandLineConstants.SHORT_PROPERTIES.equals(arg)) {
@@ -257,12 +273,16 @@ public final class Main {
             }
         }
 
-        if (serverConfig != null && initialServerConfig != null) {
-            throw ServerLogger.ROOT_LOGGER.cannotHaveBothInitialServerConfigAndServerConfig();
-        }
         String hostControllerName = null; // No host controller unless in domain mode.
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
-        return new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment, serverConfig, initialServerConfig, launchType, runningMode, productConfig);
+        return new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment, serverConfig,
+                configInteractionPolicy, launchType, runningMode, productConfig);
+    }
+
+    private static void assertSingleConfig(String serverConfig) {
+        if (serverConfig != null) {
+            throw ServerLogger.ROOT_LOGGER.cannotHaveBothInitialServerConfigAndServerConfig();
+        }
     }
 
     private static String parseValue(final String arg, final String key) {

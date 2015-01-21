@@ -31,7 +31,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
@@ -309,11 +308,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final ProductConfig productConfig;
     private final RunningModeControl runningModeControl;
 
-    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig, final String initialServerConfig,
-                             final LaunchType launchType, final RunningMode initialRunningMode, ProductConfig productConfig) {
-        if (props == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("props");
-        }
+    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
+                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType, final RunningMode initialRunningMode, ProductConfig productConfig) {
+        assert props != null;
 
         this.launchType = launchType;
         this.standalone = launchType != LaunchType.DOMAIN;
@@ -388,13 +385,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         }
 
         String defaultServerConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-        String config = initialServerConfig == null ? serverConfig : initialServerConfig;
-        boolean persist = initialServerConfig == null;
-        serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, config, persist) : null;
+        serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, serverConfig, configInteractionPolicy) : null;
         // Adds a system property to indicate whether or not the server configuration should be persisted
         @SuppressWarnings("deprecation")
         final String propertyKey = JBOSS_PERSIST_SERVER_CONFIG;
-        WildFlySecurityManager.setPropertyPrivileged(propertyKey, Boolean.toString(persist));
+        WildFlySecurityManager.setPropertyPrivileged(propertyKey, Boolean.toString(configInteractionPolicy == null || !configInteractionPolicy.isReadOnly()));
 
         tmp = getFileFromProperty(SERVER_DATA_DIR, props);
         if (tmp == null) {
