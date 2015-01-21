@@ -56,6 +56,7 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
     private final QName rootElement;
     private final XMLElementReader<List<ModelNode>> rootParser;
     private final Map<QName, XMLElementReader<List<ModelNode>>> additionalParsers;
+    private final boolean suppressLoad;
 
     /**
      * Construct a new instance.
@@ -66,11 +67,25 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
      * @param rootDeparser the root model deparser
      */
     public XmlConfigurationPersister(final File fileName, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser, final XMLElementWriter<ModelMarshallingContext> rootDeparser) {
+        this(fileName, rootElement, rootParser, rootDeparser, false);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param fileName the configuration base file name
+     * @param rootElement the root element of the configuration file
+     * @param rootParser the root model parser
+     * @param rootDeparser the root model deparser
+     */
+    public XmlConfigurationPersister(final File fileName, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser,
+                                     final XMLElementWriter<ModelMarshallingContext> rootDeparser, final boolean suppressLoad) {
         super(rootDeparser);
         this.fileName = fileName;
         this.rootElement = rootElement;
         this.rootParser = rootParser;
-        additionalParsers = new HashMap<QName, XMLElementReader<List<ModelNode>>>();
+        this.additionalParsers = new HashMap<QName, XMLElementReader<List<ModelNode>>>();
+        this.suppressLoad = suppressLoad;
     }
 
     public void registerAdditionalRootElement(final QName anotherRoot, final XMLElementReader<List<ModelNode>> parser){
@@ -88,6 +103,10 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
     /** {@inheritDoc} */
     @Override
     public List<ModelNode> load() throws ConfigurationPersistenceException {
+        if (suppressLoad) {
+            return new ArrayList<>();
+        }
+
         final XMLMapper mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(rootElement, rootParser);
         synchronized (additionalParsers) {

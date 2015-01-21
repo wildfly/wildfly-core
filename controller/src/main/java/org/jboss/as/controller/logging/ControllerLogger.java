@@ -3308,4 +3308,11 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 387, value="Illegal path address '%s' , it is not in a correct CLI format")
     IllegalArgumentException illegalCLIStylePathAddress(String pathAddress);
+
+    @Message(id = 388, value = "Could not create empty configuration file %s")
+    IllegalStateException cannotCreateEmptyConfig(String absolutePath, @Cause IOException cause);
+
+    @Message(id = 389, value = "Could not create an empty configuration at file %s as there is an existing non-empty configuration there")
+    IllegalStateException rejectEmptyConfig(String absolutePath);
+
 }

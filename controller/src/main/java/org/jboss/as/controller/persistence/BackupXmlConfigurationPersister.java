@@ -42,6 +42,7 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
 
     ConfigurationFile configurationFile;
     private final AtomicBoolean successfulBoot = new AtomicBoolean();
+
     /**
      * Construct a new instance.
      *
@@ -51,7 +52,21 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
      * @param rootDeparser the root model deparser
      */
     public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser, final XMLElementWriter<ModelMarshallingContext> rootDeparser) {
-        super(file.getBootFile(), rootElement, rootParser, rootDeparser);
+        this(file, rootElement, rootParser, rootDeparser, false);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param file the configuration base file
+     * @param rootElement the root element of the configuration file
+     * @param rootParser the root model parser
+     * @param rootDeparser the root model deparser
+     * @param suppressLoad if {@code true}, return an empty list from {@link #load()}
+     */
+    public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser,
+                                           final XMLElementWriter<ModelMarshallingContext> rootDeparser, boolean suppressLoad) {
+        super(file.getBootFile(), rootElement, rootParser, rootDeparser, suppressLoad);
         this.configurationFile = file;
     }
 

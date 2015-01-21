@@ -2,6 +2,7 @@ SYNOPSIS
 
    embed-server [--admin-only=true|false]
                 [-c=config_file || --server=config=config_file]
+                [--empty-config --remove-existing-config]
                 [--jboss-home=rootdir]
                 [--stdout=discard|echo]
 
@@ -22,6 +23,12 @@ ARGUMENTS
                      (default is "standalone.xml")
                      (Same as --server-config)
 
+ --empty-config    - Indicates the server should start with an empty
+                     configuration. If the specified server config
+                     file is not empty, an exception will be thrown
+                     and the server will not start, unless the
+                     --remove-existing option is also set
+
  --jboss-home      - Filesystem path pointing to the root directory
                      of the installation from which the CLI is
                      running and from which the embedded server
@@ -29,6 +36,10 @@ ARGUMENTS
                      environment variable JBOSS_HOME will be used.
                      Must be specified if the environment variable
                      JBOSS_HOME is not set.
+
+ --remove-existing - When the --empty-config option is used,
+                     indicates that any existing configuration
+                     file can be removed at server start
 
  --server-config   - Name of the server configuration file to use
                      (default is "standalone.xml")

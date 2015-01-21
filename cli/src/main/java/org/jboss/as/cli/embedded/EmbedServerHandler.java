@@ -40,6 +40,7 @@ import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.embedded.EmbeddedServerFactory;
@@ -71,6 +72,8 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithValue adminOnly;
     private ArgumentWithValue serverConfig;
     private ArgumentWithValue dashC;
+    private ArgumentWithoutValue emptyConfig;
+    private ArgumentWithoutValue removeExisting;
 
     static EmbedServerHandler create(AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
@@ -82,6 +85,9 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         result.dashC.addCantAppearAfter(result.serverConfig);
         result.serverConfig.addCantAppearAfter(result.dashC);
         result.adminOnly = new ArgumentWithValue(result, SimpleTabCompleter.BOOLEAN, "--admin-only");
+        result.emptyConfig = new ArgumentWithoutValue(result, "--empty-config");
+        result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
+        result.removeExisting.addRequiredPreceding(result.emptyConfig);
         return result;
     }
 
@@ -118,7 +124,8 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         if (adminProp != null && "false".equalsIgnoreCase(adminProp)) {
             adminOnlySetting = false;
         }
-
+        boolean startEmpty = emptyConfig.isPresent(parsedCmd);
+        boolean removeConfig = startEmpty && removeExisting.isPresent(parsedCmd);
 
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
@@ -157,6 +164,13 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             if (adminOnlySetting) {
                 cmdsList.add("--admin-only");
             }
+            if (startEmpty) {
+                cmdsList.add("--internal-empty-config");
+                if (removeConfig) {
+                    cmdsList.add("--internal-remove-config");
+                }
+            }
+
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
             StandaloneServer server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
