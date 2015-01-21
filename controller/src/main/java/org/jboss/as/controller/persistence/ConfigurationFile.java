@@ -448,10 +448,11 @@ public class ConfigurationFile {
     String snapshot() throws ConfigurationPersistenceException {
         String name = getTimeStamp(new Date()) + mainFile.getName();
         File snapshot = new File(snapshotsDirectory, name);
+        File source = persistOriginal ? mainFile : lastFile;
         try {
-            FilePersistenceUtils.copyFile(mainFile, snapshot);
+            FilePersistenceUtils.copyFile(source, snapshot);
         } catch (IOException e) {
-            throw ControllerLogger.ROOT_LOGGER.failedToTakeSnapshot(e, mainFile, snapshot);
+            throw ControllerLogger.ROOT_LOGGER.failedToTakeSnapshot(e, source, snapshot);
         }
         return snapshot.toString();
     }
