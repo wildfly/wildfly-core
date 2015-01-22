@@ -43,6 +43,7 @@ public class PersistentResourceXMLDescription {
     private boolean flushRequired = true;
     private final Map<String,AttributeParser> attributeParsers;
     private final boolean useElementsForGroups;
+    private final String namespaceURI;
 
     /** @deprecated use a {@link org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder} */
     @Deprecated
@@ -59,6 +60,7 @@ public class PersistentResourceXMLDescription {
         this.noAddOperation = noAddOperation;
         this.additionalOperationsGenerator = additionalOperationsGenerator;
         this.attributeParsers = attributeParsers;
+        this.namespaceURI = null;
     }
 
     private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
@@ -68,6 +70,7 @@ public class PersistentResourceXMLDescription {
         this.attributes = builder.attributes;
         this.useElementsForGroups = builder.useElementsForGroups;
         this.attributesByGroup = new LinkedHashMap<>();
+        this.namespaceURI = builder.namespaceURI;
         if (useElementsForGroups) {
             // Ensure we have a map for the default group even if there are no attributes so we don't NPE later
             this.attributesByGroup.put(null, new LinkedHashMap<String, AttributeDefinition>());
@@ -94,6 +97,10 @@ public class PersistentResourceXMLDescription {
         this.noAddOperation = builder.noAddOperation;
         this.additionalOperationsGenerator = builder.additionalOperationsGenerator;
         this.attributeParsers = builder.attributeParsers;
+    }
+
+    public PathElement getPathElement(){
+        return resourceDefinition.getPathElement();
     }
 
     public void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
@@ -196,7 +203,7 @@ public class PersistentResourceXMLDescription {
 
 
     public void persist(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
-        persist(writer, model, null);
+        persist(writer, model, namespaceURI);
     }
 
     private void writeStartElement(XMLExtendedStreamWriter writer, String namespaceURI, String localName) throws XMLStreamException {
@@ -316,10 +323,15 @@ public class PersistentResourceXMLDescription {
         return new PersistentResourceXMLBuilder(resource);
     }
 
+    public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource, String namespaceURI) {
+        return new PersistentResourceXMLBuilder(resource, namespaceURI);
+    }
+
     public static class PersistentResourceXMLBuilder {
 
 
         protected final PersistentResourceDefinition resourceDefinition;
+        private final String namespaceURI;
         protected String xmlElementName;
         protected String xmlWrapperElement;
         protected boolean useValueAsElementName;
@@ -332,6 +344,13 @@ public class PersistentResourceXMLDescription {
 
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
             this.resourceDefinition = resourceDefinition;
+            this.namespaceURI = null;
+            this.xmlElementName = resourceDefinition.getPathElement().isWildcard() ? resourceDefinition.getPathElement().getKey() : resourceDefinition.getPathElement().getValue();
+        }
+
+        protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition, String namespaceURI) {
+            this.resourceDefinition = resourceDefinition;
+            this.namespaceURI = namespaceURI;
             this.xmlElementName = resourceDefinition.getPathElement().isWildcard() ? resourceDefinition.getPathElement().getKey() : resourceDefinition.getPathElement().getValue();
         }
 

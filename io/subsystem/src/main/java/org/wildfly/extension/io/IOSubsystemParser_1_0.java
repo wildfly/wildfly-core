@@ -24,21 +24,14 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
-import java.util.List;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.as.controller.PersistentResourceXMLParser;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
-class IOSubsystemParser_1_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+class IOSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
     static final IOSubsystemParser_1_0 INSTANCE = new IOSubsystemParser_1_0();
 
@@ -63,12 +56,9 @@ class IOSubsystemParser_1_0 implements XMLStreamConstants, XMLElementReader<List
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
-        xmlDescription.parse(reader, PathAddress.EMPTY_ADDRESS, list);
+    public PersistentResourceXMLDescription getParserDescription() {
+        return xmlDescription;
     }
 }
 

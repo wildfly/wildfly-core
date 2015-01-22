@@ -24,46 +24,27 @@ package org.wildfly.extension.requestcontroller;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
-import java.util.List;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.jboss.as.controller.PersistentResourceXMLParser;
 
 /**
  * @author Stuart Douglas
  */
-class RequestControllerSubsystemParser_1_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
+class RequestControllerSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
     static final RequestControllerSubsystemParser_1_0 INSTANCE = new RequestControllerSubsystemParser_1_0();
 
     private final PersistentResourceXMLDescription xmlDescription;
 
     private RequestControllerSubsystemParser_1_0() {
-        xmlDescription = builder(RequestControllerRootDefinition.INSTANCE)
+        xmlDescription = builder(RequestControllerRootDefinition.INSTANCE, Namespace.CURRENT.getUriString())
                 .addAttributes(RequestControllerRootDefinition.MAX_REQUESTS, RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS)
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
-        xmlDescription.parse(reader, PathAddress.EMPTY_ADDRESS, list);
-    }
-
-    @Override
-    public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        ModelNode model = new ModelNode();
-        model.get(RequestControllerRootDefinition.INSTANCE.getPathElement().getKeyValuePair()).set(context.getModelNode());//this is bit of workaround for SPRD to work properly
-        xmlDescription.persist(writer, model, Namespace.CURRENT.getUriString());
+    public PersistentResourceXMLDescription getParserDescription() {
+        return xmlDescription;
     }
 }
 
