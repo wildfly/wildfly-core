@@ -79,7 +79,7 @@
                     </documentation>
                 </annotation>
             </xsd:element>
-            <xsd:element name="sub-deployment" type="deploymentType" minOccurs="0" maxOccurs="unbounded" >
+            <xsd:element name="sub-deployment" type="subDeploymentType" minOccurs="0" maxOccurs="unbounded" >
                 <annotation xmlns="http://www.w3.org/2001/XMLSchema">
                     <documentation>
                         Element that corresponds to a deployment. This is used to customise
