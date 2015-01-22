@@ -73,6 +73,8 @@ public class ConfigurationFile {
     /* Whether the next determination of the bootFile should use the .last file in history
        instead of the {@link #mainFile}. Only relevant if {@link #persistOriginal} is false */
     private volatile boolean reloadUsingLast;
+    // Whether {@link #bootFile has been reset from its first value
+    private volatile boolean bootFileReset;
     private final File mainFile;
     private final File historyRoot;
     private final File currentHistory;
@@ -125,6 +127,7 @@ public class ConfigurationFile {
      */
     public synchronized void resetBootFile(boolean reloadUsingLast) {
         this.bootFile = null;
+        this.bootFileReset = true;
         this.reloadUsingLast = reloadUsingLast;
     }
 
@@ -136,21 +139,30 @@ public class ConfigurationFile {
         if (bootFile == null) {
             synchronized (this) {
                 if (bootFile == null) {
-                    String bootFileName = this.bootFileName;
-                    if (!persistOriginal && reloadUsingLast) {
-                        //If we were reloaded, and it is not a persistent configuration we want to use the last from the history
-                        bootFileName = "last";
-                    }
-
-                    if (bootFileName.equals(rawFileName)) {
+                    // If it's a reload and we're persisting our config, we boot from mainFile,
+                    // as that's where we persist
+                    if (bootFileReset && persistOriginal) {
+                        // we boot from mainFile
                         bootFile = mainFile;
                     } else {
-                        // TODO WFCORE-513 This is broken during reload when special values for bootFileName are used
-                        bootFile = determineBootFile(configurationDir, bootFileName);
-                        try {
-                            bootFile = bootFile.getCanonicalFile();
-                        } catch (IOException ioe) {
-                            throw ControllerLogger.ROOT_LOGGER.canonicalBootFileNotFound(ioe, bootFile);
+                        // It's either first boot or we're not persisting our config.
+                        // So we need to figure out which file we're meant to boot from
+
+                        String bootFileName = this.bootFileName;
+                        if (!persistOriginal && reloadUsingLast) {
+                            //If we were reloaded, and it is not a persistent configuration we want to use the last from the history
+                            bootFileName = "last";
+                        }
+
+                        if (bootFileName.equals(rawFileName)) {
+                            bootFile = mainFile;
+                        } else {
+                            bootFile = determineBootFile(configurationDir, bootFileName);
+                            try {
+                                bootFile = bootFile.getCanonicalFile();
+                            } catch (IOException ioe) {
+                                throw ControllerLogger.ROOT_LOGGER.canonicalBootFileNotFound(ioe, bootFile);
+                            }
                         }
                     }
                 }
