@@ -24,9 +24,12 @@ package org.jboss.as.host.controller.model.jvm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  *
@@ -34,6 +37,23 @@ import org.junit.Test;
  * @version $Revision: 1.1 $
  */
 public class JvmOptionsBuilderUnitTestCase {
+    public static final int JVM_MAJOR_VERSION;
+
+    static {
+        int vmVersion;
+        try {
+            String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
+            Matcher matcher = Pattern.compile("^1\\.(\\d+)$").matcher(vmVersionStr); //match 1.<number>
+            if (matcher.find()) {
+                vmVersion = Integer.valueOf(matcher.group(1));
+            } else {
+                throw new RuntimeException("Unknown version of jvm "+vmVersionStr);
+            }
+        } catch (Exception e) {
+            vmVersion = 7;
+        }
+        JVM_MAJOR_VERSION = vmVersion;
+    }
 
     @Test
     public void testNoOptionsSun() {
@@ -48,7 +68,7 @@ public class JvmOptionsBuilderUnitTestCase {
     private void testNoOptions(JvmType type) {
         JvmElement element = JvmElementTestUtils.create(type);
 
-        List<String> command = new ArrayList<String>();
+        List<String> command = new ArrayList<>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
 
         Assert.assertEquals(0, command.size());
@@ -129,9 +149,13 @@ public class JvmOptionsBuilderUnitTestCase {
         List<String> command = new ArrayList<String>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
 
-        Assert.assertEquals(2, command.size());
-        Assert.assertTrue(command.contains("-XX:PermSize=32M"));
-        Assert.assertTrue(command.contains("-XX:MaxPermSize=64M"));
+        if (JVM_MAJOR_VERSION < 8) {
+            Assert.assertEquals(2, command.size());
+            Assert.assertTrue(command.contains("-XX:PermSize=32M"));
+            Assert.assertTrue(command.contains("-XX:MaxPermSize=64M"));
+        }else{
+            Assert.assertEquals(0, command.size());
+        }
     }
 
     @Test
@@ -293,11 +317,11 @@ public class JvmOptionsBuilderUnitTestCase {
         List<String> command = new ArrayList<String>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
 
-        Assert.assertEquals(type == JvmType.SUN ? 10 : 8, command.size());
+        Assert.assertEquals((type == JvmType.SUN  && JVM_MAJOR_VERSION < 8)? 10 : 8, command.size());
         Assert.assertTrue(command.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n"));
         Assert.assertTrue(command.contains("-Xms28M"));
         Assert.assertTrue(command.contains("-Xmx96M"));
-        if (type == JvmType.SUN) {
+        if (type == JvmType.SUN && JVM_MAJOR_VERSION < 8) {
             Assert.assertTrue(command.contains("-XX:PermSize=32M"));
             Assert.assertTrue(command.contains("-XX:MaxPermSize=64M"));
         }

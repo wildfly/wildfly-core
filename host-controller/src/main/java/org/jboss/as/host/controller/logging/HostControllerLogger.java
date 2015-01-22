@@ -1205,4 +1205,11 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message( id = 154, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
     OperationFailedException noSecurityRealmForSsl();
+
+    /**
+     * @param jvmVersion version that jvm returned
+     */
+    @LogMessage(level = Level.WARN)
+    @Message(id = 155, value = "JVM version '%s' unknown, unpredicted behavior may occur")
+    void jvmVersionUnknown(String jvmVersion);
 }

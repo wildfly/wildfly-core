@@ -27,10 +27,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  *
@@ -43,7 +46,7 @@ public class JvmOptionsBuilderFactory {
 
     private static final Map<JvmType, JvmOptionsBuilder> BUILDERS;
     static {
-        Map<JvmType, JvmOptionsBuilder> map = new HashMap<JvmType, JvmOptionsBuilder>();
+        Map<JvmType, JvmOptionsBuilder> map = new HashMap<>();
         map.put(JvmType.SUN, new SunJvmOptionsBuilder(JvmType.SUN));
         map.put(JvmType.IBM, new IbmJvmOptionsBuilder(JvmType.IBM));
         BUILDERS = Collections.unmodifiableMap(map);
@@ -167,6 +170,25 @@ public class JvmOptionsBuilderFactory {
     }
 
     private static class SunJvmOptionsBuilder extends JvmOptionsBuilder {
+        public static final int JVM_MAJOR_VERSION;
+
+        static {
+            int vmVersion;
+            try {
+                String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
+                Matcher matcher = Pattern.compile("^1\\.(\\d+)$").matcher(vmVersionStr); //match 1.<number>
+                if (matcher.find()) {
+                    vmVersion = Integer.valueOf(matcher.group(1));
+                } else {
+                    HostControllerLogger.ROOT_LOGGER.jvmVersionUnknown(vmVersionStr);
+                    vmVersion = 7;
+                }
+            } catch (Exception e) {
+                vmVersion = 7;
+            }
+            JVM_MAJOR_VERSION = vmVersion;
+        }
+
 
         public SunJvmOptionsBuilder(JvmType type) {
             super(type);
@@ -174,6 +196,7 @@ public class JvmOptionsBuilderFactory {
 
         @Override
         void addPermGen(JvmElement jvmElement, List<String> command) {
+            if (JVM_MAJOR_VERSION >= 8) return; //java 8 doesn't have prem gen anymore. jdk9 fails if it is set.
             String permgen = jvmElement.getPermgenSize();
             String maxPermgen = jvmElement.getMaxPermgen();
             if (maxPermgen == null && permgen != null) {
