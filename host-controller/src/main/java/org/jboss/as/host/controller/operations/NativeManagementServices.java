@@ -3,7 +3,6 @@ package org.jboss.as.host.controller.operations;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerService;
-import org.jboss.as.host.controller.jmx.RemotingConnectorService;
 import org.jboss.as.host.controller.mgmt.ServerToHostOperationHandlerFactoryService;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
@@ -50,9 +49,6 @@ public class NativeManagementServices {
                     new ModelControllerClientOperationHandlerFactoryService(),
                     DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.MANAGEMENT_CHANNEL,
                     HostControllerService.HC_EXECUTOR_SERVICE_NAME, HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
-
-            RemotingConnectorService.addService(serviceTarget);
-
         }
     }
 }

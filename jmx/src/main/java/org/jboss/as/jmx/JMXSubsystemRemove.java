@@ -27,6 +27,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -38,10 +39,12 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
 
     private final ManagedAuditLogger auditLoggerInfo;
     private final JmxAuthorizer authorizer;
+    private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    JMXSubsystemRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer) {
+    JMXSubsystemRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.hostInfoAccessor = hostInfoAccessor;
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
@@ -55,7 +58,7 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         if (isRemoveService(context)) {
-            JMXSubsystemAdd.launchServices(context, model, auditLoggerInfo, authorizer);
+            JMXSubsystemAdd.launchServices(context, model, auditLoggerInfo, authorizer, hostInfoAccessor);
         } else {
             context.revertReloadRequired();
         }

@@ -44,6 +44,7 @@ import org.junit.runners.Suite;
         ExtensionManagementTestCase.class,
         HcExtensionAndSubsystemManagementTestCase.class,
         IgnoredResourcesTestCase.class,
+        JMXHostSubsystemTestCase.class,
         ManagementAccessTestCase.class,
         ManagementClientContentTestCase.class,
         ManagementReadsTestCase.class,

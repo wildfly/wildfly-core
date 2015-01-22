@@ -80,7 +80,7 @@ public class ModelControllerMBeanHelper {
     static final String CLASS_NAME = ModelController.class.getName();
     private static final String AUTHORIZED_ERROR = "WFLYCTL0313";
 
-    private final boolean standalone;
+    private final MutabilityChecker mutabilityChecker;
     private final ModelController controller;
     private final ResourceAccessControlUtil accessControlUtil;
     private final PathAddress CORE_SERVICE_PLATFORM_MBEAN = PathAddress.pathAddress(PathElement.pathElement("core-service", "platform-mbean"));
@@ -91,14 +91,14 @@ public class ModelControllerMBeanHelper {
     private final ManagementModelIntegration.ManagementModelProvider managementModelProvider;
 
     ModelControllerMBeanHelper(TypeConverters converters, ConfiguredDomains configuredDomains, String domain,
-                               ModelController controller, boolean standalone,
+                               ModelController controller, MutabilityChecker mutabilityChecker,
                                ManagementModelIntegration.ManagementModelProvider managementModelProvider) {
         this.converters = converters;
         this.configuredDomains = configuredDomains;
         this.domain = domain;
         this.controller = controller;
         this.accessControlUtil = new ResourceAccessControlUtil(controller);
-        this.standalone = standalone;
+        this.mutabilityChecker = mutabilityChecker;
         this.managementModelProvider = managementModelProvider;
     }
 
@@ -199,7 +199,7 @@ public class ModelControllerMBeanHelper {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
         final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, true);
-        return MBeanInfoFactory.createMBeanInfo(name, converters, configuredDomains, standalone, address, getMBeanRegistration(address, reg));
+        return MBeanInfoFactory.createMBeanInfo(name, converters, configuredDomains, mutabilityChecker, address, getMBeanRegistration(address, reg));
     }
 
     Object getAttribute(final ObjectName name, final String attribute)  throws AttributeNotFoundException, InstanceNotFoundException, ReflectionException {
@@ -300,7 +300,7 @@ public class ModelControllerMBeanHelper {
         final ModelNode description = provider.getModelDescription(null);
         final String attributeName = findAttributeName(description.get(ATTRIBUTES), attribute.getName());
 
-        if (!standalone) {
+        if (!mutabilityChecker.mutable(address)) {
             throw JmxLogger.ROOT_LOGGER.attributeNotWritable(attribute);
         }
 
@@ -386,7 +386,7 @@ public class ModelControllerMBeanHelper {
 
 
         if (opEntry == null) {
-            ChildAddOperationEntry entry = ChildAddOperationFinder.findAddChildOperation(reg.getRegistration().getSubModel(address), operationName);
+            ChildAddOperationEntry entry = ChildAddOperationFinder.findAddChildOperation(address, mutabilityChecker, reg.getRegistration().getSubModel(address), operationName);
             if (entry == null) {
                 throw JmxLogger.ROOT_LOGGER.noOperationCalled(null, operationName, address);
             }
@@ -407,7 +407,7 @@ public class ModelControllerMBeanHelper {
     }
 
     private Object invoke(final OperationEntry entry, final String operationName, PathAddress address, Object[] params)  throws InstanceNotFoundException, MBeanException, ReflectionException {
-        if (!standalone && !entry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+        if (!mutabilityChecker.mutable(address) && !entry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
             throw JmxLogger.ROOT_LOGGER.noOperationCalled(operationName);
         }
 
