@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import java.util.Set;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
@@ -42,6 +41,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.RuntimeIgnoreTransformation;
@@ -133,7 +133,8 @@ public class HostInfoUnitTestCase {
         Assert.assertFalse(model.get(INITIAL_SERVER_GROUPS, "server-2", SOCKET_BINDING_GROUP).isDefined());
 
 
-        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null);
+        final ExtensionRegistry extensionRegistry =
+                new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
         //Test the master proxy side
 
         HostInfo testee = HostInfo.fromModelNode(model);

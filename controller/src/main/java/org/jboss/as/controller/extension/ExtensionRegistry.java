@@ -125,6 +125,8 @@ public class ExtensionRegistry {
     private final JmxAuthorizer authorizer;
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
+    private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
+
 
     /**
      * Constructor
@@ -133,12 +135,31 @@ public class ExtensionRegistry {
      * @param runningModeControl the process' running mode
      * @param auditLogger logger for auditing changes
      * @param authorizer hook for exposing access control information to the JMX subsystem
+     * @param hostControllerInfoAccessor the host controller
+     *
+     * @deprecated Remove once there has been a core release and we can update wildfly
      */
+    @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer) {
+        this(processType, runningModeControl, auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
+    }
+
+
+    /**
+     * Constructor
+     *
+     * @param processType the type of the process
+     * @param runningModeControl the process' running mode
+     * @param auditLogger logger for auditing changes
+     * @param authorizer hook for exposing access control information to the JMX subsystem
+     * @param hostControllerInfoAccessor the host controller
+     */
+    public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
         this.processType = processType;
         this.runningModeControl = runningModeControl;
         this.auditLogger = auditLogger != null ? auditLogger : AuditLogger.NO_OP_LOGGER;
         this.authorizer = authorizer != null ? authorizer : NO_OP_AUTHORIZER;
+        this.hostControllerInfoAccessor = hostControllerInfoAccessor;
     }
 
     /**
@@ -150,7 +171,7 @@ public class ExtensionRegistry {
      */
     @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl) {
-        this(processType, runningModeControl, null, null);
+        this(processType, runningModeControl, null, null, RuntimeHostControllerInfoAccessor.SERVER);
     }
 
     /**
@@ -540,6 +561,14 @@ public class ExtensionRegistry {
                 throw new UnsupportedOperationException();
             }
             return authorizer;
+        }
+
+        @Override
+        public RuntimeHostControllerInfoAccessor getHostControllerInfoAccessor() {
+            if (!allowSupplement) {
+                throw new UnsupportedOperationException();
+            }
+            return hostControllerInfoAccessor;
         }
     }
 

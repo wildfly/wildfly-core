@@ -38,4 +38,6 @@ public interface ExtensionContextSupplement {
     AuditLogger getAuditLogger(boolean inheritConfiguration, boolean manualCommit);
     /** @throws java.lang.UnsupportedOperationException if called from an invalid caller */
     JmxAuthorizer getAuthorizer();
+    /** @throws java.lang.UnsupportedOperationException if called from an invalid caller */
+    RuntimeHostControllerInfoAccessor getHostControllerInfoAccessor();
 }

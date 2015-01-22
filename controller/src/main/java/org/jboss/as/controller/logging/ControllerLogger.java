@@ -3303,6 +3303,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 385, value = "An attempt was made to register the non-host capable subsystem '%s' from extension module '%s' in the host model.")
     IllegalStateException nonHostCapableSubsystemInHostModel(String subsystemName, String extensionModuleName);
 
-    // TODO use 373 for the next message!
+    @Message(id = 386, value = "The host controller info can only be accessed after the model stage on boot")
+    OperationFailedException onlyAccessHostControllerInfoInRuntimeStage();
 
 }

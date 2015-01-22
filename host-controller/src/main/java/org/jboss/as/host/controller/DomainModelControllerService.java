@@ -95,6 +95,8 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
@@ -231,8 +233,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
-        final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer);
-        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer);
+        RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
+        final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry = new DomainControllerRuntimeIgnoreTransformationRegistry();
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo, contentRepository,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry);
@@ -1166,5 +1169,26 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 OperationTransactionControl control, OperationStepHandler step) {
             return internalExecute(operation, handler, control, step, true);
         }
+    }
+
+    private static final class DomainHostControllerInfoAccessor implements RuntimeHostControllerInfoAccessor {
+        private final LocalHostControllerInfoImpl hostControllerInfo;
+
+        public DomainHostControllerInfoAccessor(LocalHostControllerInfoImpl hostControllerInfo) {
+            this.hostControllerInfo = hostControllerInfo;
+        }
+
+        @Override
+        public HostControllerInfo getHostControllerInfo(OperationContext context) throws OperationFailedException {
+            if (context.isBooting() && context.getCurrentStage() == OperationContext.Stage.MODEL) {
+                throw ControllerLogger.ROOT_LOGGER.onlyAccessHostControllerInfoInRuntimeStage();
+            }
+            return new HostControllerInfo() {
+                public boolean isMasterHc() {
+                    return hostControllerInfo.isMasterDomainController();
+                }
+            };
+        }
+
     }
 }
