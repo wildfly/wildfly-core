@@ -253,7 +253,6 @@ rem if x%XLOGGC% == x (
       -jar "%JBOSS_HOME%\jboss-modules.jar" ^
       %MODULE_OPTS% ^
       -mp "%JBOSS_MODULEPATH%" ^
-      -jaxpmodule "javax.xml.jaxp-provider" ^
        org.jboss.as.standalone ^
       "-Djboss.home.dir=%JBOSS_HOME%" ^
        %SERVER_OPTS%

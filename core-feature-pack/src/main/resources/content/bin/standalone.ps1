@@ -144,8 +144,6 @@ $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
   $PROG_ARGS += "$JBOSS_HOME/jboss-modules.jar"
   $PROG_ARGS += "-mp"
   $PROG_ARGS += "$JBOSS_MODULEPATH"
-  $PROG_ARGS += "-jaxpmodule"
-  $PROG_ARGS += "javax.xml.jaxp-provider"
   $PROG_ARGS += "org.jboss.as.standalone"
   $PROG_ARGS += $ARGS
 
