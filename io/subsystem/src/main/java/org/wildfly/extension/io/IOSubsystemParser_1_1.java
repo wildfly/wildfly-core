@@ -26,30 +26,20 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
-import java.util.List;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.jboss.as.controller.PersistentResourceXMLParser;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
-class IOSubsystemParser_1_1 implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
+class IOSubsystemParser_1_1 extends PersistentResourceXMLParser {
     static final IOSubsystemParser_1_1 INSTANCE = new IOSubsystemParser_1_1();
 
 
     private static final PersistentResourceXMLDescription xmlDescription;
 
     static {
-        xmlDescription = builder(IORootDefinition.INSTANCE)
+        xmlDescription = builder(IORootDefinition.INSTANCE, Namespace.CURRENT.getUriString())
                 .addChild(
                         builder(WorkerResourceDefinition.INSTANCE)
                                 .addAttributes(
@@ -67,22 +57,9 @@ class IOSubsystemParser_1_1 implements XMLStreamConstants, XMLElementReader<List
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        ModelNode model = new ModelNode();
-        model.get(IORootDefinition.INSTANCE.getPathElement().getKeyValuePair()).set(context.getModelNode());//this is bit of workaround for SPRD to work properly
-        xmlDescription.persist(writer, model, Namespace.CURRENT.getUriString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
-        xmlDescription.parse(reader, PathAddress.EMPTY_ADDRESS, list);
+    public PersistentResourceXMLDescription getParserDescription() {
+        return xmlDescription;
     }
 }
 
