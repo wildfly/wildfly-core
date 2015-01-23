@@ -121,8 +121,6 @@ $PROG_ARGS += "-jar"
 $PROG_ARGS += "$JBOSS_HOME/jboss-modules.jar"
 $PROG_ARGS += "-mp"
 $PROG_ARGS += "$JBOSS_MODULEPATH"
-$PROG_ARGS += "-jaxpmodule"
-$PROG_ARGS += "javax.xml.jaxp-provider"
 $PROG_ARGS += "org.jboss.as.cli"
 $PROG_ARGS += $ARGS
 

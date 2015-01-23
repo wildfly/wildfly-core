@@ -429,7 +429,6 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         }
         cmd.add("-mp");
         cmd.add(getModulePaths());
-        // TODO (jrp) Windows has -jaxpmodule "javax.xml.jax-provider", is this needed?
         cmd.add("org.jboss.as.standalone");
         addSystemPropertyArg(cmd, HOME_DIR, getWildFlyHome());
         addSystemPropertyArg(cmd, SERVER_BASE_DIR, getBaseDirectory());
