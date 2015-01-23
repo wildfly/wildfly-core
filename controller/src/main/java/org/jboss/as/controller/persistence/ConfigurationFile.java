@@ -68,21 +68,40 @@ public class ConfigurationFile {
     private final File configurationDir;
     private final String rawFileName;
     private final String bootFileName;
+    // File from which boot operations should be parsed; null if currently undetermined
     private volatile File bootFile;
+    /* Whether the next determination of the bootFile should use the .last file in history
+       instead of the {@link #mainFile}. Only relevant if {@link #persistOriginal} is false */
     private volatile boolean reloadUsingLast;
+    // Whether {@link #bootFile has been reset from its first value
+    private volatile boolean bootFileReset;
     private final File mainFile;
-    private final String mainFileName;
     private final File historyRoot;
     private final File currentHistory;
     private final File snapshotsDirectory;
+    // Whether configuration changes should be persisted to {@link #mainFile}
     private final boolean persistOriginal;
+    /* Backup copy of the most recent configuration, stored in the history dir.
+       May be used as {@link #bootFile}; see {@link #reloadUsingLast} */
     private volatile File lastFile;
 
-
+    /**
+     * Creates a new ConfigurationFile.
+     *
+     * @param configurationDir directory in which configuration files are stored. Cannot be {@code null} and must exist
+     *                         and be a directory
+     * @param rawName default name for configuration files of the type handled by this object.
+     *                Cannot be {@code null} or an empty string
+     * @param name user provided name of the configuration file to use
+     * @param persistOriginal {@code true} if configuration modifications should be persisted back to the main
+     *                                    configuration file; {@code false} if they should only be persisted
+     *                                    to the configuration history directory
+     */
     public ConfigurationFile(final File configurationDir, final String rawName, final String name, final boolean persistOriginal) {
         if (!configurationDir.exists() || !configurationDir.isDirectory()) {
             throw ControllerLogger.ROOT_LOGGER.directoryNotFound(configurationDir.getAbsolutePath());
         }
+        assert rawName != null && rawName.length() > 0;
         this.rawFileName = rawName;
         this.bootFileName = name != null ? name : rawName;
         this.configurationDir = configurationDir;
@@ -90,38 +109,60 @@ public class ConfigurationFile {
         this.currentHistory = new File(historyRoot, "current");
         this.snapshotsDirectory = new File(historyRoot, "snapshot");
         this.persistOriginal = persistOriginal;
-        final File file = determineMainFile(configurationDir, rawName, name);
+        final File file = determineMainFile(rawName, name);
         try {
             this.mainFile = file.getCanonicalFile();
         } catch (IOException ioe) {
             throw ControllerLogger.ROOT_LOGGER.canonicalMainFileNotFound(ioe, file);
         }
-        this.mainFileName = mainFile.getName();
     }
 
+    /**
+     * Reset so the next call to {@link #getBootFile()} will re-determine the appropriate file to use for
+     * parsing boot operations.
+     *
+     * @param reloadUsingLast {@code true} if the next call to {@link #getBootFile()} should use the last file from
+     *                                    the history. Only relevant if this object is not persisting changes
+     *                                    back to the original source file
+     */
     public synchronized void resetBootFile(boolean reloadUsingLast) {
         this.bootFile = null;
+        this.bootFileReset = true;
         this.reloadUsingLast = reloadUsingLast;
     }
 
+    /**
+     * Gets the file from which boot operations should be parsed.
+     * @return  the file. Will not be {@code null}
+     */
     public File getBootFile() {
         if (bootFile == null) {
             synchronized (this) {
                 if (bootFile == null) {
-                    String bootFileName = this.bootFileName;
-                    if (!persistOriginal && reloadUsingLast) {
-                        //If we were reloaded, and it is not a persistent configuration we want to use the last from the history
-                        bootFileName = "last";
-                    }
-
-                    if (bootFileName.equals(rawFileName)) {
+                    // If it's a reload and we're persisting our config, we boot from mainFile,
+                    // as that's where we persist
+                    if (bootFileReset && persistOriginal) {
+                        // we boot from mainFile
                         bootFile = mainFile;
                     } else {
-                        bootFile = determineBootFile(configurationDir, bootFileName);
-                        try {
-                            bootFile = bootFile.getCanonicalFile();
-                        } catch (IOException ioe) {
-                            throw ControllerLogger.ROOT_LOGGER.canonicalBootFileNotFound(ioe, bootFile);
+                        // It's either first boot or we're not persisting our config.
+                        // So we need to figure out which file we're meant to boot from
+
+                        String bootFileName = this.bootFileName;
+                        if (!persistOriginal && reloadUsingLast) {
+                            //If we were reloaded, and it is not a persistent configuration we want to use the last from the history
+                            bootFileName = "last";
+                        }
+
+                        if (bootFileName.equals(rawFileName)) {
+                            bootFile = mainFile;
+                        } else {
+                            bootFile = determineBootFile(configurationDir, bootFileName);
+                            try {
+                                bootFile = bootFile.getCanonicalFile();
+                            } catch (IOException ioe) {
+                                throw ControllerLogger.ROOT_LOGGER.canonicalBootFileNotFound(ioe, bootFile);
+                            }
                         }
                     }
                 }
@@ -130,11 +171,21 @@ public class ConfigurationFile {
         return bootFile;
     }
 
-    private File determineMainFile(final File configurationDir, final String rawName, final String name) {
+    /**
+     * Given {@code name}, determine the intended main configuration file. Handles special cases, including
+     * "last", "initial", "boot", "v1", and, if persistence to the original file is not supported, absolute paths.
+     *
+     * @param rawName default name for the main configuration file. Cannot be {@code null}
+     * @param name user provided name of the main configuration, or {@code null} if not was provided
+     */
+    private File determineMainFile(final String rawName, final String name) {
+
+        assert rawName != null;
 
         String mainName = null;
 
         if (name == null) {
+            // Just use the default
             mainName = rawName;
         } else if (name.equals(LAST) || name.equals(INITIAL) || name.equals(BOOT)) {
             // Search for a *single* file in the configuration dir with suffix == name.xml
@@ -149,10 +200,12 @@ public class ConfigurationFile {
             mainName = findMainFileFromSnapshotPrefix(name);
         }
         if (mainName == null) {
+            // Try the basic case, where name is the name
             final File directoryFile = new File(configurationDir, name);
             if (directoryFile.exists()) {
-                mainName = stripPrefixSuffix(name);
+                mainName = stripPrefixSuffix(name); // TODO what if the stripped name doesn't exist? And why would there be a file like configuration/standalone.last.xml?
             } else if (!persistOriginal) {
+                // We allow absolute paths in this case
                 final File absoluteFile = new File(name);
                 if (absoluteFile.exists()) {
                     return absoluteFile;
@@ -278,10 +331,12 @@ public class ConfigurationFile {
         throw ControllerLogger.ROOT_LOGGER.fileNotFound(directoryFile.getAbsolutePath());
     }
 
+    /** Gets the file to which modifications would be persisted, if this object is persisting changes outside the history directory */
     File getMainFile() {
         return mainFile;
     }
 
+    /** Notification that boot has completed successfully and the configuration history should be updated */
     void successfulBoot() throws ConfigurationPersistenceException {
         synchronized (this) {
             if (doneBootup.get()) {
@@ -292,6 +347,9 @@ public class ConfigurationFile {
             if (persistOriginal) {
                 copySource = mainFile;
             } else {
+                // TODO WFCORE-515 in the !persistOriginal case, mainFile may not be in the
+                // configuration dir and writing to its dir may not be legal.
+                // Why not use the configuration dir?
                 copySource = new File(mainFile.getParentFile(), mainFile.getName() + ".boot");
                 FilePersistenceUtils.deleteFile(copySource);
             }
@@ -330,6 +388,7 @@ public class ConfigurationFile {
     }
 
 
+    /** Backup the current version of the configuration to the versioned configuration history */
     void backup() throws ConfigurationPersistenceException {
         if (!doneBootup.get()) {
             return;
@@ -359,6 +418,12 @@ public class ConfigurationFile {
         }
     }
 
+    /**
+     * Commit the contents of the given temp file to either the main file, or, if we are not persisting
+     * to the main file, to the .last file in the configuration history
+     * @param temp temp file containing the latest configuration. Will not be {@code null}
+     * @throws ConfigurationPersistenceException
+     */
     void commitTempFile(File temp) throws ConfigurationPersistenceException {
         if (!doneBootup.get()) {
             return;
@@ -370,6 +435,7 @@ public class ConfigurationFile {
         }
     }
 
+    /** Notification that the configuration has been written, and its current content should be stored to the .last file */
     void fileWritten() throws ConfigurationPersistenceException {
         if (!doneBootup.get() || !persistOriginal) {
             return;
@@ -392,12 +458,13 @@ public class ConfigurationFile {
     }
 
     String snapshot() throws ConfigurationPersistenceException {
-        String name = getTimeStamp(new Date()) + mainFileName;
+        String name = getTimeStamp(new Date()) + mainFile.getName();
         File snapshot = new File(snapshotsDirectory, name);
+        File source = persistOriginal ? mainFile : lastFile;
         try {
-            FilePersistenceUtils.copyFile(mainFile, snapshot);
+            FilePersistenceUtils.copyFile(source, snapshot);
         } catch (IOException e) {
-            throw ControllerLogger.ROOT_LOGGER.failedToTakeSnapshot(e, mainFile, snapshot);
+            throw ControllerLogger.ROOT_LOGGER.failedToTakeSnapshot(e, source, snapshot);
         }
         return snapshot.toString();
     }
