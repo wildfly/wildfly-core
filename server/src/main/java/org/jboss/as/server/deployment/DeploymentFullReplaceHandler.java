@@ -44,6 +44,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
@@ -99,7 +100,8 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
 //            throw ServerLogger.ROOT_LOGGER.noSuchDeployment(name);
 //        }
 
-        final ModelNode deploymentModel = context.readResourceForUpdate(PathAddress.pathAddress(deploymentPath)).getModel();
+        // WFCORE-495 remove and call context.addResource() as below to add new resource with updated PERSISTENT value
+        final ModelNode deploymentModel = context.removeResource(PathAddress.pathAddress(deploymentPath)).getModel();
 
         // Keep track of runtime name of deployment we are replacing for use in Stage.RUNTIME
         final String replacedRuntimeName = RUNTIME_NAME.resolveModelAttribute(context, deploymentModel).asString();
@@ -150,11 +152,20 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
 
         // Do the runtime part if the deployment is enabled
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
-            DeploymentHandlerUtil.replace(context, deploymentModel, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
             DeploymentUtils.enableAttribute(deploymentModel);
         } else if (wasDeployed) {
-            DeploymentHandlerUtil.undeploy(context, name, runtimeName, vaultReader);
             DeploymentUtils.disableAttribute(deploymentModel);
+        }
+
+        boolean persistent = PERSISTENT.resolveModelAttribute(context, operation).asBoolean();
+        final Resource resource = Resource.Factory.create(!persistent);
+        resource.writeModel(deploymentModel);
+        context.addResource(PathAddress.pathAddress(deploymentPath), resource);
+
+        if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
+            DeploymentHandlerUtil.replace(context, deploymentModel, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
+        } else if (wasDeployed) {
+            DeploymentHandlerUtil.undeploy(context, name, runtimeName, vaultReader);
         }
 
         context.completeStep(new OperationContext.ResultHandler() {
