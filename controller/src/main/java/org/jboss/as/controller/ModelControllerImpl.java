@@ -49,7 +49,6 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -138,6 +137,7 @@ class ModelControllerImpl implements ModelController {
     private final Authorizer authorizer;
 
     private final ConcurrentMap<Integer, OperationContextImpl> activeOperations = new ConcurrentHashMap<>();
+    private final Random random = new Random();
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
 
@@ -334,7 +334,7 @@ class ModelControllerImpl implements ModelController {
         for (;;) {
             responseStreams = null;
             // Create a random operation-id
-            final Integer operationID = new Random(new SecureRandom().nextLong()).nextInt();
+            final Integer operationID = random.nextInt();
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
@@ -397,8 +397,7 @@ class ModelControllerImpl implements ModelController {
 
     boolean boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
               final boolean rollbackOnRuntimeFailure) {
-
-        final Integer operationID = new Random(new SecureRandom().nextLong()).nextInt();
+        final Integer operationID = random.nextInt();
 
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
                 ? EnumSet.of(OperationContextImpl.ContextFlag.ROLLBACK_ON_FAIL)
