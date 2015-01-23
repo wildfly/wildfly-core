@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -68,6 +69,12 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
     /** Guarded by config's auditLock - the number of failures writing to the log */
     private short failureCount;
 
+    /** Whether we can ignore logging without taking the lock to check.
+      * Reliant on loggerStatus not being changed elsewhere, since it is not shared
+      * Only change with lock held
+      * Must be reset to false when handler updates need to be performed */
+    private final AtomicBoolean runDisabledFastPath = new AtomicBoolean(false);
+
     public ManagedAuditLoggerImpl(String asVersion, boolean server) {
         config = new CoreAuditLogConfiguration(asVersion, server);
         childImpls = new ArrayList<ManagedAuditLoggerImpl>();
@@ -82,12 +89,12 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
     @Override
     public void log(boolean readOnly, ResultAction resultAction, String userId, String domainUUID, AccessMechanism accessMechanism,
             InetAddress remoteAddress, Resource resultantModel, List<ModelNode> operations) {
+        if (runDisabledFastPath.get())
+            return;
+
         config.lock();
         try {
-            if (config.isBooting() && !isLogBoot()) {
-                return;
-            }
-            if (readOnly && !isLogReadOnly()) {
+            if (skipLogging(readOnly)) {
                 return;
             }
             storeLogItem(
@@ -99,18 +106,17 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
             applyHandlerUpdates();
             config.unlock();
         }
-
     }
 
     @Override
     public void logJmxMethodAccess(boolean readOnly, String userId, String domainUUID, AccessMechanism accessMechanism,
             InetAddress remoteAddress, String methodName, String[] methodSignature, Object[] methodParams, Throwable error) {
+        if (runDisabledFastPath.get())
+            return;
+
         config.lock();
         try {
-            if (config.isBooting() && !isLogBoot()) {
-                return;
-            }
-            if (readOnly && !isLogReadOnly()) {
+            if (skipLogging(readOnly)) {
                 return;
             }
             storeLogItem(
@@ -122,6 +128,17 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
             applyHandlerUpdates();
             config.unlock();
         }
+    }
+
+    private boolean skipLogging(boolean readOnly) {
+        if (config.isBooting() && !isLogBoot() || readOnly && !isLogReadOnly()) {
+            if (getLoggerStatus() == Status.DISABLED) {
+                // switch to the fast path for the next event
+                runDisabledFastPath.set(true);
+            }
+            return true;
+        }
+        return false;
     }
 
     public ManagedAuditLoggerImpl createNewConfiguration(boolean manualCommit) {
@@ -213,6 +230,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
             } else if (newStatus == Status.DISABLED){
                 queuedItems.clear();
             }
+            runDisabledFastPath.set(false);
         } finally {
             config.unlock();
         }
@@ -232,7 +250,8 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                 writeLogItem(item);
                 config.setLoggerStatus(Status.DISABLED);
             case DISABLED:
-                // ignore
+                // switch to the fast path for the next event
+                runDisabledFastPath.set(true);
                 break;
         }
     }
@@ -274,6 +293,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                 handlerUpdateTask = new HandlerUpdateTask();
             }
             handlerUpdateTask.addHandler(handler);
+            runDisabledFastPath.set(false);
         } finally {
             config.unlock();
         }
@@ -289,6 +309,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                     handlerUpdateTask = new HandlerUpdateTask();
                 }
                 handlerUpdateTask.replaceHandler(handler);
+                runDisabledFastPath.set(false);
             }
         } finally {
             config.unlock();
@@ -303,6 +324,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                 handlerUpdateTask = new HandlerUpdateTask();
             }
             handlerUpdateTask.removeHandler(name);
+            runDisabledFastPath.set(false);
         } finally {
             config.unlock();
         }
@@ -316,7 +338,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                 handlerUpdateTask = new HandlerUpdateTask();
             }
             handlerUpdateTask.addHandlerReference(referenceAddress);
-
+            runDisabledFastPath.set(false);
         } finally {
             config.unlock();
         }
@@ -330,6 +352,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                 handlerUpdateTask = new HandlerUpdateTask();
             }
             handlerUpdateTask.removeHandlerReference(referenceAddress);
+            runDisabledFastPath.set(false);
         } finally {
             config.unlock();
         }
