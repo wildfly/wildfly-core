@@ -74,24 +74,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     ManagementResourceRegistration getSubModel(PathAddress address);
 
     /**
-     * Register the existence of an addressable sub-resource of this resource.
-     *
-     * @param address the address of the submodel (may include a wildcard)
-     * @param descriptionProvider source for descriptive information describing this
-     *                            portion of the model (must not be {@code null})
-     * @return a resource registration which may be used to add attributes, operations and sub-models
-     *
-     * @throws IllegalArgumentException if a submodel is already registered at {@code address}
-     * @throws IllegalStateException if {@link #isRuntimeOnly()} returns {@code true}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     *
-     * @deprecated use {@link ManagementResourceRegistration#registerSubModel(org.jboss.as.controller.ResourceDefinition)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    ManagementResourceRegistration registerSubModel(PathElement address, DescriptionProvider descriptionProvider);
-
-    /**
      * Register the existence of an addressable sub-resource of this resource. Before this method returns the provided
      * {@code resourceDefinition} will be given the opportunity to
      * {@link ResourceDefinition#registerAttributes(ManagementResourceRegistration) register attributes},

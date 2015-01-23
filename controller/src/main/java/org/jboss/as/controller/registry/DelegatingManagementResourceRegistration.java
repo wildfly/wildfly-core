@@ -186,11 +186,6 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    public ManagementResourceRegistration registerSubModel(PathElement address, DescriptionProvider descriptionProvider) {
-        return getDelegate().registerSubModel(address, descriptionProvider);
-    }
-
-    @Override
     public ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition) {
         return getDelegate().registerSubModel(resourceDefinition);
     }

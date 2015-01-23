@@ -85,13 +85,6 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     /** {@inheritDoc} */
     @Override
-    @SuppressWarnings("deprecation")
-    public final ManagementResourceRegistration registerSubModel(final PathElement address, final DescriptionProvider descriptionProvider) {
-        return registerSubModel(new SimpleResourceDefinition(address, descriptionProvider));
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public abstract ManagementResourceRegistration registerSubModel(final ResourceDefinition resourceDefinition);
 
     @Override

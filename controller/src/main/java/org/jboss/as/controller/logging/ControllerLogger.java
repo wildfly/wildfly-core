@@ -3263,7 +3263,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 372, value="List attribute '%s' contains duplicates, which are not allowed")
     String duplicateElementsInList(String name);
 
-    // TODO use 373 for the next message!
+    @Message(id = 373, value="Deployment resource must be runtime only")
+    IllegalArgumentException deploymentResourceMustBeRuntimeOnly();
 
     @Message(id = 374, value = "Unable to resolve expressions at this location.")
     OperationFailedException unableToResolveExpressions();
@@ -3286,6 +3287,4 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 380, value="Attribute '%s' needs to be set or passed before attribute '%s' can be correctly set")
     OperationFailedException requiredAttributeNotSet(String required, String name);
-
-    // TODO use 373 for the next message!
 }
