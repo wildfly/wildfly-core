@@ -98,6 +98,9 @@
         <!-- IP address defaults. -->
         <node0>127.0.0.1</node0>
         <management.address>${node0}</management.address>
+        <!-- HTTP binding settings -->
+        <jboss.http.port>8080</jboss.http.port>
+        <jboss.bind.address>${management.address}</jboss.bind.address>
         <!-- Default multicast address. -->
         <mcast>230.0.0.4</mcast>
 
@@ -116,7 +119,8 @@
         <jvm.args.other>-server</jvm.args.other>
 
         <!-- Standalone server arguments -->
-        <jboss.args></jboss.args>
+        <jboss.http.bind.args>-Djboss.http.port=${jboss.http.port} -Djboss.bind.address=${jboss.bind.address}</jboss.http.bind.args>
+        <jboss.args>${jboss.http.bind.args}</jboss.args>
         <!-- Domain server argument -->
         <jboss.domain.server.args></jboss.domain.server.args>
 
@@ -292,6 +296,12 @@
                             <jboss.home>${basedir}/target/wildfly-core</jboss.home>
                             <org.wildfly.test.kill-servers-before-test>${org.wildfly.test.kill-servers-before-test}</org.wildfly.test.kill-servers-before-test>
                             <management.address>${management.address}</management.address>
+
+                            <!-- jboss.http.port and jboss.bind.address are by the UndertowService and the
+                            TestSuiteEnvironment to determine where to bind Undertow -->
+                            <jboss.http.port>${jboss.http.port}</jboss.http.port>
+                            <jboss.bind.address>${jboss.bind.address}</jboss.bind.address>
+
                             <jboss.args>${jboss.args}</jboss.args>
                             <jboss.domain.server.args>${jboss.domain.server.args}</jboss.domain.server.args>
                         </systemPropertyVariables>
@@ -420,7 +430,7 @@
             </activation>
             <properties>
                 <!-- Standalone security manager argument -->
-                <jboss.args>-secmgr</jboss.args>
+                <jboss.args>${jboss.http.bind.args} -secmgr</jboss.args>
                 <!-- Domain security manager argument -->
                 <jboss.domain.server.args>-secmgr</jboss.domain.server.args>
             </properties>
