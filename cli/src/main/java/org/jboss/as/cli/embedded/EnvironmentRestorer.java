@@ -36,6 +36,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 class EnvironmentRestorer {
 
     private final String jbossHome = WildFlySecurityManager.getPropertyPrivileged("jboss.home.dir", null);
+    private final String bootLog = WildFlySecurityManager.getPropertyPrivileged("org.jboss.boot.log.file", null);
     private final StdioContext stdioContext = StdioContext.getStdioContext();
     private final LogContext logContext = LogContext.getLogContext();
     private boolean logContextSelectorRestored;
@@ -69,6 +70,11 @@ class EnvironmentRestorer {
             WildFlySecurityManager.clearPropertyPrivileged("jboss.home.dir");
         } else {
             WildFlySecurityManager.setPropertyPrivileged("jboss.home.dir", jbossHome);
+        }
+        if (bootLog == null) {
+            WildFlySecurityManager.clearPropertyPrivileged("org.jboss.boot.log.file");
+        } else {
+            WildFlySecurityManager.setPropertyPrivileged("org.jboss.boot.log.file", bootLog);
         }
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(stdioContext));
         restoreLogContextSelector();
