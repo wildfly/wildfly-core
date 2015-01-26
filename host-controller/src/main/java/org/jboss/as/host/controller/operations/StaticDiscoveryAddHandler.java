@@ -26,7 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.discovery.StaticDiscovery;
 import org.jboss.as.host.controller.discovery.StaticDiscoveryResourceDefinition;
@@ -59,7 +58,7 @@ public class StaticDiscoveryAddHandler extends AbstractDiscoveryOptionAddHandler
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         if (context.isBooting()) {
-            populateHostControllerInfo(hostControllerInfo, context, model);
+            populateHostControllerInfo(hostControllerInfo, context, operation);
         } else {
             context.reloadRequired();
         }
@@ -68,12 +67,7 @@ public class StaticDiscoveryAddHandler extends AbstractDiscoveryOptionAddHandler
     @Override
     protected void populateModel(final OperationContext context, final ModelNode operation,
             final Resource resource) throws  OperationFailedException {
-        final ModelNode model = resource.getModel();
-        for (final SimpleAttributeDefinition attribute : StaticDiscoveryResourceDefinition.STATIC_DISCOVERY_ATTRIBUTES) {
-            attribute.validateAndSet(operation, model);
-        }
-
-        updateDiscoveryOptionsOrdering(context, operation, STATIC_DISCOVERY);
+        updateOptionsAttribute(context, operation, STATIC_DISCOVERY);
     }
 
     protected void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context,

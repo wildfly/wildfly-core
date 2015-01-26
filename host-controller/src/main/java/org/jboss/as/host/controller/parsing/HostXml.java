@@ -87,6 +87,7 @@ import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
@@ -219,28 +220,17 @@ public class HostXml extends CommonXml {
 
         if (modelNode.hasDefined(DOMAIN_CONTROLLER)) {
             ModelNode ignoredResources = null;
-            ModelNode discoveryOptionsOrdering = null;
-            ModelNode staticDiscoveryOptions = null;
             ModelNode discoveryOptions = null;
             if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(IGNORED_RESOURCES)
                     && modelNode.get(CORE_SERVICE, IGNORED_RESOURCES).hasDefined(IGNORED_RESOURCE_TYPE)) {
                 ignoredResources = modelNode.get(CORE_SERVICE, IGNORED_RESOURCES, IGNORED_RESOURCE_TYPE);
             }
             if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(DISCOVERY_OPTIONS)
-                    && modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS).hasDefined(DISCOVERY_OPTIONS)) {
+                    && modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS).hasDefined(ModelDescriptionConstants.OPTIONS)) {
                 // List of discovery option types and names, in the order they were provided
-                discoveryOptionsOrdering = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, DISCOVERY_OPTIONS);
+                discoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, ModelDescriptionConstants.OPTIONS);
             }
-            if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(DISCOVERY_OPTIONS)
-                    && modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS).hasDefined(STATIC_DISCOVERY)) {
-                staticDiscoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, STATIC_DISCOVERY);
-            }
-            if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(DISCOVERY_OPTIONS)
-                    && modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS).hasDefined(DISCOVERY_OPTION)) {
-                discoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, DISCOVERY_OPTION);
-            }
-            writeDomainController(writer, modelNode.get(DOMAIN_CONTROLLER), ignoredResources,
-                    discoveryOptionsOrdering, staticDiscoveryOptions, discoveryOptions);
+            writeDomainController(writer, modelNode.get(DOMAIN_CONTROLLER), ignoredResources, discoveryOptions);
             writeNewLine(writer);
         }
 
@@ -2238,12 +2228,12 @@ public class HostXml extends CommonXml {
     }
 
     private void writeDomainController(final XMLExtendedStreamWriter writer, final ModelNode modelNode, ModelNode ignoredResources,
-            ModelNode discoveryOptionsOrdering, ModelNode staticDiscoveryOptions, ModelNode discoveryOptions) throws XMLStreamException {
+            ModelNode discoveryOptions) throws XMLStreamException {
         writer.writeStartElement(Element.DOMAIN_CONTROLLER.getLocalName());
         if (modelNode.hasDefined(LOCAL)) {
-            if (discoveryOptionsOrdering != null) {
+            if (discoveryOptions != null) {
                 writer.writeStartElement(Element.LOCAL.getLocalName());
-                writeDiscoveryOptions(writer, discoveryOptionsOrdering, staticDiscoveryOptions, discoveryOptions);
+                writeDiscoveryOptions(writer, discoveryOptions);
                 writer.writeEndElement();
             } else {
                 writer.writeEmptyElement(Element.LOCAL.getLocalName());
@@ -2262,8 +2252,8 @@ public class HostXml extends CommonXml {
             if (ignoredResources != null) {
                 writeIgnoredResources(writer, ignoredResources);
             }
-            if (discoveryOptionsOrdering != null) {
-                writeDiscoveryOptions(writer, discoveryOptionsOrdering, staticDiscoveryOptions, discoveryOptions);
+            if (discoveryOptions != null) {
+                writeDiscoveryOptions(writer, discoveryOptions);
             }
             writer.writeEndElement();
         }
@@ -2296,16 +2286,16 @@ public class HostXml extends CommonXml {
         }
     }
 
-    private void writeDiscoveryOptions(XMLExtendedStreamWriter writer, ModelNode discoveryOptionsOrdering,
-            ModelNode staticDiscoveryOptions, ModelNode discoveryOptions) throws XMLStreamException {
+    private void writeDiscoveryOptions(XMLExtendedStreamWriter writer, ModelNode discoveryOptions) throws XMLStreamException {
         writer.writeStartElement(Element.DISCOVERY_OPTIONS.getLocalName());
-        for (Property property : discoveryOptionsOrdering.asPropertyList()) {
-            final Element element = Element.forName(property.getName());
-            final String optionName = property.getValue().asString();
+        for (Property property : discoveryOptions.asPropertyList()) {
+            final String type = property.getName().equals(STATIC_DISCOVERY) ? STATIC_DISCOVERY : DISCOVERY_OPTION;
+            final Element element = Element.forName(type);
+            final String optionName = property.getValue().get(ModelDescriptionConstants.NAME).asString();
 
             switch (element) {
                 case STATIC_DISCOVERY: {
-                    final ModelNode staticDiscoveryOption = staticDiscoveryOptions.get(optionName);
+                    final ModelNode staticDiscoveryOption = property.getValue();
                     writer.writeStartElement(element.getLocalName());
                     writeAttribute(writer, Attribute.NAME, optionName);
                     StaticDiscoveryResourceDefinition.PROTOCOL.marshallAsAttribute(staticDiscoveryOption, writer);
@@ -2315,7 +2305,7 @@ public class HostXml extends CommonXml {
                     break;
                 }
                 case DISCOVERY_OPTION: {
-                    final ModelNode discoveryOption = discoveryOptions.get(optionName);
+                    final ModelNode discoveryOption = property.getValue();
                     writer.writeStartElement(element.getLocalName());
                     writeAttribute(writer, Attribute.NAME, optionName);
                     DiscoveryOptionResourceDefinition.CODE.marshallAsAttribute(discoveryOption, writer);
@@ -2335,9 +2325,7 @@ public class HostXml extends CommonXml {
 
     private void writeDiscoveryOptionProperties(XMLExtendedStreamWriter writer, ModelNode discoveryOptionProperties) throws XMLStreamException {
         for (Property property : discoveryOptionProperties.asPropertyList()) {
-            final ModelNode discoveryOptionProperty = property.getValue();
             writer.writeStartElement(Element.PROPERTY.getLocalName());
-
             writeAttribute(writer, Attribute.NAME, property.getName());
             writeAttribute(writer, Attribute.VALUE, property.getValue().asString());
             writer.writeEndElement();
