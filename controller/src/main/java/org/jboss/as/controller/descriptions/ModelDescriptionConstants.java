@@ -102,6 +102,7 @@ public class ModelDescriptionConstants {
     public static final String CORE_SERVICE = "core-service";
     public static final String CPU_AFFINITY = "cpu-affinity";
     public static final String CRITERIA = "criteria";
+    public static final String CUSTOM_DISCOVERY = "custom-discovery";
     public static final String DATE_FORMAT = "date-format";
     public static final String DATE_SEPARATOR = "date-separator";
     public static final String DEFAULT = "default";
@@ -273,6 +274,7 @@ public class ModelDescriptionConstants {
     public static final String OPERATION_HEADERS = "operation-headers";
     public static final String OPERATION_NAME = "operation-name";
     public static final String OPERATIONS = "operations";
+    public static final String OPTIONS = "options";
     public static final String OUTBOUND_CONNECTION = "outbound-connection";
     /** Use this standard operation address field in the operation *description* ModelNode */
     public static final String OUTCOME = "outcome";
