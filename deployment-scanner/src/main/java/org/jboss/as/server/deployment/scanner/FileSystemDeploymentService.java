@@ -367,6 +367,34 @@ class FileSystemDeploymentService implements DeploymentScanner {
         }
     }
 
+    /** Perform a one-off scan during boot to establish deployment tasks to execute during boot */
+    void singleScan() {
+        assert deploymentOperationsFactory != null : "deploymentOperationsFactory is null";
+        DeploymentOperations operations = deploymentOperations;
+        if(operations == null) {
+            operations = deploymentOperationsFactory.create();
+        }
+        if (acquireScanLock()) {
+            ScanResult scanResult = null;
+            try {
+                scanResult = scan(true, operations);
+            } finally {
+                try {
+                    if (scanResult != null && scanResult.requireUndeploy) {
+                        // run a quick rescan to undeploy failed deployment during boot
+                        synchronized (this) {
+                            if (scanEnabled) {
+                                rescanUndeployTask = scheduledExecutor.schedule(new UndeployScanRunnable(), 200, TimeUnit.MILLISECONDS);
+                            }
+                        }
+                    }
+                } finally {
+                    releaseScanLock();
+                }
+            }
+        }
+    }
+
     /** Perform a normal scan */
     void scan() {
         if (acquireScanLock()) {
