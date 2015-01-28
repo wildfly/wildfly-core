@@ -55,12 +55,14 @@ public class Log4jAppenderTestCase extends AbstractLoggingTestCase {
     private static final ModelNode CUSTOM_HANDLER_ADDRESS = createAddress("custom-handler", CUSTOM_HANDLER_NAME);
     private static final ModelNode ROOT_LOGGER_ADDRESS = createAddress("root-logger", "ROOT");
 
-    private final Path logFile = getAbsoluteLogFilePath(FILE_NAME);
+    private Path logFile;
 
     @Before
     public void startContainer() throws Exception {
         // Start the server
         container.start();
+
+        logFile = getAbsoluteLogFilePath(FILE_NAME);
 
         final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
 

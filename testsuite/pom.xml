@@ -357,7 +357,6 @@
             </activation>
             <modules>
                 <module>domain</module>
-                <module>manualmode</module>
             </modules>
         </profile>
 
@@ -384,6 +383,7 @@
             <modules>
                 <module>rbac</module>
                 <module>domain</module>
+                <module>manualmode</module>
             </modules>
         </profile>
 

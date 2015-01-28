@@ -125,7 +125,7 @@ public class HTTPSConnectionWithCLITestCase {
     @Test
     public void testDefaultCLIConfiguration() throws InterruptedException, IOException {
 
-        String cliOutput = CustomCLIExecutor.execute(null, TESTING_OPERATION, HTTPS_CONTROLLER);
+        String cliOutput = CustomCLIExecutor.execute(null, TESTING_OPERATION, HTTPS_CONTROLLER, true, "N");
         assertThat("Untrusted client should not be authenticated.", cliOutput, not(containsString("\"outcome\" => \"success\"")));
 
     }
