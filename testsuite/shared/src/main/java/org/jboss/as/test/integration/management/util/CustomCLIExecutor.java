@@ -25,9 +25,12 @@ package org.jboss.as.test.integration.management.util;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +59,7 @@ public class CustomCLIExecutor {
     private static Logger LOGGER = Logger.getLogger(CustomCLIExecutor.class);
     private static final int CLI_PROC_TIMEOUT = 5000;
     private static final int STATUS_CHECK_INTERVAL = 2000;
+    private static final byte[] NEW_LINE = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
 
     public static String execute(File cliConfigFile, String operation) {
 
@@ -64,6 +68,7 @@ public class CustomCLIExecutor {
     }
 
     public static String execute(File cliConfigFile, String operation, String controller) {
+
 
         return execute(cliConfigFile, operation, controller, false);
     }
@@ -75,8 +80,23 @@ public class CustomCLIExecutor {
      * @return String cliOutput
      */
     public static String execute(File cliConfigFile, String operation, String controller, boolean logFailure) {
+        return execute(cliConfigFile, operation, controller, logFailure, null);
+    }
 
-        String cliOutput;
+    /**
+     * Externally executes CLI operation with cliConfigFile settings via defined
+     * controller
+     *
+     * @param cliConfigFile   the the configuration file to use or {@code null} to use the default
+     * @param operation       the CLI operation to execute
+     * @param controller      the controller to use
+     * @param logFailure      {@code true} to log failures otherwise {@code false}
+     * @param failureResponse a response that can be sent to stdin of the launched processes or {@code null}
+     *
+     * @return the stdout response from the process
+     */
+    public static String execute(File cliConfigFile, String operation, String controller, boolean logFailure, String failureResponse) {
+
         String jbossDist = System.getProperty("jboss.dist");
         if (jbossDist == null) {
             fail("jboss.dist system property is not set");
@@ -115,8 +135,10 @@ public class CustomCLIExecutor {
             fail("Failed to start CLI process: " + e.getLocalizedMessage());
         }
 
-        final InputStream cliStream = cliProc.getInputStream();
-        final StringBuilder cliOutBuf = new StringBuilder();
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ConsoleConsumer.start(cliProc.getInputStream(), out);
+        ConsoleConsumer.start(cliProc.getErrorStream(), err);
         boolean wait = true;
         int runningTime = 0;
         int exitCode = 0;
@@ -126,52 +148,39 @@ public class CustomCLIExecutor {
             } catch (InterruptedException e) {
             }
             runningTime += STATUS_CHECK_INTERVAL;
-            readStream(cliOutBuf, cliStream);
             try {
                 exitCode = cliProc.exitValue();
                 wait = false;
-                readStream(cliOutBuf, cliStream);
             } catch (IllegalThreadStateException e) {
                 // cli still working
+                if (failureResponse != null) {
+                    try {
+                        final OutputStream stdin = cliProc.getOutputStream();
+                        stdin.write(failureResponse.getBytes(StandardCharsets.UTF_8));
+                        stdin.write(NEW_LINE);
+                        stdin.flush();
+                    } catch (IOException e1) {
+                        LOGGER.debug(out.toString(), e);
+                    }
+                }
             }
             if (runningTime >= CLI_PROC_TIMEOUT) {
-                readStream(cliOutBuf, cliStream);
                 cliProc.destroy();
                 wait = false;
             }
         } while (wait);
 
-        cliOutput = cliOutBuf.toString();
+        final String cliOutput = out.toString();
 
         if (logFailure && exitCode != 0) {
             LOGGER.info("Command's output: '" + cliOutput + "'");
-            try {
-                int bytesTotal = cliProc.getErrorStream().available();
-                if (bytesTotal > 0) {
-                    final byte[] bytes = new byte[bytesTotal];
-                    cliProc.getErrorStream().read(bytes);
-                    LOGGER.info("Command's error log: '" + new String(bytes) + "'");
-                } else {
-                    LOGGER.info("No output data for the command.");
-                }
-            } catch (IOException e) {
-                fail("Failed to read command's error output: " + e.getLocalizedMessage());
+            if (err.size() > 0) {
+                LOGGER.info("Command's error log: '" + err.toString() + "'");
+            } else {
+                LOGGER.info("No output data for the command.");
             }
         }
         return exitCode + ": " + cliOutput;
-    }
-
-    private static void readStream(final StringBuilder cliOutBuf, InputStream cliStream) {
-        try {
-            int bytesTotal = cliStream.available();
-            if (bytesTotal > 0) {
-                final byte[] bytes = new byte[bytesTotal];
-                cliStream.read(bytes);
-                cliOutBuf.append(new String(bytes));
-            }
-        } catch (IOException e) {
-            fail("Failed to read command's output: " + e.getLocalizedMessage());
-        }
     }
 
     /**
@@ -203,5 +212,33 @@ public class CustomCLIExecutor {
         } while (now - start < timeout);
 
         fail("Server did not reload in the imparted time.");
+    }
+
+    private static class ConsoleConsumer implements Runnable {
+
+        static void start(final InputStream in, final OutputStream target) {
+            final Thread t = new Thread(new ConsoleConsumer(in, target));
+            t.start();
+        }
+
+        private final InputStream in;
+        private final OutputStream target;
+
+        private ConsoleConsumer(final InputStream in, final OutputStream target) {
+            this.in = in;
+            this.target = target;
+        }
+
+        @Override
+        public void run() {
+            final byte[] b = new byte[32];
+            int len;
+            try {
+                while ((len = in.read(b)) != -1) {
+                    target.write(b, 0, len);
+                }
+            } catch (IOException ignore) {
+            }
+        }
     }
 }
