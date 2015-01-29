@@ -31,6 +31,7 @@ import java.util.Set;
 import javax.security.auth.Subject;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.security.ControllerPermission;
 import org.jboss.as.core.security.AccountPrincipal;
 import org.jboss.as.core.security.GroupPrincipal;
 import org.jboss.as.core.security.RealmPrincipal;
@@ -46,9 +47,6 @@ public final class Caller {
 
     private static final String UNDEFINED = "UNDEFINED";
 
-    private static final RuntimePermission CREATE_CALLER_PERMISSION = new RuntimePermission("org.jboss.as.controller.security.CREATE_CALLER");
-    private static final RuntimePermission GET_SUBJECT_PERMISSION = new RuntimePermission("org.jboss.as.controller.security.GET_SUBJECT");
-
     private final Subject subject;
 
     private volatile String name;
@@ -61,7 +59,7 @@ public final class Caller {
     }
 
     public static Caller createCaller(final Subject subject) {
-        checkPermission(CREATE_CALLER_PERMISSION);
+        checkPermission(ControllerPermission.CREATE_CALLER);
 
         return new Caller(subject);
     }
@@ -176,7 +174,7 @@ public final class Caller {
      * @return The {@link Subject} used to create this caller.
      */
     public Subject getSubject() {
-        checkPermission(GET_SUBJECT_PERMISSION);
+        checkPermission(ControllerPermission.GET_CALLER_SUBJECT);
 
         return subject;
     }

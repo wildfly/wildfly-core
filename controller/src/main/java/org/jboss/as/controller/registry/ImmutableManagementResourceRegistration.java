@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.registry;
 
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +33,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.security.ControllerPermission;
 
 /**
  * Read-only view of a {@link ManagementResourceRegistration}.
@@ -41,10 +43,10 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 public interface ImmutableManagementResourceRegistration {
 
     /**
-     * A {@link RuntimePermission} needed to create a {@link ImmutableManagementResourceRegistration} or invoke one
-     * of its methods. The name of the necessary {@code RuntimePermission} is "{@code canAccessManagementResourceRegistration}."
+     * A {@link org.jboss.as.controller.security.ControllerPermission} needed to create a {@link ImmutableManagementResourceRegistration} or invoke one
+     * of its methods. The name of the permission is "{@code canAccessImmutableManagementResourceRegistration}."
      */
-    RuntimePermission ACCESS_PERMISSION = new RuntimePermission("canAccessManagementResourceRegistration");
+    Permission ACCESS_PERMISSION = ControllerPermission.CAN_ACCESS_IMMUTABLE_MANAGEMENT_RESOURCE_REGISTRATION;
 
     /**
      * Gets the address under which we are registered.
