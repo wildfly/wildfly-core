@@ -171,6 +171,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                     val.get(BOOT_TIME).set(bootTime);
                     resolvedSysProps.get(property.getName()).set(val);
                 }
+                result.get(SYSTEM_PROPERTY).set(resolvedSysProps);
             }
             return result;
         } catch (OperationFailedException e) {

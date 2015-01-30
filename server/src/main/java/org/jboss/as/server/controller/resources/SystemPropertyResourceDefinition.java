@@ -83,7 +83,7 @@ public class SystemPropertyResourceDefinition extends SimpleResourceDefinition {
     private SystemPropertyResourceDefinition(Location location, ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater, boolean useBoottime) {
         super(PATH,
                 new ReplaceResourceNameResourceDescriptionResolver(location, SYSTEM_PROPERTY),
-                new SystemPropertyAddHandler(systemPropertyUpdater, useBoottime, useBoottime ? ALL_ATTRIBUTES : SERVER_ATTRIBUTES),
+                new SystemPropertyAddHandler(systemPropertyUpdater, useBoottime ? ALL_ATTRIBUTES : SERVER_ATTRIBUTES),
                 new SystemPropertyRemoveHandler(systemPropertyUpdater));
         this.systemPropertyUpdater = systemPropertyUpdater;
         this.useBoottime = useBoottime;

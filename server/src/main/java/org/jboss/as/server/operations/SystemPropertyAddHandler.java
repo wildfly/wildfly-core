@@ -65,7 +65,6 @@ public class SystemPropertyAddHandler implements OperationStepHandler{
 
 
     private final ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater;
-    private final boolean useBoottime;
     private final AttributeDefinition[] attributes;
 
     /**
@@ -73,11 +72,9 @@ public class SystemPropertyAddHandler implements OperationStepHandler{
      *
      * @param systemPropertyUpdater the local process environment system property updater, or {@code null} if interaction with the process
      *                           environment is not required
-     * @param useBoottime {@code true} if the system property resource should support the "boot-time" attribute
      */
-    public SystemPropertyAddHandler(ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater, boolean useBoottime, AttributeDefinition[] attributes) {
+    public SystemPropertyAddHandler(ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater, AttributeDefinition[] attributes) {
         this.systemPropertyUpdater = systemPropertyUpdater;
-        this.useBoottime = useBoottime;
         this.attributes = attributes;
     }
 
