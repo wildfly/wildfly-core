@@ -47,6 +47,10 @@ if [ -z "$SHUTDOWN_WAIT" ]; then
 	SHUTDOWN_WAIT=30
 fi
 
+if [ -z "$JBOSS_LOCKFILE" ]; then
+	JBOSS_LOCKFILE=/var/lock/subsys/wildfly
+fi
+
 # Startup mode of wildfly
 if [ -z "$JBOSS_MODE" ]; then
 	JBOSS_MODE=standalone
@@ -119,6 +123,7 @@ start() {
 		let count=$count+1;
 	done
 
+	touch $JBOSS_LOCKFILE
 	success
 	echo
 	return 0
@@ -145,6 +150,7 @@ stop() {
 		fi
 	fi
 	rm -f $JBOSS_PIDFILE
+	rm -f $JBOSS_LOCKFILE
 	success
 	echo
 }
