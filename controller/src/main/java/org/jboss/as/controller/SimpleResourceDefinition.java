@@ -313,7 +313,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.deprecationData = new DeprecationData(since);
     }
 
-    public DeprecationData getDeprecationData(){
+    protected DeprecationData getDeprecationData(){
         return this.deprecationData;
     }
 }
