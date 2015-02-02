@@ -36,6 +36,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.process.ExitCodes;
+import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
@@ -159,7 +160,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                 processState.setStopping();
                 final Thread thread = new Thread(new Runnable() {
                     public void run() {
-                        System.exit(restart ? ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT : ExitCodes.NORMAL);
+                        SystemExiter.exit(restart ? ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT : ExitCodes.NORMAL);
                     }
                 });
                 // The intention is that this shutdown is graceful, and so the client gets a reply.

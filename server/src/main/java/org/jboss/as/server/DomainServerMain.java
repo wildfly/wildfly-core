@@ -97,7 +97,7 @@ public final class DomainServerMain {
             StreamUtils.readFully(initialInput, authKey);
         } catch (IOException e) {
             e.printStackTrace();
-            System.exit(ExitCodes.FAILED);
+            SystemExiter.exit(ExitCodes.FAILED);
             throw new IllegalStateException(); // not reached
         }
 
@@ -123,7 +123,7 @@ public final class DomainServerMain {
             }));
         } catch (Exception e) {
             e.printStackTrace(initialError);
-            System.exit(ExitCodes.FAILED);
+            SystemExiter.exit(ExitCodes.FAILED);
             throw new IllegalStateException(); // not reached
         } finally {
         }
@@ -171,7 +171,7 @@ public final class DomainServerMain {
             e.printStackTrace();
         }
         // Once the input stream is cut off, shut down
-        System.exit(ExitCodes.NORMAL);
+        SystemExiter.exit(ExitCodes.NORMAL);
         throw new IllegalStateException(); // not reached
     }
 
