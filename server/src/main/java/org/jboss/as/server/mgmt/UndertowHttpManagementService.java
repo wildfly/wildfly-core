@@ -28,6 +28,7 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -81,6 +82,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<SecurityRealm> securityRealmServiceValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
+    private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private ManagementHttpServer serverManagement;
@@ -228,7 +230,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
             serverManagement = ManagementHttpServer.create(bindAddress, secureBindAddress, 50, modelController,
                     securityRealmService, controlledProcessStateService, consoleMode, consoleSlot, upgradeHandler,
-                    requestProcessor);
+                    requestProcessor, allowedOriginsValue.getOptionalValue());
 
             serverManagement.start();
 
@@ -391,5 +393,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
     public InjectedValue<ManagementHttpRequestProcessor> getRequestProcessorValue() {
         return requestProcessorValue;
+    }
+
+    public InjectedValue<Collection<String>> getAllowedOriginsInjector() {
+        return allowedOriginsValue;
     }
 }

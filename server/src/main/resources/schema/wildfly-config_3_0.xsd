@@ -2127,6 +2127,15 @@
                 </xs:choice>
                 <xs:attribute name="console-enabled" type="xs:boolean" use="optional" default="true"/>
                 <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="false"/>
+                <xs:attribute name="allowed-origins" type="urlListType" use="optional" >
+                    <xs:annotation>
+                        <xs:documentation>
+                            A space separated list of Origins that will be trusted to send request to the management
+                            API once the user is authenticated. This is used following the Cross-Origin Resource Sharing
+                            recommendation (http://www.w3.org/TR/access-control/).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

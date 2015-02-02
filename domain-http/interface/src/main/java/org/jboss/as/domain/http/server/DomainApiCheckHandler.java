@@ -21,16 +21,18 @@
 */
 package org.jboss.as.domain.http.server;
 
+import static org.jboss.as.domain.http.server.cors.CorsUtil.matchOrigin;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.BlockingHandler;
-import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -50,13 +52,17 @@ class DomainApiCheckHandler implements HttpHandler {
     private final HttpHandler domainApiHandler;
     private final HttpHandler addContentHandler;
     private final HttpHandler genericOperationHandler;
+    private final Collection<String> allowedOrigins = new ArrayList<String>();
 
 
-    DomainApiCheckHandler(final ModelController modelController, final ControlledProcessStateService controlledProcessStateService) {
+    DomainApiCheckHandler(final ModelController modelController, final ControlledProcessStateService controlledProcessStateService, final Collection<String> allowedOrigins) {
         this.controlledProcessStateService = controlledProcessStateService;
         domainApiHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiHandler(modelController)));
         addContentHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiUploadHandler(modelController)));
         genericOperationHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiGenericOperationHandler(modelController)));
+        if (allowedOrigins != null) {
+            this.allowedOrigins.addAll(allowedOrigins);
+        }
     }
 
     @Override
@@ -140,18 +146,7 @@ class DomainApiCheckHandler implements HttpHandler {
          */
         final HeaderMap headers = exchange.getRequestHeaders();
         if (headers.contains(Headers.ORIGIN)) {
-            String origin = headers.getFirst(Headers.ORIGIN);
-            String host = headers.getFirst(Headers.HOST);
-            String protocol = exchange.getRequestScheme();
-            //This browser set header should not need IPv6 escaping
-            String allowedOrigin = protocol + "://" + host;
-
-            // This will reject multi-origin Origin headers due to the exact match.
-            if (origin.equals(allowedOrigin) == false) {
-                ROOT_LOGGER.debug("Request rejected due to HOST/ORIGIN mis-match.");
-                ResponseCodeHandler.HANDLE_403.handleRequest(exchange);
-                return false;
-            }
+           return matchOrigin(exchange, allowedOrigins) != null;
         }
         return true;
     }

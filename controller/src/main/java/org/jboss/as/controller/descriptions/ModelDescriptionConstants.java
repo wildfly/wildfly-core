@@ -45,6 +45,7 @@ public class ModelDescriptionConstants {
     public static final String ALLOWED = "allowed";
     public static final String ALLOW_EMPTY_PASSWORDS = "allow-empty-passwords";
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
+    public static final String ALLOWED_ORIGINS = "allowed-origins";
     public static final String ALL_ROLE_NAMES = "all-role-names";
     public static final String ALTERNATIVES = "alternatives";
     public static final String ANY = "any";

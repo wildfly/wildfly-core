@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -672,6 +674,11 @@ public class ModelParserUtils {
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return false;
+        }
+
+        @Override
+        public Collection<String> getAllowedOrigins() {
+            return Collections.EMPTY_LIST;
         }
     };
 }

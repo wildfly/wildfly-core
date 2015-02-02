@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.ControlledProcessState;
@@ -133,5 +134,7 @@ public interface LocalHostControllerInfo {
      * @return the state
      */
     ControlledProcessState.State getProcessState();
+
+    Collection<String> getAllowedOrigins();
 
 }

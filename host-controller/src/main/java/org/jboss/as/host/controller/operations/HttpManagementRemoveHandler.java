@@ -23,6 +23,8 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.operations.HttpManagementAddHandler.createConnectorOptions;
+
+import java.util.Collections;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -81,5 +83,6 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
         hostControllerInfo.setHttpManagementSecureInterface(null);
         hostControllerInfo.setHttpManagementSecurePort(0);
         hostControllerInfo.setHttpManagementSecurityRealm(null);
+        hostControllerInfo.setAllowedOrigins(Collections.EMPTY_LIST);
     }
 }

@@ -21,6 +21,8 @@
  */
 package org.jboss.as.domain.http.server;
 
+import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
+
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
 import static org.xnio.SslClientAuthMode.REQUESTED;
@@ -59,6 +61,7 @@ import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
+import java.util.Collection;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -167,7 +170,7 @@ public class ManagementHttpServer {
     public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
                                               ModelController modelController, SecurityRealm securityRealm, ControlledProcessStateService controlledProcessStateService,
                                               ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler,
-                                              ManagementHttpRequestProcessor managementHttpRequestProcessor) throws IOException, StartException {
+                                              ManagementHttpRequestProcessor managementHttpRequestProcessor, Collection<String> allowedOrigins) throws IOException, StartException {
 
         SSLContext sslContext = null;
         SslClientAuthMode sslClientAuthMode = null;
@@ -199,7 +202,7 @@ public class ManagementHttpServer {
         }
 
         setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
-                secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor);
+                secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor, allowedOrigins);
         return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode);
     }
 
@@ -207,11 +210,13 @@ public class ManagementHttpServer {
     private static void setupOpenListener(HttpOpenListener listener, ModelController modelController, ConsoleMode consoleMode,
                                           String consoleSlot, ControlledProcessStateService controlledProcessStateService,
                                           int secureRedirectPort, SecurityRealm securityRealm,
-                                          final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor) {
+                                          final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor,
+                                          final Collection<String> allowedOrigins) {
 
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
         ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
-        listener.setRootHandler(managementHttpRequestHandler);
+        CorsHttpHandler corsHandler = new CorsHttpHandler(managementHttpRequestHandler, allowedOrigins);
+        listener.setRootHandler(corsHandler);
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;
@@ -244,7 +249,7 @@ public class ManagementHttpServer {
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
-        DomainApiCheckHandler domainApiHandler = new DomainApiCheckHandler(modelController, controlledProcessStateService);
+        DomainApiCheckHandler domainApiHandler = new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins);
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
             HttpHandler readinessHandler = new RedirectReadinessHandler(securityRealm, consoleHandler.getHandler(),

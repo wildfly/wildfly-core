@@ -28,6 +28,7 @@ import static org.jboss.as.host.controller.resources.HttpManagementResourceDefin
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
+import java.util.Collection;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -124,6 +125,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         hostControllerInfo.setHttpManagementSecurePort(securePortNode.isDefined() ? securePortNode.asInt() : -1);
         final ModelNode realmNode = HttpManagementResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, model);
         hostControllerInfo.setHttpManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
+        hostControllerInfo.setAllowedOrigins(HttpManagementResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model));
     }
 
     public static void installHttpManagementServices(final RunningMode runningMode, final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo,
@@ -135,6 +137,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         String secureInterfaceName = hostControllerInfo.getHttpManagementSecureInterface();
         int securePort = hostControllerInfo.getHttpManagementSecurePort();
         String securityRealm = hostControllerInfo.getHttpManagementSecurityRealm();
+        Collection<String> allowedOrigins = hostControllerInfo.getAllowedOrigins();
 
         AS_ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
 
@@ -162,7 +165,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addInjection(service.getPortInjector(), port)
-                .addInjection(service.getSecurePortInjector(), securePort);
+                .addInjection(service.getSecurePortInjector(), securePort)
+                .addInjection(service.getAllowedOriginsInjector(), allowedOrigins);
 
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);

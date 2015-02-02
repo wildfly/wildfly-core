@@ -37,6 +37,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -470,6 +472,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return true;
+        }
+
+        @Override
+        public Collection<String> getAllowedOrigins() {
+            return Collections.EMPTY_LIST;
         }
     }
 

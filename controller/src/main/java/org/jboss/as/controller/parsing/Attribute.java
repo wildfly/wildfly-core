@@ -42,6 +42,7 @@ public enum Attribute {
     ADMIN_ONLY_POLICY("admin-only-policy"),
     ALIAS("alias"),
     ALLOW_EMPTY_PASSWORDS("allow-empty-passwords"),
+    ALLOWED_ORIGINS("allowed-origins"),
     ALLOWED_USERS("allowed-users"),
     APP_NAME("app-name"),
     APPLICATION("application"),
