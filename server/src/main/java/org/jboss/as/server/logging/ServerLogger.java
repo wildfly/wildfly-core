@@ -121,6 +121,11 @@ public interface ServerLogger extends BasicLogger {
     ServerLogger NETWORK_LOGGER = Logger.getMessageLogger(ServerLogger.class, "org.jboss.as.server.net");
 
     /**
+     * Logger for deprecated APIs
+     */
+    ServerLogger DEPRECATED_DEP_LOGGER = Logger.getMessageLogger(ServerLogger.class, "org.jboss.as.dependency.deprecated");
+
+    /**
      * Log message for when a jboss-deployment-structure.xml file is ignored
      * @param file name of the ignored file
      */
@@ -1092,4 +1097,8 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 220, value = "Server shutdown has been requested.")
     void shutdownHookInvoked();
+
+    @LogMessage(level = WARN)
+    @Message(id = 221, value = "Deployment \"%s\" is using a deprecated module (\"%s\") which may be removed in future versions without notice.")
+    void deprecatedApiUsed(String name, ModuleIdentifier id);
 }
