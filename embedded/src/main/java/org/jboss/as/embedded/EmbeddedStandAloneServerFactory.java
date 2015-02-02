@@ -61,6 +61,7 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.client.ModelControllerServerDeploymentManager;
@@ -117,216 +118,7 @@ public class EmbeddedStandAloneServerFactory {
 
         setupCleanDirectories(jbossHomeDir, systemProps);
 
-        StandaloneServer standaloneServer = new StandaloneServer() {
-
-            private final PropertyChangeListener processStateListener = new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if ("currentState".equals(evt.getPropertyName())) {
-                        ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState);
-                    }
-                }
-            };
-            private ServiceContainer serviceContainer;
-            private ServerDeploymentManager serverDeploymentManager;
-            private Context context;
-            private ControlledProcessState.State currentProcessState;
-            private ModelControllerClient modelControllerClient;
-            private ExecutorService executorService;
-            private ControlledProcessStateService controlledProcessStateService;
-
-            @Override
-            public void deploy(File file) throws IOException, ExecutionException, InterruptedException {
-                // the current deployment manager only accepts jar input stream, so hack one together
-                final InputStream is = VFSUtils.createJarFileInputStream(VFS.getChild(file.toURI()));
-                try {
-                    execute(serverDeploymentManager.newDeploymentPlan().add(file.getName(), is).andDeploy().build());
-                } finally {
-                    if(is != null) try {
-                        is.close();
-                    } catch (IOException ignore) {
-                        //
-                    }
-                }
-
-            }
-
-            private ServerDeploymentPlanResult execute(DeploymentPlan deploymentPlan) throws ExecutionException, InterruptedException {
-                return serverDeploymentManager.execute(deploymentPlan).get();
-            }
-
-            @Override
-            public Context getContext() {
-                if (context == null) {
-                    throw ServerLogger.ROOT_LOGGER.namingContextHasNotBeenSet();
-                }
-                return context;
-            }
-
-            @Override
-            public synchronized ModelControllerClient getModelControllerClient() {
-                return modelControllerClient == null ? null : new DelegatingModelControllerClient(new DelegatingModelControllerClient.DelegateProvider() {
-                    @Override
-                    public ModelControllerClient getDelegate() {
-                        return getActiveModelControllerClient();
-                    }
-                });
-            }
-
-            @Override
-            public void start() throws ServerStartException {
-                try {
-                    // Determine the ServerEnvironment
-                    ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED);
-
-                    Bootstrap bootstrap = Bootstrap.Factory.newInstance();
-
-                    Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
-
-                    /*
-                     * This would setup an {@link TransientConfigurationPersister} which does not persist anything
-                     *
-                    final ExtensionRegistry extensionRegistry = configuration.getExtensionRegistry();
-                    final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = new Bootstrap.ConfigurationPersisterFactory() {
-                        @Override
-                        public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                            final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
-                            final StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-                            final File configurationFile = serverEnvironment.getServerConfigurationFile().getBootFile();
-                            XmlConfigurationPersister persister = new TransientConfigurationPersister(configurationFile, rootElement, parser, parser);
-                            for (Namespace namespace : Namespace.domainValues()) {
-                                if (!namespace.equals(Namespace.CURRENT)) {
-                                    persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
-                                }
-                            }
-                            extensionRegistry.setWriterRegistry(persister);
-                            return persister;
-                        }
-                    };
-                    configuration.setConfigurationPersisterFactory(configurationPersisterFactory);
-                    */
-
-                    configuration.setModuleLoader(moduleLoader);
-
-                    Future<ServiceContainer> future = bootstrap.startup(configuration, Collections.<ServiceActivator>emptyList());
-
-                    serviceContainer = future.get();
-
-                    executorService = Executors.newCachedThreadPool();
-
-                    @SuppressWarnings("unchecked")
-                    final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
-                    controlledProcessStateService = processStateServiceValue.getValue();
-                    controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                    establishModelControllerClient(controlledProcessStateService.getCurrentState());
-
-                    context = new InitialContext();
-                } catch (RuntimeException rte) {
-                    throw rte;
-                } catch (Exception ex) {
-                    throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
-                }
-            }
-
-            @Override
-            public void stop() {
-                if (context != null) {
-                    try {
-                        context.close();
-
-                        context = null;
-                    } catch (NamingException e) {
-                        // TODO: use logging?
-                        e.printStackTrace();
-                    }
-                }
-                serverDeploymentManager = null;
-                if (serviceContainer != null) {
-                    try {
-                        serviceContainer.shutdown();
-
-                        serviceContainer.awaitTermination();
-                    } catch (RuntimeException rte) {
-                        throw rte;
-                    } catch (InterruptedException ite) {
-                        ite.printStackTrace();
-                        Thread.currentThread().interrupt();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-                if (controlledProcessStateService != null) {
-                    controlledProcessStateService.removePropertyChangeListener(processStateListener);
-                    controlledProcessStateService = null;
-                }
-                if (executorService != null) {
-                    try {
-                        executorService.shutdown();
-
-                        // 10 secs is arbitrary, but if the service container is terminated,
-                        // no good can happen from waiting for ModelControllerClient requests to complete
-                        executorService.awaitTermination(10, TimeUnit.SECONDS);
-                    } catch (RuntimeException rte) {
-                        throw rte;
-                    } catch (InterruptedException ite) {
-                        ite.printStackTrace();
-                        Thread.currentThread().interrupt();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-
-            @Override
-            public void undeploy(File file) throws ExecutionException, InterruptedException {
-                execute(serverDeploymentManager.newDeploymentPlan()
-                        .undeploy(file.getName()).andRemoveUndeployed()
-                        .build());
-            }
-
-            @Override
-            public ServiceController<?> getService(ServiceName serviceName) {
-                return serviceContainer != null ? serviceContainer.getService(serviceName) : null;
-            }
-
-            private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
-                ModelControllerClient newClient = null;
-                if (state != ControlledProcessState.State.STOPPING && serviceContainer != null) {
-                    @SuppressWarnings("unchecked")
-                    final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getService(Services.JBOSS_SERVER_CONTROLLER);
-                    if (controllerService != null) {
-                        final ModelController controller = controllerService.getValue();
-                        serverDeploymentManager = new ModelControllerServerDeploymentManager(controller);
-                        newClient = controller.createClient(executorService);
-                    } // else TODO use some sort of timeout and poll. A non-stopping server should install a ModelController very quickly
-                }
-                modelControllerClient = newClient;
-                currentProcessState = state;
-            }
-
-            private synchronized ModelControllerClient getActiveModelControllerClient() {
-                switch (currentProcessState) {
-                    case STOPPING: {
-                        throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
-                    }
-                    case STARTING: {
-                        if (modelControllerClient == null) {
-                            // Service wasn't available when we got the ControlledProcessState
-                            // state change notification; try again
-                            establishModelControllerClient(currentProcessState);
-                            if (modelControllerClient == null) {
-                                throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
-                            }
-                        }
-                        // fall through
-                    }
-                    default: {
-                        return modelControllerClient;
-                    }
-                }
-            }
-        };
+        StandaloneServer standaloneServer = new StandaloneServerImpl(cmdargs, systemProps, systemEnv, moduleLoader);
         return standaloneServer;
     }
 
@@ -442,6 +234,244 @@ public class EmbeddedStandAloneServerFactory {
 
                 } catch (FileNotFoundException e) {
                     throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
+                }
+            }
+        }
+    }
+
+    private static class StandaloneServerImpl implements StandaloneServer {
+
+        private final PropertyChangeListener processStateListener;
+        private final String[] cmdargs;
+        private final Properties systemProps;
+        private final Map<String, String> systemEnv;
+        private final ModuleLoader moduleLoader;
+        private ServiceContainer serviceContainer;
+        private ServerDeploymentManager serverDeploymentManager;
+        private Context context;
+        private ControlledProcessState.State currentProcessState;
+        private ModelControllerClient modelControllerClient;
+        private ExecutorService executorService;
+        private ControlledProcessStateService controlledProcessStateService;
+
+        public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
+            this.cmdargs = cmdargs;
+            this.systemProps = systemProps;
+            this.systemEnv = systemEnv;
+            this.moduleLoader = moduleLoader;
+            processStateListener = new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if ("currentState".equals(evt.getPropertyName())) {
+                        ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
+                        establishModelControllerClient(newState);
+                    }
+                }
+            };
+        }
+
+        @Override
+        public void deploy(File file) throws IOException, ExecutionException, InterruptedException {
+            // the current deployment manager only accepts jar input stream, so hack one together
+            final InputStream is = VFSUtils.createJarFileInputStream(VFS.getChild(file.toURI()));
+            try {
+                execute(serverDeploymentManager.newDeploymentPlan().add(file.getName(), is).andDeploy().build());
+            } finally {
+                if(is != null) try {
+                    is.close();
+                } catch (IOException ignore) {
+                    //
+                }
+            }
+
+        }
+
+        private ServerDeploymentPlanResult execute(DeploymentPlan deploymentPlan) throws ExecutionException, InterruptedException {
+            return serverDeploymentManager.execute(deploymentPlan).get();
+        }
+
+        @Override
+        public Context getContext() {
+            if (context == null) {
+                throw ServerLogger.ROOT_LOGGER.namingContextHasNotBeenSet();
+            }
+            return context;
+        }
+
+        @Override
+        public synchronized ModelControllerClient getModelControllerClient() {
+            return modelControllerClient == null ? null : new DelegatingModelControllerClient(new DelegatingModelControllerClient.DelegateProvider() {
+                @Override
+                public ModelControllerClient getDelegate() {
+                    return getActiveModelControllerClient();
+                }
+            });
+        }
+
+        @Override
+        public void start() throws ServerStartException {
+            try {
+
+                // Take control of server use of System.exit
+                SystemExiter.initialize(new SystemExiter.Exiter() {
+                    @Override
+                    public void exit(int status) {
+                        StandaloneServerImpl.this.exit();
+                    }
+                });
+
+                // Determine the ServerEnvironment
+                ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED);
+
+                Bootstrap bootstrap = Bootstrap.Factory.newInstance();
+
+                Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+
+                /*
+                 * This would setup an {@link TransientConfigurationPersister} which does not persist anything
+                 *
+                final ExtensionRegistry extensionRegistry = configuration.getExtensionRegistry();
+                final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = new Bootstrap.ConfigurationPersisterFactory() {
+                    @Override
+                    public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
+                        final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
+                        final StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+                        final File configurationFile = serverEnvironment.getServerConfigurationFile().getBootFile();
+                        XmlConfigurationPersister persister = new TransientConfigurationPersister(configurationFile, rootElement, parser, parser);
+                        for (Namespace namespace : Namespace.domainValues()) {
+                            if (!namespace.equals(Namespace.CURRENT)) {
+                                persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
+                            }
+                        }
+                        extensionRegistry.setWriterRegistry(persister);
+                        return persister;
+                    }
+                };
+                configuration.setConfigurationPersisterFactory(configurationPersisterFactory);
+                */
+
+                configuration.setModuleLoader(moduleLoader);
+
+                Future<ServiceContainer> future = bootstrap.startup(configuration, Collections.<ServiceActivator>emptyList());
+
+                serviceContainer = future.get();
+
+                executorService = Executors.newCachedThreadPool();
+
+                @SuppressWarnings("unchecked")
+                final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
+                controlledProcessStateService = processStateServiceValue.getValue();
+                controlledProcessStateService.addPropertyChangeListener(processStateListener);
+                establishModelControllerClient(controlledProcessStateService.getCurrentState());
+
+                context = new InitialContext();
+            } catch (RuntimeException rte) {
+                throw rte;
+            } catch (Exception ex) {
+                throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
+            }
+        }
+
+        @Override
+        public void stop() {
+            exit();
+        }
+
+        private void exit() {
+            if (context != null) {
+                try {
+                    context.close();
+
+                    context = null;
+                } catch (NamingException e) {
+                    // TODO: use logging?
+                    e.printStackTrace();
+                }
+            }
+            serverDeploymentManager = null;
+            if (serviceContainer != null) {
+                try {
+                    serviceContainer.shutdown();
+
+                    serviceContainer.awaitTermination();
+                } catch (RuntimeException rte) {
+                    throw rte;
+                } catch (InterruptedException ite) {
+                    ite.printStackTrace();
+                    Thread.currentThread().interrupt();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (controlledProcessStateService != null) {
+                controlledProcessStateService.removePropertyChangeListener(processStateListener);
+                controlledProcessStateService = null;
+            }
+            if (executorService != null) {
+                try {
+                    executorService.shutdown();
+
+                    // 10 secs is arbitrary, but if the service container is terminated,
+                    // no good can happen from waiting for ModelControllerClient requests to complete
+                    executorService.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (RuntimeException rte) {
+                    throw rte;
+                } catch (InterruptedException ite) {
+                    ite.printStackTrace();
+                    Thread.currentThread().interrupt();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
+        }
+
+        @Override
+        public void undeploy(File file) throws ExecutionException, InterruptedException {
+            execute(serverDeploymentManager.newDeploymentPlan()
+                    .undeploy(file.getName()).andRemoveUndeployed()
+                    .build());
+        }
+
+        @Override
+        public ServiceController<?> getService(ServiceName serviceName) {
+            return serviceContainer != null ? serviceContainer.getService(serviceName) : null;
+        }
+
+        private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
+            ModelControllerClient newClient = null;
+            if (state != ControlledProcessState.State.STOPPING && serviceContainer != null) {
+                @SuppressWarnings("unchecked")
+                final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getService(Services.JBOSS_SERVER_CONTROLLER);
+                if (controllerService != null) {
+                    final ModelController controller = controllerService.getValue();
+                    serverDeploymentManager = new ModelControllerServerDeploymentManager(controller);
+                    newClient = controller.createClient(executorService);
+                } // else TODO use some sort of timeout and poll. A non-stopping server should install a ModelController very quickly
+            }
+            modelControllerClient = newClient;
+            currentProcessState = state;
+        }
+
+        private synchronized ModelControllerClient getActiveModelControllerClient() {
+            switch (currentProcessState) {
+                case STOPPING: {
+                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
+                }
+                case STARTING: {
+                    if (modelControllerClient == null) {
+                        // Service wasn't available when we got the ControlledProcessState
+                        // state change notification; try again
+                        establishModelControllerClient(currentProcessState);
+                        if (modelControllerClient == null) {
+                            throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
+                        }
+                    }
+                    // fall through
+                }
+                default: {
+                    return modelControllerClient;
                 }
             }
         }
