@@ -166,7 +166,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
 
         ManagementResourceRegistration profileASub2Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), new NonResolvingResourceDescriptionResolver()));
-        AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG);
+        AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG, "number");
         profileASub2Reg.registerReadWriteAttribute(longAttr, null, new ModelOnlyWriteAttributeHandler(longAttr));
 
 
@@ -205,7 +205,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         ManagementResourceRegistration profileCSub5Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), new NonResolvingResourceDescriptionResolver()));
 
-        profileCSub5Reg.registerReadOnlyAttribute(TestUtils.createAttribute("name", ModelType.STRING), new OperationStepHandler() {
+        profileCSub5Reg.registerReadOnlyAttribute(TestUtils.createAttribute("name", ModelType.STRING, "varchar"), new OperationStepHandler() {
 
             @Override
             public void execute(OperationContext context, ModelNode operation) {
@@ -233,7 +233,11 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
 
     /**
      * Override to get the actual result from the response.
+     * @param operation
+     * @return
+     * @throws OperationFailedException
      */
+    @Override
     public ModelNode executeForResult(ModelNode operation) throws OperationFailedException {
         ModelNode rsp = getController().execute(operation, null, null, null);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
@@ -329,7 +333,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (operations) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 16 : 20, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 18 : 22, ops.size());
             boolean runtimeOnly = processType != ProcessType.DOMAIN_SERVER;
             assertEquals(runtimeOnly, ops.contains("testA1-1"));
             assertEquals(runtimeOnly, ops.contains("testA1-2"));
@@ -381,7 +385,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (result.hasDefined(OPERATIONS)) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 16 : 18, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 18 : 20, ops.size());
             assertTrue(ops.contains(READ_RESOURCE_OPERATION));
             assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
             assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
@@ -416,7 +420,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (result.hasDefined(OPERATIONS)) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 16 : 18, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 18 : 20, ops.size());
             assertTrue(ops.contains(READ_RESOURCE_OPERATION));
             assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
             assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));

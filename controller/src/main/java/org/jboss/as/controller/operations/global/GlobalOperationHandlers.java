@@ -77,6 +77,8 @@ public class GlobalOperationHandlers {
         set.add(MapOperations.MAP_CLEAR_DEFINITION.getName());
         set.add(MapOperations.MAP_REMOVE_DEFINITION.getName());
         set.add(ListOperations.LIST_ADD_DEFINITION.getName());
+        set.add(ReadAttributeGroupNamesHandler.DEFINITION.getName());
+        set.add(ReadAttributeGroupHandler.DEFINITION.getName());
 
         GLOBAL_READ_OPERATION_NAMES = Collections.unmodifiableSet(set);
     }
@@ -91,14 +93,17 @@ public class GlobalOperationHandlers {
                     org.jboss.as.controller.operations.global.ReadResourceHandler.INSTANCE, true);
             root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.DEFINITION,
                     org.jboss.as.controller.operations.global.ReadAttributeHandler.INSTANCE, true);
+            root.registerOperationHandler(ReadAttributeGroupHandler.DEFINITION, ReadAttributeGroupHandler.INSTANCE, true);
         }else{
             root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_DEFINITION,
                     org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_INSTANCE, true);
             root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_DEFINITION,
                     org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_INSTANCE, true);
+            root.registerOperationHandler(ReadAttributeGroupHandler.RESOLVE_DEFINITION, ReadAttributeGroupHandler.RESOLVE_INSTANCE, true);
         }
 
         root.registerOperationHandler(ReadResourceDescriptionHandler.DEFINITION, ReadResourceDescriptionHandler.INSTANCE, true);
+        root.registerOperationHandler(ReadAttributeGroupNamesHandler.DEFINITION, ReadAttributeGroupNamesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadChildrenNamesHandler.DEFINITION, ReadChildrenNamesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadChildrenTypesHandler.DEFINITION, ReadChildrenTypesHandler.INSTANCE, true);
         root.registerOperationHandler(ReadChildrenResourcesHandler.DEFINITION, ReadChildrenResourcesHandler.INSTANCE, true);

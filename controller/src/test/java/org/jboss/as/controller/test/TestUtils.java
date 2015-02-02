@@ -29,6 +29,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -41,19 +42,46 @@ public class TestUtils {
             .build();
 
     public static AttributeDefinition createAttribute(String name, ModelType type) {
-        return SimpleAttributeDefinitionBuilder.create(name, type).build();
+        return createAttribute(name, type, null, false);
+    }
+
+    public static AttributeDefinition createAttribute(String name, ModelType type, String groupName) {
+        return createAttribute(name, type, groupName, false);
     }
 
     public static AttributeDefinition createAttribute(String name, ModelType type, boolean runtimeOnly) {
+        return createAttribute(name, type, null, runtimeOnly);
+    }
+
+    public static AttributeDefinition createAttribute(String name, ModelType type, String groupName, boolean runtimeOnly) {
+        return createAttribute(name, type, groupName, runtimeOnly, false);
+    }
+
+    public static AttributeDefinition createAttribute(String name, ModelType type, String groupName, boolean runtimeOnly, boolean alias) {
         SimpleAttributeDefinitionBuilder attribute = SimpleAttributeDefinitionBuilder.create(name, type);
         if (runtimeOnly) {
             attribute.setStorageRuntime();
         }
+        if(groupName != null && ! groupName.isEmpty()) {
+            attribute.setAttributeGroup(groupName);
+        }
+        if(alias) {
+            attribute.addFlag(AttributeAccess.Flag.ALIAS);
+        }
+        attribute.setAllowExpression(true);
         return attribute.build();
     }
 
     public static AttributeDefinition createMetric(String name, ModelType type) {
-        return SimpleAttributeDefinitionBuilder.create(name, type).setStorageRuntime().build();
+        return createMetric(name, type, null);
+    }
+
+    public static AttributeDefinition createMetric(String name, ModelType type, String groupName) {
+        SimpleAttributeDefinitionBuilder attribute = SimpleAttributeDefinitionBuilder.create(name, type).setStorageRuntime();
+        if(groupName != null && ! groupName.isEmpty()) {
+            attribute.setAttributeGroup(groupName);
+        }
+        return attribute.build();
     }
 
     public static OperationDefinition createOperationDefinition(String name, AttributeDefinition... parameters) {

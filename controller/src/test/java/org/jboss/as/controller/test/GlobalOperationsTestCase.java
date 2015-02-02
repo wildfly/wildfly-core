@@ -555,7 +555,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         ModelNode result = executeForResult(operation);
 
         assertEquals(ModelType.LIST, result.getType());
-        assertEquals(20, result.asList().size());
+        assertEquals(22, result.asList().size());
         List<String> names = modelNodeListToStringList(result.asList());
         assertTrue(names.contains("testA1-1"));
         assertTrue(names.contains("testA1-2"));
@@ -574,7 +574,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
 
         result = executeForResult(operation);
         assertEquals(ModelType.LIST, result.getType());
-        assertEquals(19, result.asList().size());
+        assertEquals(21, result.asList().size());
         names = modelNodeListToStringList(result.asList());
         assertTrue(names.contains("testA2"));
         assertTrue(names.contains(READ_RESOURCE_OPERATION));
@@ -590,7 +590,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         operation = createOperation(READ_OPERATION_NAMES_OPERATION, "profile", "profileB");
         result = executeForResult(operation);
         assertEquals(ModelType.LIST, result.getType());
-        assertEquals(18, result.asList().size());
+        assertEquals(20, result.asList().size());
         assertTrue(names.contains(READ_RESOURCE_OPERATION));
         assertTrue(names.contains(READ_ATTRIBUTE_OPERATION));
         assertTrue(names.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
