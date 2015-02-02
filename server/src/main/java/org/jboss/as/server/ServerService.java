@@ -373,7 +373,7 @@ public final class ServerService extends AbstractControllerService {
         } else {
             // Die!
             ServerLogger.ROOT_LOGGER.unsuccessfulBoot();
-            System.exit(1);
+            SystemExiter.exit(1);
         }
     }
 
