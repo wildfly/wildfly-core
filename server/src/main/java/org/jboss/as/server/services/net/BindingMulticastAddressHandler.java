@@ -21,6 +21,7 @@ package org.jboss.as.server.services.net;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
@@ -41,7 +42,7 @@ public class BindingMulticastAddressHandler extends AbstractBindingWriteHandler 
     }
 
     @Override
-    void handleRuntimeChange(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
+    void handleRuntimeChange(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
         final InetAddress address;
         if(attributeValue.isDefined()) {
             String addrString = attributeValue.asString();
@@ -57,7 +58,7 @@ public class BindingMulticastAddressHandler extends AbstractBindingWriteHandler 
     }
 
     @Override
-    void handleRuntimeRollback(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
+    void handleRuntimeRollback(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
         final InetAddress address;
         if(attributeValue.isDefined()) {
             String addrString = attributeValue.asString();

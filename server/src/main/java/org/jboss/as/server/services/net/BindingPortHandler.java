@@ -18,6 +18,7 @@
  */
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
@@ -37,12 +38,12 @@ public class BindingPortHandler extends AbstractBindingWriteHandler {
     }
 
     @Override
-    void handleRuntimeChange(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
+    void handleRuntimeChange(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
         binding.setPort(attributeValue.asInt());
     }
 
     @Override
-    void handleRuntimeRollback(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
+    void handleRuntimeRollback(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
         binding.setPort(attributeValue.asInt());
     }
 }
