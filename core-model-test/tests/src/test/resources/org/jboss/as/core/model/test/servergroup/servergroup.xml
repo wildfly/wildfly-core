@@ -33,7 +33,7 @@
                  </environment-variables>
             </jvm>
 
-            <socket-binding-group ref="test-sockets" port-offset="10"/>
+            <socket-binding-group ref="test-sockets" port-offset="10" default-interface="public-two"/>
 
             <deployments>
                 <deployment name="test-deployment" runtime-name="bar.war" enabled="false"/>

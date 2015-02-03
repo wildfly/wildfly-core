@@ -22,6 +22,7 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -67,6 +68,9 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
         return new SocketBindingGroupHandler(hostControllerInfo);
     }
 
+    public static ServerRestartRequiredServerConfigWriteAttributeHandler createDefaultSocketBindingInstance(LocalHostControllerInfo hostControllerInfo) {
+        return new SocketBindingDefaultInterfaceHandler(hostControllerInfo);
+    }
 
     @Override
     protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
@@ -144,6 +148,29 @@ public abstract class ServerRestartRequiredServerConfigWriteAttributeHandler ext
         }
     }
 
+    private static class SocketBindingDefaultInterfaceHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
+
+        final LocalHostControllerInfo hostControllerInfo;
+
+        public SocketBindingDefaultInterfaceHandler(LocalHostControllerInfo hostControllerInfo) {
+            super(ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
+            this.hostControllerInfo = hostControllerInfo;
+        }
+
+        @Override
+        protected void validateReferencedNewValueExists(OperationContext context, ModelNode operation, ModelNode currentValue, ModelNode resolvedValue) throws OperationFailedException {
+            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
+
+            if (resolvedValue.isDefined()) {
+                //Don't do this on boot since the domain model is not populated yet
+                if (!context.isBooting() && resolvedValue.isDefined() && root.getChild(PathElement.pathElement(INTERFACE, resolvedValue.asString())) == null) {
+                    if (hostControllerInfo.isMasterDomainController() || !hostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
+                        throw HostControllerLogger.ROOT_LOGGER.failedToResolveInterface(resolvedValue.asString());
+                    }
+                }
+            }
+        }
+    }
 
     private static class SocketBindingPortOffsetHandler extends ServerRestartRequiredServerConfigWriteAttributeHandler {
 

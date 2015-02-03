@@ -402,10 +402,11 @@ public class ModelDescriptionConstants {
     public static final String SHUTDOWN = "shutdown";
     public static final String SKIP_MISSING_GROUPS = "skip-missing-groups";
     public static final String SOCKET_BINDING = "socket-binding";
-    public static final String SOCKET_BINDING_REF = "socket-binding-ref";
+    public static final String SOCKET_BINDING_DEFAULT_INTERFACE = "socket-binding-default-interface";
     public static final String SOCKET_BINDING_GROUP = "socket-binding-group";
     public static final String SOCKET_BINDING_GROUP_NAME = "socket-binding-group-name";
     public static final String SOCKET_BINDING_PORT_OFFSET = "socket-binding-port-offset";
+    public static final String SOCKET_BINDING_REF = "socket-binding-ref";
     public static final String SOURCE_INTERFACE = "source-interface";
     public static final String SOURCE_PORT = "source-port";
     public static final String SSL = "ssl";

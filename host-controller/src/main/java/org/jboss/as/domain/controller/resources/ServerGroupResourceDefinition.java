@@ -73,6 +73,12 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
             .build();
 
+    public static final SimpleAttributeDefinition SOCKET_BINDING_DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE, ModelType.STRING, true)
+            .setAllowExpression(false)
+            .setXmlName(Attribute.DEFAULT_INTERFACE.getLocalName())
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+            .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG).build();
+
     public static final SimpleAttributeDefinition SOCKET_BINDING_PORT_OFFSET = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET, ModelType.INT, true)
             .setDefaultValue(new ModelNode(0))
             .setXmlName(Attribute.PORT_OFFSET.getLocalName())
@@ -87,7 +93,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
             .build();
 
-    public static final AttributeDefinition[] ADD_ATTRIBUTES = new AttributeDefinition[] {PROFILE, SOCKET_BINDING_GROUP, SOCKET_BINDING_PORT_OFFSET, MANAGEMENT_SUBSYSTEM_ENDPOINT};
+    public static final AttributeDefinition[] ADD_ATTRIBUTES = new AttributeDefinition[] {PROFILE, SOCKET_BINDING_GROUP, SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, MANAGEMENT_SUBSYSTEM_ENDPOINT};
 
     private final boolean master;
     private final HostFileRepository fileRepository;

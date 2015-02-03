@@ -27,6 +27,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
@@ -46,7 +47,12 @@ class ServerGroupTransformers {
 
         //////////////////////////////////
         //The EAP/AS 7.x chains
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_4);
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_6)
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
+                .end();
+        builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_6, DomainTransformers.VERSION_1_4);
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
         builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3)
@@ -69,8 +75,11 @@ class ServerGroupTransformers {
 
         //////////////////////////////////
         //The WildFly chains
-
-        builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_2_1);
+        builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_2_1)
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED,  ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
+                .end();
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
         return chainedBuilder;

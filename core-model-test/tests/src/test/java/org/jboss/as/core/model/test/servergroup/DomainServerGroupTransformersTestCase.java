@@ -25,6 +25,9 @@ package org.jboss.as.core.model.test.servergroup;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT;
+import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE;
+import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET;
 
 import java.util.List;
 
@@ -41,7 +44,6 @@ import org.jboss.as.core.model.test.TransformersTestParameterized.TransformersPa
 import org.jboss.as.core.model.test.util.ExcludeCommonOperations;
 import org.jboss.as.core.model.test.util.StandardServerGroupInitializers;
 import org.jboss.as.core.model.test.util.TransformersTestParameter;
-import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestControllerVersion;
@@ -120,9 +122,34 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP)),
                         new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT,
-                                ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET
-                        ).setReadOnly(ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT)));
+                                MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET
+                        ).setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT)));
+    }
+
+
+    @Test
+    public void testRejectTransformers9x() throws Exception {
+        KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
+                .setModelInitializer(StandardServerGroupInitializers.XML_MODEL_INITIALIZER, StandardServerGroupInitializers.XML_MODEL_WRITE_SANITIZER)
+                .createContentRepositoryContent("12345678901234567890")
+                .createContentRepositoryContent("09876543210987654321");
+
+        // Add legacy subsystems
+        LegacyKernelServicesInitializer legacyInitializer =
+                StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
+
+        KernelServices mainServices = builder.build();
+
+        List<ModelNode> ops = builder.parseXmlResource("servergroup.xml");
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
+                .addFailedAttribute(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP)),
+                        FailedOperationTransformationConfig.ChainedConfig.createBuilder(
+                                MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE)
+                        .addConfig(new FailedOperationTransformationConfig.RejectExpressionsConfig(MANAGEMENT_SUBSYSTEM_ENDPOINT,
+                                        SOCKET_BINDING_PORT_OFFSET))
+                        .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(SOCKET_BINDING_DEFAULT_INTERFACE))
+                        .build().setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT)));
+
     }
 
     private static final ModelFixer MODEL_FIXER = new ModelFixer() {

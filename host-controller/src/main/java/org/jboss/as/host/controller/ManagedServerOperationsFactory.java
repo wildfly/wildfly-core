@@ -81,6 +81,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
@@ -195,6 +196,7 @@ public final class ManagedServerOperationsFactory {
 
         int portOffSet = 0;
         String socketBindingRef = null;
+        String defaultInterface = null;
 
         if (serverGroup.hasDefined(SOCKET_BINDING_GROUP)) {
             socketBindingRef = serverGroup.get(SOCKET_BINDING_GROUP).asString();
@@ -207,6 +209,12 @@ public final class ManagedServerOperationsFactory {
         }
         if (serverModel.hasDefined(SOCKET_BINDING_PORT_OFFSET)) {
             portOffSet = serverModel.get(SOCKET_BINDING_PORT_OFFSET).asInt();
+        }
+        if (serverGroup.hasDefined(SOCKET_BINDING_DEFAULT_INTERFACE)) {
+            defaultInterface = serverGroup.get(SOCKET_BINDING_DEFAULT_INTERFACE).asString();
+        }
+        if (serverModel.hasDefined(SOCKET_BINDING_DEFAULT_INTERFACE)) {
+            defaultInterface = serverModel.get(SOCKET_BINDING_DEFAULT_INTERFACE).asString();
         }
         if (socketBindingRef == null) {
             throw HostControllerLogger.ROOT_LOGGER.undefinedSocketBinding(serverName);
@@ -227,7 +235,7 @@ public final class ManagedServerOperationsFactory {
         addManagementConnections(updates);
         addManagementAuthorization(updates);
         addInterfaces(updates);
-        addSocketBindings(updates, portOffSet, socketBindingRef);
+        addSocketBindings(updates, portOffSet, socketBindingRef, defaultInterface);
         addSubsystems(updates);
         addDeployments(updates);
         addDeploymentOverlays(updates);
@@ -589,7 +597,7 @@ public final class ManagedServerOperationsFactory {
         }
     }
 
-    private void addSocketBindings(List<ModelNode> updates, int portOffSet, String bindingRef) {
+    private void addSocketBindings(List<ModelNode> updates, int portOffSet, String bindingRef, String defaultInterface) {
         final Set<String> processed = new HashSet<String>();
         final Map<String, ModelNode> groups = new LinkedHashMap<String, ModelNode>();
         if (domainModel.hasDefined(SOCKET_BINDING_GROUP)) {
@@ -608,6 +616,9 @@ public final class ManagedServerOperationsFactory {
         final PathAddress groupAddress = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, bindingRef));
         final ModelNode groupAdd = BindingGroupAddHandler.getOperation(groupAddress, group);
         groupAdd.get(PORT_OFFSET).set(portOffSet);
+        if(defaultInterface != null) {
+            groupAdd.get(DEFAULT_INTERFACE).set(defaultInterface);
+        }
         updates.add(groupAdd);
         mergeBindingGroups(updates, groups, bindingRef, group, processed);
     }
