@@ -22,14 +22,13 @@
 
 package org.jboss.as.controller;
 
+
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.MapValidator;
@@ -82,47 +81,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
      * @throws XMLStreamException if {@code value} is not valid
      */
     public ModelNode parse(final String value, final Location location) throws XMLStreamException {
-
-        final String trimmed = value == null ? null : value.trim();
-        ModelNode node;
-        if (trimmed != null) {
-            if (isAllowExpression()) {
-                node = ParseUtils.parsePossibleExpression(trimmed);
-            } else {
-                node = new ModelNode().set(trimmed);
-            }
-            if (node.getType() != ModelType.EXPRESSION) {
-                // Convert the string to the expected type
-                switch (getType()) {
-                    case BIG_DECIMAL:
-                        node.set(node.asBigDecimal());
-                        break;
-                    case BIG_INTEGER:
-                        node.set(node.asBigInteger());
-                        break;
-                    case BOOLEAN:
-                        node.set(node.asBoolean());
-                        break;
-                    case BYTES:
-                        node.set(node.asBytes());
-                        break;
-                    case DOUBLE:
-                        node.set(node.asDouble());
-                        break;
-                    case INT:
-                        node.set(node.asInt());
-                        break;
-                    case LONG:
-                        node.set(node.asLong());
-                        break;
-                }
-            }
-        }
-        else {
-            node = new ModelNode();
-        }
-
-
+        ModelNode node = ParseUtils.parseAttributeValue(value, isAllowExpression(), getType());
         try {
             elementValidator.validateParameter(getXmlName(), node);
         } catch (OperationFailedException e) {

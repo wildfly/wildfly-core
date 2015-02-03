@@ -50,6 +50,7 @@ public abstract class AbstractSystemPropertyTest extends AbstractCoreModelTest {
     static final String PROP_THREE = "sys.prop.test.three";
     static final String PROP_FOUR = "sys.prop.test.four";
     static final String PROP_FIVE = "sys.prop.test.five";
+    static final String PROP_SIX = "sys.prop.test.six";
 
     final boolean standalone;
     final boolean domain;
@@ -65,6 +66,8 @@ public abstract class AbstractSystemPropertyTest extends AbstractCoreModelTest {
         System.clearProperty(PROP_TWO);
         System.clearProperty(PROP_THREE);
         System.clearProperty(PROP_FOUR);
+        System.clearProperty(PROP_FIVE);
+        System.clearProperty(PROP_SIX);
     }
 
     @Test
@@ -326,11 +329,12 @@ public abstract class AbstractSystemPropertyTest extends AbstractCoreModelTest {
         ModelTestUtils.compareXml(xmlOriginal, marshalled);
 
         ModelNode props = readSystemPropertiesParentModel(kernelServices);
-        Assert.assertEquals(standalone || domain ? 4 : 5, props.keys().size());
+        Assert.assertEquals(standalone || domain ? 5 : 6, props.keys().size());
 
         Assert.assertEquals("1", props.get(PROP_ONE, VALUE).asString());
         Assert.assertEquals("2", props.get(PROP_TWO, VALUE).asString());
         Assert.assertEquals("3", props.get(PROP_THREE, VALUE).asString());
+        Assert.assertEquals(" six ", props.get(PROP_SIX, VALUE).asString());
         Assert.assertFalse(props.get(PROP_FOUR, VALUE).isDefined());
         if (!standalone) {
             Assert.assertTrue(props.get(PROP_ONE, BOOT_TIME).asBoolean());

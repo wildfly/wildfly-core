@@ -24,13 +24,13 @@
 
 package org.jboss.as.controller;
 
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
@@ -86,44 +86,7 @@ public abstract class AttributeParser {
     }
 
     private ModelNode parse(final AttributeDefinition attribute, final String value) throws OperationFailedException {
-        final String trimmed = value == null ? null : value.trim();
-        ModelNode node;
-        if (trimmed != null) {
-            if (attribute.isAllowExpression()) {
-                node = ParseUtils.parsePossibleExpression(trimmed);
-            } else {
-                node = new ModelNode().set(trimmed);
-            }
-            if (node.getType() != ModelType.EXPRESSION) {
-                // Convert the string to the expected type
-                switch (attribute.getType()) {
-                    case BIG_DECIMAL:
-                        node.set(node.asBigDecimal());
-                        break;
-                    case BIG_INTEGER:
-                        node.set(node.asBigInteger());
-                        break;
-                    case BOOLEAN:
-                        node.set(node.asBoolean());
-                        break;
-                    case BYTES:
-                        node.set(node.asBytes());
-                        break;
-                    case DOUBLE:
-                        node.set(node.asDouble());
-                        break;
-                    case INT:
-                        node.set(node.asInt());
-                        break;
-                    case LONG:
-                        node.set(node.asLong());
-                        break;
-                }
-            }
-        } else {
-            node = new ModelNode();
-        }
-
+        ModelNode node = ParseUtils.parseAttributeValue(value, attribute.isAllowExpression(), attribute.getType());
         final ParameterValidator validator;
         // A bit yuck, but I didn't want to introduce a new type just for this
         if (attribute instanceof ListAttributeDefinition) {
