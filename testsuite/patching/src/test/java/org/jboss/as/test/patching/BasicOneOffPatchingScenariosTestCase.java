@@ -41,12 +41,15 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import com.google.common.base.Joiner;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.test.patching.util.module.Module;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -56,6 +59,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+
+import com.google.common.base.Joiner;
 
 
 /**
@@ -103,7 +108,7 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
 
         // apply the patch and check if server is in restart-required mode
         controller.start();
-        Assert.assertTrue("Patch should be accepted", CliUtilsForPatching.applyPatch(zippedPatch.getAbsolutePath()));
+        Assert.assertTrue("Patch should be accepted", applyPatch(zippedPatch.getAbsolutePath()));
         Assert.assertTrue("server should be in restart-required mode", CliUtilsForPatching.doesServerRequireRestart());
         controller.stop();
 
@@ -136,6 +141,26 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
                 CliUtilsForPatching.getInstalledPatches().contains(patchID));
         Assert.assertEquals("Unexpected contents of misc file", fileContent, readFile(path));
         controller.stop();
+    }
+
+    /**
+     * Applies a patch using a client provided ModelControllerClient.
+     * Test for WFCORE-526
+     * @param path  the path to patch archive
+     * @return returns true or throws an exception
+     * @throws Exception  if the patch command failed
+     */
+    protected boolean applyPatch(String path) throws Exception {
+        final CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
+        final ModelControllerClient client = ModelControllerClient.Factory.create(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());
+        ctx.bindClient(client);
+        try {
+            ctx.handle("patch apply " + path);
+        } finally {
+            // terminating the session closes the client too
+            ctx.terminateSession();
+        }
+        return true;
     }
 
     /**
