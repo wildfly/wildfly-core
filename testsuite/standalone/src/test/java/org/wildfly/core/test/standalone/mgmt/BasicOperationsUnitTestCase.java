@@ -359,6 +359,27 @@ public class BasicOperationsUnitTestCase {
         execute(remove);
     }
 
+    @Test
+    public void testEmptyAddress() throws IOException {
+        ModelNode operation = new ModelNode();
+        operation.get(OP).set("whoami");
+        operation.get(OP_ADDR).set("");
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
+        Assert.assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
+        Assert.assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0378", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0378"));
+    }
+
+    @Test
+    public void testEmptyOperation() throws IOException {
+        ModelNode operation = new ModelNode();
+        operation.get(OP_ADDR).setEmptyList();
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
+        Assert.assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
+        Assert.assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0383", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0383"));
+    }
+
     protected ModelNode execute(final ModelNode operation) throws IOException {
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         Assert.assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());

@@ -3293,4 +3293,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 382, value="Illegal permission actions '%s'")
     IllegalArgumentException illegalPermissionActions(String actions);
+
+    @Message(id = 383, value = "No operation is defined %s")
+    String noOperationDefined(final ModelNode operation);
 }

@@ -45,6 +45,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
+import static org.jboss.as.controller.operations.common.Util.validateOperation;
 
 import java.io.IOException;
 import java.security.AccessControlContext;
@@ -296,7 +297,10 @@ class ModelControllerImpl implements ModelController {
         }
         final ModelNode blockingTimeoutConfig = headers != null && headers.hasDefined(BLOCKING_TIMEOUT) ? headers.get(BLOCKING_TIMEOUT) : null;
 
-        final ModelNode responseNode = new ModelNode();
+        final ModelNode responseNode = validateOperation(operation);
+        if(responseNode.hasDefined(FAILURE_DESCRIPTION)) {
+            return OperationResponse.Factory.createSimple(responseNode);
+        }
         // Report the correct operation response, otherwise the preparedResult would only contain
         // the result of the last active step in a composite operation
         final OperationTransactionControl originalResultTxControl = control == null ? null : new OperationTransactionControl() {
@@ -1437,6 +1441,7 @@ class ModelControllerImpl implements ModelController {
     }
 
     private interface ResponseConverter<T> {
+
         T fromOperationResponse(OperationResponse or);
 
         ResponseConverter<ModelNode> TO_MODEL_NODE = new ResponseConverter<ModelNode>() {
@@ -1446,8 +1451,8 @@ class ModelControllerImpl implements ModelController {
                 try {
                     or.close();
                 } catch (IOException e) {
-                    ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, " +
-                            "if any, were not wanted", or);
+                    ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
+                            + "if any, were not wanted", or);
                 }
                 return result;
             }

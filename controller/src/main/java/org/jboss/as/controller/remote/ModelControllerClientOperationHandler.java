@@ -245,24 +245,28 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
      * @return {@code true} if the prepared result should be sent, {@code false} otherwise
      */
     private boolean sendPreparedResponse(final ModelNode operation) {
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String op = operation.get(OP).asString();
-        final int size = address.size();
-        if (size == 0) {
-            if (op.equals("reload")) {
-                return true;
-            } else if (op.equals(COMPOSITE)) {
-                // TODO
-                return false;
-            } else {
-                return false;
+        try {
+            final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            final String op = operation.get(OP).asString();
+            final int size = address.size();
+            if (size == 0) {
+                if ("reload".equals(op)) {
+                    return true;
+                } else if (COMPOSITE.equals(op)) {
+                    // TODO
+                    return false;
+                } else {
+                    return false;
+                }
+            } else if (size == 1) {
+                if (HOST.equals(address.getLastElement().getKey())) {
+                    return "reload".equals(op);
+                }
             }
-        } else if (size == 1) {
-            if (address.getLastElement().getKey().equals(HOST)) {
-                return op.equals("reload");
-            }
+            return false;
+        } catch(Exception ex) {
+            return false;
         }
-        return false;
     }
 
     private static class CompletedCallback {
