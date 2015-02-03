@@ -346,6 +346,10 @@ public class PathAddress implements Iterable<PathElement> {
         return pathAddressList.listIterator();
     }
 
+    public PathAddress getParent(){
+        return subAddress(0, size() - 1);
+    }
+
     @Override
     public int hashCode() {
         return pathAddressList.hashCode();
