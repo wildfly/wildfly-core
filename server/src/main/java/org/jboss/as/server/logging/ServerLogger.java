@@ -1101,4 +1101,10 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 221, value = "Deployment \"%s\" is using a deprecated module (\"%s\") which may be removed in future versions without notice.")
     void deprecatedApiUsed(String name, ModuleIdentifier id);
+
+    @Message(id = 222, value="Illegal permission name '%s'")
+    IllegalArgumentException illegalPermissionName(String name);
+
+    @Message(id = 223, value="Illegal permission actions '%s'")
+    IllegalArgumentException illegalPermissionActions(String actions);
 }
