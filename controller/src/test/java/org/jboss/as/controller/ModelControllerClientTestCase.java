@@ -193,10 +193,8 @@ public class ModelControllerClientTestCase {
         // Set the handler
         final ModelControllerClient client = setupTestClient(controller);
         try {
-            ModelNode operation = new ModelNode();
-            operation.get("test").set("123");
-
             ModelNode op = new ModelNode();
+            op.get("operation").set("fake");
             op.get("name").set(123);
             OperationBuilder builder = new OperationBuilder(op);
             builder.addInputStream(new ByteArrayInputStream(firstBytes));
@@ -235,6 +233,7 @@ public class ModelControllerClientTestCase {
 
             ModelNode operation = new ModelNode();
             operation.get("test").set("123");
+            operation.get("operation").set("fake");
 
             final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
 
@@ -287,6 +286,7 @@ public class ModelControllerClientTestCase {
         try {
             ModelNode operation = new ModelNode();
             operation.get("test").set("123");
+            operation.get("operation").set("fake");
 
             final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
 
@@ -322,6 +322,7 @@ public class ModelControllerClientTestCase {
         final ModelControllerClient client = setupTestClient(controller);
         try {
             final ModelNode op = new ModelNode();
+            op.get("operation").set("fake");
             final TestEntry entry = new TestEntry();
             final Operation operation = OperationBuilder.create(op)
                     .addInputStream(entry)

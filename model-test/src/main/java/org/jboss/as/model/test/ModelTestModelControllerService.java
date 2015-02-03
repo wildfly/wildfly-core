@@ -22,6 +22,7 @@
 package org.jboss.as.model.test;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
 import java.util.Collections;
 import java.util.List;
@@ -321,7 +322,9 @@ public abstract class ModelTestModelControllerService extends AbstractController
      */
     public static Resource grabRootResource(ModelTestKernelServices<?> kernelServices) {
         final AtomicReference<Resource> resourceRef = new AtomicReference<Resource>();
-        ((ModelTestKernelServicesImpl<?>)kernelServices).internalExecute(new ModelNode(), new OperationStepHandler() {
+        ModelNode fakeOP = new ModelNode();
+        fakeOP.get(OP).set("fake");
+        ((ModelTestKernelServicesImpl<?>)kernelServices).internalExecute(fakeOP, new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 resourceRef.set(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));

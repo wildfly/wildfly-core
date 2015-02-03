@@ -18,9 +18,12 @@
  */
 package org.jboss.as.controller.operations.common;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
@@ -33,7 +36,9 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * Utility methods related to working with detyped operations.
@@ -162,5 +167,28 @@ public class Util {
         }
 
         return null;
+    }
+
+    public static ModelNode validateOperation(ModelNode operation) {
+        ModelNode responseNode = new ModelNode();
+        StringBuilder errors = new StringBuilder();
+        if (!operation.hasDefined(OP) || operation.get(OP).asString() == null || operation.get(OP).asString().isEmpty()) {
+            errors.append(ControllerLogger.ROOT_LOGGER.noOperationDefined(operation));
+        }
+        if (operation.hasDefined(OP_ADDR)) {
+            try {
+                operation.get(OP_ADDR).asList();
+            } catch (IllegalArgumentException ex) {
+                if(errors.length() > 0) {
+                    errors.append(System.lineSeparator());
+                }
+                errors.append(ControllerLogger.ROOT_LOGGER.attributeIsWrongType(OP_ADDR, ModelType.LIST, operation.get(OP_ADDR).getType()).getMessage());
+            }
+        }
+        if(errors.length() > 0) {
+            responseNode.get(OUTCOME).set(FAILED);
+            responseNode.get(FAILURE_DESCRIPTION).set(errors.toString());
+        }
+        return responseNode;
     }
 }

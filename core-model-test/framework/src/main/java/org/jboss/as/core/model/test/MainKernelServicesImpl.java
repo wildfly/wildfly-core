@@ -23,6 +23,7 @@ package org.jboss.as.core.model.test;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -120,7 +121,9 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
         DomainControllerRuntimeIgnoreTransformationRegistry registry = new DomainControllerRuntimeIgnoreTransformationRegistry();
         registry.initializeHost("host");
-        ModelNode result = internalExecute(new ModelNode(), new ReadMasterDomainModelHandler("host", transformers, registry));
+        ModelNode fakeOP = new ModelNode();
+        fakeOP.get(OP).set("fake");
+        ModelNode result = internalExecute(fakeOP, new ReadMasterDomainModelHandler(HOST, transformers, registry));
         if (FAILED.equals(result.get(OUTCOME).asString())) {
             throw new RuntimeException(result.get(FAILURE_DESCRIPTION).asString());
         }
