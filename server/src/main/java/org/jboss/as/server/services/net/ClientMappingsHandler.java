@@ -18,8 +18,9 @@
  */
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
@@ -38,14 +39,14 @@ public class ClientMappingsHandler extends AbstractBindingWriteHandler {
     }
 
     @Override
-    void handleRuntimeChange(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
-        binding.setClientMappings(BindingAddHandler.parseClientMappings(attributeValue));
+    void handleRuntimeChange(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
+         binding.setClientMappings(BindingAddHandler.parseClientMappings(context, attributeValue));
     }
 
     @Override
-    void handleRuntimeRollback(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
+    void handleRuntimeRollback(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
         try {
-            binding.setClientMappings(BindingAddHandler.parseClientMappings(attributeValue));
+            binding.setClientMappings(BindingAddHandler.parseClientMappings(context, attributeValue));
         } catch (OperationFailedException e) {
             throw ControllerLogger.ROOT_LOGGER.failedToRecoverServices(e);
         }

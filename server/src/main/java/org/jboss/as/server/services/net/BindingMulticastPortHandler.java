@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
@@ -41,12 +42,12 @@ public class BindingMulticastPortHandler extends AbstractBindingWriteHandler {
     }
 
     @Override
-    void handleRuntimeChange(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
+    void handleRuntimeChange(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) throws OperationFailedException {
         binding.setMulticastPort(attributeValue.asInt());
     }
 
     @Override
-    void handleRuntimeRollback(ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
+    void handleRuntimeRollback(OperationContext context, ModelNode operation, String attributeName, ModelNode attributeValue, SocketBinding binding) {
         binding.setMulticastPort(attributeValue.asInt());
     }
 }

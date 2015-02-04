@@ -59,7 +59,7 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
      * @param binding        the resolved socket binding
      * @throws OperationFailedException
      */
-    abstract void handleRuntimeChange(final ModelNode operation, final String attributeName, final ModelNode attributeValue, final SocketBinding binding) throws OperationFailedException;
+    abstract void handleRuntimeChange(final OperationContext context, final ModelNode operation, final String attributeName, final ModelNode attributeValue, final SocketBinding binding) throws OperationFailedException;
 
     /**
      * Handle the actual runtime change.
@@ -70,7 +70,7 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
      * @param binding        the resolved socket binding
      * @throws OperationFailedException
      */
-    abstract void handleRuntimeRollback(final ModelNode operation, final String attributeName, final ModelNode previousValue, final SocketBinding binding);
+    abstract void handleRuntimeRollback(final OperationContext context, final ModelNode operation, final String attributeName, final ModelNode previousValue, final SocketBinding binding);
 
     /**
      * Indicates if a change requires a reload, regardless of whether the socket-binding was bound or not.
@@ -99,7 +99,7 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
             // Cannot edit bound sockets
             return true;
         } else {
-            handleRuntimeChange(operation, attributeName, resolvedValue, binding);
+            handleRuntimeChange(context, operation, attributeName, resolvedValue, binding);
         }
         handbackHolder.setHandback(new RollbackInfo(bindingName, bindingModel, binding));
         return requiresRestart();
@@ -113,7 +113,7 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
             if(handback.revertBinding()) {
                 revertBindingReinstall(context, handback.bindingName, handback.bindingModel, attributeName, valueToRevert);
             } else {
-                handleRuntimeRollback(operation, attributeName, valueToRevert, handback.binding);
+                handleRuntimeRollback(context, operation, attributeName, valueToRevert, handback.binding);
             }
         }
     }

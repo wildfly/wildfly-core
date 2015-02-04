@@ -20,9 +20,7 @@ package org.jboss.as.server.services.net;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_MAPPINGS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTINATION_ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTINATION_PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOURCE_NETWORK;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -111,7 +109,7 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final int mcastPort = AbstractSocketBindingResourceDefinition.MULTICAST_PORT.resolveModelAttribute(context, config).asInt(0);
         final InetAddress mcastInet = mcastAddr == null ? null : InetAddress.getByName(mcastAddr);
         final ModelNode mappingsNode = config.get(CLIENT_MAPPINGS);
-        final List<ClientMapping> clientMappings = mappingsNode.isDefined() ? parseClientMappings(mappingsNode) : null;
+        final List<ClientMapping> clientMappings = mappingsNode.isDefined() ? parseClientMappings(context, mappingsNode) : null;
 
         final SocketBindingService service = new SocketBindingService(name, port, fixedPort, mcastInet, mcastPort, clientMappings);
         final ServiceBuilder<SocketBinding> builder = serviceTarget.addService(SocketBinding.JBOSS_BINDING_NAME.append(name), service);
@@ -123,10 +121,10 @@ public class BindingAddHandler extends SocketBindingAddHandler {
                 .install();
     }
 
-    public static List<ClientMapping> parseClientMappings(ModelNode mappings) throws OperationFailedException {
+    public static List<ClientMapping> parseClientMappings(OperationContext context, ModelNode mappings) throws OperationFailedException {
         List<ClientMapping> clientMappings = new ArrayList<ClientMapping>();
         for (ModelNode mappingNode : mappings.asList()) {
-            ModelNode sourceNode = mappingNode.get(SOURCE_NETWORK);
+            ModelNode sourceNode = AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_SOURCE_NETWORK.resolveModelAttribute(context, mappingNode);
             final InetAddress sourceAddress;
             final int mask;
             final String destination;
@@ -141,14 +139,14 @@ public class BindingAddHandler extends SocketBindingAddHandler {
                 mask = 0;
             }
 
-            ModelNode destinationNode = mappingNode.get(DESTINATION_ADDRESS);
+            ModelNode destinationNode = AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_DESTINATION_ADDRESS.resolveModelAttribute(context, mappingNode);
             if (! destinationNode.isDefined()) {
                 // Validation prevents this, but just in case
                 throw ControllerLogger.ROOT_LOGGER.nullNotAllowed(DESTINATION_ADDRESS);
             }
             destination = destinationNode.asString();
 
-            ModelNode portNode = mappingNode.get(DESTINATION_PORT);
+            ModelNode portNode = AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_DESTINATION_PORT.resolveModelAttribute(context, mappingNode);
             port = portNode.isDefined() ? portNode.asInt() : -1;
             clientMappings.add(new ClientMapping(sourceAddress, mask, destination, port));
         }
