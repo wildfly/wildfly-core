@@ -60,39 +60,6 @@ public interface PatchLogger extends BasicLogger {
     @Message(id = 2, value = "Cannot invalidate %s")
     void cannotInvalidateZip(String name);
 
-    @Message(id = Message.NONE, value = "Filesystem path of a pristine unzip of the distribution of the version of the " +
-            "software to which the generated patch applies")
-    String argAppliesToDist();
-
-    /**
-     * Instructions for the {@code -h} and {@code --help} command line arguments.
-     *
-     * @return the instructions.
-     */
-    @Message(id = Message.NONE, value = "Display this message and exit")
-    String argHelp();
-
-    @Message(id = Message.NONE, value = "Filesystem location to which the generated patch file should be written")
-    String argOutputFile();
-
-    @Message(id = Message.NONE, value = "Filesystem path of the patch generation configuration file to use")
-    String argPatchConfig();
-
-    @Message(id = Message.NONE, value = "Filesystem path of a pristine unzip of a distribution of software which " +
-            "contains the changes that should be incorporated in the patch")
-    String argUpdatedDist();
-
-    @Message(id = Message.NONE, value = "Usage: %s [args...]%nwhere args include:")
-    String patchGeneratorUsageHeadline(String todo);
-
-    /**
-     * Instructions for {@code --version} command line argument.
-     *
-     * @return the instructions.
-     */
-    @Message(id = Message.NONE, value = "Print version and exit")
-    String argVersion();
-
     @Message(id = Message.NONE, value = "Conflicts detected")
     String detectedConflicts();
 
