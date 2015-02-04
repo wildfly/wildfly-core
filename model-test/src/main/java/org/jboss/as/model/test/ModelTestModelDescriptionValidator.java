@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
@@ -117,6 +118,7 @@ public class ModelTestModelDescriptionValidator {
         paramAndAttributeKeys.put(TYPE, NullDescriptorValidator.INSTANCE);
         //Arbitrary
         paramAndAttributeKeys.put(ALTERNATIVES, StringListValidator.INSTANCE);
+        paramAndAttributeKeys.put(ATTRIBUTE_GROUP, NullDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(REQUIRES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(MIN, NumericDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(MAX, NumericDescriptorValidator.INSTANCE);
