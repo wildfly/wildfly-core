@@ -35,6 +35,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -77,7 +78,7 @@ public class LogStreamExtension implements Extension {
 
     @Override
     public void initialize(ExtensionContext context) {
-        SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, 1, 0, 0);
+        SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         subsystem.registerSubsystemModel(new LogStreamSubsystemResourceDefinition());
         subsystem.registerXMLElementWriter(PARSER);
     }

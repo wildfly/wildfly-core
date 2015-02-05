@@ -77,7 +77,7 @@ class SubsystemInitialization {
      * @return the subsystem registration for further use
      */
     protected RegistrationResult initializeSubsystem(final ExtensionContext context, ModelVersion version) {
-        final SubsystemRegistration subsystem = context.registerSubsystem(subsystemName,  version.getMajor(), version.getMinor());
+        final SubsystemRegistration subsystem = context.registerSubsystem(subsystemName, version);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(definition);
 
         // Test attribute

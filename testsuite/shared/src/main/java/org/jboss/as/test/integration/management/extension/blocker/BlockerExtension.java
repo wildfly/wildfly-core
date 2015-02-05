@@ -34,6 +34,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -92,7 +93,7 @@ public class BlockerExtension implements Extension {
 
     @Override
     public void initialize(ExtensionContext context) {
-        SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, 1, 0, 0);
+        SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         subsystem.registerSubsystemModel(new BlockerSubsystemResourceDefinition(context.getProcessType() == ProcessType.HOST_CONTROLLER));
         subsystem.registerXMLElementWriter(PARSER);
     }

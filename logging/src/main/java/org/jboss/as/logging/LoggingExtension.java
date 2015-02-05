@@ -79,6 +79,8 @@ public class LoggingExtension implements Extension {
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
+    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+
     private static final ModuleIdentifier[] LOGGING_API_MODULES = new ModuleIdentifier[] {
             ModuleIdentifier.create("org.apache.commons.logging"),
             ModuleIdentifier.create("org.apache.log4j"),
@@ -160,8 +162,7 @@ public class LoggingExtension implements Extension {
             // ignore
         }
 
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
 
 
         PathManager pathManager = null;

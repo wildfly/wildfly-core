@@ -30,11 +30,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.List;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -65,7 +67,7 @@ class SubsystemWithChildrenExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
 
-        final SubsystemRegistration subsystem = context.registerSubsystem("test", 1, 0, 0);
+        final SubsystemRegistration subsystem = context.registerSubsystem("test", ModelVersion.create(1));
 
         ResourceBuilder builder = ResourceBuilder.Factory.create(SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver())
                 .setAddOperation(TestSubystemAdd.INSTANCE)

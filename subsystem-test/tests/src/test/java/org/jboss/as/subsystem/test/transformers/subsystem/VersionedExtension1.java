@@ -25,6 +25,7 @@ package org.jboss.as.subsystem.test.transformers.subsystem;
 import java.util.List;
 
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
@@ -41,7 +42,7 @@ public class VersionedExtension1 extends VersionedExtensionCommon {
 
     @Override
     public void initialize(final ExtensionContext context) {
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, 1, 0, 0);
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
 
         final ManagementResourceRegistration registration = initializeSubsystem(subsystem);
         // Register an element which is going to get renamed

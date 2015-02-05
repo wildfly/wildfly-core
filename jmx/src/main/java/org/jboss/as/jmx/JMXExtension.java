@@ -115,13 +115,14 @@ public class JMXExtension implements Extension {
     private static final int MANAGEMENT_API_MINOR_VERSION = 2;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
+    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void initialize(ExtensionContext context) {
-        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
 
         //This is ugly but for now we don't want to make the audit logger easily available to all extensions
         @SuppressWarnings("deprecation")

@@ -20,6 +20,7 @@ package org.jboss.as.test.manualmode.vault.module;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 
@@ -36,7 +37,7 @@ public class TestVaultExtension implements Extension {
 
     @Override
     public void initialize(ExtensionContext context) {
-        SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, 1, 0);
+        SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         registration.registerSubsystemModel(new TestVaultSubsystemResourceDescription());
         registration.registerXMLElementWriter(new TestVaultParser());
     }
