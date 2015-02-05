@@ -42,6 +42,7 @@ import javax.security.auth.login.LoginException;
 
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.SubjectIdentity;
@@ -80,6 +81,7 @@ public class KeytabService implements Service<KeytabService> {
     private final boolean debug;
     private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
+    private Handle pathHandle = null;
     private Configuration clientConfiguration;
     private Configuration serverConfiguration;
 
@@ -107,7 +109,7 @@ public class KeytabService implements Service<KeytabService> {
             PathManager pm = pathManager.getValue();
 
             file = pm.resolveRelativePathEntry(file, relativeTo);
-            pm.registerCallback(relativeTo, new org.jboss.as.controller.services.path.PathManager.Callback() {
+            pathHandle = pm.registerCallback(relativeTo, new org.jboss.as.controller.services.path.PathManager.Callback() {
 
                 @Override
                 public void pathModelEvent(PathEventContext eventContext, String name) {
@@ -172,6 +174,11 @@ public class KeytabService implements Service<KeytabService> {
     public void stop(StopContext context) {
         clientConfiguration = null;
         serverConfiguration = null;
+
+        if (pathHandle != null) {
+            pathHandle.remove();
+            pathHandle = null;
+        }
     }
 
     Injector<PathManager> getPathManagerInjector() {
