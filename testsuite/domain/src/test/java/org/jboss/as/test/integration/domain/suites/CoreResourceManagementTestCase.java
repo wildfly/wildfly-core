@@ -22,9 +22,11 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_START;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BOOT_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
@@ -50,6 +52,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE;
@@ -70,11 +73,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.CompositeOperationHandler;
@@ -85,8 +92,10 @@ import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.SnapshotDeleteHandler;
 import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
+import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -108,6 +117,9 @@ public class CoreResourceManagementTestCase {
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     private static final String TEST = "test";
+    private static final String BOOT_PROPERTY_NAME = "boot-test";
+    private static final String BOOT_PROPERTY_VALUE = "domain";
+    private static final Map<String, String> BOOT_TEST_PROPERTIES = Collections.singletonMap(BOOT_PROPERTY_NAME, BOOT_PROPERTY_VALUE);
     private static final ModelNode ROOT_PROP_ADDRESS = new ModelNode();
     private static final ModelNode SERVER_GROUP_PROP_ADDRESS = new ModelNode();
     private static final ModelNode HOST_PROP_ADDRESS = new ModelNode();
@@ -116,6 +128,7 @@ public class CoreResourceManagementTestCase {
     private static final ModelNode SERVER_PROP_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_PROP_ADDRESS = new ModelNode();
+    private static final ModelNode MAIN_RUNNING_SERVER_CONFIG_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS = new ModelNode();
     private static final ModelNode OTHER_RUNNING_SERVER_ADDRESS = new ModelNode();
     private static final ModelNode OTHER_RUNNING_SERVER_PROP_ADDRESS = new ModelNode();
@@ -150,6 +163,9 @@ public class CoreResourceManagementTestCase {
         MAIN_RUNNING_SERVER_PROP_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         MAIN_RUNNING_SERVER_PROP_ADDRESS.protect();
+        MAIN_RUNNING_SERVER_CONFIG_ADDRESS.add(HOST, "master");
+        MAIN_RUNNING_SERVER_CONFIG_ADDRESS.add(SERVER_CONFIG, "main-one");
+        MAIN_RUNNING_SERVER_CONFIG_ADDRESS.protect();
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(HOST, "master");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(CORE_SERVICE, PLATFORM_MBEAN);
@@ -367,6 +383,50 @@ public class CoreResourceManagementTestCase {
         response = slaveClient.execute(getReadChildrenNamesOperation(OTHER_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount, returnVal.asList().size());
+    }
+
+    @Test //Covers WFCORE-499
+    public void testSystemPropertyBootTime() throws IOException, MgmtOperationException {
+        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        ModelNode propertyAddress = MAIN_RUNNING_SERVER_CONFIG_ADDRESS.clone().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
+        validateBootProperty(masterClient, propertyAddress);
+        propertyAddress = new ModelNode().add(SERVER_GROUP, "main-server-group").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
+        validateBootProperty(masterClient, propertyAddress);
+        propertyAddress = new ModelNode().add(HOST, "master").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
+        validateBootProperty(masterClient, propertyAddress);
+        propertyAddress = new ModelNode().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
+        validateBootProperty(masterClient, propertyAddress);
+    }
+
+    private void validateBootProperty(DomainClient masterClient, ModelNode propertyAddress) throws IOException, MgmtOperationException {
+        ModelNode response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        ModelNode returnVal = validateResponse(response);
+        int origPropCount = returnVal.asInt();
+
+        ServiceActivatorDeploymentUtil.validateNoProperties(masterClient, PathAddress.pathAddress(MAIN_RUNNING_SERVER_ADDRESS), BOOT_TEST_PROPERTIES.keySet());
+
+        ModelNode request = getSystemPropertyAddOperation(propertyAddress, BOOT_PROPERTY_VALUE, Boolean.FALSE);
+        response = masterClient.execute(request);
+        validateResponse(response);
+
+        validateBootSystemProperty(masterClient, MAIN_RUNNING_SERVER_ADDRESS, true, origPropCount, BOOT_PROPERTY_VALUE);
+
+        request = getSystemPropertyRemoveOperation(propertyAddress);
+        validateResponse(masterClient.execute(request));
+        restartServer(masterClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
+
+        ServiceActivatorDeploymentUtil.validateNoProperties(masterClient, PathAddress.pathAddress(MAIN_RUNNING_SERVER_ADDRESS), BOOT_TEST_PROPERTIES.keySet());
+        request = getSystemPropertyAddOperation(propertyAddress, BOOT_PROPERTY_VALUE, Boolean.TRUE);
+        response = masterClient.execute(request);
+        validateResponse(response);
+
+        restartServer(masterClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
+        // TODO validate response structure
+        validateBootSystemProperty(masterClient, MAIN_RUNNING_SERVER_ADDRESS, true, origPropCount, BOOT_PROPERTY_VALUE);
+
+        request = getSystemPropertyRemoveOperation(propertyAddress);
+        validateResponse(masterClient.execute(request));
+        restartServer(masterClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
     }
 
     /** Test for AS7-3443 */
@@ -1010,19 +1070,29 @@ public class CoreResourceManagementTestCase {
 
 
     private static ModelNode getSystemPropertyAddOperation(ModelNode address, String value, Boolean boottime) {
-        ModelNode result = getEmptyOperation(ADD, address);
+        ModelNode operation = getEmptyOperation(ADD, address);
         if (value != null) {
-            result.get(VALUE).set(value);
+            operation.get(VALUE).set(value);
         }
         if (boottime != null) {
-            result.get(BOOT_TIME).set(boottime);
+            operation.get(BOOT_TIME).set(boottime);
         }
-        return result;
+        return operation;
+    }
+
+    private static ModelNode getSystemPropertyRemoveOperation(ModelNode address) {
+        return getEmptyOperation(REMOVE, address);
     }
 
     private static ModelNode getReadAttributeOperation(ModelNode address, String attribute) {
         ModelNode result = getEmptyOperation(READ_ATTRIBUTE_OPERATION, address);
         result.get(NAME).set(attribute);
+        return result;
+    }
+
+    private static ModelNode getReadResourceOperation(ModelNode address) {
+        ModelNode result = getEmptyOperation(READ_RESOURCE_OPERATION, address);
+        result.get(RECURSIVE).set(true);
         return result;
     }
 
@@ -1052,6 +1122,23 @@ public class CoreResourceManagementTestCase {
         return op;
     }
 
+    private static void validateBootSystemProperty(DomainClient client, ModelNode serverAddress, boolean existInModel, int origPropCount, String value) throws IOException, MgmtOperationException {
+        ModelNode response = client.execute(getReadChildrenNamesOperation(serverAddress, SYSTEM_PROPERTY));
+        if(existInModel) {
+            ModelNode properties = validateResponse(response);
+            assertThat(properties.asList().size(), is(origPropCount + 1));
+            ModelNode property = validateResponse(client.execute(getReadResourceOperation(serverAddress.clone().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME))));
+            assertThat(property.hasDefined(VALUE), is(true));
+            assertThat(property.get(VALUE).asString(), is(value));
+        } else {
+            ModelNode properties = validateResponse(response);
+            assertThat("We have found " + properties.asList(), properties.asList().size(), is(origPropCount));
+            ModelNode property = validateFailedResponse(client.execute(getReadResourceOperation(serverAddress.clone().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME))));
+            assertThat(property.hasDefined(VALUE), is(false));
+        }
+        ServiceActivatorDeploymentUtil.validateProperties(client, PathAddress.pathAddress(serverAddress), BOOT_TEST_PROPERTIES);
+    }
+
     private ModelNode getPropertyAddress(ModelNode basePropAddress, String propName) {
         PathAddress addr = PathAddress.pathAddress(basePropAddress);
         PathAddress copy = PathAddress.EMPTY_ADDRESS;
@@ -1071,5 +1158,15 @@ public class CoreResourceManagementTestCase {
         op.get(OP_ADDR).set(address);
         op.get("expression").set(new ValueExpression("${" + propName + "}"));
         return op;
+    }
+
+    private void restartServer(DomainClient client, ModelNode serverAddress) throws IOException {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set("restart");
+        operation.get(OP_ADDR).set(serverAddress);
+        operation.get(BLOCKING).set(true);
+        ModelNode response = client.execute(operation);
+        validateResponse(response, true);
+        Assert.assertTrue(checkState(client, serverAddress, "STARTED"));
     }
 }
