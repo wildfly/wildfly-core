@@ -156,7 +156,7 @@ public class CliUtilsForPatching {
         CLIWrapper cli = null;
         try {
             cli = new CLIWrapper(connect);
-            String command = "patch info";
+            String command = "patch info --json-output";
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
             String output = cli.readOutput();
@@ -180,7 +180,7 @@ public class CliUtilsForPatching {
         CLIWrapper cli = null;
         try {
             cli = new CLIWrapper(true);
-            String command = "patch info";
+            String command = "patch info --json-output";
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
             String response = cli.readOutput();
@@ -208,7 +208,7 @@ public class CliUtilsForPatching {
         CLIWrapper cli = null;
         try {
             cli = new CLIWrapper(true);
-            cli.sendLine("patch info");
+            cli.sendLine("patch info --json-output");
             String response = cli.readOutput();
             ModelNode responseNode = ModelNode.fromJSONString(response);
             return responseNode.get("result").get("cumulative-patch-id").asString();
@@ -230,7 +230,7 @@ public class CliUtilsForPatching {
         CLIWrapper cli = null;
         try {
             cli = new CLIWrapper(true);
-            cli.sendLine("patch info", true);
+            cli.sendLine("patch info --json-output", true);
             String response = cli.readOutput();
             ModelNode responseNode = ModelNode.fromJSONString(response);
             ModelNode respHeaders = responseNode.get("response-headers");
@@ -257,7 +257,7 @@ public class CliUtilsForPatching {
     public static boolean rollbackAllOneOffs() throws Exception {
         CLIWrapper cli = null;
         boolean success = true;
-        final String infoCommand = "patch info --distribution=%s";
+        final String infoCommand = "patch info --distribution=%s --json-output";
         final String rollbackCommand = "patch rollback --patch-id=%s --distribution=%s --reset-configuration=true --override-all";
         try {
             cli = new CLIWrapper(false);
@@ -289,7 +289,7 @@ public class CliUtilsForPatching {
      */
     public static boolean rollbackCumulativePatch(boolean resetConfiguration) throws Exception {
         CLIWrapper cli = null;
-        final String infoCommand = "patch info --distribution=%s";
+        final String infoCommand = "patch info --distribution=%s --json-output";
         final String rollbackCommand = "patch rollback --patch-id=%s --distribution=%s --reset-configuration=%s";
         try {
             cli = new CLIWrapper(true);
@@ -318,7 +318,7 @@ public class CliUtilsForPatching {
     public static boolean rollbackAll() throws Exception {
         CLIWrapper cli = null;
         boolean success = true;
-        final String infoCommand = "patch info --distribution=%s";
+        final String infoCommand = "patch info --distribution=%s --json-output";
         final String rollbackCommand = "patch rollback --patch-id=%s --distribution=%s --reset-configuration=true";
         try {
             cli = new CLIWrapper(false);

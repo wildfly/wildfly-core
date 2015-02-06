@@ -33,12 +33,15 @@ import static org.jboss.as.test.patching.PatchingTestUtil.MODULES_PATH;
 import static org.jboss.as.test.patching.PatchingTestUtil.PRODUCT;
 import static org.jboss.as.test.patching.PatchingTestUtil.assertPatchElements;
 import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
+import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +70,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase {
+public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
 
     private ByteArrayOutputStream bytesOs;
     private CommandContext ctx;
@@ -89,12 +92,9 @@ public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase
         final File miscDir = new File(PatchingTestUtil.AS_DISTRIBUTION, "miscDir");
         createdFiles.add(miscDir);
 
-        final String fileContent = "Hello World!";
         // prepare the patch
         String oneOffID = randomString();
         File oneOffDir = mkdir(tempDir, oneOffID);
-        ContentModification miscFileAdded = ContentModificationUtils.addMisc(oneOffDir, oneOffID,
-                fileContent, "miscDir", "test-file");
 
         // create a module to be updated w/o a conflict
         String patchElementId = randomString();
@@ -102,8 +102,6 @@ public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase
         String moduleName = "module-test";
         final File moduleDir = createModule0(baseModuleDir, moduleName);
         createdFiles.add(moduleDir);
-        // create the patch with the updated module
-        ContentModification moduleModified = ContentModificationUtils.modifyModule(oneOffDir, patchElementId, moduleDir, "new resource in the module");
 
         // create a bundle to be updated w/o a conflict
         File baseBundleDir = PatchingTestUtil.BASE_BUNDLE_DIRECTORY;
@@ -116,86 +114,139 @@ public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase
         String bundleName = "bundle-test";
         File bundleDir = createBundle0(baseBundleDir, bundleName, "bundle content");
         createdFiles.add(bundleDir);
-        // patch the bundle
-        ContentModification bundleModified = ContentModificationUtils.modifyBundle(oneOffDir, patchElementId, bundleDir, "updated bundle content");
 
         ProductConfig productConfig = new ProductConfig(PRODUCT, AS_VERSION, "main");
-        final String oneOffDescr = "A one-off patch adding a misc file.";
-        final String oneOffElementDescr = "A one-off element patch";
-        Patch oneOff = PatchBuilder.create()
-                .setPatchId(oneOffID)
-                .setDescription(oneOffDescr)
-                .setLink("http://test.one")
-                .oneOffPatchIdentity(productConfig.getProductName(), productConfig.getProductVersion())
-                .getParent()
-                .addContentModification(miscFileAdded)
-                .oneOffPatchElement(patchElementId, "base", false)
-                .setDescription(oneOffElementDescr)
-                .addContentModification(moduleModified)
-                .addContentModification(bundleModified)
-                .getParent()
-                .build();
-        createPatchXMLFile(oneOffDir, oneOff);
-        File zippedOneOff = PatchingTestUtil.createZippedPatchFile(oneOffDir, oneOffID);
 
-        // apply the patch and check if server is in restart-required mode
+        final File zippedOneOff = createOneOff(oneOffDir, oneOffID, patchElementId, moduleDir, bundleDir, productConfig);
         handle("patch apply " + zippedOneOff.getAbsolutePath());
 
-        String cpID = randomString();
-        String elementCpID = randomString();
-        File cpDir = mkdir(tempDir, cpID);
+        final String cpId = "cp1";
+        final String cpElementId = "cp1-element";
+        final File cpDir = mkdir(tempDir, cpId);
+        final File zippedCP = createCP(cpDir, cpId, cpElementId, patchElementId, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
+        handle("patch apply " + zippedCP.getAbsolutePath());
 
-        final File patchedModule = IoUtils.newFile(baseModuleDir, ".overlays", patchElementId, moduleName);
-        final File patchedBundle = IoUtils.newFile(baseBundleDir, ".overlays", patchElementId, bundleName);
+        final String oneOff1 = "oneOff1";
+        final String oneOffElement1 = "oneOff1element";
+        final File oneOff1Dir = mkdir(tempDir, oneOff1);
+        //productConfig = new ProductConfig(productConfig.getProductName(), productConfig.getProductVersion() + "_CP" + cpId, "main");
+        final File zippedOneOff1 = createOneOff2(oneOff1Dir, oneOff1, oneOffElement1, cpElementId, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
+        handle("patch apply " + zippedOneOff1.getAbsolutePath());
+
+        final String oneOff2 = "oneOff2";
+        final String oneOffElement2 = "oneOff2element";
+        final File oneOff2Dir = mkdir(tempDir, oneOff2);
+        final File zippedOneOff2 = createOneOff2(oneOff2Dir, oneOff2, oneOffElement2, oneOffElement1, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
+        handle("patch apply " + zippedOneOff2.getAbsolutePath());
+
+        handle("patch info");
+        Map<String, String> table = CLIPatchInfoUtil.parseTable(bytesOs.toByteArray());
+        assertEquals(3, table.size());
+        assertEquals(productConfig.getProductVersion(), table.get("Version"));
+        assertEquals(cpId, table.get("Cumulative patch ID"));
+        assertEquals(oneOff2 + ',' + oneOff1, table.get("One-off patches"));
+
+        handle("patch info --verbose");
+        final ByteArrayInputStream bis = new ByteArrayInputStream(bytesOs.toByteArray());
+        final InputStreamReader reader = new InputStreamReader(bis);
+        final BufferedReader buf = new BufferedReader(reader);
+        try {
+            table = CLIPatchInfoUtil.parseTable(buf);
+            assertEquals(3, table.size());
+            assertEquals(productConfig.getProductVersion(), table.get("Version"));
+            assertEquals(cpId, table.get("Cumulative patch ID"));
+            assertEquals(oneOff2 + ',' + oneOff1, table.get("One-off patches"));
+            // layers
+            table = CLIPatchInfoUtil.parseTable(buf);
+            assertEquals(3, table.size());
+            assertEquals(table.toString(), "base", table.get("Layer"));
+            assertEquals(cpElementId, table.get("Cumulative patch ID"));
+            assertEquals(oneOffElement2 + ',' + oneOffElement1, table.get("One-off patches"));
+        } finally {
+            IoUtils.safeClose(buf);
+        }
+    }
+
+    protected File createCP(File cpDir, String cpID, String elementCpID, String overridenElementId, final File miscDir,
+            final File baseModuleDir, File baseBundleDir, String moduleName, String bundleName,
+            final ProductConfig productConfig) throws IOException, Exception {
+
+        final File patchedModule = IoUtils.newFile(baseModuleDir, ".overlays", overridenElementId, moduleName);
+        final File patchedBundle = IoUtils.newFile(baseBundleDir, ".overlays", overridenElementId, bundleName);
 
         final ContentModification fileModified2 = ContentModificationUtils.modifyMisc(cpDir, cpID, "another file update", new File(miscDir, "test-file"), "miscDir", "test-file");
         final ContentModification moduleModified2 = ContentModificationUtils.modifyModule(cpDir, elementCpID, patchedModule, "another module update");
         final ContentModification bundleModified2 = ContentModificationUtils.modifyBundle(cpDir, elementCpID, patchedBundle, "another bundle update");
 
-        final String cpDescr = "A CP adding a misc file.";
-        final String cpElementDescr = "A CP element";
-        Patch cp = PatchBuilder.create()
+        final Patch cp = PatchBuilder.create()
                 .setPatchId(cpID)
-                .setDescription(cpDescr)
+                .setDescription(descriptionFor(cpID))
                 .setLink("http://test.two")
                 .upgradeIdentity(productConfig.getProductName(), productConfig.getProductVersion(), productConfig.getProductVersion() + "_CP" + cpID)
                 .getParent()
                 .addContentModification(fileModified2)
                 .upgradeElement(elementCpID, "base", false)
-                .setDescription(cpElementDescr)
+                .setDescription(descriptionFor(elementCpID))
                 .addContentModification(moduleModified2)
                 .addContentModification(bundleModified2)
                 .getParent()
                 .build();
         createPatchXMLFile(cpDir, cp);
         File zippedCP = PatchingTestUtil.createZippedPatchFile(cpDir, cpID);
+        return zippedCP;
+    }
 
-        handle("patch apply " + zippedCP.getAbsolutePath());
+    protected File createOneOff2(File patchDir, String patchId, String elementId, String overridenElementId, final File miscDir,
+            final File baseModuleDir, File baseBundleDir, String moduleName, String bundleName,
+            final ProductConfig productConfig) throws IOException, Exception {
 
-        handle("patch info --patch-id=" + oneOffID);
-        CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), oneOffID, "http://test.one", true,
-                productConfig.getProductName(), productConfig.getProductVersion(), oneOffDescr);
+        final File patchedModule = IoUtils.newFile(baseModuleDir, ".overlays", overridenElementId, moduleName);
+        final File patchedBundle = IoUtils.newFile(baseBundleDir, ".overlays", overridenElementId, bundleName);
 
-        Map<String,String> element = new HashMap<String,String>();
-        element.put("Patch ID", patchElementId);
-        element.put("Name", "base");
-        element.put("Type", "layer");
-        element.put("Description", oneOffElementDescr);
-        handle("patch info --patch-id=" + oneOffID + " --verbose");
-        CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), oneOffID, "http://test.one", true,
-                productConfig.getProductName(), productConfig.getProductVersion(), oneOffDescr, Collections.singletonList(element));
+        final ContentModification fileModified = ContentModificationUtils.modifyMisc(patchDir, patchId, "another file update", new File(miscDir, "test-file"), "miscDir", "test-file");
+        final ContentModification moduleModified = ContentModificationUtils.modifyModule(patchDir, elementId, patchedModule, "another module update");
+        final ContentModification bundleModified = ContentModificationUtils.modifyBundle(patchDir, elementId, patchedBundle, "another bundle update");
 
-        handle("patch info --patch-id=" + cpID);
-        CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), cpID, "http://test.two", false,
-                productConfig.getProductName(), productConfig.getProductVersion(), cpDescr);
+        final Patch patch = PatchBuilder.create()
+                .setPatchId(patchId)
+                .setDescription(descriptionFor(patchId))
+                .setLink("http://test.two")
+                .oneOffPatchIdentity(productConfig.getProductName(), productConfig.getProductVersion())
+                .getParent()
+                .addContentModification(fileModified)
+                .oneOffPatchElement(elementId, "base", false)
+                .setDescription(descriptionFor(elementId))
+                .addContentModification(moduleModified)
+                .addContentModification(bundleModified)
+                .getParent()
+                .build();
+        createPatchXMLFile(patchDir, patch);
+        return PatchingTestUtil.createZippedPatchFile(patchDir, patchId);
+    }
 
-        element.put("Patch ID", elementCpID);
-        element.put("Name", "base");
-        element.put("Type", "layer");
-        element.put("Description", cpElementDescr);
-        handle("patch info --patch-id=" + cpID + " --verbose");
-        CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), cpID, "http://test.two", false,
-                productConfig.getProductName(), productConfig.getProductVersion(), cpDescr, Collections.singletonList(element));
+    protected File createOneOff(File oneOffDir, String oneOffId, String patchElementId, File moduleDir, File bundleDir, ProductConfig productConfig) throws Exception {
+        // patch misc file
+        final ContentModification miscFileAdded = ContentModificationUtils.addMisc(oneOffDir, oneOffId, "Hello World!", "miscDir", "test-file");
+        // patch module
+        final ContentModification moduleModified = ContentModificationUtils.modifyModule(oneOffDir, patchElementId, moduleDir, "new resource in the module");
+        // patch the bundle
+        final ContentModification bundleModified = ContentModificationUtils.modifyBundle(oneOffDir, patchElementId, bundleDir, "updated bundle content");
+
+        final Patch oneOff = PatchBuilder.create()
+                .setPatchId(oneOffId)
+                .setDescription(descriptionFor(oneOffId))
+                .setLink("http://test.one")
+                .oneOffPatchIdentity(productConfig.getProductName(), productConfig.getProductVersion())
+                .getParent()
+                .addContentModification(miscFileAdded)
+                .oneOffPatchElement(patchElementId, "base", false)
+                .setDescription(descriptionFor(patchElementId))
+                .addContentModification(moduleModified)
+                .addContentModification(bundleModified)
+                .getParent()
+                .build();
+        createPatchXMLFile(oneOffDir, oneOff);
+        return PatchingTestUtil.createZippedPatchFile(oneOffDir, oneOffId);
     }
 
     @Override
@@ -264,5 +315,9 @@ public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase
         ctx.handle(line);
         controller.stop();
         return new String(bytesOs.toByteArray());
+    }
+
+    private static String descriptionFor(String patchId) {
+        return "description for " + patchId;
     }
 }

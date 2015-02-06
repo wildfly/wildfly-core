@@ -78,8 +78,7 @@ ACTION: info
                            (The name of the argument is also optional, i.e.
                            'patch info <patch-id>' is also acceptable)
 
-      --verbose          - Optional, short version is -v, may appear only
-                           in combination with the patch-id argument.
+      --verbose          - Optional, short version is -v.
                            If present, the information displayed will also
                            include details of the layer/add-on patches included
                            in the patch.
