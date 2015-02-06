@@ -60,7 +60,7 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     /**
      * {@inheritDoc}
      */
-    protected AbstractBoottimeAddStepHandler(Collection<AttributeDefinition> attributes) {
+    protected AbstractBoottimeAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
         super(attributes);
     }
 
