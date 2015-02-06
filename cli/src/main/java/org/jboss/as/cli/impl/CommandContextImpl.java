@@ -47,6 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -93,6 +94,7 @@ import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.batch.impl.DefaultBatchManager;
 import org.jboss.as.cli.batch.impl.DefaultBatchedCommand;
 import org.jboss.as.cli.embedded.EmbeddedControllerHandlerRegistrar;
+import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
 import org.jboss.as.cli.handlers.ArchiveHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
@@ -393,8 +395,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new QuitHandler(), "quit", "q", "exit");
         cmdRegistry.registerHandler(new ReadAttributeHandler(this), "read-attribute");
         cmdRegistry.registerHandler(new ReadOperationHandler(this), "read-operation");
-        cmdRegistry.registerHandler(new ReloadHandler(this), "reload");
-        cmdRegistry.registerHandler(new ShutdownHandler(this), "shutdown");
         cmdRegistry.registerHandler(new VersionHandler(), "version");
         cmdRegistry.registerHandler(new ConnectionInfoHandler(), "connection-info");
 
@@ -463,7 +463,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
         // Embedded server/host, if we are running in a modular environment
-        EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        AtomicReference<EmbeddedServerLaunch> embeddedServerRef = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerRef), "reload");
+        cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerRef), "shutdown");
 
         registerExtraHandlers();
     }

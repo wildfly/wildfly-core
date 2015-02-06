@@ -22,6 +22,7 @@
 
 package org.jboss.as.cli.embedded;
 
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.embedded.StandaloneServer;
 
 /**
@@ -29,7 +30,7 @@ import org.jboss.as.embedded.StandaloneServer;
  *
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
-class EmbeddedServerLaunch {
+public final class EmbeddedServerLaunch {
 
     private final StandaloneServer server;
 
@@ -46,5 +47,9 @@ class EmbeddedServerLaunch {
 
     StandaloneServer getServer() {
         return server;
+    }
+
+    public ModelControllerClient getModelControllerClient() {
+        return server.getModelControllerClient();
     }
 }
