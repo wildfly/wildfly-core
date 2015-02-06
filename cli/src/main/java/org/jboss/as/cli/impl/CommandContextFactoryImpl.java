@@ -51,9 +51,22 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
+    public CommandContext newCommandContext(String controller, String username, char[] password, Terminal terminal)
+            throws CliInitializationException {
+        return newCommandContext(controller, username, password, false, -1, terminal);
+    }
+
+    @Override
     public CommandContext newCommandContext(String controller, String username, char[] password)
             throws CliInitializationException {
         return newCommandContext(controller, username, password, false, -1);
+    }
+
+    @Override
+    public CommandContext newCommandContext(String controller, String username, char[] password,
+            boolean initConsole, final int connectionTimeout, Terminal terminal) throws CliInitializationException {
+        return new CommandContextImpl(controller, username, password, username != null, initConsole,
+                connectionTimeout, terminal);
     }
 
     @Override

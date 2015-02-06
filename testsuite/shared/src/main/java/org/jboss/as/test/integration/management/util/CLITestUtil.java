@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.cli.impl.Terminal;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -67,7 +68,6 @@ public class CLITestUtil {
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
             throws CliInitializationException {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, null, null, in, out);
     }
@@ -75,16 +75,15 @@ public class CLITestUtil {
     public static CommandContext getCommandContext(String protocol, String address, int port)
             throws CliInitializationException {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port), null, null);
+        return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port),
+                null, null, Terminal.TEST);
     }
 
     public static CommandContext getCommandContext(OutputStream out) throws CliInitializationException {
-        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), null, null, null, out);
+        return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort),
+                null, null, null, out);
     }
 
     protected static void setJBossCliConfig() {

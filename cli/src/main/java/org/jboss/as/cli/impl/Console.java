@@ -21,19 +21,23 @@
  */
 package org.jboss.as.cli.impl;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import org.jboss.aesh.complete.CompleteOperation;
 import org.jboss.aesh.complete.Completion;
-import org.jboss.aesh.console.Config;
-import org.jboss.aesh.console.ConsoleOutput;
+import org.jboss.aesh.console.AeshConsoleBufferBuilder;
+import org.jboss.aesh.console.AeshInputProcessorBuilder;
+import org.jboss.aesh.console.ConsoleBuffer;
+import org.jboss.aesh.console.ConsoleCallback;
+import org.jboss.aesh.console.InputProcessor;
 import org.jboss.aesh.console.Prompt;
 import org.jboss.aesh.console.settings.Settings;
+
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandHistory;
@@ -49,11 +53,7 @@ public interface Console {
 
     boolean isUseHistory();
 
-    void setUseHistory(boolean useHistory);
-
     CommandHistory getHistory();
-
-    void setHistoryFile(File f);
 
     void clearScreen();
 
@@ -71,41 +71,27 @@ public interface Console {
 
     int getTerminalHeight();
 
-    /**
-     * Checks whether the tab-completion is enabled.
-     *
-     * @return  true if tab-completion is enabled, false - otherwise
-     */
-    boolean isCompletionEnabled();
+    void setCallback(ConsoleCallback consoleCallback);
 
-    /**
-     * Enables or disables the tab-completion.
-     *
-     * @param completionEnabled  true will enable the tab-completion, false will disable it
-     */
-    void setCompletionEnabled(boolean completionEnabled);
+    void start();
 
-    /**
-     * Interrupts blocking readLine method.
-     *
-     * Added as solution to BZ-1149099.
-     */
-    void interrupt();
+    void stop();
+
+    boolean running();
+
+    void setPrompt(String prompt);
 
     static final class Factory {
 
-        public static Console getConsole(CommandContext ctx) throws CliInitializationException {
-            return getConsole(ctx, null, null);
+        public static Console getConsole(CommandContext ctx, Settings settings) throws CliInitializationException {
+            return getConsole(ctx, settings, null, null);
         }
 
-        public static Console getConsole(final CommandContext ctx, InputStream is, OutputStream os) throws CliInitializationException {
+        public static Console getConsole(final CommandContext ctx, final Settings set, InputStream is, OutputStream os) throws CliInitializationException {
 
-            org.jboss.aesh.console.Console aeshConsole = null;
-            try {
-                aeshConsole = new org.jboss.aesh.console.Console();
-            } catch (IOException e) {
-                throw new CliInitializationException(e);
-            }
+            org.jboss.aesh.console.Console aeshConsole;
+            final Settings settings = set;
+            aeshConsole = new org.jboss.aesh.console.Console(settings);
 
             final org.jboss.aesh.console.Console finalAeshConsole = aeshConsole;
             return new Console() {
@@ -119,11 +105,12 @@ public interface Console {
                     console.addCompletion(new Completion() {
                         @Override
                         public void complete(CompleteOperation co) {
+                            List<String> candidates = new ArrayList<>();
                             int offset =  completer.complete(cmdCtx,
-                                    co.getBuffer(), co.getCursor(), co.getCompletionCandidates());
+                                    co.getBuffer(), co.getCursor(), candidates);
                             co.setOffset(offset);
-                            if(co.getCompletionCandidates().size() == 1 &&
-                                    co.getCompletionCandidates().get(0).startsWith(co.getBuffer()))
+                            co.addCompletionCandidates(candidates);
+                            if(candidates.size() == 1 && candidates.get(0).startsWith(co.getBuffer()))
                                 co.doAppendSeparator(true);
                             else
                                 co.doAppendSeparator(false);
@@ -133,22 +120,12 @@ public interface Console {
 
                 @Override
                 public boolean isUseHistory() {
-                    return !Settings.getInstance().isHistoryDisabled();
-                }
-
-                @Override
-                public void setUseHistory(boolean useHistory) {
-                    Settings.getInstance().setHistoryDisabled(!useHistory);
+                    return settings.isHistoryDisabled();
                 }
 
                 @Override
                 public CommandHistory getHistory() {
                     return history;
-                }
-
-                @Override
-                public void setHistoryFile(File f) {
-                    Settings.getInstance().setHistoryFile(f);
                 }
 
                 @Override
@@ -164,53 +141,58 @@ public interface Console {
                 public void printColumns(Collection<String> list) {
                     String[] newList = new String[list.size()];
                     list.toArray(newList);
-                    try {
-                        console.pushToStdOut(
-                                org.jboss.aesh.util.Parser.formatDisplayList(newList,
-                                        console.getTerminalSize().getHeight(),
-                                        console.getTerminalSize().getWidth()));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    console.getShell().out().println(
+                            org.jboss.aesh.parser.Parser.formatDisplayList(newList,
+                                    console.getTerminalSize().getHeight(),
+                                    console.getTerminalSize().getWidth()));
                 }
 
                 @Override
                 public void print(String line) {
-                    try {
-                        console.pushToStdOut(line);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    console.getShell().out().print(line);
                 }
 
                 @Override
                 public void printNewLine() {
-                    try {
-                        console.pushToStdOut(Config.getLineSeparator());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    console.getShell().out().println();
                 }
 
                 @Override
                 public String readLine(String prompt) {
-                    try {
-                        ConsoleOutput output = console.read(prompt);
-                        return output != null ? output.getBuffer() : null;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
+                    return read(prompt, null);
                 }
 
                 @Override
                 public String readLine(String prompt, Character mask) {
+                    return read(prompt, mask);
+                }
+
+                private String read(String prompt, Character mask) {
+
+                    ConsoleBuffer consoleBuffer = new AeshConsoleBufferBuilder()
+                            .shell(console.getShell())
+                            .prompt(new Prompt(prompt, mask))
+                            .create();
+                    InputProcessor inputProcessor = new AeshInputProcessorBuilder()
+                            .consoleBuffer(consoleBuffer)
+                            .create();
+
+                    consoleBuffer.displayPrompt();
+                    String result = null;
                     try {
-                        return console.read(new Prompt(prompt), mask).getBuffer();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
+                        do {
+                            result = inputProcessor.parseOperation(console.getConsoleCallback().getInput());
+                        }
+
+                        while(result == null );
                     }
+                    catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    return result;
                 }
 
                 @Override
@@ -224,22 +206,32 @@ public interface Console {
                 }
 
                 @Override
-                public boolean isCompletionEnabled() {
-                    return !Settings.getInstance().isDisableCompletion();
+
+                public void setCallback(ConsoleCallback consoleCallback) {
+                    if(console != null)
+                        console.setConsoleCallback(consoleCallback);
                 }
 
                 @Override
-                public void setCompletionEnabled(boolean completionEnabled) {
-                    Settings.getInstance().setDisableCompletion(!completionEnabled);
+                public void start() {
+                    if(console != null)
+                        console.start();
                 }
 
                 @Override
-                public void interrupt() {
-                    try {
-                        Settings.getInstance().getInputStream().close(); // BZ-1149099 - enables interruption of active prompt
-                    } catch (IOException e) {
-                        //
-                    }
+                public void stop() {
+                    if(console != null)
+                        console.stop();
+                }
+
+                @Override
+                public boolean running() {
+                    return console != null && console.isRunning();
+                }
+
+                @Override
+                public void setPrompt(String prompt) {
+                    console.setPrompt(new Prompt(prompt));
                 }
 
                 class HistoryImpl implements CommandHistory {
@@ -252,12 +244,12 @@ public interface Console {
 
                 @Override
                 public boolean isUseHistory() {
-                    return !Settings.getInstance().isHistoryDisabled();
+                    return !settings.isHistoryDisabled();
                 }
 
                 @Override
                 public void setUseHistory(boolean useHistory) {
-                    Settings.getInstance().setHistoryDisabled(!useHistory);
+                    //not implemented
                 }
 
                 @Override
@@ -267,12 +259,12 @@ public interface Console {
 
                 @Override
                 public void setMaxSize(int maxSize) {
-                    Settings.getInstance().setHistorySize(maxSize);
+                    //not implemented
                 }
 
                 @Override
                 public int getMaxSize() {
-                    return Settings.getInstance().getHistorySize();
+                    return settings.getHistorySize();
                 }
             }};
         }

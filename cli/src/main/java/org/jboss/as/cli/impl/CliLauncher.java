@@ -51,6 +51,8 @@ public class CliLauncher {
         int exitCode = 0;
         CommandContext cmdCtx = null;
         boolean gui = false;
+        boolean fileMode = false;
+        boolean commandMode = false;
         final List<String> systemPropertyKeys = new ArrayList<>();
         try {
             String argError = null;
@@ -249,6 +251,7 @@ public class CliLauncher {
             if(file != null) {
                 cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout);
                 processFile(file, cmdCtx);
+                fileMode = true;
                 return;
             }
 
@@ -269,19 +272,29 @@ public class CliLauncher {
             cmdCtx.interact();
         } catch(Throwable t) {
             System.out.println(Util.getMessagesFromThrowable(t));
-            exitCode = 1;
-        } finally {
-            if((cmdCtx != null) && !gui) {
+           exitCode = 1;
+       }
+        finally {
+            if(cmdCtx != null && fileMode) {
                 cmdCtx.terminateSession();
                 if(cmdCtx.getExitCode() != 0) {
                     exitCode = cmdCtx.getExitCode();
                 }
-            }
-            if (!gui) {
                 System.exit(exitCode);
             }
+            else if(cmdCtx != null && commandMode) {
+                cmdCtx.terminateSession();
+                if(cmdCtx.getExitCode() != 0) {
+                    exitCode = cmdCtx.getExitCode();
+                }
+                System.exit(exitCode);
+            }
+            //if we have any exit code at this point we use it
+            if(exitCode != 0)
+                System.exit(exitCode);
+            else if(cmdCtx.getExitCode() != 0)
+                System.exit(cmdCtx.getExitCode());
         }
-        System.exit(exitCode);
     }
 
     private static CommandContext initCommandContext(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, boolean connect, final int connectionTimeout) throws CliInitializationException {
