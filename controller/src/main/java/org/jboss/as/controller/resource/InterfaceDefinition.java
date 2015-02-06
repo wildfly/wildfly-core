@@ -214,6 +214,8 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
                     org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_INSTANCE, true);
             interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_DEFINITION,
                     org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_INSTANCE, true);
+            interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeGroupHandler.RESOLVE_DEFINITION,
+                    org.jboss.as.controller.operations.global.ReadAttributeGroupHandler.RESOLVE_INSTANCE, true);
         }
     }
 

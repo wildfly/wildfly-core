@@ -311,15 +311,15 @@ public abstract class AbstractProxyControllerTest {
     public void testReadOperationNames() throws Exception {
         Operation read = createOperation(READ_OPERATION_NAMES_OPERATION);
         ModelNode result = mainControllerClient.execute(read);
-        checkOperationNames(result.get(RESULT), 19);
+        checkOperationNames(result.get(RESULT), 21);
 
         read = createOperation(READ_OPERATION_NAMES_OPERATION, SERVER, "serverA");
         result = mainControllerClient.execute(read);
-        checkOperationNames(result.get(RESULT), 20);
+        checkOperationNames(result.get(RESULT), 22);
 
         read = createOperation(READ_OPERATION_NAMES_OPERATION, SERVER, "serverA", "serverchild", "svrA");
         result = mainControllerClient.execute(read);
-        checkOperationNames(result.get(RESULT), 19);
+        checkOperationNames(result.get(RESULT), 21);
     }
 
     @Test

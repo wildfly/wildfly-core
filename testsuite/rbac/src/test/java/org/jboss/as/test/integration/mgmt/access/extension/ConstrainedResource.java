@@ -56,12 +56,14 @@ public class ConstrainedResource extends SimpleResourceDefinition {
 
     private static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder("password", ModelType.STRING, true)
             .setAllowExpression(true)
+            .setAttributeGroup("security")
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.CREDENTIAL)
             .addAccessConstraint(DS_SECURITY_DEF)
             .build();
 
     static SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder("security-domain", ModelType.STRING)
             .setAllowExpression(true)
+            .setAttributeGroup("security")
             .setAllowNull(true)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN_REF)
             .addAccessConstraint(DS_SECURITY_DEF)
@@ -73,6 +75,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
 
     static SimpleAttributeDefinition JNDI_NAME = new SimpleAttributeDefinitionBuilder("jndi-name", ModelType.STRING, true)
             .setAllowExpression(true)
+            .setAttributeGroup("naming")
             .setValidator(new ParameterValidator() {
                 @Override
                 public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
@@ -81,7 +84,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
                             String str = value.asString();
                             if (!str.startsWith("java:/") && !str.startsWith("java:jboss/")) {
                                 throw new OperationFailedException("Jndi name have to start with java:/ or java:jboss/");
-                            } else if (str.endsWith("/") || str.indexOf("//") != -1) {
+                            } else if (str.endsWith("/") || str.contains("//")) {
                                 throw new OperationFailedException("Jndi name shouldn't include '//' or end with '/'");
                             }
                         }
