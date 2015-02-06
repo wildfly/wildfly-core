@@ -168,8 +168,10 @@ public class Server {
                     //ignore as this can only fail if shutdown is already in progress
                 }
 
-                process.waitFor();
-                process = null;
+                if (process != null) {
+                    process.waitFor();
+                    process = null;
+                }
 
                 shutdown.interrupt();
             }
