@@ -63,6 +63,7 @@ public class CliLauncher {
             char[] password = null;
             boolean noLocalAuth = false;
             int connectionTimeout = -1;
+            String clientBindAddress = null;
 
             for(String arg : args) {
                 if(arg.startsWith("--controller=") || arg.startsWith("controller=")) {
@@ -174,6 +175,8 @@ public class CliLauncher {
                         argError = "'=' is missing after --timeout";
                         break;
                     }
+                } else if(arg.startsWith("--bind=")) {
+                    clientBindAddress = arg.substring(7);
                 } else if (arg.equals("--help") || arg.equals("-h")) {
                     commands = Collections.singletonList("help");
                 } else if (arg.startsWith("--properties=")) {
@@ -241,31 +244,31 @@ public class CliLauncher {
             }
 
             if(version) {
-                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout);
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout, clientBindAddress);
                 VersionHandler.INSTANCE.handle(cmdCtx);
                 return;
             }
 
             if(file != null) {
-                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout);
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout, clientBindAddress);
                 processFile(file, cmdCtx);
                 return;
             }
 
             if(commands != null) {
-                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout);
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout, clientBindAddress);
                 processCommands(commands, cmdCtx);
                 return;
             }
 
             if (gui) {
-                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, true, connectionTimeout);
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, true, connectionTimeout, clientBindAddress);
                 processGui(cmdCtx);
                 return;
             }
 
             // Interactive mode
-            cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, true, connect, connectionTimeout);
+            cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, true, connect, connectionTimeout, clientBindAddress);
             cmdCtx.interact();
         } catch(Throwable t) {
             System.out.println(Util.getMessagesFromThrowable(t));
@@ -284,8 +287,17 @@ public class CliLauncher {
         System.exit(exitCode);
     }
 
-    private static CommandContext initCommandContext(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, boolean connect, final int connectionTimeout) throws CliInitializationException {
-        final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext(defaultController, username, password, disableLocalAuth, initConsole, connectionTimeout);
+    private static CommandContext initCommandContext(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, boolean connect, final int connectionTimeout, final String clientBindAddress) throws CliInitializationException {
+        final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext(
+                new CommandContextConfiguration.Builder()
+                .setController(defaultController)
+                .setUsername(username)
+                .setPassword(password)
+                .setClientBindAddress(clientBindAddress)
+                .setDisableLocalAuth(disableLocalAuth)
+                .setInitConsole(initConsole)
+                .setConnectionTimeout(connectionTimeout)
+                .build());
         if(connect) {
             try {
                 cmdCtx.connectController();

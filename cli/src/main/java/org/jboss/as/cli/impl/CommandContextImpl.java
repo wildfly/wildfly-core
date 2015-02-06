@@ -225,6 +225,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private final CommandCompleter cmdCompleter;
     /** the timeout handler */
     private final GeneralTimeoutHandler timeoutHandler = new GeneralTimeoutHandler();
+    /** the client bind address */
+    private final String clientBindAddress;
 
     /** output target */
     private BufferedWriter outputTarget;
@@ -271,32 +273,28 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         username = null;
         password = null;
         disableLocalAuth = false;
+        clientBindAddress = null;
         initSSLContext();
         initJaasConfig();
         addShutdownHook();
         CliLauncher.runcom(this);
-    }
-
-    CommandContextImpl(String username, char[] password, boolean disableLocalAuth) throws CliInitializationException {
-        this(null, username, password, disableLocalAuth, false, -1);
     }
 
     /**
      * Default constructor used for both interactive and non-interactive mode.
      *
      */
-    CommandContextImpl(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, final int connectionTimeout)
-            throws CliInitializationException {
-
+    CommandContextImpl(CommandContextConfiguration configuration) throws CliInitializationException {
         config = CliConfigImpl.load(this);
-        addressResolver = ControllerAddressResolver.newInstance(config, defaultController);
+        addressResolver = ControllerAddressResolver.newInstance(config, configuration.getController());
 
         operationHandler = new OperationRequestHandler();
 
-        this.username = username;
-        this.password = password;
-        this.disableLocalAuth = disableLocalAuth;
-        this.connectionTimeout = connectionTimeout != -1 ? connectionTimeout : config.getConnectionTimeout();
+        this.username = configuration.getUsername();
+        this.password = configuration.getPassword();
+        this.disableLocalAuth = configuration.isDisableLocalAuth();
+        this.connectionTimeout =  configuration.getConnectionTimeout() != -1 ? configuration.getConnectionTimeout() : config.getConnectionTimeout();
+        this.clientBindAddress = configuration.getClientBindAddress();
 
         resolveParameterValues = config.isResolveParameterValues();
         silent = config.isSilent();
@@ -304,47 +302,15 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         initSSLContext();
         initJaasConfig();
-
-        if (initConsole) {
+        if (configuration.isInitConsole() || configuration.getConsoleInput() != null || configuration.getConsoleOutput() != null) {
             cmdCompleter = new CommandCompleter(cmdRegistry);
-            initBasicConsole(null, null);
+            initBasicConsole(configuration.getConsoleInput(), configuration.getConsoleOutput());
             console.addCompleter(cmdCompleter);
             this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
         } else {
             this.cmdCompleter = null;
             this.operationCandidatesProvider = null;
         }
-
-        addShutdownHook();
-        CliLauncher.runcom(this);
-    }
-
-    CommandContextImpl(String defaultController,
-            String username, char[] password, boolean disableLocalAuth,
-            InputStream consoleInput, OutputStream consoleOutput)
-            throws CliInitializationException {
-
-        config = CliConfigImpl.load(this);
-        addressResolver = ControllerAddressResolver.newInstance(config, defaultController);
-
-        operationHandler = new OperationRequestHandler();
-
-        this.username = username;
-        this.password = password;
-        this.disableLocalAuth = disableLocalAuth;
-        this.connectionTimeout = config.getConnectionTimeout();
-
-        resolveParameterValues = config.isResolveParameterValues();
-        silent = config.isSilent();
-        initCommands();
-
-        initSSLContext();
-        initJaasConfig();
-
-        cmdCompleter = new CommandCompleter(cmdRegistry);
-        initBasicConsole(consoleInput, consoleOutput);
-        console.addCompleter(cmdCompleter);
-        this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
 
         addShutdownHook();
         CliLauncher.runcom(this);
@@ -861,7 +827,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     log.debug("connecting to " + address.getHost() + ':' + address.getPort() + " as " + username);
                 }
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(address, cbh,
-                        disableLocalAuth, sslContext, connectionTimeout, this, timeoutHandler);
+                        disableLocalAuth, sslContext, connectionTimeout, this, timeoutHandler, clientBindAddress);
                 retry = false;
                 connInfoBean = new ConnectionInfoBean();
                 tryConnection(tempClient, address);

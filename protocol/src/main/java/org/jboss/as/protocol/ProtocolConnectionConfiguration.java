@@ -55,6 +55,9 @@ public class ProtocolConnectionConfiguration {
     protected ProtocolConnectionConfiguration() {
         // TODO AS7-6223 propagate clientBindAddress configuration up to end user level and get rid of this system property
         this.clientBindAddress = SecurityActions.getSystemProperty(JBOSS_CLIENT_SOCKET_BIND_ADDRESS);
+        if(this.clientBindAddress != null) {
+             ProtocolLogger.ROOT_LOGGER.deprecatedCLIConfiguration(JBOSS_CLIENT_SOCKET_BIND_ADDRESS);
+        }
     }
 
     protected void validate() {
@@ -137,7 +140,9 @@ public class ProtocolConnectionConfiguration {
     }
 
     public void setClientBindAddress(String clientBindAddress) {
-        this.clientBindAddress = clientBindAddress;
+        if(clientBindAddress != null || this.clientBindAddress == null) {
+            this.clientBindAddress = clientBindAddress;
+        }
     }
 
     public ProtocolTimeoutHandler getTimeoutHandler() {

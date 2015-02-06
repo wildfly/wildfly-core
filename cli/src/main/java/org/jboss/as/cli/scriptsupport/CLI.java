@@ -27,6 +27,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -112,9 +113,26 @@ public class CLI {
      * @param password The password for logging in.
      */
     public void connect(String controller, String username, char[] password) {
+        connect(controller, username, password, null);
+    }
+
+    /**
+     * Connect to the server using a specified host and port.
+     *
+     * @param controller
+     * @param username The user name for logging in.
+     * @param clientBindAddress
+     * @param password The password for logging in.
+     */
+    public void connect(String controller, String username, char[] password, String clientBindAddress) {
         checkAlreadyConnected();
         try {
-            ctx = CommandContextFactory.getInstance().newCommandContext(controller, username, password);
+            ctx = CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                    .setController(controller)
+                    .setUsername(username)
+                    .setPassword(password)
+                    .setClientBindAddress(clientBindAddress)
+                    .build());
             ctx.connectController();
         } catch (CliInitializationException e) {
             throw new IllegalStateException("Unable to initialize command context.", e);
@@ -132,7 +150,20 @@ public class CLI {
      * @param password The password for logging in.
      */
     public void connect(String controllerHost, int controllerPort, String username, char[] password) {
-        connect("http-remoting", controllerHost, controllerPort, username, password);
+        connect("http-remoting", controllerHost, controllerPort, username, password, null);
+    }
+
+    /**
+     * Connect to the server using a specified host and port.
+     *
+     * @param controllerHost The host name.
+     * @param controllerPort The port.
+     * @param username The user name for logging in.
+     * @param password The password for logging in.
+     * @param clientBindAddress the client bind address.
+     */
+    public void connect(String controllerHost, int controllerPort, String username, char[] password, String clientBindAddress) {
+        connect("http-remoting", controllerHost, controllerPort, username, password, clientBindAddress);
     }
 
     /**
@@ -144,9 +175,26 @@ public class CLI {
      * @param password The password for logging in.
      */
     public void connect(String protocol, String controllerHost, int controllerPort, String username, char[] password) {
+        connect(protocol, controllerHost, controllerPort, username, password, null);
+    }
+
+    /**
+     * Connect to the server using a specified host and port.
+     * @param protocol The protocol
+     * @param controllerHost The host name.
+     * @param controllerPort The port.
+     * @param username The user name for logging in.
+     * @param password The password for logging in.
+     */
+    public void connect(String protocol, String controllerHost, int controllerPort, String username, char[] password, String clientBindAddress) {
         checkAlreadyConnected();
         try {
-            ctx = CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, controllerHost, controllerPort), username, password);
+            ctx = CommandContextFactory.getInstance().newCommandContext(
+                    new CommandContextConfiguration.Builder().setController(constructUri(protocol, controllerHost, controllerPort))
+                    .setUsername(username)
+                    .setPassword(password)
+                    .setClientBindAddress(clientBindAddress)
+                    .build());
             ctx.connectController();
         } catch (CliInitializationException e) {
             throw new IllegalStateException("Unable to initialize command context.", e);

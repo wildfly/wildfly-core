@@ -183,7 +183,7 @@ public class ConnectDialog extends JInternalFrame {
                     if (user == null) {
                         cmdCtx = CommandContextFactory.getInstance().newCommandContext();
                     } else {
-                        cmdCtx = CommandContextFactory.getInstance().newCommandContext(user, password.toCharArray());
+                        cmdCtx = CommandContextFactory.getInstance().newCommandContext(null, user, password.toCharArray());
                     }
                     cmdCtx.connectController(controller);
                     plugin.init(cmdCtx);

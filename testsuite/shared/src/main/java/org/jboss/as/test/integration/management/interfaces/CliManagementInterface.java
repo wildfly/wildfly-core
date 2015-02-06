@@ -94,7 +94,7 @@ public class CliManagementInterface implements ManagementInterface {
 
     public static ManagementInterface create(String host, int port, String username, String password) {
         CLI client = CLI.newInstance();
-        client.connect(host, port, username, password.toCharArray());
+        client.connect(host, port, username, password.toCharArray(), null);
         return new CliManagementInterface(client);
     }
 }

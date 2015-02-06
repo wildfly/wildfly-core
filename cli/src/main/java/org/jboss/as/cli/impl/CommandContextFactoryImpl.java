@@ -21,14 +21,14 @@
  */
 package org.jboss.as.cli.impl;
 
+import org.jboss.as.cli.CliInitializationException;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContextFactory;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import org.jboss.as.cli.CliInitializationException;
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandContextFactory;
 
 /**
  *
@@ -45,35 +45,60 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     }
 
     @Override
-    public CommandContext newCommandContext(String username, char[] password)
-            throws CliInitializationException {
-        return new CommandContextImpl(username, password, username != null);
+    public CommandContext newCommandContext(String username, char[] password) throws CliInitializationException {
+        return newCommandContext(new CommandContextConfiguration.Builder()
+                .setUsername(username)
+                .setPassword(password)
+                .setInitConsole(false)
+                .build());
     }
 
     @Override
-    public CommandContext newCommandContext(String controller, String username, char[] password)
-            throws CliInitializationException {
-        return newCommandContext(controller, username, password, false, -1);
+    public CommandContext newCommandContext(String controller, String username, char[] password) throws CliInitializationException {
+        return newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(controller)
+                .setUsername(username)
+                .setPassword(password)
+                .setInitConsole(false)
+                .build());
     }
 
     @Override
-    public CommandContext newCommandContext(String controller, String username, char[] password,
-            boolean initConsole, final int connectionTimeout) throws CliInitializationException {
-        return new CommandContextImpl(controller, username, password, username != null, initConsole, connectionTimeout);
+    @Deprecated
+    public CommandContext newCommandContext(String controller, String username, char[] password, boolean initConsole, int connectionTimeout) throws CliInitializationException {
+        return newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(controller)
+                .setUsername(username)
+                .setPassword(password)
+                .setInitConsole(initConsole)
+                .setConnectionTimeout(connectionTimeout)
+                .build());
     }
 
     @Override
-    public CommandContext newCommandContext(String controller,
-            String username, char[] password,
-            InputStream consoleInput, OutputStream consoleOutput) throws CliInitializationException {
-        return new CommandContextImpl(controller, username, password, username != null, consoleInput, consoleOutput);
+    @Deprecated
+    public CommandContext newCommandContext(String controller, String username, char[] password, boolean disableLocalAuth, boolean initConsole, int connectionTimeout) throws CliInitializationException {
+        return newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(controller)
+                .setUsername(username)
+                .setPassword(password)
+                .setDisableLocalAuth(disableLocalAuth)
+                .setInitConsole(initConsole)
+                .setConnectionTimeout(connectionTimeout)
+                .build());
     }
 
     @Override
-    public CommandContext newCommandContext(String controller,
-            String username, char[] password, boolean disableLocalAuth, boolean initConsole, int connectionTimeout)
-            throws CliInitializationException {
-        return new CommandContextImpl(controller, username, password, disableLocalAuth || username != null, initConsole, connectionTimeout);
+    public CommandContext newCommandContext(String controller, String username, char[] password, InputStream consoleInput, OutputStream consoleOutput) throws CliInitializationException {
+        return newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(controller)
+                .setUsername(username)
+                .setPassword(password)
+                .setConsoleInput(consoleInput)
+                .setConsoleOutput(consoleOutput)
+                .setDisableLocalAuth(false)
+                .setInitConsole(false)
+                .build());
     }
 
     @Override
@@ -81,8 +106,11 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     public CommandContext newCommandContext(String controllerHost, int controllerPort, String username, char[] password)
             throws CliInitializationException {
         try {
-            return newCommandContext(new URI(null, null, controllerHost, controllerPort, null, null, null).toString().substring(2),
-                    username, password);
+            return newCommandContext(new CommandContextConfiguration.Builder()
+                    .setController(new URI(null, null, controllerHost, controllerPort, null, null, null).toString().substring(2))
+                    .setUsername(username)
+                    .setPassword(password)
+                    .build());
         } catch (URISyntaxException e) {
             throw new CliInitializationException("Unable to construct URI for connection.", e);
         }
@@ -93,8 +121,13 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     public CommandContext newCommandContext(String controllerHost, int controllerPort, String username, char[] password,
             boolean initConsole, int connectionTimeout) throws CliInitializationException {
         try {
-            return newCommandContext(new URI(null, null, controllerHost, controllerPort, null, null, null).toString().substring(2),
-                    username, password, initConsole, connectionTimeout);
+            return newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(new URI(null, null, controllerHost, controllerPort, null, null, null).toString().substring(2))
+                .setUsername(username)
+                .setPassword(password)
+                .setInitConsole(initConsole)
+                .setConnectionTimeout(connectionTimeout)
+                .build());
         } catch (URISyntaxException e) {
             throw new CliInitializationException("Unable to construct URI for connection.", e);
         }
@@ -105,10 +138,22 @@ public class CommandContextFactoryImpl extends CommandContextFactory {
     public CommandContext newCommandContext(String controllerHost, int controllerPort, String username, char[] password,
             InputStream consoleInput, OutputStream consoleOutput) throws CliInitializationException {
         try {
-            return newCommandContext(new URI(null, null, controllerHost, controllerPort, null, null, null).toString().substring(2),
-                    username, password, consoleInput, consoleOutput);
+            return newCommandContext(new CommandContextConfiguration.Builder()
+                    .setController(new URI(null, null, controllerHost, controllerPort, null, null, null).toString().substring(2))
+                    .setUsername(username)
+                    .setPassword(password)
+                    .setConsoleInput(consoleInput)
+                    .setConsoleOutput(consoleOutput)
+                    .setInitConsole(false)
+                    .setDisableLocalAuth(false)
+                    .build());
         } catch (URISyntaxException e) {
             throw new CliInitializationException("Unable to construct URI for connection.", e);
         }
+    }
+
+    @Override
+    public CommandContext newCommandContext(CommandContextConfiguration configuration) throws CliInitializationException {
+        return new CommandContextImpl(configuration);
     }
 }

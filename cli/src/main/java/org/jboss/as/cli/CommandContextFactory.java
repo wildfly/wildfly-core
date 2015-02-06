@@ -21,9 +21,11 @@
  */
 package org.jboss.as.cli;
 
+import org.jboss.as.cli.impl.CommandContextConfiguration;
+import org.wildfly.security.manager.WildFlySecurityManager;
+
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  *
@@ -56,14 +58,24 @@ public abstract class CommandContextFactory {
 
     public abstract CommandContext newCommandContext(String controller, String username, char[] password) throws CliInitializationException;
 
+    /**
+     * @deprecated Use {@link #newCommandContext(CommandContextConfiguration configuration)} instead.
+     */
+    @Deprecated
     public abstract CommandContext newCommandContext(String controller, String username, char[] password, boolean initConsole,
             final int connectionTimeout) throws CliInitializationException;
 
+    /**
+     * @deprecated Use {@link #newCommandContext(CommandContextConfiguration configuration)} instead.
+     */
+    @Deprecated
     public abstract CommandContext newCommandContext(String controller, String username, char[] password, boolean disableLocalAuth,
             boolean initConsole, final int connectionTimeout) throws CliInitializationException;
 
     public abstract CommandContext newCommandContext(String controller, String username, char[] password, InputStream consoleInput,
             OutputStream consoleOutput) throws CliInitializationException;
+
+    public abstract CommandContext newCommandContext(CommandContextConfiguration configuration) throws CliInitializationException;
 
     /**
      * @deprecated Use {@link #newCommandContext(String, String, char[])} instead.

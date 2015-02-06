@@ -37,6 +37,7 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
 
     private static final int DEFAULT_CONNECTION_TIMEOUT = 5000;
     private final String address;
+    private final String clientBindAddress;
     private final int port;
     private final CallbackHandler handler;
     private final Map<String, String> saslOptions;
@@ -46,7 +47,7 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
     private final boolean shutdownExecutor;
     private final int connectionTimeout;
 
-    public ClientConfigurationImpl(String address, int port, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext, ExecutorService executorService, boolean shutdownExecutor, final int connectionTimeout, final String protocol) {
+    public ClientConfigurationImpl(String address, int port, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext, ExecutorService executorService, boolean shutdownExecutor, final int connectionTimeout, final String protocol, String clientBindAddress) {
         this.address = address;
         this.port = port;
         this.handler = handler;
@@ -55,6 +56,7 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
         this.executorService = executorService;
         this.shutdownExecutor = shutdownExecutor;
         this.protocol = protocol;
+        this.clientBindAddress = clientBindAddress;
         this.connectionTimeout = connectionTimeout > 0 ? connectionTimeout : DEFAULT_CONNECTION_TIMEOUT;
     }
 
@@ -104,5 +106,10 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
         if(shutdownExecutor && executorService != null) {
             executorService.shutdown();
         }
+    }
+
+    @Override
+    public String getClientBindAddress() {
+        return clientBindAddress;
     }
 }
