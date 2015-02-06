@@ -71,6 +71,8 @@ public class RemotingExtension implements Extension {
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
+    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+
     private static final ModelVersion VERSION_1_1 = ModelVersion.create(1, 1);
     private static final ModelVersion VERSION_1_2 = ModelVersion.create(1, 2);
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
@@ -80,8 +82,7 @@ public class RemotingExtension implements Extension {
     public void initialize(ExtensionContext context) {
 
         // Register the remoting subsystem
-        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
         registration.registerXMLElementWriter(RemotingSubsystemXMLPersister.INSTANCE);
 
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new RemotingSubsystemRootResource());

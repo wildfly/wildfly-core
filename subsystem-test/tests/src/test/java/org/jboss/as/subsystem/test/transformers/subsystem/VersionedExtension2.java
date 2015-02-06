@@ -67,7 +67,7 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
 
     @Override
     public void initialize(final ExtensionContext context) {
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, 2, 0, 0);
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(2));
         // Initialize the subsystem
         final ManagementResourceRegistration registration = initializeSubsystem(subsystem);
 

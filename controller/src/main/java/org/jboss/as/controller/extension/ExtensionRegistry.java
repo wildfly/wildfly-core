@@ -420,6 +420,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public SubsystemRegistration registerSubsystem(String name, ModelVersion version) {
+            return registerSubsystem(name, version, false);
+        }
+
+        @Override
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion) throws IllegalArgumentException, IllegalStateException {
             return registerSubsystem(name, majorVersion, minorVersion, 0);
         }
@@ -431,18 +436,20 @@ public class ExtensionRegistry {
 
         @Override
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated) {
+            return registerSubsystem(name, ModelVersion.create(majorVersion, minorVersion, microVersion), deprecated);
+        }
+
+        public SubsystemRegistration registerSubsystem(String name, ModelVersion version, boolean deprecated) {
             assert name != null : "name is null";
             checkNewSubystem(extension.extensionModuleName, name);
             SubsystemInformationImpl info = extension.getSubsystemInfo(name);
-            info.setMajorVersion(majorVersion);
-            info.setMinorVersion(minorVersion);
-            info.setMicroVersion(microVersion);
+            info.setVersion(version);
             info.setDeprecated(deprecated);
             subsystemsInfo.put(name, info);
             if (deprecated){
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
-            return new SubsystemRegistrationImpl(name, majorVersion, minorVersion, microVersion,
+            return new SubsystemRegistrationImpl(name, version,
                     profileRegistration, deploymentsRegistration);
         }
 
@@ -504,9 +511,7 @@ public class ExtensionRegistry {
 
     private class SubsystemInformationImpl implements SubsystemInformation {
 
-        private Integer majorVersion;
-        private Integer minorVersion;
-        private Integer microVersion;
+        private ModelVersion version;
         private boolean deprecated = false;
         private final List<String> parsingNamespaces = new ArrayList<String>();
 
@@ -521,29 +526,21 @@ public class ExtensionRegistry {
 
         @Override
         public Integer getManagementInterfaceMajorVersion() {
-            return majorVersion;
-        }
-
-        private void setMajorVersion(Integer majorVersion) {
-            this.majorVersion = majorVersion;
+            return version != null ? version.getMajor() : null;
         }
 
         @Override
         public Integer getManagementInterfaceMinorVersion() {
-            return minorVersion;
-        }
-
-        private void setMinorVersion(Integer minorVersion) {
-            this.minorVersion = minorVersion;
+            return version != null ? version.getMinor() : null;
         }
 
         @Override
         public Integer getManagementInterfaceMicroVersion() {
-            return microVersion;
+            return version != null ? version.getMicro() : null;
         }
 
-        private void setMicroVersion(Integer microVersion) {
-            this.microVersion = microVersion;
+        private void setVersion(ModelVersion version) {
+            this.version = version;
         }
 
         public boolean isDeprecated() {
@@ -561,14 +558,14 @@ public class ExtensionRegistry {
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
 
-        private SubsystemRegistrationImpl(String name, int major, int minor, int micro,
+        private SubsystemRegistrationImpl(String name, ModelVersion version,
                                           ManagementResourceRegistration profileRegistration,
                                           ManagementResourceRegistration deploymentsRegistration) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             this.deploymentsRegistration = deploymentsRegistration;
-            this.version = ModelVersion.create(major, minor, micro);
+            this.version = version;
         }
 
         @Override

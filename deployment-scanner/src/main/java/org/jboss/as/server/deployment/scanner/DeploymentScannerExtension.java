@@ -26,6 +26,7 @@ import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLo
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SubsystemRegistration;
@@ -51,6 +52,8 @@ public class DeploymentScannerExtension implements Extension {
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
+    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+
     static ResourceDescriptionResolver getResourceDescriptionResolver(final String keyPrefix) {
         return new StandardResourceDescriptionResolver(keyPrefix, RESOURCE_NAME, DeploymentScannerExtension.class.getClassLoader(), true, false);
     }
@@ -66,8 +69,7 @@ public class DeploymentScannerExtension implements Extension {
             throw DeploymentScannerLogger.ROOT_LOGGER.deploymentScannerNotForDomainMode();
         }
 
-        final SubsystemRegistration subsystem = context.registerSubsystem(CommonAttributes.DEPLOYMENT_SCANNER, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration subsystem = context.registerSubsystem(CommonAttributes.DEPLOYMENT_SCANNER, CURRENT_VERSION);
         subsystem.registerXMLElementWriter(DeploymentScannerParser_2_0.INSTANCE);
 
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new DeploymentScannerSubsystemDefinition());

@@ -55,6 +55,8 @@ public class ThreadsExtension implements Extension {
     private static final int MANAGEMENT_API_MINOR_VERSION = 1;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
+    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+
     public static ResourceDescriptionResolver getResourceDescriptionResolver(final String keyPrefix, boolean useUnprefixedChildTypes) {
         return new StandardResourceDescriptionResolver(keyPrefix, RESOURCE_NAME, ThreadsExtension.class.getClassLoader(), true, useUnprefixedChildTypes);
     }
@@ -67,8 +69,7 @@ public class ThreadsExtension implements Extension {
         final boolean registerRuntimeOnly = context.isRuntimeOnlyRegistrationValid();
 
         // Register the remoting subsystem
-        final SubsystemRegistration registration = context.registerSubsystem(THREADS, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration registration = context.registerSubsystem(THREADS, CURRENT_VERSION);
         registration.registerXMLElementWriter(ThreadsParser.INSTANCE);
 
         // Remoting subsystem description and operation handlers
