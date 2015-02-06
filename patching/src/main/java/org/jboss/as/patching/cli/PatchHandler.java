@@ -27,7 +27,6 @@ import static java.lang.System.getSecurityManager;
 import static java.lang.System.getenv;
 import static java.security.AccessController.doPrivileged;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +38,8 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -505,8 +506,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
 
     private PatchOperationTarget createPatchOperationTarget(CommandContext ctx) throws CommandLineException {
         final PatchOperationTarget target;
-        boolean connected = ctx.getControllerHost() != null;
-        if (connected) {
+        if (ctx.getModelControllerClient() != null) {
             if (ctx.isDomainMode()) {
                 String hostName = host.getValue(ctx.getParsedCommandLine(), true);
                 target = PatchOperationTarget.createHost(hostName, ctx.getModelControllerClient());
