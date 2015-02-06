@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.patching.IoUtils;
 import org.junit.Assert;
 
 /**
@@ -53,7 +54,14 @@ public class CLIPatchInfoUtil {
         final InputStreamReader reader = new InputStreamReader(bis);
         final BufferedReader buf = new BufferedReader(reader);
 
-        final Map<String,String> actual = parseTable(buf);
+        final Map<String,String> actual;
+        try {
+            actual = parseTable(buf);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read input", e);
+        } finally {
+            IoUtils.safeClose(buf);
+        }
 
         final Map<String,String> expected = new HashMap<String,String>();
         expected.put(PATCH_ID, patchId);
@@ -80,10 +88,10 @@ public class CLIPatchInfoUtil {
         expected.put(DESCR, description);
         expected.put("Link", link);
 
-        Map<String, String> actual = parseTable(buf);
-        Assert.assertEquals(expected, actual);
-
         try {
+            Map<String, String> actual = parseTable(buf);
+            Assert.assertEquals(expected, actual);
+
             if(buf.ready()) {
                 String readLine = buf.readLine();
                 if(!"ELEMENTS".equals(readLine)) {
@@ -97,53 +105,53 @@ public class CLIPatchInfoUtil {
                     Assert.fail("Expected an empty line but received '" + readLine + "'");
                 }
             }
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read the buffer", e);
-        }
 
-        for(Map<String,String> e : elements) {
-            try {
-                if(!buf.ready()) {
+            for (Map<String, String> e : elements) {
+                if (!buf.ready()) {
                     Assert.fail("No more output");
                 }
-            } catch (IOException e1) {
-                throw new IllegalStateException("Failed to check the state of the reader", e1);
+                actual = parseTable(buf);
+                Assert.assertEquals(e, actual);
             }
 
-            actual = parseTable(buf);
-            Assert.assertEquals(e, actual);
-        }
-
-        try {
-            if(buf.ready()) {
+            if (buf.ready()) {
                 final StringBuilder str = new StringBuilder();
                 String line;
-                while((line = buf.readLine()) != null) {
+                while ((line = buf.readLine()) != null) {
                     str.append(line).append("\n");
                 }
                 Assert.fail("The output contained more info: " + str.toString());
             }
         } catch (IOException e1) {
-            throw new IllegalStateException("Failed to read the reader", e1);
+            throw new IllegalStateException("Failed to read the input", e1);
+        } finally {
+            IoUtils.safeClose(buf);
         }
     }
 
-    private static Map<String, String> parseTable(final BufferedReader buf) {
-        final Map<String,String> actual = new HashMap<String,String>();
+    public static Map<String, String> parseTable(byte[] table) throws IOException {
+        final ByteArrayInputStream bis = new ByteArrayInputStream(table);
+        final InputStreamReader reader = new InputStreamReader(bis);
+        final BufferedReader buf = new BufferedReader(reader);
         try {
-            String line = null;
-            while((line = buf.readLine()) != null && !line.isEmpty()) {
-                final int colon = line.indexOf(':');
-                if(colon < 0) {
-                    Assert.fail("Failed to locate ':' in '" + line + "'");
-                }
-                if(colon == line.length() - 1) {
-                    Assert.fail("The line appears to end on ':'");
-                }
-                actual.put(line.substring(0, colon), line.substring(colon + 1).trim());
+            return parseTable(buf);
+        } finally {
+            IoUtils.safeClose(buf);
+        }
+    }
+
+    public static Map<String, String> parseTable(final BufferedReader buf) throws IOException {
+        final Map<String, String> actual = new HashMap<String, String>();
+        String line = null;
+        while ((line = buf.readLine()) != null && !line.isEmpty()) {
+            final int colon = line.indexOf(':');
+            if (colon < 0) {
+                Assert.fail("Failed to locate ':' in '" + line + "'");
             }
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read info", e);
+            if (colon == line.length() - 1) {
+                Assert.fail("The line appears to end on ':'");
+            }
+            actual.put(line.substring(0, colon), line.substring(colon + 1).trim());
         }
         return actual;
     }

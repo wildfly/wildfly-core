@@ -103,6 +103,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
 
     private final ArgumentWithoutValue verbose;
 
+    /** whether the output should be displayed in a human friendly form or JSON - tools friendly */
+    private final ArgumentWithoutValue jsonOutput;
+
     private static final String lineSeparator = getSecurityManager() == null ? getProperty("line.separator") : doPrivileged(new ReadPropertyAction("line.separator"));
 
     public PatchHandler(final CommandContext context) {
@@ -254,7 +257,17 @@ public class PatchHandler extends CommandHandlerWithHelp {
             }
         };
         verbose.addRequiredPreceding(action);
-        verbose.addRequiredPreceding(patchId);
+
+        jsonOutput = new ArgumentWithoutValue(this, "--json-output") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+//                if (canOnlyAppearAfterActions(ctx, INFO)) {
+//                    return super.canAppearNext(ctx);
+//                }
+                // hide from the tab-completion for now
+                return false;
+            }
+        };
     }
 
     private boolean canOnlyAppearAfterActions(CommandContext ctx, String... actions) {
@@ -340,12 +353,56 @@ public class PatchHandler extends CommandHandlerWithHelp {
                         ctx.printLine(table.toString(false));
                     }
                 }
-            } else {
+            } else if(jsonOutput.isPresent(parsedLine)) {
                 ctx.printLine(response.toJSONString(false));
+            } else {
+                final ModelNode result = response.get(ModelDescriptionConstants.RESULT);
+                if(!result.isDefined()) {
+                    return;
+                }
+                SimpleTable table = new SimpleTable(2);
+                table.addLine(new String[]{"Version:", result.get(Constants.VERSION).asString()});
+                addPatchesInfo(result, table);
+                ctx.printLine(table.toString(false));
+                if(verbose.isPresent(parsedLine)) {
+                    printLayerPatches(ctx, result, Constants.ADD_ON);
+                    printLayerPatches(ctx, result, Constants.LAYER);
+                }
             }
         } else {
             ctx.printLine(response.toJSONString(false));
         }
+    }
+
+    protected void printLayerPatches(CommandContext ctx, final ModelNode result, final String type) {
+        ModelNode layer = result.get(type);
+        if(layer.isDefined()) {
+            final String header = Character.toUpperCase(type.charAt(0)) + type.substring(1) + ':';
+            for(String name : layer.keys()) {
+                final ModelNode node = layer.get(name);
+                final SimpleTable table = new SimpleTable(2);
+                table.addLine(new String[]{header, name});
+                addPatchesInfo(node, table);
+                ctx.printLine(lineSeparator + table.toString(false));
+            }
+        }
+    }
+
+    protected void addPatchesInfo(final ModelNode result, SimpleTable table) {
+        table.addLine(new String[]{"Cumulative patch ID:", result.get(Constants.CUMULATIVE).asString()});
+        final List<ModelNode> patches = result.get(Constants.PATCHES).asList();
+        final String patchesStr;
+        if(patches.isEmpty()) {
+            patchesStr = "none";
+        } else {
+            final StringBuilder buf = new StringBuilder();
+            buf.append(patches.get(0).asString());
+            for (int i = 1; i < patches.size(); ++i) {
+                buf.append(',').append(patches.get(i).asString());
+            }
+            patchesStr = buf.toString();
+        }
+        table.addLine(new String[]{"One-off patches:", patchesStr});
     }
 
     protected void doInspect(CommandContext ctx) throws CommandLineException {
