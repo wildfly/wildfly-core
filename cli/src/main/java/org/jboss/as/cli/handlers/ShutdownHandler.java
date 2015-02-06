@@ -24,6 +24,7 @@ package org.jboss.as.cli.handlers;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -32,6 +33,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
+import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.CLIModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
@@ -48,10 +50,13 @@ public class ShutdownHandler extends BaseOperationCommand {
 
     private final ArgumentWithValue restart;
     private final ArgumentWithValue host;
+    private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
     private PerNodeOperationAccess hostShutdownPermission;
 
-    public ShutdownHandler(CommandContext ctx) {
+    public ShutdownHandler(CommandContext ctx, AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
         super(ctx, "shutdown", true);
+
+        this.embeddedServerRef = embeddedServerRef;
 
         restart = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--restart");
 
@@ -78,6 +83,11 @@ public class ShutdownHandler extends BaseOperationCommand {
                 .operation(Util.SHUTDOWN)
                 .requirement(hostShutdownPermission)
                 .build();
+    }
+
+    @Override
+    public boolean isAvailable(CommandContext ctx) {
+        return super.isAvailable(ctx) && (embeddedServerRef == null || embeddedServerRef.get() == null);
     }
 
     /* (non-Javadoc)
