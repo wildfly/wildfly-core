@@ -15,7 +15,8 @@ public class DeploymentScannerParsingTestCase extends AbstractSubsystemBaseTest 
             "<subsystem xmlns=\"urn:jboss:domain:deployment-scanner:2.0\">\n" +
             "    <deployment-scanner name=\"myScanner\" path=\"deployments_${custom.system.property:test}\" " +
                    "relative-to=\"jboss.server.base.dir\" scan-enabled=\"false\" scan-interval=\"5000\" " +
-                   "auto-deploy-xml=\"true\" deployment-timeout=\"60\"/>\n" +
+                   "auto-deploy-xml=\"true\" deployment-timeout=\"60\" " +
+                    "runtime-failure-causes-rollback=\"${runtime-failure-causes-rollback:false}\"/>\n" +
             "    <deployment-scanner path=\"deployments\"  relative-to=\"jboss.server.base.dir\" " +
                    "scan-enabled=\"false\" scan-interval=\"5000\" " +
                    "auto-deploy-xml=\"true\" deployment-timeout=\"30\"/>\n" +
