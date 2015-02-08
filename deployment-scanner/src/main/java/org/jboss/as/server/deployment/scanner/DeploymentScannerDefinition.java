@@ -110,7 +110,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
                     .setDefaultValue(new ModelNode().set(false))
                     .build();
 
-    protected static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {PATH,RELATIVE_TO,SCAN_ENABLED,SCAN_INTERVAL,AUTO_DEPLOY_EXPLODED,AUTO_DEPLOY_XML,AUTO_DEPLOY_ZIPPED,DEPLOYMENT_TIMEOUT};
+    protected static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {PATH,RELATIVE_TO,SCAN_ENABLED,SCAN_INTERVAL,AUTO_DEPLOY_EXPLODED,AUTO_DEPLOY_XML,AUTO_DEPLOY_ZIPPED,DEPLOYMENT_TIMEOUT,RUNTIME_FAILURE_CAUSES_ROLLBACK};
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
