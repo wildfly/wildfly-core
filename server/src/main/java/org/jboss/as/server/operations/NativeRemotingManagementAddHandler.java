@@ -24,6 +24,8 @@ package org.jboss.as.server.operations;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.remoting.RemotingServices;
@@ -52,9 +54,10 @@ public class NativeRemotingManagementAddHandler extends AbstractAddStepHandler {
         model.setEmptyObject();
     }
 
+
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return true;
+        return context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY;
     }
 
     @Override
