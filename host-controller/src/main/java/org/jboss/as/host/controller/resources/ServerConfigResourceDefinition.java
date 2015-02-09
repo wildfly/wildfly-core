@@ -24,10 +24,12 @@ package org.jboss.as.host.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.NoopOperationStepHandler;
@@ -81,6 +83,10 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(true)).build();
 
+    public static final SimpleAttributeDefinition UPDATE_AUTO_START_WITH_SERVER_STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UPDATE_AUTO_START_WITH_SERVER_STATUS, ModelType.BOOLEAN, true)
+            .setAllowExpression(false)
+            .setDefaultValue(new ModelNode(false)).build();
+
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, true)
             .build();
 
@@ -122,7 +128,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     /** The attributes that can be written by the {@code add} operation */
-    public static final List<SimpleAttributeDefinition> WRITABLE_ATTRIBUTES = Arrays.asList(AUTO_START, SOCKET_BINDING_GROUP, SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, GROUP);
+    public static final List<SimpleAttributeDefinition> WRITABLE_ATTRIBUTES = Arrays.asList(AUTO_START, UPDATE_AUTO_START_WITH_SERVER_STATUS, SOCKET_BINDING_GROUP, SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, GROUP);
 
     private final ServerInventory serverInventory;
     private final PathManagerService pathManager;
@@ -130,13 +136,14 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
     /**
      * Creates a ServerConfigResourceDefinition.
+     * @param hostControllerInfo
      * @param serverInventory  the server inventory to use for runtime server lifecycle operations. May be {@code null}
      *                         in which case no such operations will be registered
      * @param pathManager the {@link PathManagerService} to use for the child {@code path} resources. Cannot be {@code null}
      */
-    public ServerConfigResourceDefinition(final LocalHostControllerInfo hostControllerInfo, final ServerInventory serverInventory, final PathManagerService pathManager) {
+    public ServerConfigResourceDefinition(final LocalHostControllerInfo hostControllerInfo, final ServerInventory serverInventory, final PathManagerService pathManager, final ControlledProcessState processState, final File domainDataDir) {
         super(PathElement.pathElement(SERVER_CONFIG), HostResolver.getResolver(SERVER_CONFIG, false),
-                ServerAddHandler.create(hostControllerInfo), ServerRemoveHandler.INSTANCE);
+                ServerAddHandler.create(hostControllerInfo, serverInventory, processState, domainDataDir), ServerRemoveHandler.INSTANCE);
 
         assert pathManager != null : "pathManager is null";
 
@@ -151,6 +158,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
 
         resourceRegistration.registerReadWriteAttribute(AUTO_START, null, new ModelOnlyWriteAttributeHandler(AUTO_START));
+        resourceRegistration.registerReadWriteAttribute(UPDATE_AUTO_START_WITH_SERVER_STATUS, null, new ModelOnlyWriteAttributeHandler(UPDATE_AUTO_START_WITH_SERVER_STATUS));
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createSocketBindingGroupInstance(hostControllerInfo));
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_DEFAULT_INTERFACE, null, ServerRestartRequiredServerConfigWriteAttributeHandler.createDefaultSocketBindingInstance(hostControllerInfo));
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_PORT_OFFSET, null, ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE);

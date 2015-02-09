@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -1215,4 +1216,11 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 156, value = "failed to resolve interface %s")
     OperationFailedException failedToResolveInterface(String name);
+
+    @Message( id = 157, value = "Could not create domain auto-start directory: %s")
+    IllegalStateException couldNotCreateDomainAutoStartDirectory(Path file, @Cause Throwable cause);
+
+    @LogMessage(level = Level.INFO)
+    @Message( id = 158, value = "Error persisting server autostart status")
+    void couldNotPersistAutoStartServerStatus(@Cause Throwable cause);
 }

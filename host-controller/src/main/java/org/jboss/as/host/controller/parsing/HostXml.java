@@ -2004,6 +2004,10 @@ public class HostXml extends CommonXml {
                         ServerConfigResourceDefinition.AUTO_START.parseAndSetParameter(value, addUpdate, reader);
                         break;
                     }
+                    case UPDATE_AUTO_START_WITH_SERVER_STATUS: {
+                        ServerConfigResourceDefinition.UPDATE_AUTO_START_WITH_SERVER_STATUS.parseAndSetParameter(value, addUpdate, reader);
+                        break;
+                    }
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -2168,6 +2172,7 @@ public class HostXml extends CommonXml {
             writeAttribute(writer, Attribute.NAME, prop.getName());
             ServerConfigResourceDefinition.GROUP.marshallAsAttribute(server, writer);
             ServerConfigResourceDefinition.AUTO_START.marshallAsAttribute(server, writer);
+            ServerConfigResourceDefinition.UPDATE_AUTO_START_WITH_SERVER_STATUS.marshallAsAttribute(server, writer);
             if (server.hasDefined(PATH)) {
                 writePaths(writer, server.get(PATH), false);
             }

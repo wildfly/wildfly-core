@@ -19,6 +19,7 @@
 package org.jboss.as.host.controller.operations;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.EnumSet;
@@ -71,7 +72,7 @@ public class ServerStopHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final boolean blocking = operation.get("blocking").asBoolean(false);
+        final boolean blocking = operation.get(BLOCKING).asBoolean(false);
         final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
         context.addStep(new OperationStepHandler() {
             @Override
@@ -86,6 +87,7 @@ public class ServerStopHandler implements OperationStepHandler {
                 context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
 
                 final ServerStatus status = serverInventory.stopServer(serverName, timeout, blocking);
+                context.readResource(PathAddress.EMPTY_ADDRESS, false);
                 context.getResult().set(status.toString());
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
