@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
@@ -43,10 +44,13 @@ import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.embedded.EmbeddedServerFactory;
 import org.jboss.as.embedded.ServerStartException;
 import org.jboss.as.embedded.StandaloneServer;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.LogContextSelector;
 import org.jboss.logmanager.PropertyConfigurator;
@@ -74,6 +78,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithValue dashC;
     private ArgumentWithoutValue emptyConfig;
     private ArgumentWithoutValue removeExisting;
+    private ArgumentWithValue timeout;
 
     static EmbedServerHandler create(AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
@@ -88,6 +93,8 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         result.emptyConfig = new ArgumentWithoutValue(result, "--empty-config");
         result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
         result.removeExisting.addRequiredPreceding(result.emptyConfig);
+        result.timeout = new ArgumentWithValue(result, "--timeout");
+
         return result;
     }
 
@@ -134,6 +141,12 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             }
         }
 
+        Long bootTimeout = null;
+        String timeoutString = timeout.getValue(parsedCmd);
+        if (timeoutString != null) {
+            bootTimeout = TimeUnit.SECONDS.toMillis(Long.parseLong(timeoutString));
+        }
+
         final EnvironmentRestorer restorer = new EnvironmentRestorer();
         boolean ok = false;
         try {
@@ -176,8 +189,46 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             StandaloneServer server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             server.start();
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
-            ctx.bindClient(server.getModelControllerClient());
-            // TODO wait for start
+            ModelControllerClient mcc = server.getModelControllerClient();
+            ctx.bindClient(mcc);
+            if (bootTimeout == null || bootTimeout > 0) {
+                // Poll for server state. Alternative would be to get ControlledProcessStateService
+                // and do reflection stuff to read the state and register for change notifications
+                long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
+                String status = "starting";
+                final ModelNode getStateOp = new ModelNode();
+                getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                getStateOp.get(ClientConstants.NAME).set("server-state");
+                do {
+                    try {
+                        final ModelNode response = mcc.execute(getStateOp);
+                        if (Util.isSuccess(response)) {
+                            status = response.get(ClientConstants.RESULT).asString();
+                        }
+                    } catch (Exception e) {
+                        // ignore and try again
+                    }
+
+                    if ("starting".equals(status)) {
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new CommandLineException("Interrupted while waiting for embedded server to start");
+                        }
+                    } else {
+                        break;
+                    }
+                } while (System.nanoTime() < expired);
+
+                if ("starting".equals(status)) {
+                    assert bootTimeout != null; // we'll assume the loop didn't run for decades
+                    server.stop();
+                    throw new CommandLineException("Embedded server did not exit 'starting' status within " +
+                            TimeUnit.MILLISECONDS.toSeconds(bootTimeout) + " seconds");
+                }
+
+            }
             ok = true;
         } catch (ServerStartException e) {
             throw new CommandLineException("Cannot start embedded server", e);

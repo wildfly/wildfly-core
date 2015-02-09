@@ -58,3 +58,13 @@ ARGUMENTS
                      asynchronous output from the server may
                      interfere with the normal appearance of
                      the CLI prompt.
+
+ --timeout         - Maximum time, in seconds, to wait for the
+                     server to reach a running (i.e. fully started)
+                     state once the embedded server is created.
+                     If unspecified, the command will block for
+                     as long as necessary, with no upper limit.
+                     If the value is less than 1, the command will
+                     return as soon as the embedded server has
+                     reached the point in its boot where it is
+                     manageable by the CLI.
