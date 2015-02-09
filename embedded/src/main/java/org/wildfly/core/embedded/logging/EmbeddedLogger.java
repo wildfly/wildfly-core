@@ -20,9 +20,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.embedded.logging;
+package org.wildfly.core.embedded.logging;
 
-import org.jboss.as.embedded.ServerStartException;
+import org.wildfly.core.embedded.ServerStartException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;

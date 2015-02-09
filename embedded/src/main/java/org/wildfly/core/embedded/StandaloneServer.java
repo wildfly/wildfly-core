@@ -19,17 +19,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.embedded;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import javax.naming.Context;
+package org.wildfly.core.embedded;
 
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 
 /**
  * The standalone server interface.
@@ -39,27 +31,9 @@ import org.jboss.msc.service.ServiceName;
  */
 public interface StandaloneServer {
 
-    // TODO: use a DeploymentPlan
-    @Deprecated
-    void deploy(File file) throws IOException, ExecutionException, InterruptedException;
-
-    // TODO: use a DeploymentPlan
-    @Deprecated
-    void undeploy(File file) throws ExecutionException, InterruptedException;
-
-    /**
-     * Retrieve a naming context for looking up references to session beans executing in
-     * the embeddable container.
-     *
-     * @return The naming context.
-     */
-    Context getContext();
-
     ModelControllerClient getModelControllerClient();
 
     void start() throws ServerStartException;
 
     void stop();
-
-    ServiceController<?> getService(ServiceName serviceName);
 }

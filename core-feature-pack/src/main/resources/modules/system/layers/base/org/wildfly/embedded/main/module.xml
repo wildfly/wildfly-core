@@ -22,8 +22,10 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.3" name="org.jboss.as.embedded">
+<module xmlns="urn:jboss:module:1.3" name="org.wildfly.embedded">
     <properties>
+        <!-- Core version of the embedded API is currently only meant
+        for use by the CLI -->
         <property name="jboss.api" value="private"/>
     </properties>
 
@@ -48,6 +50,5 @@
         <module name="org.jboss.stdio"/>
         <module name="org.jboss.vfs"/>
         <module name="org.jboss.as.protocol"/>
-        <module name="javax.api" />
     </dependencies>
 </module>

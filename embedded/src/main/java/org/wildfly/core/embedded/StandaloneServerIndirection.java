@@ -14,19 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.as.embedded;
+package org.wildfly.core.embedded;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.concurrent.ExecutionException;
-
-import javax.naming.Context;
 
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.embedded.logging.EmbeddedLogger;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
+import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
  * Indirection to the {@link StandaloneServer}; used to encapsulate access to the underlying embedded AS Server instance in a
@@ -41,11 +35,7 @@ final class StandaloneServerIndirection implements StandaloneServer {
     private final Object standaloneServer;
     private final Method methodStart;
     private final Method methodStop;
-    private final Method methodGetContext;
-    private final Method methodGetService;
     private final Method methodGetModelControllerClient;
-    private final Method methodDeploy;
-    private final Method methodUndeploy;
 
     StandaloneServerIndirection(Class<?> standaloneServerClass, Object standaloneServerImpl) {
         this.standaloneServer = standaloneServerImpl;
@@ -54,11 +44,7 @@ final class StandaloneServerIndirection implements StandaloneServer {
         try {
             methodStart = standaloneServerClass.getMethod("start");
             methodStop = standaloneServerClass.getMethod("stop");
-            methodGetContext = standaloneServerClass.getMethod("getContext");
-            methodGetService = standaloneServerClass.getMethod("getService", ServiceName.class);
             methodGetModelControllerClient = standaloneServerClass.getMethod("getModelControllerClient");
-            methodDeploy = standaloneServerClass.getMethod("deploy", File.class);
-            methodUndeploy = standaloneServerClass.getMethod("undeploy", File.class);
         } catch (final NoSuchMethodException nsme) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, nsme.getMessage(), standaloneServerClass.getName());
         }
@@ -75,28 +61,8 @@ final class StandaloneServerIndirection implements StandaloneServer {
     }
 
     @Override
-    public ServiceController<?> getService(ServiceName serviceName) {
-        return (ServiceController<?>) invokeOnServer(methodGetService, serviceName);
-    }
-
-    @Override
     public ModelControllerClient getModelControllerClient()  {
         return (ModelControllerClient) invokeOnServer(methodGetModelControllerClient);
-    }
-
-    @Override
-    public void deploy(File file)  {
-        invokeOnServer(methodDeploy, file);
-    }
-
-    @Override
-    public void undeploy(File file) throws ExecutionException, InterruptedException {
-        invokeOnServer(methodUndeploy, file);
-    }
-
-    @Override
-    public Context getContext() {
-        return (Context) invokeOnServer(methodGetContext);
     }
 
     private Object invokeOnServer(final Method method, Object... args) {

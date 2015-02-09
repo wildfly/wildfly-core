@@ -20,9 +20,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.embedded;
+package org.wildfly.core.embedded;
 
-import org.jboss.as.embedded.logging.EmbeddedLogger;
+import org.wildfly.core.embedded.logging.EmbeddedLogger;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
@@ -63,7 +63,7 @@ import java.util.logging.LogManager;
  */
 public class EmbeddedServerFactory {
 
-    private static final String MODULE_ID_EMBEDDED = "org.jboss.as.embedded";
+    private static final String MODULE_ID_EMBEDDED = "org.wildfly.embedded";
     private static final String MODULE_ID_LOGMANAGER = "org.jboss.logmanager";
     private static final String MODULE_ID_VFS = "org.jboss.vfs";
     private static final String SYSPROP_KEY_CLASS_PATH = "java.class.path";

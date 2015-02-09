@@ -19,13 +19,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.embedded;
+package org.wildfly.core.embedded;
 
-import org.jboss.as.embedded.logging.EmbeddedLogger;
+import org.wildfly.core.embedded.logging.EmbeddedLogger;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
 
 import java.io.File;
+
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**

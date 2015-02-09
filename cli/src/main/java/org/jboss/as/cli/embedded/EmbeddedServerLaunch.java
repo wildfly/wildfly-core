@@ -23,7 +23,7 @@
 package org.jboss.as.cli.embedded;
 
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.embedded.StandaloneServer;
+import org.wildfly.core.embedded.StandaloneServer;
 
 /**
  * Simple data structure to record information related to a launch of an embedded server.

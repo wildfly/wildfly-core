@@ -20,13 +20,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.embedded;
+package org.wildfly.core.embedded;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
@@ -34,41 +33,28 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
-import org.jboss.as.controller.client.helpers.standalone.DeploymentPlan;
-import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
-import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanResult;
-import org.jboss.as.embedded.logging.EmbeddedLogger;
+import org.wildfly.core.embedded.logging.EmbeddedLogger;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.SystemExiter;
-import org.jboss.as.server.deployment.client.ModelControllerServerDeploymentManager;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.Value;
 import org.jboss.stdio.StdioContext;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 
 /**
  * This is the counter-part of EmbeddedServerFactory which lives behind a module class loader.
@@ -91,7 +77,7 @@ import org.jboss.vfs.VFSUtils;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Thomas.Diesler@jboss.com
- * @see org.jboss.as.embedded.EmbeddedServerFactory
+ * @see EmbeddedServerFactory
  */
 public class EmbeddedStandAloneServerFactory {
 
@@ -235,8 +221,6 @@ public class EmbeddedStandAloneServerFactory {
         private final Map<String, String> systemEnv;
         private final ModuleLoader moduleLoader;
         private ServiceContainer serviceContainer;
-        private ServerDeploymentManager serverDeploymentManager;
-        private Context context;
         private ControlledProcessState.State currentProcessState;
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
@@ -257,34 +241,6 @@ public class EmbeddedStandAloneServerFactory {
                     }
                 }
             };
-        }
-
-        @Override
-        public void deploy(File file) throws IOException, ExecutionException, InterruptedException {
-            // the current deployment manager only accepts jar input stream, so hack one together
-            final InputStream is = VFSUtils.createJarFileInputStream(VFS.getChild(file.toURI()));
-            try {
-                execute(serverDeploymentManager.newDeploymentPlan().add(file.getName(), is).andDeploy().build());
-            } finally {
-                if(is != null) try {
-                    is.close();
-                } catch (IOException ignore) {
-                    //
-                }
-            }
-
-        }
-
-        private ServerDeploymentPlanResult execute(DeploymentPlan deploymentPlan) throws ExecutionException, InterruptedException {
-            return serverDeploymentManager.execute(deploymentPlan).get();
-        }
-
-        @Override
-        public Context getContext() {
-            if (context == null) {
-                throw ServerLogger.ROOT_LOGGER.namingContextHasNotBeenSet();
-            }
-            return context;
         }
 
         @Override
@@ -362,7 +318,6 @@ public class EmbeddedStandAloneServerFactory {
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
                 establishModelControllerClient(controlledProcessStateService.getCurrentState());
 
-                context = new InitialContext();
             } catch (RuntimeException rte) {
                 throw rte;
             } catch (Exception ex) {
@@ -376,17 +331,7 @@ public class EmbeddedStandAloneServerFactory {
         }
 
         private void exit() {
-            if (context != null) {
-                try {
-                    context.close();
 
-                    context = null;
-                } catch (NamingException e) {
-                    // TODO: use logging?
-                    e.printStackTrace();
-                }
-            }
-            serverDeploymentManager = null;
             if (serviceContainer != null) {
                 try {
                     serviceContainer.shutdown();
@@ -433,18 +378,6 @@ public class EmbeddedStandAloneServerFactory {
             SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
         }
 
-        @Override
-        public void undeploy(File file) throws ExecutionException, InterruptedException {
-            execute(serverDeploymentManager.newDeploymentPlan()
-                    .undeploy(file.getName()).andRemoveUndeployed()
-                    .build());
-        }
-
-        @Override
-        public ServiceController<?> getService(ServiceName serviceName) {
-            return serviceContainer != null ? serviceContainer.getService(serviceName) : null;
-        }
-
         private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
             ModelControllerClient newClient = null;
             if (state != ControlledProcessState.State.STOPPING && serviceContainer != null) {
@@ -452,7 +385,6 @@ public class EmbeddedStandAloneServerFactory {
                 final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getService(Services.JBOSS_SERVER_CONTROLLER);
                 if (controllerService != null) {
                     final ModelController controller = controllerService.getValue();
-                    serverDeploymentManager = new ModelControllerServerDeploymentManager(controller);
                     newClient = controller.createClient(executorService);
                 } // else TODO use some sort of timeout and poll. A non-stopping server should install a ModelController very quickly
             }
