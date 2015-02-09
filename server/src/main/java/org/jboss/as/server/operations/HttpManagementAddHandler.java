@@ -43,6 +43,7 @@ import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
@@ -104,7 +105,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         //The core model testing currently uses RunningMode.ADMIN_ONLY, but in the real world
         //the http interface needs to be enabled even when that happens.
         //I don't want to wire up all the services unless I can avoid it, so for now the tests set this system property
-        return WildFlySecurityManager.getPropertyPrivileged("jboss.as.test.disable.runtime", null) == null;
+        return WildFlySecurityManager.getPropertyPrivileged("jboss.as.test.disable.runtime", null) == null
+                && (context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY);
     }
 
     @Override
