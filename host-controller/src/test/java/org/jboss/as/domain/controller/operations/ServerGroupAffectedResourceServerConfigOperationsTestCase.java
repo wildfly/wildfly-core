@@ -36,13 +36,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.security.auth.callback.CallbackHandler;
+import org.jboss.as.controller.ControlledProcessState;
 
 import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.OperationContext;
@@ -50,16 +55,22 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.operations.ServerAddHandler;
 import org.jboss.as.host.controller.operations.ServerRemoveHandler;
 import org.jboss.as.host.controller.operations.ServerRestartRequiredServerConfigWriteAttributeHandler;
+import org.jboss.as.process.ProcessInfo;
+import org.jboss.as.process.ProcessMessageHandler;
+import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
@@ -193,7 +204,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             operation.get(SOCKET_BINDING_GROUP).set(socketBindingGroupName);
         }
 
-        ServerAddHandler.create(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        ServerAddHandler.create(new MockHostControllerInfo(master), new ServerInventoryMock(), new ControlledProcessState(false), new File(System.getProperty("java.io.tmpdir"))).execute(operationContext, operation);
 
         if (master && (socketBindingGroupOverride == SocketBindingGroupOverrideType.BAD || badServerGroup)) {
             Assert.fail();
@@ -477,6 +488,177 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         @Override
         public Collection<String> getAllowedOrigins() {
             return Collections.EMPTY_LIST;
+        }
+    }
+
+    private static class ServerInventoryMock implements ServerInventory {
+
+        public ServerInventoryMock() {
+        }
+
+        @Override
+        public String getServerProcessName(String serverName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public String getProcessServerName(String processName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Map<String, ProcessInfo> determineRunningProcesses() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Map<String, ProcessInfo> determineRunningProcesses(boolean serversOnly) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus determineServerStatus(String serverName) {
+            return ServerStatus.STARTED;
+        }
+
+        @Override
+        public ServerStatus startServer(String serverName, ModelNode domainModel) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus stopServer(String serverName, int gracefulTimeout) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus stopServer(String serverName, int gracefulTimeout, boolean blocking) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void stopServers(int gracefulTimeout) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void stopServers(int gracefulTimeout, boolean blockUntilStopped) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void reconnectServer(String serverName, ModelNode domainModel, byte[] authKey, boolean running, boolean stopping) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ServerStatus reloadServer(String serverName, boolean blocking) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void destroyServer(String serverName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void killServer(String serverName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public CallbackHandler getServerCallbackHandler() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ProxyController serverCommunicationRegistered(String serverProcessName, ManagementChannelHandler channelHandler) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean serverReconnected(String serverProcessName, ManagementChannelHandler channelHandler) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void serverStarted(String serverProcessName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void serverStartFailed(String serverProcessName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void serverProcessStopped(String serverProcessName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void connectionFinished() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void serverProcessAdded(String processName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void serverProcessStarted(String processName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void serverProcessRemoved(String processName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void operationFailed(String processName, ProcessMessageHandler.OperationType type) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void processInventory(Map<String, ProcessInfo> processInfos) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void awaitServersState(Collection<String> serverNames, boolean started) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void suspendServer(String serverName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void resumeServer(String serverName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 

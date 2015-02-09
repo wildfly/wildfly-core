@@ -169,6 +169,7 @@ public enum Attribute {
     SYSLOG_FORMAT ("syslog-format"),
     TRUNCATE("truncate"),
     TYPE("type"),
+    UPDATE_AUTO_START_WITH_SERVER_STATUS("update-auto-start-with-server-status"),
     URL("url"),
     USER("user"),
     USER_DN("user-dn"),

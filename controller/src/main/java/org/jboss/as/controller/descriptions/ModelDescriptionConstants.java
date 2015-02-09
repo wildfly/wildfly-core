@@ -449,6 +449,7 @@ public class ModelDescriptionConstants {
     public static final String UPLOAD_DEPLOYMENT_URL = "upload-deployment-url";
     public static final String UPLOAD_DEPLOYMENT_STREAM = "upload-deployment-stream";
     public static final String UNIT = "unit";
+    public static final String UPDATE_AUTO_START_WITH_SERVER_STATUS = "update-auto-start-with-server-status";
     public static final String URI = "uri";
     public static final String URL = "url";
     public static final String USE_CURRENT_DOMAIN_CONFIG = "use-current-domain-config";

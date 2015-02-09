@@ -96,7 +96,7 @@ public class ServerStartHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final boolean blocking = operation.get("blocking").asBoolean(false);
+        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
 
         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
@@ -108,20 +108,29 @@ public class ServerStartHandler implements OperationStepHandler {
                 final ServerStatus origStatus = serverInventory.determineServerStatus(serverName);
                 if (origStatus != ServerStatus.STARTED && origStatus != ServerStatus.STARTING) {
                     final ServerStatus status = serverInventory.startServer(serverName, model, blocking);
+                    persistAutoStart(context);
                     context.getResult().set(status.toString());
                 } else {
                     context.getResult().set(origStatus.toString());
                 }
-
                 context.completeStep(new OperationContext.RollbackHandler() {
                     @Override
                     public void handleRollback(OperationContext context, ModelNode operation) {
                         if (origStatus != ServerStatus.STARTED && origStatus != ServerStatus.STARTING) {
                             serverInventory.stopServer(serverName, -1);
+                            persistAutoStart(context);
                         }
                     }
                 });
             }
+            /**
+             * By reading the model we ensure that ServerConfigResource.persistAutoStart will get called.
+             * @param context the current operation context.
+             */
+            private void persistAutoStart(OperationContext context) {
+                context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
+            }
         }, OperationContext.Stage.RUNTIME);
     }
+
 }

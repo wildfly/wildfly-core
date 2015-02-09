@@ -19,6 +19,10 @@
 package org.jboss.as.host.controller.operations;
 
 
+import static org.jboss.as.controller.PathAddress.EMPTY_ADDRESS;
+
+import org.jboss.as.host.controller.resources.ServerConfigResource;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -27,8 +31,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
+import java.io.File;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
@@ -39,6 +45,7 @@ import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -53,16 +60,30 @@ public class ServerAddHandler extends AbstractAddStepHandler {
     public static final String OPERATION_NAME = ADD;
 
     private final LocalHostControllerInfo hostControllerInfo;
+    private final ServerInventory serverInventory;
+    private final ControlledProcessState processState;
+    private final File domainDataDir;
 
     /**
      * Create the ServerAddHandler
      */
-    private ServerAddHandler(LocalHostControllerInfo hostControllerInfo) {
+    private ServerAddHandler(LocalHostControllerInfo hostControllerInfo, ServerInventory serverInventory, ControlledProcessState processState, File domainDataDir) {
         this.hostControllerInfo = hostControllerInfo;
+        this.serverInventory = serverInventory;
+        this.processState = processState;
+        this.domainDataDir = domainDataDir;
     }
 
-    public static ServerAddHandler create(LocalHostControllerInfo hostControllerInfo) {
-        return new ServerAddHandler(hostControllerInfo);
+    public static ServerAddHandler create(LocalHostControllerInfo hostControllerInfo, ServerInventory serverInventory, ControlledProcessState processState, final File domainDataDir) {
+        return new ServerAddHandler(hostControllerInfo, serverInventory, processState, domainDataDir);
+    }
+
+    @Override
+    protected Resource createResource(final OperationContext context) {
+        final Resource serverConfigResource = new ServerConfigResource(serverInventory, processState,
+                context.getCurrentAddress().getLastElement().getValue(), domainDataDir, Resource.Factory.create());
+        context.addResource(EMPTY_ADDRESS, serverConfigResource);
+        return serverConfigResource;
     }
 
     @Override

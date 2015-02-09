@@ -396,7 +396,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         interfaces.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
 
         //server configurations
-        hostRegistration.registerSubModel(new ServerConfigResourceDefinition(hostControllerInfo, serverInventory, pathManager));
+        hostRegistration.registerSubModel(new ServerConfigResourceDefinition(hostControllerInfo, serverInventory, pathManager, processState, environment.getDomainDataDir()));
         hostRegistration.registerSubModel(new StoppedServerResource(serverInventory));
     }
 }

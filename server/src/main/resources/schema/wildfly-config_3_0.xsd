@@ -2442,6 +2442,13 @@
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="group" type="xs:string" use="required"/>
         <xs:attribute name="auto-start" type="xs:boolean" default="true"/>
+        <xs:attribute name="update-auto-start-with-server-status" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Iif the server last status (STARTED or STOPPED) is to be used to define the value of auto-start.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="server-socket-bindingsType">

@@ -379,7 +379,7 @@ public class ModelParserUtils {
                 ));
 
                 //server configurations
-                hostRegistration.registerSubModel(new ServerConfigResourceDefinition(MOCK_HOST_CONTROLLER_INFO, null, MOCK_PATH_MANAGER));
+                hostRegistration.registerSubModel(new ServerConfigResourceDefinition(MOCK_HOST_CONTROLLER_INFO, null, MOCK_PATH_MANAGER, new ControlledProcessState(false), new File(System.getProperty("java.io.tmpdir"))));
             }
         });
 
