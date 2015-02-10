@@ -273,7 +273,7 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
         return bundle.getString(getBundleKey(operationName, paramName,DEPRECATED));
     }
 
-    private String getBundleKey(String... args) {
+    protected String getBundleKey(String... args) {
         return getVariableBundleKey(args);
     }
 

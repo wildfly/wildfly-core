@@ -265,7 +265,7 @@ public class ResolvePathHandler implements OperationStepHandler {
         @Override
         public String getOperationDescription(String operationName, Locale locale, ResourceBundle bundle) {
             if (this.operationName.equals(operationName)) {
-                return bundle.getString(getBundleKey());
+                return bundle.getString(getKey());
             }
             return super.getOperationParameterDescription(operationName, operationName, locale, bundle);
         }
@@ -273,7 +273,7 @@ public class ResolvePathHandler implements OperationStepHandler {
         @Override
         public String getOperationParameterDescription(final String operationName, final String paramName, final Locale locale, final ResourceBundle bundle) {
             if (this.operationName.equals(operationName)) {
-                return bundle.getString(getBundleKey(paramName));
+                return bundle.getString(getKey(paramName));
             }
             return super.getOperationParameterDescription(operationName, paramName, locale, bundle);
         }
@@ -281,17 +281,19 @@ public class ResolvePathHandler implements OperationStepHandler {
         @Override
         public String getOperationReplyDescription(String operationName, Locale locale, ResourceBundle bundle) {
             if (this.operationName.equals(operationName)) {
-                return bundle.getString(getBundleKey(REPLY));
+                return bundle.getString(getKey(REPLY));
             }
             return super.getOperationReplyDescription(operationName, locale, bundle);
         }
+
+        private String getKey() {
+                return String.format("%s.%s", ModelDescriptionConstants.PATH, OPERATION_NAME);
+            }
+
+        private String getKey(final String key) {
+                return String.format("%s.%s.%s", ModelDescriptionConstants.PATH, OPERATION_NAME, key);
+            }
     }
 
-    private static String getBundleKey() {
-        return String.format("%s.%s", ModelDescriptionConstants.PATH, OPERATION_NAME);
-    }
 
-    private static String getBundleKey(final String key) {
-        return String.format("%s.%s.%s", ModelDescriptionConstants.PATH, OPERATION_NAME, key);
-    }
 }
