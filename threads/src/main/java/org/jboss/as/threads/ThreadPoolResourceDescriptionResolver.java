@@ -63,7 +63,7 @@ class ThreadPoolResourceDescriptionResolver extends StandardResourceDescriptionR
     @Override
     public String getResourceAttributeDescription(String attributeName, Locale locale, ResourceBundle bundle) {
         if (COMMON_ATTRIBUTE_NAMES.contains(attributeName)) {
-            return bundle.getString(getBundleKey(attributeName));
+            return bundle.getString(getKey(attributeName));
         }
         return super.getResourceAttributeDescription(attributeName, locale, bundle);
     }
@@ -79,7 +79,7 @@ class ThreadPoolResourceDescriptionResolver extends StandardResourceDescriptionR
     @Override
     public String getOperationParameterDescription(String operationName, String paramName, Locale locale, ResourceBundle bundle) {
         if (ModelDescriptionConstants.ADD.equals(operationName) && COMMON_ATTRIBUTE_NAMES.contains(paramName)) {
-            return bundle.getString(getBundleKey(paramName));
+            return bundle.getString(getKey(paramName));
         }
         return super.getOperationParameterDescription(operationName, paramName, locale, bundle);
     }
@@ -93,7 +93,7 @@ class ThreadPoolResourceDescriptionResolver extends StandardResourceDescriptionR
     }
 
 
-    private String getBundleKey(String... args) {
+    private String getKey(String... args) {
         return getVariableBundleKey(args);
     }
 
