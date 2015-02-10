@@ -36,6 +36,7 @@ import java.util.Collection;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.domain.http.server.cors.CorsUtil;
 import org.jboss.as.domain.http.server.security.SubjectDoAsHandler;
 
 /**
@@ -61,7 +62,9 @@ class DomainApiCheckHandler implements HttpHandler {
         addContentHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiUploadHandler(modelController)));
         genericOperationHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiGenericOperationHandler(modelController)));
         if (allowedOrigins != null) {
-            this.allowedOrigins.addAll(allowedOrigins);
+            for (String allowedOrigin : allowedOrigins) {
+                this.allowedOrigins.add(CorsUtil.sanitizeDefaultPort(allowedOrigin));
+            }
         }
     }
 
