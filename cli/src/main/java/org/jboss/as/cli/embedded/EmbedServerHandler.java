@@ -80,10 +80,12 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue removeExisting;
     private ArgumentWithValue timeout;
 
-    static EmbedServerHandler create(AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx) {
+    static EmbedServerHandler create(AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx, boolean modular) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-        result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
+        if (!modular) {
+            result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
+        }
         result.stdOutHandling = new ArgumentWithValue(result, new SimpleTabCompleter(new String[]{ECHO, DISCARD_STDOUT}), "--std-out");
         result.serverConfig = new ArgumentWithValue(result, "--server-config");
         result.dashC = new ArgumentWithValue(result, "-c");
@@ -186,7 +188,14 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            StandaloneServer server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            StandaloneServer server;
+            if (this.jbossHome == null) {
+                // Modular environment
+                server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            } else {
+                String[] systemPackages = null;
+                server = EmbeddedServerFactory.create(jbossHome.getAbsolutePath(), null, null, systemPackages, cmds);
+            }
             server.start();
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
             ModelControllerClient mcc = server.getModelControllerClient();
@@ -265,11 +274,15 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     }
 
     private File getJBossHome(final ParsedCommandLine parsedCmd) throws CommandLineException {
-        String jbossHome = this.jbossHome.getValue(parsedCmd);
+        String jbossHome = this.jbossHome == null ? null : this.jbossHome.getValue(parsedCmd);
         if (jbossHome == null || jbossHome.length() == 0) {
             jbossHome = WildFlySecurityManager.getEnvPropertyPrivileged("JBOSS_HOME", null);
             if (jbossHome == null || jbossHome.length() == 0) {
-                throw new CommandLineException("Missing configuration value for --jboss-home and environment variable JBOSS_HOME is not set");
+                if (this.jbossHome != null) {
+                    throw new CommandLineException("Missing configuration value for --jboss-home and environment variable JBOSS_HOME is not set");
+                } else {
+                    throw new CommandLineException("Environment variable JBOSS_HOME is not set");
+                }
             }
             return validateJBossHome(jbossHome, "environment variable JBOSS_HOME");
         } else {

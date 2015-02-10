@@ -9,9 +9,6 @@ SYNOPSIS
 DESCRIPTION
 
    Launches a standalone server embedded in the CLI process.
-   Only available if the CLI process is running in a modular
-   classloading environment with a module loader able to
-   load all necessary server modules.
 
 ARGUMENTS
 
@@ -30,12 +27,17 @@ ARGUMENTS
                      --remove-existing option is also set
 
  --jboss-home      - Filesystem path pointing to the root directory
-                     of the installation from which the CLI is
-                     running and from which the embedded server
-                     should run. If not specified, the value of the
+                     of the installation from which the embedded server
+                     should run. Only available if the CLI itself
+                     is not running in a modular classloading environment.
+                     In a non-modular classloading environment, if this
+                     option is not specified, the value of the
                      environment variable JBOSS_HOME will be used.
                      Must be specified if the environment variable
-                     JBOSS_HOME is not set.
+                     JBOSS_HOME is not set.In a modular classloading
+                     environment it is assumed the CLI is running from
+                     the server installation itself and the JBOSS_HOME
+                     environment variable must be set.
 
  --remove-existing - When the --empty-config option is used,
                      indicates that any existing configuration
