@@ -52,7 +52,6 @@ class ReadDomainModelHandler implements OperationStepHandler {
         final Resource rootResource = context.readResource(PathAddress.EMPTY_ADDRESS, true);
         final ReadMasterDomainModelUtil readUtil = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(context, transformers, rootResource, ignoredTransformationRegistry);
         context.getResult().set(readUtil.getDescribedResources());
-        context.stepCompleted();
     }
 
 }

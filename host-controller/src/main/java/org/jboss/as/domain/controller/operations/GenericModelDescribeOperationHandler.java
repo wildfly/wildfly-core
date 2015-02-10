@@ -92,12 +92,10 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
         final PathAddress address = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
         final PathAddressFilter filter = context.getAttachment(PathAddressFilter.KEY);
         if (filter != null && ! filter.accepts(address)) {
-            context.stepCompleted();
             return;
         }
         final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
         if (registration.isAlias() || registration.isRemote() || registration.isRuntimeOnly()) {
-            context.stepCompleted();
             return;
         }
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
@@ -137,7 +135,6 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                     }
                     context.getResult().set(result);
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
@@ -183,7 +180,6 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                                 addChildOperation(address, childRsp.require(RESULT).asList(), results);
                             }
                         }
-                        context.stepCompleted();
                     }
                 }, OperationContext.Stage.MODEL, true);
 
@@ -195,7 +191,6 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
         }
 
         if (resource.isProxy() || resource.isRuntime()) {
-            context.stepCompleted();
             return;
         }
 
@@ -252,7 +247,6 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                 }
             }
         }
-        context.stepCompleted();
     }
 
     protected void addChildOperation(final PathAddress parent, final List<ModelNode> operations, ModelNode results) {

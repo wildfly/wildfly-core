@@ -70,7 +70,6 @@ public class ReadMasterDomainOperationsHandler implements OperationStepHandler {
         context.acquireControllerLock();
         context.attach(PathAddressFilter.KEY, DEFAULT_FILTER);
         context.addStep(operation, GenericModelDescribeOperationHandler.INSTANCE, OperationContext.Stage.MODEL, true);
-        context.stepCompleted();
     }
 
 }

@@ -81,7 +81,6 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         final ModelNode localModel = operationExecutor.executeReadOnly(OPERATION, readModelHandler, ModelController.OperationTransactionControl.COMMIT);
         if (localModel.hasDefined(FAILURE_DESCRIPTION)) {
             context.getFailureDescription().set(localModel.get(FAILURE_DESCRIPTION));
-            context.stepCompleted();
             return;
         }
 
@@ -94,7 +93,6 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         final ModelNode localOperations = operationExecutor.executeReadOnly(OPERATION, transformedResource, readOperationHandler, ModelController.OperationTransactionControl.COMMIT);
         if (localOperations.hasDefined(FAILURE_DESCRIPTION)) {
             context.getFailureDescription().set(localOperations.get(FAILURE_DESCRIPTION));
-            context.stepCompleted();
             return;
         }
 
@@ -109,11 +107,9 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
                 final ModelNode result = localOperations.get(RESULT);
                 final SyncModelOperationHandler handler = new SyncModelOperationHandler(result.asList(), remote, remoteExtensions, ignoredResourceRegistry, operationExecutor, extensionRegistry);
                 context.addStep(operation, handler, OperationContext.Stage.MODEL, true);
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
-        context.stepCompleted();
 
     }
 

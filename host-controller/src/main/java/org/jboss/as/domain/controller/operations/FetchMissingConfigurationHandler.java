@@ -71,7 +71,6 @@ public class FetchMissingConfigurationHandler implements OperationStepHandler {
 
         final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
         context.addStep(handler, OperationContext.Stage.MODEL);
-        context.stepCompleted();
     }
 
 }

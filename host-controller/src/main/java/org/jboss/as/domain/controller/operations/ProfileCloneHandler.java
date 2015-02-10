@@ -86,13 +86,10 @@ public class ProfileCloneHandler implements OperationStepHandler {
                     final OperationStepHandler h = context.getRootResourceRegistration().getOperationHandler(a, op.get(OP).asString());
                     context.addStep(op, h, OperationContext.Stage.MODEL, true);
                 }
-                context.stepCompleted();
             }
         }, OperationContext.Stage.MODEL, true);
 
         context.addStep(result, describeOp, handler, OperationContext.Stage.MODEL, true);
-
-        context.stepCompleted();
     }
 
 

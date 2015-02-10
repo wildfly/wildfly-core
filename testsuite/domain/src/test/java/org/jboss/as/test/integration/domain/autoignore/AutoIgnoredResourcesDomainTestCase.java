@@ -527,7 +527,6 @@ public class AutoIgnoredResourcesDomainTestCase {
     }
 
     private void checkSystemProperties(int size) throws Exception {
-        if (true) return;
         Assert.assertEquals(size, getChildrenOfTypeOnSlave(SYSTEM_PROPERTY).asList().size());
     }
 

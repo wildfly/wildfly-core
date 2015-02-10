@@ -71,7 +71,6 @@ public class ReadMasterDomainModelHandler implements OperationStepHandler {
 
         final OperationStepHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
         context.addStep(handler, OperationContext.Stage.MODEL);
-        context.stepCompleted();
     }
 
 }

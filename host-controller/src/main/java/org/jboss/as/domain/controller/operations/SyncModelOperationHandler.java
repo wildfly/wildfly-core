@@ -114,7 +114,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
         final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteModel, readOperationsHandler, ModelController.OperationTransactionControl.COMMIT);
         if (result.hasDefined(FAILURE_DESCRIPTION)) {
             context.getFailureDescription().set(result.get(FAILURE_DESCRIPTION));
-            context.stepCompleted();
             return;
         }
 
@@ -163,8 +162,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 }
             }
         }
-
-        context.stepCompleted();
     }
 
     void compare(Node current, Node remote, List<ModelNode> operations, ImmutableManagementResourceRegistration registration) {
