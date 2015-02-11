@@ -3306,4 +3306,6 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 386, value = "The host controller info can only be accessed after the model stage on boot")
     OperationFailedException onlyAccessHostControllerInfoInRuntimeStage();
 
+    @Message(id = 387, value="Illegal path address '%s' , it is not in a correct CLI format")
+    IllegalArgumentException illegalCLIStylePathAddress(String pathAddress);
 }

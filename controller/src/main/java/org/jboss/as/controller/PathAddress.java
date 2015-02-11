@@ -54,8 +54,7 @@ public class PathAddress implements Iterable<PathElement> {
     public static final PathAddress EMPTY_ADDRESS = new PathAddress(Collections.<PathElement>emptyList());
 
     /**
-     * Creates a PathAddress from the given ModelNode address.  The given node is expected
-     * to be an address node.
+     * Creates a PathAddress from the given ModelNode address. The given node is expected to be an address node.
      *
      * @param node the node (cannot be {@code null})
      *
@@ -73,11 +72,9 @@ public class PathAddress implements Iterable<PathElement> {
                 Property prop = null;
                 if (element.getType() == ModelType.PROPERTY || element.getType() == ModelType.OBJECT) {
                     prop = element.asProperty();
-                }
-                else if (key == null) {
+                } else if (key == null) {
                     key = element.asString();
-                }
-                else {
+                } else {
                     prop = new Property(key, element);
                 }
                 if (prop != null) {
@@ -150,6 +147,68 @@ public class PathAddress implements Iterable<PathElement> {
         return pathAddress(list);
     }
 
+    public static PathAddress parseCLIStyleAddress(String address) throws IllegalArgumentException {
+        PathAddress parsedAddress = PathAddress.EMPTY_ADDRESS;
+        if (address == null || address.trim().isEmpty()) {
+            return parsedAddress;
+        }
+        String trimmedAddress = address.trim();
+        if (trimmedAddress.charAt(0) != '/' || !Character.isAlphabetic(trimmedAddress.charAt(1))) {
+            throw ControllerLogger.ROOT_LOGGER.illegalCLIStylePathAddress(address);
+        }
+        char[] characters = address.toCharArray();
+        boolean escaped = false;
+        StringBuilder keyBuffer = new StringBuilder();
+        StringBuilder valueBuffer = new StringBuilder();
+        StringBuilder currentBuffer = keyBuffer;
+        for (int i = 1; i < characters.length; i++) {
+            switch (characters[i]) {
+                case '/':
+                    if (escaped) {
+                        escaped = false;
+                        currentBuffer.append(characters[i]);
+                    } else {
+                        parsedAddress = addpathAddressElement(parsedAddress, address, keyBuffer, valueBuffer);
+                        keyBuffer = new StringBuilder();
+                        valueBuffer = new StringBuilder();
+                        currentBuffer = keyBuffer;
+                    }
+                    break;
+                case '\\':
+                    if (escaped) {
+                        escaped = false;
+                        currentBuffer.append(characters[i]);
+                    } else {
+                        escaped = true;
+                    }
+                    break;
+                case '=':
+                    if (escaped) {
+                        escaped = false;
+                        currentBuffer.append(characters[i]);
+                    } else {
+                        currentBuffer = valueBuffer;
+                    }
+                    break;
+                default:
+                    currentBuffer.append(characters[i]);
+                    break;
+            }
+        }
+        parsedAddress = addpathAddressElement(parsedAddress, address, keyBuffer, valueBuffer);
+        return parsedAddress;
+    }
+
+    private static PathAddress addpathAddressElement(PathAddress parsedAddress, String address, StringBuilder keyBuffer, StringBuilder valueBuffer) {
+        if (keyBuffer.length() > 0) {
+            if (valueBuffer.length() > 0) {
+                return parsedAddress.append(PathElement.pathElement(keyBuffer.toString(), valueBuffer.toString()));
+            }
+            throw ControllerLogger.ROOT_LOGGER.illegalCLIStylePathAddress(address);
+        }
+        return parsedAddress;
+    }
+
     private static OperationFailedRuntimeException duplicateElement(final String name) {
         return ControllerLogger.ROOT_LOGGER.duplicateElement(name);
     }
@@ -167,8 +226,7 @@ public class PathAddress implements Iterable<PathElement> {
      * @param index the index
      * @return the element
      *
-     * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt;= size()</tt>)
+     * @throws IndexOutOfBoundsException if the index is out of range (<tt>index &lt; 0 || index &gt;= size()</tt>)
      */
     public PathElement getElement(int index) {
         final List<PathElement> list = pathAddressList;
@@ -248,7 +306,6 @@ public class PathAddress implements Iterable<PathElement> {
         return append(PathElement.pathElement(key));
     }
 
-
     /**
      * Navigate to this address in the given model node.
      *
@@ -261,8 +318,8 @@ public class PathAddress implements Iterable<PathElement> {
         final Iterator<PathElement> i = pathAddressList.iterator();
         while (i.hasNext()) {
             final PathElement element = i.next();
-            if (create && ! i.hasNext()) {
-                if(element.isMultiTarget()) {
+            if (create && !i.hasNext()) {
+                if (element.isMultiTarget()) {
                     throw new IllegalStateException();
                 }
                 model = model.require(element.getKey()).get(element.getValue());
@@ -288,7 +345,7 @@ public class PathAddress implements Iterable<PathElement> {
                 model = model.require(element.getKey()).require(element.getValue());
             } else {
                 final ModelNode parent = model.require(element.getKey());
-                    model = parent.remove(element.getValue()).clone();
+                model = parent.remove(element.getValue()).clone();
             }
         }
         return model;
@@ -303,7 +360,7 @@ public class PathAddress implements Iterable<PathElement> {
         final ModelNode node = new ModelNode().setEmptyList();
         for (PathElement element : pathAddressList) {
             final String value;
-            if(element.isMultiTarget() && ! element.isWildcard()) {
+            if (element.isMultiTarget() && !element.isWildcard()) {
                 value = '[' + element.getValue() + ']';
             } else {
                 value = element.getValue();
@@ -319,8 +376,8 @@ public class PathAddress implements Iterable<PathElement> {
      * @return <code>true</code> if the address can apply to multiple targets, <code>false</code> otherwise
      */
     public boolean isMultiTarget() {
-        for(final PathElement element : pathAddressList) {
-            if(element.isMultiTarget()) {
+        for (final PathElement element : pathAddressList) {
+            if (element.isMultiTarget()) {
                 return true;
             }
         }
@@ -346,7 +403,7 @@ public class PathAddress implements Iterable<PathElement> {
         return pathAddressList.listIterator();
     }
 
-    public PathAddress getParent(){
+    public PathAddress getParent() {
         return subAddress(0, size() - 1);
     }
 
@@ -363,7 +420,7 @@ public class PathAddress implements Iterable<PathElement> {
      */
     @Override
     public boolean equals(Object other) {
-        return other instanceof PathAddress && equals((PathAddress)other);
+        return other instanceof PathAddress && equals((PathAddress) other);
     }
 
     /**
