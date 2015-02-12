@@ -24,15 +24,11 @@ package org.jboss.as.embedded;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -57,14 +53,13 @@ import org.jboss.as.controller.client.helpers.standalone.DeploymentPlan;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanResult;
 import org.jboss.as.embedded.logging.EmbeddedLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.server.SystemExiter;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.deployment.client.ModelControllerServerDeploymentManager;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
@@ -136,22 +131,26 @@ public class EmbeddedStandAloneServerFactory {
         File originalConfigDir = getFileUnderAsRoot(jbossHomeDir, props, ServerEnvironment.SERVER_CONFIG_DIR, "configuration", true);
         File originalDataDir = getFileUnderAsRoot(jbossHomeDir, props, ServerEnvironment.SERVER_DATA_DIR, "data", false);
 
-        File configDir = new File(tempRoot, "config");
-        configDir.mkdir();
-        File dataDir = new File(tempRoot, "data");
-        dataDir.mkdir();
-        // For jboss.server.deployment.scanner.default
-        File deploymentsDir = new File(tempRoot, "deployments");
-        deploymentsDir.mkdir();
+        try {
+            File configDir = new File(tempRoot, "config");
+            Files.createDirectory(configDir.toPath());
+            File dataDir = new File(tempRoot, "data");
+            Files.createDirectory(dataDir.toPath());
+            // For jboss.server.deployment.scanner.default
+            File deploymentsDir = new File(tempRoot, "deployments");
+            Files.createDirectory(deploymentsDir.toPath());
 
-        copyDirectory(originalConfigDir, configDir);
-        if (originalDataDir.exists()) {
-            copyDirectory(originalDataDir, dataDir);
+            copyDirectory(originalConfigDir, configDir);
+            if (originalDataDir.exists()) {
+                copyDirectory(originalDataDir, dataDir);
+            }
+
+            props.put(ServerEnvironment.SERVER_BASE_DIR, tempRoot.getAbsolutePath());
+            props.put(ServerEnvironment.SERVER_CONFIG_DIR, configDir.getAbsolutePath());
+            props.put(ServerEnvironment.SERVER_DATA_DIR, dataDir.getAbsolutePath());
+        }  catch (IOException e) {
+            throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
-
-        props.put(ServerEnvironment.SERVER_BASE_DIR, tempRoot.getAbsolutePath());
-        props.put(ServerEnvironment.SERVER_CONFIG_DIR, configDir.getAbsolutePath());
-        props.put(ServerEnvironment.SERVER_DATA_DIR, dataDir.getAbsolutePath());
 
     }
 
@@ -184,18 +183,22 @@ public class EmbeddedStandAloneServerFactory {
             return null;
         }
 
-        File root = new File(tempRoot);
-        if (!root.exists()) {
-            //Attempt to try to create the directory, in case something like target/embedded was specified
-            root.mkdirs();
+        try {
+            File root = new File(tempRoot);
+            if (!root.exists()) {
+                //Attempt to try to create the directory, in case something like target/embedded was specified
+                Files.createDirectories(root.toPath());
+            }
+            validateDirectory("jboss.test.clean.root", root);
+            root = new File(root, "configs");
+            Files.createDirectories(root.toPath());
+            SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+            root = new File(root, format.format(new Date()));
+            Files.createDirectory(root.toPath());
+            return root;
+        } catch (IOException e) {
+            throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
-        validateDirectory("jboss.test.clean.root", root);
-        root = new File(root, "configs");
-        root.mkdir();
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-        root = new File(root, format.format(new Date()));
-        root.mkdir();
-        return root;
     }
 
     private static void validateDirectory(String property, File file) {
@@ -212,29 +215,13 @@ public class EmbeddedStandAloneServerFactory {
             final File srcFile = new File(src, current);
             final File destFile = new File(dest, current);
 
-            if (srcFile.isDirectory()) {
-                destFile.mkdir();
-                copyDirectory(srcFile, destFile);
-            } else {
-                try {
-                    final InputStream in = new BufferedInputStream(new FileInputStream(srcFile));
-                    final OutputStream out = new BufferedOutputStream(new FileOutputStream(destFile));
-
-                    try {
-                        int i;
-                        while ((i = in.read()) != -1) {
-                            out.write(i);
-                        }
-                    } catch (IOException e) {
-                        throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
-                    } finally {
-                        StreamUtils.safeClose(in);
-                        StreamUtils.safeClose(out);
-                    }
-
-                } catch (FileNotFoundException e) {
-                    throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
+            try {
+                Files.copy(srcFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                if (srcFile.isDirectory()) {
+                    copyDirectory(srcFile, destFile);
                 }
+            } catch (IOException e) {
+                throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
             }
         }
     }
