@@ -27,12 +27,15 @@ import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGG
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.BlockingHandler;
+import io.undertow.server.handlers.encoding.EncodingHandler;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -57,9 +60,9 @@ class DomainApiCheckHandler implements HttpHandler {
 
     DomainApiCheckHandler(final ModelController modelController, final ControlledProcessStateService controlledProcessStateService, final Collection<String> allowedOrigins) {
         this.controlledProcessStateService = controlledProcessStateService;
-        domainApiHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiHandler(modelController)));
+        domainApiHandler = new BlockingHandler(new SubjectDoAsHandler(new EncodingHandler.Builder().build(Collections.<String,Object>emptyMap()).wrap(new DomainApiHandler(modelController))));
         addContentHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiUploadHandler(modelController)));
-        genericOperationHandler = new BlockingHandler(new SubjectDoAsHandler(new DomainApiGenericOperationHandler(modelController)));
+        genericOperationHandler = new BlockingHandler(new SubjectDoAsHandler(new EncodingHandler.Builder().build(Collections.<String,Object>emptyMap()).wrap(new DomainApiGenericOperationHandler(modelController))));
         if (allowedOrigins != null) {
             this.allowedOrigins.addAll(allowedOrigins);
         }
