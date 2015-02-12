@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2012, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -19,25 +19,37 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.controller.extension;
 
-import org.jboss.as.controller.access.management.JmxAuthorizer;
-import org.jboss.as.controller.audit.AuditLogger;
-
 /**
- * Supplemental methods an extension context might implement. For internal use only.
+ * Enum of places an extension registry can be added
  *
- * @author Brian Stansberry (c) 2014 Red Hat Inc.
- *
- * @deprecated for internal use only; may be removed at any time
+ * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-@Deprecated
-public interface ExtensionContextSupplement {
-    /** @throws java.lang.UnsupportedOperationException if called from an invalid caller */
-    AuditLogger getAuditLogger(boolean inheritConfiguration, boolean manualCommit);
-    /** @throws java.lang.UnsupportedOperationException if called from an invalid caller */
-    JmxAuthorizer getAuthorizer();
-    /** @throws java.lang.UnsupportedOperationException if called from an invalid caller */
-    RuntimeHostControllerInfoAccessor getHostControllerInfoAccessor();
+public enum ExtensionRegistryType {
+
+    /**
+     * The extension registry is for a standalone or managed server.
+     */
+    SERVER,
+
+    /**
+     * The extension registry is for the host model part in a host controller.
+     */
+    HOST,
+
+    /**
+     * The extension registry is for the domain model part in a host controller running as a slave.
+     * <em>NB</em> it is not known during bootup of the host.xml part if we are a slave or not. But
+     * once we reach the domain part it is known.
+     */
+    MASTER,
+
+    /**
+     * The extension registry is for the domain model part in a host controller running as a slave.
+     * <em>NB</em> it is not known during bootup of the host.xml part if we are a slave or not. But
+     * once we reach the domain part it is known.
+     */
+    SLAVE;
+
 }

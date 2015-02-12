@@ -26,9 +26,11 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -41,6 +43,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationSupport;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -105,6 +108,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
             }
         }
     }
+
+    private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
+        .setPrivateEntry()
+        .build();
 
     protected final ProcessType processType;
     protected final DelegatingConfigurableAuthorizer authorizer;
@@ -295,13 +302,23 @@ public abstract class AbstractControllerService implements Service<ModelControll
      *          if the configuration failed to be loaded
      */
     protected void boot(final BootContext context) throws ConfigurationPersistenceException {
-        runPerformControllerInitialization(context);
-        boot(configurationPersister.load(), false);
+        List<ModelNode> bootOps = configurationPersister.load();
+        ModelNode op = registerModelControllerServiceInitializationBootStep(context);
+        if (op != null) {
+            bootOps.add(op);
+        }
+        boot(bootOps, false);
         finishBoot();
     }
 
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
-        return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT, rollbackOnRuntimeFailure);
+        return boot(bootOperations, rollbackOnRuntimeFailure, ModelControllerImpl.getMutableRootResourceRegistrationProvider());
+    }
+
+    protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure,
+            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
+        return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
+                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider);
     }
 
     /** @deprecated internal use only  only for use by legacy test controllers */
@@ -427,14 +444,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.configurationPersister = persister;
     }
 
-    protected void runPerformControllerInitialization(BootContext context) {
-        performControllerInitialization(context.getServiceTarget(), controller.getManagementModel());
-    }
-
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
-        //
-    }
-
     protected abstract void initModel(ManagementModel managementModel, Resource modelControllerResource);
 
     protected ManagedAuditLogger getAuditLogger() {
@@ -444,5 +453,103 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected BootErrorCollector getBootErrorCollector() {
         return bootErrorCollector;
     }
+
+    /**
+     * Used to add the operation used to initialise the ModelControllerServiceInitialization instances.
+     * The operation will only be registered, and called if the implementing class overrides and returns
+     * a non {@code null} value from  {@link #getModelControllerServiceInitializationParams()}
+     *
+     * @param context the boot context
+     * @param the operation to trigger the initialization
+     */
+    protected final ModelNode registerModelControllerServiceInitializationBootStep(BootContext context) {
+        ModelControllerServiceInitializationParams initParams = getModelControllerServiceInitializationParams();
+        if (initParams != null) {
+            //Register the hidden op. The operation handler removes the operation once it is done
+            controller.getManagementModel().getRootResourceRegistration().registerOperationHandler(INIT_CONTROLLER_OP, new ModelControllerServiceInitializationBootStepHandler(initParams));
+            //Return the operation
+            return Util.createEmptyOperation(INIT_CONTROLLER_OP.getName(), PathAddress.EMPTY_ADDRESS);
+        }
+        return null;
+    }
+
+    /**
+     * Override to return a {@link ModelControllerServiceInitializationParams}. If {@code null} is returned,
+     * {@link #registerModelControllerServiceInitializationBootStep(BootContext)} will not perform any initialization
+     * of {@link ModelControllerServiceInitialization} instances.
+     *
+     * @return the context to use for registering {@link ModelControllerServiceInitialization} instances
+     */
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
+        return null;
+    }
+
+    /**
+     * Operation step handler performing initialisation of the {@link ModelControllerServiceInitialization} instances.
+     *
+     */
+    private final class ModelControllerServiceInitializationBootStepHandler implements OperationStepHandler {
+        private final ModelControllerServiceInitializationParams initParams;
+
+        ModelControllerServiceInitializationBootStepHandler(ModelControllerServiceInitializationParams initParams) {
+            this.initParams = initParams;
+        }
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    //Get the current management model instance here, so make sure that if ModelControllerServiceInitializations
+                    //add resources, those resources end up in the model
+                    assert context instanceof OperationContextImpl;
+                    ManagementModel managementModel = ((OperationContextImpl)context).getManagementModel();
+
+                    final ServiceLoader<ModelControllerServiceInitialization> sl = initParams.serviceLoader;
+
+                    final String hostName = initParams.getHostName();
+                    assert processType != ProcessType.HOST_CONTROLLER || hostName != null;
+                    for (ModelControllerServiceInitialization init : sl) {
+                        if (processType == ProcessType.HOST_CONTROLLER) {
+                            init.initializeHost(context.getServiceTarget(), managementModel, hostName);
+                            init.initializeDomain(context.getServiceTarget(), managementModel);
+                        } else {
+                            init.initializeStandalone(context.getServiceTarget(), managementModel);
+
+                        }
+                    }
+                    managementModel.getRootResourceRegistration().unregisterOperationHandler(INIT_CONTROLLER_OP.getName());
+                }
+            }, Stage.RUNTIME);
+        }
+    }
+
+    /**
+     * Parameters for initializing {@link ModelControllerServiceInitialization} instances
+     */
+    protected abstract static class ModelControllerServiceInitializationParams {
+
+        /**
+         * The service loader used to load the {@link ModelControllerServiceInitialization} instances.
+         * The TCCL when creating the service loader needs to be the classloader of the {@link AbstractControllerService}
+         * sub-class, which is what the TCCL is in the controller boot() method, which is where the instances of this interface get
+         * created via the {@link AbstractControllerService#getModelControllerServiceInitializationParams()}
+         *
+         */
+        private final ServiceLoader<ModelControllerServiceInitialization> serviceLoader;
+
+        public ModelControllerServiceInitializationParams(ServiceLoader<ModelControllerServiceInitialization> serviceLoader) {
+            this.serviceLoader = serviceLoader;
+        }
+
+        /**
+         * Get the host name. If the process is a host controller this value cannot be {@code null}. If it is a
+         * server process it may be {@code null}, since it never gets used.
+         *
+         * @return the host name
+         */
+        protected abstract String getHostName();
+    }
+
 }
 

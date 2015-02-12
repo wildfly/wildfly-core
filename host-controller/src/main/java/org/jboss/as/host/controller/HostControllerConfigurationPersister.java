@@ -54,20 +54,22 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
     private final ExtensibleConfigurationPersister hostPersister;
     private final LocalHostControllerInfo hostControllerInfo;
     private final ExecutorService executorService;
+    private final ExtensionRegistry hostExtensionRegistry;
     private final ExtensionRegistry extensionRegistry;
     private Boolean slave;
 
     public HostControllerConfigurationPersister(final HostControllerEnvironment environment, final LocalHostControllerInfo localHostControllerInfo,
-                                                final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
+                                                final ExecutorService executorService, final ExtensionRegistry hostExtensionRegistry, final ExtensionRegistry extensionRegistry) {
         this.environment = environment;
         this.hostControllerInfo = localHostControllerInfo;
         this.executorService = executorService;
+        this.hostExtensionRegistry = hostExtensionRegistry;
         this.extensionRegistry = extensionRegistry;
         final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
         if (environment.getRunningModeControl().isReloaded()) {
             configurationFile.resetBootFile(environment.getRunningModeControl().isUseCurrentConfig());
         }
-        this.hostPersister = ConfigurationPersisterFactory.createHostXmlConfigurationPersister(configurationFile, environment);
+        this.hostPersister = ConfigurationPersisterFactory.createHostXmlConfigurationPersister(configurationFile, environment, executorService, hostExtensionRegistry);
     }
 
     public void initializeDomainConfigurationPersister(boolean slave) {

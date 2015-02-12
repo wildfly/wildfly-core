@@ -228,15 +228,16 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     /**
      * Gets whether a {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME} step should be added to call
      * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}}.
-     * This default implementation always returns {@code true}. Subclasses that perform no runtime
-     * update could override and return {@code false}. This method is
+     * This default implementation will return {@code true} for a normal server running in normal (non admin-only) mode.
+     * If running on a host controller, it will return {@code true} if it is the active copy of the host controller subsystem.
+     * Subclasses that perform no runtime update could override and return {@code false}. This method is
      * invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
      *
      * @param context operation context
      * @return {@code true} if {@code performRuntime} should be invoked; {@code false} otherwise.
      */
     protected boolean requiresRuntime(OperationContext context) {
-        return context.isNormalServer();
+        return context.isDefaultRequiresRuntime();
     }
 
     /**

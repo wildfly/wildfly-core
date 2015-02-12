@@ -40,6 +40,9 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
+import org.jboss.as.controller.extension.ExtensionResourceDefinition;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.NamespaceRemoveHandler;
 import org.jboss.as.controller.operations.common.ProcessStateAttributeHandler;
@@ -196,7 +199,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     private final HostFileRepository remoteFileRepository;
     private final ContentRepository contentRepository;
     private final DomainController domainController;
-    private final ExtensionRegistry extensionRegistry;
+    private final ExtensionRegistry hostExtensionRegistry;
     private final AbstractVaultReader vaultReader;
     private final IgnoredDomainResourceRegistry ignoredRegistry;
     private final ControlledProcessState processState;
@@ -215,7 +218,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                                   final HostFileRepository remoteFileRepository,
                                   final ContentRepository contentRepository,
                                   final DomainController domainController,
-                                  final ExtensionRegistry extensionRegistry,
+                                  final ExtensionRegistry hostExtensionRegistry,
                                   final AbstractVaultReader vaultReader,
                                   final IgnoredDomainResourceRegistry ignoredRegistry,
                                   final ControlledProcessState processState,
@@ -233,7 +236,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         this.remoteFileRepository = remoteFileRepository;
         this.contentRepository = contentRepository;
         this.domainController = domainController;
-        this.extensionRegistry = extensionRegistry;
+        this.hostExtensionRegistry = hostExtensionRegistry;
         this.vaultReader = vaultReader;
         this.ignoredRegistry = ignoredRegistry;
         this.processState = processState;
@@ -326,9 +329,18 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
 
     @Override
-    public void registerChildren(ManagementResourceRegistration hostRegistration) {
+    public void registerChildren(final ManagementResourceRegistration hostRegistration) {
         super.registerChildren(hostRegistration);
 
+        //Extensions
+        hostRegistration.registerSubModel(new ExtensionResourceDefinition(hostExtensionRegistry, true,
+                ExtensionRegistryType.HOST,
+                new MutableRootResourceRegistrationProvider() {
+                    @Override
+                    public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
+                        return hostRegistration;
+                    }
+                }));
 
         // System Properties
         hostRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(SystemPropertyResourceDefinition.Location.HOST));

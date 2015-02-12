@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.domain.controller.HostConnectionInfo.Event;
 import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
@@ -73,6 +72,8 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -93,6 +94,9 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
@@ -106,6 +110,7 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostConnectionInfo;
+import org.jboss.as.domain.controller.HostConnectionInfo.Event;
 import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
@@ -194,6 +199,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private ManagementResourceRegistration modelNodeRegistration;
     private final AbstractVaultReader vaultReader;
     private final ContentRepository contentRepository;
+    private final ExtensionRegistry hostExtensionRegistry;
     private final ExtensionRegistry extensionRegistry;
     private final ControlledProcessState processState;
     private final IgnoredDomainResourceRegistry ignoredRegistry;
@@ -209,6 +215,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private volatile ServerInventory serverInventory;
 
     private volatile ScheduledExecutorService pingScheduler;
+    private volatile ManagementResourceRegistration hostModelRegistration;
 
 
     static ServiceController<ModelController> addService(final ServiceTarget serviceTarget,
@@ -226,14 +233,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
-        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer);
+        RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
+        final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry = new DomainControllerRuntimeIgnoreTransformationRegistry();
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo, contentRepository,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
-                ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DelegatingResourceDefinition(), extensionRegistry, runtimeIgnoreTransformationRegistry, auditLogger, authorizer);
+                ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DelegatingResourceDefinition(),
+                hostExtensionRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry, auditLogger, authorizer);
         ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler = new ApplyMissingDomainModelResourcesHandler(service, environment, hostControllerInfo, ignoredRegistry);
         prepareStepHandler.initialize(applyMissingDomainModelResourcesHandler);
         return serviceTarget.addService(SERVICE_NAME, service)
@@ -258,6 +268,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final PathManagerService pathManager,
                                          final ExpressionResolver expressionResolver,
                                          final DelegatingResourceDefinition rootResourceDefinition,
+                                         final ExtensionRegistry hostExtensionRegistry,
                                          final ExtensionRegistry extensionRegistry,
                                          final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry,
                                          final ManagedAuditLogger auditLogger,
@@ -278,6 +289,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.vaultReader = vaultReader;
         this.ignoredRegistry = ignoredRegistry;
         this.bootstrapListener = bootstrapListener;
+        this.hostExtensionRegistry = hostExtensionRegistry;
         this.extensionRegistry = extensionRegistry;
         this.pathManager = pathManager;
         this.expressionResolver = expressionResolver;
@@ -455,7 +467,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     @Override
     public void start(StartContext context) throws StartException {
         final ExecutorService executorService = getExecutorServiceInjector().getValue();
-        this.hostControllerConfigurationPersister = new HostControllerConfigurationPersister(environment, hostControllerInfo, executorService, extensionRegistry);
+        this.hostControllerConfigurationPersister = new HostControllerConfigurationPersister(environment, hostControllerInfo, executorService, hostExtensionRegistry, extensionRegistry);
         setConfigurationPersister(hostControllerConfigurationPersister);
         prepareStepHandler.setExecutorService(executorService);
         ThreadFactory pingerThreadFactory = new JBossThreadFactory(new ThreadGroup("proxy-pinger-threads"), Boolean.TRUE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
@@ -540,7 +552,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
             ModelNode addHostOp = hostBootOps.remove(0);
             ok = boot(Collections.singletonList(addHostOp), true);
-            ok = ok && boot(hostBootOps, true);
+
+            // Add the controller initialization operation
+            hostBootOps.add(registerModelControllerServiceInitializationBootStep(context));
+
+            //Pass in a custom mutable root resource registration provider for the remaining host model ops boot
+            //This will be used to make sure that any extensions added in parallel get registered in the host model
+            ok = ok && boot(hostBootOps, true, new MutableRootResourceRegistrationProvider() {
+                public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
+                    return hostModelRegistration;
+                }
+            });
 
             final RunningMode currentRunningMode = runningModeControl.getRunningMode();
 
@@ -556,8 +578,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     installDiscoveryService(serviceTarget, discoveryOptions);
                 }
 
-                // Run the initialization
-                runPerformControllerInitialization(context);
 
                 if (!hostControllerInfo.isMasterDomainController() && !environment.isUseCachedDc()) {
 
@@ -760,15 +780,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
     }
 
+
     @Override
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
-        //
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
         final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-        final String hostName = hostControllerInfo.getLocalHostName();
-        for (ModelControllerServiceInitialization init : sl) {
-            init.initializeHost(target, managementModel, hostName);
-            init.initializeDomain(target, managementModel);
-        }
+        return new ModelControllerServiceInitializationParams(sl) {
+
+            @Override
+            public String getHostName() {
+                return hostControllerInfo.getLocalHostName();
+            }
+        };
     }
 
     private void establishServerInventory(Future<ServerInventory> future) {
@@ -839,10 +861,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     @Override
     public void registerHostModel(String hostName, ManagementResourceRegistration root) {
-        HostModelUtil.createHostRegistry(hostName, root, hostControllerConfigurationPersister, environment, runningModeControl,
-                localFileRepository, hostControllerInfo, new DelegatingServerInventory(), remoteFileRepository, contentRepository,
-                this, extensionRegistry,vaultReader, ignoredRegistry, processState, pathManager, authorizer, getAuditLogger(),
-                getBootErrorCollector());
+        hostModelRegistration =
+                HostModelUtil.createHostRegistry(hostName, root, hostControllerConfigurationPersister, environment, runningModeControl,
+                        localFileRepository, hostControllerInfo, new DelegatingServerInventory(), remoteFileRepository, contentRepository,
+                        this, hostExtensionRegistry, extensionRegistry, vaultReader, ignoredRegistry, processState, pathManager, authorizer,
+                        getAuditLogger(), getBootErrorCollector());
     }
 
 
@@ -1146,5 +1169,26 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 OperationTransactionControl control, OperationStepHandler step) {
             return internalExecute(operation, handler, control, step, true);
         }
+    }
+
+    private static final class DomainHostControllerInfoAccessor implements RuntimeHostControllerInfoAccessor {
+        private final LocalHostControllerInfoImpl hostControllerInfo;
+
+        public DomainHostControllerInfoAccessor(LocalHostControllerInfoImpl hostControllerInfo) {
+            this.hostControllerInfo = hostControllerInfo;
+        }
+
+        @Override
+        public HostControllerInfo getHostControllerInfo(OperationContext context) throws OperationFailedException {
+            if (context.isBooting() && context.getCurrentStage() == OperationContext.Stage.MODEL) {
+                throw ControllerLogger.ROOT_LOGGER.onlyAccessHostControllerInfoInRuntimeStage();
+            }
+            return new HostControllerInfo() {
+                public boolean isMasterHc() {
+                    return hostControllerInfo.isMasterDomainController();
+                }
+            };
+        }
+
     }
 }

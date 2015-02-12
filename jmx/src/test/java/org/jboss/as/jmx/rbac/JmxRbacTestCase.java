@@ -61,6 +61,8 @@ import org.jboss.as.controller.access.rbac.StandardRole;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -586,11 +588,12 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         pathManagerService.addPathManagerResources(rootResource);
 
 
-        ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), AuditLogger.NO_OP_LOGGER, getAuthorizer());
+        ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL),
+                AuditLogger.NO_OP_LOGGER, getAuthorizer(), RuntimeHostControllerInfoAccessor.SERVER);
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();
-        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", registration, false));
+        extension.initialize(extensionRegistry.getExtensionContext("org.jboss.as.jmx", registration, ExtensionRegistryType.SLAVE));
 
         Resource coreManagementResource = Resource.Factory.create();
         rootResource.registerChild(CoreManagementResourceDefinition.PATH_ELEMENT, coreManagementResource);

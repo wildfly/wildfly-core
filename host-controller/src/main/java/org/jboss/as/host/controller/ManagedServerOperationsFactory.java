@@ -22,8 +22,6 @@
 
 package org.jboss.as.host.controller;
 
-import static org.jboss.as.host.controller.ManagedServerBootCmdFactory.resolveExpressions;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADVANCED_FILTER;
@@ -93,6 +91,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT_EXPRESSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT_OPTIONS;
+import static org.jboss.as.host.controller.ManagedServerBootCmdFactory.resolveExpressions;
 
 import java.io.File;
 import java.util.AbstractList;
@@ -289,7 +288,6 @@ public final class ManagedServerOperationsFactory {
     private void addExtensions(List<ModelNode> updates) {
         final Set<String> extensionNames = new LinkedHashSet<String>();
         addExtensions(extensionNames, domainModel.get(EXTENSION));
-        addExtensions(extensionNames, hostModel.get(EXTENSION));
 
         for (String name : extensionNames) {
             updates.add(Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, name))));

@@ -26,6 +26,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -50,14 +51,17 @@ public class ExposeModelResourceResolved extends ExposeModelResource {
             .setDefaultValue(new ModelNode(true))
             .build();
 
-    ExposeModelResourceResolved(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer) {
-        super(PATH_ELEMENT, auditLoggerInfo, authorizer, DOMAIN_NAME, PROPER_PROPERTY_FORMAT);
+    private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
+
+    ExposeModelResourceResolved(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+        super(PATH_ELEMENT, auditLoggerInfo, authorizer, hostInfoAccessor, DOMAIN_NAME, PROPER_PROPERTY_FORMAT);
+        this.hostInfoAccessor = hostInfoAccessor;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(PROPER_PROPERTY_FORMAT, null, new JMXWriteAttributeHandler(PROPER_PROPERTY_FORMAT));
+        resourceRegistration.registerReadWriteAttribute(PROPER_PROPERTY_FORMAT, null, new JMXWriteAttributeHandler(hostInfoAccessor, PROPER_PROPERTY_FORMAT));
     }
 
 

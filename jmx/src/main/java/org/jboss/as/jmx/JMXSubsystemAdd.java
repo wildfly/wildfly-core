@@ -29,6 +29,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -41,19 +42,22 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
 
     private final ManagedAuditLogger auditLoggerInfo;
     private final JmxAuthorizer authorizer;
+    private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer) {
+    JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
         super(JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY);
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.hostInfoAccessor = hostInfoAccessor;
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        launchServices(context, Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)), auditLoggerInfo, authorizer);
+        launchServices(context, Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)), auditLoggerInfo, authorizer, hostInfoAccessor);
     }
 
     static void launchServices(OperationContext context, ModelNode model, ManagedAuditLogger auditLoggerInfo,
-                               JmxAuthorizer authorizer) throws OperationFailedException {
+                               JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) throws OperationFailedException {
+
         // Add the MBean service
         String resolvedDomain = getDomainName(context, model, CommonAttributes.RESOLVED);
         String expressionsDomain = getDomainName(context, model, CommonAttributes.EXPRESSION);
@@ -62,9 +66,14 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
             legacyWithProperPropertyFormat = ExposeModelResourceExpression.DOMAIN_NAME.resolveModelAttribute(context, model).asBoolean();
         }
         boolean coreMBeanSensitivity = JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.resolveModelAttribute(context, model).asBoolean();
-        boolean forStandalone = context.getProcessType() == ProcessType.STANDALONE_SERVER;
+        final boolean isMasterHc;
+        if (context.getProcessType() == ProcessType.HOST_CONTROLLER) {
+            isMasterHc = hostInfoAccessor.getHostControllerInfo(context).isMasterHc();
+        } else {
+            isMasterHc = false;
+        }
         MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
-                            coreMBeanSensitivity, auditLoggerInfo, authorizer, forStandalone);
+                            coreMBeanSensitivity, auditLoggerInfo, authorizer, context.getProcessType(), isMasterHc);
     }
 
     /**

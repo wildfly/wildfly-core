@@ -39,12 +39,13 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResource;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.DomainController;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
@@ -194,7 +195,7 @@ public class ApplyMissingDomainModelResourcesHandler implements OperationStepHan
                 ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
                 try {
                     extension.initializeParsers(domainController.getExtensionRegistry().getExtensionParsingContext(module, null));
-                    extension.initialize(domainController.getExtensionRegistry().getExtensionContext(module, rootRegistration, false));
+                    extension.initialize(domainController.getExtensionRegistry().getExtensionContext(module, rootRegistration, ExtensionRegistryType.SLAVE));
                 } finally {
                     SecurityActions.setThreadContextClassLoader(oldTccl);
                 }

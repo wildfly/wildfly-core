@@ -37,9 +37,12 @@ import org.jboss.as.controller.registry.OperationEntry;
  */
 class ChildAddOperationFinder {
 
-    static Map<PathElement, ChildAddOperationEntry> findAddChildOperations(ImmutableManagementResourceRegistration resourceRegistration){
+    static Map<PathElement, ChildAddOperationEntry> findAddChildOperations(PathAddress parentAddress, MutabilityChecker mutabilityChecker, ImmutableManagementResourceRegistration resourceRegistration){
         Map<PathElement, ChildAddOperationEntry> operations = new HashMap<PathElement, ChildAddOperationEntry>();
         for(PathElement childElement : resourceRegistration.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+            if (!mutabilityChecker.mutable(parentAddress.append(childElement))) {
+                continue;
+            }
             final ImmutableManagementResourceRegistration childReg = resourceRegistration.getSubModel(PathAddress.pathAddress(childElement));
             final Map<String, OperationEntry> registeredOps = childReg.getOperationDescriptions(PathAddress.EMPTY_ADDRESS, false);
             final OperationEntry childAdd = registeredOps.get(ADD);
@@ -50,8 +53,11 @@ class ChildAddOperationFinder {
         return operations;
     }
 
-    static ChildAddOperationEntry findAddChildOperation(ImmutableManagementResourceRegistration resourceRegistration, String addName){
+    static ChildAddOperationEntry findAddChildOperation(PathAddress parentAddress, MutabilityChecker mutabilityChecker, ImmutableManagementResourceRegistration resourceRegistration, String addName){
         for(PathElement childElement : resourceRegistration.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+            if (!mutabilityChecker.mutable(parentAddress.append(childElement))) {
+                continue;
+            }
             final ImmutableManagementResourceRegistration childReg = resourceRegistration.getSubModel(PathAddress.pathAddress(childElement));
             final Map<String, OperationEntry> registeredOps = childReg.getOperationDescriptions(PathAddress.EMPTY_ADDRESS, false);
             final OperationEntry childAdd = registeredOps.get(ADD);

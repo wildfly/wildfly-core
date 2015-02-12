@@ -40,6 +40,14 @@ import org.jboss.staxmapper.XMLElementWriter;
 public interface SubsystemRegistration {
 
     /**
+     * Mark a subsystem as host capable. This will only take effect if running on a HC, and be ignored on a standalone or managed server.
+     * The standard behaviour on the HC is to register the subsystem resource definitions in the domain model under the {@code /profile=*} address.
+     * If this method is called, the standard behaviour happens, but in addition the resource definitions are registered in the local host model
+     * so that the subsystem can be added there as well.
+     */
+    void setHostCapable();
+
+    /**
      * Get the model node registration for this subsystem.
      *
      * @param resourceDefinition  factory for the provider of the description of the subsystem's root management resource

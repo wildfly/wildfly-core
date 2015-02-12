@@ -72,7 +72,7 @@ public class TestParser implements ModelTestParser {
             testParser = new TestParser(type, domainXml, domainXml);
             root = "domain";
         } else if (type == TestModelType.HOST) {
-            HostXml hostXml = new HostXml("master", RunningMode.NORMAL, false);
+            HostXml hostXml = new HostXml("master", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
             testParser = new TestParser(type, hostXml, hostXml);
             root = "host";
         } else {

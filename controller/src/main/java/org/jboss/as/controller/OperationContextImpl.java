@@ -1679,6 +1679,10 @@ final class OperationContextImpl extends AbstractOperationContext {
         return context;
     }
 
+    ManagementModel getManagementModel() {
+        return managementModel;
+    }
+
     class ContextServiceTarget implements ServiceTarget {
 
         private final Step targetActiveStep;

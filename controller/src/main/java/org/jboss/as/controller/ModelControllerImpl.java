@@ -290,10 +290,10 @@ class ModelControllerImpl implements ModelController {
 
         final ModelNode headers = operation.has(OPERATION_HEADERS) ? operation.get(OPERATION_HEADERS) : null;
         final boolean rollbackOnFailure = headers == null || !headers.hasDefined(ROLLBACK_ON_RUNTIME_FAILURE) || headers.get(ROLLBACK_ON_RUNTIME_FAILURE).asBoolean();
-        final EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnFailure ? EnumSet.of(OperationContextImpl.ContextFlag.ROLLBACK_ON_FAIL) : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
+        final EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnFailure ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL) : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
         final boolean restartResourceServices = headers != null && headers.hasDefined(ALLOW_RESOURCE_SERVICE_RESTART) && headers.get(ALLOW_RESOURCE_SERVICE_RESTART).asBoolean();
         if (restartResourceServices) {
-            contextFlags.add(OperationContextImpl.ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
+            contextFlags.add(AbstractOperationContext.ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
         }
         final ModelNode blockingTimeoutConfig = headers != null && headers.hasDefined(BLOCKING_TIMEOUT) ? headers.get(BLOCKING_TIMEOUT) : null;
 
@@ -400,20 +400,21 @@ class ModelControllerImpl implements ModelController {
     }
 
     boolean boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
-              final boolean rollbackOnRuntimeFailure) {
+              final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) {
+
         final Integer operationID = random.nextInt();
 
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
-                ? EnumSet.of(OperationContextImpl.ContextFlag.ROLLBACK_ON_FAIL)
+                ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
-        final OperationContextImpl context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
+        final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
                 hostServerGroupTracker, null, null, notificationSupport);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
-        BootOperations bootOperations = organizeBootOperations(bootList, operationID);
+        BootOperations bootOperations = organizeBootOperations(bootList, operationID, parallelBootRootResourceRegistrationProvider);
         for (ParsedBootOp initialOp : bootOperations.initialOps) {
             context.addBootStep(initialOp);
         }
@@ -426,7 +427,7 @@ class ModelControllerImpl implements ModelController {
         if (resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
 
             // Success. Now any extension handlers are registered. Continue with remaining ops
-            final OperationContextImpl postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
+            final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport);
@@ -472,16 +473,19 @@ class ModelControllerImpl implements ModelController {
      *
      * @param bootList the list of boot operations
      * @param lockPermit lockPermit to use in any {@link org.jboss.as.controller.ParallelBootOperationContext}
+     * @param parallelBootRootResourceRegistrationProvider the root resource registration provider used for the parallel extension add handler. If {@code null} the default one will be used
      * @return data structure organizing the boot ops for initial execution and post-extension-add execution
      */
-    private BootOperations organizeBootOperations(List<ModelNode> bootList, final int lockPermit) {
+    private BootOperations organizeBootOperations(List<ModelNode> bootList, final int lockPermit, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) {
 
         final List<ParsedBootOp> initialOps = new ArrayList<ParsedBootOp>();
         List<ParsedBootOp> postExtensionOps = null;
         boolean invalid = false;
         boolean sawExtensionAdd = false;
-        ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
-        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, getMutableRootResourceRegistrationProvider());
+        final ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
+        final MutableRootResourceRegistrationProvider parallellBRRRProvider = parallelBootRootResourceRegistrationProvider != null ?
+                parallelBootRootResourceRegistrationProvider : getMutableRootResourceRegistrationProvider();
+        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, parallellBRRRProvider);
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
                 ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit) : null;
         boolean registeredParallelSubsystemHandler = false;
@@ -1465,5 +1469,4 @@ class ModelControllerImpl implements ModelController {
             }
         };
     }
-
 }

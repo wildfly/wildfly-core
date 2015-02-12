@@ -51,6 +51,7 @@ import javax.management.RuntimeOperationsException;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
@@ -75,18 +76,19 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
     private final AtomicLong notificationSequenceNumber = new AtomicLong(0);
 
     public ModelControllerMBeanServerPlugin(final ConfiguredDomains configuredDomains, ModelController controller, final MBeanServerDelegate delegate,
-                                            boolean legacyWithProperPropertyFormat, boolean forStandalone,
-                                            ManagementModelIntegration.ManagementModelProvider managementModelProvider) {
+                                            boolean legacyWithProperPropertyFormat, ProcessType processType,
+                                            ManagementModelIntegration.ManagementModelProvider managementModelProvider, boolean isMasterHc) {
         assert configuredDomains != null;
         this.configuredDomains = configuredDomains;
         this.notificationRegistry = controller.getNotificationRegistry();
 
+        MutabilityChecker mutabilityChecker = MutabilityChecker.create(processType, isMasterHc);
         legacyHelper = configuredDomains.getLegacyDomain() != null ?
                 new ModelControllerMBeanHelper(TypeConverters.createLegacyTypeConverters(legacyWithProperPropertyFormat),
-                        configuredDomains, configuredDomains.getLegacyDomain(), controller, forStandalone, managementModelProvider) : null;
+                        configuredDomains, configuredDomains.getLegacyDomain(), controller, mutabilityChecker, managementModelProvider) : null;
         exprHelper = configuredDomains.getExprDomain() != null ?
                 new ModelControllerMBeanHelper(TypeConverters.createExpressionTypeConverters(), configuredDomains,
-                        configuredDomains.getExprDomain(), controller, forStandalone, managementModelProvider) : null;
+                        configuredDomains.getExprDomain(), controller, mutabilityChecker, managementModelProvider) : null;
 
         // JMX notifications for MBean registration/unregistration are emitted by the MBeanServerDelegate and not by the
         // MBeans itself. If we have a reference on the delegate, we add a listener for any WildFly resource address

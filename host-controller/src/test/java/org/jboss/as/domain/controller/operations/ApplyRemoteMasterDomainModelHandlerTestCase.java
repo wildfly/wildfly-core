@@ -58,6 +58,7 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.access.rbac.StandardRBACAuthorizer;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -89,7 +90,7 @@ import org.junit.Test;
  */
 public class ApplyRemoteMasterDomainModelHandlerTestCase extends AbstractOperationTestCase {
 
-    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null);
+    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
     private final ApplyExtensionsHandler extensionHandler = new ApplyExtensionsHandler(extensionRegistry, HOST_INFO, new IgnoredDomainResourceRegistry(HOST_INFO)) {
         @Override
         protected void initializeExtension(String module, ManagementResourceRegistration rootResourceRegistration) {

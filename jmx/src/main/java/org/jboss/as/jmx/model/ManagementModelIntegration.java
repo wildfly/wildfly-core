@@ -59,6 +59,9 @@ public class ManagementModelIntegration implements ModelControllerServiceInitial
     @Override
     public void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName) {
         // not relevant to host controller;
+        ManagementModelProvider provider =
+                new ManagementModelProvider(new ResourceAndRegistration(managementModel));
+        target.addService(SERVICE_NAME, provider).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
     }
 
     static final class ResourceAndRegistration {

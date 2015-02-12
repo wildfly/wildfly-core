@@ -93,7 +93,12 @@ import org.jboss.staxmapper.XMLMapper;
 
 /**
  * A registry for information about {@link org.jboss.as.controller.Extension}s to the core application server.
- *
+ * In server/standalone mode there will be one extension registry for the whole server process. In domain mode,
+ * there will be:
+ * <ul>
+ *      <li>One extension registry for extensions in the domain model</li>
+ *      <li>One extension registry for extension in the host model</li>
+ * </ul>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class ExtensionRegistry {
@@ -120,6 +125,8 @@ public class ExtensionRegistry {
     private final JmxAuthorizer authorizer;
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
+    private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
+
 
     /**
      * Constructor
@@ -128,12 +135,31 @@ public class ExtensionRegistry {
      * @param runningModeControl the process' running mode
      * @param auditLogger logger for auditing changes
      * @param authorizer hook for exposing access control information to the JMX subsystem
+     * @param hostControllerInfoAccessor the host controller
+     *
+     * @deprecated Remove once there has been a core release and we can update wildfly
      */
+    @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer) {
+        this(processType, runningModeControl, auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
+    }
+
+
+    /**
+     * Constructor
+     *
+     * @param processType the type of the process
+     * @param runningModeControl the process' running mode
+     * @param auditLogger logger for auditing changes
+     * @param authorizer hook for exposing access control information to the JMX subsystem
+     * @param hostControllerInfoAccessor the host controller
+     */
+    public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
         this.processType = processType;
         this.runningModeControl = runningModeControl;
         this.auditLogger = auditLogger != null ? auditLogger : AuditLogger.NO_OP_LOGGER;
         this.authorizer = authorizer != null ? authorizer : NO_OP_AUTHORIZER;
+        this.hostControllerInfoAccessor = hostControllerInfoAccessor;
     }
 
     /**
@@ -145,7 +171,7 @@ public class ExtensionRegistry {
      */
     @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl) {
-        this(processType, runningModeControl, null, null);
+        this(processType, runningModeControl, null, null, RuntimeHostControllerInfoAccessor.SERVER);
     }
 
     /**
@@ -220,8 +246,26 @@ public class ExtensionRegistry {
      * @param isMasterDomainController set to {@code true} if we are the master domain controller, in which case transformers get registered
      *
      * @return  the {@link ExtensionContext}.  Will not return {@code null}
+     *
+     * @deprecated use {@link #getExtensionContext(String, ManagementResourceRegistration, ExtensionRegistryType)}. Main code should be using this, but this is left behind in case any tests need to use this code.
      */
+    @Deprecated
     public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, boolean isMasterDomainController) {
+        ExtensionRegistryType type = isMasterDomainController ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
+        return getExtensionContext(moduleName, rootRegistration, type);
+    }
+
+    /**
+     * Gets an {@link ExtensionContext} for use when handling an {@code add} operation for
+     * a resource representing an {@link org.jboss.as.controller.Extension}.
+     *
+     * @param moduleName the name of the extension's module. Cannot be {@code null}
+     * @param rootRegistration the root management resource registration
+     * @param extensionRegistryType the type of registry we are working on, which has an effect on things like whether extensions get registered etc.
+     *
+     * @return  the {@link ExtensionContext}.  Will not return {@code null}
+     */
+    public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, ExtensionRegistryType extensionRegistryType) {
         // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
         // doesn't add the profile mrr even in HC-based tests
         ManagementResourceRegistration profileRegistration = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
@@ -233,7 +277,7 @@ public class ExtensionRegistry {
         // Hack to restrict extra data to specified extension(s)
         boolean allowSupplement = legallySupplemented.contains(moduleName);
         ManagedAuditLogger al = allowSupplement ? auditLogger : null;
-        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, isMasterDomainController, al);
+        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, extensionRegistryType, al);
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
@@ -258,10 +302,18 @@ public class ExtensionRegistry {
      * @throws IllegalStateException if the extension still has subsystems present in {@code rootResource} or its children
      */
     public void removeExtension(Resource rootResource, String moduleName, ManagementResourceRegistration rootRegistration) throws IllegalStateException {
-        // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
-        // doesn't add the profile mrr even in HC-based tests
-        ManagementResourceRegistration profileReg = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
-        if (profileReg == null) {
+        final ManagementResourceRegistration profileReg;
+        if (rootRegistration.getPathAddress().size() == 0) {
+            //domain or server extension
+            // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
+            // doesn't add the profile mrr even in HC-based tests
+            ManagementResourceRegistration reg = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
+            if (reg == null) {
+                reg = rootRegistration;
+            }
+            profileReg = reg;
+        } else {
+            //host model extension
             profileReg = rootRegistration;
         }
         ManagementResourceRegistration deploymentsReg = processType.isServer() ? rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT))) : null;
@@ -304,6 +356,7 @@ public class ExtensionRegistry {
             transformerRegistry = TransformerRegistry.Factory.create();
             extensions.clear();
             reverseMap.clear();
+            subsystemsInfo.clear();
         }
     }
 
@@ -397,14 +450,15 @@ public class ExtensionRegistry {
         private final boolean allowSupplement;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
+        private final ExtensionRegistryType extensionRegistryType;
 
         private ExtensionContextImpl(String extensionName, ManagementResourceRegistration profileResourceRegistration,
                                      ManagementResourceRegistration deploymentsResourceRegistration, PathManager pathManager,
-                                     boolean registerTransformers, ManagedAuditLogger auditLogger) {
+                                     ExtensionRegistryType extensionRegistryType, ManagedAuditLogger auditLogger) {
             assert pathManager != null || !processType.isServer() : "pathManager is null";
             this.pathManager = pathManager;
             this.extension = getExtensionInfo(extensionName);
-            this.registerTransformers = registerTransformers;
+            this.registerTransformers = extensionRegistryType == ExtensionRegistryType.MASTER;
             this.auditLogger = auditLogger;
             this.allowSupplement = auditLogger != null;
             this.profileRegistration = profileResourceRegistration;
@@ -417,6 +471,7 @@ public class ExtensionRegistry {
             } else {
                 this.deploymentsRegistration = null;
             }
+            this.extensionRegistryType = extensionRegistryType;
         }
 
         @Override
@@ -450,7 +505,7 @@ public class ExtensionRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             return new SubsystemRegistrationImpl(name, version,
-                    profileRegistration, deploymentsRegistration);
+                    profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName);
         }
 
         @Override
@@ -507,12 +562,21 @@ public class ExtensionRegistry {
             }
             return authorizer;
         }
+
+        @Override
+        public RuntimeHostControllerInfoAccessor getHostControllerInfoAccessor() {
+            if (!allowSupplement) {
+                throw new UnsupportedOperationException();
+            }
+            return hostControllerInfoAccessor;
+        }
     }
 
     private class SubsystemInformationImpl implements SubsystemInformation {
 
         private ModelVersion version;
         private boolean deprecated = false;
+        private volatile boolean hostCapable;
         private final List<String> parsingNamespaces = new ArrayList<String>();
 
         @Override
@@ -550,6 +614,15 @@ public class ExtensionRegistry {
         private void setDeprecated(boolean deprecated) {
             this.deprecated = deprecated;
         }
+
+
+        private void setHostCapable() {
+            hostCapable = true;
+        }
+
+        public boolean isHostCapable() {
+            return hostCapable;
+        }
     }
 
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
@@ -557,21 +630,37 @@ public class ExtensionRegistry {
         private final ModelVersion version;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
+        private final ExtensionRegistryType extensionRegistryType;
+        private final String extensionModuleName;
+        private volatile boolean hostCapable;
+        private volatile boolean modelsRegistered;
 
         private SubsystemRegistrationImpl(String name, ModelVersion version,
                                           ManagementResourceRegistration profileRegistration,
-                                          ManagementResourceRegistration deploymentsRegistration) {
+                                          ManagementResourceRegistration deploymentsRegistration,
+                                          ExtensionRegistryType extensionRegistryType,
+                                          String extensionModuleName) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             this.deploymentsRegistration = deploymentsRegistration;
             this.version = version;
+            this.extensionRegistryType = extensionRegistryType;
+            this.extensionModuleName = extensionModuleName;
+        }
+
+        @Override
+        public void setHostCapable() {
+            if (modelsRegistered) {
+                throw ControllerLogger.ROOT_LOGGER.registerHostCapableMustHappenFirst(name);
+            }
+            hostCapable = true;
         }
 
         @Override
         public ManagementResourceRegistration registerSubsystemModel(ResourceDefinition resourceDefinition) {
             assert resourceDefinition != null : "resourceDefinition is null";
-
+            checkHostCapable();
             return profileRegistration.registerSubModel(resourceDefinition);
         }
 
@@ -592,22 +681,30 @@ public class ExtensionRegistry {
 
         @Override
         public TransformersSubRegistration registerModelTransformers(final ModelVersionRange range, final ResourceTransformer subsystemTransformer) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, range, subsystemTransformer);
         }
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, placeholder);
         }
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, false);
         }
 
 
         @Override
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
+            modelsRegistered = true;
+            checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
         }
 
@@ -623,6 +720,12 @@ public class ExtensionRegistry {
         @Override
         public ModelVersion getSubsystemVersion() {
             return version;
+        }
+
+        private void checkHostCapable() {
+            if (extensionRegistryType == ExtensionRegistryType.HOST && !hostCapable) {
+                throw ControllerLogger.ROOT_LOGGER.nonHostCapableSubsystemInHostModel(name, extensionModuleName);
+            }
         }
     }
 

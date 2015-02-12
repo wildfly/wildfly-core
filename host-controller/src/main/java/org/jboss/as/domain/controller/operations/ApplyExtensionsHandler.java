@@ -45,6 +45,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResource;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -193,7 +194,7 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
                 ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
                 try {
                     extension.initializeParsers(extensionRegistry.getExtensionParsingContext(module, null));
-                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, false));
+                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, ExtensionRegistryType.SLAVE));
                 } finally {
                     SecurityActions.setThreadContextClassLoader(oldTccl);
                 }

@@ -37,7 +37,12 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = REMOVE;
     private final ExtensionRegistry extensionRegistry;
-    private final boolean isMasterDomainController;
+    private final ExtensionRegistryType extensionRegistryType;
+
+    /**
+     * For a server or domain.xml extension, this will be the root resource registration.<br/>
+     * For a host.xml extension, this will be the host resource registration
+     */
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
@@ -46,10 +51,10 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
      * @param extensionRegistry the registry for extensions
      */
     public ExtensionRemoveHandler(final ExtensionRegistry extensionRegistry,
-                                  final boolean isMasterDomainController,
+                                  final ExtensionRegistryType extensionRegistryType,
                                   final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         this.extensionRegistry = extensionRegistry;
-        this.isMasterDomainController = isMasterDomainController;
+        this.extensionRegistryType = extensionRegistryType;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
@@ -60,13 +65,13 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 
         final ManagementResourceRegistration rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
-        extensionRegistry.removeExtension(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), module, rootRegistration);
+        extensionRegistry.removeExtension(context.readResourceFromRoot(rootRegistration.getPathAddress()), module, rootRegistration);
 
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
                 // Restore the extension to the ExtensionRegistry and the ManagementResourceRegistration tree
-                ExtensionAddHandler.initializeExtension(extensionRegistry, module, rootRegistration, isMasterDomainController);
+                ExtensionAddHandler.initializeExtension(extensionRegistry, module, rootRegistration, extensionRegistryType);
             }
         });
     }

@@ -39,6 +39,7 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -53,7 +54,6 @@ import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
 import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -88,14 +88,17 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     }
 
     @Override
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
-        super.performControllerInitialization(target, managementModel);
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
         if (additionalInit.getProcessType().isServer()) {
             final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-            for (ModelControllerServiceInitialization init : sl) {
-                    init.initializeStandalone(target, managementModel);
-            }
+            return new ModelControllerServiceInitializationParams(sl) {
+                @Override
+                public String getHostName() {
+                    return null;
+                }
+            };
         }
+        return null;
     }
 
     @Override
@@ -126,7 +129,8 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
 
     @Override
     protected void preBoot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) {
-        mainExtension.initialize(extensionRegistry.getExtensionContext("Test", getRootRegistration(), registerTransformers));
+        mainExtension.initialize(extensionRegistry.getExtensionContext("Test", getRootRegistration(),
+                registerTransformers ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE));
     }
 
     protected void postBoot() {

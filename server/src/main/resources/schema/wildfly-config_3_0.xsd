@@ -77,6 +77,7 @@
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
+                <xs:element name="extensions" type="extensionsType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="system-properties" type="properties-with-boottime" minOccurs="0"/>
                 <xs:element name="paths" type="specified-pathsType" minOccurs="0" maxOccurs="1" />
                 <xs:element name="vault" type="vaultType" minOccurs="0" maxOccurs="1"/>
@@ -85,6 +86,7 @@
                 <xs:element name="interfaces" type="specified-interfacesType" minOccurs="0"/>
                 <xs:element name="jvms" type="jvmsType" minOccurs="0"/>
                 <xs:element name="servers" type="serversType" minOccurs="0"/>
+                <xs:element name="profile" type="host-profileType" minOccurs="0"/>                
             </xs:sequence>
             <xs:attribute name="name" type="xs:string" use="optional">
                 <xs:annotation>
@@ -2781,6 +2783,23 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="host-profileType">
+        <xs:annotation>
+            <xs:documentation>Contains a list of subsystems that will be run on the host</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:any namespace="##other">
+                    <xs:annotation>
+                        <xs:documentation>A profile declaration may include configuration
+                            elements from other namespaces for the subsystems that make up the profile.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:any>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    
     <!-- general socket definition -->
     <xs:complexType name="socket-binding-groupsType">
         <xs:annotation>

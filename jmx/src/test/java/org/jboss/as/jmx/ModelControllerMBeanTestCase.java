@@ -81,6 +81,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -1612,7 +1613,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
                                                         ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
             super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
-            extension.initialize(extensionRegistry.getExtensionContext("additional", rootRegistration, false));
+            extension.initialize(extensionRegistry.getExtensionContext("additional", rootRegistration, ExtensionRegistryType.SLAVE));
         }
 
         String getExtraXml() {

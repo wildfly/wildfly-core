@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.dmr.ModelNode;
@@ -48,15 +49,18 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
     private final ManagedAuditLogger auditLoggerInfo;
     private final JmxAuthorizer authorizer;
     private final SimpleAttributeDefinition domainName;
+    private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    ExposeModelResource(PathElement pathElement, ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, SimpleAttributeDefinition domainName, SimpleAttributeDefinition...otherAttributes) {
+    ExposeModelResource(PathElement pathElement, ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer,
+            RuntimeHostControllerInfoAccessor hostInfoAccessor, SimpleAttributeDefinition domainName, SimpleAttributeDefinition...otherAttributes) {
         super(pathElement,
                 JMXExtension.getResourceDescriptionResolver(CommonAttributes.EXPOSE_MODEL + "." + pathElement.getValue()),
-                new ShowModelAdd(auditLoggerInfo, authorizer, domainName, otherAttributes),
-                new ShowModelRemove(auditLoggerInfo, authorizer));
+                new ShowModelAdd(auditLoggerInfo, authorizer, domainName, hostInfoAccessor, otherAttributes),
+                new ShowModelRemove(auditLoggerInfo, authorizer, hostInfoAccessor));
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
         this.domainName = domainName;
+        this.hostInfoAccessor = hostInfoAccessor;
     }
 
     static SimpleAttributeDefinition getDomainNameAttribute(String childName) {
@@ -71,17 +75,19 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(domainName, null, new JMXWriteAttributeHandler(domainName));
+        resourceRegistration.registerReadWriteAttribute(domainName, null, new JMXWriteAttributeHandler(hostInfoAccessor, domainName));
     }
 
     class JMXWriteAttributeHandler extends RestartParentWriteAttributeHandler {
-        JMXWriteAttributeHandler(AttributeDefinition attr) {
+        private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
+        JMXWriteAttributeHandler(RuntimeHostControllerInfoAccessor hostInfoAccessor, AttributeDefinition attr) {
             super(ModelDescriptionConstants.SUBSYSTEM, attr);
+            this.hostInfoAccessor = hostInfoAccessor;
         }
 
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, hostInfoAccessor);
         }
 
         @Override
@@ -96,12 +102,17 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         private final JmxAuthorizer authorizer;
         private final SimpleAttributeDefinition domainName;
         private final SimpleAttributeDefinition[] otherAttributes;
-        private ShowModelAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, SimpleAttributeDefinition domainName, SimpleAttributeDefinition...otherAttributes) {
+        private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
+
+        private ShowModelAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer,
+                SimpleAttributeDefinition domainName, RuntimeHostControllerInfoAccessor hostInfoAccessor,
+                SimpleAttributeDefinition...otherAttributes) {
             super(ModelDescriptionConstants.SUBSYSTEM);
             this.auditLoggerInfo = auditLoggerInfo;
             this.authorizer = authorizer;
             this.domainName = domainName;
             this.otherAttributes = otherAttributes;
+            this.hostInfoAccessor = hostInfoAccessor;
         }
 
         @Override
@@ -116,7 +127,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, hostInfoAccessor);
         }
 
         @Override
@@ -129,16 +140,18 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
         private final ManagedAuditLogger auditLoggerInfo;
         private final JmxAuthorizer authorizer;
+        private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-        private ShowModelRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer) {
+        private ShowModelRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
             super(ModelDescriptionConstants.SUBSYSTEM);
             this.auditLoggerInfo = auditLoggerInfo;
             this.authorizer = authorizer;
+            this.hostInfoAccessor = hostInfoAccessor;
         }
 
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, hostInfoAccessor);
         }
 
         @Override

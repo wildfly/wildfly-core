@@ -111,17 +111,17 @@ public class MBeanInfoFactory {
     private final ObjectName name;
     private final TypeConverters converters;
     private final ConfiguredDomains configuredDomains;
-    private final boolean standalone;
+    private final MutabilityChecker mutabilityChecker;
     private final ImmutableManagementResourceRegistration resourceRegistration;
     private final ModelNode providedDescription;
     private final PathAddress pathAddress;
     private final boolean legacy;
 
-    private MBeanInfoFactory(final ObjectName name, final TypeConverters converters, final ConfiguredDomains configuredDomains, final boolean standalone, final PathAddress address, final ImmutableManagementResourceRegistration resourceRegistration) {
+    private MBeanInfoFactory(final ObjectName name, final TypeConverters converters, final ConfiguredDomains configuredDomains, final MutabilityChecker mutabilityChecker, final PathAddress address, final ImmutableManagementResourceRegistration resourceRegistration) {
         this.name = name;
         this.converters = converters;
         this.configuredDomains = configuredDomains;
-        this.standalone = standalone;
+        this.mutabilityChecker = mutabilityChecker;
         this.legacy = configuredDomains.isLegacyDomain(name);
         this.resourceRegistration = resourceRegistration;
         DescriptionProvider provider = resourceRegistration.getModelDescription(PathAddress.EMPTY_ADDRESS);
@@ -129,8 +129,8 @@ public class MBeanInfoFactory {
         this.pathAddress = address;
     }
 
-    static MBeanInfo createMBeanInfo(final ObjectName name, final TypeConverters converters, final ConfiguredDomains configuredDomains, final boolean standalone, final PathAddress address, final ImmutableManagementResourceRegistration resourceRegistration) throws InstanceNotFoundException{
-        return new MBeanInfoFactory(name, converters, configuredDomains, standalone, address, resourceRegistration).createMBeanInfo();
+    static MBeanInfo createMBeanInfo(final ObjectName name, final TypeConverters converters, final ConfiguredDomains configuredDomains, final MutabilityChecker mutabilityChecker, final PathAddress address, final ImmutableManagementResourceRegistration resourceRegistration) throws InstanceNotFoundException{
+        return new MBeanInfoFactory(name, converters, configuredDomains, mutabilityChecker, address, resourceRegistration).createMBeanInfo();
     }
 
     private MBeanInfo createMBeanInfo() {
@@ -179,7 +179,7 @@ public class MBeanInfoFactory {
                 return null;
             }
         }
-        final boolean writable = standalone && (access != null && access.getAccessType() == AccessType.READ_WRITE);
+        final boolean writable = mutabilityChecker.mutable(pathAddress) && (access != null && access.getAccessType() == AccessType.READ_WRITE);
 
         return new OpenMBeanAttributeInfoSupport(
                 escapedName,
@@ -219,7 +219,7 @@ public class MBeanInfoFactory {
                 }
             }
             final OperationEntry opEntry = entry.getValue();
-            if (standalone || opEntry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+            if (mutabilityChecker.mutable(pathAddress) || opEntry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
                 ops.add(getOperation(NameConverter.convertToCamelCase(entry.getKey()), null, opEntry));
             }
         }
@@ -228,7 +228,7 @@ public class MBeanInfoFactory {
     }
 
     private void addChildAddOperations(List<OpenMBeanOperationInfo> ops, ImmutableManagementResourceRegistration resourceRegistration) {
-        for (Map.Entry<PathElement, ChildAddOperationEntry> entry : ChildAddOperationFinder.findAddChildOperations(resourceRegistration).entrySet()) {
+        for (Map.Entry<PathElement, ChildAddOperationEntry> entry : ChildAddOperationFinder.findAddChildOperations(pathAddress, mutabilityChecker, resourceRegistration).entrySet()) {
             OpenMBeanParameterInfo addWildcardChildName = null;
             if (entry.getValue().getElement().isWildcard()) {
                 addWildcardChildName = new OpenMBeanParameterInfoSupport("name", "The name of the " + entry.getValue().getElement().getKey() + " to add.", SimpleType.STRING);
@@ -406,6 +406,4 @@ public class MBeanInfoFactory {
             }
         }
     }
-
-
 }

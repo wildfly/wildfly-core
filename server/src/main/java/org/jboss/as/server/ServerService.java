@@ -28,7 +28,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
@@ -274,9 +273,6 @@ public final class ServerService extends AbstractControllerService {
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
 
-            // Initialize controller extensions
-            runPerformControllerInitialization(context);
-
             context.getServiceTarget().addService(SuspendController.SERVICE_NAME, new SuspendController()).install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
@@ -348,7 +344,18 @@ public final class ServerService extends AbstractControllerService {
                 // TODO replace system property used by tests with something properly configurable for general use
                 // TODO search for uses of "jboss.unsupported.fail-boot-on-runtime-failure" in tests before changing this!!
                 boolean failOnRuntime = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged("jboss.unsupported.fail-boot-on-runtime-failure", "false"));
-                ok = boot(extensibleConfigurationPersister.load(), failOnRuntime);
+
+                // Load the ops
+                List<ModelNode> bootOps = extensibleConfigurationPersister.load();
+                //Add the controller initialization operation to the boot ops
+                ModelNode controllerInitOp = registerModelControllerServiceInitializationBootStep(context);
+                if (controllerInitOp != null) {
+                    //In a domain server this is an unmodifiable list so copy it
+                    bootOps = new ArrayList<>(bootOps);
+                    bootOps.add(controllerInitOp);
+                }
+
+                ok = boot(bootOps, failOnRuntime);
                 if (ok) {
                     finishBoot();
                 }
@@ -402,13 +409,14 @@ public final class ServerService extends AbstractControllerService {
     }
 
     @Override
-    protected void performControllerInitialization(ServiceTarget target, ManagementModel managementModel) {
+    protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
         final ServiceLoader<ModelControllerServiceInitialization> sl = ServiceLoader.load(ModelControllerServiceInitialization.class);
-        final Iterator<ModelControllerServiceInitialization> iterator = sl.iterator();
-        while(iterator.hasNext()) {
-            final ModelControllerServiceInitialization init = iterator.next();
-            init.initializeStandalone(target, managementModel);
-        }
+        return new ModelControllerServiceInitializationParams(sl) {
+            @Override
+            public String getHostName() {
+                return null;
+            }
+        };
     }
 
     /** Temporary replacement for QueuelessThreadPoolService */

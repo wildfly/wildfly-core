@@ -45,23 +45,27 @@ public class ExtensionAddHandler implements OperationStepHandler {
 
     private final ExtensionRegistry extensionRegistry;
     private final boolean parallelBoot;
-    private final boolean isMasterDomainController;
+    private final ExtensionRegistryType extensionRegistryType;
+    /**
+     * For a server or domain.xml extension, this will be the root resource registration.<br/>
+     * For a host.xml extension, this will be the host resource registration
+     */
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     /**
      * Create the AbstractAddExtensionHandler
      * @param extensionRegistry registry for extensions
      * @param parallelBoot {@code true} is parallel initialization of extensions is in progress; {@code false} if not
-     * @param isMasterDomainController {@code true} if this handler will execute in a master HostController
+     * @param extensionRegistryType {@code true} if this handler will execute in a master HostController
      * @param rootResourceRegistrationProvider provides access to the root {@code ManagementResourceRegistration}
      */
     public ExtensionAddHandler(final ExtensionRegistry extensionRegistry, final boolean parallelBoot,
-                               boolean isMasterDomainController,
+                               ExtensionRegistryType extensionRegistryType,
                                final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         assert extensionRegistry != null : "extensionRegistry is null";
         this.extensionRegistry = extensionRegistry;
         this.parallelBoot = parallelBoot;
-        this.isMasterDomainController = isMasterDomainController;
+        this.extensionRegistryType = extensionRegistryType;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
@@ -76,8 +80,8 @@ public class ExtensionAddHandler implements OperationStepHandler {
         final ManagementResourceRegistration rootRegistration;
         if (install) {
             rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
-            initializeExtension(extensionRegistry, moduleName, rootRegistration, isMasterDomainController);
-            if (isMasterDomainController && !context.isBooting()) {
+            initializeExtension(extensionRegistry, moduleName, rootRegistration, extensionRegistryType);
+            if (extensionRegistryType == ExtensionRegistryType.SLAVE && !context.isBooting()) {
                 ModelNode subsystems = new ModelNode();
                 extensionRegistry.recordSubsystemVersions(moduleName, subsystems);
                 context.getResult().set(subsystems);
@@ -97,12 +101,20 @@ public class ExtensionAddHandler implements OperationStepHandler {
     }
 
     void initializeExtension(String module, ManagementResourceRegistration rootRegistration) {
-        initializeExtension(extensionRegistry, module, rootRegistration, isMasterDomainController);
+        initializeExtension(extensionRegistry, module, rootRegistration, extensionRegistryType);
     }
 
+    /**
+     * Initialise an extension module's extensions in the extension registry
+     *
+     * @param extensionRegistry the extension registry
+     * @param module the name of the module containing the extensions
+     * @param rootRegistration The parent registration of the extensions. For a server or domain.xml extension, this will be the root resource registration. For a host.xml extension, this will be the host resource registration
+     * @param extensionRegistryType The type of the registry
+     */
     static void initializeExtension(ExtensionRegistry extensionRegistry, String module,
                                     ManagementResourceRegistration rootRegistration,
-                                    boolean isMasterDomainController) {
+                                    ExtensionRegistryType extensionRegistryType) {
         try {
             boolean unknownModule = false;
             for (Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
@@ -116,7 +128,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
                         // now that we know the registry was unaware of the module
                         unknownModule = true;
                     }
-                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, isMasterDomainController));
+                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, extensionRegistryType));
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                 }

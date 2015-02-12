@@ -60,6 +60,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionContextSupplement;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -124,14 +125,20 @@ public class JMXExtension implements Extension {
     public void initialize(ExtensionContext context) {
         final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
 
+        //This subsystem should be runnable on a host
+        registration.setHostCapable();
+
         //This is ugly but for now we don't want to make the audit logger easily available to all extensions
         @SuppressWarnings("deprecation")
         ManagedAuditLogger auditLogger = (ManagedAuditLogger)((ExtensionContextSupplement)context).getAuditLogger(false, true);
         //This is ugly but for now we don't want to make the authorizer easily available to all extensions
         @SuppressWarnings("deprecation")
         JmxAuthorizer authorizer = ((ExtensionContextSupplement)context).getAuthorizer();
+        //This is ugly but for now we don't want to make the authorizer easily available to all extensions
+        @SuppressWarnings("deprecation")
+        RuntimeHostControllerInfoAccessor hostInfoAccessor = ((ExtensionContextSupplement)context).getHostControllerInfoAccessor();
 
-        registration.registerSubsystemModel(JMXSubsystemRootResource.create(auditLogger, authorizer));
+        registration.registerSubsystemModel(JMXSubsystemRootResource.create(auditLogger, authorizer, hostInfoAccessor));
         registration.registerXMLElementWriter(writer);
 
         if (context.isRegisterTransformers()) {

@@ -80,8 +80,8 @@ import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.InterfaceDefinition;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ResolveExpressionOnDomainHandler;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentFullReplaceHandler;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
@@ -145,13 +145,15 @@ public class ServerOperationResolver {
     private enum HostKey {
 
         UNKNOWN(null),
+        EXTENSION(ModelDescriptionConstants.EXTENSION),
         PATH(ModelDescriptionConstants.PATH),
         SYSTEM_PROPERTY(ModelDescriptionConstants.SYSTEM_PROPERTY),
         CORE_SERVICE(ModelDescriptionConstants.CORE_SERVICE),
         INTERFACE(ModelDescriptionConstants.INTERFACE),
         JVM(ModelDescriptionConstants.JVM),
         SERVER(ModelDescriptionConstants.SERVER),
-        SERVER_CONFIG(ModelDescriptionConstants.SERVER_CONFIG);
+        SERVER_CONFIG(ModelDescriptionConstants.SERVER_CONFIG),
+        SUBSYSTEM(ModelDescriptionConstants.SUBSYSTEM);
 
         private final String name;
 
@@ -587,6 +589,11 @@ public class ServerOperationResolver {
                 }
                 case SERVER_CONFIG: {
                     return resolveServerConfigOperation(operation, address, domain, host);
+                }
+                case EXTENSION:
+                case SUBSYSTEM: {
+                    //Changes made to the subsystems on a host should not be propagated to the servers
+                    return Collections.emptyMap();
                 }
                 case SERVER:
                 default:

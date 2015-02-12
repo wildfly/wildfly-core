@@ -437,7 +437,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
         final HostControllerEnvironment env = createHostControllerEnvironment();
         final LocalHostControllerInfoImpl info = createLocalHostControllerInfo(env);
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(info);
-        final HostControllerConfigurationPersister persister = new HostControllerConfigurationPersister(env, info, Executors.newCachedThreadPool(), extensionRegistry);
+        final ExtensionRegistry hostExtensionRegistry = extensionRegistry; //Just use the same for the host as for the domain
+        final HostControllerConfigurationPersister persister = new HostControllerConfigurationPersister(env, info, Executors.newCachedThreadPool(), hostExtensionRegistry, extensionRegistry);
         final HostFileRepository hostFileRepository = createHostFileRepository();
         final DomainController domainController = createDomainController(env, info);
 
@@ -489,6 +490,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     null /*remoteFileRepository*/,
                     injectedContentRepository.getValue(),
                     domainController,
+                    extensionRegistry, //Just use the same for the host as for the domain
                     extensionRegistry,
                     null /*vaultReader*/,
                     ignoredRegistry,

@@ -56,6 +56,14 @@ public class ExtensionSetup {
         support.addTestModule(TestExtension.MODULE_NAME, moduleXml, content);
     }
 
+    public static void initializeHostTestExtension(final DomainTestSupport support) throws IOException {
+        // Get module.xml, create modules.jar and add to test config
+        final InputStream moduleXml = getModuleXml("host-capable-module.xml");
+        StreamExporter exporter = createResourceRoot(TestHostCapableExtension.class, ExtensionSetup.class.getPackage(), EmptySubsystemParser.class.getPackage());
+        Map<String, StreamExporter> content = Collections.singletonMap("test-extension.jar", exporter);
+        support.addTestModule(TestHostCapableExtension.MODULE_NAME, moduleXml, content);
+    }
+
     public static void addExtensionAndSubsystem(final DomainTestSupport support) throws IOException, MgmtOperationException {
         DomainClient masterClient = support.getDomainMasterLifecycleUtil().getDomainClient();
         PathAddress profileAddress = PathAddress.pathAddress("profile", "profile-a");

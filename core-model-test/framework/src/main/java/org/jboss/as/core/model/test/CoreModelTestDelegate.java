@@ -86,6 +86,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.core.model.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.core.model.bridge.local.ScopedKernelServicesBootstrap;
 import org.jboss.as.host.controller.HostRunningModeControl;
@@ -426,7 +427,7 @@ public class CoreModelTestDelegate {
             this.type = type;
             this.processType = type == TestModelType.HOST || type == TestModelType.DOMAIN ? ProcessType.HOST_CONTROLLER : ProcessType.STANDALONE_SERVER;
             runningModeControl = type == TestModelType.HOST ? new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY) : new RunningModeControl(RunningMode.ADMIN_ONLY);
-            extensionRegistry = new ExtensionRegistry(processType, runningModeControl, null, null);
+            extensionRegistry = new ExtensionRegistry(processType, runningModeControl, null, null, RuntimeHostControllerInfoAccessor.SERVER);
             testParser = TestParser.create(extensionRegistry, xmlMapper, type);
         }
 

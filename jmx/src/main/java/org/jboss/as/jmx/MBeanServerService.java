@@ -28,6 +28,7 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.jmx.model.ConfiguredDomains;
@@ -55,6 +56,8 @@ import org.jboss.msc.value.InjectedValue;
 public class MBeanServerService implements Service<PluggableMBeanServer> {
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("mbean", "server");
 
+    private static final ServiceName DOMAIN_CONTROLLER_NAME = ServiceName.JBOSS.append("host", "controller", "model", "controller");
+
     private final String resolvedDomainName;
     private final String expressionsDomainName;
     private final boolean legacyWithProperPropertyFormat;
@@ -63,33 +66,38 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     private final ManagedAuditLogger auditLoggerInfo;
     private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
     private final InjectedValue<ManagementModelIntegration.ManagementModelProvider> managementModelProviderValue = new InjectedValue<ManagementModelIntegration.ManagementModelProvider>();
-    private final boolean forStandalone;
+    private final ProcessType processType;
+    private final boolean isMasterHc;
     private PluggableMBeanServer mBeanServer;
     private MBeanServerPlugin showModelPlugin;
 
     private MBeanServerService(final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                final boolean coreMBeanSensitivity,
-            final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer, final boolean forStandalone) {
+            final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer, final ProcessType processType, final boolean isMasterHc) {
         this.resolvedDomainName = resolvedDomainName;
         this.expressionsDomainName = expressionsDomainName;
         this.legacyWithProperPropertyFormat = legacyWithProperPropertyFormat;
         this.coreMBeanSensitivity = coreMBeanSensitivity;
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
-        this.forStandalone = forStandalone;
+        this.processType = processType;
+        this.isMasterHc = isMasterHc;
     }
 
     @SafeVarargs
     public static ServiceController<?> addService(final ServiceTarget batchBuilder, final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                                   final boolean coreMBeanSensitivity,
                                                   final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer,
-                                                  boolean forStandalone, final ServiceListener<? super PluggableMBeanServer>... listeners) {
-        MBeanServerService service = new MBeanServerService(resolvedDomainName, expressionsDomainName, legacyWithProperPropertyFormat,
-                coreMBeanSensitivity, auditLoggerInfo, authorizer, forStandalone);
+                                                  final ProcessType processType, final boolean isMasterHc,
+                                                  final ServiceListener<? super PluggableMBeanServer>... listeners) {
+        final MBeanServerService service = new MBeanServerService(resolvedDomainName, expressionsDomainName, legacyWithProperPropertyFormat,
+                coreMBeanSensitivity, auditLoggerInfo, authorizer, processType, isMasterHc);
+        final ServiceName modelControllerName = processType == ProcessType.HOST_CONTROLLER ?
+                DOMAIN_CONTROLLER_NAME : Services.JBOSS_SERVER_CONTROLLER;
         return batchBuilder.addService(MBeanServerService.SERVICE_NAME, service)
             .addListener(listeners)
             .setInitialMode(ServiceController.Mode.ACTIVE)
-            .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.modelControllerValue)
+            .addDependency(modelControllerName, ModelController.class, service.modelControllerValue)
             .addDependency(ManagementModelIntegration.SERVICE_NAME, ManagementModelIntegration.ManagementModelProvider.class, service.managementModelProviderValue)
             .install();
     }
@@ -107,7 +115,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
             //TODO make these configurable
             ConfiguredDomains configuredDomains = new ConfiguredDomains(resolvedDomainName, expressionsDomainName);
             showModelPlugin = new ModelControllerMBeanServerPlugin(configuredDomains, modelControllerValue.getValue(),
-                    delegate, legacyWithProperPropertyFormat, forStandalone, managementModelProviderValue.getValue());
+                    delegate, legacyWithProperPropertyFormat, processType, managementModelProviderValue.getValue(), isMasterHc);
             pluggable.addPlugin(showModelPlugin);
         }
         mBeanServer = pluggable;
