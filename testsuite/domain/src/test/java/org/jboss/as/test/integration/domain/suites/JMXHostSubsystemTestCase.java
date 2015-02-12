@@ -146,7 +146,9 @@ public class JMXHostSubsystemTestCase {
 
     @Test
     public void testSystemPropertiesMaster() throws Exception {
-        testDomainModelSystemProperties(masterClient, true, masterConnection);
+        //testDomainModelSystemProperties(masterClient, true, masterConnection);
+        //For now disable writes on the master while we decide if it is a good idea or not
+        testDomainModelSystemProperties(masterClient, false, masterConnection);
     }
 
     @Test

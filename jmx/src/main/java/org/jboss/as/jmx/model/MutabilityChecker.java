@@ -66,6 +66,12 @@ abstract class MutabilityChecker {
 
         @Override
         boolean mutable(PathAddress address) {
+
+            //Turn off the writes for the host controller while we decide if it is a good idea or not
+            if (true) {
+                return false;
+            }
+
             if (isMaster) {
                 return true;
             }
