@@ -122,8 +122,7 @@ class WrapperSSLContext extends SSLContext {
 
             @Override
             public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
-                // TODO Auto-generated method stub
-                return null;
+                return wrapped.createSocket(s, host, port, autoClose);
             }
 
             @Override
