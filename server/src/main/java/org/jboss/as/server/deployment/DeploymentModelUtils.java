@@ -46,31 +46,25 @@ public class DeploymentModelUtils {
     static final String SUB_DEPLOYMENT = "subdeployment";
 
     static ModelNode getSubsystemRoot(final String subsystemName, final DeploymentUnit unit) {
-        final Resource root = unit.getAttachment(DEPLOYMENT_RESOURCE);
-        synchronized (root) {
-            return getOrCreate(root, PathElement.pathElement(SUBSYSTEM, subsystemName)).getModel();
-        }
+        return createDeploymentSubModel(subsystemName, null, unit);
     }
 
     static ModelNode createDeploymentSubModel(final String subsystemName, final PathElement address, final DeploymentUnit unit) {
-        final Resource root = unit.getAttachment(DEPLOYMENT_RESOURCE);
-        synchronized (root) {
-            final ImmutableManagementResourceRegistration registration = unit.getAttachment(REGISTRATION_ATTACHMENT);
-            final Resource subsystem = getOrCreate(root, PathElement.pathElement(SUBSYSTEM, subsystemName));
-            final ImmutableManagementResourceRegistration subModel = registration.getSubModel(getExtensionAddress(subsystemName, address));
-            if(subModel == null) {
-                throw new IllegalStateException(address.toString());
-            }
-            return getOrCreate(subsystem, address).getModel();
+        if (address == null) {
+            return createDeploymentSubModel(subsystemName, PathAddress.EMPTY_ADDRESS, null, unit);
         }
+        return createDeploymentSubModel(subsystemName, PathAddress.pathAddress(address), null, unit);
     }
 
     static ModelNode createDeploymentSubModel(final String subsystemName, final PathAddress address, final Resource resource,final DeploymentUnit unit) {
         final Resource root = unit.getAttachment(DEPLOYMENT_RESOURCE);
         synchronized (root) {
             final ImmutableManagementResourceRegistration registration = unit.getAttachment(REGISTRATION_ATTACHMENT);
-            final Resource subsystem = getOrCreate(root, PathElement.pathElement(SUBSYSTEM, subsystemName));
-            Resource parent = subsystem;
+            final PathElement subsystemPath = PathElement.pathElement(SUBSYSTEM, subsystemName);
+            if (address == PathAddress.EMPTY_ADDRESS) {
+                return create(root, subsystemPath, resource).getModel();
+            }
+            Resource parent = getOrCreate(root, subsystemPath);
             int count = address.size()-1;
             for(int index = 0; index<count;index++){
                 parent = getOrCreate(parent, address.getElement(index));
@@ -79,7 +73,7 @@ public class DeploymentModelUtils {
             if(subModel == null) {
                 throw new IllegalStateException(address.toString());
             }
-            return getOrCreate(parent, address.getLastElement(),resource).getModel();
+            return create(parent, address.getLastElement(), resource).getModel();
         }
     }
 
@@ -101,14 +95,7 @@ public class DeploymentModelUtils {
                     throw new IllegalStateException();
                 }
             } else {
-                Resource toRegister = desired;
-                if(toRegister == null){
-                    toRegister = Resource.Factory.create(true);
-                }else if (!toRegister.isRuntime()){
-                    throw ControllerLogger.ROOT_LOGGER.deploymentResourceMustBeRuntimeOnly();
-                }
-                parent.registerChild(element, toRegister);
-                return toRegister;
+                return create(parent, element, desired);
             }
         }
     }
@@ -124,13 +111,22 @@ public class DeploymentModelUtils {
         }
     }
 
-    static PathAddress getExtensionAddress(final String subsystemName, final PathElement element) {
-        return PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystemName), element);
-    }
-
     static PathAddress getExtensionAddress(final String subsystemName, final PathAddress elements) {
         PathAddress address = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystemName));
         address = address.append(elements);
         return address;
+    }
+
+    private static Resource create(final Resource parent, final PathElement element, final Resource desired) {
+        synchronized (parent) {
+            Resource toRegister = desired;
+            if (toRegister == null) {
+                toRegister = Resource.Factory.create(true);
+            } else if (!toRegister.isRuntime()) {
+                throw ControllerLogger.ROOT_LOGGER.deploymentResourceMustBeRuntimeOnly();
+            }
+            parent.registerChild(element, toRegister);
+            return toRegister;
+        }
     }
 }

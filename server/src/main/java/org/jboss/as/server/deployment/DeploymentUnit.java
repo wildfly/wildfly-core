@@ -64,7 +64,7 @@ public interface DeploymentUnit extends Attachable {
     ServiceRegistry getServiceRegistry();
 
     /**
-     * Get the extension deployment model root.
+     * Get or create the extension deployment model root.
      *
      * @param subsystemName the subsystem name.
      * @return the model
@@ -74,34 +74,77 @@ public interface DeploymentUnit extends Attachable {
     /**
      * Create a management sub-model for components from the deployment itself. Operations, metrics and descriptions
      * have to be registered as part of the subsystem registration {@link org.jboss.as.controller.ExtensionContext} and
-     * {@linkplain org.jboss.as.controller.SubsystemRegistration.registerDeploymentModel}.
+     * {@link org.jboss.as.controller.SubsystemRegistration#registerDeploymentModel(org.jboss.as.controller.ResourceDefinition)}.
      *
-     * @param subsystemName the subsystem name the model was registered
-     * @param address the path address this sub-model should be created in
-     * @return the model node
+     * <p>
+     * If the address is {@code null} only the subsystem resource will be created. If the address is not {@code null}
+     * the subsystem resource will be created if it does not already exist and the resource for the address will also be
+     * created.
+     * </p>
+     *
+     * @param subsystemName the subsystem name for model
+     * @param address the path address this sub-model should be created in or {@code null} to create the root subsystem resource
+     * @return the model for the created resource
+     *
+     * @throws java.lang.IllegalStateException if a resource with the address has already been created
      */
     ModelNode createDeploymentSubModel(final String subsystemName, final PathElement address);
 
     /**
+     * Create a management sub-model for components from the deployment itself. Operations, metrics and descriptions
+     * have to be registered as part of the subsystem registration {@link org.jboss.as.controller.ExtensionContext} and
+     * {@link org.jboss.as.controller.SubsystemRegistration#registerDeploymentModel(org.jboss.as.controller.ResourceDefinition)}.
      *
-     * This method is extension of {@link #createDeploymentSubModel(String, PathElement)}, the difference is that this method traverses recursively till last
-     * element in {@link PathAddress}.
+     * <p>
+     * If the address is {@linkplain org.jboss.as.controller.PathAddress#EMPTY_ADDRESS} only the subsystem resource will
+     * be created.
+     * </p>
+     *
+     * <p>
+     * If the address is not {@linkplain org.jboss.as.controller.PathAddress#EMPTY_ADDRESS} the subsystem resource as
+     * well as any other child resources will be created if they do not exist. Finally an attempt will be made to create
+     * the {@link org.jboss.as.controller.PathAddress#getLastElement() last} resource from the address.
+     * </p>
      *
      * @param subsystemName the subsystem name the model was registered
-     * @param address the path address this sub-model should be created in
-     * @return the model node
+     * @param address the path address this sub-model should be created in or {@link org.jboss.as.controller.PathAddress#EMPTY_ADDRESS}
+     *                to create the root subsystem resource
+     * @return the model for the created resource
+     *
+     * @see #createDeploymentSubModel(String, org.jboss.as.controller.PathElement)
+     *
+     * @throws java.lang.IllegalStateException if the {@link org.jboss.as.controller.PathAddress#getLastElement() last} resource already exists
      */
     ModelNode createDeploymentSubModel(final String subsystemName, final PathAddress address);
 
     /**
+     * Create a management sub-model for components from the deployment itself. Operations, metrics and descriptions
+     * have to be registered as part of the subsystem registration {@link org.jboss.as.controller.ExtensionContext} and
+     * {@link org.jboss.as.controller.SubsystemRegistration#registerDeploymentModel(org.jboss.as.controller.ResourceDefinition)}.
      *
-     * This method is extension of {@link #createDeploymentSubModel(String, PathAddress)}, the difference is that it accepts resource that should be registered
-     * at specified path.
+     * <p>
+     * If the address is {@linkplain org.jboss.as.controller.PathAddress#EMPTY_ADDRESS} and the resource parameter is
+     * {@code null} the subsystem resource be created. If the resource parameter is not {@code null} the resource will
+     * be registered as the subsystem resource.
+     * </p>
+     *
+     * <p>
+     * If the address is not {@linkplain org.jboss.as.controller.PathAddress#EMPTY_ADDRESS} the subsystem resource as
+     * well as any other child resources will be created if they do not exist. Finally an attempt will be made to create
+     * the {@link org.jboss.as.controller.PathAddress#getLastElement() last} resource from the address if the resource
+     * parameter is {@code null}. If the resource parameter is not {@code null} the resource parameter will be
+     * registered as the {@link org.jboss.as.controller.PathAddress#getLastElement() last} resource.
+     * </p>
      *
      * @param subsystemName the subsystem name the model was registered
-     * @param address the path address this sub-model should be created in
-     * @param resource the resource that needs to be registered as submodule
-     * @return the model node
+     * @param address the path address this sub-model should be created in or {@link org.jboss.as.controller.PathAddress#EMPTY_ADDRESS}
+     *                to create the root subsystem resource
+     * @param resource the resource to be registered as sub-module or {@code null} to create the resource(s) from the address
+     * @return the model for the optionally created resource
+     *
+     * @see #createDeploymentSubModel(String, org.jboss.as.controller.PathElement)
+     *
+     * @throws java.lang.IllegalStateException if the {@link org.jboss.as.controller.PathAddress#getLastElement() last} resource already exists
      */
     ModelNode createDeploymentSubModel(final String subsystemName, final PathAddress address, final Resource resource);
 
