@@ -440,7 +440,7 @@ public class GlobalOperationHandlers {
                 //PathAddress target = aliasEntry.getTargetAddress();
                 PathAddress target = aliasEntry.convertToTargetAddress(addr.append(element));
                 PathAddress targetParent = target.subAddress(0, target.size() - 1);
-                Resource parentResource = context.readResourceFromRoot(targetParent);
+                Resource parentResource = context.readResourceFromRoot(targetParent, false);
                 if (parentResource != null && parentResource.hasChildren(target.getLastElement().getKey())) {
                     set.add(element.getValue());
                 }

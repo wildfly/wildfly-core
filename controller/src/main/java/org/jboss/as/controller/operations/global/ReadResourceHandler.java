@@ -410,19 +410,32 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         Resource result;
         if (registry != null && registry.isRuntimeOnly()) {
             try {
+                // BES 2015/02/12 (WFCORE-539) -- following comment and use of 'true' I can't understand,
+                // as the only use of 'resource' is to get the model or the children names,
+                // neither of which needs the cloning behavior in OperationContextImpl.readResourceFromRoot
+
                 //TODO check that having changed this from false to true does not break anything
                 //If it does, consider adding a Resource.alwaysClone() method that can be used in
                 //OperationContextImpl.readResourceFromRoot(final PathAddress address, final boolean recursive)
                 //instead of the recursive check
-                result = context.readResource(PathAddress.EMPTY_ADDRESS, true);
+                //result = context.readResource(PathAddress.EMPTY_ADDRESS, true);
+
+                // BES 2015/02/12 -- So, back to 'false'
+                result = context.readResource(PathAddress.EMPTY_ADDRESS, false);
             } catch (RuntimeException e) {
                 result = PlaceholderResource.INSTANCE;
             }
         } else {
+            // BES 2015/02/12 (WFCORE-539) -- following comment and use of 'true' I can't understand,
+            // as the only use of 'resource' is to get the model or the children names,
+            // neither of which needs the cloning behavior in OperationContextImpl.readResourceFromRoot
+
             //TODO check that having changed this from false to true does not break anything
             //If it does, consider adding a Resource.alwaysClone() method that can be used in
             //OperationContextImpl.readResourceFromRoot(final PathAddress address, final boolean recursive)
             //instead of the recursive check
+
+            // BES 2015/02/12 -- So, back to 'false'
             result = context.readResource(PathAddress.EMPTY_ADDRESS, true);
         }
         return result;
