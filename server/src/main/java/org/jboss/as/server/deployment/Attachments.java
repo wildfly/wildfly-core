@@ -203,6 +203,11 @@ public final class Attachments {
 
     public static final AttachmentKey<Map<String, MountedDeploymentOverlay>> DEPLOYMENT_OVERLAY_LOCATIONS = AttachmentKey.create(Map.class);
 
+    /**
+     * Support for getting and creating resource models on a deployments resource.
+     */
+    public static final AttachmentKey<DeploymentResourceSupport> DEPLOYMENT_RESOURCE_SUPPORT = AttachmentKey.create(DeploymentResourceSupport.class);
+
 
 
     //

@@ -22,115 +22,16 @@
 
 package org.jboss.as.server.deployment;
 
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 
 /**
  * @author Emanuel Muckenhuber
- * TODO:  make this package protected again instead of public
+ * @deprecated Use {@link org.jboss.as.server.deployment.DeploymentResourceSupport} from an {@link Attachments#DEPLOYMENT_RESOURCE_SUPPORT attachment} on the {@link org.jboss.as.server.deployment.DeploymentUnit}
  */
+@Deprecated
 public class DeploymentModelUtils {
 
-    // TODO:  make this package protected again instead of public
-    public static final AttachmentKey<Resource> DEPLOYMENT_RESOURCE = AttachmentKey.create(Resource.class);
-    static final AttachmentKey<ImmutableManagementResourceRegistration> REGISTRATION_ATTACHMENT = AttachmentKey.create(ImmutableManagementResourceRegistration.class);
-    public static final AttachmentKey<ManagementResourceRegistration> MUTABLE_REGISTRATION_ATTACHMENT = AttachmentKey.create(ManagementResourceRegistration.class);
-
-    static final String SUBSYSTEM = ModelDescriptionConstants.SUBSYSTEM;
-    static final String SUB_DEPLOYMENT = "subdeployment";
-
-    static ModelNode getSubsystemRoot(final String subsystemName, final DeploymentUnit unit) {
-        final Resource root = unit.getAttachment(DEPLOYMENT_RESOURCE);
-        synchronized (root) {
-            return getOrCreate(root, PathElement.pathElement(SUBSYSTEM, subsystemName)).getModel();
-        }
-    }
-
-    static ModelNode createDeploymentSubModel(final String subsystemName, final PathElement address, final DeploymentUnit unit) {
-        final Resource root = unit.getAttachment(DEPLOYMENT_RESOURCE);
-        synchronized (root) {
-            final ImmutableManagementResourceRegistration registration = unit.getAttachment(REGISTRATION_ATTACHMENT);
-            final Resource subsystem = getOrCreate(root, PathElement.pathElement(SUBSYSTEM, subsystemName));
-            final ImmutableManagementResourceRegistration subModel = registration.getSubModel(getExtensionAddress(subsystemName, address));
-            if(subModel == null) {
-                throw new IllegalStateException(address.toString());
-            }
-            return getOrCreate(subsystem, address).getModel();
-        }
-    }
-
-    static ModelNode createDeploymentSubModel(final String subsystemName, final PathAddress address, final Resource resource,final DeploymentUnit unit) {
-        final Resource root = unit.getAttachment(DEPLOYMENT_RESOURCE);
-        synchronized (root) {
-            final ImmutableManagementResourceRegistration registration = unit.getAttachment(REGISTRATION_ATTACHMENT);
-            final Resource subsystem = getOrCreate(root, PathElement.pathElement(SUBSYSTEM, subsystemName));
-            Resource parent = subsystem;
-            int count = address.size()-1;
-            for(int index = 0; index<count;index++){
-                parent = getOrCreate(parent, address.getElement(index));
-            }
-            final ImmutableManagementResourceRegistration subModel = registration.getSubModel(getExtensionAddress(subsystemName, address));
-            if(subModel == null) {
-                throw new IllegalStateException(address.toString());
-            }
-            return getOrCreate(parent, address.getLastElement(),resource).getModel();
-        }
-    }
-
-    static Resource createSubDeployment(final String deploymentName, DeploymentUnit parent) {
-        final Resource root = parent.getAttachment(DEPLOYMENT_RESOURCE);
-        return getOrCreate(root, PathElement.pathElement(SUB_DEPLOYMENT, deploymentName));
-    }
-
-    static Resource getOrCreate(final Resource parent, final PathElement element) {
-       return getOrCreate(parent, element, null);
-    }
-
-    static Resource getOrCreate(final Resource parent, final PathElement element, final Resource desired) {
-        synchronized(parent) {
-            if(parent.hasChild(element)) {
-                if(desired==null){
-                    return parent.requireChild(element);
-                } else {
-                    throw new IllegalStateException();
-                }
-            } else {
-                Resource toRegister = desired;
-                if(toRegister == null){
-                    toRegister = Resource.Factory.create(true);
-                }else if (!toRegister.isRuntime()){
-                    throw ControllerLogger.ROOT_LOGGER.deploymentResourceMustBeRuntimeOnly();
-                }
-                parent.registerChild(element, toRegister);
-                return toRegister;
-            }
-        }
-    }
-
-    static void cleanup(final Resource resource) {
-        synchronized (resource) {
-            for(final Resource.ResourceEntry entry : resource.getChildren(SUBSYSTEM)) {
-                resource.removeChild(entry.getPathElement());
-            }
-            for(final Resource.ResourceEntry entry : resource.getChildren(SUB_DEPLOYMENT)) {
-                resource.removeChild(entry.getPathElement());
-            }
-        }
-    }
-
-    static PathAddress getExtensionAddress(final String subsystemName, final PathElement element) {
-        return PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystemName), element);
-    }
-
-    static PathAddress getExtensionAddress(final String subsystemName, final PathAddress elements) {
-        PathAddress address = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystemName));
-        address = address.append(elements);
-        return address;
-    }
+    public static final AttachmentKey<Resource> DEPLOYMENT_RESOURCE = DeploymentResourceSupport.DEPLOYMENT_RESOURCE;
+    public static final AttachmentKey<ManagementResourceRegistration> MUTABLE_REGISTRATION_ATTACHMENT = DeploymentResourceSupport.MUTABLE_REGISTRATION_ATTACHMENT;
 }

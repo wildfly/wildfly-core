@@ -93,7 +93,7 @@ public class DeploymentHandlerUtil {
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();
 
-            DeploymentModelUtils.cleanup(deployment);
+            DeploymentResourceSupport.cleanup(deployment);
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) {
@@ -178,7 +178,7 @@ public class DeploymentHandlerUtil {
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();
 
-            DeploymentModelUtils.cleanup(deployment);
+            DeploymentResourceSupport.cleanup(deployment);
 
             context.addStep(new OperationStepHandler() {
                 public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -239,7 +239,7 @@ public class DeploymentHandlerUtil {
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS.append(path));
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate().getSubModel(PathAddress.EMPTY_ADDRESS.append(path));
 
-            DeploymentModelUtils.cleanup(deployment);
+            DeploymentResourceSupport.cleanup(deployment);
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -255,7 +255,7 @@ public class DeploymentHandlerUtil {
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                             if (resultAction == OperationContext.ResultAction.ROLLBACK) {
 
-                                DeploymentModelUtils.cleanup(deployment);
+                                DeploymentResourceSupport.cleanup(deployment);
                                 final String name = originalDeployment.require(NAME).asString();
                                 final String runtimeName = originalDeployment.require(RUNTIME_NAME).asString();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(originalDeployment.require(CONTENT));
@@ -281,7 +281,7 @@ public class DeploymentHandlerUtil {
             final Resource deployment = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();
-            DeploymentModelUtils.cleanup(deployment);
+            DeploymentResourceSupport.cleanup(deployment);
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) {
