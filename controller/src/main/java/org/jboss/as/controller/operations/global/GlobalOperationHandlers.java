@@ -455,7 +455,7 @@ public class GlobalOperationHandlers {
 
         // WFLY-3306 Ensure we have an entry for any valid child type
         for (String type : registry.getChildNames(PathAddress.EMPTY_ADDRESS)) {
-            if ((validChildType == null || validChildType.equals(validChildType))
+            if ((validChildType == null || validChildType.equals(type))
                 && !result.containsKey(type)) {
                 result.put(type, Collections.<String>emptySet());
             }
