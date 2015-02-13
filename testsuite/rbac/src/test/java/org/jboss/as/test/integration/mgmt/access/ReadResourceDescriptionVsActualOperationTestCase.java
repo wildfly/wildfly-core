@@ -24,6 +24,7 @@ package org.jboss.as.test.integration.mgmt.access;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
@@ -33,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +45,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.test.integration.management.rbac.Outcome;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
@@ -116,11 +119,23 @@ public class ReadResourceDescriptionVsActualOperationTestCase extends AbstractRb
         operation.get(OPERATIONS).set(true);
         operation.get(ACCESS_CONTROL).set("trim-descriptions");
         ModelNode result = RbacUtil.executeOperation(client, operation, Outcome.SUCCESS);
-
+        System.out.println();
+        System.out.println(result);
+        System.out.println();
         ModelNode clone = result.clone();
         ModelNode allowExecute = clone.get(RESULT, ACCESS_CONTROL, DEFAULT, OPERATIONS, opName, EXECUTE);
         assertTrue(result.toString(), allowExecute.isDefined());
-        return allowExecute.asBoolean();
+        if (!allowExecute.asBoolean()) {
+            return false;
+        }
+        for (Property prop : clone.get(RESULT, ACCESS_CONTROL, DEFAULT, ATTRIBUTES).asPropertyList()) {
+            ModelNode write = prop.getValue().get(WRITE);
+            assertTrue(prop.toString(), write.isDefined());
+            if (!prop.getValue().get(WRITE).asBoolean()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void removeResource(String address) throws IOException {
