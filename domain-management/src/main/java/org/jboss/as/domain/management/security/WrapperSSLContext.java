@@ -161,7 +161,7 @@ class WrapperSSLContext extends SSLContext {
             @Override
             public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
                     throws IOException {
-                Socket socket = createSocket(address, port, localAddress, localPort);
+                Socket socket = wrapped.createSocket(address, port, localAddress, localPort);
                 setSslParams(socket);
                 return socket;
             }
