@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
@@ -147,6 +148,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
                 new HttpManagementRemoveHandler(hostControllerInfo, environment),
                 OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
+        setDeprecated(ModelVersion.create(1, 7));
     }
 
     @Override
