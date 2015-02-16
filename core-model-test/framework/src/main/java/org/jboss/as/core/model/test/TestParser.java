@@ -21,6 +21,7 @@
 */
 package org.jboss.as.core.model.test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -52,7 +53,7 @@ public class TestParser implements ModelTestParser {
     private final TestModelType type;
     private final XMLElementReader<List<ModelNode>> reader;
     private final XMLElementWriter<ModelMarshallingContext> writer;
-    private volatile ModelWriteSanitizer writeSanitizer;
+    private volatile List<ModelWriteSanitizer> writeSanitizers;
 
     public TestParser(TestModelType type, XMLElementReader<List<ModelNode>> reader, XMLElementWriter<ModelMarshallingContext> writer) {
         this.type = type;
@@ -93,9 +94,17 @@ public class TestParser implements ModelTestParser {
         return testParser;
     }
 
-    void setModelWriteSanitizer(ModelWriteSanitizer writeSanitizer) {
-        this.writeSanitizer = writeSanitizer;
+    void addModelWriteSanitizer(ModelWriteSanitizer writeSanitizer) {
+        if (writeSanitizer == null) {
+            return;
+        }
+        if (writeSanitizers == null) {
+            writeSanitizers = new ArrayList<ModelWriteSanitizer>();
+        }
+        writeSanitizers.add(writeSanitizer);
     }
+
+
 
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> value) throws XMLStreamException {
@@ -127,10 +136,16 @@ public class TestParser implements ModelTestParser {
         return context;
     }
     private ModelMarshallingContext sanitizeContext(final ModelMarshallingContext context) {
-        if (writeSanitizer == null) {
+        if (writeSanitizers == null) {
             return context;
         }
-        final ModelNode model = writeSanitizer.sanitize(context.getModelNode());
+
+        ModelNode model = context.getModelNode();
+        for (ModelWriteSanitizer sanitizer : writeSanitizers) {
+            model = sanitizer.sanitize(model);
+        }
+
+        final ModelNode theModel = model;
         return new ModelMarshallingContext() {
 
             @Override
@@ -140,7 +155,7 @@ public class TestParser implements ModelTestParser {
 
             @Override
             public ModelNode getModelNode() {
-                return model;
+                return theModel;
             }
         };
     }

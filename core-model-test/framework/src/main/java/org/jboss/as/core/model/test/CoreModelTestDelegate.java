@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIXED_PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIXED_SOURCE_PORT;
@@ -70,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,6 +93,8 @@ import org.jboss.as.core.model.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.core.model.bridge.local.ScopedKernelServicesBootstrap;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
+import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
+import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestBootOperationsBuilder;
@@ -474,7 +478,7 @@ public class CoreModelTestDelegate {
             bootOperationBuilder.validateNotAlreadyBuilt();
             this.modelInitializer = modelInitializer;
             this.modelWriteSanitizer = modelWriteSanitizer;
-            testParser.setModelWriteSanitizer(modelWriteSanitizer);
+            testParser.addModelWriteSanitizer(modelWriteSanitizer);
             return this;
         }
 
@@ -488,6 +492,12 @@ public class CoreModelTestDelegate {
         public KernelServices build() throws Exception {
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
+
+
+            if (type == TestModelType.HOST) {
+                adjustLocalDomainControllerWriteForHost(bootOperations);
+            }
+
             AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(processType, runningModeControl, ModelTestOperationValidatorFilter.createValidateAll(), bootOperations, testParser, null, type, modelInitializer, extensionRegistry, contentRepositoryContents);
             CoreModelTestDelegate.this.kernelServices.add(kernelServices);
 
@@ -524,6 +534,34 @@ public class CoreModelTestDelegate {
 
 
             return kernelServices;
+        }
+
+
+        private void adjustLocalDomainControllerWriteForHost(List<ModelNode> bootOperations) {
+            //Remove the write-local-domain-controller operation since the test controller already simulates what it does at runtime.
+            //For model validation to work, it always needs to be part of the model, and will be added there by the test controller.
+            //We need to keep track of if it was part of the boot ops or not. If it was not part of the boot ops, the model will need
+            //'sanitising' to remove it otherwise the xml comparison checks will fail.
+            boolean dcInBootOps = false;
+            for (Iterator<ModelNode> it = bootOperations.iterator() ; it.hasNext() ; ) {
+                ModelNode op = it.next();
+                String opName = op.get(OP).asString();
+                if (opName.equals(LocalDomainControllerAddHandler.OPERATION_NAME) || opName.equals(RemoteDomainControllerAddHandler.OPERATION_NAME)) {
+                    dcInBootOps = true;
+                    break;
+                }
+            }
+            if (!dcInBootOps) {
+                testParser.addModelWriteSanitizer(new ModelWriteSanitizer() {
+                    @Override
+                    public ModelNode sanitize(ModelNode model) {
+                        if (model.isDefined() && model.has(DOMAIN_CONTROLLER)) {
+                            model.remove(DOMAIN_CONTROLLER);
+                        }
+                        return model;
+                    }
+                });
+            }
         }
 
         private ModelNode removeForIntellij(ModelNode model){

@@ -66,8 +66,8 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
+import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
 import org.jboss.as.controller.operations.common.Util;
@@ -361,7 +361,7 @@ public class ModelParserUtils {
                 hostRegistration.registerSubModel(core);
 
                 // Domain controller
-                LocalDomainControllerAddHandler localDcAddHandler = new MockLocalDomainControllerAddHandler();
+                LocalDomainControllerAddHandler localDcAddHandler = LocalDomainControllerAddHandler.getTestInstance();
                 hostRegistration.registerOperationHandler(LocalDomainControllerAddHandler.DEFINITION, localDcAddHandler, false);
                 RemoteDomainControllerAddHandler remoteDcAddHandler = new MockRemoteDomainControllerAddHandler();
                 hostRegistration.registerOperationHandler(RemoteDomainControllerAddHandler.DEFINITION, remoteDcAddHandler, false);
@@ -549,21 +549,6 @@ public class ModelParserUtils {
 
         @Override
         public void deleteDeployment(ContentReference reference) {
-        }
-    }
-
-    private static class MockLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
-
-        /**
-         * Create the ServerAddHandler
-         */
-        protected MockLocalDomainControllerAddHandler() {
-            super(null, null, null, null, null, null, null, MOCK_PATH_MANAGER);
-        }
-
-        @Override
-        protected void initializeDomain() {
-            // no-op
         }
     }
 

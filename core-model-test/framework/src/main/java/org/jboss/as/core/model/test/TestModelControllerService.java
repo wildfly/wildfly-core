@@ -21,7 +21,12 @@
 */
 package org.jboss.as.core.model.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCHEMA_LOCATIONS;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,14 +42,22 @@ import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -66,7 +79,10 @@ import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationEntry;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
+import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
+import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
+import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.StringConfigurationPersister;
@@ -123,16 +139,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         if (type == TestModelType.STANDALONE) {
             initializer = new ServerInitializer();
         } else if (type == TestModelType.HOST) {
-            //Remove the write-local-domain-controller operation since we already simulate that here
-            for (Iterator<ModelNode> it = persister.getBootOperations().iterator() ; it.hasNext() ; ) {
-                ModelNode op = it.next();
-                if (op.get(OP).asString().equals("write-local-domain-controller")) {
-                    System.out.println("WARNING: Test framework is removing the 'write-local-domain-controller' operation. If you are comparing xml results use a " +
-                             "ModelWriteSanitizer to add the \"domain-controller\" => {\"local\" => {}} part (See ShippedConfigurationsModelTestCase.testHostXml() for an example)");
-                    it.remove();
-                    break;
-                }
-            }
+            addWriteLocalDomainControllerBootOpIfNeeded(persister);
             initializer = new HostInitializer();
         } else if (type == TestModelType.DOMAIN) {
             initializer = new DomainInitializer();
@@ -262,6 +269,45 @@ class TestModelControllerService extends ModelTestModelControllerService {
         }
     }
 
+    private static void addWriteLocalDomainControllerBootOpIfNeeded(StringConfigurationPersister persister) {
+        boolean missingDomainController = true;
+        for (Iterator<ModelNode> it = persister.getBootOperations().iterator() ; it.hasNext() ; ) {
+            ModelNode op = it.next();
+            String opName = op.get(OP).asString();
+            if (opName.equals(LocalDomainControllerAddHandler.OPERATION_NAME)) {
+                missingDomainController = false;
+                break;
+            } else if (opName.equals(RemoteDomainControllerAddHandler.OPERATION_NAME)) {
+                missingDomainController = false;
+                break;
+            }
+        }
+
+        if (persister.getBootOperations().size() == 0) {
+            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
+            return;
+        }
+        //The first operation should be the :register-host-model(name=<host-name>) operation so use that to get the address of the host resource
+        ModelNode registerHostModel = persister.getBootOperations().get(0);
+        if (!registerHostModel.require(OP).asString().equals(HostModelRegistrationHandler.OPERATION_NAME)){
+            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
+            return;
+        }
+        PathAddress hostAddr = PathAddress.pathAddress(HOST, registerHostModel.get(NAME).asString());
+        if (missingDomainController) {
+
+            //Now create the write-local-domain-controller operation
+            ModelNode local = new ModelNode();
+            local.get(LOCAL).setEmptyObject();
+            ModelNode writeLocalDomainController = Util.createOperation(LocalDomainControllerAddHandler.DEFINITION, hostAddr);
+
+            //Insert the write-local-domain-controller step after the :register-host-model(name=<host-name>) call
+            persister.getBootOperations().add(1, writeLocalDomainController);
+        }
+
+        persister.getBootOperations().add(1, Util.createEmptyOperation(AddMissingHostNamespacesAttributeForValidationHandler.NAME, hostAddr));
+        persister.getBootOperations().add(1, Util.createEmptyOperation(AddMissingHostSchemaLocationsAttributeForValidationHandler.NAME, hostAddr));
+    }
     private LocalHostControllerInfoImpl createLocalHostControllerInfo(HostControllerEnvironment env) {
         return new LocalHostControllerInfoImpl(null, env);
     }
@@ -480,7 +526,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                         }
                     },ProcessType.HOST_CONTROLLER, authorizer, modelControllerResource);
 
-            HostModelUtil.createHostRegistry(
+            ManagementResourceRegistration hostReg = HostModelUtil.createHostRegistry(
                     hostName,
                     rootRegistration,
                     persister,
@@ -501,6 +547,14 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     authorizer,
                     AuditLogger.NO_OP_LOGGER,
                     getBootErrorCollector());
+
+            //Swap out the write-local-domain-controller operation with one which only does the model part
+            hostReg.unregisterOperationHandler(LocalDomainControllerAddHandler.OPERATION_NAME);
+            hostReg.registerOperationHandler(LocalDomainControllerAddHandler.DEFINITION, LocalDomainControllerAddHandler.getTestInstance());
+
+            //Register the ops to initialise the schemalocations and namespaces
+            hostReg.registerOperationHandler(AddMissingHostNamespacesAttributeForValidationHandler.DEF, AddMissingHostNamespacesAttributeForValidationHandler.INSTANCE);
+            hostReg.registerOperationHandler(AddMissingHostSchemaLocationsAttributeForValidationHandler.DEF, AddMissingHostSchemaLocationsAttributeForValidationHandler.INSTANCE);
         }
     }
 
@@ -683,6 +737,26 @@ class TestModelControllerService extends ModelTestModelControllerService {
                 HostFileRepository fileRepository, LocalHostControllerInfo hostControllerInfo,
                 ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                 PathManagerService pathManager) {
+        }
+    }
+
+    private static class AddMissingHostSchemaLocationsAttributeForValidationHandler implements OperationStepHandler {
+        static final OperationStepHandler INSTANCE = new AddMissingHostSchemaLocationsAttributeForValidationHandler();
+        static final String NAME = "add-missing-schema-locations-attribute-for-validation-handler";
+        static final OperationDefinition DEF = new SimpleOperationDefinitionBuilder(NAME, new NonResolvingResourceDescriptionResolver()).build();
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel().get(SCHEMA_LOCATIONS).setEmptyList();
+        }
+    }
+
+    private static class AddMissingHostNamespacesAttributeForValidationHandler implements OperationStepHandler {
+        static final OperationStepHandler INSTANCE = new AddMissingHostNamespacesAttributeForValidationHandler();
+        static final String NAME = "add-missing-namespaces-attribute-for-validation-handler";
+        static final OperationDefinition DEF = new SimpleOperationDefinitionBuilder(NAME, new NonResolvingResourceDescriptionResolver()).build();
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel().get(NAMESPACES).setEmptyList();
         }
     }
 }
