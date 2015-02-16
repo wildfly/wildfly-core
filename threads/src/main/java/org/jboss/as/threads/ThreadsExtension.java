@@ -24,14 +24,14 @@ package org.jboss.as.threads;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.threads.CommonAttributes.THREADS;
 
-import org.jboss.as.controller.Extension;
+import java.util.Collections;
+import java.util.Set;
+
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
-import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
-import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.extension.AbstractLegacyExtension;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -44,7 +44,7 @@ import org.jboss.as.controller.transform.description.TransformationDescriptionBu
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ThreadsExtension implements Extension {
+public class ThreadsExtension extends AbstractLegacyExtension {
 
     public static final String SUBSYSTEM_NAME = "threads";
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
@@ -54,17 +54,16 @@ public class ThreadsExtension implements Extension {
     private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
     private static final int MANAGEMENT_API_MINOR_VERSION = 1;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
+    static final ModelVersion DEPRECATED_SINCE = ModelVersion.create(1, 1, 0);
 
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
-    public static ResourceDescriptionResolver getResourceDescriptionResolver(final String keyPrefix, boolean useUnprefixedChildTypes) {
-        return new StandardResourceDescriptionResolver(keyPrefix, RESOURCE_NAME, ThreadsExtension.class.getClassLoader(), true, useUnprefixedChildTypes);
+    public ThreadsExtension() {
+        super("org.jboss.as.threads", SUBSYSTEM_NAME);
     }
 
     @Override
-    public void initialize(final ExtensionContext context) {
-
-        ThreadsLogger.ROOT_LOGGER.debugf("Initializing Threading Extension");
+    protected Set<ManagementResourceRegistration> initializeLegacyModel(ExtensionContext context) {
 
         final boolean registerRuntimeOnly = context.isRuntimeOnlyRegistrationValid();
 
@@ -74,16 +73,16 @@ public class ThreadsExtension implements Extension {
 
         // Remoting subsystem description and operation handlers
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new ThreadSubsystemResourceDefinition(registerRuntimeOnly));
-        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         if (context.isRegisterTransformers()) {
             registerTransformers1_0(registration);
         }
+        return Collections.singleton(subsystem);
     }
 
     @Override
-    public void initializeParsers(final ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser.INSTANCE);
+    protected void initializeLegacyParsers(ExtensionParsingContext context) {
+    context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser.INSTANCE);
     }
 
@@ -102,7 +101,6 @@ public class ThreadsExtension implements Extension {
         UnboundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder);
         ThreadFactoryResourceDefinition.registerTransformers1_0(builder);
         TransformationDescription.Tools.register(builder.build(), subsystem, ModelVersion.create(1, 0, 0));
-
     }
 
 

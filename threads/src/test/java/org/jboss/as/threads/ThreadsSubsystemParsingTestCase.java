@@ -67,6 +67,8 @@ import javax.xml.stream.XMLStreamException;
 import java.util.List;
 
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -130,7 +132,7 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         ModelNode operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION);
         operation.get(RECURSIVE).set(true);
         operation.get(OPERATIONS).set(true);
-        services = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).build();
+        services = createKernelServicesBuilder(createAdditionalInitialization()).build();
 
         ModelNode result = services.executeForResult(operation);
 
@@ -1074,7 +1076,7 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
 
     private List<ModelNode> createSubSystem(String subsystemContents, Namespace namespace) throws Exception {
         final String xmlContent = "<subsystem xmlns=\"" + namespace.getUriString() + "\">" + subsystemContents + "</subsystem>";
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT);
+        KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization());
         this.services = builder.build();
         this.model = services.readWholeModel();
         return parse(xmlContent);
@@ -1096,5 +1098,20 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         }
         model = services.readWholeModel();
         return rsp.get(RESULT);
+    }
+
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return new AdditionalInitialization() {
+
+            @Override
+            protected ProcessType getProcessType() {
+                return ProcessType.HOST_CONTROLLER;
+            }
+
+            @Override
+            protected RunningMode getRunningMode() {
+                return RunningMode.ADMIN_ONLY;
+            }
+        };
     }
 }

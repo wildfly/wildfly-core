@@ -32,6 +32,9 @@ import java.util.List;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
@@ -159,5 +162,29 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
                         keepaliveOnly)
                 .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.THREAD_FACTORY)),
                         threadFactory);
+    }
+
+    @Override
+    protected void validateDescribeOperation(KernelServices hc, AdditionalInitialization serverInit, ModelNode expectedModel) throws Exception {
+        final ModelNode operation = createDescribeOperation();
+        final ModelNode result = hc.executeOperation(operation);
+        Assert.assertTrue("The subsystem describe operation must fail",
+                result.hasDefined(ModelDescriptionConstants.FAILURE_DESCRIPTION));
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return new AdditionalInitialization() {
+
+            @Override
+            protected ProcessType getProcessType() {
+                return ProcessType.HOST_CONTROLLER;
+            }
+
+            @Override
+            protected RunningMode getRunningMode() {
+                return RunningMode.ADMIN_ONLY;
+            }
+        };
     }
 }

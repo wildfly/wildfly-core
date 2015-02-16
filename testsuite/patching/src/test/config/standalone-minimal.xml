@@ -6,7 +6,6 @@
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
-        <extension module="org.jboss.as.threads"/>
         <extension module="org.wildfly.extension.io"/>
     </extensions>
     <management>
@@ -84,9 +83,9 @@
         <subsystem xmlns="urn:jboss:domain:deployment-scanner:1.1">
             <deployment-scanner path="deployments" relative-to="jboss.server.base.dir" scan-interval="5000"/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:io:1.0">
-            <worker name="default" io-threads="3"/>
-            <buffer-pool name="default" buffer-size="16384" buffers-per-slice="128"/>
+        <subsystem xmlns="urn:jboss:domain:io:1.1">
+            <worker name="default" />
+            <buffer-pool name="default" />
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jmx:1.2">
             <expose-resolved-model/>
@@ -96,7 +95,6 @@
         <subsystem xmlns="urn:jboss:domain:remoting:3.0">
             <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:threads:1.1"/>
     </profile>
     <interfaces>
         <interface name="management">
