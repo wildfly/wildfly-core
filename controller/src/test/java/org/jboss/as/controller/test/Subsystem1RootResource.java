@@ -24,7 +24,6 @@
 
 package org.jboss.as.controller.test;
 
-import static org.jboss.as.controller.test.AbstractGlobalOperationsTestCase.TestMetricHandler;
 import static org.jboss.as.controller.test.TestUtils.createAttribute;
 import static org.jboss.as.controller.test.TestUtils.createMetric;
 
@@ -38,6 +37,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.test.AbstractGlobalOperationsTestCase.TestMetricHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -56,8 +56,8 @@ public class Subsystem1RootResource extends SimpleResourceDefinition {
 
         profileSub1Reg.registerReadOnlyAttribute(new PrimitiveListAttributeDefinition.Builder("attr1", ModelType.INT).setAllowNull(false).build(), null);
 
-        profileSub1Reg.registerReadOnlyAttribute(createAttribute("read-only", ModelType.INT), null);
-        final AttributeDefinition attribute = createAttribute("read-write", ModelType.INT);
+        profileSub1Reg.registerReadOnlyAttribute(createAttribute("read-only", ModelType.INT, null, false, false, true), null);
+        final AttributeDefinition attribute = createAttribute("read-write", ModelType.INT, null, false, false, true);
         profileSub1Reg.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
         profileSub1Reg.registerMetric(createMetric("metric1", ModelType.INT), TestMetricHandler.INSTANCE);
         profileSub1Reg.registerMetric(createMetric("metric2", ModelType.INT), TestMetricHandler.INSTANCE);
@@ -78,7 +78,7 @@ public class Subsystem1RootResource extends SimpleResourceDefinition {
         ResourceDefinition profileSub1RegType2Def = ResourceBuilder.Factory.create(PathElement.pathElement("type2", "other"),
                 new NonResolvingResourceDescriptionResolver())
                 .addReadOnlyAttribute(createAttribute("name", ModelType.STRING))
-                .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("default", ModelType.STRING).setDefaultValue(new ModelNode("Default string")).build())
+                .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("default", ModelType.STRING).setAllowNull(true).setDefaultValue(new ModelNode("Default string")).build())
                 .build();
         profileSub1Reg.registerSubModel(profileSub1RegType2Def);
     }

@@ -155,10 +155,13 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 final ModelNode model = new ModelNode();
                 //Atttributes
+                model.get("profile", "profileA", NAME).set("profileA");
                 model.get("profile", "profileA", "subsystem", "subsystem1", BOOLEAN_ATT_NAME).set(true);
                 model.get("profile", "profileA", "subsystem", "subsystem1", LONG_ATT_NAME).set(1000L);
+                model.get("profile", "profileB", NAME).set("profileB");
                 model.get("profile", "profileB", "subsystem", "subsystem1", BOOLEAN_ATT_NAME).set(new ValueExpression("${boolean-value}"));
                 model.get("profile", "profileB", "subsystem", "subsystem1", LONG_ATT_NAME).set(new ValueExpression("${long-value}"));
+                model.get("profile", "profilType", NAME).set("profilType");
                 model.get("profile", "profilType", "subsystem", "subsystem1", BOOLEAN_ATT_NAME).set(true);
                 model.get("profile", "profilType", "subsystem", "subsystem1", LONG_ATT_NAME).set(1000L);
                 model.get("profile", "profilType", "subsystem", "subsystem1", STRING_ATT_NAME).set("wildfly");
@@ -176,7 +179,7 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
 
         ResourceDefinition profileDef = ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"),
                 new NonResolvingResourceDescriptionResolver())
-                .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, false).setMinSize(1).build())
+                .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create(NAME, ModelType.STRING, false).setMinSize(1).build())
                 .pushChild(PathElement.pathElement("subsystem", "subsystem1"))
                 .addReadWriteAttribute(BOOLEAN_ATT, null, handler)
                 .addReadWriteAttribute(LONG_ATT, null, handler)
