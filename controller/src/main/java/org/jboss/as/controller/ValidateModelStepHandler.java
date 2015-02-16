@@ -18,9 +18,13 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+
 import java.util.Set;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -38,17 +42,21 @@ class ValidateModelStepHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
+        final Resource resource = loadResource(context);
+        if (resource == null) {
+            return;
+        }
+
         final ModelNode model = resource.getModel();
         final ImmutableManagementResourceRegistration resourceRegistration = context.getResourceRegistration();
         final Set<String> attributeNames = resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
-        for (String attributeName : attributeNames) {
+        for (final String attributeName : attributeNames) {
             final boolean has = model.hasDefined(attributeName);
-            AttributeAccess access = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+            final AttributeAccess access = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
             if (access.getStorageType() != AttributeAccess.Storage.CONFIGURATION){
                 continue;
             }
-            AttributeDefinition attr = access.getAttributeDefinition();
+            final AttributeDefinition attr = access.getAttributeDefinition();
             if (!has && isRequired(attr, model)) {
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
             }
@@ -85,12 +93,18 @@ class ValidateModelStepHandler implements OperationStepHandler {
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
-    boolean isRequired(final AttributeDefinition def, final ModelNode model) {
+    private ModelNode createReadAttributeOperation(OperationContext context, String attributeName) {
+        ModelNode readAttr = Util.createOperation(ReadResourceHandler.DEFINITION, context.getCurrentAddress());
+        readAttr.get(NAME).set(attributeName);
+        return readAttr;
+    }
+
+    private boolean isRequired(final AttributeDefinition def, final ModelNode model) {
         final boolean required = !def.isAllowNull() && !def.isResourceOnly();
         return required ? !hasAlternative(def.getAlternatives(), model) : required;
     }
 
-    boolean isAllowed(final AttributeDefinition def, final ModelNode model) {
+    private boolean isAllowed(final AttributeDefinition def, final ModelNode model) {
         final String[] alternatives = def.getAlternatives();
         if (alternatives != null) {
             for (final String alternative : alternatives) {
@@ -102,7 +116,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
         return true;
     }
 
-    boolean hasAlternative(final String[] alternatives, ModelNode operationObject) {
+    private boolean hasAlternative(final String[] alternatives, ModelNode operationObject) {
         if (alternatives != null) {
             for (final String alternative : alternatives) {
                 if (operationObject.hasDefined(alternative)) {
@@ -113,5 +127,18 @@ class ValidateModelStepHandler implements OperationStepHandler {
         return false;
     }
 
+    private Resource loadResource(OperationContext context) {
+        final PathAddress address = context.getCurrentAddress();
+        PathAddress current = PathAddress.EMPTY_ADDRESS;
+        Resource resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
+        for (PathElement element : address) {
+            if (!resource.hasChild(element)) {
+                return null;
+            }
+            current = current.append(element);
+            resource = context.readResourceFromRoot(current, false);
+        }
+        return resource;
+    }
 }
 

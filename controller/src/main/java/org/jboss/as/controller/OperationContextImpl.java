@@ -21,7 +21,6 @@
  */
 
 package org.jboss.as.controller;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -205,6 +204,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final BooleanHolder done = new BooleanHolder();
 
     private volatile ExecutionStatus executionStatus = ExecutionStatus.EXECUTING;
+
 
     OperationContextImpl(final Integer operationId, final String operationName, final ModelNode operationAddress,
                          final ModelControllerImpl modelController, final ProcessType processType,

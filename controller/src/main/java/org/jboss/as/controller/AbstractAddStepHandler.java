@@ -122,7 +122,6 @@ public class AbstractAddStepHandler implements OperationStepHandler {
         populateModel(context, operation, resource);
         recordCapabilitiesAndRequirements(context, operation, resource);
         //verify model for alternatives & requires
-        context.addStep(ValidateModelStepHandler.INSTANCE, OperationContext.Stage.MODEL);
         if (requiresRuntime(context)) {
             context.addStep(new OperationStepHandler() {
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
