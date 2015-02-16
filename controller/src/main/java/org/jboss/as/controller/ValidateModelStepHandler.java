@@ -19,9 +19,11 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
 import java.util.Set;
 
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.ReadResourceHandler;
@@ -58,21 +60,32 @@ class ValidateModelStepHandler implements OperationStepHandler {
             }
             final AttributeDefinition attr = access.getAttributeDefinition();
             if (!has && isRequired(attr, model)) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
+                attemptReadMissingAttributeValueFromHandler(context, access, attributeName, new ErrorHandler() {
+                    @Override
+                    public void throwError() throws OperationFailedException {
+                        throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
+                    }});
             }
             if (!has) {
                 continue;
             }
 
             if (attr.getRequires() != null) {
-                for (String required : attr.getRequires()) {
+                for (final String required : attr.getRequires()) {
                     if (!model.hasDefined(required)) {
-                        throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(required, attr.getName());
+                        attemptReadMissingAttributeValueFromHandler(context, access, attributeName, new ErrorHandler() {
+                            @Override
+                            public void throwError() throws OperationFailedException {
+                                throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(required, attr.getName());
+                            }});
                     }
                 }
             }
 
             if (!isAllowed(attr, model)) {
+                //TODO should really use attemptReadMissingAttributeValueFromHandler() to make this totally good, but the
+                //overhead might be bigger than is worth at the moment since we would have to invoke the extra steps for
+                //every single attribute not found (and not found should be the normal).
                 String[] alts = attr.getAlternatives();
                 StringBuilder sb = null;
                 if (alts != null) {
@@ -93,10 +106,31 @@ class ValidateModelStepHandler implements OperationStepHandler {
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
-    private ModelNode createReadAttributeOperation(OperationContext context, String attributeName) {
-        ModelNode readAttr = Util.createOperation(ReadResourceHandler.DEFINITION, context.getCurrentAddress());
-        readAttr.get(NAME).set(attributeName);
-        return readAttr;
+    private void attemptReadMissingAttributeValueFromHandler(final OperationContext context, final AttributeAccess attributeAccess,
+            final String attributeName, final ErrorHandler errorHandler) throws OperationFailedException {
+        OperationStepHandler handler = attributeAccess.getReadHandler();
+        if (handler == null) {
+            errorHandler.throwError();
+        } else {
+            final ModelNode readAttr = Util.createOperation(ReadResourceHandler.DEFINITION, context.getCurrentAddress());
+            readAttr.get(NAME).set(attributeName);
+
+            //Do a read-attribute as an immediate step
+            final ModelNode resultHolder = new ModelNode();
+            context.addStep(resultHolder, readAttr, handler, Stage.MODEL, true);
+
+            //Then check the read-attribute result in a later step and throw the error if it is not set
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    if (!resultHolder.isDefined() && !resultHolder.hasDefined(RESULT)) {
+                        errorHandler.throwError();
+                    }
+                }
+            }, Stage.MODEL);
+        }
+
+
     }
 
     private boolean isRequired(final AttributeDefinition def, final ModelNode model) {
@@ -139,6 +173,10 @@ class ValidateModelStepHandler implements OperationStepHandler {
             resource = context.readResourceFromRoot(current, false);
         }
         return resource;
+    }
+
+    private interface ErrorHandler {
+        void throwError() throws OperationFailedException;
     }
 }
 
