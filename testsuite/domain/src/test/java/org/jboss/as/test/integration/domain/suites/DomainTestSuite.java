@@ -40,6 +40,7 @@ import org.junit.runners.Suite;
         CoreResourceManagementTestCase.class,
         //DeploymentManagementTestCase.class,
         //DeploymentOverlayTestCase.class,
+        DeploymentRolloutFailureTestCase.class,
         DirectoryGroupingByTypeTestCase.class,
         ExtensionManagementTestCase.class,
         HcExtensionAndSubsystemManagementTestCase.class,
