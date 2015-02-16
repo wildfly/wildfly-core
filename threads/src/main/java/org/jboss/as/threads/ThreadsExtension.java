@@ -34,9 +34,6 @@ import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.extension.AbstractLegacyExtension;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescription;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
  * Extension for thread management.
@@ -74,9 +71,6 @@ public class ThreadsExtension extends AbstractLegacyExtension {
         // Remoting subsystem description and operation handlers
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new ThreadSubsystemResourceDefinition(registerRuntimeOnly));
 
-        if (context.isRegisterTransformers()) {
-            registerTransformers1_0(registration);
-        }
         return Collections.singleton(subsystem);
     }
 
@@ -85,23 +79,4 @@ public class ThreadsExtension extends AbstractLegacyExtension {
     context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser.INSTANCE);
     }
-
-    // Transformation
-
-    /**
-     * Register the transformers for older model versions.
-     *
-     * @param subsystem the subsystems registration
-     */
-    private static void registerTransformers1_0(final SubsystemRegistration subsystem) {
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
-        BoundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        QueuelessThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        ScheduledThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        UnboundedQueueThreadPoolResourceDefinition.registerTransformers1_0(builder);
-        ThreadFactoryResourceDefinition.registerTransformers1_0(builder);
-        TransformationDescription.Tools.register(builder.build(), subsystem, ModelVersion.create(1, 0, 0));
-    }
-
-
 }
