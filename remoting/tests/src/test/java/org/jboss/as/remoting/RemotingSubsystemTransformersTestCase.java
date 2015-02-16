@@ -32,12 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.remoting.SaslPolicyResource.FORWARD_SECRECY;
-import static org.jboss.as.remoting.SaslPolicyResource.NO_ACTIVE;
-import static org.jboss.as.remoting.SaslPolicyResource.NO_ANONYMOUS;
-import static org.jboss.as.remoting.SaslPolicyResource.NO_DICTIONARY;
-import static org.jboss.as.remoting.SaslPolicyResource.NO_PLAIN_TEXT;
-import static org.jboss.as.remoting.SaslPolicyResource.PASS_CREDENTIALS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -54,7 +48,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.FailedOperationTransformationConfig.AttributesPathAddressConfig;
-import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
@@ -71,96 +64,6 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
 
     public RemotingSubsystemTransformersTestCase() {
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
-    }
-
-    @Test
-    public void testExpressionsAreRejectedAS712() throws Exception {
-        testExpressionsAreRejectedByVersion_1_1(ModelTestControllerVersion.V7_1_2_FINAL);
-    }
-
-    @Test
-    public void testExpressionsAreRejectedAS713() throws Exception {
-        testExpressionsAreRejectedByVersion_1_1(ModelTestControllerVersion.V7_1_3_FINAL);
-    }
-
-
-    @Test
-    public void testExpressionsAreRejectedEAP600() throws Exception {
-        testExpressionsAreRejectedByVersion_1_1(ModelTestControllerVersion.EAP_6_0_0);
-    }
-
-    @Test
-    public void testExpressionsAreRejectedEAP601() throws Exception {
-        testExpressionsAreRejectedByVersion_1_1(ModelTestControllerVersion.EAP_6_0_1);
-    }
-
-    private void testExpressionsAreRejectedByVersion_1_1(ModelTestControllerVersion controllerVersion) throws Exception {
-        String subsystemXml = readResource("remoting-with-expressions.xml");
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.ADMIN_ONLY_HC);
-
-        // Add legacy subsystems
-        ModelVersion version_1_1 = ModelVersion.create(1, 1);
-        builder.createLegacyKernelServicesBuilder(null, controllerVersion, version_1_1)
-                .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion());
-
-        KernelServices mainServices = builder.build();
-        assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(version_1_1);
-        assertNotNull(legacyServices);
-        assertTrue(legacyServices.isSuccessfulBoot());
-
-        PathAddress subsystemAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME));
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, version_1_1, parse(subsystemXml),
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH), FailedOperationTransformationConfig.DISCARDED_RESOURCE)
-                        .addFailedAttribute(subsystemAddress,
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                        RemotingSubsystemRootResource.WORKER_READ_THREADS,
-                                        RemotingSubsystemRootResource.WORKER_TASK_CORE_THREADS,
-                                        RemotingSubsystemRootResource.WORKER_TASK_KEEPALIVE,
-                                        RemotingSubsystemRootResource.WORKER_TASK_LIMIT,
-                                        RemotingSubsystemRootResource.WORKER_TASK_MAX_THREADS,
-                                        RemotingSubsystemRootResource.WORKER_WRITE_THREADS))
-                        .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.CONNECTOR)).append(PathElement.pathElement(CommonAttributes.PROPERTY)),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(VALUE))
-                        .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.CONNECTOR)).append(PathElement.pathElement(CommonAttributes.SECURITY, CommonAttributes.SASL)),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(CommonAttributes.SERVER_AUTH, CommonAttributes.REUSE_SESSION))
-                        .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.CONNECTOR))
-                                .append(PathElement.pathElement(CommonAttributes.SECURITY, CommonAttributes.SASL)).append(PathElement.pathElement(CommonAttributes.SASL_POLICY)),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                        CommonAttributes.FORWARD_SECRECY,
-                                        CommonAttributes.NO_ACTIVE,
-                                        CommonAttributes.NO_ANONYMOUS,
-                                        CommonAttributes.NO_DICTIONARY,
-                                        CommonAttributes.NO_PLAIN_TEXT,
-                                        CommonAttributes.PASS_CREDENTIALS))
-                        .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.CONNECTOR))
-                                .append(PathElement.pathElement(CommonAttributes.PROPERTY)),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                        CommonAttributes.VALUE))
-                        .addFailedAttribute(subsystemAddress.append(
-                                PathElement.pathElement(CommonAttributes.CONNECTOR))
-                                .append(PathElement.pathElement(CommonAttributes.SECURITY, CommonAttributes.SASL))
-                                .append(CommonAttributes.PROPERTY),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                        CommonAttributes.VALUE))
-                        .addFailedAttribute(subsystemAddress.append(
-                                PathElement.pathElement(CommonAttributes.OUTBOUND_CONNECTION))
-                                .append(CommonAttributes.PROPERTY),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                        CommonAttributes.VALUE))
-                        .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION)),
-                                new FailedOperationTransformationConfig.ChainedConfig(
-                                        toList(new FailedOperationTransformationConfig.RejectExpressionsConfig(CommonAttributes.USERNAME), new FixProtocolConfig(CommonAttributes.PROTOCOL)),
-                                        CommonAttributes.USERNAME, CommonAttributes.PROTOCOL))
-                        .addFailedAttribute(subsystemAddress.append(
-                                PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION))
-                                .append(PathElement.pathElement(CommonAttributes.PROPERTY)),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(CommonAttributes.VALUE))
-                        .addFailedAttribute(subsystemAddress.append(
-                                PathElement.pathElement(CommonAttributes.LOCAL_OUTBOUND_CONNECTION))
-                                .append(PathElement.pathElement(CommonAttributes.PROPERTY)),
-                                new FailedOperationTransformationConfig.RejectExpressionsConfig(CommonAttributes.VALUE)));
     }
 
     @Test
@@ -201,74 +104,6 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
                                 new FixProtocolConfig(CommonAttributes.PROTOCOL)));
     }
 
-    @Test
-    public void testTransformersAS712() throws Exception {
-        testTransformers_1_1(ModelTestControllerVersion.V7_1_2_FINAL);
-    }
-
-    @Test
-    public void testTransformersAS713() throws Exception {
-        testTransformers_1_1(ModelTestControllerVersion.V7_1_3_FINAL);
-    }
-
-    @Test
-    public void testTransformersEAP600() throws Exception {
-        testTransformers_1_1(ModelTestControllerVersion.EAP_6_0_0);
-    }
-
-    @Test
-    public void testTransformersEAP601() throws Exception {
-        testTransformers_1_1(ModelTestControllerVersion.EAP_6_0_1);
-    }
-
-    private void testTransformers_1_1(ModelTestControllerVersion controllerVersion) throws Exception {
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.ADMIN_ONLY_HC)
-                .setSubsystemXmlResource("remoting-without-expressions.xml");
-        ModelVersion oldVersion = ModelVersion.create(1, 1);
-
-        // Add legacy subsystems
-        builder.createLegacyKernelServicesBuilder(AdditionalInitialization.ADMIN_ONLY_HC, controllerVersion, oldVersion)
-                .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion())
-                .skipReverseControllerCheck();
-                //.configureReverseControllerCheck(createAdditionalInitialization(), null);
-
-        KernelServices mainServices = builder.build();
-        assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
-        assertNotNull(legacyServices);
-        assertTrue(legacyServices.isSuccessfulBoot());
-
-        checkSubsystemModelTransformation(mainServices, oldVersion, getAS7_6077Fixer(), false);
-        checkRejectWorkerThreadAttributes(mainServices, oldVersion);
-        checkRejectSASLAttribute(mainServices, oldVersion, CommonAttributes.REUSE_SESSION, "${reuse.session:true}");
-        checkRejectSASLAttribute(mainServices, oldVersion, CommonAttributes.SERVER_AUTH, "${server.auth:true}");
-        checkRejectSASLProperty(mainServices, oldVersion);
-        checkRejectSASLPolicyAttributes(mainServices, oldVersion);
-        checkRejectConnectorProperty(mainServices, oldVersion);
-        checkRejectRemoteOutboundConnectionUsername(mainServices, oldVersion);
-        checkRejectOutboundConnectionProperty(mainServices, oldVersion, CommonAttributes.REMOTE_OUTBOUND_CONNECTION, "remote-conn1");
-        checkRejectOutboundConnectionProperty(mainServices, oldVersion, CommonAttributes.LOCAL_OUTBOUND_CONNECTION, "local-conn1");
-        checkRejectOutboundConnectionProperty(mainServices, oldVersion, CommonAttributes.OUTBOUND_CONNECTION, "generic-conn1");
-        checkRejectOutboundConnectionProtocolNotRemote(mainServices, oldVersion, CommonAttributes.REMOTE_OUTBOUND_CONNECTION, "remote-conn1");
-        checkRejectHttpConnector(mainServices, oldVersion);
-        checkRejectEndpointConfiguration(mainServices, oldVersion);
-    }
-
-    private ModelFixer getAS7_6077Fixer() {
-        return new ModelFixer() {
-            @Override
-            public ModelNode fixModel(ModelNode modelNode) {
-                for (AttributeDefinition ad : RemotingSubsystemRootResource.ATTRIBUTES) {
-                    if (modelNode.hasDefined(ad.getName())) {
-                        if (modelNode.get(ad.getName()).equals(ad.getDefaultValue())) {
-                            modelNode.get(ad.getName()).set(new ModelNode());
-                        }
-                    }
-                }
-                return modelNode;
-            }
-        };
-    }
 
     @Test
     public void testTransformersAS720() throws Exception {
@@ -309,20 +144,6 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         checkRejectEndpointConfiguration(mainServices, oldVersion);
     }
 
-    private void checkRejectOutboundConnectionProperty(KernelServices mainServices, ModelVersion version, String type, String name) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        address.add(type, name);
-        address.add(CommonAttributes.PROPERTY, "org.xnio.Options.SSL_ENABLED");
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set(CommonAttributes.VALUE);
-        operation.get(VALUE).set("${myprop:true}");
-
-        checkReject(operation, mainServices, version);
-    }
-
     private void checkRejectOutboundConnectionProtocolNotRemote(KernelServices mainServices, ModelVersion version, String type, String name) throws OperationFailedException {
         ModelNode operation = new ModelNode();
         operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
@@ -346,96 +167,6 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         operation.get(CommonAttributes.PROTOCOL).set(Protocol.HTTP_REMOTING.toString());
         checkReject(operation, mainServices, version);
 
-    }
-
-    private void checkRejectSASLAttribute(KernelServices mainServices, ModelVersion version, String name, String value) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        address.add(CommonAttributes.CONNECTOR, "remoting-connector");
-        address.add(CommonAttributes.SECURITY, CommonAttributes.SASL);
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set(name);
-        operation.get(VALUE).set(value);
-
-        checkReject(operation, mainServices, version);
-    }
-
-    private void checkRejectSASLProperty(KernelServices mainServices, ModelVersion version) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        address.add(CommonAttributes.CONNECTOR, "remoting-connector");
-        address.add(CommonAttributes.SECURITY, CommonAttributes.SASL);
-        address.add(CommonAttributes.PROPERTY, "sasl1");
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set(CommonAttributes.VALUE);
-        operation.get(VALUE).set("${sasl.prop:sasl one}");
-
-        checkReject(operation, mainServices, version);
-    }
-
-    private void checkRejectSASLPolicyAttributes(KernelServices mainServices, ModelVersion version) throws OperationFailedException {
-        for (AttributeDefinition attr: new AttributeDefinition[] {NO_ACTIVE, NO_ANONYMOUS, NO_DICTIONARY, FORWARD_SECRECY,
-                NO_PLAIN_TEXT, PASS_CREDENTIALS}) {
-            checkRejectSASLPolicyAttribute(mainServices, version, attr);
-        }
-    }
-
-    private void checkRejectSASLPolicyAttribute(KernelServices mainServices, ModelVersion version, AttributeDefinition attr) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        address.add(CommonAttributes.CONNECTOR, "remoting-connector");
-        address.add(CommonAttributes.SECURITY, CommonAttributes.SASL);
-        address.add(CommonAttributes.SASL_POLICY, CommonAttributes.POLICY);
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set(attr.getName());
-        operation.get(VALUE).set("${mypolicy:false}");
-
-        checkReject(operation, mainServices, version);
-    }
-
-    private void checkRejectConnectorProperty(KernelServices mainServices, ModelVersion version) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        address.add(CommonAttributes.CONNECTOR, "remoting-connector");
-        address.add(CommonAttributes.PROPERTY, "c1");
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set(CommonAttributes.VALUE);
-        operation.get(VALUE).set("${connector.prop:connector one}");
-
-        checkReject(operation, mainServices, version);
-    }
-
-    private void checkRejectRemoteOutboundConnectionUsername(KernelServices mainServices, ModelVersion version) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        address.add(CommonAttributes.REMOTE_OUTBOUND_CONNECTION, "remote-conn1");
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set(CommonAttributes.USERNAME);
-        operation.get(VALUE).set("${remoting.user:myuser}");
-
-        checkReject(operation, mainServices, version);
-    }
-
-    private void checkRejectWorkerThreadAttributes(KernelServices mainServices, ModelVersion version) throws OperationFailedException {
-        ModelNode operation = new ModelNode();
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        ModelNode address = new ModelNode();
-        address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set("worker-read-threads");
-        operation.get(VALUE).set("${worker.read.threads:5}");
-
-        checkReject(operation, mainServices, version);
     }
 
     private void checkRejectHttpConnector(KernelServices mainServices, ModelVersion version) throws OperationFailedException {
@@ -487,14 +218,6 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         final OperationTransformer.TransformedOperation op = mainServices.transformOperation(version, operation);
         final ModelNode result = mainServices.executeOperation(version, op);
         assertEquals("should reject the operation", FAILED, result.get(OUTCOME).asString());
-    }
-
-    private List<AttributesPathAddressConfig<?>> toList(AttributesPathAddressConfig<?>...configs){
-        List<AttributesPathAddressConfig<?>> list = new ArrayList<AttributesPathAddressConfig<?>>();
-        for (AttributesPathAddressConfig<?> config : configs) {
-            list.add(config);
-        }
-        return list;
     }
 
     private static class FixProtocolConfig extends AttributesPathAddressConfig<FixProtocolConfig> {

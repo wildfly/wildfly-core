@@ -73,7 +73,6 @@ public class RemotingExtension implements Extension {
 
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
-    private static final ModelVersion VERSION_1_1 = ModelVersion.create(1, 1);
     private static final ModelVersion VERSION_1_2 = ModelVersion.create(1, 2);
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
     private static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1);
@@ -125,36 +124,7 @@ public class RemotingExtension implements Extension {
 
         //1.3.0 to 1.2.0 (do nothing)
 
-        //1.2.0 to 1.1.0
-        buildTransformers_1_1(chainedBuilder.createBuilder(VERSION_1_2, VERSION_1_1));
-
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_1, VERSION_1_2, VERSION_1_3, VERSION_2_1});
-    }
-
-    private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
-
-        builder.getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, RemotingSubsystemRootResource.ATTRIBUTES);
-
-        builder.rejectChildResource(HttpConnectorResource.PATH);
-
-        ResourceTransformationDescriptionBuilder connector = builder.addChildResource(ConnectorResource.PATH);
-        connector.addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE);
-
-        ResourceTransformationDescriptionBuilder sasl = connector.addChildResource(SaslResource.SASL_CONFIG_PATH);
-        sasl.getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, SaslResource.ATTRIBUTES);
-        sasl.addChildResource(SaslPolicyResource.INSTANCE).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, SaslPolicyResource.ATTRIBUTES);
-        sasl.addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE);
-
-        builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, RemoteOutboundConnectionResourceDefinition.USERNAME).end()
-                .addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE).end();
-
-        builder.addChildResource(LocalOutboundConnectionResourceDefinition.ADDRESS)
-                .addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE).end();
-
-        builder.addChildResource(GenericOutboundConnectionResourceDefinition.ADDRESS)
-                .addChildResource(PropertyResource.PATH).getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PropertyResource.VALUE).end();
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_2, VERSION_1_3, VERSION_2_1});
     }
 
     private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
