@@ -22,9 +22,16 @@
 
 package org.jboss.as.host.controller.logging;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Path;
+
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
@@ -36,20 +43,14 @@ import org.jboss.as.protocol.mgmt.RequestProcessingException;
 import org.jboss.as.server.ServerState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.BasicLogger;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
 import org.jboss.remoting3.Channel;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Path;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -1112,6 +1113,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id=138, value = "Could not remove S3 file. Error was: %s")
     void cannotRemoveS3File(Exception e);
 
+    // Is not used any more
     @Message(id=139, value="Invalid value for %s. Must only contain all of the existing discovery options")
     OperationFailedException invalidDiscoveryOptionsOrdering(String name);
 
@@ -1223,4 +1225,7 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message( id = 158, value = "Error persisting server autostart status")
     void couldNotPersistAutoStartServerStatus(@Cause Throwable cause);
+
+    @Message(id=159, value="Invalid discovery type %s")
+    String invalidDiscoveryType(String type);
 }

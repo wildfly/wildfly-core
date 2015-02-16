@@ -19,31 +19,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
-
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.dmr.ModelNode;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
+import org.jboss.as.host.controller.discovery.DiscoveryOptionsResourceDefinition;
 
 /**
- * Handler for a static discovery resource's remove operation.
+ * Handles changes to the options attribute containing the list
+ * of custom and static descovery options.
  *
- * @author Farah Juma
+ * @author Alexey Loubyansky
  */
-public class StaticDiscoveryRemoveHandler extends AbstractDiscoveryOptionRemoveHandler {
+public class DiscoveryWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
-    /**
-     * Create the StaticDiscoveryRemoveHandler.
-     */
-    public StaticDiscoveryRemoveHandler() {
+    public DiscoveryWriteAttributeHandler() {
+        super(DiscoveryOptionsResourceDefinition.OPTIONS);
     }
 
     @Override
-    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        super.performRemove(context, operation, model);
-        updateOptionsAttribute(context, operation, STATIC_DISCOVERY);
+    protected boolean requiresRuntime(OperationContext context) {
+        // HCs may connect to the in either RunningMode.NORMAL or ADMIN_ONLY,
+        // so the running mode doesn't figure in whether reload is required
+        return !context.isBooting();
     }
 }
