@@ -234,10 +234,6 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
             final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
             ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = null;
             switch (modelVersion) {
-                case VERSION_1_2_0: {
-                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-                    break;
-                }
                 case VERSION_1_3_0: {
                     resourceBuilder
                             .getAttributeBuilder()

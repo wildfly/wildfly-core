@@ -275,11 +275,8 @@ public class LoggingExtension implements Extension {
         registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_2_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_2_0_0, KnownModelVersion.VERSION_1_4_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_4_0, KnownModelVersion.VERSION_1_3_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0, defs);
-
 
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
-                KnownModelVersion.VERSION_1_2_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_3_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_4_0.getModelVersion(),
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),

@@ -34,17 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
-import org.jboss.as.model.test.FailedOperationTransformationConfig;
-import org.jboss.as.model.test.FailedOperationTransformationConfig.NewAttributesConfig;
-import org.jboss.as.model.test.ModelFixer;
-import org.jboss.as.model.test.ModelTestControllerVersion;
-import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.KernelServices;
-import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.logmanager.LogContext;
 import org.junit.Assert;
 import org.junit.Test;
@@ -118,93 +110,6 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         for (String configId : configs) {
             // Run the standard subsystem test, but don't compare the XML as it should never match
             standardSubsystemTest(configId, false);
-        }
-    }
-
-    @Test
-    public void testTransformers720() throws Exception {
-        testTransformer1_2_0(ModelTestControllerVersion.V7_2_0_FINAL);
-    }
-
-    @Test
-    public void testFailedTransformedBootOperations720() throws Exception {
-        testFailedTransformedBootOperations1_2_0(ModelTestControllerVersion.V7_2_0_FINAL);
-    }
-
-    private void testTransformer1_2_0(final ModelTestControllerVersion controllerVersion) throws Exception {
-        final String subsystemXml = readResource("/logging_1_2.xml");
-        final ModelVersion modelVersion = ModelVersion.create(1, 2, 0);
-
-        final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance())
-                .setSubsystemXml(subsystemXml);
-
-        // Create the legacy kernel
-        builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, modelVersion)
-                .addMavenResourceURL("org.jboss.as:jboss-as-logging:" + controllerVersion.getMavenGavVersion())
-                .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
-                .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
-
-        KernelServices mainServices = builder.build();
-        Assert.assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
-        Assert.assertTrue(legacyServices.isSuccessfulBoot());
-        Assert.assertNotNull(legacyServices);
-        checkSubsystemModelTransformation(mainServices, modelVersion, AsyncModelFixer.INSTANCE);
-    }
-
-    private void testFailedTransformedBootOperations1_2_0(final ModelTestControllerVersion controllerVersion) throws Exception {
-        final ModelVersion modelVersion = ModelVersion.create(1, 2, 0);
-        final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance());
-
-        // Create the legacy kernel
-        builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, modelVersion)
-                .addMavenResourceURL("org.jboss.as:jboss-as-logging:" + controllerVersion.getMavenGavVersion())
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class);
-
-
-        KernelServices mainServices = builder.build();
-        KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
-
-        Assert.assertNotNull(legacyServices);
-        Assert.assertTrue("main services did not boot", mainServices.isSuccessfulBoot());
-        Assert.assertTrue(legacyServices.isSuccessfulBoot());
-
-        final List<ModelNode> ops = builder.parseXmlResource("/expressions_1_2.xml");
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops,
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS,
-                                new NewAttributesConfig(LoggingResourceDefinition.ATTRIBUTES))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(FileHandlerResourceDefinition.FILE_HANDLER_PATH),
-                                new NewAttributesConfig(FileHandlerResourceDefinition.NAMED_FORMATTER))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new NewAttributesConfig(SizeRotatingHandlerResourceDefinition.ROTATE_ON_BOOT))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PatternFormatterResourceDefinition.PATTERN_FORMATTER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append(FileHandlerResourceDefinition.FILE_HANDLER_PATH),
-                                new NewAttributesConfig(FileHandlerResourceDefinition.NAMED_FORMATTER))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append(PatternFormatterResourceDefinition.PATTERN_FORMATTER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-        );
-    }
-
-    private static class AsyncModelFixer implements ModelFixer {
-
-        static final AsyncModelFixer INSTANCE = new AsyncModelFixer();
-
-        @Override
-        public ModelNode fixModel(final ModelNode modelNode) {
-            // Find the async-handler
-            if (modelNode.hasDefined(AsyncHandlerResourceDefinition.ASYNC_HANDLER)) {
-                final ModelNode asyncHandlers = modelNode.get(AsyncHandlerResourceDefinition.ASYNC_HANDLER);
-                for (Property asyncHandler : asyncHandlers.asPropertyList()) {
-                    final ModelNode async = asyncHandler.getValue();
-                    async.remove(CommonAttributes.ENCODING.getName());
-                    async.remove(AbstractHandlerDefinition.FORMATTER.getName());
-                    asyncHandlers.get(asyncHandler.getName()).set(async);
-                }
-            }
-            return modelNode;
         }
     }
 }

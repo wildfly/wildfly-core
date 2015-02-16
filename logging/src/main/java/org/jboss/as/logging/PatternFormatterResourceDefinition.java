@@ -179,7 +179,6 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
-            case VERSION_1_2_0:
             case VERSION_1_3_0:
                 resourceBuilder.rejectChildResource(PATTERN_FORMATTER_PATH);
                 if (loggingProfileBuilder != null) {
