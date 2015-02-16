@@ -73,7 +73,6 @@ public class RemotingExtension implements Extension {
 
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
-    private static final ModelVersion VERSION_1_2 = ModelVersion.create(1, 2);
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
     private static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1);
 
@@ -120,11 +119,11 @@ public class RemotingExtension implements Extension {
         buildTransformers_2_1(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_2_1));
 
         //2.1.0 to 1.3.0
-        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_3));
+        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_3)); //todo we need to add 1.4 version
 
         //1.3.0 to 1.2.0 (do nothing)
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_2, VERSION_1_3, VERSION_2_1});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_2_1});
     }
 
     private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {

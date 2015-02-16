@@ -36,9 +36,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
@@ -46,10 +43,8 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.transform.OperationTransformer;
-import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.FailedOperationTransformationConfig.AttributesPathAddressConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
-import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -66,65 +61,19 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
     }
 
-    @Test
-    public void testNonRemotingProtocolRejectedAS720() throws Exception {
-        testNonRemotingProtocolRejectedByVersion1_2(ModelTestControllerVersion.V7_2_0_FINAL);
-    }
-
-    @Test
-    public void testNonRemotingProtocolRejectedEAP610() throws Exception {
-        testNonRemotingProtocolRejectedByVersion1_2(ModelTestControllerVersion.EAP_6_1_0);
-    }
-
-    @Test
-    public void testNonRemotingProtocolRejectedEAP611() throws Exception {
-        testNonRemotingProtocolRejectedByVersion1_2(ModelTestControllerVersion.EAP_6_1_1);
-    }
-
-    private void testNonRemotingProtocolRejectedByVersion1_2(ModelTestControllerVersion controllerVersion) throws Exception {
-        String subsystemXml = readResource("remoting-with-expressions.xml");
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.ADMIN_ONLY_HC);
-
-        // Add legacy subsystems
-        ModelVersion version_1_1 = ModelVersion.create(1, 2);
-        builder.createLegacyKernelServicesBuilder(AdditionalInitialization.ADMIN_ONLY_HC, controllerVersion, version_1_1)
-                .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion());
-
-        KernelServices mainServices = builder.build();
-        assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(version_1_1);
-        assertNotNull(legacyServices);
-        assertTrue(legacyServices.isSuccessfulBoot());
-
-        PathAddress rootAddr = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME));
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, version_1_1, parse(subsystemXml),
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(rootAddr.append(RemotingEndpointResource.ENDPOINT_PATH), FailedOperationTransformationConfig.DISCARDED_RESOURCE)
-                        .addFailedAttribute(rootAddr.append(PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION)),
-                                new FixProtocolConfig(CommonAttributes.PROTOCOL)));
-    }
 
 
     @Test
-    public void testTransformersAS720() throws Exception {
-        testTransformers_1_2_0(ModelTestControllerVersion.V7_2_0_FINAL);
-    }
-
-    @Test
-    public void testTransformersEAP610() throws Exception {
-        testTransformers_1_2_0(ModelTestControllerVersion.EAP_6_1_0);
-    }
-
-    @Test
-    public void testTransformersEAP611() throws Exception {
-        testTransformers_1_2_0(ModelTestControllerVersion.EAP_6_1_1);
+    public void testTransformersEAP620() throws Exception {
+        testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_2_0);
     }
 
 
-    private void testTransformers_1_2_0(ModelTestControllerVersion controllerVersion) throws Exception {
+
+    private void testTransformers_1_3_0(ModelTestControllerVersion controllerVersion) throws Exception {
         KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
                 .setSubsystemXmlResource("remoting-with-expressions-and-good-legacy-protocol.xml");
-        ModelVersion oldVersion = ModelVersion.create(1, 2, 0);
+        ModelVersion oldVersion = ModelVersion.create(1, 3, 0);
 
 
         // Add legacy subsystems
@@ -218,28 +167,5 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         final OperationTransformer.TransformedOperation op = mainServices.transformOperation(version, operation);
         final ModelNode result = mainServices.executeOperation(version, op);
         assertEquals("should reject the operation", FAILED, result.get(OUTCOME).asString());
-    }
-
-    private static class FixProtocolConfig extends AttributesPathAddressConfig<FixProtocolConfig> {
-
-        public FixProtocolConfig(String... attributes) {
-            super(attributes);
-        }
-
-        @Override
-        protected boolean isAttributeWritable(String attributeName) {
-            return true;
-        }
-
-        @Override
-        protected boolean checkValue(String attrName, ModelNode attribute, boolean isWriteAttribute) {
-            return !attribute.asString().equals(Protocol.REMOTE.toString());
-        }
-
-        @Override
-        protected ModelNode correctValue(ModelNode toResolve, boolean isWriteAttribute) {
-            return new ModelNode(Protocol.REMOTE.toString());
-        }
-
     }
 }
