@@ -276,11 +276,9 @@ public class LoggingExtension implements Extension {
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_2_0_0, KnownModelVersion.VERSION_1_4_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_4_0, KnownModelVersion.VERSION_1_3_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_3_0, KnownModelVersion.VERSION_1_2_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_2_0, KnownModelVersion.VERSION_1_1_0, defs);
 
 
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
-                KnownModelVersion.VERSION_1_1_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_2_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_3_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_4_0.getModelVersion(),
@@ -294,14 +292,7 @@ public class LoggingExtension implements Extension {
 
     private void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final ModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
         final ResourceTransformationDescriptionBuilder subsystemBuilder = chainedBuilder.createBuilder(fromVersion, toVersion.getModelVersion());
-        final ResourceTransformationDescriptionBuilder loggingProfileBuilder;
-        if (toVersion == KnownModelVersion.VERSION_1_1_0) {
-            // Reject the profile
-            subsystemBuilder.rejectChildResource(LOGGING_PROFILE_PATH);
-            loggingProfileBuilder = null;
-        } else {
-            loggingProfileBuilder = subsystemBuilder.addChildResource(LOGGING_PROFILE_PATH);
-        }
+        final ResourceTransformationDescriptionBuilder loggingProfileBuilder = subsystemBuilder.addChildResource(LOGGING_PROFILE_PATH);
 
         for (TransformerResourceDefinition def : defs) {
             def.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);

@@ -45,7 +45,6 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.AttributeTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.resolvers.OverflowActionResolver;
 import org.jboss.dmr.ModelNode;
@@ -130,18 +129,6 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         final AttributeTransformationDescriptionBuilder attributeBuilder = resourceBuilder.getAttributeBuilder();
         switch (modelVersion) {
-            case VERSION_1_1_0: {
-                attributeBuilder
-                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, QUEUE_LENGTH, OVERFLOW_ACTION)
-                        .end()
-                        .addOperationTransformationOverride(ADD_HANDLER_OPERATION_NAME)
-                        .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                        .end()
-                        .addOperationTransformationOverride(REMOVE_HANDLER_OPERATION_NAME)
-                        .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                        .end();
-                break;
-            }
             case VERSION_1_3_0: {
                 // These attributes at some point made it on the resource model, but should have never been there. They
                 // are not used by the handler and not persisted to the XML. Discarding them should have no effect.

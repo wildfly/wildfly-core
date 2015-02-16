@@ -29,7 +29,6 @@ import static org.jboss.as.logging.CommonAttributes.FILE;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.logmanager.handlers.FileHandler;
 
@@ -51,14 +50,6 @@ class FileHandlerResourceDefinition extends AbstractFileHandlerDefinition {
 
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_1_1_0: {
-                resourceBuilder
-                        .getAttributeBuilder()
-                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, APPEND, FILE)
-                        .end();
-                break;
-            }
-        }
+        //
     }
 }

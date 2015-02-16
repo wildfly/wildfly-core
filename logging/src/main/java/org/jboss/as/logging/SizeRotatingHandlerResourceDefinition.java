@@ -89,13 +89,6 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
-            case VERSION_1_1_0: {
-                resourceBuilder
-                        .getAttributeBuilder()
-                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, APPEND, FILE, MAX_BACKUP_INDEX, ROTATE_SIZE)
-                        .end();
-                break;
-            }
             case VERSION_1_2_0: {
                 resourceBuilder
                         .getAttributeBuilder()

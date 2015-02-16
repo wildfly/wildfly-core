@@ -28,7 +28,6 @@ import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 
 /**
@@ -48,14 +47,6 @@ class CustomHandlerResourceDefinition extends AbstractHandlerDefinition {
 
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_1_1_0: {
-                resourceBuilder
-                        .getAttributeBuilder()
-                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PROPERTIES)
-                        .end();
-                break;
-            }
-        }
+        //do nothing
     }
 }
