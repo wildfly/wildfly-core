@@ -61,9 +61,8 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
             .setValidator(new RegexValidator(ModelType.STRING, true, true, COLOR_MAP_VALIDATION_PATTERN))
             .build();
 
-    public static final PropertyAttributeDefinition PATTERN = PropertyAttributeDefinition.Builder.of("pattern", ModelType.STRING)
+    public static final PropertyAttributeDefinition PATTERN = PropertyAttributeDefinition.Builder.of("pattern", ModelType.STRING, true)
             .setAllowExpression(true)
-            .setAllowNull(false)
             .setDefaultValue(new ModelNode("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"))
             .build();
 
