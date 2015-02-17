@@ -122,8 +122,9 @@ class WrapperSSLContext extends SSLContext {
 
             @Override
             public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
-                // TODO Auto-generated method stub
-                return null;
+                Socket socket = wrapped.createSocket(s, host, port, autoClose);
+                setSslParams(socket);
+                return socket;
             }
 
             @Override
@@ -160,7 +161,7 @@ class WrapperSSLContext extends SSLContext {
             @Override
             public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
                     throws IOException {
-                Socket socket = createSocket(address, port, localAddress, localPort);
+                Socket socket = wrapped.createSocket(address, port, localAddress, localPort);
                 setSslParams(socket);
                 return socket;
             }
