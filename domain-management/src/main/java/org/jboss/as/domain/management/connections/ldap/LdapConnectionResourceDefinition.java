@@ -25,6 +25,7 @@ package org.jboss.as.domain.management.connections.ldap;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -50,6 +51,8 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
 
 
     public static final PathElement RESOURCE_PATH = PathElement.pathElement(LDAP_CONNECTION);
+
+    static final String DEPRECATED_PARENT_CATEGORY = "core.management.ldap-connection";
 
     private static final String DEFAULT_INITIAL_CONTEXT = "com.sun.jndi.ldap.LdapCtxFactory";
 
@@ -96,9 +99,10 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
 
 
     private LdapConnectionResourceDefinition(OperationStepHandler add, OperationStepHandler remove) {
-        super(RESOURCE_PATH, ControllerResolver.getResolver("core.management.ldap-connection"),
+        super(RESOURCE_PATH, ControllerResolver.getResolver(DEPRECATED_PARENT_CATEGORY),
                 add, remove,
                 OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
+        setDeprecated(ModelVersion.create(1, 7));
     }
 
     public static LdapConnectionResourceDefinition newInstance() {
