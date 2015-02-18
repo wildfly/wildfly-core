@@ -72,9 +72,16 @@ public class HttpRequest {
         Callable<String> task = new Callable<String>() {
             @Override
             public String call() throws Exception {
-                final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setDoInput(true);
-                return processResponse(conn);
+                HttpURLConnection conn = null;
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setDoInput(true);
+                    return processResponse(conn);
+                } finally {
+                    if(conn != null) {
+                        conn.disconnect();
+                    }
+                }
             }
         };
         return execute(task, timeout, unit);
@@ -98,22 +105,29 @@ public class HttpRequest {
             @Override
             public String call() throws Exception {
                 final long startTime = System.currentTimeMillis();
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setDoInput(true);
-                while(conn.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                    if(System.currentTimeMillis() - startTime >= waitUntilAvailableMs) {
-                        break;
+                HttpURLConnection conn = null;
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setDoInput(true);
+                    while (conn.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+                        if (System.currentTimeMillis() - startTime >= waitUntilAvailableMs) {
+                            break;
+                        }
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            break;
+                        } finally {
+                            conn = (HttpURLConnection) url.openConnection();
+                            conn.setDoInput(true);
+                        }
                     }
-                    try {
-                        Thread.sleep(500);
-                    } catch(InterruptedException e) {
-                        break;
-                    } finally {
-                        conn = (HttpURLConnection) url.openConnection();
-                        conn.setDoInput(true);
+                    return processResponse(conn);
+                } finally {
+                    if (conn != null) {
+                        conn.disconnect();
                     }
                 }
-                return processResponse(conn);
             }
         };
         return execute(task, responseTimeout, responseTimeoutUnit);
@@ -124,14 +138,21 @@ public class HttpRequest {
         Callable<String> task = new Callable<String>() {
             @Override
             public String call() throws IOException {
-                final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                if (username != null) {
-                    final String userpassword = username + ":" + password;
-                    final String basicAuthorization = Base64.encodeBytes(userpassword.getBytes());
-                    conn.setRequestProperty("Authorization", "Basic " + basicAuthorization);
+                HttpURLConnection conn = null;
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                    if (username != null) {
+                        final String userpassword = username + ":" + password;
+                        final String basicAuthorization = Base64.encodeBytes(userpassword.getBytes());
+                        conn.setRequestProperty("Authorization", "Basic " + basicAuthorization);
+                    }
+                    conn.setDoInput(true);
+                    return processResponse(conn);
+                } finally {
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
                 }
-                conn.setDoInput(true);
-                return processResponse(conn);
             }
         };
         return execute(task, timeout, unit);
@@ -139,9 +160,10 @@ public class HttpRequest {
 
     private static String read(final InputStream in) throws IOException {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int b;
-        while((b = in.read()) != -1) {
-            out.write(b);
+        byte[] buff = new byte[8];
+        int rc;
+        while ((rc = in.read(buff)) != -1) {
+            out.write(buff, 0, rc);
         }
         return out.toString();
     }
@@ -149,23 +171,13 @@ public class HttpRequest {
     private static String processResponse(HttpURLConnection conn) throws IOException {
         int responseCode = conn.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
-            final InputStream err = conn.getErrorStream();
-            try {
+            try (final InputStream err = conn.getErrorStream()){
                 String response = err != null ? read(err) : null;
                 throw new IOException(String.format("HTTP Status %d Response: %s", responseCode, response));
             }
-            finally {
-                if (err != null) {
-                    err.close();
-                }
-            }
         }
-        final InputStream in = conn.getInputStream();
-        try {
+        try (final InputStream in = conn.getInputStream()){
             return read(in);
-        }
-        finally {
-            in.close();
         }
     }
 
@@ -196,17 +208,20 @@ public class HttpRequest {
         Callable<String> task = new Callable<String>() {
             @Override
             public String call() throws Exception {
-                final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-                conn.setRequestMethod(requestMethod);
-                final OutputStream out = conn.getOutputStream();
+                HttpURLConnection conn = null;
                 try {
-                    write(out, message);
-                    return processResponse(conn);
-                }
-                finally {
-                    out.close();
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setDoInput(true);
+                    conn.setDoOutput(true);
+                    conn.setRequestMethod(requestMethod);
+                    try (final OutputStream out = conn.getOutputStream()){
+                        write(out, message);
+                        return processResponse(conn);
+                    }
+                } finally {
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
                 }
             }
         };
