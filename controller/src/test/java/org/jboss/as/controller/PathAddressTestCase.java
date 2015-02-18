@@ -21,8 +21,12 @@
 */
 package org.jboss.as.controller;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.dmr.ModelNode;
@@ -158,4 +162,24 @@ public class PathAddressTestCase {
         PathAddress.pathAddress(new ModelNode().add(SERVER, "1").add(HOST, "2").add(HOST, "*"));
     }
 
+    @Test
+    public void testParseCLIStyleAddress() {
+        assertThat(PathAddress.parseCLIStyleAddress(""), is(PathAddress.EMPTY_ADDRESS));
+        PathAddress expectedResult = PathAddress.pathAddress(PathElement.pathElement("subsystem", "io"), PathElement.pathElement("worker", "new-worker1"));
+        assertThat(PathAddress.parseCLIStyleAddress("/subsystem=io/worker=new-worker1"), is(expectedResult));
+        expectedResult = PathAddress.pathAddress(PathElement.pathElement("subsystem", "io"), PathElement.pathElement("workers"), PathElement.pathElement("worker", "new-worker1"));
+        assertThat(PathAddress.parseCLIStyleAddress("/subsystem=io/workers=*/worker=new-worker1"), is(expectedResult));
+    }
+
+    @Test
+    public void testParseCLIStyleWrongAddress() {
+        String wrongAddress = "/subsystem=io/workers/worker=new-worker1";
+        try {
+            PathAddress.parseCLIStyleAddress(wrongAddress);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage(), containsString("WFLYCTL0387"));
+            assertThat(ex.getMessage(), containsString(wrongAddress));
+        }
+    }
 }

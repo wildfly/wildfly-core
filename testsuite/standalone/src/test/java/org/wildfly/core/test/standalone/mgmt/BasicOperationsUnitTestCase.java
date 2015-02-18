@@ -295,6 +295,17 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
+    public void testSimpleReadWithStringAddress() throws IOException {
+        final ModelNode address = new ModelNode("/subsystem=logging/console-handler=CONSOLE");
+
+        final ModelNode operation = createReadAttributeOperation(address, "level");
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        assertSuccessful(result);
+
+        Assert.assertEquals("INFO", result.get(RESULT).asString());
+    }
+
+    @Test
     @Ignore //TODO UNDERTOW reneable when we expose metrics from undertow
     public void testMetricReadAttribute() throws IOException {
         final ModelNode address = new ModelNode();
@@ -360,14 +371,14 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    public void testEmptyAddress() throws IOException {
+    public void testBadAddress() throws IOException {
         ModelNode operation = new ModelNode();
         operation.get(OP).set("whoami");
-        operation.get(OP_ADDR).set("");
+        operation.get(OP_ADDR).set("a");
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
         Assert.assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
-        Assert.assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0378", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0378"));
+        Assert.assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0387", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0387"));
     }
 
     @Test

@@ -63,7 +63,6 @@ public class Util {
         return pe == null ? null : pe.getValue();
     }
 
-
     public static ModelNode createAddOperation(final PathAddress address) {
         return createOperation(ModelDescriptionConstants.ADD, address);
     }
@@ -177,15 +176,24 @@ public class Util {
         }
         if (operation.hasDefined(OP_ADDR)) {
             try {
-                operation.get(OP_ADDR).asList();
+                if(operation.get(OP_ADDR).getType() == ModelType.STRING) {
+                    ModelNode address = PathAddress.parseCLIStyleAddress(operation.get(OP_ADDR).asString()).toModelNode();
+                    operation.get(OP_ADDR).set(address);
+                } else {
+                    operation.get(OP_ADDR).asList();
+                }
             } catch (IllegalArgumentException ex) {
-                if(errors.length() > 0) {
+                if (errors.length() > 0) {
                     errors.append(System.lineSeparator());
                 }
-                errors.append(ControllerLogger.ROOT_LOGGER.attributeIsWrongType(OP_ADDR, ModelType.LIST, operation.get(OP_ADDR).getType()).getMessage());
+                if(ex.getMessage() != null) {
+                    errors.append(ex.getMessage());
+                } else {
+                    errors.append(ControllerLogger.ROOT_LOGGER.attributeIsWrongType(OP_ADDR, ModelType.LIST, operation.get(OP_ADDR).getType()).getMessage());
+                }
             }
         }
-        if(errors.length() > 0) {
+        if (errors.length() > 0) {
             responseNode.get(OUTCOME).set(FAILED);
             responseNode.get(FAILURE_DESCRIPTION).set(errors.toString());
         }
