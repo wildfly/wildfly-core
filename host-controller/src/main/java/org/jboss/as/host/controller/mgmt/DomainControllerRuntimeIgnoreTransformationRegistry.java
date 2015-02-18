@@ -49,7 +49,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
 import org.jboss.dmr.ModelNode;
-import org.jboss.util.collection.ConcurrentSet;
 
 /**
  * Registry for the DC to keep track of what data is missing on a slave HC, and to piggyback that information to the slave if changes to the domain model
@@ -66,7 +65,7 @@ public class DomainControllerRuntimeIgnoreTransformationRegistry {
 
 
     ConcurrentMap<String, DomainControllerRuntimeIgnoreTransformationEntry> hostEntries = new ConcurrentHashMap<String, DomainControllerRuntimeIgnoreTransformationEntry>();
-    ConcurrentMap<String, ConcurrentSet<PathElement>> hostKnownAddresses = new ConcurrentHashMap<String, ConcurrentSet<PathElement>>();
+    ConcurrentMap<String, Set<PathElement>> hostKnownAddresses = new ConcurrentHashMap<String, Set<PathElement>>();
 
     public DomainControllerRuntimeIgnoreTransformationRegistry() {
     }
@@ -77,7 +76,7 @@ public class DomainControllerRuntimeIgnoreTransformationRegistry {
      * @param name the name of the host
      */
     public void initializeHost(String name) {
-        hostKnownAddresses.put(name, new ConcurrentSet<PathElement>());
+        hostKnownAddresses.put(name, Collections.newSetFromMap(new ConcurrentHashMap<PathElement, Boolean>()));
     }
 
     //These are for use by DomainControllerService
