@@ -55,9 +55,8 @@ public class ClassIndex {
                 if (classMethods == null) {
                     final Set<Method> methods = methodSet();
                     Class<?> clazz = this.moduleClass;
-                    final ClassReflectionIndex<?> classIndex = deploymentReflectionIndex.getClassIndex(clazz);
                     while (clazz != null) {
-                        methods.addAll(classIndex.getMethods());
+                        methods.addAll(deploymentReflectionIndex.getClassIndex(clazz).getMethods());
                         clazz = clazz.getSuperclass();
                     }
                     final Map<Class<?>, Set<Method>> defaultMethodsByInterface = new IdentityHashMap<Class<?>, Set<Method>>();
