@@ -25,8 +25,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPRECATED;
@@ -343,7 +343,6 @@ public class ModelTestModelDescriptionValidator {
             errors.add(validationElement.createValidationFailure("Undefined description " + currentDescription.asString()));
         }
 
-
         ModelNode typeNode = currentDescription.hasDefined(TYPE) ? currentDescription.get(TYPE) : null;
         ModelNode valueTypeNode = currentDescription.hasDefined(VALUE_TYPE) ? currentDescription.get(VALUE_TYPE) : null;
 
@@ -380,7 +379,7 @@ public class ModelTestModelDescriptionValidator {
                     return;
                 }
                 for (String key : keys) {
-                    validateAttributeOrParameter(validationElement, rawDescription, valueTypeNode.get(key));
+                    validateAttributeOrParameter(validationElement.getChild(key), rawDescription, valueTypeNode.get(key));
                 }
             }
         }
@@ -1032,6 +1031,10 @@ public class ModelTestModelDescriptionValidator {
             return "Attribute '" + name + "' @" + address;
         }
 
+        AttributeValidationElement getChild(String name) {
+            return new AttributeValidationElement(this.name + '.' + name, standardValidators);
+        }
+
         void validateKeys(ModelType currentType, ModelNode description) {
             for (String attrKey : description.keys()) {
                 AttributeOrParameterArbitraryDescriptorValidator validator = standardValidators.get(attrKey);
@@ -1077,6 +1080,10 @@ public class ModelTestModelDescriptionValidator {
         @Override
         public String toString() {
             return "Parameter '" + name + "' in operation " + operation.getName() + "' @" + address;
+        }
+
+        OperationParameterValidationElement getChild(String name) {
+            return new OperationParameterValidationElement(operation, this.name + '.' + name);
         }
 
         ValidationFailure createValidationFailure(String message) {
