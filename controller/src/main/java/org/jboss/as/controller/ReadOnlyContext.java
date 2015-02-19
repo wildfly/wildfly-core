@@ -60,7 +60,9 @@ class ReadOnlyContext extends AbstractOperationContext {
     ReadOnlyContext(final ProcessType processType, final RunningMode runningMode, final ModelController.OperationTransactionControl transactionControl,
                     final ControlledProcessState processState, final boolean booting,
                     final AbstractOperationContext primaryContext, final ModelControllerImpl controller, final int operationId) {
-        super(processType, runningMode, transactionControl, processState, booting, controller.getAuditLogger(), controller.getNotificationSupport(), controller);
+        super(processType, runningMode, transactionControl, processState,
+                booting, controller.getAuditLogger(), controller.getNotificationSupport(),
+                controller, primaryContext.isSkipModelValidation());
         this.primaryContext = primaryContext;
         this.controller = controller;
         this.operationId = operationId;
@@ -367,4 +369,13 @@ class ReadOnlyContext extends AbstractOperationContext {
         throw readOnlyContext();
     }
 
+    @Override
+    boolean isSkipModelValidation() {
+        return primaryContext.isSkipModelValidation();
+    }
+
+    @Override
+    void addModelValidationSteps() {
+        primaryContext.addModelValidationSteps();
+    }
 }

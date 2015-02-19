@@ -342,7 +342,7 @@ class ModelControllerImpl implements ModelController {
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport);
+                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport, false);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
@@ -400,17 +400,19 @@ class ModelControllerImpl implements ModelController {
     }
 
     boolean boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
-              final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) {
+              final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider, boolean skipModelValidation) {
 
         final Integer operationID = random.nextInt();
 
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
                 ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
+
+        //For the initial operations the model will not be complete, so defer the validation
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport);
+                hostServerGroupTracker, null, null, notificationSupport, true);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -425,12 +427,11 @@ class ModelControllerImpl implements ModelController {
         // Run the steps up to the last ExtensionAddHandler
         OperationContext.ResultAction resultAction = context.executeOperation();
         if (resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
-
             // Success. Now any extension handlers are registered. Continue with remaining ops
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport);
+                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -449,6 +450,19 @@ class ModelControllerImpl implements ModelController {
             }
 
             resultAction = postExtContext.executeOperation();
+
+            if (!skipModelValidation && resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
+                //Get the modified resources from the initial operations and add to the resources to be validated by the post operations
+                Set<PathAddress> validateAddresses = new HashSet<PathAddress>();
+                validateAddresses.addAll(context.getModifiedResourcesForModelValidation());
+                validateAddresses.addAll(postExtContext.getModifiedResourcesForModelValidation());
+                final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
+                        EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
+                        contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
+                                bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false);
+                resultAction = validateContext.executeOperation();
+
+            }
         }
 
         return  resultAction == OperationContext.ResultAction.KEEP;
