@@ -75,24 +75,10 @@ public class SystemPropertyRemoveHandler implements OperationStepHandler {
         final boolean reload = !applyToRuntime && context.getProcessType().isServer();
 
         if (applyToRuntime) {
-            context.addStep(new OperationStepHandler() {
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-                    WildFlySecurityManager.clearPropertyPrivileged(name);
-                    if (systemPropertyUpdater != null) {
-                        systemPropertyUpdater.systemPropertyUpdated(name, null);
-                    }
-                    context.completeStep(new OperationContext.RollbackHandler() {
-                        @Override
-                        public void handleRollback(OperationContext context, ModelNode operation) {
-                            WildFlySecurityManager.setPropertyPrivileged(name, oldValue);
-                            if (systemPropertyUpdater != null) {
-                                systemPropertyUpdater.systemPropertyUpdated(name, oldValue);
-                            }
-                        }
-                    });
-                }
-            }, OperationContext.Stage.RUNTIME);
+            WildFlySecurityManager.clearPropertyPrivileged(name);
+            if (systemPropertyUpdater != null) {
+                systemPropertyUpdater.systemPropertyUpdated(name, null);
+            }
         } else if (reload) {
             context.reloadRequired();
         }
@@ -100,7 +86,12 @@ public class SystemPropertyRemoveHandler implements OperationStepHandler {
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
-                if (reload) {
+                if (applyToRuntime) {
+                    WildFlySecurityManager.setPropertyPrivileged(name, oldValue);
+                    if (systemPropertyUpdater != null) {
+                        systemPropertyUpdater.systemPropertyUpdated(name, oldValue);
+                    }
+                } else if (reload) {
                     context.revertReloadRequired();
                 }
             }
