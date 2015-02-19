@@ -1565,8 +1565,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         for (PathElement element : address) {
             // Allow wildcard navigation for the last element
             if (element.isWildcard()) {
-                model = Resource.Factory.create();
                 final Set<Resource.ResourceEntry> children = model.getChildren(element.getKey());
+                model = Resource.Factory.create();
                 for (final Resource.ResourceEntry entry : children) {
                     model.registerChild(entry.getPathElement(), entry);
                 }
