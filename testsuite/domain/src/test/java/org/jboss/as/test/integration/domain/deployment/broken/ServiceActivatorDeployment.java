@@ -42,6 +42,7 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
 
     public static final ServiceName SERVICE_NAME = ServiceName.of("test", "deployment", "broken");
     public static final String FAIL_SYS_PROP = "test.deployment.broken.fail";
+    public static final String FAILURE_MESSAGE = "configured to fail";
 
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
@@ -52,7 +53,7 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     public synchronized void start(StartContext context) throws StartException {
         Boolean fail = Boolean.getBoolean(FAIL_SYS_PROP);
         if (fail) {
-            throw new StartException("configured to fail");
+            throw new StartException(FAILURE_MESSAGE);
         }
     }
 

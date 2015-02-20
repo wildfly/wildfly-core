@@ -27,15 +27,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILED_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
@@ -63,6 +66,7 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -74,6 +78,7 @@ import org.junit.Test;
 public class DeploymentRolloutFailureTestCase {
 
     private static final String BROKEN_DEPLOYMENT = "broken.jar";
+    private static final String MSG = "main-server-group";
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, BROKEN_DEPLOYMENT);
     private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, "main-server-group");
     private static final PathAddress SYS_PROP_ADDR = PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"),
@@ -160,6 +165,12 @@ public class DeploymentRolloutFailureTestCase {
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
+        // Validate the server results are included
+        ModelNode m3Resp = ret.get(SERVER_GROUPS, MSG, HOST, "slave", "main-three", RESPONSE);
+        Assert.assertTrue(ret.toString(), m3Resp.isDefined());
+        Assert.assertEquals(m3Resp.toString(), FAILED, m3Resp.get(OUTCOME).asString());
+        Assert.assertTrue(m3Resp.toString(), m3Resp.get(FAILURE_DESCRIPTION).asString().contains(ServiceActivatorDeployment.FAILURE_MESSAGE));
+
     }
 
     private ModelNode getDeploymentCompositeOp() throws MalformedURLException {
@@ -202,6 +213,12 @@ public class DeploymentRolloutFailureTestCase {
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
+        // Validate the server results are included
+        ModelNode m3Resp = ret.get(SERVER_GROUPS, MSG, HOST, "slave", "main-three", RESPONSE);
+        Assert.assertTrue(ret.toString(), m3Resp.isDefined());
+        Assert.assertEquals(m3Resp.toString(), FAILED, m3Resp.get(OUTCOME).asString());
+        Assert.assertTrue(m3Resp.toString(), m3Resp.get(FAILURE_DESCRIPTION).isDefined());
+
     }
 
     private ModelNode getUndeployCompositeOp() throws MalformedURLException {

@@ -78,17 +78,27 @@ public class DomainFinalResultHandler implements OperationStepHandler {
                 final boolean isDomain = isDomainOperation(operation);
                 boolean shouldContinue = collectDomainFailure(context, isDomain);
                 shouldContinue = shouldContinue && collectContextFailure(context, isDomain);
-                shouldContinue = shouldContinue && collectHostFailures(context, isDomain);
-                if(shouldContinue){
+                if (shouldContinue) {
+
                     ModelNode contextResult = context.getResult();
                     contextResult.setEmptyObject(); // clear out any old data
                     contextResult.set(getDomainResults(operation));
-                    if (domainOperationContext.getServerResults().size() > 0) {
-                        populateServerGroupResults(context);
+
+                    // If we have server results we know all was ok on the slaves
+                    Map<ServerIdentity, ModelNode> serverResults = domainOperationContext.getServerResults();
+                    if (serverResults.size() > 0) {
+                        populateServerGroupResults(context, serverResults);
                     } else {
-                        // Just make sure there's an 'undefined' server-groups node
-                        context.getServerResults();
+                        shouldContinue = collectHostFailures(context, isDomain);
+                        if (shouldContinue) {
+                            // Just make sure there's an 'undefined' server-groups node
+                            context.getServerResults();
+                        }
                     }
+                }
+
+                if (!shouldContinue && context.hasResult()) {
+                    context.getResult().setEmptyObject();  // clear out any old data
                 }
             }
         });
@@ -122,7 +132,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             } else {
                 ModelNode hostFailureProperty = new ModelNode();
                 ModelNode contextFailure = context.getFailureDescription();
-                ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+                ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
                 hostFailureProperty.add(domainOperationContext.getLocalHostInfo().getLocalHostName(), hostFailure);
 
                 formattedFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureProperty);
@@ -215,10 +225,11 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         return result;
     }
 
-    private void populateServerGroupResults(final OperationContext context) {
+    private void populateServerGroupResults(final OperationContext context, final Map<ServerIdentity, ModelNode> serverResults) {
+
         final Set<String> groupNames = new TreeSet<String>();
         final Map<String, Set<HostServer>> groupToServerMap = new HashMap<String, Set<HostServer>>();
-        for (Map.Entry<ServerIdentity, ModelNode> entry : domainOperationContext.getServerResults().entrySet()) {
+        for (Map.Entry<ServerIdentity, ModelNode> entry : serverResults.entrySet()) {
             final String serverGroup = entry.getKey().getServerGroupName();
             groupNames.add(serverGroup);
             final String hostName = entry.getKey().getHostName();
@@ -243,7 +254,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             }
             context.getServerResults().get(groupName).set(groupNode);
         }
-        if(!serverGroupSuccess) {
+        if (!serverGroupSuccess) {
             // TODO see if we can extract more information from the server details
             context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBack());
         }
