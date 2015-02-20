@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -95,6 +96,10 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
             // We do not allow failures on the host controllers
             context.setRollbackOnly();
         } else {
+
+            // Temporary hack to prevent CompositeOperationHandler throwing away domain failure data
+            context.attachIfAbsent(CompositeOperationHandler.DOMAIN_EXECUTION_KEY, Boolean.TRUE);
+
             boolean nullDomainOp = hostControllerExecutionSupport.getDomainOperation() == null;
 
             // Transformed operations might need to simulate certain behavior, so allow read-only operations to be pushed as well
