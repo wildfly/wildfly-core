@@ -436,7 +436,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             //instead of the recursive check
 
             // BES 2015/02/12 -- So, back to 'false'
-            result = context.readResource(PathAddress.EMPTY_ADDRESS, true);
+            result = context.readResource(PathAddress.EMPTY_ADDRESS, false);
         }
         return result;
     }
