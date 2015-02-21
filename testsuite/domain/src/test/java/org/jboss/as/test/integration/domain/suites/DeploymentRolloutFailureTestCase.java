@@ -80,7 +80,7 @@ public class DeploymentRolloutFailureTestCase {
     private static final String BROKEN_DEPLOYMENT = "broken.jar";
     private static final String MSG = "main-server-group";
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, BROKEN_DEPLOYMENT);
-    private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, "main-server-group");
+    private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, MSG);
     private static final PathAddress SYS_PROP_ADDR = PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"),
             PathElement.pathElement(SERVER_CONFIG, "main-three"), PathElement.pathElement(SYSTEM_PROPERTY, ServiceActivatorDeployment.FAIL_SYS_PROP));
     private static DomainTestSupport testSupport;
@@ -158,10 +158,7 @@ public class DeploymentRolloutFailureTestCase {
 
     private void failInstallFailedDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getDeploymentCompositeOp();
-        System.out.println("Deploy op expected to fail:");
-        System.out.println(op);
         final ModelNode ret = masterClient.execute(op);
-        System.out.println(ret);
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
@@ -171,6 +168,13 @@ public class DeploymentRolloutFailureTestCase {
         Assert.assertEquals(m3Resp.toString(), FAILED, m3Resp.get(OUTCOME).asString());
         Assert.assertTrue(m3Resp.toString(), m3Resp.get(FAILURE_DESCRIPTION).asString().contains(ServiceActivatorDeployment.FAILURE_MESSAGE));
 
+        ModelNode failDesc = ret.get(FAILURE_DESCRIPTION);
+        Assert.assertTrue(failDesc.toString(), failDesc.isDefined());
+        ModelNode servers = failDesc.asProperty().getValue();
+        Assert.assertTrue(failDesc.toString(), servers.isDefined());
+        ModelNode serverFail = servers.get(SERVER_GROUP, MSG, HOST, "slave", "main-three");
+        Assert.assertTrue(failDesc.toString(), serverFail.isDefined());
+        Assert.assertTrue(failDesc.toString(), serverFail.toString().contains(ServiceActivatorDeployment.FAILURE_MESSAGE));
     }
 
     private ModelNode getDeploymentCompositeOp() throws MalformedURLException {
@@ -205,11 +209,8 @@ public class DeploymentRolloutFailureTestCase {
     }
 
     private void failRemoveFailedDeployment() throws IOException, MgmtOperationException {
-        System.out.println("Undeploy op expected to fail:");
         ModelNode op = getUndeployCompositeOp();
-        System.out.println(op);
         final ModelNode ret = masterClient.execute(op);
-        System.out.println(ret);
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
@@ -219,6 +220,12 @@ public class DeploymentRolloutFailureTestCase {
         Assert.assertEquals(m3Resp.toString(), FAILED, m3Resp.get(OUTCOME).asString());
         Assert.assertTrue(m3Resp.toString(), m3Resp.get(FAILURE_DESCRIPTION).isDefined());
 
+        ModelNode failDesc = ret.get(FAILURE_DESCRIPTION);
+        Assert.assertTrue(failDesc.toString(), failDesc.isDefined());
+        ModelNode servers = failDesc.asProperty().getValue();
+        Assert.assertTrue(failDesc.toString(), servers.isDefined());
+        ModelNode serverFail = servers.get(SERVER_GROUP, MSG, HOST, "slave", "main-three");
+        Assert.assertTrue(failDesc.toString(), serverFail.isDefined());
     }
 
     private ModelNode getUndeployCompositeOp() throws MalformedURLException {
