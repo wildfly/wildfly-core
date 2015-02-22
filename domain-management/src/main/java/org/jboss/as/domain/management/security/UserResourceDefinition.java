@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.management.security;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -48,11 +49,13 @@ public class UserResourceDefinition extends SimpleResourceDefinition {
 
     public UserResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.USER),
-                ControllerResolver.getResolver("core.management.security-realm.authentication.xml.user"),
+                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
+                        "core.management.security-realm.authentication.xml.user"),
                 UserAddHandler.INSTANCE,
                 UserRemoveHandler.INSTANCE,
                 OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_NONE);
+        setDeprecated(ModelVersion.create(1, 7));
     }
 
     @Override

@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.security;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -104,9 +105,11 @@ public class LdapAuthenticationResourceDefinition extends LdapResourceDefinition
 
     public LdapAuthenticationResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.LDAP),
-                ControllerResolver.getResolver("core.management.security-realm.authentication.ldap"),
+                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
+                        "core.management.security-realm.authentication.ldap"),
                 new LdapAuthenticationAddHandler(), new SecurityRealmChildRemoveHandler(true),
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
+        setDeprecated(ModelVersion.create(1, 7));
     }
 
     @Override
