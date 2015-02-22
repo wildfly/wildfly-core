@@ -184,8 +184,17 @@ public class PersistentResourceXMLDescription {
                 ParseUtils.requireNoContent(reader);
             }
         } else {
+            String parentName = reader.getLocalName();
             Map<String, PersistentResourceXMLDescription> children = getChildrenMap();
-            while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
+            while (reader.hasNext()) {
+                if (reader.nextTag() == XMLStreamConstants.END_ELEMENT) {
+                    // break the loop at the end of the parent element
+                    if (parentName.equals(reader.getLocalName())) {
+                        break;
+                    }
+                    // else continue to the next children
+                    continue;
+                }
                 PersistentResourceXMLDescription child = children.get(reader.getLocalName());
                 if (child != null) {
                     child.parse(reader, parentAddress, list);
