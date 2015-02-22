@@ -22,9 +22,11 @@
 
 package org.wildfly.core.test.standalone.mgmt;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -33,32 +35,49 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE_DEPTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.parsing.Element.LINK_LOCAL_ADDRESS;
 import static org.jboss.as.controller.parsing.Element.LOOPBACK;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
+import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,14 +108,14 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP_ADDR).set(address);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertTrue(result.hasDefined(RESULT));
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
         final Collection<ModelNode> steps = getSteps(result.get(RESULT));
-        Assert.assertFalse(steps.isEmpty());
+        assertFalse(steps.isEmpty());
         for(final ModelNode step : steps) {
-            Assert.assertTrue(step.hasDefined(OP_ADDR));
-            Assert.assertTrue(step.hasDefined(RESULT));
-            Assert.assertEquals(SUCCESS, step.get(OUTCOME).asString());
+            assertTrue(step.hasDefined(OP_ADDR));
+            assertTrue(step.hasDefined(RESULT));
+            assertEquals(SUCCESS, step.get(OUTCOME).asString());
         }
     }
 
@@ -109,13 +128,13 @@ public class BasicOperationsUnitTestCase {
         operation.get(RECURSIVE_DEPTH).set(1);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
         final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
-        Assert.assertTrue(logging.hasDefined("logger"));
+        assertTrue(logging.hasDefined("logger"));
         final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
-        Assert.assertFalse(rootLogger.hasDefined("ROOT"));
+        assertFalse(rootLogger.hasDefined("ROOT"));
     }
 
     @Test
@@ -128,13 +147,13 @@ public class BasicOperationsUnitTestCase {
         operation.get(RECURSIVE_DEPTH).set(1);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
         final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
-        Assert.assertTrue(logging.hasDefined("logger"));
+        assertTrue(logging.hasDefined("logger"));
         final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
-        Assert.assertFalse(rootLogger.hasDefined("ROOT"));
+        assertFalse(rootLogger.hasDefined("ROOT"));
     }
 
     @Test
@@ -147,13 +166,13 @@ public class BasicOperationsUnitTestCase {
         operation.get(RECURSIVE_DEPTH).set(2);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
         final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
-        Assert.assertTrue(logging.hasDefined("logger"));
+        assertTrue(logging.hasDefined("logger"));
         final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
-        Assert.assertTrue(rootLogger.hasDefined("ROOT"));
+        assertTrue(rootLogger.hasDefined("ROOT"));
     }
 
     @Test
@@ -166,11 +185,11 @@ public class BasicOperationsUnitTestCase {
         operation.get(RECURSIVE_DEPTH).set(1);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
         final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
-        Assert.assertFalse(logging.hasDefined("logger"));
+        assertFalse(logging.hasDefined("logger"));
     }
 
     @Test
@@ -183,11 +202,11 @@ public class BasicOperationsUnitTestCase {
         operation.get(RECURSIVE_DEPTH).set(0);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
         final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
-        Assert.assertFalse(logging.hasDefined("logger"));
+        assertFalse(logging.hasDefined("logger"));
     }
 
     @Test
@@ -204,15 +223,15 @@ public class BasicOperationsUnitTestCase {
         operation.get(NAME).set(PORT);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertTrue(result.hasDefined(RESULT));
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
         final Collection<ModelNode> steps = getSteps(result.get(RESULT));
-        Assert.assertFalse(steps.isEmpty());
+        assertFalse(steps.isEmpty());
         for(final ModelNode step : steps) {
-            Assert.assertTrue(step.hasDefined(OP_ADDR));
-            Assert.assertTrue(step.hasDefined(RESULT));
+            assertTrue(step.hasDefined(OP_ADDR));
+            assertTrue(step.hasDefined(RESULT));
             final ModelNode stepResult = step.get(RESULT);
-            Assert.assertTrue(stepResult.getType() == ModelType.EXPRESSION || stepResult.asInt() >= 0);
+            assertTrue(stepResult.getType() == ModelType.EXPRESSION || stepResult.asInt() >= 0);
         }
     }
 
@@ -229,21 +248,21 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP_ADDR).set(address);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertTrue(result.hasDefined(RESULT));
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
         final Collection<ModelNode> steps = result.get(RESULT).asList();
-        Assert.assertFalse(steps.isEmpty());
-        Assert.assertEquals("should only contain a single type", 1, steps.size());
+        assertFalse(steps.isEmpty());
+        assertEquals("should only contain a single type", 1, steps.size());
         for(final ModelNode step : steps) {
-            Assert.assertTrue(step.hasDefined(OP_ADDR));
-            Assert.assertTrue(step.hasDefined(RESULT));
-            Assert.assertEquals(SUCCESS, step.get(OUTCOME).asString());
+            assertTrue(step.hasDefined(OP_ADDR));
+            assertTrue(step.hasDefined(RESULT));
+            assertEquals(SUCCESS, step.get(OUTCOME).asString());
             final ModelNode stepResult = step.get(RESULT);
-            Assert.assertTrue(stepResult.hasDefined(DESCRIPTION));
-            Assert.assertTrue(stepResult.hasDefined(ATTRIBUTES));
-            Assert.assertTrue(stepResult.get(ModelDescriptionConstants.ATTRIBUTES).hasDefined(ModelDescriptionConstants.NAME));
-            Assert.assertTrue(stepResult.get(ModelDescriptionConstants.ATTRIBUTES).hasDefined(ModelDescriptionConstants.INTERFACE));
-            Assert.assertTrue(stepResult.get(ModelDescriptionConstants.ATTRIBUTES).hasDefined(ModelDescriptionConstants.PORT));
+            assertTrue(stepResult.hasDefined(DESCRIPTION));
+            assertTrue(stepResult.hasDefined(ATTRIBUTES));
+            assertTrue(stepResult.get(ModelDescriptionConstants.ATTRIBUTES).hasDefined(ModelDescriptionConstants.NAME));
+            assertTrue(stepResult.get(ModelDescriptionConstants.ATTRIBUTES).hasDefined(ModelDescriptionConstants.INTERFACE));
+            assertTrue(stepResult.get(ModelDescriptionConstants.ATTRIBUTES).hasDefined(ModelDescriptionConstants.PORT));
         }
     }
 
@@ -256,8 +275,8 @@ public class BasicOperationsUnitTestCase {
         operation.get(INCLUDE_RUNTIME).set(true);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(result.get(FAILURE_DESCRIPTION).isDefined() ? result.get(FAILURE_DESCRIPTION).asString() : "", SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(result.get(FAILURE_DESCRIPTION).isDefined() ? result.get(FAILURE_DESCRIPTION).asString() : "", SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
     }
 
     @Test
@@ -272,12 +291,12 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP_ADDR).set(address);
 
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertTrue(result.hasDefined(RESULT));
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
         final List<ModelNode> steps = getSteps(result.get(RESULT));
-        Assert.assertEquals(1, steps.size());
+        assertEquals(1, steps.size());
         final ModelNode httpBinding = steps.get(0);
-        Assert.assertEquals(9990, httpBinding.get(RESULT, "port").resolve().asInt());
+        assertEquals(9990, httpBinding.get(RESULT, "port").resolve().asInt());
 
     }
 
@@ -291,7 +310,7 @@ public class BasicOperationsUnitTestCase {
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         assertSuccessful(result);
 
-        Assert.assertEquals("INFO", result.get(RESULT).asString());
+        assertEquals("INFO", result.get(RESULT).asString());
     }
 
     @Test
@@ -302,7 +321,7 @@ public class BasicOperationsUnitTestCase {
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         assertSuccessful(result);
 
-        Assert.assertEquals("INFO", result.get(RESULT).asString());
+        assertEquals("INFO", result.get(RESULT).asString());
     }
 
     @Test
@@ -315,7 +334,7 @@ public class BasicOperationsUnitTestCase {
         final ModelNode operation = createReadAttributeOperation(address, "bytesReceived");
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         assertSuccessful(result);
-        Assert.assertTrue(result.asInt() >= 0);
+        assertTrue(result.asInt() >= 0);
     }
 
     @Test
@@ -325,7 +344,7 @@ public class BasicOperationsUnitTestCase {
 
         final ModelNode operation = createReadAttributeOperation(address, "scanner");
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
+        assertEquals(FAILED, result.get(OUTCOME).asString());
     }
 
     @Test
@@ -376,9 +395,9 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP).set("whoami");
         operation.get(OP_ADDR).set("a");
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
-        Assert.assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0387", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0387"));
+        assertEquals(FAILED, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
+        assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0387", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0387"));
     }
 
     @Test
@@ -386,20 +405,82 @@ public class BasicOperationsUnitTestCase {
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(FAILED, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
-        Assert.assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0383", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0383"));
+        assertEquals(FAILED, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
+        assertTrue(result.get(FAILURE_DESCRIPTION).asString() + "should contain WFLYCTL0383", result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0383"));
+    }
+
+    @Test
+    public void testRemoveAddSystemPropertyInBatch() throws Exception {
+        final String propertyName = "my.property";
+        ModelNode addPropertyOp = Operations.createAddOperation(PathAddress.EMPTY_ADDRESS.append(SYSTEM_PROPERTY, propertyName).toModelNode());
+        addPropertyOp.get(VALUE).set("test");
+        ModelNode removePropertyOp = Operations.createRemoveOperation(PathAddress.EMPTY_ADDRESS.append(SYSTEM_PROPERTY, propertyName).toModelNode());
+        try {
+            int origPropCount = countSystemProperties();
+
+            Map<String, String> properties = Collections.singletonMap(propertyName, "test");
+            validateSystemProperty(properties, propertyName, false, origPropCount);
+
+            ModelNode response = managementClient.getControllerClient().execute(addPropertyOp);
+            validateResponse(response, false);
+            validateSystemProperty(properties, propertyName, true, origPropCount);
+
+            ModelNode composite = new ModelNode();
+            composite.get(OP).set(CompositeOperationHandler.NAME);
+            composite.get(OP_ADDR).setEmptyList();
+            composite.get(OPERATION_HEADERS, ROLLBACK_ON_RUNTIME_FAILURE).set(false);
+
+            composite.get(STEPS).add(removePropertyOp);
+            composite.get(STEPS).add(addPropertyOp);
+
+            ModelNode result = managementClient.getControllerClient().execute(composite);
+            validateResponse(result);
+            validateSystemProperty(properties, propertyName, true, origPropCount);
+        } finally {
+            managementClient.getControllerClient().execute(removePropertyOp);
+        }
+    }
+    
+    private static int countSystemProperties() throws IOException {
+        ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
+        readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
+        ModelNode response = managementClient.getControllerClient().execute(readProperties);
+        ModelNode properties = validateResponse(response);
+        return properties.asList().size();
+    }
+    
+    private static void validateSystemProperty(Map<String, String> properties, String propertyName, boolean exist, int origPropCount) throws IOException, MgmtOperationException {
+        ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
+        readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
+        ModelNode response = managementClient.getControllerClient().execute(readProperties);
+        if (exist) {
+            ModelNode propertiesNode = validateResponse(response);
+            assertThat(propertiesNode.asList().size(), is(origPropCount + 1));
+            ModelNode property = validateResponse(managementClient.getControllerClient().execute(createReadResourceOperation(
+                    PathAddress.EMPTY_ADDRESS.append(SYSTEM_PROPERTY, propertyName).toModelNode())));
+            assertThat(property.hasDefined(VALUE), is(true));
+            assertThat(property.get(VALUE).asString(), is(properties.get(propertyName)));
+            ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), PathAddress.EMPTY_ADDRESS, properties);
+        } else {
+            ModelNode propertiesNode = validateResponse(response);
+            assertThat("We have found " + propertiesNode.asList(), propertiesNode.asList().size(), is(origPropCount));
+            ModelNode property = validateFailedResponse(managementClient.getControllerClient().execute(createReadResourceOperation(
+                    PathAddress.EMPTY_ADDRESS.append(SYSTEM_PROPERTY, propertyName).toModelNode())));
+            assertThat(property.hasDefined(VALUE), is(false));
+            ServiceActivatorDeploymentUtil.validateNoProperties(managementClient.getControllerClient(), PathAddress.EMPTY_ADDRESS, properties.keySet());
+        }
     }
 
     protected ModelNode execute(final ModelNode operation) throws IOException {
         final ModelNode result = managementClient.getControllerClient().execute(operation);
-        Assert.assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
         return result;
     }
 
     static void assertSuccessful(final ModelNode result) {
-        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        Assert.assertTrue(result.hasDefined(RESULT));
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
     }
 
     static ModelNode createReadAttributeOperation(final ModelNode address, final String attributeName) {
@@ -410,8 +491,16 @@ public class BasicOperationsUnitTestCase {
         return operation;
     }
 
+    static ModelNode createReadResourceOperation(ModelNode address) {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).set(address);
+        operation.get(RECURSIVE).set(true);
+        return operation;
+    }
+
     protected static List<ModelNode> getSteps(final ModelNode result) {
-        Assert.assertTrue(result.isDefined());
+        assertTrue(result.isDefined());
         return result.asList();
     }
 }
