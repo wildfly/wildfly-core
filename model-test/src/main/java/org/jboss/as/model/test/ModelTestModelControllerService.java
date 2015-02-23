@@ -24,7 +24,6 @@ package org.jboss.as.model.test;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
-import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -90,7 +89,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
                            final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller71x version) {
         // Fails in core-model-test transformation testing if ExpressionResolver.TEST_RESOLVER is used because not present in 7.1.x
         super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, getExpressionResolverFor71());
+                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -109,15 +108,6 @@ public abstract class ModelTestModelControllerService extends AbstractController
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
         this.runningModeControl = runningModeControl;
-    }
-
-    private static ExpressionResolver getExpressionResolverFor71() {
-        try {
-            Field defaultExpressionResolver = ExpressionResolver.class.getDeclaredField("DEFAULT");
-            return (ExpressionResolver) defaultExpressionResolver.get(null);
-        } catch (NoSuchFieldException ex) {
-        } catch (IllegalAccessException ex) {}
-        return ExpressionResolver.TEST_RESOLVER;
     }
 
     /**

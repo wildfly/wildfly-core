@@ -52,8 +52,8 @@ class ServerGroupTransformers {
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .end();
-        JvmTransformers.registerTransformers2_1_AndBelow(builder);
         builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_6, DomainTransformers.VERSION_1_4);
+        JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
         builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3)
                 .getAttributeBuilder()

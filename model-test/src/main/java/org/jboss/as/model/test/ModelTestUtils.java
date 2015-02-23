@@ -518,7 +518,7 @@ public class ModelTestUtils {
     private static void checkFailedTransformedAddOperation(ModelTestKernelServices<?> mainServices, ModelVersion modelVersion, ModelNode operation, FailedOperationTransformationConfig config) throws OperationFailedException {
         TransformedOperation transformedOperation = mainServices.transformOperation(modelVersion, operation.clone());
         if (config.expectFailed(operation)) {
-            Assert.assertNotNull("Expected transformation to get rejected " + operation + " for version " + modelVersion , transformedOperation.getFailureDescription());
+            Assert.assertNotNull("Expected transformation to get rejected " + operation, transformedOperation.getFailureDescription());
             if (config.canCorrectMore(operation)) {
                 checkFailedTransformedAddOperation(mainServices, modelVersion, config.correctOperation(operation), config);
             }

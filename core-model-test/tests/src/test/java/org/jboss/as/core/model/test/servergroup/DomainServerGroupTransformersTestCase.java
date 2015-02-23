@@ -106,6 +106,7 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         if (modelVersion.getMajor() > 1 || modelVersion.getMinor() > 3) {
             return;
         }
+
         KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
                 .setModelInitializer(StandardServerGroupInitializers.XML_MODEL_INITIALIZER, StandardServerGroupInitializers.XML_MODEL_WRITE_SANITIZER)
                 .createContentRepositoryContent("12345678901234567890")
@@ -114,7 +115,7 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         // Add legacy subsystems
         LegacyKernelServicesInitializer legacyInitializer =
                 StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
-        ExcludeCommonOperations.excludeBadOps_7_1_x(legacyInitializer);
+
         KernelServices mainServices = builder.build();
 
         List<ModelNode> ops = builder.parseXmlResource("servergroup_1_3-with-expressions.xml");
@@ -128,9 +129,6 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
 
     @Test
     public void testRejectTransformers9x() throws Exception {
-        if (modelVersion.getMajor() <= 1 || modelVersion.getMinor() <= 3) {
-            return;
-        }
         KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
                 .setModelInitializer(StandardServerGroupInitializers.XML_MODEL_INITIALIZER, StandardServerGroupInitializers.XML_MODEL_WRITE_SANITIZER)
                 .createContentRepositoryContent("12345678901234567890")
@@ -139,6 +137,7 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         // Add legacy subsystems
         LegacyKernelServicesInitializer legacyInitializer =
                 StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
+
         KernelServices mainServices = builder.build();
 
         List<ModelNode> ops = builder.parseXmlResource("servergroup.xml");
