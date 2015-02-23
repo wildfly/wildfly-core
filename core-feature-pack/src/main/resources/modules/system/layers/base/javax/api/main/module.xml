@@ -23,6 +23,7 @@
   -->
 <module xmlns="urn:jboss:module:1.3" name="javax.api">
     <dependencies>
+        <module name="javax.sql.api" export="true"/>
         <system export="true">
             <paths>
                 <path name="javax/accessibility"/>
