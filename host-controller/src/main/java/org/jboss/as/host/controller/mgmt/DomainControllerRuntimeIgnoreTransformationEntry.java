@@ -31,7 +31,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.RuntimeIgnoreTransformation;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
-import org.jboss.util.collection.ConcurrentSet;
 
 /**
  * Used on the DC. Maintains the known domain level resource addresses and server groups for a particular host
@@ -42,7 +41,7 @@ public class DomainControllerRuntimeIgnoreTransformationEntry implements Runtime
 
     private final HostInfo hostInfo;
     private final IgnoredNonAffectedServerGroupsUtil util;
-    private volatile ConcurrentSet<PathElement> knownRootAddresses;
+    private volatile Set<PathElement> knownRootAddresses;
 
     private DomainControllerRuntimeIgnoreTransformationEntry(HostInfo hostInfo, ExtensionRegistry extensionRegistry) {
         this.hostInfo = hostInfo;
@@ -61,11 +60,11 @@ public class DomainControllerRuntimeIgnoreTransformationEntry implements Runtime
     }
 
     /**
-     * Callback for {@link DomainControllerRuntimeIgnoreTransformationRegistry} to initialize the known addresses map
+     * Callback for {@link DomainControllerRuntimeIgnoreTransformationRegistry} to initialize the known addresses set
      *
-     * @param knownRootAddresses the known addresses map
+     * @param knownRootAddresses the known addresses set. Must be a thread-safe implementation of Set
      */
-    void setKnownRootAddresses(ConcurrentSet<PathElement> knownRootAddresses) {
+    void setKnownRootAddresses(Set<PathElement> knownRootAddresses) {
         this.knownRootAddresses = knownRootAddresses;
     }
 
@@ -82,7 +81,7 @@ public class DomainControllerRuntimeIgnoreTransformationEntry implements Runtime
      * Whether the host should ignore the domain resource
      *
      * @param domainResource the root domain resource
-     * @param the address to check
+     * @param address the address to check
      * @return {@code true} if we are to ignore the resource
      */
     @Override
