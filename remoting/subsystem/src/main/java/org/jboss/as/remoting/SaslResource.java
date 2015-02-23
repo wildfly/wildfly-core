@@ -21,6 +21,8 @@
 */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.INCLUDE_MECHANISMS;
 import static org.jboss.as.remoting.CommonAttributes.QOP;
 import static org.jboss.as.remoting.CommonAttributes.REUSE_SESSION;
@@ -32,17 +34,14 @@ import static org.jboss.as.remoting.CommonAttributes.STRENGTH;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
@@ -55,8 +54,9 @@ import org.xnio.sasl.SaslStrength;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Tomaz Cerar
  */
-public class SaslResource extends SimpleResourceDefinition {
+class SaslResource extends ConnectorChildResource {
     static final PathElement SASL_CONFIG_PATH = PathElement.pathElement(SECURITY, SASL);
 
     static final AttributeDefinition INCLUDE_MECHANISMS_ATTRIBUTE = new StringListAttributeDefinition.Builder(INCLUDE_MECHANISMS)
@@ -87,25 +87,28 @@ public class SaslResource extends SimpleResourceDefinition {
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.VALUE))
             .build();
 
+    private final String parent;
+
     static final AttributeDefinition[] ATTRIBUTES = {INCLUDE_MECHANISMS_ATTRIBUTE, QOP_ATTRIBUTE, STRENGTH_ATTRIBUTE, SERVER_AUTH_ATTRIBUTE, REUSE_SESSION_ATTRIBUTE};
 
-    static final SaslResource INSTANCE = new SaslResource();
+    static final SaslResource INSTANCE_CONNECTOR = new SaslResource(CONNECTOR);
+    static final SaslResource INSTANCE_HTTP_CONNECTOR = new SaslResource(HTTP_CONNECTOR);
 
     private final List<AccessConstraintDefinition> accessConstraints;
 
-    private SaslResource() {
+    private SaslResource(final String parent) {
         super(SASL_CONFIG_PATH,
                 RemotingExtension.getResourceDescriptionResolver(SASL),
-                SaslAdd.INSTANCE,
-                SaslRemove.INSTANCE);
+                new AddResourceConnectorRestartHandler(parent, ATTRIBUTES),
+                new RemoveResourceConnectorRestartHandler(parent));
         this.accessConstraints = RemotingExtension.REMOTING_SECURITY_DEF.wrapAsList();
+        this.parent = parent;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final ReloadRequiredWriteAttributeHandler writeHandler =
-                new ReloadRequiredWriteAttributeHandler(INCLUDE_MECHANISMS_ATTRIBUTE, QOP_ATTRIBUTE, STRENGTH_ATTRIBUTE,
-                        REUSE_SESSION_ATTRIBUTE, SERVER_AUTH_ATTRIBUTE);
+        final RestartConnectorWriteAttributeHandler writeHandler =
+                new RestartConnectorWriteAttributeHandler(parent, ATTRIBUTES);
         resourceRegistration.registerReadWriteAttribute(INCLUDE_MECHANISMS_ATTRIBUTE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(QOP_ATTRIBUTE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(STRENGTH_ATTRIBUTE, null, writeHandler);

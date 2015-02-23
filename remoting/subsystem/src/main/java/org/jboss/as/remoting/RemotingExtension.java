@@ -90,14 +90,14 @@ public class RemotingExtension implements Extension {
 
         final ManagementResourceRegistration connector = subsystem.registerSubModel(ConnectorResource.INSTANCE);
         connector.registerSubModel(PropertyResource.INSTANCE_CONNECTOR);
-        final ManagementResourceRegistration sasl = connector.registerSubModel(SaslResource.INSTANCE);
-        sasl.registerSubModel(SaslPolicyResource.INSTANCE);
+        final ManagementResourceRegistration sasl = connector.registerSubModel(SaslResource.INSTANCE_CONNECTOR);
+        sasl.registerSubModel(SaslPolicyResource.INSTANCE_CONNECTOR);
         sasl.registerSubModel(PropertyResource.INSTANCE_CONNECTOR);
 
         final ManagementResourceRegistration httpConnector = subsystem.registerSubModel(HttpConnectorResource.INSTANCE);
         httpConnector.registerSubModel(PropertyResource.INSTANCE_HTTP_CONNECTOR);
-        final ManagementResourceRegistration httpSasl = httpConnector.registerSubModel(SaslResource.INSTANCE);
-        httpSasl.registerSubModel(SaslPolicyResource.INSTANCE);
+        final ManagementResourceRegistration httpSasl = httpConnector.registerSubModel(SaslResource.INSTANCE_HTTP_CONNECTOR);
+        httpSasl.registerSubModel(SaslPolicyResource.INSTANCE_HTTP_CONNECTOR);
         httpSasl.registerSubModel(PropertyResource.INSTANCE_HTTP_CONNECTOR);
 
         // remote outbound connection

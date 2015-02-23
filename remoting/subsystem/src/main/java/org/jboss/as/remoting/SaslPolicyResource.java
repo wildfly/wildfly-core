@@ -21,23 +21,23 @@
 */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.POLICY;
 import static org.jboss.as.remoting.CommonAttributes.SASL_POLICY;
 
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Tomaz Cerar
  */
-public class SaslPolicyResource extends SimpleResourceDefinition {
+class SaslPolicyResource extends ConnectorChildResource {
     static final PathElement SASL_POLICY_CONFIG_PATH = PathElement.pathElement(SASL_POLICY, POLICY);
 
     static final SimpleAttributeDefinition FORWARD_SECRECY = createBooleanAttributeDefinition(CommonAttributes.FORWARD_SECRECY);
@@ -58,19 +58,22 @@ public class SaslPolicyResource extends SimpleResourceDefinition {
 
     };
 
-    static final SaslPolicyResource INSTANCE = new SaslPolicyResource();
+    static final SaslPolicyResource INSTANCE_CONNECTOR = new SaslPolicyResource(CONNECTOR);
+    static final SaslPolicyResource INSTANCE_HTTP_CONNECTOR = new SaslPolicyResource(HTTP_CONNECTOR);
+    private final String parent;
 
-    private SaslPolicyResource() {
+    private SaslPolicyResource(String parent) {
         super(SASL_POLICY_CONFIG_PATH,
                 RemotingExtension.getResourceDescriptionResolver(POLICY),
-                SaslPolicyAdd.INSTANCE,
-                SaslPolicyRemove.INSTANCE);
+                new AddResourceConnectorRestartHandler(parent, ATTRIBUTES),
+                new RemoveResourceConnectorRestartHandler(parent));
+        this.parent = parent;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final OperationStepHandler writeHandler =
-                new ReloadRequiredWriteAttributeHandler(FORWARD_SECRECY, NO_ACTIVE, NO_ANONYMOUS, NO_DICTIONARY,
+        final RestartConnectorWriteAttributeHandler writeHandler =
+                new RestartConnectorWriteAttributeHandler(parent,FORWARD_SECRECY, NO_ACTIVE, NO_ANONYMOUS, NO_DICTIONARY,
                         NO_PLAIN_TEXT, PASS_CREDENTIALS);
         resourceRegistration.registerReadWriteAttribute(FORWARD_SECRECY, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(NO_ACTIVE, null, writeHandler);

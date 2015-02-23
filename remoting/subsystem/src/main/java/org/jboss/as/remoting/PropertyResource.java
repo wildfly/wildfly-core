@@ -25,114 +25,41 @@ import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
 
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.RestartParentResourceAddHandler;
-import org.jboss.as.controller.RestartParentResourceRemoveHandler;
-import org.jboss.as.controller.RestartParentWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceName;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Tomaz Cerar
  */
-public class PropertyResource extends SimpleResourceDefinition {
+public class PropertyResource extends ConnectorChildResource {
 
     static final PathElement PATH = PathElement.pathElement(PROPERTY);
-
-    static final PropertyResource INSTANCE_CONNECTOR = new PropertyResource(CONNECTOR);
-    static final PropertyResource INSTANCE_HTTP_CONNECTOR = new PropertyResource(HTTP_CONNECTOR);
 
     static final SimpleAttributeDefinition VALUE = SimpleAttributeDefinitionBuilder.create(CommonAttributes.VALUE, ModelType.STRING)
             .setDefaultValue(null)
             .setAllowNull(true)
             .setAllowExpression(true)
             .build();
+    static final PropertyResource INSTANCE_CONNECTOR = new PropertyResource(CONNECTOR);
+    static final PropertyResource INSTANCE_HTTP_CONNECTOR = new PropertyResource(HTTP_CONNECTOR);
+
 
     private final String parent;
 
     protected PropertyResource(String parent) {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(PROPERTY),
-                new PropertyAdd(parent),
-                new PropertyRemove(parent));
+                new AddResourceConnectorRestartHandler(parent, PropertyResource.VALUE),
+                new RemoveResourceConnectorRestartHandler(parent));
         this.parent = parent;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(VALUE, null, new PropertyWriteAttributeHandler(parent));
+        resourceRegistration.registerReadWriteAttribute(VALUE, null, new RestartConnectorWriteAttributeHandler(parent, VALUE));
     }
-
-    private static void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-        ConnectorAdd.INSTANCE.launchServices(context, parentAddress.getLastElement().getValue(), parentModel);
-    }
-
-    private static ServiceName getParentServiceName(PathAddress parentAddress) {
-        return RemotingServices.serverServiceName(parentAddress.getLastElement().getValue());
-    }
-
-    private static class PropertyWriteAttributeHandler extends RestartParentWriteAttributeHandler {
-
-        public PropertyWriteAttributeHandler(String parent) {
-            // FIXME PropertyWriteAttributeHandler constructor
-            super(parent, VALUE);
-        }
-
-        @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            PropertyResource.recreateParentService(context, parentAddress, parentModel);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress parentAddress) {
-            return PropertyResource.getParentServiceName(parentAddress);
-        }
-    }
-
-    private static class PropertyAdd extends RestartParentResourceAddHandler {
-
-        private PropertyAdd(String parent) {
-            super(parent);
-        }
-
-        protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
-            PropertyResource.VALUE.validateAndSet(operation, model);
-        }
-
-        @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            PropertyResource.recreateParentService(context, parentAddress, parentModel);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress parentAddress) {
-            return PropertyResource.getParentServiceName(parentAddress);
-        }
-    }
-
-    private static class PropertyRemove extends RestartParentResourceRemoveHandler {
-        private PropertyRemove(String parent) {
-            super(parent);
-        }
-
-        @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            PropertyResource.recreateParentService(context, parentAddress, parentModel);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress parentAddress) {
-            return PropertyResource.getParentServiceName(parentAddress);
-        }
-    }
-
 }
