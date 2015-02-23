@@ -49,7 +49,8 @@ public class ModelControllerClientOperationHandlerFactoryService extends Abstrac
             subject = new Subject();
         }
 
-        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport(), subject));
+        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler,
+                getResponseAttachmentSupport(), getClientRequestExecutor(), subject));
 
         channel.receiveMessage(handler.getReceiver());
         return handler;

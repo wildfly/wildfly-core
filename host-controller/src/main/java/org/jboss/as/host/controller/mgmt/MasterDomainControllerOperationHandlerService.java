@@ -98,7 +98,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
         // Assemble the request handlers for the domain channel
         handler.addHandlerFactory(new HostControllerRegistrationHandler(handler, domainController, operationExecutor,
                 getExecutor(), runtimeIgnoreTransformationRegistry, slaveHostRegistrations));
-        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport()));
+        handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport(), getClientRequestExecutor()));
         handler.addHandlerFactory(new MasterDomainControllerOperationHandlerImpl(domainController, getExecutor()));
         handler.addHandlerFactory(pongRequestHandler);
         handler.addHandlerFactory(new DomainTransactionalProtocolOperationHandler(txOperationExecutor, handler, getResponseAttachmentSupport()));

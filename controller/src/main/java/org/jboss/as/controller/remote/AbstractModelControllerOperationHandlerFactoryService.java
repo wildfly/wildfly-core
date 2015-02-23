@@ -21,11 +21,17 @@
 */
 package org.jboss.as.controller.remote;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.logging.ControllerLogger.SERVER_MANAGEMENT_LOGGER;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
@@ -35,6 +41,8 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Service used to create operation handlers per incoming channel
@@ -45,11 +53,18 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
 
     public static final ServiceName OPERATION_HANDLER_NAME_SUFFIX = ServiceName.of("operation", "handler");
 
+    // The defaults if no executor was defined
+    private static final int WORK_QUEUE_SIZE = 512;
+    private static final int POOL_CORE_SIZE = 4;
+    private static final int POOL_MAX_SIZE = 4;
+
+
     private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
     private final InjectedValue<ExecutorService> executor = new InjectedValue<ExecutorService>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutor = new InjectedValue<>();
 
     private ResponseAttachmentInputStreamSupport responseAttachmentSupport;
+    private ExecutorService clientRequestExecutor;
 
     /**
      * Use to inject the model controller that will be the target of the operations
@@ -73,6 +88,15 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     public synchronized void start(StartContext context) throws StartException {
         SERVER_MANAGEMENT_LOGGER.debugf("Starting operation handler service %s", context.getController().getName());
         responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutor.getValue());
+
+        final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);
+        final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(POOL_CORE_SIZE, POOL_MAX_SIZE,
+                60L, TimeUnit.SECONDS, workQueue,
+                threadFactory);
+        // Allow the core threads to time out as well
+        executor.allowCoreThreadTimeOut(true);
+        this.clientRequestExecutor = executor;
     }
 
     /** {@inheritDoc} */
@@ -84,6 +108,9 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
             public void run() {
                 try {
                     responseAttachmentSupport.shutdown();
+                    // Shut down new requests to the client request executor,
+                    // but don't mess with currently running tasks
+                    clientRequestExecutor.shutdown();
                 } finally {
                     stopContext.complete();
                 }
@@ -117,4 +144,7 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
         return responseAttachmentSupport;
     }
 
+    protected final ExecutorService getClientRequestExecutor() {
+        return clientRequestExecutor;
+    }
 }

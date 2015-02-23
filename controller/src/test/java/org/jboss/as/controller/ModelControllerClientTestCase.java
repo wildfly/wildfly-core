@@ -21,6 +21,7 @@
 */
 package org.jboss.as.controller;
 
+import static java.security.AccessController.doPrivileged;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
@@ -31,7 +32,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -53,11 +58,13 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.remoting3.Channel;
 import org.jboss.threads.AsyncFuture;
+import org.jboss.threads.JBossThreadFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.xnio.IoUtils;
 /**
  *
@@ -87,9 +94,20 @@ public class ModelControllerClientTestCase {
                 @Override
                 public ManagementChannelHandler startReceiving(Channel channel) {
                     final ManagementChannelHandler support = new ManagementChannelHandler(channel, channels.getExecutorService());
-                    support.addHandlerFactory(new ModelControllerClientOperationHandler(controller, support, new ResponseAttachmentInputStreamSupport()));
+                    support.addHandlerFactory(new ModelControllerClientOperationHandler(controller, support, new ResponseAttachmentInputStreamSupport(), getClientRequestExecutor()));
                     channel.receiveMessage(support.getReceiver());
                     return support;
+                }
+
+                private ExecutorService getClientRequestExecutor() {
+                    final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(512);
+                    final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+                    ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4,
+                            250L, TimeUnit.MILLISECONDS, workQueue,
+                            threadFactory);
+                    // Allow the core threads to time out as well
+                    executor.allowCoreThreadTimeOut(true);
+                    return executor;
                 }
             });
             channels.startClientConnetion();
