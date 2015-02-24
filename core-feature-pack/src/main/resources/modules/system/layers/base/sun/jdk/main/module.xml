@@ -52,6 +52,7 @@
                 <path name="com/sun/jndi/url/rmi"/>
                 <path name="com/sun/media/sound"/>
                 <path name="com/sun/crypto/provider"/>
+                <path name="com/sun/org/apache/bcel/internal/classfile"/>
                 <path name="com/sun/org/apache/xml/internal/security/transforms/implementations"/>
                 <path name="com/sun/rowset"/>
                 <path name="com/sun/rowset/providers"/>
