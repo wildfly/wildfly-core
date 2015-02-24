@@ -66,7 +66,6 @@ import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.Value;
-import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VFSUtils;
@@ -242,7 +241,6 @@ public class EmbeddedStandAloneServerFactory {
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ControlledProcessStateService controlledProcessStateService;
-        private StdioContext initialStdioContext = StdioContext.getStdioContext();
         private boolean uninstallStdIo;
 
         public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
@@ -301,6 +299,7 @@ public class EmbeddedStandAloneServerFactory {
 
         @Override
         public void start() throws ServerStartException {
+
             try {
 
                 // Take control of server use of System.exit
@@ -311,6 +310,7 @@ public class EmbeddedStandAloneServerFactory {
                     }
                 });
 
+                // Take control of stdio
                 try {
                     StdioContext.install();
                     uninstallStdIo = true;
@@ -421,7 +421,7 @@ public class EmbeddedStandAloneServerFactory {
                     ex.printStackTrace();
                 }
             }
-            StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
+
             if (uninstallStdIo) {
                 try {
                     StdioContext.uninstall();

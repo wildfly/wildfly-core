@@ -189,4 +189,8 @@ public interface EmbeddedLogger extends BasicLogger {
 
     @Message(id = 24, value = "The embedded server is reloading and invocations on the ModelControllerClient are not yet available")
     IllegalStateException processIsReloading();
+
+    @LogMessage(level = WARN)
+    @Message(id = 25, value = "Unable to configure embedded server logging from %s")
+    void cannotConfigureBootLogging(File loggingProperties);
 }

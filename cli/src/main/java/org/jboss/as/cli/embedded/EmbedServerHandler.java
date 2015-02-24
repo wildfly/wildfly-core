@@ -54,11 +54,9 @@ import org.jboss.as.embedded.StandaloneServer;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.LogContextSelector;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
-import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -153,26 +151,29 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
         final EnvironmentRestorer restorer = new EnvironmentRestorer();
         boolean ok = false;
+        ThreadLocalContextSelector contextSelector = null;
         try {
+
+            Contexts defaultContexts = restorer.getDefaultContexts();
+
+            StdioContext discardStdoutContext = null;
+            if (!ECHO.equalsIgnoreCase(stdOutHandling.getValue(parsedCmd))) {
+                PrintStream nullStream = new UncloseablePrintStream(NullOutputStream.getInstance());
+                StdioContext currentContext = defaultContexts.getStdioContext();
+                discardStdoutContext = StdioContext.create(currentContext.getIn(), nullStream, currentContext.getErr());
+            }
 
             // Create our own LogContext
             final LogContext embeddedLogContext = LogContext.create();
-            LogContext.setLogContextSelector(new LogContextSelector() {
-                @Override
-                public LogContext getLogContext() {
-                    return embeddedLogContext;
-                }
-            });
+            // Set up logging from standalone/configuration/logging.properties
+            configureLogContext(embeddedLogContext, jbossHome, ctx);
 
-            if (!ECHO.equalsIgnoreCase(stdOutHandling.getValue(parsedCmd))) {
-                PrintStream nullStream = new UncloseablePrintStream(NullOutputStream.getInstance());
-                StdioContext currentContext = restorer.getStdioContext();
-                StdioContext newContext = StdioContext.create(currentContext.getIn(), nullStream, currentContext.getErr());
-                StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(newContext));
-            } else {
-                // Set up logging from standalone/configuration/logging.properties
-                configureLogContext(embeddedLogContext, jbossHome, ctx);
-            }
+            Contexts localContexts = new Contexts(embeddedLogContext, discardStdoutContext);
+            contextSelector = new ThreadLocalContextSelector(localContexts, defaultContexts);
+            contextSelector.pushLocal();
+
+            StdioContext.setStdioContextSelector(contextSelector);
+            LogContext.setLogContextSelector(contextSelector);
 
             List<String> cmdsList = new ArrayList<>();
             if (xml != null && xml.trim().length() > 0) {
@@ -195,12 +196,11 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 // Modular environment
                 server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                String[] systemPackages = null;
-                server = EmbeddedServerFactory.create(jbossHome.getAbsolutePath(), null, null, systemPackages, cmds);
+                server = EmbeddedServerFactory.create(jbossHome.getAbsolutePath(), null, null, null, cmds);
             }
             server.start();
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
-            ModelControllerClient mcc = server.getModelControllerClient();
+            ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);
             ctx.bindClient(mcc);
             // Stop the server on any disconnect event
             ctx.addEventListener(new CliEventListener() {
@@ -257,9 +257,8 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             if (!ok) {
                 ctx.disconnectController();
                 restorer.restoreEnvironment();
-            } else {
-                // Just put back the LogContextSelector
-                //restorer.restoreLogContextSelector();
+            } else if (contextSelector != null) {
+                contextSelector.restore(null);
             }
         }
     }
@@ -313,4 +312,5 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         }
         return f;
     }
+
 }

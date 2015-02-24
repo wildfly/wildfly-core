@@ -45,8 +45,21 @@ public class EmbeddedControllerHandlerRegistrar {
         String systemPkgs = WildFlySecurityManager.getPropertyPrivileged("jboss.modules.system.pkgs", null);
         try {
             // Set jboss.modules.system.pkgs before loading Module class, as it reads it in a static initializer
+            //
+            // Note that if it turns out we're already in a modular environment, setting this does
+            // nothing, as the prop has already been read. Does no harm either.
+            //
+            // Why these packages?
+            // 1) msc, dmr, controller.client are part of the StandaloneServer API
+            // 2) org.jboss.threads is unfortunately part of the ModelControllerClient API
+            // 3) org.jboss.modules -- dunno, seems vaguely logical; the AS7 embedded code included this so I do too
+            // 4) org.jboss.logging and org.jboss.logmanager -- logmanager.LogManager is installed as
+            //    the JDK log manager, and it uses its LogContext class and the static field therein
+            //    heavily. If the CLI-side LogContext class and the modular side LogContext class are different,
+            //    nothing works properly. Since logmanager is a system pkg, the org.jboss.logging API stuff must be too
             WildFlySecurityManager.setPropertyPrivileged("jboss.modules.system.pkgs",
-                    "org.jboss.modules,org.jboss.msc,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
+                    "org.jboss.modules,org.jboss.msc,org.jboss.dmr,org.jboss.threads," +
+                    "org.jboss.as.controller.client,org.jboss.logging,org.jboss.logmanager");
 
             String classname = "org.jboss.modules.Module";
             ClassLoader cl = EmbeddedControllerHandlerRegistrar.class.getClassLoader();
