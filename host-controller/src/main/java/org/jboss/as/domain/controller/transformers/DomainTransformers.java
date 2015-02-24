@@ -103,7 +103,7 @@ public class DomainTransformers {
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3, VERSION_1_4, VERSION_1_5, VERSION_1_6);
+        registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3, VERSION_1_4);
     }
 
     private static void registerChainedPathsTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
@@ -118,7 +118,7 @@ public class DomainTransformers {
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3, VERSION_1_4, VERSION_1_5, VERSION_1_6);
+        registerChainedTransformer(registry, builder, VERSION_1_2, VERSION_1_3, VERSION_1_4, VERSION_1_6);
 
         registerChainedTransformer(registry, builder, VERSION_2_0, VERSION_2_1);
     }
