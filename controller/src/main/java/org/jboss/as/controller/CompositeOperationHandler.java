@@ -57,6 +57,11 @@ public final class CompositeOperationHandler implements OperationStepHandler {
     public static final CompositeOperationHandler INSTANCE = new CompositeOperationHandler();
     public static final String NAME = ModelDescriptionConstants.COMPOSITE;
 
+    /** Gets the failure message used for reporting a rollback with no failure message in a step */
+    public static String getUnexplainedFailureMessage() {
+        return ControllerLogger.ROOT_LOGGER.compositeOperationRolledBack();
+    }
+
     private static final AttributeDefinition STEPS = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.STEPS, ModelType.OBJECT)
             .build();
 
@@ -122,7 +127,7 @@ public final class CompositeOperationHandler implements OperationStepHandler {
                     }
                 }
                 if (!failureMsg.isDefined()) {
-                    failureMsg.set(ControllerLogger.ROOT_LOGGER.compositeOperationRolledBack());
+                    failureMsg.set(getUnexplainedFailureMessage());
                 }
                 context.getFailureDescription().set(failureMsg);
             }

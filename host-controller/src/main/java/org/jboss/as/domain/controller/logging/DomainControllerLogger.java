@@ -731,4 +731,12 @@ public interface DomainControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 73, value = "%s deployment has been re-deployed, its content will not be removed. You will need to restart it.")
     void undeployingDeploymentHasBeenRedeployed(String deploymentName);
+
+    /**
+     * A message indicating the operation failed or was rolled back on all servers,.
+     *
+     * @return the message.
+     */
+    @Message(id = 74, value = "Operation failed or was rolled back on all servers. Server failures:")
+    String operationFailedOrRolledBackWithCause();
 }

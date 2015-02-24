@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -78,17 +80,27 @@ public class DomainFinalResultHandler implements OperationStepHandler {
                 final boolean isDomain = isDomainOperation(operation);
                 boolean shouldContinue = collectDomainFailure(context, isDomain);
                 shouldContinue = shouldContinue && collectContextFailure(context, isDomain);
-                shouldContinue = shouldContinue && collectHostFailures(context, isDomain);
-                if(shouldContinue){
+                if (shouldContinue) {
+
                     ModelNode contextResult = context.getResult();
                     contextResult.setEmptyObject(); // clear out any old data
                     contextResult.set(getDomainResults(operation));
-                    if (domainOperationContext.getServerResults().size() > 0) {
-                        populateServerGroupResults(context);
+
+                    // If we have server results we know all was ok on the slaves
+                    Map<ServerIdentity, ModelNode> serverResults = domainOperationContext.getServerResults();
+                    if (serverResults.size() > 0) {
+                        populateServerGroupResults(context, serverResults);
                     } else {
-                        // Just make sure there's an 'undefined' server-groups node
-                        context.getServerResults();
+                        shouldContinue = collectHostFailures(context, isDomain);
+                        if (shouldContinue) {
+                            // Just make sure there's an 'undefined' server-groups node
+                            context.getServerResults();
+                        }
                     }
+                }
+
+                if (!shouldContinue && context.hasResult()) {
+                    context.getResult().setEmptyObject();  // clear out any old data
                 }
             }
         });
@@ -101,7 +113,9 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             domainFailure = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
         }
         if (domainFailure != null) {
-            context.getFailureDescription().get(DOMAIN_FAILURE_DESCRIPTION).set(domainFailure);
+            ModelNode fullFailure = new ModelNode();
+            fullFailure.get(DOMAIN_FAILURE_DESCRIPTION).set(domainFailure);
+            context.getFailureDescription().set(fullFailure);
             return false;
         }
         return true;
@@ -122,7 +136,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             } else {
                 ModelNode hostFailureProperty = new ModelNode();
                 ModelNode contextFailure = context.getFailureDescription();
-                ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+                ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
                 hostFailureProperty.add(domainOperationContext.getLocalHostInfo().getLocalHostName(), hostFailure);
 
                 formattedFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureProperty);
@@ -163,7 +177,9 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             //DomainRolloutStepHandler.pushToServers() puts in a simple string into the failure description, but that might be a red herring.
             //If there is a failure description and it is not of type OBJECT, then let's not set it for now
             if (!context.getFailureDescription().isDefined() || context.getFailureDescription().getType() == ModelType.OBJECT) {
-                context.getFailureDescription().get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureResults);
+                ModelNode fullFailure = new ModelNode();
+                fullFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureResults);
+                context.getFailureDescription().set(fullFailure);
             } else {
                 DomainControllerLogger.CONTROLLER_LOGGER.debugf("Failure description is not of type OBJECT '%s'", context.getFailureDescription());
             }
@@ -215,10 +231,11 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         return result;
     }
 
-    private void populateServerGroupResults(final OperationContext context) {
+    private void populateServerGroupResults(final OperationContext context, final Map<ServerIdentity, ModelNode> serverResults) {
+
         final Set<String> groupNames = new TreeSet<String>();
         final Map<String, Set<HostServer>> groupToServerMap = new HashMap<String, Set<HostServer>>();
-        for (Map.Entry<ServerIdentity, ModelNode> entry : domainOperationContext.getServerResults().entrySet()) {
+        for (Map.Entry<ServerIdentity, ModelNode> entry : serverResults.entrySet()) {
             final String serverGroup = entry.getKey().getServerGroupName();
             groupNames.add(serverGroup);
             final String hostName = entry.getKey().getHostName();
@@ -230,9 +247,11 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         }
 
         boolean serverGroupSuccess = false;
+        ModelNode failureReport = new ModelNode();
         for (String groupName : groupNames) {
             final ModelNode groupNode = new ModelNode();
-            if (domainOperationContext.isServerGroupRollback(groupName)) {
+            boolean groupFailure = domainOperationContext.isServerGroupRollback(groupName);
+            if (groupFailure) {
                 // TODO revisit if we should report this for the whole group, since the result might not be accurate
                 // groupNode.get(ROLLED_BACK).set(true);
             } else {
@@ -240,12 +259,27 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             }
             for (HostServer hostServer : groupToServerMap.get(groupName)) {
                 groupNode.get(HOST, hostServer.hostName, hostServer.serverName, RESPONSE).set(hostServer.result);
+                if (groupFailure && hostServer.result.hasDefined(OUTCOME)
+                        && FAILED.equals(hostServer.result.get(OUTCOME).asString())
+                        && hostServer.result.hasDefined(FAILURE_DESCRIPTION)) {
+                    ModelNode failDesc = hostServer.result.get(FAILURE_DESCRIPTION);
+                    if (!CompositeOperationHandler.getUnexplainedFailureMessage().equals(failDesc.asString())) {
+                        failureReport.get(SERVER_GROUP, groupName, HOST, hostServer.hostName, hostServer.serverName).set(failDesc);
+                    } // else the server just reported an unexplained composite failure.
+                      // We assume it's due to domain-wide rollback, which is not useful information
+                      // so don't include this server in the top level failure description
+                }
             }
             context.getServerResults().get(groupName).set(groupNode);
         }
-        if(!serverGroupSuccess) {
-            // TODO see if we can extract more information from the server details
-            context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBack());
+        if (!serverGroupSuccess) {
+            if (failureReport.isDefined()) {
+                ModelNode fullFailure = new ModelNode();
+                fullFailure.get(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBackWithCause()).set(failureReport);
+                context.getFailureDescription().set(fullFailure);
+            } else {
+                context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBack());
+            }
         }
     }
 

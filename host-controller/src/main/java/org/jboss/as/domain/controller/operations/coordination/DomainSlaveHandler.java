@@ -41,7 +41,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -84,9 +83,6 @@ public class DomainSlaveHandler implements OperationStepHandler {
             context.setRollbackOnly();
             return;
         }
-
-        // Temporary hack to prevent CompositeOperationHandler throwing away domain failure data
-        context.attachIfAbsent(CompositeOperationHandler.DOMAIN_EXECUTION_KEY, Boolean.TRUE);
 
         final Set<String> outstanding = new HashSet<String>(hostProxies.keySet());
         final List<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>> results = new ArrayList<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>>();
