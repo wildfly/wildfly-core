@@ -150,14 +150,7 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
 
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        if (modelVersion.hasTransformers()) {
-            switch (modelVersion) {
-                case VERSION_1_1_0:
-                    final PathElement pathElement = getPathElement();
-                    rootResourceBuilder.rejectChildResource(pathElement);
-                    break;
-            }
-        }
+        //
     }
 
     static enum FacilityAttribute {

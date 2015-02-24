@@ -22,7 +22,6 @@
 
 package org.jboss.as.logging;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.FILTER;
 import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
@@ -47,8 +46,6 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.LoggingOperations.ReadFilterOperationStepHandler;
 import org.jboss.dmr.ModelNode;
@@ -175,32 +172,6 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
             final PathElement pathElement = getPathElement();
             final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
             switch (modelVersion) {
-                case VERSION_1_1_0: {
-                    resourceBuilder
-                         .getAttributeBuilder()
-                            // discard level="ALL"
-                            .setDiscard(Transformers1_1_0.LEVEL_ALL_DISCARD_CHECKER, LEVEL)
-                            .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, EXPRESSION_ATTRIBUTES)
-                                    // Discard undefined filter-spec, else convert the value and rename to "filter"
-                            .setDiscard(DiscardAttributeChecker.UNDEFINED, FILTER_SPEC)
-                            .setValueConverter(Transformers1_1_0.FILTER_SPEC_CONVERTER, FILTER_SPEC)
-                            .addRename(FILTER_SPEC, FILTER.getName())
-                            .end()
-                                    // Register operation transformers
-                            .addOperationTransformationOverride(ADD)
-                            .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                            .inheritResourceAttributeDefinitions()
-                            .end()
-                            .addOperationTransformationOverride(ADD_HANDLER_OPERATION_NAME)
-                            .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                            .inheritResourceAttributeDefinitions()
-                            .end()
-                            .addOperationTransformationOverride(REMOVE_HANDLER_OPERATION_NAME)
-                            .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                            .inheritResourceAttributeDefinitions()
-                            .end();
-                    break;
-                }
                 case VERSION_1_3_0: {
                     resourceBuilder.setCustomResourceTransformer(new LoggingResourceTransformer(CATEGORY));
                     final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);

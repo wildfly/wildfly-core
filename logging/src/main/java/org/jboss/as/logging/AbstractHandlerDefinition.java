@@ -22,7 +22,6 @@
 
 package org.jboss.as.logging;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLE;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
@@ -235,35 +234,6 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
             final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
             ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = null;
             switch (modelVersion) {
-                case VERSION_1_1_0:
-                    resourceBuilder
-                            .getAttributeBuilder()
-                                    // discard level="ALL"
-                            .setDiscard(Transformers1_1_0.LEVEL_ALL_DISCARD_CHECKER, LEVEL)
-                                    // Strip console color from format patterns
-                            .setValueConverter(Transformers1_1_0.CONSOLE_COLOR_CONVERTER, FORMATTER)
-                                    // Discard undefined filter-spec, else convert the value and rename to "filter"
-                            .setDiscard(DiscardAttributeChecker.UNDEFINED, FILTER_SPEC)
-                            .setValueConverter(Transformers1_1_0.FILTER_SPEC_CONVERTER, FILTER_SPEC)
-                            .addRename(FILTER_SPEC, FILTER.getName())
-                                    // Discard 'enabled' if undefined or true, else reject
-                            .setDiscard(Transformers1_1_0.DISCARD_ENABLED, ENABLED)
-                            .addRejectCheck(RejectAttributeChecker.DEFINED, ENABLED)
-                                    // Standard expression rejection
-                            .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, DEFAULT_ATTRIBUTES)
-                            .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, LEGACY_ATTRIBUTES)
-                            .end()
-                            .addOperationTransformationOverride(ADD)
-                            .setCustomOperationTransformer(LoggingOperationTransformer.INSTANCE)
-                            .inheritResourceAttributeDefinitions()
-                            .end()
-                                    // Discard 'name' as legacy slaves didn't store it in resources
-                            .setCustomResourceTransformer(new LoggingResourceTransformer(NAME));
-                    break;
-                case VERSION_1_2_0: {
-                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-                    break;
-                }
                 case VERSION_1_3_0: {
                     resourceBuilder
                             .getAttributeBuilder()

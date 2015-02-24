@@ -31,7 +31,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
-import org.jboss.as.controller.transform.description.DiscardAttributeChecker.DiscardAttributeValueChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.resolvers.SizeResolver;
@@ -89,28 +88,6 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
-            case VERSION_1_1_0: {
-                resourceBuilder
-                        .getAttributeBuilder()
-                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, AUTOFLUSH, APPEND, FILE, MAX_BACKUP_INDEX, ROTATE_SIZE)
-                        .end();
-                break;
-            }
-            case VERSION_1_2_0: {
-                resourceBuilder
-                        .getAttributeBuilder()
-                        .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
-                        .end();
-                if (loggingProfileBuilder != null) {
-                    loggingProfileBuilder
-                            .getAttributeBuilder()
-                            .setDiscard(new DiscardAttributeValueChecker(new ModelNode(false)), ROTATE_ON_BOOT)
-                            .addRejectCheck(RejectAttributeChecker.DEFINED, ROTATE_ON_BOOT)
-                            .end();
-                }
-                break;
-            }
             case VERSION_2_0_0: {
                 resourceBuilder
                         .getAttributeBuilder()

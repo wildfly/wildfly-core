@@ -29,19 +29,20 @@ public enum ModelTestControllerVersion {
     MASTER (CurrentVersion.VERSION, false, null),
     V7_1_2_FINAL ("7.1.2.Final", false, "7.1.2", false),
     V7_1_3_FINAL ("7.1.3.Final", false, "7.1.2", false),
-    V7_2_0_FINAL ("7.2.0.Final", false, "7.2.0"),
+    V7_2_0_FINAL ("7.2.0.Final", false, "7.2.0" ,false),
 
     //WILDFLY RELEASES
     WILDFLY_8_0_0_FINAL ("8.0.0.Final", false, "8.0.0", false),
     WILDFLY_8_1_0_FINAL ("8.1.0.Final", false, "8.0.0", false),
+    WILDFLY_8_2_0_FINAL ("8.2.0.Final", false, "8.0.0", false),
 
     //EAP releases
     EAP_6_0_0 ("7.1.2.Final-redhat-1", true, "7.1.2", false),
     EAP_6_0_1 ("7.1.3.Final-redhat-4", true, "7.1.2", false),
-    EAP_6_1_0 ("7.2.0.Final-redhat-8", true, "7.2.0"),
-    EAP_6_1_1 ("7.2.1.Final-redhat-10", true, "7.2.0"),
-    //TODO might eventually need EAP 6.2.0+ controllers since 7.2.0 does not have the RBAC classes, which could be used by subsystems
-    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"),
+    EAP_6_1_0 ("7.2.0.Final-redhat-8", true, "7.2.0", false),
+    EAP_6_1_1 ("7.2.1.Final-redhat-10", true, "7.2.0" ,false),
+
+    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"), //EAP 6.2 is the earliest version we support for transformers
     EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.4.0"),
     ;
 
