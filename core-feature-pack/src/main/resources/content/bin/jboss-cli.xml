@@ -26,10 +26,6 @@
 
     <validate-operation-requests>true</validate-operation-requests>
 
-    <!-- whether to resolve system properties specified as command argument or operation parameter values
-         in the CLI VM before sending the operation requests to the controller -->
-    <resolve-parameter-values>false</resolve-parameter-values>
-
     <!-- Command and operation history log configuration -->
     <history>
         <enabled>true</enabled>
@@ -37,6 +33,11 @@
         <file-dir>${user.home}</file-dir>
         <max-size>500</max-size>
     </history>
+
+    <!-- whether to resolve system properties specified as command argument or operation parameter values
+                  in the CLI VM before sending the operation requests to the controller -->
+    <resolve-parameter-values>false</resolve-parameter-values>
+
 
     <!-- Whether to write info and error messages to the terminal output -->
     <silent>false</silent>
