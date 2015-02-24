@@ -42,19 +42,23 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- *
+ * Undertow handler for CORS headers.
+ * @see http://www.w3.org/TR/cors
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class CorsHttpHandler implements HttpHandler {
 
     private final HttpHandler next;
     private final Collection<String> allowedOrigins = new ArrayList<String>();
+    /** Default max age **/
     private static final long ONE_HOUR_IN_SECONDS = 60 * 60;
 
     public CorsHttpHandler(HttpHandler next, Collection<String> allowedOrigins) {
         this.next = next;
         if (allowedOrigins != null) {
-            this.allowedOrigins.addAll(allowedOrigins);
+            for (String allowedOrigin : allowedOrigins) {
+                this.allowedOrigins.add(CorsUtil.sanitizeDefaultPort(allowedOrigin));
+            }
         }
     }
 
@@ -79,8 +83,9 @@ public class CorsHttpHandler implements HttpHandler {
     private void setCorsResponseHeaders(HttpServerExchange exchange) throws Exception {
         HeaderMap headers = exchange.getRequestHeaders();
         if (headers.contains(Headers.ORIGIN)) {
-            String allowedOrigin = matchOrigin(exchange, allowedOrigins);
-            exchange.getResponseHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
+            if(matchOrigin(exchange, allowedOrigins) != null) {
+                exchange.getResponseHeaders().addAll(ACCESS_CONTROL_ALLOW_ORIGIN, headers.get(Headers.ORIGIN));
+            }
         }
         HeaderValues requestedMethods = headers.get(ACCESS_CONTROL_REQUEST_METHOD);
         if (requestedMethods != null && !requestedMethods.isEmpty()) {
