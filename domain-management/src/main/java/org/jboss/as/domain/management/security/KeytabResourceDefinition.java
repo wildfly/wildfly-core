@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.security;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -62,6 +63,7 @@ public class KeytabResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .setAllowNull(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
+            .setAttributeMarshaller(AttributeMarshaller.STRING_LIST)
             .build();
 
     public static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEBUG, ModelType.BOOLEAN, true)

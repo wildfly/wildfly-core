@@ -24,6 +24,12 @@ package org.jboss.as.controller;
 
 import static org.junit.Assert.fail;
 
+import java.io.StringWriter;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -124,6 +130,33 @@ public class SimpleListAttributeDefinitionUnitTestCase {
         validateOperation(copy, invalidValue2, false);
     }
 
+    @Test
+    public void testSpaceSeparatedParserAndMarshaller() throws XMLStreamException {
+        AttributeDefinition attributeDefinition = new StringListAttributeDefinition.Builder("connectors")
+                .setXmlName("connectors")
+                .setAttributeParser(AttributeParser.STRING_LIST)
+                .setAttributeMarshaller(AttributeMarshaller.STRING_LIST)
+                .build();
+
+        // parse the XML attribute
+        ModelNode model = new ModelNode();
+        AttributeParser.STRING_LIST.parseAndSetParameter(attributeDefinition, "foo bar", model, null);
+
+        Assert.assertEquals(2, model.get("connectors").asList().size());
+        Assert.assertEquals("foo", model.get("connectors").asList().get(0).asString());
+        Assert.assertEquals("bar", model.get("connectors").asList().get(1).asString());
+
+        StringWriter stringWriter = new StringWriter();
+        XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter);
+
+        // marshall the XML attribute
+        writer.writeStartElement("resource");
+        attributeDefinition.getAttributeMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
+        writer.writeEndElement();
+
+        Assert.assertEquals(stringWriter.toString(), "<resource connectors=\"foo bar\"></resource>");
+
+    }
     private void validateOperation(AttributeDefinition attributeDefinition, ModelNode value, boolean expectSuccess) throws OperationFailedException {
         ModelNode operation = new ModelNode();
         operation.get("test").set(value);

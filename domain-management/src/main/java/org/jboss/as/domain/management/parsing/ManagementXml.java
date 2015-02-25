@@ -4017,7 +4017,8 @@ public class ManagementXml {
                     writer.writeAttribute(Attribute.PRINCIPAL.getLocalName(), current.getName());
                     KeytabResourceDefinition.PATH.marshallAsAttribute(currentNode, writer);
                     KeytabResourceDefinition.RELATIVE_TO.marshallAsAttribute(currentNode, writer);
-                    KeytabResourceDefinition.FOR_HOSTS.marshallAsElement(currentNode, writer);
+                    KeytabResourceDefinition.FOR_HOSTS.getAttributeMarshaller()
+                            .marshallAsAttribute(KeytabResourceDefinition.FOR_HOSTS, currentNode, true, writer);
                     KeytabResourceDefinition.DEBUG.marshallAsAttribute(currentNode, writer);
                 }
             }
@@ -4313,7 +4314,8 @@ public class ManagementXml {
             LdapConnectionResourceDefinition.SECURITY_REALM.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.INITIAL_CONTEXT_FACTORY.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.REFERRALS.marshallAsAttribute(connection, writer);
-            LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR.marshallAsElement(connection, writer);
+            LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR.getAttributeMarshaller()
+                    .marshallAsAttribute(LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR, connection, true, writer);
 
             if (connection.hasDefined(PROPERTY)) {
                 List<Property> propertyList = connection.get(PROPERTY).asPropertyList();

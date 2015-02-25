@@ -2500,7 +2500,8 @@ public class HostXml extends CommonXml {
             HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.marshallAsAttribute(protocol, writer);
-            HttpManagementResourceDefinition.ALLOWED_ORIGINS.marshallAsElement(protocol, writer);
+            HttpManagementResourceDefinition.ALLOWED_ORIGINS.getAttributeMarshaller()
+                    .marshallAsAttribute(HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
             HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
 
