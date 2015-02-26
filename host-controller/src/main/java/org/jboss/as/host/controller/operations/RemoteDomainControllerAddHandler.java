@@ -67,6 +67,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setAllowExpression(true)
             .setValidator(new IntRangeValidator(1, 65535, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setRequires(ModelDescriptionConstants.HOST)
             .build();
 
     public static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST, ModelType.STRING)
@@ -74,6 +75,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setRequires(ModelDescriptionConstants.PORT)
             .build();
 
     public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
@@ -82,6 +84,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setValidator(new EnumValidator(Protocol.class, true, true))
             .setDefaultValue(Protocol.REMOTE.toModelNode())
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setRequires(ModelDescriptionConstants.HOST, ModelDescriptionConstants.PORT)
             .build();
 
     public static final SimpleAttributeDefinition USERNAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USERNAME, STRING, true)

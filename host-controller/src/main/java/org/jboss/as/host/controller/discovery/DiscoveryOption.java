@@ -52,6 +52,7 @@ public interface DiscoveryOption {
 
     /**
      *  Gets the host name of the remote domain controller.
+     *  This method may return null.
      *
      *  @return the host name
      */
@@ -66,6 +67,7 @@ public interface DiscoveryOption {
 
     /**
      *  Gets the protocol to communicate with the domain controller.
+     *  This method may return null.
      *
      * @return the protocol to use.
      */
