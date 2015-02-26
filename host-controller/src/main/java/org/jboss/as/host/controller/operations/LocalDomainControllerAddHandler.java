@@ -45,21 +45,13 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class LocalDomainControllerAddHandler implements OperationStepHandler {
+public abstract class LocalDomainControllerAddHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "write-local-domain-controller";
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .build();
 
-    private final ManagementResourceRegistration rootRegistration;
-    private final HostControllerConfigurationPersister overallConfigPersister;
-    private final HostFileRepository fileRepository;
-    private final LocalHostControllerInfoImpl hostControllerInfo;
-    private final ContentRepository contentRepository;
-    private final DomainController domainController;
-    private final ExtensionRegistry extensionRegistry;
-    private final PathManagerService pathManager;
 
     public static LocalDomainControllerAddHandler getInstance(final ManagementResourceRegistration rootRegistration,
                                                                  final LocalHostControllerInfoImpl hostControllerInfo,
@@ -69,26 +61,12 @@ public class LocalDomainControllerAddHandler implements OperationStepHandler {
                                                                  final DomainController domainController,
                                                                  final ExtensionRegistry extensionRegistry,
                                                                  final PathManagerService pathManager) {
-        return new LocalDomainControllerAddHandler(rootRegistration, hostControllerInfo, overallConfigPersister,
+        return new RealLocalDomainControllerAddHandler(rootRegistration, hostControllerInfo, overallConfigPersister,
                 fileRepository, contentRepository, domainController, extensionRegistry, pathManager);
     }
 
-    protected LocalDomainControllerAddHandler(final ManagementResourceRegistration rootRegistration,
-                                    final LocalHostControllerInfoImpl hostControllerInfo,
-                                    final HostControllerConfigurationPersister overallConfigPersister,
-                                    final HostFileRepository fileRepository,
-                                    final ContentRepository contentRepository,
-                                    final DomainController domainController,
-                                    final ExtensionRegistry extensionRegistry,
-                                    final PathManagerService pathManager) {
-        this.rootRegistration = rootRegistration;
-        this.overallConfigPersister = overallConfigPersister;
-        this.fileRepository = fileRepository;
-        this.hostControllerInfo = hostControllerInfo;
-        this.contentRepository = contentRepository;
-        this.domainController = domainController;
-        this.extensionRegistry = extensionRegistry;
-        this.pathManager = pathManager;
+    public static LocalDomainControllerAddHandler getTestInstance() {
+        return new TestLocalDomainControllerAddHandler();
     }
 
     @Override
@@ -119,10 +97,48 @@ public class LocalDomainControllerAddHandler implements OperationStepHandler {
         });
     }
 
-    protected void initializeDomain() {
-        hostControllerInfo.setMasterDomainController(true);
-        overallConfigPersister.initializeDomainConfigurationPersister(false);
+    protected abstract void initializeDomain();
 
-        domainController.initializeMasterDomainRegistry(rootRegistration, overallConfigPersister.getDomainPersister(), contentRepository, fileRepository, extensionRegistry, pathManager);
+    private static class RealLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
+        private final ManagementResourceRegistration rootRegistration;
+        private final HostControllerConfigurationPersister overallConfigPersister;
+        private final HostFileRepository fileRepository;
+        private final LocalHostControllerInfoImpl hostControllerInfo;
+        private final ContentRepository contentRepository;
+        private final DomainController domainController;
+        private final ExtensionRegistry extensionRegistry;
+        private final PathManagerService pathManager;
+
+        protected RealLocalDomainControllerAddHandler(final ManagementResourceRegistration rootRegistration,
+                final LocalHostControllerInfoImpl hostControllerInfo,
+                final HostControllerConfigurationPersister overallConfigPersister,
+                final HostFileRepository fileRepository,
+                final ContentRepository contentRepository,
+                final DomainController domainController,
+                final ExtensionRegistry extensionRegistry,
+                final PathManagerService pathManager) {
+            this.rootRegistration = rootRegistration;
+            this.overallConfigPersister = overallConfigPersister;
+            this.fileRepository = fileRepository;
+            this.hostControllerInfo = hostControllerInfo;
+            this.contentRepository = contentRepository;
+            this.domainController = domainController;
+            this.extensionRegistry = extensionRegistry;
+            this.pathManager = pathManager;
+        }
+
+        protected void initializeDomain() {
+            hostControllerInfo.setMasterDomainController(true);
+            overallConfigPersister.initializeDomainConfigurationPersister(false);
+
+            domainController.initializeMasterDomainRegistry(rootRegistration, overallConfigPersister.getDomainPersister(), contentRepository, fileRepository, extensionRegistry, pathManager);
+        }
+    }
+
+    private static class TestLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
+
+        @Override
+        protected void initializeDomain() {
+        }
     }
 }

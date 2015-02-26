@@ -30,6 +30,7 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
 
 import java.util.Locale;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -84,6 +85,7 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
                     }
                 }
             })
+            .setAllowNull(true)
             .setDefaultValue(new ModelNode(OverflowAction.BLOCK.name()))
             .setPropertyName("overflowAction")
             .setResolver(OverflowActionResolver.INSTANCE)

@@ -58,7 +58,6 @@ import static org.jboss.as.controller.parsing.Element.LINK_LOCAL_ADDRESS;
 import static org.jboss.as.controller.parsing.Element.LOOPBACK;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -69,11 +68,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import javax.inject.Inject;
+
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
@@ -351,8 +353,9 @@ public class BasicOperationsUnitTestCase {
     public void testInterfaceAdd() throws IOException {
 
         final ModelNode base = new ModelNode();
+        final PathAddress addr = PathAddress.pathAddress(INTERFACE, "test");
         base.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        base.get(OP_ADDR).add(INTERFACE, "test");
+        base.get(OP_ADDR).set(addr.toModelNode());
         base.protect();
 
         final ModelNode add = base.clone();
@@ -380,6 +383,9 @@ public class BasicOperationsUnitTestCase {
         composite.get(STEPS).add(any);
         composite.get(STEPS).add(linkLocalAddress);
         composite.get(STEPS).add(loopBack);
+        //Since any-address, link-local-address and loopback are all mutually exclusive, remove two of them from the composite
+        composite.get(STEPS).add(Util.getUndefineAttributeOperation(addr, ANY_ADDRESS));
+        composite.get(STEPS).add(Util.getUndefineAttributeOperation(addr, LINK_LOCAL_ADDRESS.getLocalName()));
 
         execute(composite);
 
@@ -441,7 +447,7 @@ public class BasicOperationsUnitTestCase {
             managementClient.getControllerClient().execute(removePropertyOp);
         }
     }
-    
+
     private static int countSystemProperties() throws IOException {
         ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
         readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
@@ -449,7 +455,7 @@ public class BasicOperationsUnitTestCase {
         ModelNode properties = validateResponse(response);
         return properties.asList().size();
     }
-    
+
     private static void validateSystemProperty(Map<String, String> properties, String propertyName, boolean exist, int origPropCount) throws IOException, MgmtOperationException {
         ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
         readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);

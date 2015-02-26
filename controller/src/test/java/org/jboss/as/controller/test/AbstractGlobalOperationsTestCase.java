@@ -117,6 +117,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         final ModelNode model = new ModelNode();
                         //Atttributes
+                        model.get("profile", "profileA", "name").set("profileA");
                         model.get("profile", "profileA", "subsystem", "subsystem1", "attr1").add(1);
                         model.get("profile", "profileA", "subsystem", "subsystem1", "attr1").add(2);
                         //Children
@@ -146,6 +147,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
 
                         model.get("profile", "profileB", "name").set("Profile B");
 
+                        model.get("profile", "profileC", "name").set("profileC");
                         model.get("profile", "profileC", "subsystem", "subsystem4");
                         model.get("profile", "profileC", "subsystem", "subsystem5", "name").set("Test");
 
@@ -312,13 +314,13 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         assertFalse(result.require(ATTRIBUTES).require("attr1").require(NILLABLE).asBoolean());
         assertEquals(AccessType.READ_ONLY.toString(), result.require(ATTRIBUTES).require("attr1").get(ACCESS_TYPE).asString());
         assertEquals(ModelType.INT, result.require(ATTRIBUTES).require("read-only").require(TYPE).asType());
-        assertFalse(result.require(ATTRIBUTES).require("read-only").require(NILLABLE).asBoolean());
+        assertTrue(result.require(ATTRIBUTES).require("read-only").require(NILLABLE).asBoolean());
         assertEquals(AccessType.READ_ONLY.toString(), result.require(ATTRIBUTES).require("read-only").get(ACCESS_TYPE).asString());
         assertEquals(ModelType.INT, result.require(ATTRIBUTES).require("metric1").require(TYPE).asType());
         assertEquals(AccessType.METRIC.toString(), result.require(ATTRIBUTES).require("metric1").get(ACCESS_TYPE).asString());
         assertEquals(AccessType.METRIC.toString(), result.require(ATTRIBUTES).require("metric2").get(ACCESS_TYPE).asString());
         assertEquals(ModelType.INT, result.require(ATTRIBUTES).require("read-write").require(TYPE).asType());
-        assertFalse(result.require(ATTRIBUTES).require("read-write").require(NILLABLE).asBoolean());
+        assertTrue(result.require(ATTRIBUTES).require("read-write").require(NILLABLE).asBoolean());
         assertEquals(expectedRwAttributeAccess.toString(), result.require(ATTRIBUTES).require("read-write").get(ACCESS_TYPE).asString());
 
         //we don't have proper support for this!

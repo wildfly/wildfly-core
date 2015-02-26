@@ -23,6 +23,7 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -33,6 +34,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
@@ -77,6 +80,7 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationSupport;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -104,6 +108,8 @@ abstract class AbstractOperationContext implements OperationContext {
                     ROLLBACK_ON_RUNTIME_FAILURE, ROLLOUT_PLAN)));
 
     static final ThreadLocal<Thread> controllingThread = new ThreadLocal<Thread>();
+
+    static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
 
     /** Thread that initiated execution of the overall operation for which this context is the whole or a part */
     final Thread initiatingThread;
@@ -147,6 +153,14 @@ abstract class AbstractOperationContext implements OperationContext {
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
+    /**
+     * Resources modified by this context's operations. May be modified by ParallelBootOperationStepHandler which spawns threads,
+     * so guard by itself.
+     * If validation is to be skipped this will be {@code null}
+     */
+    private final Set<PathAddress> modifiedResourcesForModelValidation;
+
+
     enum ContextFlag {
         ROLLBACK_ON_FAIL, ALLOW_RESOURCE_SERVICE_RESTART,
     }
@@ -157,7 +171,8 @@ abstract class AbstractOperationContext implements OperationContext {
                              final boolean booting,
                              final AuditLogger auditLogger,
                              final NotificationSupport notificationSupport,
-                             final ModelControllerImpl controller) {
+                             final ModelControllerImpl controller,
+                             final boolean skipModelValidation) {
         this.processType = processType;
         this.runningMode = runningMode;
         this.transactionControl = transactionControl;
@@ -179,6 +194,7 @@ abstract class AbstractOperationContext implements OperationContext {
         }
         initiatingThread = Thread.currentThread();
         this.callEnvironment = new Environment(processState, processType);
+        modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
     }
 
     @Override
@@ -449,6 +465,7 @@ abstract class AbstractOperationContext implements OperationContext {
      */
     abstract ManagementResourceRegistration getRootResourceRegistrationForUpdate();
 
+
     /**
      * Gets whether the currently executing thread is allowed to control this operation context.
      *
@@ -538,6 +555,10 @@ abstract class AbstractOperationContext implements OperationContext {
         do {
             step = steps.get(currentStage).pollFirst();
             if (step == null) {
+
+                if (currentStage == Stage.MODEL && addModelValidationSteps()) {
+                    continue;
+                }
                 // No steps remain in this stage; give subclasses a chance to check status
                 // and approve moving to the next stage
                 if (!stageCompleted(currentStage)) {
@@ -670,7 +691,36 @@ abstract class AbstractOperationContext implements OperationContext {
     public void emit(Notification notification) {
         // buffer the notifications but emit them only when an operation is successful.
         notifications.add(notification);
+
+        if (modifiedResourcesForModelValidation != null) {
+            //Hook for doing validation
+            String type = notification.getType();
+            switch (type) {
+                case ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION:
+                case RESOURCE_ADDED_NOTIFICATION: {
+                    PathAddress addr = notification.getSource();
+                    synchronized (modifiedResourcesForModelValidation) {
+                        if (!modifiedResourcesForModelValidation.contains(addr)) {
+                            modifiedResourcesForModelValidation.add(addr);
+                        }
+                    }
+                    break;
+                }
+                case RESOURCE_REMOVED_NOTIFICATION: {
+                    PathAddress addr = notification.getSource();
+                    synchronized (modifiedResourcesForModelValidation) {
+                        if (modifiedResourcesForModelValidation.contains(addr)) {
+                            modifiedResourcesForModelValidation.remove(addr);
+                        }
+                    }
+                    break;
+                }
+                default:
+                    //do nothing
+            }
+        }
     }
+
 
     private void emitNotifications() {
         // emit notifications only if the action is kept
@@ -825,6 +875,14 @@ abstract class AbstractOperationContext implements OperationContext {
             addBootFailureDescription();
             // Make sure non-recursive steps finalize
             finishStep(step);
+        }
+    }
+
+    void addModifiedResourcesForModelValidation(Set<PathAddress> modifiedResources) {
+        if (modifiedResourcesForModelValidation != null) {
+            synchronized (modifiedResourcesForModelValidation) {
+                modifiedResourcesForModelValidation.addAll(modifiedResources);
+            }
         }
     }
 
@@ -1084,6 +1142,24 @@ abstract class AbstractOperationContext implements OperationContext {
         }
         return false;
     }
+
+    private boolean addModelValidationSteps() {
+        if (modifiedResourcesForModelValidation == null) {
+            return false;
+        }
+        synchronized (modifiedResourcesForModelValidation) {
+            if (modifiedResourcesForModelValidation.size() == 0) {
+                return false;
+            }
+            for (PathAddress address : modifiedResourcesForModelValidation) {
+                ModelNode op = Util.createOperation(INTERNAL_MODEL_VALIDATION_NAME, address);
+                addStep(op, ValidateModelStepHandler.INSTANCE, Stage.MODEL);
+            }
+            modifiedResourcesForModelValidation.clear();
+        }
+        return true;
+    }
+
 
     class Step {
         private final Step parent;

@@ -52,6 +52,7 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
     public static final PropertyAttributeDefinition MAX_BACKUP_INDEX = PropertyAttributeDefinition.Builder.of("max-backup-index", ModelType.INT, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
+            .setAllowNull(true)
             .setDefaultValue(new ModelNode(1))
             .setPropertyName("maxBackupIndex")
             .setValidator(new IntRangeValidator(1, true))
@@ -59,11 +60,12 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
 
     public static final PropertyAttributeDefinition ROTATE_ON_BOOT = PropertyAttributeDefinition.Builder.of("rotate-on-boot", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
+            .setAllowNull(true)
             .setDefaultValue(new ModelNode(false))
             .setPropertyName("rotateOnBoot")
             .build();
 
-    public static final PropertyAttributeDefinition ROTATE_SIZE = PropertyAttributeDefinition.Builder.of("rotate-size", ModelType.STRING)
+    public static final PropertyAttributeDefinition ROTATE_SIZE = PropertyAttributeDefinition.Builder.of("rotate-size", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .setDefaultValue(new ModelNode("2m"))

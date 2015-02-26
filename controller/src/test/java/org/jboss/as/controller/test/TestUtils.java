@@ -58,6 +58,11 @@ public class TestUtils {
     }
 
     public static AttributeDefinition createAttribute(String name, ModelType type, String groupName, boolean runtimeOnly, boolean alias) {
+        return createAttribute(name, type, groupName, runtimeOnly, alias, false);
+    }
+
+
+    public static AttributeDefinition createAttribute(String name, ModelType type, String groupName, boolean runtimeOnly, boolean alias, boolean allowNull) {
         SimpleAttributeDefinitionBuilder attribute = SimpleAttributeDefinitionBuilder.create(name, type);
         if (runtimeOnly) {
             attribute.setStorageRuntime();
@@ -69,6 +74,9 @@ public class TestUtils {
             attribute.addFlag(AttributeAccess.Flag.ALIAS);
         }
         attribute.setAllowExpression(true);
+        if (allowNull) {
+            attribute.setAllowNull(true);
+        }
         return attribute.build();
     }
 

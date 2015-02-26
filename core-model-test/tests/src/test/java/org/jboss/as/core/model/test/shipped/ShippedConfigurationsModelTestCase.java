@@ -21,8 +21,6 @@
 */
 package org.jboss.as.core.model.test.shipped;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 
 import org.jboss.as.controller.PathElement;
@@ -62,15 +60,7 @@ public class ShippedConfigurationsModelTestCase extends AbstractCoreModelTest {
 
     @Test
     public void testHostXml() throws Exception {
-        testConfiguration(TestModelType.HOST, "host.xml", null, new ModelWriteSanitizer() {
-            @Override
-            public ModelNode sanitize(ModelNode model) {
-                //The write-local-domain-controller operation gets removed on boot by TestModelControllerService
-                //so add that resource here since we're using that from the xml
-                model.get(DOMAIN_CONTROLLER, LOCAL).setEmptyObject();
-                return model;
-            }
-        });
+        testConfiguration(TestModelType.HOST, "host.xml", null, null);
     }
 
     @Test

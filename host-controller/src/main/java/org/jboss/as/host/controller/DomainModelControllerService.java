@@ -551,7 +551,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
             // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
             ModelNode addHostOp = hostBootOps.remove(0);
-            ok = boot(Collections.singletonList(addHostOp), true);
+            //Disable model validation here since it will will fail
+            ok = boot(Collections.singletonList(addHostOp), true, true);
 
             // Add the controller initialization operation
             hostBootOps.add(registerModelControllerServiceInitializationBootStep(context));
@@ -567,7 +568,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
             final RunningMode currentRunningMode = runningModeControl.getRunningMode();
 
             if (ok) {
-
                 // Now we know our management interface configuration. Install the server inventory
                 Future<ServerInventory> inventoryFuture = installServerInventory(serviceTarget);
 

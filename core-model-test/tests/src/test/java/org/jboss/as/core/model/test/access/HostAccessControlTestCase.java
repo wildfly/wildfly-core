@@ -22,17 +22,10 @@
 
 package org.jboss.as.core.model.test.access;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
-
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
-import org.jboss.as.core.model.test.ModelInitializer;
-import org.jboss.as.core.model.test.ModelWriteSanitizer;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,7 +41,6 @@ public class HostAccessControlTestCase extends AbstractCoreModelTest {
 
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
                 .setXmlResource("host.xml")
-                .setModelInitializer(MODEL_SANITIZER, MODEL_WRITER_SANITIZER)
                 .validateDescription()
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
@@ -58,21 +50,5 @@ public class HostAccessControlTestCase extends AbstractCoreModelTest {
         String marshalled = kernelServices.getPersistedSubsystemXml();
         ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "host.xml"), marshalled);
     }
-
-    private final ModelInitializer MODEL_SANITIZER = new ModelInitializer() {
-        @Override
-        public void populateModel(Resource rootResource) {
-        }
-    };
-
-    private final ModelWriteSanitizer MODEL_WRITER_SANITIZER = new ModelWriteSanitizer() {
-        @Override
-        public ModelNode sanitize(ModelNode model) {
-            //The write-local-domain-controller operation gets removed on boot by TestModelControllerService
-            //so add that resource here since we're using that from the xml
-            model.get(DOMAIN_CONTROLLER, LOCAL).setEmptyObject();
-            return model;
-        }
-    };
 }
 

@@ -29,7 +29,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOLVE_EXPRESSIONS;
-import static org.jboss.as.controller.test.AbstractControllerTestBase.createModel;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
@@ -37,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -168,7 +168,7 @@ public class ReadAttributeGroupTestCase extends AbstractControllerTestBase {
         basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("fifth", ModelType.STRING, "group1", true), null);
         basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("sixth", ModelType.STRING, "group2", false, false), null);
         basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("seventh", ModelType.STRING, "group2", false, true), ShowModelAliasReadHandler.INSTANCE);
-        basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("eigth", ModelType.STRING, "group1", false, false), null);
+        basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("eigth", ModelType.STRING, "group1", false, false, true), null);
 
         registration.registerOperationHandler(TestUtils.SETUP_OPERATION_DEF, new OperationStepHandler() {
             @Override

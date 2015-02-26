@@ -60,7 +60,9 @@ class ReadOnlyContext extends AbstractOperationContext {
     ReadOnlyContext(final ProcessType processType, final RunningMode runningMode, final ModelController.OperationTransactionControl transactionControl,
                     final ControlledProcessState processState, final boolean booting,
                     final AbstractOperationContext primaryContext, final ModelControllerImpl controller, final int operationId) {
-        super(processType, runningMode, transactionControl, processState, booting, controller.getAuditLogger(), controller.getNotificationSupport(), controller);
+        super(processType, runningMode, transactionControl, processState,
+                booting, controller.getAuditLogger(), controller.getNotificationSupport(),
+                controller, true);
         this.primaryContext = primaryContext;
         this.controller = controller;
         this.operationId = operationId;
@@ -366,5 +368,4 @@ class ReadOnlyContext extends AbstractOperationContext {
     public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
         throw readOnlyContext();
     }
-
 }

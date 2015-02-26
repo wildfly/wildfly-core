@@ -227,7 +227,7 @@ public interface CommonAttributes {
             .setAllowExpression(false)
             .build();
 
-    SimpleAttributeDefinition REPLACE_ALL = SimpleAttributeDefinitionBuilder.create("replace-all", ModelType.BOOLEAN)
+    SimpleAttributeDefinition REPLACE_ALL = SimpleAttributeDefinitionBuilder.create("replace-all", ModelType.BOOLEAN, true)
             .setAllowExpression(false)
             .setDefaultValue(new ModelNode(true))
             .build();
