@@ -436,14 +436,4 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     void logAuditRecord() {
         // handled by the primary context
     }
-
-    @Override
-    boolean isSkipModelValidation() {
-        return primaryContext.isSkipModelValidation();
-    }
-
-    @Override
-    void addModelValidationSteps() {
-        primaryContext.addModelValidationSteps();
-    }
 }

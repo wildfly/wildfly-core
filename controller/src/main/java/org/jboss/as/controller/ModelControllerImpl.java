@@ -98,6 +98,7 @@ import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
@@ -454,18 +455,31 @@ class ModelControllerImpl implements ModelController {
             if (!skipModelValidation && resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
                 //Get the modified resources from the initial operations and add to the resources to be validated by the post operations
                 Set<PathAddress> validateAddresses = new HashSet<PathAddress>();
-                validateAddresses.addAll(context.getModifiedResourcesForModelValidation());
-                validateAddresses.addAll(postExtContext.getModifiedResourcesForModelValidation());
+                Resource root = managementModel.get().getRootResource();
+                addAllAddresses(PathAddress.EMPTY_ADDRESS, root, validateAddresses);
+
                 final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                                 bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false);
+                validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
-
             }
         }
 
         return  resultAction == OperationContext.ResultAction.KEEP;
+    }
+
+    private void addAllAddresses(PathAddress current, Resource resource, Set<PathAddress> addresses) {
+        addresses.add(current);
+
+        for (String name : resource.getChildTypes()) {
+            for (ResourceEntry entry : resource.getChildren(name)) {
+                if (!entry.isProxy()) {
+                    addAllAddresses(current.append(entry.getPathElement()), entry, addresses);
+                }
+            }
+        }
     }
 
     /**

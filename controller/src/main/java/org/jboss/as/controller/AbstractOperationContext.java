@@ -153,13 +153,12 @@ abstract class AbstractOperationContext implements OperationContext {
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
-    private final boolean skipModelValidation;
     /**
      * Resources modified by this context's operations. May be modified by ParallelBootOperationStepHandler which spawns threads,
-     * so guard by itself
+     * so guard by itself.
+     * If validation is to be skipped this will be {@code null}
      */
-    private final Set<PathAddress> modifiedResourcesForModelValidation = new HashSet<PathAddress>();
-    boolean addedModelValidationStep = false;
+    private final Set<PathAddress> modifiedResourcesForModelValidation;
 
 
     enum ContextFlag {
@@ -195,7 +194,7 @@ abstract class AbstractOperationContext implements OperationContext {
         }
         initiatingThread = Thread.currentThread();
         this.callEnvironment = new Environment(processState, processType);
-        this.skipModelValidation = skipModelValidation;
+        modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
     }
 
     @Override
@@ -466,14 +465,6 @@ abstract class AbstractOperationContext implements OperationContext {
      */
     abstract ManagementResourceRegistration getRootResourceRegistrationForUpdate();
 
-    /**
-     * Whether or not to skip model validation
-     *
-     * @return {@code true} if the model validation step should be skipped
-     */
-    boolean isSkipModelValidation() {
-        return skipModelValidation;
-    }
 
     /**
      * Gets whether the currently executing thread is allowed to control this operation context.
@@ -565,9 +556,7 @@ abstract class AbstractOperationContext implements OperationContext {
             step = steps.get(currentStage).pollFirst();
             if (step == null) {
 
-                if (currentStage == Stage.MODEL && !addedModelValidationStep && !skipModelValidation) {
-                    addModelValidationSteps();
-                    addedModelValidationStep = true;
+                if (currentStage == Stage.MODEL && addModelValidationSteps()) {
                     continue;
                 }
                 // No steps remain in this stage; give subclasses a chance to check status
@@ -703,31 +692,35 @@ abstract class AbstractOperationContext implements OperationContext {
         // buffer the notifications but emit them only when an operation is successful.
         notifications.add(notification);
 
-        String type = notification.getType();
-        switch (type) {
-            case ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION:
-            case RESOURCE_ADDED_NOTIFICATION: {
-                PathAddress addr = notification.getSource();
-                synchronized (modifiedResourcesForModelValidation) {
-                    if (!modifiedResourcesForModelValidation.contains(addr)) {
-                        modifiedResourcesForModelValidation.add(addr);
+        if (modifiedResourcesForModelValidation != null) {
+            //Hook for doing validation
+            String type = notification.getType();
+            switch (type) {
+                case ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION:
+                case RESOURCE_ADDED_NOTIFICATION: {
+                    PathAddress addr = notification.getSource();
+                    synchronized (modifiedResourcesForModelValidation) {
+                        if (!modifiedResourcesForModelValidation.contains(addr)) {
+                            modifiedResourcesForModelValidation.add(addr);
+                        }
                     }
+                    break;
                 }
-                break;
-            }
-            case RESOURCE_REMOVED_NOTIFICATION: {
-                PathAddress addr = notification.getSource();
-                synchronized (modifiedResourcesForModelValidation) {
-                    if (modifiedResourcesForModelValidation.contains(addr)) {
-                        modifiedResourcesForModelValidation.remove(addr);
+                case RESOURCE_REMOVED_NOTIFICATION: {
+                    PathAddress addr = notification.getSource();
+                    synchronized (modifiedResourcesForModelValidation) {
+                        if (modifiedResourcesForModelValidation.contains(addr)) {
+                            modifiedResourcesForModelValidation.remove(addr);
+                        }
                     }
+                    break;
                 }
-                break;
+                default:
+                    //do nothing
             }
-            default:
-                //do nothing
         }
     }
+
 
     private void emitNotifications() {
         // emit notifications only if the action is kept
@@ -885,15 +878,11 @@ abstract class AbstractOperationContext implements OperationContext {
         }
     }
 
-    Set<PathAddress> getModifiedResourcesForModelValidation() {
-        synchronized (modifiedResourcesForModelValidation) {
-            return new HashSet<PathAddress>(modifiedResourcesForModelValidation);
-        }
-    }
-
     void addModifiedResourcesForModelValidation(Set<PathAddress> modifiedResources) {
-        synchronized (modifiedResourcesForModelValidation) {
-            modifiedResourcesForModelValidation.addAll(modifiedResources);
+        if (modifiedResourcesForModelValidation != null) {
+            synchronized (modifiedResourcesForModelValidation) {
+                modifiedResourcesForModelValidation.addAll(modifiedResources);
+            }
         }
     }
 
@@ -1154,13 +1143,21 @@ abstract class AbstractOperationContext implements OperationContext {
         return false;
     }
 
-    void addModelValidationSteps() {
+    private boolean addModelValidationSteps() {
+        if (modifiedResourcesForModelValidation == null) {
+            return false;
+        }
         synchronized (modifiedResourcesForModelValidation) {
+            if (modifiedResourcesForModelValidation.size() == 0) {
+                return false;
+            }
             for (PathAddress address : modifiedResourcesForModelValidation) {
                 ModelNode op = Util.createOperation(INTERNAL_MODEL_VALIDATION_NAME, address);
                 addStep(op, ValidateModelStepHandler.INSTANCE, Stage.MODEL);
             }
+            modifiedResourcesForModelValidation.clear();
         }
+        return true;
     }
 
 
