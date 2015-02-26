@@ -206,10 +206,6 @@ public class JBossDeploymentStructureParser11 implements XMLElementReader<ParseR
 
     @Override
     public void readElement(final XMLExtendedStreamReader reader, final ParseResult result) throws XMLStreamException {
-        final int count = reader.getAttributeCount();
-        if (count != 0) {
-            throw unexpectedContent(reader);
-        }
         // xsd:sequence
         boolean deploymentVisited = false;
         while (reader.hasNext()) {
