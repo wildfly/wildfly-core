@@ -55,13 +55,15 @@ public abstract class AbstractDiscoveryOptionAddHandler extends AbstractAddStepH
         final PathAddress discoveryOptionsAddress = operationAddress.subAddress(0, operationAddress.size() - 1);
         final ModelNode discoveryOptions = Resource.Tools.readModel(context.readResourceFromRoot(discoveryOptionsAddress));
 
-        final ModelNode node = new ModelNode();
+        final ModelNode element = new ModelNode();
         if(ModelDescriptionConstants.CUSTOM_DISCOVERY.equals(type)) {
+            final ModelNode node = element.get(ModelDescriptionConstants.CUSTOM_DISCOVERY);
             node.get(ModelDescriptionConstants.NAME).set(operationAddress.getLastElement().getValue());
             for (final AttributeDefinition attribute : DiscoveryOptionResourceDefinition.DISCOVERY_ATTRIBUTES) {
                 attribute.validateAndSet(operation, node);
             }
         } else if(ModelDescriptionConstants.STATIC_DISCOVERY.equals(type)) {
+            final ModelNode node = element.get(ModelDescriptionConstants.STATIC_DISCOVERY);
             node.get(ModelDescriptionConstants.NAME).set(operationAddress.getLastElement().getValue());
             for (final AttributeDefinition attribute : StaticDiscoveryResourceDefinition.STATIC_DISCOVERY_ATTRIBUTES) {
                 attribute.validateAndSet(operation, node);
@@ -76,7 +78,7 @@ public abstract class AbstractDiscoveryOptionAddHandler extends AbstractAddStepH
         if (!list.isDefined()) {
             list.setEmptyList();
         }
-        list.add(type, node);
+        list.add(element);
 
         final ModelNode writeOp = Util.getWriteAttributeOperation(discoveryOptionsAddress, ModelDescriptionConstants.OPTIONS, list);
         final OperationStepHandler writeHandler = context.getRootResourceRegistration().getSubModel(discoveryOptionsAddress).getOperationHandler(PathAddress.EMPTY_ADDRESS, WRITE_ATTRIBUTE_OPERATION);

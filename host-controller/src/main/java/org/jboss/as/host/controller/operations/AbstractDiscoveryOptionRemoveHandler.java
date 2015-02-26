@@ -56,11 +56,12 @@ public abstract class AbstractDiscoveryOptionRemoveHandler extends AbstractRemov
         final String name = operationAddress.getLastElement().getValue();
 
         final ModelNode newList = new ModelNode().setEmptyList();
-        for (Property prop : currentList.asPropertyList()) {
+        for (ModelNode e : currentList.asList()) {
+            final Property prop = e.asProperty();
             final String discoveryOptionType = prop.getName();
             final String discoveryOptionName = prop.getValue().get(ModelDescriptionConstants.NAME).asString();
             if (!(discoveryOptionType.equals(type) && discoveryOptionName.equals(name))) {
-                newList.add(discoveryOptionType, prop.getValue());
+                newList.add(e);
             }
         }
 

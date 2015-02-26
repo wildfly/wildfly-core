@@ -31,7 +31,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -48,9 +47,8 @@ public class DiscoveryOptionsResource implements Resource {
     }
 
     DiscoveryOptionsResource(Resource delegate) {
-        if (delegate == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("delegate");
-        }
+        assert delegate != null : "delegate is null";
+
         this.delegate = delegate;
     }
 

@@ -185,16 +185,17 @@ public class DiscoveryOptionTestCase {
         discoveryOptionsAddress.add("core-service", "discovery-options");
         ModelNode readOptionsAttr = Util.getReadAttributeOperation(PathAddress.pathAddress(discoveryOptionsAddress), ModelDescriptionConstants.OPTIONS);
 
-        ModelNode value = new ModelNode();
+        ModelNode item = new ModelNode();
+        ModelNode value = item.get("static-discovery");
         value.get("name").set("start-option");
         value.get("protocol");
         value.get("host").set(new ValueExpression("${jboss.test.host.master.address}"));
         value.get("port").set(9999);
 
         ModelNode expectedOptions = new ModelNode();
-        expectedOptions.add("static-discovery", value);
+        expectedOptions.add(item);
         ModelNode originalOptions = new ModelNode();
-        originalOptions.add("static-discovery", value);
+        originalOptions.add(item);
 
         ModelNode discoveryOptionProperties = new ModelNode();
         discoveryOptionProperties.get(ACCESS_KEY).set("access_key");
@@ -215,32 +216,35 @@ public class DiscoveryOptionTestCase {
         ModelNode discoveryOptionAddressOne = discoveryOptionsAddress.clone().add("discovery-option", "option-one");
         addDiscoveryOptionTest(slaveClient, discoveryOptionAddressOne, addS3DiscoveryOption);
 
-        value = new ModelNode();
+        item = new ModelNode();
+        value = item.get("custom-discovery");
         value.get("name").set("option-one");
         value.get("code").set("org.jboss.as.host.controller.discovery.S3Discovery");
         value.get("module").set("org.jboss.as.host.controller.discovery");
         value.get("properties").set(discoveryOptionProperties);
-        expectedOptions.add("custom-discovery", value);
+        expectedOptions.add(item);
 
         // (host=slave),(core-service=discovery-options),(static-discovery=option-two)
         ModelNode discoveryOptionAddressTwo = discoveryOptionsAddress.clone().add("static-discovery", "option-two");
         addDiscoveryOptionTest(slaveClient, discoveryOptionAddressTwo, addStaticDiscoveryOption);
-        value = new ModelNode();
+        item = new ModelNode();
+        value = item.get("static-discovery");
         value.get("name").set("option-two");
         value.get("protocol");
         value.get("host").set("127.0.0.2");
         value.get("port").set(9999);
-        expectedOptions.add("static-discovery", value);
+        expectedOptions.add(item);
 
         // (host=slave),(core-service=discovery-options),(discovery-option=option-three)
         ModelNode discoveryOptionAddressThree = discoveryOptionsAddress.clone().add("discovery-option", "option-three");
         addDiscoveryOptionTest(slaveClient, discoveryOptionAddressThree, addS3DiscoveryOption);
-        value = new ModelNode();
+        item = new ModelNode();
+        value = item.get("custom-discovery");
         value.get("name").set("option-three");
         value.get("code").set("org.jboss.as.host.controller.discovery.S3Discovery");
         value.get("module").set("org.jboss.as.host.controller.discovery");
         value.get("properties").set(discoveryOptionProperties);
-        expectedOptions.add("custom-discovery", value);
+        expectedOptions.add(item);
 
         result = slaveClient.execute(readOptionsAttr);
         returnVal = validateResponse(result);
