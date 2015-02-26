@@ -82,9 +82,7 @@ public abstract class AttributeMarshaller {
         return false;
     }
 
-
-
-    private static class ListMarshaller extends DefaultAttributeMarshaller {
+    private static class ListMarshaller extends AttributeMarshaller {
         private final char delimiter;
 
         private ListMarshaller(char delimiter) {
@@ -92,8 +90,7 @@ public abstract class AttributeMarshaller {
         }
 
         @Override
-        public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-
+        public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
             StringBuilder builder = new StringBuilder();
             if (resourceModel.hasDefined(attribute.getName())) {
                 for (ModelNode p : resourceModel.get(attribute.getName()).asList()) {

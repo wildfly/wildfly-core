@@ -1468,7 +1468,8 @@ public class StandaloneXml extends CommonXml {
                 HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
             }
             HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.marshallAsAttribute(protocol, writer);
-            HttpManagementResourceDefinition.ALLOWED_ORIGINS.marshallAsElement(protocol, writer);
+            HttpManagementResourceDefinition.ALLOWED_ORIGINS.getAttributeMarshaller()
+                    .marshallAsAttribute(HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
 
             if (HttpManagementResourceDefinition.INTERFACE.isMarshallable(protocol)) {
                 writer.writeEmptyElement(Element.SOCKET.getLocalName());
