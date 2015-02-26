@@ -21,7 +21,6 @@
  */
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
@@ -30,6 +29,7 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -44,28 +44,29 @@ public abstract class AbstractDiscoveryOptionRemoveHandler extends AbstractRemov
 
     public static final String OPERATION_NAME = REMOVE;
 
-    protected void updateDiscoveryOptionsOrdering(OperationContext context, ModelNode operation,
-            String type) {
-        PathAddress operationAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        PathAddress discoveryOptionsAddress = operationAddress.subAddress(0, operationAddress.size() - 1);
-        ModelNode discoveryOptions = Resource.Tools.readModel(context.readResourceFromRoot(discoveryOptionsAddress));
+    protected void updateOptionsAttribute(OperationContext context, ModelNode operation, String type) {
+
+        final PathAddress operationAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final PathAddress discoveryOptionsAddress = operationAddress.subAddress(0, operationAddress.size() - 1);
+        final ModelNode discoveryOptions = Resource.Tools.readModel(context.readResourceFromRoot(discoveryOptionsAddress));
 
         // Get the current list of discovery options and remove the given discovery option
         // from the list to maintain the order
-        ModelNode discoveryOptionsOrdering = discoveryOptions.get(DISCOVERY_OPTIONS);
-        String name = Util.getNameFromAddress(operation.get(OP_ADDR));
+        final ModelNode currentList = discoveryOptions.get(ModelDescriptionConstants.OPTIONS);
+        final String name = operationAddress.getLastElement().getValue();
 
-        ModelNode newDiscoveryOptionsOrdering = new ModelNode() ;
-        for (Property prop : discoveryOptionsOrdering.asPropertyList()) {
-            String discoveryOptionType = prop.getName();
-            String discoveryOptionName = prop.getValue().asString();
-            if (!(discoveryOptionName.equals(name) && discoveryOptionType.equals(type))) {
-                newDiscoveryOptionsOrdering.add(discoveryOptionType, discoveryOptionName);
+        final ModelNode newList = new ModelNode().setEmptyList();
+        for (ModelNode e : currentList.asList()) {
+            final Property prop = e.asProperty();
+            final String discoveryOptionType = prop.getName();
+            final String discoveryOptionName = prop.getValue().get(ModelDescriptionConstants.NAME).asString();
+            if (!(discoveryOptionType.equals(type) && discoveryOptionName.equals(name))) {
+                newList.add(e);
             }
         }
 
-        ModelNode writeOp = Util.getWriteAttributeOperation(discoveryOptionsAddress, DISCOVERY_OPTIONS, newDiscoveryOptionsOrdering);
-        OperationStepHandler writeHandler = context.getRootResourceRegistration().getSubModel(discoveryOptionsAddress).getOperationHandler(PathAddress.EMPTY_ADDRESS, WRITE_ATTRIBUTE_OPERATION);
-        context.addStep(new ModelNode(), writeOp, writeHandler, OperationContext.Stage.MODEL, true);
+        final ModelNode writeOp = Util.getWriteAttributeOperation(discoveryOptionsAddress, ModelDescriptionConstants.OPTIONS, newList);
+        final OperationStepHandler writeHandler = context.getRootResourceRegistration().getSubModel(discoveryOptionsAddress).getOperationHandler(PathAddress.EMPTY_ADDRESS, WRITE_ATTRIBUTE_OPERATION);
+        context.addStep(writeOp, writeHandler, OperationContext.Stage.MODEL);
     }
 }

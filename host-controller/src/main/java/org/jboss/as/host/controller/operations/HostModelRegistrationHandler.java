@@ -49,6 +49,7 @@ import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
+import org.jboss.as.host.controller.discovery.DiscoveryOptionsResource;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.platform.mbean.PlatformMBeanConstants;
@@ -128,7 +129,7 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
         rootResource.registerChild(ignoredRoot.getPathElement(), ignoredRoot);
 
         // Create the empty discovery options resource
-        context.createResource(hostAddress.append(PathElement.pathElement(CORE_SERVICE, DISCOVERY_OPTIONS)));
+        context.addResource(hostAddress.append(PathElement.pathElement(CORE_SERVICE, DISCOVERY_OPTIONS)), new DiscoveryOptionsResource());
     }
 
     private static void initCoreModel(final ModelNode root, HostControllerEnvironment environment) {

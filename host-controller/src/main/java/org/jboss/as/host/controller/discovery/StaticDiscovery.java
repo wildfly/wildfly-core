@@ -23,8 +23,8 @@
 package org.jboss.as.host.controller.discovery;
 
 import io.undertow.util.NetworkUtils;
-import java.util.List;
 
+import java.util.List;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
@@ -42,10 +42,20 @@ public class StaticDiscovery implements DiscoveryOption {
     // The port number of the domain controller
     private final int remoteDcPort;
 
-    // The port number of the domain controller
+    // The protocol for the discovery
     private final String remoteDcProtocol;
 
+    /**
+     * Creates an initialized static discovery config instance.
+     * In the current implementation, protocol and host can't be null.
+     *
+     * @param protocol  protocol to use for the discovery
+     * @param host  host name of the domain controller
+     * @param port  port number of the domain controller
+     */
     public StaticDiscovery(String protocol, String host, int port) {
+        assert protocol != null : "protocol is null";
+        assert host != null : "host is null";
         remoteDcHost = NetworkUtils.formatPossibleIpv6Address(host);
         remoteDcPort = port;
         remoteDcProtocol = protocol;

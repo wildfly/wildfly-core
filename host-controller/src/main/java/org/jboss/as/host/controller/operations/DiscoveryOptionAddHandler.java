@@ -22,13 +22,12 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CUSTOM_DISCOVERY;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
@@ -65,7 +64,7 @@ public class DiscoveryOptionAddHandler extends AbstractDiscoveryOptionAddHandler
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         if (context.isBooting()) {
-            populateHostControllerInfo(hostControllerInfo, context, operation, model);
+            populateHostControllerInfo(hostControllerInfo, context, operation);
         } else {
             context.reloadRequired();
         }
@@ -74,25 +73,20 @@ public class DiscoveryOptionAddHandler extends AbstractDiscoveryOptionAddHandler
     @Override
     protected void populateModel(final OperationContext context, final ModelNode operation,
             final Resource resource) throws  OperationFailedException {
-        final ModelNode model = resource.getModel();
-        for (final AttributeDefinition attribute : DiscoveryOptionResourceDefinition.DISCOVERY_ATTRIBUTES) {
-            attribute.validateAndSet(operation, model);
-        }
-
-        updateDiscoveryOptionsOrdering(context, operation, DISCOVERY_OPTION);
+        updateOptionsAttribute(context, operation, CUSTOM_DISCOVERY);
     }
 
     protected void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context,
-            ModelNode operation, ModelNode model) throws OperationFailedException {
-        ModelNode codeNode = DiscoveryOptionResourceDefinition.CODE.resolveModelAttribute(context, model);
+            ModelNode operation) throws OperationFailedException {
+        ModelNode codeNode = DiscoveryOptionResourceDefinition.CODE.resolveModelAttribute(context, operation);
         String discoveryOptionClassName = codeNode.isDefined() ? codeNode.asString() : null;
 
-        ModelNode moduleNode = DiscoveryOptionResourceDefinition.MODULE.resolveModelAttribute(context, model);
+        ModelNode moduleNode = DiscoveryOptionResourceDefinition.MODULE.resolveModelAttribute(context, operation);
         String moduleName = moduleNode.isDefined() ? moduleNode.asString() : null;
 
         final Map<String, ModelNode> discoveryOptionProperties = new HashMap<String, ModelNode>();
         if (operation.hasDefined(DiscoveryOptionResourceDefinition.PROPERTIES.getName())) {
-            for (Map.Entry<String, String> discoveryOptionProperty : DiscoveryOptionResourceDefinition.PROPERTIES.unwrap(context, model).entrySet()) {
+            for (Map.Entry<String, String> discoveryOptionProperty : DiscoveryOptionResourceDefinition.PROPERTIES.unwrap(context, operation).entrySet()) {
                 discoveryOptionProperties.put(discoveryOptionProperty.getKey(), new ModelNode(discoveryOptionProperty.getValue()));
             }
         }

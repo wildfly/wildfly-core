@@ -180,6 +180,8 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             // seeing that LIST represents a grouping, use prefix+"."+suffix for naming the entries
             if (valueType instanceof SimpleListAttributeDefinition) {
                 SimpleListAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle);
+            } else if (valueType instanceof MapAttributeDefinition) {
+                MapAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, bundle);
             }
         }
     }

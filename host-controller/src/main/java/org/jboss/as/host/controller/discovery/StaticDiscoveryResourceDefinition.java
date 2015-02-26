@@ -27,7 +27,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.descriptions.HostResolver;
@@ -43,11 +45,22 @@ import org.jboss.as.host.controller.operations.StaticDiscoveryRemoveHandler;
  */
 public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition {
 
-    public static final SimpleAttributeDefinition HOST = RemoteDomainControllerAddHandler.HOST;
+    public static final SimpleAttributeDefinition HOST = getRequiredCopy(RemoteDomainControllerAddHandler.HOST);
 
-    public static final SimpleAttributeDefinition PORT = RemoteDomainControllerAddHandler.PORT;
+    public static final SimpleAttributeDefinition PORT = getRequiredCopy(RemoteDomainControllerAddHandler.PORT);
 
-    public static final SimpleAttributeDefinition PROTOCOL = RemoteDomainControllerAddHandler.PROTOCOL;
+    public static final SimpleAttributeDefinition PROTOCOL = RemoteDomainControllerAddHandler.PROTOCOL; // protocol should allow null it appears
+
+    private static SimpleAttributeDefinition getRequiredCopy(SimpleAttributeDefinition attr) {
+        return new SimpleAttributeDefinitionBuilder(attr.getName(), attr.getType())
+        .setAllowNull(false)
+        .setAllowExpression(attr.isAllowExpression())
+        .setValidator(attr.getValidator())
+        .setFlags(attr.getFlags().toArray(new AttributeAccess.Flag[0]))
+        .setRequires(attr.getRequires())
+        .setDefaultValue(attr.getDefaultValue())
+        .build();
+    }
 
     public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {PROTOCOL, HOST, PORT};
 

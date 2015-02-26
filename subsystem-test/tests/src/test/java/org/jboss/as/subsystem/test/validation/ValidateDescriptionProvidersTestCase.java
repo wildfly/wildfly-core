@@ -520,12 +520,13 @@ public class ValidateDescriptionProvidersTestCase {
         complex.get("thing", VALUE_TYPE, "thingb", TYPE).set(ModelType.OBJECT);
         ModelNode description = createSubsystemSkeleton(ModelType.OBJECT, complex);
         List<ValidationFailure> errors = validate(description, null);
-        assertAttributeFailure(errors.get(0), ROOT_ADDRESS, ROOT_ATTR);
-        assertOperationParameterFailure(errors.get(1), ROOT_ADDRESS, ROOT_OP, PARAM);
-        assertOperationParameterFailure(errors.get(2), ROOT_ADDRESS, ROOT_OP, REPLY);
-        assertAttributeFailure(errors.get(3), CHILD_ADDRESS, CHILD_ATTR);
-        assertOperationParameterFailure(errors.get(4), CHILD_ADDRESS, CHILD_OP, PARAM);
-        assertOperationParameterFailure(errors.get(5), CHILD_ADDRESS, CHILD_OP, REPLY);
+        System.out.println("ERRORS: " + errors);
+        assertAttributeFailure(errors.get(0), ROOT_ADDRESS, ROOT_ATTR + ".thing.thingb");
+        assertOperationParameterFailure(errors.get(1), ROOT_ADDRESS, ROOT_OP, PARAM + ".thing.thingb");
+        assertOperationParameterFailure(errors.get(2), ROOT_ADDRESS, ROOT_OP, REPLY + ".thing.thingb");
+        assertAttributeFailure(errors.get(3), CHILD_ADDRESS, CHILD_ATTR + ".thing.thingb");
+        assertOperationParameterFailure(errors.get(4), CHILD_ADDRESS, CHILD_OP, PARAM + ".thing.thingb");
+        assertOperationParameterFailure(errors.get(5), CHILD_ADDRESS, CHILD_OP, REPLY + ".thing.thingb");
     }
 
     private ModelNode createSubsystemSkeleton(ModelType type, ModelType valueType) {
