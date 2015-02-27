@@ -1,0 +1,4 @@
+<subsystem xmlns="urn:jboss:domain:test:1.0">
+    <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3" />
+    <buffer-cache name="extra" buffer-size="1025" buffers-per-region="1054" max-regions="15"/>
+</subsystem>
