@@ -86,12 +86,13 @@ class DeploymentUnitImpl extends SimpleAttachable implements DeploymentUnit {
 
     @Override
     public ModelNode getDeploymentSubsystemModel(final String subsystemName) {
-        return DeploymentModelUtils.getSubsystemRoot(subsystemName, this);
+        return DeploymentResourceSupport.getDeploymentSubModel(subsystemName, null, this);
     }
 
     @Override
     public ModelNode createDeploymentSubModel(final String subsystemName, final PathElement address) {
-        return DeploymentModelUtils.createDeploymentSubModel(subsystemName, address, this);
+        // Using the getDeploymentSubModel results in the previous behavior
+        return DeploymentResourceSupport.getDeploymentSubModel(subsystemName, address, this);
     }
 
     @Override
@@ -101,6 +102,7 @@ class DeploymentUnitImpl extends SimpleAttachable implements DeploymentUnit {
 
     @Override
     public ModelNode createDeploymentSubModel(String subsystemName, PathAddress address, Resource resource) {
-        return DeploymentModelUtils.createDeploymentSubModel(subsystemName, address, resource,this);
+        // Using the getDeploymentSubModel results in the previous behavior
+        return DeploymentResourceSupport.getDeploymentSubModel(subsystemName, address, resource, this);
     }
 }
