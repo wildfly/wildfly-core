@@ -974,9 +974,24 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             builder.setOperationName(Util.READ_ATTRIBUTE);
             builder.addProperty(Util.NAME, Util.NAME);
 
-            client.execute(builder.buildRequest());
-            // We don't actually care what the response is we just want to be sure the ModelControllerClient
-            // does not throw an Exception.
+            final ModelNode response = client.execute(builder.buildRequest());
+            if(!Util.isSuccess(response)) {
+                // here we check whether the error is related to the access control permissions
+                // WFLYCTL0332: Permission denied
+                // WFLYCTL0313: Unauthorized to execute operation
+                final String failure = Util.getFailureDescription(response);
+                if(failure.contains("WFLYCTL0332")) {
+                    StreamUtils.safeClose(client);
+                    throw new CommandLineException("Connection refused based on the insufficient user permissions." +
+                        " Please, make sure security-realm attribute is specified for the relevant management interface" +
+                        " (standalone.xml/host.xml) and review access-control configuration (standalone.xml/domain.xml).");
+                } else {
+                    // Otherwise, on one hand, we don't actually care what the response is,
+                    // we just want to be sure the ModelControllerClient does not throw an Exception.
+                    // On the other hand, reading name attribute is a very basic one which should always work
+                    printLine("Warning! The connection check resulted in failure: " + Util.getFailureDescription(response));
+                }
+            }
         } catch (Exception e) {
             try {
                 Throwable current = e;
