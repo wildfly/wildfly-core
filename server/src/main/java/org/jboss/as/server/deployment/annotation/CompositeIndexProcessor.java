@@ -22,16 +22,17 @@
 
 package org.jboss.as.server.deployment.annotation;
 
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -43,9 +44,13 @@ import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.moduleservice.ModuleIndexBuilder;
 import org.jboss.jandex.Index;
+import org.jboss.jandex.Indexer;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.Resource;
+import org.jboss.modules.filter.PathFilter;
+import org.jboss.modules.filter.PathFilters;
 
 /**
  * Processor responsible for creating and attaching a {@link CompositeIndex} for a deployment.
@@ -75,9 +80,12 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                     indexes.addAll(additionalIndex.indexes);
                     additionalAnnotationIndexes.put(moduleIdentifier, additionalIndex);
                 } else {
-                    ServerLogger.DEPLOYMENT_LOGGER.noCompositeIndex(module.getIdentifier(), ModuleIndexBuilder.INDEX_LOCATION);
+                    final Index index = calculateModuleIndex(module);
+                    indexes.add(index);
                 }
             } catch (ModuleLoadException e) {
+                throw new DeploymentUnitProcessingException(e);
+            } catch (IOException e) {
                 throw new DeploymentUnitProcessingException(e);
             }
         }
@@ -136,6 +144,17 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
             }
         }
         return additionalRoots;
+    }
+
+    private Index calculateModuleIndex(final Module module) throws ModuleLoadException, IOException {
+        final Indexer indexer = new Indexer();
+        final PathFilter filter = PathFilters.getDefaultImportFilter();
+        final Iterator<Resource> iterator = module.iterateResources(filter);
+        while (iterator.hasNext()) {
+            Resource resource = iterator.next();
+            indexer.index(resource.openStream());
+        }
+        return indexer.complete();
     }
 
     public void undeploy(DeploymentUnit deploymentUnit) {
