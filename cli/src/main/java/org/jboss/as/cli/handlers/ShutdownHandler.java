@@ -100,7 +100,7 @@ public class ShutdownHandler extends BaseOperationCommand {
         final String restartValue = restart.getValue(ctx.getParsedCommandLine());
         if (Util.TRUE.equals(restartValue) ||
                 ctx.isDomainMode() &&
-                !isMaster(ctx.getModelControllerClient(), host.getValue(ctx.getParsedCommandLine()))) {
+                !isLocalHost(ctx.getModelControllerClient(), host.getValue(ctx.getParsedCommandLine()))) {
             disconnect = false;
         }
 
@@ -158,7 +158,7 @@ public class ShutdownHandler extends BaseOperationCommand {
         return op;
     }
 
-    protected boolean isMaster(ModelControllerClient client, String host) throws CommandLineException {
+    protected boolean isLocalHost(ModelControllerClient client, String host) throws CommandLineException {
         ModelNode request = new ModelNode();
         request.get(Util.ADDRESS).setEmptyList();
         request.get(Util.OPERATION).set(Util.READ_ATTRIBUTE);
@@ -178,24 +178,7 @@ public class ShutdownHandler extends BaseOperationCommand {
             throw new CommandLineException("The result is not defined for attribute " + Util.LOCAL_HOST_NAME + ": " + result);
         }
 
-        request = new ModelNode();
-        request.get(Util.ADDRESS).add(Util.HOST, result.asString());
-        request.get(Util.OPERATION).set(Util.READ_ATTRIBUTE);
-        request.get(Util.NAME).set(Util.MASTER);
-        try {
-            response = client.execute(request);
-        } catch (IOException e) {
-            throw new CommandLineException("Failed to read attribute " + Util.MASTER + " of host " + result.asString(), e);
-        }
-        if(!Util.isSuccess(response)) {
-            throw new CommandLineException("Failed to read attribute " + Util.MASTER + " of host " + result.asString()
-                    + ": " + Util.getFailureDescription(response));
-        }
-        result = response.get(Util.RESULT);
-        if(!result.isDefined()) {
-            throw new CommandLineException("The result is not defined for attribute " + Util.MASTER + " of host " + result.asString() + ": " + result);
-        }
-        return result.asBoolean();
+        return result.asString().equals(host);
     }
 
     protected void setBooleanArgument(final ParsedCommandLine args, final ModelNode op, ArgumentWithValue arg, String paramName)
