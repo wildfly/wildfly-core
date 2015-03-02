@@ -23,7 +23,6 @@
 <domain xmlns="urn:jboss:domain:1.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="urn:jboss:domain:1.0 jboss_7_0.xsd
-                            urn:jboss:domain:threads:1.0 jboss-threads.xsd
                             urn:jboss:domain:naming:1.0 jboss-naming.xsd
                             urn:jboss:domain:transactions:1.0 jboss-txn.xsd
                             urn:jboss:domain:messaging:1.0 jboss-messaging.xsd
@@ -44,7 +43,6 @@
         <!--<extension module="org.jboss.as.osgi"/>-->
         <!--<extension module="org.jboss.as.remoting"/>-->
         <!--<extension module="org.jboss.as.sar"/>-->
-        <!--<extension module="org.jboss.as.threads"/>-->
         <!--<extension module="org.jboss.as.transactions"/>-->
     </extensions>
 

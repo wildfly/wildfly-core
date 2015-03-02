@@ -24,22 +24,14 @@
 
 package org.jboss.as.threads;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-
 import java.io.IOException;
-import java.util.List;
 
-import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.model.test.FailedOperationTransformationConfig;
-import org.jboss.as.model.test.ModelTestControllerVersion;
-import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.model.test.SingleClassFilter;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
-import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -66,98 +58,27 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
     public void testExpressions() throws Exception {
         standardSubsystemTest("expressions.xml");
     }
-
-    @Test
-    public void testTransformerAS712() throws Exception {
-        testTransformer_1_0(ModelTestControllerVersion.V7_1_2_FINAL);
+    @Override
+    protected void validateDescribeOperation(KernelServices hc, AdditionalInitialization serverInit, ModelNode expectedModel) throws Exception {
+        final ModelNode operation = createDescribeOperation();
+        final ModelNode result = hc.executeOperation(operation);
+        Assert.assertTrue("The subsystem describe operation must fail",
+                result.hasDefined(ModelDescriptionConstants.FAILURE_DESCRIPTION));
     }
 
-    @Test
-    public void testTransformerAS713() throws Exception {
-        testTransformer_1_0(ModelTestControllerVersion.V7_1_2_FINAL);
-    }
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return new AdditionalInitialization() {
 
-    /**
-     * Tests transformation of model from 1.1.0 version into 1.0.0 version.
-     *
-     * @throws Exception
-     */
-    private void testTransformer_1_0(ModelTestControllerVersion controllerVersion) throws Exception {
-        String subsystemXml = "threads-transform-1_0.xml";   //This has no expressions not understood by 1.0
-        ModelVersion modelVersion = ModelVersion.create(1, 0, 0); //The old model version
-        //Use the non-runtime version of the extension which will happen on the HC
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
-                .setSubsystemXmlResource(subsystemXml);
+            @Override
+            protected ProcessType getProcessType() {
+                return ProcessType.HOST_CONTROLLER;
+            }
 
-        final PathAddress subsystemAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, getMainSubsystemName()));
-
-        // Add legacy subsystems
-        builder.createLegacyKernelServicesBuilder(null, controllerVersion, modelVersion)
-                .addOperationValidationResolve("add", subsystemAddress.append(PathElement.pathElement("thread-factory")))
-                .addMavenResourceURL("org.jboss.as:jboss-as-threads:" + controllerVersion.getMavenGavVersion())
-                .excludeFromParent(SingleClassFilter.createFilter(ThreadsLogger.class)); 
-
-        KernelServices mainServices = builder.build();
-        KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
-        Assert.assertNotNull(legacyServices);
-        checkSubsystemModelTransformation(mainServices, modelVersion);
-    }
-
-    @Test
-    public void testRejectExpressionsAS712() throws Exception {
-        testRejectExpressions_1_0_0(ModelTestControllerVersion.V7_1_2_FINAL);
-    }
-
-    @Test
-    public void testRejectExpressionsAS713() throws Exception {
-        testRejectExpressions_1_0_0(ModelTestControllerVersion.V7_1_3_FINAL);
-    }
-
-    private void testRejectExpressions_1_0_0(ModelTestControllerVersion controllerVersion) throws Exception {
-        // create builder for current subsystem version
-        KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization());
-
-        // create builder for legacy subsystem version
-        ModelVersion version_1_0_0 = ModelVersion.create(1, 0, 0);
-        builder.createLegacyKernelServicesBuilder(null, controllerVersion, version_1_0_0)
-                .addMavenResourceURL("org.jboss.as:jboss-as-threads:" + controllerVersion.getMavenGavVersion())
-                .excludeFromParent(SingleClassFilter.createFilter(ThreadsLogger.class));
-
-        KernelServices mainServices = builder.build();
-        KernelServices legacyServices = mainServices.getLegacyServices(version_1_0_0);
-
-        Assert.assertNotNull(legacyServices);
-        Assert.assertTrue("main services did not boot", mainServices.isSuccessfulBoot());
-        Assert.assertTrue(legacyServices.isSuccessfulBoot());
-
-        List<ModelNode> xmlOps = builder.parseXmlResource("expressions.xml");
-
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, version_1_0_0, xmlOps, getConfig());
-    }
-
-    private FailedOperationTransformationConfig getConfig() {
-        PathAddress subsystemAddress = PathAddress.pathAddress(ThreadsExtension.SUBSYSTEM_PATH);
-        FailedOperationTransformationConfig.RejectExpressionsConfig keepaliveOnly =
-                new FailedOperationTransformationConfig.RejectExpressionsConfig(PoolAttributeDefinitions.KEEPALIVE_TIME);
-        FailedOperationTransformationConfig.RejectExpressionsConfig allowedAndKeepalive =
-                new FailedOperationTransformationConfig.RejectExpressionsConfig(PoolAttributeDefinitions.ALLOW_CORE_TIMEOUT, PoolAttributeDefinitions.KEEPALIVE_TIME);
-        FailedOperationTransformationConfig.RejectExpressionsConfig threadFactory =
-                new FailedOperationTransformationConfig.RejectExpressionsConfig(PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN);
-
-        return new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL)),
-                        allowedAndKeepalive)
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.BOUNDED_QUEUE_THREAD_POOL)),
-                        allowedAndKeepalive)
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL)),
-                        keepaliveOnly)
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.QUEUELESS_THREAD_POOL)),
-                        keepaliveOnly)
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL)),
-                        keepaliveOnly)
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.SCHEDULED_THREAD_POOL)),
-                        keepaliveOnly)
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(CommonAttributes.THREAD_FACTORY)),
-                        threadFactory);
+            @Override
+            protected RunningMode getRunningMode() {
+                return RunningMode.ADMIN_ONLY;
+            }
+        };
     }
 }

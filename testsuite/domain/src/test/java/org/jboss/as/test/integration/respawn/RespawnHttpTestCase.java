@@ -156,7 +156,7 @@ public class RespawnHttpTestCase {
         args.add(processUtil.getJavaCommand());
         args.add("--");
         if(localRepo != null) {
-            args.add("-Dlocal.maven.repo.path=" + localRepo);
+            args.add("-Dmaven.repo.local=" + localRepo);
         }
         args.add("-Dorg.jboss.boot.log.file=" + masterDirPath + "/log/host-controller.log");
         args.add("-Dlogging.configuration=file:" + jbossHome + "/domain/configuration/logging.properties");
@@ -173,7 +173,7 @@ public class RespawnHttpTestCase {
         args.add("-Djboss.test.host.master.address=" + address);
         args.add("-Djboss.domain.base.dir=" + masterDir.getAbsolutePath());
         if(localRepo != null) {
-            args.add("-Dlocal.maven.repo.path=" + localRepo);
+            args.add("-Dmaven.repo.local=" + localRepo);
         }
         args.add("--interprocess-hc-address");
         args.add(address);

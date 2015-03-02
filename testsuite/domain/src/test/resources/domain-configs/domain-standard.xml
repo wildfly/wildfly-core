@@ -56,16 +56,16 @@
     <profiles>
 
         <profile name="web-only">
-            <subsystem xmlns="urn:jboss:domain:io:1.0">
-                <worker name="default" io-threads="3"/>
-                <buffer-pool name="default" buffer-size="16384" buffers-per-slice="128"/>
+            <subsystem xmlns="urn:jboss:domain:io:1.1">
+                <worker name="default" />
+                <buffer-pool name="default" />
             </subsystem>
         </profile>
         <profile name="default">
             <!-- include profile="web-only"/ -->
-            <subsystem xmlns="urn:jboss:domain:io:1.0">
-                <worker name="default" io-threads="3"/>
-                <buffer-pool name="default" buffer-size="16384" buffers-per-slice="128"/>
+            <subsystem xmlns="urn:jboss:domain:io:1.1">
+                <worker name="default" />
+                <buffer-pool name="default" />
             </subsystem>
 
             <subsystem xmlns="urn:jboss:domain:logging:1.2">
@@ -108,9 +108,9 @@
         </profile>
         <profile name="other">
             <!-- include profile="default"/ -->
-            <subsystem xmlns="urn:jboss:domain:io:1.0">
-                <worker name="default" io-threads="3"/>
-                <buffer-pool name="default" buffer-size="16384" buffers-per-slice="128"/>
+            <subsystem xmlns="urn:jboss:domain:io:1.1">
+                <worker name="default"/>
+                <buffer-pool name="default"/>
             </subsystem>
 
             <subsystem xmlns="urn:jboss:domain:logging:1.2">
