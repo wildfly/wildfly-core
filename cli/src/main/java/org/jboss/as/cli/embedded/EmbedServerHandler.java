@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.jboss.as.cli.CliEvent;
+import org.jboss.as.cli.CliEventListener;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
@@ -200,6 +202,15 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
             ModelControllerClient mcc = server.getModelControllerClient();
             ctx.bindClient(mcc);
+            // Stop the server on any disconnect event
+            ctx.addEventListener(new CliEventListener() {
+                @Override
+                public void cliEvent(CliEvent event, CommandContext ctx) {
+                    if (event == CliEvent.DISCONNECTED) {
+                        StopEmbeddedServerHandler.cleanup(serverReference);
+                    }
+                }
+            });
             if (bootTimeout == null || bootTimeout > 0) {
                 // Poll for server state. Alternative would be to get ControlledProcessStateService
                 // and do reflection stuff to read the state and register for change notifications
@@ -232,7 +243,8 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
                 if ("starting".equals(status)) {
                     assert bootTimeout != null; // we'll assume the loop didn't run for decades
-                    server.stop();
+                    // Disconnecting will trigger the event listener above, to stop server and restore environment
+                    ctx.disconnectController();
                     throw new CommandLineException("Embedded server did not exit 'starting' status within " +
                             TimeUnit.MILLISECONDS.toSeconds(bootTimeout) + " seconds");
                 }
@@ -243,6 +255,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             throw new CommandLineException("Cannot start embedded server", e);
         } finally {
             if (!ok) {
+                ctx.disconnectController();
                 restorer.restoreEnvironment();
             } else {
                 // Just put back the LogContextSelector

@@ -53,12 +53,21 @@ class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         EmbeddedServerLaunch serverLaunch = serverReference.get();
         if (serverLaunch != null) {
+            ctx.disconnectController();
+        }
+    }
+
+    static void cleanup(final AtomicReference<EmbeddedServerLaunch> serverReference) {
+        EmbeddedServerLaunch serverLaunch = serverReference.get();
+        if (serverLaunch != null) {
             try {
-                ctx.disconnectController();
                 serverLaunch.getServer().stop();
-                serverReference.set(null);
             } finally {
-                serverLaunch.getEnvironmentRestorer().restoreEnvironment();
+                try {
+                    serverLaunch.getEnvironmentRestorer().restoreEnvironment();
+                } finally {
+                    serverReference.compareAndSet(serverLaunch, null);
+                }
             }
         }
     }

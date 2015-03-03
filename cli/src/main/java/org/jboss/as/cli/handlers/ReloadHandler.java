@@ -217,6 +217,7 @@ public class ReloadHandler extends BaseOperationCommand {
 
             if (System.currentTimeMillis() - start > timeoutMillis) {
                 if (!"starting".equals(serverState))  {
+                    ctx.disconnectController();
                     throw new CommandLineException("Failed to establish connection in " + (System.currentTimeMillis() - start)
                             + "ms");
                 } // else we don't wait any longer for start to finish. This is roughly consistent with
@@ -235,6 +236,7 @@ public class ReloadHandler extends BaseOperationCommand {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
+                ctx.disconnectController();
                 throw new CommandLineException("Interrupted while pausing before reconnecting.", e);
             }
         }
