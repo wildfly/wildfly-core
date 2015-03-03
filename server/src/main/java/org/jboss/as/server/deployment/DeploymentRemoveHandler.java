@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.HashUtil;
-import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -110,7 +109,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                                 Set<String> newHash;
                                 try {
                                     newHash = DeploymentUtils.getDeploymentHexHash(context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel());
-                                } catch (NoSuchResourceException ex) {
+                                } catch (Resource.NoSuchResourceException ex) {
                                     newHash = Collections.EMPTY_SET;
                                 }
                                 for (byte[] hash : removedHashes) {

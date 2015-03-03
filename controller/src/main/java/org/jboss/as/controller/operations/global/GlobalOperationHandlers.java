@@ -36,7 +36,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -274,7 +273,7 @@ public class GlobalOperationHandlers {
                 // equivalent to the resource not existing
                 // Just report the failure to the filter and complete normally
                 filteredData.addReadRestrictedResource(base);
-            } catch (NoSuchResourceException e) {
+            } catch (Resource.NoSuchResourceException e) {
                 // Just report the failure to the filter and complete normally
                 filteredData.addAccessRestrictedResource(base);
             }
@@ -338,7 +337,7 @@ public class GlobalOperationHandlers {
                         try {
                             handler.execute(context, operation);
                             resultAddress.set(base.toModelNode());
-                        } catch (NoSuchResourceException e) {
+                        } catch (Resource.NoSuchResourceException e) {
                             // just discard the result to avoid leaking the inaccessible address
                         }
                     }

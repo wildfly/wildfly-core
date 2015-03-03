@@ -22,14 +22,17 @@
 
 package org.jboss.as.controller;
 
-import org.jboss.as.controller._private.OperationFailedRuntimeException;
-
 /**
- * {@link OperationFailedRuntimeException} thrown when a resource cannot be found.
+ * {@link java.lang.RuntimeException} implementing {@link org.jboss.as.controller.OperationClientException}
+ * that is thrown when a resource cannot be found.
+ *
+ * @deprecated use parent class {@link org.jboss.as.controller.registry.Resource.NoSuchResourceException}
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-public class NoSuchResourceException extends OperationFailedRuntimeException {
+@Deprecated
+public class NoSuchResourceException extends org.jboss.as.controller.registry.Resource.NoSuchResourceException {
+
     /**
      * Constructs a {@code OperationFailedException} with the given message.
      * The message is also used as the {@link #getFailureDescription() failure description}.

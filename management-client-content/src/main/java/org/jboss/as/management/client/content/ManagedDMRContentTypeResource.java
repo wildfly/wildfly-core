@@ -45,7 +45,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.management.client.content.ManagedDMRContentTypeResource.ManagedContent;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
