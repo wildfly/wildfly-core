@@ -166,7 +166,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.http.RedirectException;
@@ -263,7 +262,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     // Store a ref to the default input stream aesh will use before we do any manipulation of stdin
     private InputStream stdIn = Settings.getInstance().getInputStream();
-    private StdioContext initialStdIOContext;
     private boolean uninstallIO;
 
     /**
@@ -361,7 +359,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     private void initStdIO() {
-        this.initialStdIOContext = StdioContext.getStdioContext();
         try {
             StdioContext.install();
             this.uninstallIO = true;
@@ -378,7 +375,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 // someone else must have uninstalled
             }
         }
-        StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(this.initialStdIOContext));
     }
 
     private void initCommands() {

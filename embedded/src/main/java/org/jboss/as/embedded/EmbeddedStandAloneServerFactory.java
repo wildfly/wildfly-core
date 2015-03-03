@@ -66,6 +66,8 @@ import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.Value;
+import org.jboss.stdio.SimpleStdioContextSelector;
+import org.jboss.stdio.StdioContext;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VFSUtils;
 
@@ -240,6 +242,8 @@ public class EmbeddedStandAloneServerFactory {
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ControlledProcessStateService controlledProcessStateService;
+        private StdioContext initialStdioContext = StdioContext.getStdioContext();
+        private boolean uninstallStdIo;
 
         public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
             this.cmdargs = cmdargs;
@@ -306,6 +310,13 @@ public class EmbeddedStandAloneServerFactory {
                         StandaloneServerImpl.this.exit();
                     }
                 });
+
+                try {
+                    StdioContext.install();
+                    uninstallStdIo = true;
+                } catch (IllegalStateException ignored) {
+                    // already installed
+                }
 
                 // Determine the ServerEnvironment
                 ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED);
@@ -408,6 +419,14 @@ public class EmbeddedStandAloneServerFactory {
                     Thread.currentThread().interrupt();
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                }
+            }
+            StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
+            if (uninstallStdIo) {
+                try {
+                    StdioContext.uninstall();
+                } catch (IllegalStateException ignored) {
+                    // something else already did
                 }
             }
 
