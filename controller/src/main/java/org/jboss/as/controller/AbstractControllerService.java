@@ -116,7 +116,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected final ProcessType processType;
     protected final DelegatingConfigurableAuthorizer authorizer;
     private final RunningModeControl runningModeControl;
-    private final DescriptionProvider rootDescriptionProvider;
     private final ResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
     private final OperationStepHandler prepareStep;
@@ -208,6 +207,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
      *
      * @deprecated Here for backwards compatibility for ModelTestModelControllerService
      */
+    @Deprecated
     protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
@@ -221,14 +221,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
                                       final DelegatingConfigurableAuthorizer authorizer) {
-        assert rootDescriptionProvider != null || rootResourceDefinition != null: rootDescriptionProvider == null ? "Null root description provider" : "Null root resource definition";
+        assert rootDescriptionProvider == null: "description provider cannot be used anymore";
+        assert rootResourceDefinition != null: "Null root resource definition";
         assert expressionResolver != null : "Null expressionResolver";
         assert auditLogger != null : "Null auditLogger";
         assert authorizer != null : "Null authorizer";
         this.processType = processType;
         this.runningModeControl = runningModeControl;
         this.configurationPersister = configurationPersister;
-        this.rootDescriptionProvider = rootDescriptionProvider;
         this.rootResourceDefinition = rootResourceDefinition;
         this.processState = processState;
         this.prepareStep = prepareStep;
@@ -252,9 +252,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final NotificationSupport notificationSupport = NotificationSupport.Factory.create(executorService);
         WritableAuthorizerConfiguration authorizerConfig = authorizer.getWritableAuthorizerConfiguration();
         authorizerConfig.reset();
-        ManagementResourceRegistration rootResourceRegistration = rootDescriptionProvider != null
-                ? ManagementResourceRegistration.Factory.create(rootDescriptionProvider, authorizerConfig)
-                : ManagementResourceRegistration.Factory.create(rootResourceDefinition, authorizerConfig);
+        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.create(rootResourceDefinition, authorizerConfig);
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
@@ -469,7 +467,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * a non {@code null} value from  {@link #getModelControllerServiceInitializationParams()}
      *
      * @param context the boot context
-     * @param the operation to trigger the initialization
      */
     protected final ModelNode registerModelControllerServiceInitializationBootStep(BootContext context) {
         ModelControllerServiceInitializationParams initParams = getModelControllerServiceInitializationParams();

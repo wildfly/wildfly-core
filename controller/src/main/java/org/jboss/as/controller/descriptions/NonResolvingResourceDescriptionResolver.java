@@ -34,6 +34,8 @@ import java.util.ResourceBundle;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
  */
 public class NonResolvingResourceDescriptionResolver extends StandardResourceDescriptionResolver {
+    public static NonResolvingResourceDescriptionResolver INSTANCE = new NonResolvingResourceDescriptionResolver();
+
     public NonResolvingResourceDescriptionResolver() {
         super("", "", NonResolvingResourceDescriptionResolver.class.getClassLoader());
     }

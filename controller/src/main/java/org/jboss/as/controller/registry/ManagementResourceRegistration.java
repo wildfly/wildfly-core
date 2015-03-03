@@ -400,7 +400,9 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @return the new root model node registration
          *
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         * @deprecated DescriptionProvider shouldn't be used anymore, use ResourceDefinition variant
          */
+        @Deprecated
         public static ManagementResourceRegistration create(final DescriptionProvider rootModelDescriptionProvider) {
             return create(rootModelDescriptionProvider, null);
         }
@@ -414,7 +416,9 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @return the new root model node registration
          *
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         * @deprecated DescriptionProvider shouldn't be used anymore, use ResourceDefinition variant
          */
+        @Deprecated
         public static ManagementResourceRegistration create(final DescriptionProvider rootModelDescriptionProvider,
                                                             AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
             if (rootModelDescriptionProvider == null) {

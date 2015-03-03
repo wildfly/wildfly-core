@@ -32,7 +32,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,6 +53,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -68,6 +68,7 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -643,7 +644,11 @@ public class ExtensionRegistry {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
-            this.deploymentsRegistration = deploymentsRegistration;
+            if (deploymentsRegistration == null){
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.create(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+            }else {
+                this.deploymentsRegistration = deploymentsRegistration;
+            }
             this.version = version;
             this.extensionRegistryType = extensionRegistryType;
             this.extensionModuleName = extensionModuleName;
@@ -667,11 +672,7 @@ public class ExtensionRegistry {
         @Override
         public ManagementResourceRegistration registerDeploymentModel(ResourceDefinition resourceDefinition) {
             assert resourceDefinition != null : "resourceDefinition is null";
-            final ManagementResourceRegistration deploymentsReg = deploymentsRegistration;
-            ManagementResourceRegistration base = deploymentsReg != null
-                    ? deploymentsReg
-                    : getDummyRegistration();
-            return base.registerSubModel(resourceDefinition);
+            return deploymentsRegistration.registerSubModel(resourceDefinition);
         }
 
         @Override
@@ -706,15 +707,6 @@ public class ExtensionRegistry {
             modelsRegistered = true;
             checkHostCapable();
             return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
-        }
-
-        private ManagementResourceRegistration getDummyRegistration() {
-            return ManagementResourceRegistration.Factory.create(new DescriptionProvider() {
-                @Override
-                public ModelNode getModelDescription(Locale locale) {
-                    return new ModelNode();
-                }
-            });
         }
 
         @Override

@@ -261,10 +261,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param handler      operation handler to register
      * @param flags        with flags
      */
-    @SuppressWarnings("deprecation")
     protected void registerAddOperation(final ManagementResourceRegistration registration, final AbstractAddStepHandler handler,
                                         OperationEntry.Flag... flags) {
-        this.registerAddOperation(registration, (OperationStepHandler) handler, flags);
+        registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, new DefaultResourceAddDescriptionProvider(registration, descriptionResolver), getFlagsSet(flags));
     }
 
     @Deprecated

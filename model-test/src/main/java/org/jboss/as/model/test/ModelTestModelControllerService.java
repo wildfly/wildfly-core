@@ -71,6 +71,7 @@ import org.junit.Assert;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
+//TODO find better way to support legacy ModelTestModelControllerService without need for having all old methods still present on AbstractControllerService
 public abstract class ModelTestModelControllerService extends AbstractControllerService {
 
     private final CountDownLatch latch = new CountDownLatch(1);
@@ -212,10 +213,10 @@ public abstract class ModelTestModelControllerService extends AbstractController
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-            final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller80x version) {
+            final ResourceDefinition resourceDefinition, ControlledProcessState processState, Controller80x version) {
         // Fails in core-model-test transformation testing if ExpressionResolver.TEST_RESOLVER is used because not present in 7.1.x
         super(processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
+         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -243,9 +244,9 @@ public abstract class ModelTestModelControllerService extends AbstractController
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-            final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller90x version) {
+            final ResourceDefinition resourceDefinition, ControlledProcessState processState, Controller90x version) {
         super(processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
+         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
