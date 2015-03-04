@@ -72,6 +72,11 @@ public class ListAttributeDefinitionTestCase {
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return Collections.emptyList();
             }
+
+            @Override
+            public boolean isRuntime() {
+                return false;
+            }
         };
 
         ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.create(resource);
@@ -123,6 +128,11 @@ public class ListAttributeDefinitionTestCase {
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return Collections.emptyList();
+            }
+
+            @Override
+            public boolean isRuntime() {
+                return false;
             }
         };
 

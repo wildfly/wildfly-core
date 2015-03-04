@@ -86,4 +86,11 @@ public interface ResourceDefinition {
      * @return the access constraints or an empty list; will not return {@code null}.
      */
     List<AccessConstraintDefinition> getAccessConstraints();
+
+    /**
+     *
+     * @return true if resource is runtime
+     * @since WildFly Core 1.0, WildFly 9.0
+     */
+    boolean isRuntime();
 }

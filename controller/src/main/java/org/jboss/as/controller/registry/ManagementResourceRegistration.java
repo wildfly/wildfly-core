@@ -460,8 +460,13 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                 public List<AccessConstraintDefinition> getAccessConstraints() {
                     return Collections.emptyList();
                 }
+
+                @Override
+                public boolean isRuntime() {
+                    return false;
+                }
             };
-            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, false);
+            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, rootResourceDefinition.isRuntime());
         }
 
         /**
@@ -491,7 +496,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
             if (resourceDefinition == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProviderFactory");
             }
-            ConcreteResourceRegistration resourceRegistration = new ConcreteResourceRegistration(null, null, resourceDefinition, constraintUtilizationRegistry, false);
+            ConcreteResourceRegistration resourceRegistration = new ConcreteResourceRegistration(null, null, resourceDefinition, constraintUtilizationRegistry, resourceDefinition.isRuntime());
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);
