@@ -592,7 +592,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                             // Invalid configuration; no way to get the domain config
                             ROOT_LOGGER.noDomainControllerConfigurationProvided(currentRunningMode,
                                     CommandLineConstants.ADMIN_ONLY, RunningMode.ADMIN_ONLY);
-                            System.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                            SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                         }
                     } else {
                         // We're in admin-only mode. See how we handle access control config
@@ -609,7 +609,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                             ModelDescriptionConstants.ADMIN_ONLY_POLICY,
                                             AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG,
                                             CommandLineConstants.CACHED_DC, RunningMode.ADMIN_ONLY);
-                                    System.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                                    SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                                     break;
                                 }
                                 break;
@@ -619,7 +619,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                         ModelDescriptionConstants.ADMIN_ONLY_POLICY,
                                         AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG,
                                         CommandLineConstants.CACHED_DC, currentRunningMode);
-                                System.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                                SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                                 break;
                             default:
                                 throw new IllegalStateException(hostControllerInfo.getAdminOnlyDomainConfigPolicy().toString());
@@ -704,7 +704,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             } else {
                 // Die!
                 ROOT_LOGGER.unsuccessfulBoot();
-                System.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
             }
         }
     }
@@ -776,7 +776,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         CommandLineConstants.CACHED_DC);
 
             }
-            System.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+            SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
         }
     }
 

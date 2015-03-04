@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.logmanager.ClassLoaderLogContextSelector;
 import org.jboss.logmanager.LogContext;
+import org.jboss.logmanager.LogContextSelector;
 import org.jboss.logmanager.ThreadLocalLogContextSelector;
 
 /**
@@ -41,7 +42,15 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
 
     public WildFlyLogContextSelectorImpl() {
         counter = new AtomicInteger(0);
-        contextSelector = new ClassLoaderLogContextSelector(true);
+        // Use the current log context as the default, not LogContext.DEFAULT_LOG_CONTEXT_SELECTOR
+        // This allows embedding use cases to control the log context
+        final LogContext defaultLogContext = LogContext.getLogContext();
+        contextSelector = new ClassLoaderLogContextSelector(new LogContextSelector() {
+            @Override
+            public LogContext getLogContext() {
+                return defaultLogContext;
+            }
+        }, true);
         threadLocalContextSelector = new ThreadLocalLogContextSelector(contextSelector);
     }
 

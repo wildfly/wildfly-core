@@ -174,8 +174,9 @@ public interface Bootstrap {
                             configurationFile.resetBootFile(runningModeControl.isUseCurrentConfig());
                         }
                         QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
+                        boolean suppressBoot = !runningModeControl.isReloaded() && isNewConfiguration(configurationFile.getInteractionPolicy());
                         StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-                        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser);
+                        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser, suppressBoot);
                         for (Namespace namespace : Namespace.domainValues()) {
                             if (!namespace.equals(Namespace.CURRENT)) {
                                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
@@ -183,6 +184,11 @@ public interface Bootstrap {
                         }
                         extensionRegistry.setWriterRegistry(persister);
                         return persister;
+                    }
+
+                    private boolean isNewConfiguration(ConfigurationFile.InteractionPolicy interactionPolicy) {
+                        return interactionPolicy == ConfigurationFile.InteractionPolicy.NEW
+                                || interactionPolicy == ConfigurationFile.InteractionPolicy.DISCARD;
                     }
                 };
             }

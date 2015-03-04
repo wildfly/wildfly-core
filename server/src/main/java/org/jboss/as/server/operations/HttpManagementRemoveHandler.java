@@ -25,6 +25,8 @@ package org.jboss.as.server.operations;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.domain.management.access.RbacSanityCheckOperation;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
@@ -53,7 +55,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return true;
+        return context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY;
     }
 
     @Override

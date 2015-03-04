@@ -42,10 +42,11 @@ public class SystemExiter {
     }
 
     private static Exiter getExiter() {
-        return exiter == null ? new DefaultExiter() : exiter;
+        return exiter == null ? Exiter.DEFAULT : exiter;
     }
 
     public interface Exiter {
+        Exiter DEFAULT = new DefaultExiter();
         void exit(int status);
     }
 

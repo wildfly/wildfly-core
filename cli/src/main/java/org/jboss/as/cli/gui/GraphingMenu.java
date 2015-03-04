@@ -71,7 +71,8 @@ public class GraphingMenu extends JPopupMenu {
         }
 
         public void actionPerformed(ActionEvent ae) {
-            System.out.println("selected menu item");
+            // TODO what is this class meant to do?
+            //System.out.println("selected menu item");
         }
 
     }
