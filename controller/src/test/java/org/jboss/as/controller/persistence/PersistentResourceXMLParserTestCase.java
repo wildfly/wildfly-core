@@ -44,6 +44,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamSource;
 
+import com.sun.corba.se.spi.activation.Server;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
@@ -73,6 +74,7 @@ import org.w3c.dom.ls.LSSerializer;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2015 Red Hat inc.
+ * @author Tomaz Cerar
  */
 public class PersistentResourceXMLParserTestCase {
 
@@ -193,6 +195,32 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
+
+    @Test
+    public void testServerParser() throws Exception {
+        ServerParser parser = new ServerParser();
+
+        String xml = readResource("server-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(MyParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        Assert.assertEquals(2, operations.size());
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
+    }
+
     private ModelNode opsToModel(List<ModelNode> operations) {
         ModelNode subsystem = new ModelNode();
 
@@ -277,6 +305,23 @@ public class PersistentResourceXMLParserTestCase {
                 .setDefaultValue(new ModelNode(10))
                 .build();
 
+        public static final SimpleAttributeDefinition STATISTICS_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STATISTICS_ENABLED, ModelType.BOOLEAN)
+                .setAttributeGroup("statistics")
+                .setXmlName("enabled")
+                .setDefaultValue(new ModelNode(false))
+                .setAllowNull(true)
+                .setAllowExpression(true)
+                .build();
+        public static final SimpleAttributeDefinition SECURITY_ENABLED = new SimpleAttributeDefinitionBuilder("security-enabled", ModelType.BOOLEAN)
+                .setAttributeGroup("security")
+                .setXmlName("enabled")
+                .setDefaultValue(new ModelNode(true))
+                .setAllowNull(true)
+                .setAllowExpression(true)
+                .setRestartAllServices()
+                .build();
+
+
 
         protected static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
             @Override
@@ -300,6 +345,17 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(BUFFERS_PER_REGION);
                 attributes.add(MAX_REGIONS);
                 attributes.add(ALIAS);
+                return attributes;
+            }
+        };
+
+
+        protected static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), new NonResolvingResourceDescriptionResolver()) {
+            @Override
+            public Collection<AttributeDefinition> getAttributes() {
+                Collection<AttributeDefinition> attributes = new ArrayList<>();
+                attributes.add(STATISTICS_ENABLED);
+                attributes.add(SECURITY_ENABLED);
                 return attributes;
             }
         };
@@ -373,6 +429,20 @@ public class PersistentResourceXMLParserTestCase {
                             builder(BUFFER_CACHE_INSTANCE)
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+                    )
+                    .build();
+        }
+    }
+
+    static class ServerParser extends MyParser {
+
+
+        @Override
+        public PersistentResourceXMLDescription getParserDescription() {
+            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+                    .addChild(
+                            builder(SERVER_INSTANCE)
+                                    .addAttributes(SECURITY_ENABLED, STATISTICS_ENABLED)
                     )
                     .build();
         }
