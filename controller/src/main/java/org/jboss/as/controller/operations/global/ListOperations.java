@@ -54,7 +54,7 @@ public class ListOperations {
             .setReadOnly()
             .build();
     public static final OperationDefinition LIST_REMOVE_DEFINITION = new SimpleOperationDefinitionBuilder("list-remove", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE)
+            .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, AbstractListHandler.INDEX)
             .setRuntimeOnly()
             .build();
     public static final OperationDefinition LIST_CLEAR_DEFINITION = new SimpleOperationDefinitionBuilder("list-clear", ControllerResolver.getResolver("global"))
