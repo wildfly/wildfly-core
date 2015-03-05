@@ -147,7 +147,18 @@ public interface Resource extends Cloneable {
      */
     Resource removeChild(PathElement address);
 
+    /**
+     * Is this {@link Resource} a runtime only resource?
+     *
+     * @return {@code true} if this {@link Resource} is a runtime only resource, {@code false} otherwise.
+     */
     boolean isRuntime();
+
+    /**
+     * Is this {@link Resource} a proxied resource?
+     *
+     * @return {@code true} if this {@link Resource} is a proxied resource, {@code false} otherwise.
+     */
     boolean isProxy();
 
     Resource clone();
@@ -280,6 +291,8 @@ public interface Resource extends Cloneable {
          * @param address the address the address relative to {@code resource}'s address. Cannot be {@code null}
          * @return the resource the descendant resource. Will not be {@code null}
          * @throws java.util.NoSuchElementException if there is no descendant resource at {@code address}
+         *
+         * @see NoSuchResourceException
          */
         public static Resource navigate(final Resource resource, final PathAddress address) {
             Resource r = resource;
