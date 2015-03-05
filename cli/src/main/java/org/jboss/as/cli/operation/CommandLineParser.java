@@ -50,7 +50,7 @@ public interface CommandLineParser {
 
         void nodeSeparator(int index);
 
-        void addressOperationSeparator(int index);
+        void addressOperationSeparator(int index) throws CommandFormatException;
 
         void operationName(int index, String operationName) throws CommandFormatException;
 

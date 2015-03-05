@@ -24,6 +24,7 @@ package org.jboss.as.cli.parsing.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -372,6 +373,24 @@ public class OperationParsingTestCase {
         assertTrue(props.contains("url"));
         assertEquals("1234test", keystoreDmr.get(">{password").asString());
         assertEquals("/Users/xxx/clientcert.jks}", keystoreDmr.get("url").asString());
+    }
+
+    @Test
+    public void testOperationNameAfterNo() throws Exception {
+
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+
+        try {
+            parse("/subsystem=logging/logger:read-resource", handler);
+            fail("Shouldn't allow parsing of operation names following incomplete node paths");
+        } catch(OperationFormatException expected) {
+        }
+
+        try {
+            parse("/subsystem=logging/logger=:read-resource", handler);
+            fail("Shouldn't allow parsing of operation names following incomplete node paths");
+        } catch(OperationFormatException expected) {
+        }
     }
 
     protected void parse(String opReq, DefaultCallbackHandler handler) throws CommandFormatException {
