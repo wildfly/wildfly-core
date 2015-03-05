@@ -21,6 +21,7 @@
  */
 package org.jboss.as.server.deployment.reflect;
 
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.invocation.proxy.reflection.ClassMetadataSource;
 import org.jboss.invocation.proxy.reflection.ReflectionMetadataSource;
 
@@ -33,31 +34,39 @@ import java.util.Collection;
  */
 public class ProxyMetadataSource implements ReflectionMetadataSource {
 
-    private final DeploymentReflectionIndex index;
-
-    public ProxyMetadataSource(final DeploymentReflectionIndex index) {
-        this.index = index;
+    private final DeploymentReflectionIndex deploymentReflectionIndex;
+    private final DeploymentClassIndex deploymentClassIndex;
+    public ProxyMetadataSource(final DeploymentReflectionIndex deploymentReflectionIndex,final DeploymentClassIndex deploymentClassIndex) {
+        this.deploymentReflectionIndex = deploymentReflectionIndex;
+        this.deploymentClassIndex = deploymentClassIndex;
     }
 
     @Override
     public ClassMetadataSource getClassMetadata(final Class<?> clazz) {
-        final ClassReflectionIndex<?> index = this.index.getClassIndex(clazz);
-        return new ClassMetadataSource() {
-            @Override
-            public Collection<Method> getDeclaredMethods() {
-                return index.getMethods();
-            }
+        try {
+            final ClassReflectionIndex<?> index = this.deploymentReflectionIndex.getClassIndex(clazz);
+            final ClassIndex classIndex = this.deploymentClassIndex.classIndex(clazz.getName());
 
-            @Override
-            public Method getMethod(final String methodName, final Class<?> returnType, final Class<?>... parameters) throws NoSuchMethodException {
-                return index.getMethod(returnType, methodName, parameters);
-            }
+            return new ClassMetadataSource() {
+                @Override
+                public Collection<Method> getDeclaredMethods() {
+                    return classIndex.getClassMethods();
+                }
 
-            @Override
-            @SuppressWarnings("unchecked")
-            public Collection<Constructor<?>> getConstructors() {
-                return (Collection) index.getConstructors();
-            }
-        };
+                @Override
+                public Method getMethod(final String methodName, final Class<?> returnType, final Class<?>... parameters)
+                        throws NoSuchMethodException {
+                    return index.getMethod(returnType, methodName, parameters);
+                }
+
+                @Override
+                @SuppressWarnings("unchecked")
+                public Collection<Constructor<?>> getConstructors() {
+                    return (Collection) index.getConstructors();
+                }
+            };
+        } catch (ClassNotFoundException e) {
+            throw ServerLogger.ROOT_LOGGER.errorGettingReflectiveInformation(clazz, clazz.getClassLoader(), e);
+        }
     }
 }
