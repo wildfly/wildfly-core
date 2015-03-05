@@ -21,19 +21,17 @@
 */
 package org.jboss.as.model.test;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
@@ -41,12 +39,10 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -55,7 +51,6 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.TransformerRegistry;
@@ -408,61 +403,6 @@ public abstract class ModelTestModelControllerService extends AbstractController
                                         final ModelController.OperationTransactionControl control,
                                         final OperationAttachments attachments, final OperationStepHandler prepareStep) {
         return super.internalExecute(operation, handler, control, attachments, prepareStep);
-    }
-
-    public static final DescriptionProvider DESC_PROVIDER = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription(Locale locale) {
-            ModelNode model = new ModelNode();
-            model.get(DESCRIPTION).set("The test model controller");
-            return model;
-        }
-    };
-
-    public static class DelegatingResourceDefinition implements ResourceDefinition {
-        private volatile ResourceDefinition delegate;
-
-        public void setDelegate(ResourceDefinition delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerOperations(resourceRegistration);
-        }
-
-        @Override
-        public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerChildren(resourceRegistration);
-        }
-
-        @Override
-        public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerAttributes(resourceRegistration);
-        }
-
-        @Override
-        public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerNotifications(resourceRegistration);
-        }
-
-        @Override
-        public PathElement getPathElement() {
-            return delegate.getPathElement();
-        }
-
-        @Override
-        public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-            return delegate.getDescriptionProvider(resourceRegistration);
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            if (delegate == null) {
-                return Collections.emptyList();
-            }
-            return delegate.getAccessConstraints();
-        }
     }
 
     //These are here to overload the constuctor used for the different legacy controllers
