@@ -50,6 +50,19 @@ public final class DeploymentResourceSupport {
     }
 
     /**
+     * Checks to see if a subsystem resource has already been registered for the deployment.
+     *
+     * @param subsystemName the name of the subsystem
+     *
+     * @return {@code true} if the subsystem exists on the deployment otherwise {@code false}
+     */
+    public boolean hasDeploymentSubsystemModel(final String subsystemName) {
+        final Resource root = deploymentUnit.getAttachment(DEPLOYMENT_RESOURCE);
+        final PathElement subsystem = PathElement.pathElement(SUBSYSTEM, subsystemName);
+        return root.hasChild(subsystem);
+    }
+
+    /**
      * Get the subsystem deployment model root.
      *
      * <p>
@@ -79,6 +92,50 @@ public final class DeploymentResourceSupport {
         assert subsystemName != null : "The subsystemName cannot be null";
         assert resource != null : "The resource cannot be null";
         return registerDeploymentSubResource(subsystemName, PathAddress.EMPTY_ADDRESS, resource);
+    }
+
+    /**
+     * Checks to see if a resource has already been registered for the specified address on the subsystem.
+     *
+     * @param subsystemName the name of the subsystem
+     * @param address       the address to check
+     *
+     * @return {@code true} if the address exists on the subsystem otherwise {@code false}
+     */
+    public boolean hasDeploymentSubModel(final String subsystemName, final PathElement address) {
+        final Resource root = deploymentUnit.getAttachment(DEPLOYMENT_RESOURCE);
+        final PathElement subsystem = PathElement.pathElement(SUBSYSTEM, subsystemName);
+        return root.hasChild(subsystem) && (address == null || root.getChild(subsystem).hasChild(address));
+    }
+
+    /**
+     * Checks to see if a resource has already been registered for the specified address on the subsystem.
+     *
+     * @param subsystemName the name of the subsystem
+     * @param address       the address to check
+     *
+     * @return {@code true} if the address exists on the subsystem otherwise {@code false}
+     */
+    public boolean hasDeploymentSubModel(final String subsystemName, final PathAddress address) {
+        final Resource root = deploymentUnit.getAttachment(DEPLOYMENT_RESOURCE);
+        final PathElement subsystem = PathElement.pathElement(SUBSYSTEM, subsystemName);
+        boolean found = false;
+        if (root.hasChild(subsystem)) {
+            if (address == PathAddress.EMPTY_ADDRESS) {
+                return true;
+            }
+            Resource parent = root.getChild(subsystem);
+            for (PathElement child : address) {
+                if (parent.hasChild(child)) {
+                    found = true;
+                    parent = parent.getChild(child);
+                } else {
+                    found = false;
+                    break;
+                }
+            }
+        }
+        return found;
     }
 
     /**
