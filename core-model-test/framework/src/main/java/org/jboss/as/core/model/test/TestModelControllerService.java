@@ -651,6 +651,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
             }
             super.registerNotifications(resourceRegistration);
         }
+
+        @Override
+        public boolean isRuntime() {
+            return false;
+        }
     }
 
 
