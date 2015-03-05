@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -169,7 +168,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 } else {
                     overrideHandler.execute(context, operation);
                 }
-            } catch (NoSuchResourceException nsre) {
+            } catch (Resource.NoSuchResourceException nsre) {
                 // Just report the failure to the filter and complete normally
                 PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
                 filteredData.addAccessRestrictedResource(pa);

@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -170,7 +169,7 @@ public class ProxyStepHandler implements OperationStepHandler {
             ModelNode responseNode = finalResult.getResponseNode();
             context.getResult().set(responseNode.get(RESULT));
             ModelNode failureDesc = responseNode.get(FAILURE_DESCRIPTION);
-            OperationFailedRuntimeException stdFailure = translateFailureDescription(failureDesc);
+            RuntimeException stdFailure = translateFailureDescription(failureDesc);
             if (stdFailure != null) {
                 throw stdFailure;
             }
@@ -268,11 +267,11 @@ public class ProxyStepHandler implements OperationStepHandler {
         }
     }
 
-    private static OperationFailedRuntimeException translateFailureDescription(ModelNode failureDescription) {
+    private static RuntimeException translateFailureDescription(ModelNode failureDescription) {
 
         String failureDesc = failureDescription.asString();
         if (failureDesc.startsWith("WFLYCTL0216")) {
-            return new NoSuchResourceException(failureDesc);
+            return new org.jboss.as.controller.registry.Resource.NoSuchResourceException(failureDesc);
         }
         else if (failureDesc.startsWith("WFLYCTL0313")) {
             return new UnauthorizedException(failureDesc);

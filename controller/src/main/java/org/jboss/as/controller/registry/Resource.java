@@ -22,14 +22,14 @@
 
 package org.jboss.as.controller.registry;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
-
-import java.util.NoSuchElementException;
-import java.util.Set;
 
 /**
  * An addressable resource in the management model, representing a local model and child resources.
@@ -82,9 +82,7 @@ public interface Resource extends Cloneable {
      *
      * @param element the path element
      * @return the resource
-     * @throws java.util.NoSuchElementException if the child does not exist
-     *
-     * @see NoSuchResourceException
+     * @throws NoSuchResourceException if the child does not exist
      */
     Resource requireChild(PathElement element);
 
@@ -101,9 +99,7 @@ public interface Resource extends Cloneable {
      *
      * @param address the address
      * @return the resource
-     * @throws java.util.NoSuchElementException if any resource in the path does not exist
-     *
-     * @see NoSuchResourceException
+     * @throws NoSuchResourceException if any resource in the path does not exist
      */
     Resource navigate(PathAddress address);
 
@@ -279,7 +275,7 @@ public interface Resource extends Cloneable {
          * @param resource the resource the resource. Cannot be {@code null}
          * @param address the address the address relative to {@code resource}'s address. Cannot be {@code null}
          * @return the resource the descendant resource. Will not be {@code null}
-         * @throws java.util.NoSuchElementException if there is no descendant resource at {@code address}
+         * @throws NoSuchResourceException if there is no descendant resource at {@code address}
          */
         public static Resource navigate(final Resource resource, final PathAddress address) {
             Resource r = resource;
@@ -301,12 +297,21 @@ public interface Resource extends Cloneable {
         private static final long serialVersionUID = -2409240663987141424L;
 
         public NoSuchResourceException(PathElement childPath) {
-            super(ControllerLogger.ROOT_LOGGER.childResourceNotFound(childPath));
+            this(ControllerLogger.ROOT_LOGGER.childResourceNotFound(childPath));
+        }
+
+        public NoSuchResourceException(String message) {
+            super(message);
         }
 
         @Override
         public ModelNode getFailureDescription() {
             return new ModelNode(getLocalizedMessage());
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + " [ " + getFailureDescription() + " ]";
         }
     }
 

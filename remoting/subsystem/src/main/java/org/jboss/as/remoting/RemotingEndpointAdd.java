@@ -26,7 +26,6 @@ package org.jboss.as.remoting;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -69,7 +68,7 @@ public class RemotingEndpointAdd extends AbstractAddStepHandler {
                     return existing;
                 }
             }
-        } catch (NoSuchResourceException ignored) {
+        } catch (Resource.NoSuchResourceException ignored) {
             //
         }
         return super.createResource(context);

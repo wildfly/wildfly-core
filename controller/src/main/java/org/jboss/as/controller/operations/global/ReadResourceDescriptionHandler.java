@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -163,7 +162,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
         } else {
             try {
                 doExecuteInternal(context, operation, accessControlContext);
-            } catch (NoSuchResourceException | UnauthorizedException nsre) {
+            } catch (Resource.NoSuchResourceException | UnauthorizedException nsre) {
                 context.getResult().set(new ModelNode());
             }
         }
@@ -782,7 +781,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
         private boolean addParentResource(OperationContext context, List<PathAddress> addresses, PathAddress address) {
             try {
                 context.readResourceFromRoot(address);
-            } catch (NoSuchResourceException nsre) {
+            } catch (Resource.NoSuchResourceException nsre) {
                 // Don't include the result
                 return false;
             } catch (UnauthorizedException ue) {
@@ -829,7 +828,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
             } else {
                 try {
                     overrideStepHandler.execute(context, operation);
-                } catch (NoSuchResourceException e){
+                } catch (Resource.NoSuchResourceException e){
                     //Mark it as not accessible so that the assembly handler can remove it
                     context.getResult().set(PROXY_NO_SUCH_RESOURCE);
                 } catch (UnauthorizedException e) {

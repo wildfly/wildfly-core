@@ -31,8 +31,8 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.logging.Handler;
 
-import org.jboss.as.controller.NoSuchResourceException;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.Target;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.module.ResourceRoot;
@@ -850,7 +850,7 @@ public interface LoggingLogger extends BasicLogger {
      * @return an {@link OperationFailedException} for the error
      */
     @Message(id = 80, value = "File '%s' was not found and cannot be found in the %s directory.")
-    NoSuchResourceException logFileNotFound(String name, String directoryProperty);
+    Resource.NoSuchResourceException logFileNotFound(String name, String directoryProperty);
 
     /**
      * Creates an exception indicating the user cannot read the file.

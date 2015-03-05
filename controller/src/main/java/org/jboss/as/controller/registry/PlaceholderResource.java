@@ -25,9 +25,9 @@ package org.jboss.as.controller.registry;
 import java.util.Collections;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
