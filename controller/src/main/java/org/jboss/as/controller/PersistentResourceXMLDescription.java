@@ -5,7 +5,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +37,8 @@ public class PersistentResourceXMLDescription {
     protected final PersistentResourceDefinition resourceDefinition;
     protected final String xmlElementName;
     protected final String xmlWrapperElement;
-    protected final Collection<AttributeDefinition> attributes;
+    @Deprecated
+    protected final LinkedHashMap<String, AttributeDefinition> attributes; //we dont use it anymore, it is here just for backward compatibilty and make sure PermissionResourceDefinition works
     protected final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
     protected final List<PersistentResourceXMLDescription> children;
     protected final boolean useValueAsElementName;
@@ -60,7 +60,7 @@ public class PersistentResourceXMLDescription {
         this.xmlElementName = xmlElementName;
         this.xmlWrapperElement = xmlWrapperElement;
         this.useElementsForGroups = true;
-        this.attributes = attributes.values();
+        this.attributes = attributes;
         this.attributesByGroup = new LinkedHashMap<>();
         this.attributesByGroup.put(null, attributes);
         this.children = children;
@@ -77,7 +77,7 @@ public class PersistentResourceXMLDescription {
         this.resourceDefinition = builder.resourceDefinition;
         this.xmlElementName = builder.xmlElementName;
         this.xmlWrapperElement = builder.xmlWrapperElement;
-        this.attributes = builder.attributes;
+        this.attributes = new LinkedHashMap<>();
         this.useElementsForGroups = builder.useElementsForGroups;
         this.attributesByGroup = new LinkedHashMap<>();
         this.namespaceURI = builder.namespaceURI;
@@ -86,7 +86,7 @@ public class PersistentResourceXMLDescription {
             this.attributesByGroup.put(null, new LinkedHashMap<String, AttributeDefinition>());
             this.attributeGroups = new HashSet<>();
             // Segregate attributes by group
-            for (AttributeDefinition ad : builder.attributes) {
+            for (AttributeDefinition ad : builder.attributeList) {
                 LinkedHashMap<String, AttributeDefinition> forGroup = this.attributesByGroup.get(ad.getAttributeGroup());
                 if (forGroup == null) {
                     forGroup = new LinkedHashMap<>();
@@ -97,7 +97,7 @@ public class PersistentResourceXMLDescription {
             }
         } else {
             LinkedHashMap<String,AttributeDefinition> attrs = new LinkedHashMap<>();
-            for (AttributeDefinition ad : builder.attributes) {
+            for (AttributeDefinition ad : builder.attributeList) {
                 attrs.put(ad.getXmlName(), ad);
             }
             // Ignore attribute-group, treat all as if they are in the default group
@@ -357,7 +357,9 @@ public class PersistentResourceXMLDescription {
         protected boolean useValueAsElementName;
         protected boolean noAddOperation;
         protected AdditionalOperationsGenerator additionalOperationsGenerator;
-        protected final LinkedList<AttributeDefinition> attributes = new LinkedList<>();
+        @Deprecated
+        protected final LinkedHashMap<String, AttributeDefinition> attributes = new LinkedHashMap<>();
+        protected final LinkedList<AttributeDefinition> attributeList = new LinkedList<>();
         protected final List<PersistentResourceXMLBuilder> children = new ArrayList<>();
         protected final LinkedHashMap<String, AttributeParser> attributeParsers = new LinkedHashMap<>();
         protected final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
@@ -381,25 +383,31 @@ public class PersistentResourceXMLDescription {
         }
 
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute) {
-            this.attributes.add(attribute);
+            this.attributeList.add(attribute);
+            this.attributes.put(attribute.getXmlName(), attribute);
             return this;
         }
 
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser) {
-            this.attributes.add(attribute);
+            this.attributeList.add(attribute);
+            this.attributes.put(attribute.getXmlName(), attribute);
             this.attributeParsers.put(attribute.getXmlName(), attributeParser);
             return this;
         }
 
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
-            this.attributes.add(attribute);
+            this.attributeList.add(attribute);
+            this.attributes.put(attribute.getXmlName(), attribute);
             this.attributeParsers.put(attribute.getXmlName(), attributeParser);
             this.attributeMarshallers.put(attribute.getXmlName(), attributeMarshaller);
             return this;
         }
 
         public PersistentResourceXMLBuilder addAttributes(AttributeDefinition... attributes) {
-            Collections.addAll(this.attributes, attributes);
+            Collections.addAll(this.attributeList, attributes);
+            for (final AttributeDefinition at : attributes) {
+                this.attributes.put(at.getXmlName(), at);
+            }
             return this;
         }
 
