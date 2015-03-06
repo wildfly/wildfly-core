@@ -21,10 +21,8 @@
  */
 package org.jboss.as.domain.management.audit;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -74,7 +72,7 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
         protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
             final PathAddress addr = PathAddress.pathAddress(operation.require(OP_ADDR));
             String name = addr.getLastElement().getValue();
-            if (!lookForHandler(context, addr, name)) {
+            if (!HandlerUtil.lookForHandler(context, addr, name)) {
                 throw DomainManagementLogger.ROOT_LOGGER.noHandlerCalled(name);
             }
             resource.getModel().setEmptyObject();
@@ -96,26 +94,6 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
             auditLogger.getUpdater().rollbackChanges();
         }
 
-        private boolean lookForHandler(OperationContext context, PathAddress addr, String name) {
-            PathAddress referenceAddress = addr.subAddress(0, addr.size() - 2).append(FILE_HANDLER, name);
-            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
-            if (lookForResource(root, referenceAddress)) {
-                return true;
-            }
-            referenceAddress  = addr.subAddress(0, addr.size() - 2).append(SYSLOG_HANDLER, name);
-            return lookForResource(root, referenceAddress);
-        }
-
-        private boolean lookForResource(final Resource root, final PathAddress pathAddress) {
-            Resource current = root;
-            for (PathElement element : pathAddress) {
-                current = current.getChild(element);
-                if (current == null) {
-                    return false;
-                }
-            }
-            return true;
-        }
     }
 
     private static class AuditLogHandlerReferenceRemoveHandler extends AbstractRemoveStepHandler {

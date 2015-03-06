@@ -1094,6 +1094,30 @@ public interface DomainManagementLogger extends BasicLogger {
     String passwordShouldHaveSymbol(int minSymbol);
 
     /**
+     * The error message for invalid rotate size value.
+     * @param size the rotate size value.
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 103, value = "Invalid size %s")
+    OperationFailedException invalidSize(String size);
+
+    /**
+     * The error message indicating a suffix contains seconds or milliseconds and the handler does not allow it.
+     * @param suffix the suffix value.
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 104, value = "The suffix (%s) can not contain seconds or milliseconds.")
+    OperationFailedException suffixContainsMillis(String suffix);
+
+    /**
+     * The error message indicating a suffix is invalid.
+     * @param suffix the suffix value.
+     * @return a {@link OperationFailedException} for the error.
+     */
+    @Message(id = 105, value = "The suffix (%s) is invalid. A suffix must be a valid date format.")
+    OperationFailedException invalidSuffix(String suffix);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.

@@ -36,6 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.InetAddress;
@@ -216,12 +217,53 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
         return op;
     }
 
+    protected ModelNode createAddPeriodicRotatingFileHandlerOperation(String handlerName, String formatterName, String fileName, String suffix) {
+        ModelNode op = Util.createAddOperation(createPeriodicRotatingFileHandlerAddress(handlerName));
+        op.get(ModelDescriptionConstants.RELATIVE_TO).set("log.dir");
+        op.get(ModelDescriptionConstants.PATH).set(fileName);
+        op.get(ModelDescriptionConstants.FORMATTER).set(formatterName);
+        op.get(ModelDescriptionConstants.SUFFIX).set(suffix);
+        return op;
+    }
+
+    protected ModelNode createAddSizeRotatingFileHandlerOperation(String handlerName, String formatterName, String fileName, String rotateSize, int maxBackupIndex) {
+        ModelNode op = Util.createAddOperation(createSizeRotatingFileHandlerAddress(handlerName));
+        op.get(ModelDescriptionConstants.RELATIVE_TO).set("log.dir");
+        op.get(ModelDescriptionConstants.PATH).set(fileName);
+        op.get(ModelDescriptionConstants.FORMATTER).set(formatterName);
+        if (rotateSize != null) {
+            op.get(ModelDescriptionConstants.ROTATE_SIZE).set(rotateSize);
+        }
+        op.get(ModelDescriptionConstants.MAX_BACKUP_INDEX).set(maxBackupIndex);
+        return op;
+    }
+
     protected ModelNode createRemoveFileHandlerOperation(String handlerName) {
         return Util.createRemoveOperation(createFileHandlerAddress(handlerName));
     }
 
+    protected ModelNode createRemovePeriodicRotatingFileHandlerOperation(String handlerName) {
+        return Util.createRemoveOperation(createPeriodicRotatingFileHandlerAddress(handlerName));
+    }
+
+    protected ModelNode createRemoveSizeRotatingFileHandlerOperation(String handlerName) {
+        return Util.createRemoveOperation(createSizeRotatingFileHandlerAddress(handlerName));
+    }
+
     protected PathAddress createFileHandlerAddress(String handlerName){
-        return AUDIT_ADDR.append(PathElement.pathElement(ModelDescriptionConstants.FILE_HANDLER, handlerName));
+        return createHandlerAddress(ModelDescriptionConstants.FILE_HANDLER, handlerName);
+    }
+
+    protected PathAddress createPeriodicRotatingFileHandlerAddress(String handlerName){
+        return createHandlerAddress(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER, handlerName);
+    }
+
+    protected PathAddress createSizeRotatingFileHandlerAddress(String handlerName){
+        return createHandlerAddress(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER, handlerName);
+    }
+
+    protected PathAddress createHandlerAddress(String handlerType, String handlerName){
+        return AUDIT_ADDR.append(PathElement.pathElement(handlerType, handlerName));
     }
 
     protected ModelNode createRemoveJsonFormatterOperation(String formatterName) {
@@ -346,7 +388,7 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
     }
 
     protected List<ModelNode> checkBootRecordHeader(ModelNode bootRecord, int ops, String type, boolean readOnly, boolean booting, boolean success) {
-        Assert.assertEquals("core", bootRecord.get("type").asString());
+        Assert.assertEquals(type, bootRecord.get("type").asString());
         Assert.assertEquals(readOnly, bootRecord.get("r/o").asBoolean());
         Assert.assertEquals(booting, bootRecord.get("booting").asBoolean());
         Assert.assertFalse(bootRecord.get("user").isDefined());
@@ -359,6 +401,14 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
         return operations;
     }
 
+    protected FilenameFilter createLogFilenameFilter(final String filenamePrefix) {
+        return new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.startsWith(filenamePrefix);
+            }
+        };
+    }
 
     @Override
     protected void addBootOperations(List<ModelNode> bootOperations) {

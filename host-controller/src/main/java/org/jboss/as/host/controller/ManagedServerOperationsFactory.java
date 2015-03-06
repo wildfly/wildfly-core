@@ -60,6 +60,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRINCIPAL_TO_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
@@ -78,6 +79,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LOGGER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -121,6 +123,8 @@ import org.jboss.as.domain.management.access.SensitivityResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
 import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.JsonAuditLogFormatterResourceDefinition;
+import org.jboss.as.domain.management.audit.PeriodicRotatingFileAuditLogHandlerResourceDefinition;
+import org.jboss.as.domain.management.audit.SizeRotatingFileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.SyslogAuditLogHandlerResourceDefinition;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.repository.ContentReference;
@@ -479,6 +483,18 @@ public final class ManagedServerOperationsFactory {
                 for (Property fileProp : auditLogModel.get(FILE_HANDLER).asPropertyList()){
                     final PathAddress fileHandlerAddress = auditLogAddr.append(PathElement.pathElement(FILE_HANDLER, fileProp.getName()));
                     updates.add(FileAuditLogHandlerResourceDefinition.createServerAddOperation(fileHandlerAddress, fileProp.getValue()));
+                }
+            }
+            if (auditLogModel.get(SIZE_ROTATING_FILE_HANDLER).isDefined()){
+                for (Property sizeRotatingFileProp : auditLogModel.get(SIZE_ROTATING_FILE_HANDLER).asPropertyList()){
+                    final PathAddress sizeRotatingFileHandlerAddress = auditLogAddr.append(PathElement.pathElement(SIZE_ROTATING_FILE_HANDLER, sizeRotatingFileProp.getName()));
+                    updates.add(SizeRotatingFileAuditLogHandlerResourceDefinition.createServerAddOperation(sizeRotatingFileHandlerAddress, sizeRotatingFileProp.getValue()));
+                }
+            }
+            if (auditLogModel.get(PERIODIC_ROTATING_FILE_HANDLER).isDefined()){
+                for (Property periodicRotatingFileProp : auditLogModel.get(PERIODIC_ROTATING_FILE_HANDLER).asPropertyList()){
+                    final PathAddress periodicRotatingFileHandlerAddress = auditLogAddr.append(PathElement.pathElement(PERIODIC_ROTATING_FILE_HANDLER, periodicRotatingFileProp.getName()));
+                    updates.add(PeriodicRotatingFileAuditLogHandlerResourceDefinition.createServerAddOperation(periodicRotatingFileHandlerAddress, periodicRotatingFileProp.getValue()));
                 }
             }
             if (auditLogModel.get(SYSLOG_HANDLER).isDefined()){

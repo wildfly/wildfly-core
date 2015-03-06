@@ -55,6 +55,8 @@ import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
 import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.JsonAuditLogFormatterResourceDefinition;
+import org.jboss.as.domain.management.audit.PeriodicRotatingFileAuditLogHandlerResourceDefinition;
+import org.jboss.as.domain.management.audit.SizeRotatingFileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.SyslogAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.SyslogAuditLogProtocolResourceDefinition;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
@@ -109,7 +111,7 @@ public class AuditLogXml {
                 parseAuditLogFormatters1_5(reader, auditLogAddress, expectedNs, list);
                 break;
             case HANDLERS:{
-                parseAuditLogHandlers_1_5(reader, auditLogAddress, expectedNs, list);
+                parseAuditLogHandlers(reader, auditLogAddress, expectedNs, list);
                 break;
             }
             case LOGGER:{
@@ -195,6 +197,21 @@ public class AuditLogXml {
         requireNoContent(reader);
     }
 
+    private void parseAuditLogHandlers(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+        switch (expectedNs) {
+            case DOMAIN_1_5:
+            case DOMAIN_1_6:
+            case DOMAIN_2_0:
+            case DOMAIN_2_1:
+            case DOMAIN_2_2:
+                parseAuditLogHandlers_1_5(reader, address, expectedNs, list);
+                break;
+            default: // i.e. 3.x
+                parseAuditLogHandlers_3_0(reader, address, expectedNs, list);
+                break;
+        }
+    }
+
     private void parseAuditLogHandlers_1_5(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
 
         requireNamespace(reader, expectedNs);
@@ -211,6 +228,32 @@ public class AuditLogXml {
                 parseSyslogAuditLogHandler_1_5(reader, address, expectedNs, list);
                 break;
             }
+            default:
+                throw unexpectedElement(reader);
+            }
+        }
+    }
+
+    private void parseAuditLogHandlers_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+
+        requireNamespace(reader, expectedNs);   //FIXME is this needed? what it does?
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, expectedNs);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+            case FILE_HANDLER:
+                parseFileAuditLogHandler_1_5(reader, address, expectedNs, list);
+                break;
+            case PERIODIC_ROTATING_FILE_HANDLER:
+                parsePeriodicRotatingFileAuditLogHandler_3_0(reader, address, expectedNs, list);
+                break;
+            case SIZE_ROTATING_FILE_HANDLER:
+                parseSizeRotatingFileAuditLogHandler_3_0(reader, address, expectedNs, list);
+                break;
+            case SYSLOG_HANDLER:
+                parseSyslogAuditLogHandler_1_5(reader, address, expectedNs, list);
+                break;
             default:
                 throw unexpectedElement(reader);
             }
@@ -251,6 +294,83 @@ public class AuditLogXml {
                 default: {
                     throw unexpectedAttribute(reader, i);
                 }
+            }
+        }
+
+        requireNoContent(reader);
+    }
+
+    private void parseSizeRotatingFileAuditLogHandler_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+        final ModelNode add = Util.createAddOperation();
+        list.add(add);
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            }
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            switch (attribute) {
+                case NAME:
+                    add.get(OP_ADDR).set(address).add(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER, value);
+                    break;
+                case MAX_FAILURE_COUNT:
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.parseAndSetParameter(value, add, reader);
+                    break;
+                case FORMATTER:
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.FORMATTER.parseAndSetParameter(value, add, reader);
+                    break;
+                case PATH:
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.PATH.parseAndSetParameter(value, add, reader);
+                    break;
+                case RELATIVE_TO:
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.RELATIVE_TO.parseAndSetParameter(value, add, reader);
+                    break;
+                case ROTATE_SIZE:
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.ROTATE_SIZE.parseAndSetParameter(value, add, reader);
+                    break;
+                case MAX_BACKUP_INDEX:
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.MAX_BACKUP_INDEX.parseAndSetParameter(value, add, reader);
+                    break;
+                default:
+                    throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        requireNoContent(reader);
+    }
+
+    private void parsePeriodicRotatingFileAuditLogHandler_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+        final ModelNode add = Util.createAddOperation();
+        list.add(add);
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            }
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            switch (attribute) {
+                case NAME:
+                    add.get(OP_ADDR).set(address).add(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER, value);
+                    break;
+                case MAX_FAILURE_COUNT:
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.parseAndSetParameter(value, add, reader);
+                    break;
+                case FORMATTER:
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.FORMATTER.parseAndSetParameter(value, add, reader);
+                    break;
+                case PATH:
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.PATH.parseAndSetParameter(value, add, reader);
+                    break;
+                case RELATIVE_TO:
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.RELATIVE_TO.parseAndSetParameter(value, add, reader);
+                    break;
+                case SUFFIX:
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.SUFFIX.parseAndSetParameter(value, add, reader);
+                    break;
+                default:
+                    throw unexpectedAttribute(reader, i);
             }
         }
 
@@ -675,7 +795,9 @@ public class AuditLogXml {
 
 
         if ((auditLog.hasDefined(ModelDescriptionConstants.FILE_HANDLER) && auditLog.get(ModelDescriptionConstants.FILE_HANDLER).keys().size() > 0) ||
-                (auditLog.hasDefined(ModelDescriptionConstants.SYSLOG_HANDLER) && auditLog.get(ModelDescriptionConstants.SYSLOG_HANDLER).keys().size() > 0)) {
+                (auditLog.hasDefined(ModelDescriptionConstants.SYSLOG_HANDLER) && auditLog.get(ModelDescriptionConstants.SYSLOG_HANDLER).keys().size() > 0) ||
+                (auditLog.hasDefined(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER) && auditLog.get(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER).keys().size() > 0) ||
+                (auditLog.hasDefined(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER) && auditLog.get(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER).keys().size() > 0)) {
             writer.writeStartElement(Element.HANDLERS.getLocalName());
             if (auditLog.hasDefined(ModelDescriptionConstants.FILE_HANDLER)) {
                 for (String name : auditLog.get(ModelDescriptionConstants.FILE_HANDLER).keys()) {
@@ -686,6 +808,33 @@ public class AuditLogXml {
                     FileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
                     FileAuditLogHandlerResourceDefinition.PATH.marshallAsAttribute(handler, writer);
                     FileAuditLogHandlerResourceDefinition.RELATIVE_TO.marshallAsAttribute(handler, writer);
+                    writer.writeEndElement();
+                }
+            }
+            if (auditLog.hasDefined(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER)) {
+                for (String name : auditLog.get(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER).keys()) {
+                    writer.writeStartElement(Element.PERIODIC_ROTATING_FILE_HANDLER.getLocalName());
+                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
+                    ModelNode handler = auditLog.get(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER, name);
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.FORMATTER.marshallAsAttribute(handler, writer);
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.PATH.marshallAsAttribute(handler, writer);
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.RELATIVE_TO.marshallAsAttribute(handler, writer);
+                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.SUFFIX.marshallAsAttribute(handler, writer);
+                    writer.writeEndElement();
+                }
+            }
+            if (auditLog.hasDefined(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER)) {
+                for (String name : auditLog.get(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER).keys()) {
+                    writer.writeStartElement(Element.SIZE_ROTATING_FILE_HANDLER.getLocalName());
+                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
+                    ModelNode handler = auditLog.get(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER, name);
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.FORMATTER.marshallAsAttribute(handler, writer);
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.PATH.marshallAsAttribute(handler, writer);
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.RELATIVE_TO.marshallAsAttribute(handler, writer);
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.ROTATE_SIZE.marshallAsAttribute(handler, writer);
+                    SizeRotatingFileAuditLogHandlerResourceDefinition.MAX_BACKUP_INDEX.marshallAsAttribute(handler, writer);
                     writer.writeEndElement();
                 }
             }

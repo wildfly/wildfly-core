@@ -21,11 +21,10 @@
  */
 package org.jboss.as.domain.management.audit;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FORMATTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JSON_FORMATTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
+import static org.jboss.as.domain.management.audit.AuditLogHandlerResourceDefinition.HANDLER_TYPES;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -183,7 +182,7 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
                 throws OperationFailedException {
             final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
             final Resource auditLog = context.readResourceFromRoot(PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT, AccessAuditResourceDefinition.PATH_ELEMENT));
-            checkFormatterNotReferenced(name, auditLog, FILE_HANDLER, SYSLOG_HANDLER);
+            checkFormatterNotReferenced(name, auditLog, HANDLER_TYPES);
             super.performRemove(context, operation, model);
         }
 

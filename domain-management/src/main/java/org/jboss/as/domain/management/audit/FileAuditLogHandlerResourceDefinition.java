@@ -34,9 +34,11 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.audit.AbstractFileAuditLogHandler;
 import org.jboss.as.controller.audit.FileAuditLogHandler;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -46,16 +48,13 @@ import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
+import java.util.Arrays;
+
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResourceDefinition {
-
-    public static final SimpleAttributeDefinition FORMATTER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FORMATTER, ModelType.STRING)
-        .setAllowNull(false)
-        .setMinSize(1)
-        .build();
 
     public static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PATH, ModelType.STRING)
         .setAllowNull(false)
@@ -68,7 +67,7 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
         .setMinSize(1)
         .build();
 
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{FORMATTER, PATH, RELATIVE_TO, MAX_FAILURE_COUNT};
+    protected static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{FORMATTER, PATH, RELATIVE_TO, MAX_FAILURE_COUNT};
 
 
     public FileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
@@ -76,6 +75,11 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
                 DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.file-handler"),
                 new FileAuditLogHandlerAddHandler(auditLogger, pathManager, ATTRIBUTES), new HandlerRemoveHandler(auditLogger));
         setDeprecated(ModelVersion.create(1, 7));
+    }
+
+    public FileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager, PathElement pathElement, ResourceDescriptionResolver descriptionResolver,
+                OperationStepHandler addHandler, OperationStepHandler removeHandler) {
+        super(auditLogger, pathManager, pathElement, descriptionResolver, addHandler, removeHandler);
     }
 
     public static ModelNode createServerAddOperation(final PathAddress address, final ModelNode fileHandler){
@@ -91,14 +95,18 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        HandlerWriteAttributeHandler write = new HandlerWriteAttributeHandler(auditLogger, pathManager, ATTRIBUTES);
+        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager, ATTRIBUTES);
         for (AttributeDefinition def : ATTRIBUTES){
             resourceRegistration.registerReadWriteAttribute(def, null, write);
         }
     }
 
-    private static FileAuditLogHandler createHandler(final PathManagerService pathManager,
-                                               final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    protected HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
+        return new HandlerWriteAttributeHandler(auditLogger, pathManager, attributeDefinitions);
+    }
+
+    private static FileAuditLogHandler createFileAuditLogHandler(final PathManagerService pathManager,
+                                                                 final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
         final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
         final String relativeTo = model.hasDefined(RELATIVE_TO.getName()) ? RELATIVE_TO.resolveModelAttribute(context, model).asString() : null;
@@ -108,12 +116,12 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
         return new FileAuditLogHandler(name, formatterName, maxFailureCount, pathManager, path, relativeTo);
     }
 
-    private static class FileAuditLogHandlerAddHandler extends AbstractAddStepHandler {
+    protected static class FileAuditLogHandlerAddHandler extends AbstractAddStepHandler {
 
-        private final ManagedAuditLogger auditLogger;
-        private final PathManagerService pathManager;
+        protected final ManagedAuditLogger auditLogger;
+        protected final PathManagerService pathManager;
 
-        private FileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
+        protected FileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
             super(attributes);
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
@@ -138,8 +146,13 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
             }, OperationContext.Stage.MODEL);
         }
 
+        @Override
         protected boolean requiresRuntime(OperationContext context){
             return true;
+        }
+
+        protected AbstractFileAuditLogHandler createHandler(final PathManagerService pathManager, final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            return createFileAuditLogHandler(pathManager, context, operation);
         }
 
         @Override
@@ -154,14 +167,19 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
         }
     }
 
-    private static class HandlerWriteAttributeHandler extends AuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler {
+    protected static class HandlerWriteAttributeHandler extends AuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler {
 
         public HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
             super(auditLogger, pathManager, attributeDefinitions);
         }
 
+        @Override
         protected boolean requiresRuntime(OperationContext context){
             return true;
+        }
+
+        protected AbstractFileAuditLogHandler createHandler(final PathManagerService pathManager, final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            return createFileAuditLogHandler(pathManager, context, operation);
         }
 
         @Override
@@ -179,4 +197,15 @@ public class FileAuditLogHandlerResourceDefinition extends AuditLogHandlerResour
             }
         }
     }
+
+    protected static <T> T[] joinArrays(final T[] array1, final T[] array2) {
+        if (array2 == null)
+            return array1;
+        if (array1 == null)
+            return array2;
+        final T[] joinedArrays = Arrays.copyOf(array1, array1.length + array2.length);
+        System.arraycopy(array2, 0, joinedArrays, array1.length, array2.length);
+        return joinedArrays;
+    }
+
 }

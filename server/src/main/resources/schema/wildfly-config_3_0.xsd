@@ -1459,6 +1459,8 @@
         </xs:annotation>
         <xs:choice minOccurs="1" maxOccurs="unbounded">
             <xs:element name="file-handler" type="file-audit-log-handlerType"/>
+            <xs:element name="size-rotating-file-handler" type="size-rotating-file-audit-log-handlerType"/>
+            <xs:element name="periodic-rotating-file-handler" type="periodic-rotating-file-audit-log-handlerType"/>
             <xs:element name="syslog-handler" type="syslog-audit-log-handlerType"/>
         </xs:choice>
     </xs:complexType>
@@ -1520,6 +1522,65 @@
 			   </xs:extension>
 			</xs:complexContent>
     </xs:complexType>
+
+    <xs:complexType name="size-rotating-file-audit-log-handlerType">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration of a size rotating file handler for the audit log. This writes to a local file,
+                rotating the log after the size of the file grows beyond a certain point and keeping
+                a fixed number of backups..
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="file-audit-log-handlerType">
+                <xs:attribute name="rotate-size" type="sizeType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The size at which to rotate the log file.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="max-backup-index" type="xs:positiveInteger" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The maximum number of backups to keep.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="periodic-rotating-file-audit-log-handlerType">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration of a periodic rotating file handler for the audit log. This writes to a local file,
+                rotating the log after a time period derived from the given suffix string,
+                which should be in a format understood by java.text.SimpleDateFormat.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="file-audit-log-handlerType">
+                <xs:attribute name="suffix" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The suffix string in a format which can be understood by java.text.SimpleDateFormat.
+                            The period of the rotation is automatically calculated based on the suffix.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:simpleType name="sizeType">
+        <xs:annotation>
+            <xs:documentation>A positive number optionally followed by one of [bBkKmMgGtT]</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]+[bBkKmMgGtT]?"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="syslog-audit-log-handlerType">
         <xs:annotation>
