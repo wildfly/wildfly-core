@@ -124,6 +124,9 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
         ExtensionUtils.createExtensionModule(BlockerExtension.MODULE_NAME, BlockerExtension.class, EmptySubsystemParser.class.getPackage());
 
+        // Set jboss.bind.address so the embedded server uses the expected IP address
+        System.setProperty("jboss.bind.address.management", TestSuiteEnvironment.getServerAddress());
+
         // Silly assertion just to stop IDEs complaining about field 'out' not being used.
         assertNotNull(out);
     }
