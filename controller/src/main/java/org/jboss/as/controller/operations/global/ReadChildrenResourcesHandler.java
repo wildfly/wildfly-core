@@ -171,7 +171,20 @@ public class ReadChildrenResourcesHandler implements OperationStepHandler {
                         PathElement path = entry.getKey();
                         ModelNode value = entry.getValue();
                         if (!value.has(FAILURE_DESCRIPTION)) {
-                            sortedChildren.put(path.getValue(), value.get(RESULT));
+                            if (value.hasDefined(RESULT)) {
+                                sortedChildren.put(path.getValue(), value.get(RESULT));
+                            } else {
+                                // A child did not produce a response. We don't know if the definition
+                                // of our resource indicates the child that has disappeared must be
+                                // present, so we don't want to produce a response for our resource
+                                // without the child if our resource is now gone as well.
+                                // So, see if our resource has disappeared as well.
+                                if (!filteredData.isAddressFiltered(address, path)) {
+                                    // Wasn't filtered. Confirm our resource still exists
+                                    context.readResourceFromRoot(address, false);
+                                } // else there's no result because it was just filtered
+
+                            }
                         } else if (!failed && value.hasDefined(FAILURE_DESCRIPTION)) {
                             context.getFailureDescription().set(value.get(FAILURE_DESCRIPTION));
                             failed = true;

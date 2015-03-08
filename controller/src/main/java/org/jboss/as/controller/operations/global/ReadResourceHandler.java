@@ -61,6 +61,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
+import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -141,15 +142,20 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
     private final boolean resolvable;
 
     public ReadResourceHandler() {
-        this(null, null, false);
+        this(null, null, false, false);
     }
 
     public ReadResourceHandler(boolean resolvable){
-        this(null,null,resolvable);
+        this(null,null,resolvable, false);
     }
 
     ReadResourceHandler(final FilteredData filteredData, OperationStepHandler overrideHandler, boolean resolvable) {
-        super(filteredData);
+        this(filteredData, overrideHandler, resolvable, true);
+    }
+
+    private ReadResourceHandler(final FilteredData filteredData, OperationStepHandler overrideHandler,
+                                boolean resolvable, boolean ignoreMissingResource) {
+        super(filteredData, ignoreMissingResource);
         this.overrideHandler = overrideHandler;
         this.resolvable = resolvable;
     }
@@ -157,22 +163,31 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
 
     @Override
-    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData) throws OperationFailedException {
+    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException {
 
         if (filteredData == null) {
-            doExecuteInternal(context, operation);
+            doExecuteInternal(context, operation, ignoreMissingResource);
         } else {
             try {
                 if (overrideHandler == null) {
-                    doExecuteInternal(context, operation);
+                    doExecuteInternal(context, operation, ignoreMissingResource);
                 } else {
                     overrideHandler.execute(context, operation);
                 }
-            } catch (Resource.NoSuchResourceException nsre) {
+            } catch (ResourceNotAddressableException rnae) {
                 // Just report the failure to the filter and complete normally
-                PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
-                filteredData.addAccessRestrictedResource(pa);
-                context.getResult().set(new ModelNode());
+                reportInaccesible(context, operation, filteredData);
+            } catch (Resource.NoSuchResourceException nsre) {
+                // It's possible this is a remote failure, in which case we
+                // don't get ResourceNotAddressableException. So see if
+                // it was due to any authorization denial
+                AuthorizationResult.Decision decision = context.authorize(operation, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
+                if (decision == AuthorizationResult.Decision.DENY) {
+                    // Just report the failure to the filter and complete normally
+                    reportInaccesible(context, operation, filteredData);
+                } else if (!ignoreMissingResource) {
+                    throw nsre;
+                }
             } catch (UnauthorizedException ue) {
                 // Just report the failure to the filter and complete normally
                 PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
@@ -182,7 +197,14 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         }
     }
 
-    void doExecuteInternal(OperationContext context, ModelNode operation) throws OperationFailedException {
+    private void reportInaccesible(OperationContext context, ModelNode operation, FilteredData filteredData) {
+        PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
+        filteredData.addAccessRestrictedResource(pa);
+        context.getResult().set(new ModelNode());
+
+    }
+
+    private void doExecuteInternal(OperationContext context, ModelNode operation, boolean ignoreMissingResource) throws OperationFailedException {
 
         validator.validate(operation);
 
@@ -203,22 +225,25 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         // We wouldn't call read-resource if the recursive=false
         final Map<String, ModelNode> directChildren = new HashMap<String, ModelNode>();
         // Attributes of AccessType.METRIC
-        final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics = queryRuntime
-                ? new HashMap<AttributeDefinition.NameAndGroup, ModelNode>()
-                : Collections.<AttributeDefinition.NameAndGroup, ModelNode>emptyMap();
+        final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics = queryRuntime
+                ? new HashMap<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse>()
+                : Collections.<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse>emptyMap();
         // Non-AccessType.METRIC attributes
-        final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes = new HashMap<>();
+        final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes = new HashMap<>();
         // Child resources recursively read
         final Map<PathElement, ModelNode> childResources = recursive ? new LinkedHashMap<PathElement, ModelNode>() : Collections.<PathElement, ModelNode>emptyMap();
 
-        final FilteredData localFilteredData = getFilteredData() == null ? new FilteredData(address) : getFilteredData();
+        // If we were not configured with a FilteredData, we are handling the top
+        // resource being read, otherwise we are a child resource
+        FilteredData fd = getFilteredData();
+        final FilteredData localFilteredData = fd == null ? new FilteredData(address) : fd;
 
         // We're going to add a bunch of steps that should immediately follow this one. We are going to add them
         // in reverse order of how they should execute, as that is the way adding a Stage.IMMEDIATE step works
 
         // Last to execute is the handler that assembles the overall response from the pieces created by all the other steps
         final ReadResourceAssemblyHandler assemblyHandler = new ReadResourceAssemblyHandler(address, metrics,
-                otherAttributes, directChildren, childResources, nonExistentChildTypes, localFilteredData);
+                otherAttributes, directChildren, childResources, nonExistentChildTypes, localFilteredData, ignoreMissingResource);
         context.addStep(assemblyHandler, queryRuntime ? OperationContext.Stage.VERIFY : OperationContext.Stage.MODEL, true);
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
 
@@ -312,7 +337,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             if ((aliases || !access.getFlags().contains(AttributeAccess.Flag.ALIAS))
                     && (queryRuntime || access.getStorageType() == AttributeAccess.Storage.CONFIGURATION)) {
 
-                Map<AttributeDefinition.NameAndGroup, ModelNode> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
+                Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
 
                 AttributeDefinition ad = access.getAttributeDefinition();
                 AttributeDefinition.NameAndGroup nag = ad == null ? new AttributeDefinition.NameAndGroup(attributeName) : new AttributeDefinition.NameAndGroup(ad);
@@ -379,7 +404,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
     private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData,
                                       ImmutableManagementResourceRegistration registry,
-                                      AttributeDefinition.NameAndGroup attributeKey, Map<AttributeDefinition.NameAndGroup, ModelNode> responseMap) {
+                                      AttributeDefinition.NameAndGroup attributeKey, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> responseMap) {
         // See if there was an override registered for the standard :read-attribute handling (unlikely!!!)
         OperationStepHandler overrideHandler = registry.getOperationHandler(PathAddress.EMPTY_ADDRESS, READ_ATTRIBUTE_OPERATION);
         if (overrideHandler != null &&
@@ -395,9 +420,12 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         attributeOperation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).set(resolve);
 
         final ModelNode attrResponse = new ModelNode();
-        responseMap.put(attributeKey, attrResponse);
+        GlobalOperationHandlers.AvailableResponse availableResponse = new GlobalOperationHandlers.AvailableResponse(attrResponse);
+        responseMap.put(attributeKey, availableResponse);
 
-        context.addStep(attrResponse, attributeOperation, readAttributeHandler, OperationContext.Stage.MODEL, true);
+        GlobalOperationHandlers.AvailableResponseWrapper wrapper = new GlobalOperationHandlers.AvailableResponseWrapper(readAttributeHandler, availableResponse);
+
+        context.addStep(attrResponse, attributeOperation, wrapper, OperationContext.Stage.MODEL, true);
     }
 
     /**
@@ -447,22 +475,22 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
         private final PathAddress address;
         private final Map<String, ModelNode> directChildren;
-        private final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics;
-        private final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes;
+        private final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics;
+        private final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes;
         private final Map<PathElement, ModelNode> childResources;
         private final Set<String> nonExistentChildTypes;
         private final FilteredData filteredData;
+        private final boolean ignoreMissingResource;
 
         /**
          * Creates a ReadResourceAssemblyHandler that will assemble the response using the contents
          * of the given maps.
-         *
-         * @param address          address of the resource
+         *  @param address          address of the resource
          * @param metrics          map of attributes of AccessType.METRIC. Keys are the attribute names, values are the full
          *                         read-attribute response from invoking the attribute's read handler. Will not be {@code null}
          * @param otherAttributes  map of attributes not of AccessType.METRIC that have a read handler registered. Keys
- *                         are the attribute names, values are the full read-attribute response from invoking the
- *                         attribute's read handler. Will not be {@code null}
+*                         are the attribute names, values are the full read-attribute response from invoking the
+*                         attribute's read handler. Will not be {@code null}
          * @param directChildren   Children names read directly from the parent resource where we didn't call read-resource
 *                         to gather data. We wouldn't call read-resource if the recursive=false
          * @param childResources   read-resource response from child resources, where the key is the PathAddress
@@ -470,11 +498,16 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 *                         value is the full read-resource response. Will not be {@code null}
          * @param nonExistentChildTypes names of child types where no data is available
          * @param filteredData     information about resources and attributes that were filtered
+         * @param ignoreMissingResource {@code true} if we should ignore occasions when the targeted resource
+         *                                          does not exist; {@code false} if we should throw
+         *                                          {@link org.jboss.as.controller.registry.Resource.NoSuchResourceException}
+         *                                          in such cases
          */
         private ReadResourceAssemblyHandler(final PathAddress address,
-                                            final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics,
-                                            final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes, final Map<String, ModelNode> directChildren,
-                                            final Map<PathElement, ModelNode> childResources, final Set<String> nonExistentChildTypes, FilteredData filteredData) {
+                                            final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics,
+                                            final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes, final Map<String, ModelNode> directChildren,
+                                            final Map<PathElement, ModelNode> childResources, final Set<String> nonExistentChildTypes,
+                                            FilteredData filteredData, boolean ignoreMissingResource) {
             this.address = address;
             this.metrics = metrics;
             this.otherAttributes = otherAttributes;
@@ -482,6 +515,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             this.childResources = childResources;
             this.nonExistentChildTypes = nonExistentChildTypes;
             this.filteredData = filteredData;
+            this.ignoreMissingResource = ignoreMissingResource;
         }
 
         @Override
@@ -490,8 +524,14 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             Map<AttributeDefinition.NameAndGroup, ModelNode> sortedAttributes = new TreeMap<>();
             Map<String, ModelNode> sortedChildren = new TreeMap<String, ModelNode>();
             boolean failed = false;
-            for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : otherAttributes.entrySet()) {
-                ModelNode value = entry.getValue();
+            for (Map.Entry<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> entry : otherAttributes.entrySet()) {
+                GlobalOperationHandlers.AvailableResponse ar = entry.getValue();
+                if (ar.unavailable) {
+                    // Our target resource has disappeared
+                    handleMissingResource(context);
+                    return;
+                }
+                ModelNode value = ar.response;
                 if (!value.has(FAILURE_DESCRIPTION)) {
                     sortedAttributes.put(entry.getKey(), value.get(RESULT));
                 } else if (value.hasDefined(FAILURE_DESCRIPTION)) {
@@ -505,12 +545,29 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     PathElement path = entry.getKey();
                     ModelNode value = entry.getValue();
                     if (!value.has(FAILURE_DESCRIPTION)) {
-                        ModelNode childTypeNode = sortedChildren.get(path.getKey());
-                        if (childTypeNode == null) {
-                            childTypeNode = new ModelNode();
-                            sortedChildren.put(path.getKey(), childTypeNode);
+                        if (value.hasDefined(RESULT)) {
+                            ModelNode childTypeNode = sortedChildren.get(path.getKey());
+                            if (childTypeNode == null) {
+                                childTypeNode = new ModelNode();
+                                sortedChildren.put(path.getKey(), childTypeNode);
+                            }
+                            childTypeNode.get(path.getValue()).set(value.get(RESULT));
+                        } else {
+                            // A child did not produce a response. We don't know if the definition
+                            // of our resource indicates the child that has disappeared must be
+                            // present, so we don't want to produce a response for our resource
+                            // without the child if our resource is now gone as well.
+                            // So, see if our resource has disappeared as well.
+                            if (!filteredData.isAddressFiltered(address, path)) {
+                                // Wasn't filtered. Confirm our resource still exists
+                                try {
+                                    context.readResourceFromRoot(address, false);
+                                } catch (Resource.NoSuchResourceException e) {
+                                    handleMissingResource(context);
+                                    return;
+                                }
+                            } // else there's no result because it was just filtered
                         }
-                        childTypeNode.get(path.getValue()).set(value.get(RESULT));
                     } else if (!failed && value.hasDefined(FAILURE_DESCRIPTION)) {
                         context.getFailureDescription().set(value.get(FAILURE_DESCRIPTION));
                         failed = true;
@@ -524,8 +581,14 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 for (String nonExistentChildType : nonExistentChildTypes) {
                     sortedChildren.put(nonExistentChildType, new ModelNode());
                 }
-                for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> metric : metrics.entrySet()) {
-                    ModelNode value = metric.getValue();
+                for (Map.Entry<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metric : metrics.entrySet()) {
+                    GlobalOperationHandlers.AvailableResponse ar = metric.getValue();
+                    if (ar.unavailable) {
+                        // Our target resource has disappeared
+                        handleMissingResource(context);
+                        return;
+                    }
+                    ModelNode value = ar.response;
                     if (!value.has(FAILURE_DESCRIPTION)) {
                         sortedAttributes.put(metric.getKey(), value.get(RESULT));
                     }
@@ -557,6 +620,16 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 if (filteredData.hasFilteredData()) {
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
                 }
+            }
+        }
+
+        private void handleMissingResource(OperationContext context) {
+            // Our target resource has disappeared
+            if (context.hasResult()) {
+                context.getResult().set(new ModelNode());
+            }
+            if (!ignoreMissingResource) {
+                throw new Resource.NoSuchResourceException(ControllerLogger.MGMT_OP_LOGGER.managementResourceNotFound(address));
             }
         }
     }

@@ -52,6 +52,7 @@ import org.jboss.as.controller.operations.global.GlobalOperationHandlers.Abstrac
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -112,9 +113,10 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
         this.resolvable = resolvable;
     }
 
-    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData,
+    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve,
+                                      FilteredData localFilteredData,
             ImmutableManagementResourceRegistration registry,
-            AttributeDefinition.NameAndGroup attributeKey, Map<AttributeDefinition.NameAndGroup, ModelNode> responseMap) {
+            AttributeDefinition.NameAndGroup attributeKey, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> responseMap) {
         // See if there was an override registered for the standard :read-attribute handling (unlikely!!!)
         OperationStepHandler overrideHandler = registry.getOperationHandler(PathAddress.EMPTY_ADDRESS, READ_ATTRIBUTE_OPERATION);
         if (overrideHandler != null
@@ -130,13 +132,16 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
         attributeOperation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).set(resolve);
 
         final ModelNode attrResponse = new ModelNode();
-        responseMap.put(attributeKey, attrResponse);
+        GlobalOperationHandlers.AvailableResponse availableResponse = new GlobalOperationHandlers.AvailableResponse(attrResponse);
+        responseMap.put(attributeKey, availableResponse);
 
-        context.addStep(attrResponse, attributeOperation, readAttributeHandler, OperationContext.Stage.MODEL, true);
+        GlobalOperationHandlers.AvailableResponseWrapper wrapper = new GlobalOperationHandlers.AvailableResponseWrapper(readAttributeHandler, availableResponse);
+
+        context.addStep(attrResponse, attributeOperation, wrapper, OperationContext.Stage.MODEL, true);
     }
 
     @Override
-    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData) throws OperationFailedException {
+    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException {
         validator.validate(operation);
         final PathAddress address = context.getCurrentAddress();
 
@@ -148,12 +153,12 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
         final String groupName = groupNameNode.isDefined() ? groupNameNode.asString() : null;
         final FilteredData localFilteredData = new FilteredData(address);
 
-        final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics = includeRutime
-                ? new HashMap<AttributeDefinition.NameAndGroup, ModelNode>()
-                : Collections.<AttributeDefinition.NameAndGroup, ModelNode>emptyMap();
-        final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes = new HashMap<>();
+        final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics = includeRutime
+                ? new HashMap<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse>()
+                : Collections.<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse>emptyMap();
+        final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes = new HashMap<>();
 
-        final ReadAttributeGroupAssemblyHandler assemblyHandler = new ReadAttributeGroupAssemblyHandler(metrics, otherAttributes, filteredData);
+        final ReadAttributeGroupAssemblyHandler assemblyHandler = new ReadAttributeGroupAssemblyHandler(metrics, otherAttributes, filteredData, ignoreMissingResource);
         context.addStep(assemblyHandler, includeRutime ? OperationContext.Stage.VERIFY : OperationContext.Stage.MODEL, true);
 
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
@@ -164,7 +169,7 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
             if ((aliases || !access.getFlags().contains(AttributeAccess.Flag.ALIAS))
                     && (includeRutime || access.getStorageType() == AttributeAccess.Storage.CONFIGURATION)
                     && (groupName == null || groupName.equals(ad.getAttributeGroup()))) {
-                Map<AttributeDefinition.NameAndGroup, ModelNode> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
+                Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
                 AttributeDefinition.NameAndGroup nag = ad == null ? new AttributeDefinition.NameAndGroup(attributeName) : new AttributeDefinition.NameAndGroup(ad);
                 addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, responseMap);
             }
@@ -176,26 +181,32 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
      */
     private static class ReadAttributeGroupAssemblyHandler implements OperationStepHandler {
 
-        private final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics;
-        private final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes;
+        private final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics;
+        private final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes;
         private final FilteredData filteredData;
+        private final boolean ignoreMissingResource;
 
         /**
          * Creates a ReadAttributeGroupAssemblyHandler that will assemble the response using the contents of the given
          * maps.
-         *
-         * @param metrics map of attributes of AccessType.METRIC. Keys are the attribute names, values are the full
+         *  @param metrics map of attributes of AccessType.METRIC. Keys are the attribute names, values are the full
          * read-attribute response from invoking the attribute's read handler. Will not be {@code null}
          * @param otherAttributes map of attributes not of AccessType.METRIC that have a read handler registered. Keys
          * are the attribute names, values are the full read-attribute response from invoking the attribute's read
          * handler. Will not be {@code null}
          * @param filteredData information about resources and attributes that were filtered
+         * @param ignoreMissingResource {@code true} if we should ignore occasions when the targeted resource
+         *                                          does not exist; {@code false} if we should throw
+         *                                          {@link org.jboss.as.controller.registry.Resource.NoSuchResourceException}
+         *                                          in such cases
          */
-        private ReadAttributeGroupAssemblyHandler(final Map<AttributeDefinition.NameAndGroup, ModelNode> metrics,
-                final Map<AttributeDefinition.NameAndGroup, ModelNode> otherAttributes, FilteredData filteredData) {
+        private ReadAttributeGroupAssemblyHandler(final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics,
+                                                  final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes,
+                                                  final FilteredData filteredData, final boolean ignoreMissingResource) {
             this.metrics = metrics;
             this.otherAttributes = otherAttributes;
             this.filteredData = filteredData;
+            this.ignoreMissingResource = ignoreMissingResource;
         }
 
         @Override
@@ -203,8 +214,14 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
 
             Map<AttributeDefinition.NameAndGroup, ModelNode> sortedAttributes = new TreeMap<>();
             boolean failed = false;
-            for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : otherAttributes.entrySet()) {
-                ModelNode value = entry.getValue();
+            for (Map.Entry<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> entry : otherAttributes.entrySet()) {
+                GlobalOperationHandlers.AvailableResponse ar = entry.getValue();
+                if (ar.unavailable) {
+                    // Our target resource has disappeared
+                    handleMissingResource(context);
+                    return;
+                }
+                ModelNode value = ar.response;
                 if (!value.has(FAILURE_DESCRIPTION)) {
                     sortedAttributes.put(entry.getKey(), value.get(RESULT));
                 } else if (value.hasDefined(FAILURE_DESCRIPTION)) {
@@ -214,8 +231,14 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
                 }
             }
             if (!failed) {
-                for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> metric : metrics.entrySet()) {
-                    ModelNode value = metric.getValue();
+                for (Map.Entry<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metric : metrics.entrySet()) {
+                    GlobalOperationHandlers.AvailableResponse ar = metric.getValue();
+                    if (ar.unavailable) {
+                        // Our target resource has disappeared
+                        handleMissingResource(context);
+                        return;
+                    }
+                    ModelNode value = ar.response;
                     if (!value.has(FAILURE_DESCRIPTION)) {
                         sortedAttributes.put(metric.getKey(), value.get(RESULT));
                     }
@@ -228,6 +251,16 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
                 if (filteredData!= null && filteredData.hasFilteredData()) {
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
                 }
+            }
+        }
+
+        private void handleMissingResource(OperationContext context) {
+            // Our target resource has disappeared
+            if (context.hasResult()) {
+                context.getResult().set(new ModelNode());
+            }
+            if (!ignoreMissingResource) {
+                throw new Resource.NoSuchResourceException(ControllerLogger.MGMT_OP_LOGGER.managementResourceNotFound(context.getCurrentAddress()));
             }
         }
     }
