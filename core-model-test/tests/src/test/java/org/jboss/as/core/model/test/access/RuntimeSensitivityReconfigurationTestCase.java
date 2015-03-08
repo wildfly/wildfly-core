@@ -259,6 +259,7 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
 
     protected static void assertNoAccessInterface(ModelNode operationResult, String name) {
         assertEquals(FAILED, operationResult.get(OUTCOME).asString());
+        //noinspection ThrowableResultOfMethodCallIgnored
         assertEquals(ControllerLogger.ACCESS_LOGGER.managementResourceNotFound(pathAddress(INTERFACE, name)).getMessage(),
                 operationResult.get(FAILURE_DESCRIPTION).asString());
     }
