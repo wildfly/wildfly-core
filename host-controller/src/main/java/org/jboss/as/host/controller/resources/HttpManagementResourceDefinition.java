@@ -24,19 +24,12 @@ package org.jboss.as.host.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.Stage;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -45,7 +38,6 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
@@ -70,8 +62,6 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     private static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
 
-    private static final OperationStepHandler VALIDATING_HANDLER = new HttpManagementValidatingHandler();
-
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
@@ -93,6 +83,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition HTTPS_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_PORT, ModelType.INT, true)
             .setAllowExpression(true).setValidator(new IntRangeValidator(0, 65535, true, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setRequires(SECURITY_REALM.getName())
             .build();
 
     public static final SimpleAttributeDefinition SECURE_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_INTERFACE, ModelType.STRING, true)
@@ -100,6 +91,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setRequires(SECURITY_REALM.getName())
             .build();
 
     public static final SimpleAttributeDefinition CONSOLE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONSOLE_ENABLED, ModelType.BOOLEAN, true)
@@ -162,24 +154,5 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
-    }
-
-    public static void addValidatingHandler(OperationContext operationContext, ModelNode fromOperation) {
-        ModelNode operation = Util.createOperation("validate-http-interface", PathAddress.pathAddress(fromOperation.require(OP_ADDR)));
-
-        operationContext.addStep(operation, VALIDATING_HANDLER, Stage.MODEL);
-    }
-
-    private static class HttpManagementValidatingHandler implements OperationStepHandler {
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-
-            if (model.hasDefined(SECURITY_REALM.getName()) == false && model.hasDefined(HTTPS_PORT.getName())) {
-                throw ROOT_LOGGER.noSecurityRealmForSsl();
-            }
-        }
-
     }
 }
