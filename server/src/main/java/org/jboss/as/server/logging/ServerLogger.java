@@ -1107,4 +1107,8 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 223, value="Illegal permission actions '%s'")
     IllegalArgumentException illegalPermissionActions(String actions);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 224, value="Could not mount overlay %s as parent %s is not a directory")
+    void couldNotMountOverlay(String path, VirtualFile parent);
 }

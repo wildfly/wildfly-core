@@ -71,6 +71,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.deployment.Attachments;
+import org.jboss.as.server.deployment.DeferredDeploymentOverlayDeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentCompleteServiceProcessor;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.deployment.DeploymentOverlayDeploymentUnitProcessor;
@@ -302,6 +303,7 @@ public final class ServerService extends AbstractControllerService {
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_MANIFEST, new ManifestAttachmentProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_ADDITIONAL_MANIFEST, new ManifestAttachmentProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_DEPLOYMENT_OVERLAY, new DeploymentOverlayDeploymentUnitProcessor(injectedContentRepository.getValue()));
+            DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_DEFERRED_DEPLOYMENT_OVERLAY, new DeferredDeploymentOverlayDeploymentUnitProcessor(injectedContentRepository.getValue()));
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_SUB_DEPLOYMENT, new SubDeploymentProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_MODULE_IDENTIFIERS, new ModuleIdentifierProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_ANNOTATION_INDEX, new AnnotationIndexProcessor());
