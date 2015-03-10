@@ -23,15 +23,12 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.host.controller.operations.HttpManagementAddHandler.createConnectorOptions;
-import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.addValidatingHandler;
 
 import java.util.Collection;
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -80,17 +77,9 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     private final HostControllerEnvironment environment;
 
     public HttpManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
+        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
         this.environment = environment;
-    }
-
-    @Override
-    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        ModelNode model = resource.getModel();
-        for (AttributeDefinition attr : HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS) {
-            attr.validateAndSet(operation, model);
-        }
-        addValidatingHandler(context, operation);
     }
 
     @Override

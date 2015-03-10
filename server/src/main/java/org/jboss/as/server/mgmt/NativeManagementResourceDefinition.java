@@ -29,7 +29,9 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -37,7 +39,6 @@ import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -46,7 +47,6 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.NativeManagementAddHandler;
 import org.jboss.as.server.operations.NativeManagementRemoveHandler;
-import org.jboss.as.server.operations.NativeManagementWriteAttributeHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -66,24 +66,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setNullSignificant(true)
             .build();
 
-    public static final SimpleAttributeDefinition INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INTERFACE, ModelType.STRING, false)
-                .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-                .setAlternatives(ModelDescriptionConstants.SOCKET_BINDING)
-                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-                .setDeprecated(ModelVersion.create(1, 4))
-                .build();
-
-    public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)
-            .setAllowExpression(true).setValidator(new IntRangeValidator(0, 65535, false, true))
-            .setAlternatives(ModelDescriptionConstants.SOCKET_BINDING)
-            .setRequires(ModelDescriptionConstants.INTERFACE)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setDeprecated(ModelVersion.create(1,4))
-            .build();
-
-    public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
+    public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, false)
             .setXmlName(Attribute.NATIVE.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setAlternatives(ModelDescriptionConstants.INTERFACE)
@@ -104,7 +87,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, NATIVE_PORT, SECURITY_REALM, SOCKET_BINDING, SERVER_NAME, SASL_PROTOCOL };
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {SECURITY_REALM, SOCKET_BINDING, SERVER_NAME, SASL_PROTOCOL };
 
     public static final NativeManagementResourceDefinition INSTANCE = new NativeManagementResourceDefinition();
 
@@ -121,8 +104,9 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTE_DEFINITIONS);
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, NativeManagementWriteAttributeHandler.INSTANCE);
+            resourceRegistration.registerReadWriteAttribute(attr, null, writeHandler);
         }
     }
 

@@ -23,15 +23,10 @@
 package org.jboss.as.server.operations;
 
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
-import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.INTERFACE;
-import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_PORT;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 
-import java.util.Arrays;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
@@ -43,7 +38,6 @@ import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
-import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -63,11 +57,8 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
     public static final NativeManagementAddHandler INSTANCE = new NativeManagementAddHandler();
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
-
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        for (AttributeDefinition definition : ATTRIBUTE_DEFINITIONS) {
-            validateAndSet(definition, operation, model);
-        }
+    public NativeManagementAddHandler() {
+        super(ATTRIBUTE_DEFINITIONS);
     }
 
 
@@ -87,66 +78,11 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         installNativeManagementConnector(context, model, endpointName, serviceTarget);
     }
 
-    // TODO move this kind of logic into AttributeDefinition itself
-    private static void validateAndSet(final AttributeDefinition definition, final ModelNode operation, final ModelNode subModel) throws OperationFailedException {
-        final String attributeName = definition.getName();
-        final boolean has = operation.has(attributeName);
-        if(! has && definition.isRequired(operation)) {
-            throw ServerLogger.ROOT_LOGGER.attributeIsRequired(attributeName);
-        }
-        if(has) {
-            if(! definition.isAllowed(operation)) {
-                throw ServerLogger.ROOT_LOGGER.attributeNotAllowedWhenAlternativeIsPresent(attributeName, Arrays.asList(definition.getAlternatives()));
-            }
-            definition.validateAndSet(operation, subModel);
-        } else {
-            // create the undefined node
-            subModel.get(definition.getName());
-        }
-    }
-
-    // TODO move this kind of logic into AttributeDefinition itself
-    private static ModelNode validateResolvedModel(final AttributeDefinition definition, final OperationContext context,
-                                                   final ModelNode subModel) throws OperationFailedException {
-        final String attributeName = definition.getName();
-        final boolean has = subModel.has(attributeName);
-        if(! has && definition.isRequired(subModel)) {
-            throw ServerLogger.ROOT_LOGGER.attributeIsRequired(attributeName);
-        }
-        ModelNode result;
-        if(has) {
-            if(! definition.isAllowed(subModel)) {
-                if (subModel.hasDefined(attributeName)) {
-                    throw ServerLogger.ROOT_LOGGER.attributeNotAllowedWhenAlternativeIsPresent(attributeName, Arrays.asList(definition.getAlternatives()));
-                } else {
-                    // create the undefined node
-                    result = new ModelNode();
-                }
-            } else {
-                result = definition.resolveModelAttribute(context, subModel);
-            }
-        } else {
-            // create the undefined node
-            result = new ModelNode();
-        }
-
-        return result;
-    }
 
     static void installNativeManagementConnector(final OperationContext context, final ModelNode model, final ServiceName endpointName, final ServiceTarget serviceTarget) throws OperationFailedException {
 
-        ServiceName socketBindingServiceName = null;
-        ServiceName interfaceSvcName = null;
-        int port = 0;
-        final ModelNode socketBindingNode = validateResolvedModel(SOCKET_BINDING, context, model);
-        if (socketBindingNode.isDefined()) {
-            final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
-            socketBindingServiceName = SocketBinding.JBOSS_BINDING_NAME.append(bindingName);
-        } else {
-            String interfaceName = INTERFACE.resolveModelAttribute(context, model).asString();
-            interfaceSvcName = NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceName);
-            port = NATIVE_PORT.resolveModelAttribute(context, model).asInt();
-        }
+        final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
+        ServiceName socketBindingServiceName = SocketBinding.JBOSS_BINDING_NAME.append(bindingName);
 
         String securityRealm = null;
         final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
@@ -160,14 +96,9 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath);
 //        final OptionMap options = OptionMap.builder().set(RemotingOptions.HEARTBEAT_INTERVAL, 30000).set(Options.READ_TIMEOUT, 65000).getMap();
         final OptionMap options = createConnectorOptions(context, model);
-        if (socketBindingServiceName == null) {
-            ManagementRemotingServices.installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName,
-                    ManagementRemotingServices.MANAGEMENT_CONNECTOR, interfaceSvcName, port, options);
-        } else {
-            ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
+        ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
                     socketBindingServiceName, options);
-        }
 
     }
 

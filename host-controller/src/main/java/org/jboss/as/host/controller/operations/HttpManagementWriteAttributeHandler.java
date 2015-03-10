@@ -23,12 +23,9 @@
 package org.jboss.as.host.controller.operations;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
-import org.jboss.dmr.ModelNode;
 
 /**
  * {@code OperationStepHandler} for changing attributes on the native management interface.
@@ -40,13 +37,6 @@ public class HttpManagementWriteAttributeHandler extends ReloadRequiredWriteAttr
 
     public HttpManagementWriteAttributeHandler() {
         super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
-    }
-
-    @Override
-    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName,
-                                    ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
-        super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
-        HttpManagementResourceDefinition.addValidatingHandler(context, operation);
     }
 
     @Override
