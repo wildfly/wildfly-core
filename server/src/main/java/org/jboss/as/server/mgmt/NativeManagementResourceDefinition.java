@@ -37,7 +37,6 @@ import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -66,23 +65,6 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setNullSignficant(true)
             .build();
 
-    public static final SimpleAttributeDefinition INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INTERFACE, ModelType.STRING, false)
-                .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-                .setAlternatives(ModelDescriptionConstants.SOCKET_BINDING)
-                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-                .setDeprecated(ModelVersion.create(1, 4))
-                .build();
-
-    public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)
-            .setAllowExpression(true).setValidator(new IntRangeValidator(0, 65535, false, true))
-            .setAlternatives(ModelDescriptionConstants.SOCKET_BINDING)
-            .setRequires(ModelDescriptionConstants.INTERFACE)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setDeprecated(ModelVersion.create(1,4))
-            .build();
-
     public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
             .setXmlName(Attribute.NATIVE.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
@@ -104,7 +86,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, NATIVE_PORT, SECURITY_REALM, SOCKET_BINDING, SERVER_NAME, SASL_PROTOCOL };
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {SECURITY_REALM, SOCKET_BINDING, SERVER_NAME, SASL_PROTOCOL };
 
     public static final NativeManagementResourceDefinition INSTANCE = new NativeManagementResourceDefinition();
 
