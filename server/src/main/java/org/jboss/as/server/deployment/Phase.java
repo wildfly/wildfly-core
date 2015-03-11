@@ -246,6 +246,7 @@ public enum Phase {
     public static final int STRUCTURE_GLOBAL_MODULES                    = 0x1E00;
     public static final int STRUCTURE_NAMING_EXTERNAL_CONTEXTS          = 0x1F00;
     public static final int STRUCTURE_GLOBAL_REQUEST_CONTROLLER         = 0x2000;
+    public static final int STRUCTURE_DEFERRED_DEPLOYMENT_OVERLAY       = 0xF000; //needs to run after all structure processors
 
     // PARSE
     public static final int PARSE_EE_MODULE_NAME                        = 0x0100;
