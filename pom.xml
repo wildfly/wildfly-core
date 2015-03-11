@@ -186,7 +186,6 @@
         <module>request-controller</module>
         <module>server</module>
         <module>subsystem-test</module>
-        <module>system-jmx</module>
         <module>testsuite</module>
         <module>threads</module>
         <module>version</module>
@@ -817,12 +816,6 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-subsystem-test-framework</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-system-jmx</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

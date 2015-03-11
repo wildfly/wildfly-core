@@ -340,11 +340,6 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-system-jmx</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-threads</artifactId>
         </dependency>
 
