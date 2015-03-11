@@ -59,7 +59,6 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.mgmt.RequestProcessingException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -2467,7 +2466,7 @@ public interface ControllerLogger extends BasicLogger {
      * @return an {@link OperationFailedRuntimeException} for the error.
      */
     @Message(id = 216, value = "Management resource '%s' not found")
-    Resource.NoSuchResourceException managementResourceNotFound(PathAddress pathAddress);
+    String managementResourceNotFound(PathAddress pathAddress);
 
     /**
      * Creates an exception message indicating a child resource cannot be found.

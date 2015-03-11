@@ -123,7 +123,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
     }
 
     @Override
-    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData) throws OperationFailedException {
+    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException {
 
         // Add a step to authorize the attribute read once we determine the value below
         context.addStep(operation, new AuthorizeAttributeReadHandler(filteredData), OperationContext.Stage.MODEL, true);
