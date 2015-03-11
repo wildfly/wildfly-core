@@ -5,11 +5,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -34,18 +37,23 @@ public class PersistentResourceXMLDescription {
     protected final PersistentResourceDefinition resourceDefinition;
     protected final String xmlElementName;
     protected final String xmlWrapperElement;
-    protected final LinkedHashMap<String, AttributeDefinition> attributes;
+    @Deprecated
+    protected final LinkedHashMap<String, AttributeDefinition> attributes; //we dont use it anymore, it is here just for backward compatibilty and make sure PermissionResourceDefinition works
     protected final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
     protected final List<PersistentResourceXMLDescription> children;
     protected final boolean useValueAsElementName;
     protected final boolean noAddOperation;
     protected final AdditionalOperationsGenerator additionalOperationsGenerator;
     private boolean flushRequired = true;
-    private final Map<String,AttributeParser> attributeParsers;
+    private final Map<String, AttributeParser> attributeParsers;
+    private final Map<String, AttributeMarshaller> attributeMarshallers;
     private final boolean useElementsForGroups;
     private final String namespaceURI;
+    private final Set<String> attributeGroups;
 
-    /** @deprecated use a {@link org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder} */
+    /**
+     * @deprecated use a {@link org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder}
+     */
     @Deprecated
     protected PersistentResourceXMLDescription(final PersistentResourceDefinition resourceDefinition, final String xmlElementName, final String xmlWrapperElement, final LinkedHashMap<String, AttributeDefinition> attributes, final List<PersistentResourceXMLDescription> children, final boolean useValueAsElementName, final boolean noAddOperation, final AdditionalOperationsGenerator additionalOperationsGenerator, Map<String, AttributeParser> attributeParsers) {
         this.resourceDefinition = resourceDefinition;
@@ -61,33 +69,40 @@ public class PersistentResourceXMLDescription {
         this.additionalOperationsGenerator = additionalOperationsGenerator;
         this.attributeParsers = attributeParsers;
         this.namespaceURI = null;
+        this.attributeGroups = null;
+        this.attributeMarshallers = null;
     }
 
     private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
         this.resourceDefinition = builder.resourceDefinition;
         this.xmlElementName = builder.xmlElementName;
         this.xmlWrapperElement = builder.xmlWrapperElement;
-        this.attributes = builder.attributes;
+        this.attributes = new LinkedHashMap<>();
         this.useElementsForGroups = builder.useElementsForGroups;
         this.attributesByGroup = new LinkedHashMap<>();
         this.namespaceURI = builder.namespaceURI;
         if (useElementsForGroups) {
             // Ensure we have a map for the default group even if there are no attributes so we don't NPE later
             this.attributesByGroup.put(null, new LinkedHashMap<String, AttributeDefinition>());
-
+            this.attributeGroups = new HashSet<>();
             // Segregate attributes by group
-            for (Map.Entry<String, AttributeDefinition> entry : builder.attributes.entrySet()) {
-                AttributeDefinition ad = entry.getValue();
+            for (AttributeDefinition ad : builder.attributeList) {
                 LinkedHashMap<String, AttributeDefinition> forGroup = this.attributesByGroup.get(ad.getAttributeGroup());
                 if (forGroup == null) {
                     forGroup = new LinkedHashMap<>();
                     this.attributesByGroup.put(ad.getAttributeGroup(), forGroup);
+                    this.attributeGroups.add(ad.getAttributeGroup());
                 }
-                forGroup.put(entry.getKey(), ad);
+                forGroup.put(ad.getXmlName(), ad);
             }
         } else {
+            LinkedHashMap<String,AttributeDefinition> attrs = new LinkedHashMap<>();
+            for (AttributeDefinition ad : builder.attributeList) {
+                attrs.put(ad.getXmlName(), ad);
+            }
             // Ignore attribute-group, treat all as if they are in the default group
-            this.attributesByGroup.put(null, builder.attributes);
+            this.attributesByGroup.put(null, attrs);
+            this.attributeGroups = null;
         }
         this.children = new ArrayList<>();
         for (PersistentResourceXMLBuilder b : builder.children) {
@@ -97,46 +112,49 @@ public class PersistentResourceXMLDescription {
         this.noAddOperation = builder.noAddOperation;
         this.additionalOperationsGenerator = builder.additionalOperationsGenerator;
         this.attributeParsers = builder.attributeParsers;
+        this.attributeMarshallers = builder.attributeMarshallers;
     }
 
-    public PathElement getPathElement(){
+    public PathElement getPathElement() {
         return resourceDefinition.getPathElement();
     }
 
     public void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
-        if (xmlWrapperElement != null) {
-            if (reader.getLocalName().equals(xmlWrapperElement)) {
-                if (reader.hasNext()) {
-                    if (reader.nextTag() == END_ELEMENT) {
-                        return;
-                    }
-                }
-            } else {
-                throw ParseUtils.unexpectedElement(reader);
-            }
-
-        }
         ModelNode op = Util.createAddOperation();
-
         boolean wildcard = resourceDefinition.getPathElement().isWildcard();
-        String name = parseAttributes(reader, op, attributesByGroup.get(null), wildcard);
+        String name = parseAttributeGroups(reader, op, wildcard);
         if (wildcard && name == null) {
             throw ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(new StringBuilder(NAME), reader.getLocation());
         }
-
         PathElement path = wildcard ? PathElement.pathElement(resourceDefinition.getPathElement().getKey(), name) : resourceDefinition.getPathElement();
         PathAddress address = parentAddress.append(path);
-        if(!noAddOperation) {
+        if (!noAddOperation) {
             op.get(ADDRESS).set(address.toModelNode());
             list.add(op);
         }
-        if(additionalOperationsGenerator != null) {
+        if (additionalOperationsGenerator != null) {
             additionalOperationsGenerator.additionalOperations(address, op, list);
         }
-        parseChildren(reader, address, list, op);
-        if (xmlWrapperElement != null) {
-            ParseUtils.requireNoContent(reader);
+        parseChildren(reader, address, list);
+    }
+
+    private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
+        String name;
+        if (useElementsForGroups && !attributeGroups.isEmpty()) {
+            name = parseAttributes(reader, op, attributesByGroup.get(null), wildcard); //parse attributes not belonging to a group
+            while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
+                if (attributeGroups.contains(reader.getLocalName())) {
+                    parseAttributes(reader, op, attributesByGroup.get(reader.getLocalName()), wildcard);
+                    ParseUtils.requireNoContent(reader);
+                } else {
+                    throw ParseUtils.unexpectedElement(reader);
+                }
+            }
+            flushRequired = false;
+        } else {
+            name =  parseAttributes(reader, op, attributesByGroup.get(null), wildcard);
         }
+        return name;
     }
 
     private String parseAttributes(final XMLExtendedStreamReader reader, ModelNode op, Map<String, AttributeDefinition> attributes, boolean wildcard) throws XMLStreamException {
@@ -148,18 +166,18 @@ public class PersistentResourceXMLDescription {
                 name = value;
             } else if (attributes.containsKey(attributeName)) {
                 AttributeDefinition def = attributes.get(attributeName);
-                AttributeParser parser = attributeParsers.containsKey(attributeName)? attributeParsers.get(attributeName) : def.getParser();
+                AttributeParser parser = attributeParsers.containsKey(attributeName) ? attributeParsers.get(attributeName) : def.getParser();
                 assert parser != null;
-                parser.parseAndSetParameter(def,value,op,reader);
+                parser.parseAndSetParameter(def, value, op, reader);
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
             }
         }
-        for (AttributeDefinition attributeDefinition: attributes.values()){
-            if (attributeDefinition instanceof PropertiesAttributeDefinition){
+        for (AttributeDefinition attributeDefinition : attributes.values()) {
+            if (attributeDefinition instanceof PropertiesAttributeDefinition) {
                 PropertiesAttributeDefinition attribute = (PropertiesAttributeDefinition) attributeDefinition;
                 // TODO what if this attribute isn't required and isn't in the xml?
-                attribute.parse(reader,op);
+                attribute.parse(reader, op);
                 flushRequired = false;
             }
         }
@@ -178,33 +196,32 @@ public class PersistentResourceXMLDescription {
         return res;
     }
 
-    private void parseChildren(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list, ModelNode parentAddOp) throws XMLStreamException {
-        if (children.size() == 0 && (!useElementsForGroups || attributesByGroup.size() == 1)) {
-            if (flushRequired){
+    private void parseChildren(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+        if (children.size() == 0) {
+            if (flushRequired && attributeGroups.isEmpty()) {
                 ParseUtils.requireNoContent(reader);
             }
         } else {
-            String parentName = reader.getLocalName();
             Map<String, PersistentResourceXMLDescription> children = getChildrenMap();
-            while (reader.hasNext()) {
-                if (reader.nextTag() == XMLStreamConstants.END_ELEMENT) {
-                    // break the loop at the end of the parent element
-                    if (parentName.equals(reader.getLocalName())) {
-                        break;
-                    }
-                    // else continue to the next children
-                    continue;
-                }
+            while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
                 PersistentResourceXMLDescription child = children.get(reader.getLocalName());
                 if (child != null) {
-                    child.parse(reader, parentAddress, list);
-                } else {
-                    Map<String, AttributeDefinition> groupAttributes = useElementsForGroups ? attributesByGroup.get(reader.getLocalName()) : null;
-                    if (groupAttributes != null) {
-                        parseAttributes(reader, parentAddOp, groupAttributes, false);
+                    if (child.xmlWrapperElement != null) {
+                        if (reader.getLocalName().equals(child.xmlWrapperElement)) {
+                            if (reader.hasNext() && reader.nextTag() == END_ELEMENT) { return; }
+                        } else {
+                            throw ParseUtils.unexpectedElement(reader);
+                        }
+                        child.parse(reader, parentAddress, list);
+                        while (reader.nextTag() != END_ELEMENT && !reader.getLocalName().equals(child.xmlWrapperElement)) {
+                            child.parse(reader, parentAddress, list);
+                        }
                     } else {
-                        throw ParseUtils.unexpectedElement(reader, children.keySet());
+                        child.parse(reader, parentAddress, list);
                     }
+
+                } else {
+                    throw ParseUtils.unexpectedElement(reader, children.keySet());
                 }
             }
         }
@@ -223,8 +240,7 @@ public class PersistentResourceXMLDescription {
         }
     }
 
-    public void startSubsystemElement(XMLExtendedStreamWriter writer, String namespaceURI, boolean empty) throws XMLStreamException {
-
+    private void startSubsystemElement(XMLExtendedStreamWriter writer, String namespaceURI, boolean empty) throws XMLStreamException {
         if (writer.getNamespaceContext().getPrefix(namespaceURI) == null) {
             // Unknown namespace; it becomes default
             writer.setDefaultNamespace(namespaceURI);
@@ -265,9 +281,7 @@ public class PersistentResourceXMLDescription {
                     writeStartElement(writer, namespaceURI, xmlElementName);
                     writer.writeAttribute(NAME, p.getName());
                 }
-
                 persistAttributes(writer, p.getValue(), false);
-
                 persistChildren(writer, p.getValue());
                 writer.writeEndElement();
             }
@@ -295,12 +309,11 @@ public class PersistentResourceXMLDescription {
     }
 
     private void persistAttributes(XMLExtendedStreamWriter writer, ModelNode model, boolean marshalDefault) throws XMLStreamException {
-
         // Persist all attributes in the 'null' group
-        for (Map.Entry<String, AttributeDefinition> def : attributesByGroup.get(null).entrySet()) {
-            def.getValue().getAttributeMarshaller().marshallAsAttribute(def.getValue(), model, marshalDefault, writer);
+        for (AttributeDefinition def : attributesByGroup.get(null).values()) {
+            AttributeMarshaller marshaller = attributeMarshallers.containsKey(def.getName()) ? attributeMarshallers.get(def.getName()) : def.getAttributeMarshaller();
+            marshaller.marshallAsAttribute(def, model, marshalDefault, writer);
         }
-
         if (useElementsForGroups) {
             for (Map.Entry<String, LinkedHashMap<String, AttributeDefinition>> entry : attributesByGroup.entrySet()) {
                 if (entry.getKey() == null) {
@@ -309,7 +322,7 @@ public class PersistentResourceXMLDescription {
                 boolean started = false;
                 for (Map.Entry<String, AttributeDefinition> def : entry.getValue().entrySet()) {
                     AttributeDefinition ad = def.getValue();
-                    AttributeMarshaller marshaller = ad.getAttributeMarshaller();
+                    AttributeMarshaller marshaller = attributeMarshallers.containsKey(ad.getName()) ? attributeMarshallers.get(ad.getName()) : ad.getAttributeMarshaller();
                     if (marshaller.isMarshallable(ad, model, marshalDefault)) {
                         if (!started) {
                             writer.writeEmptyElement(entry.getKey());
@@ -337,8 +350,6 @@ public class PersistentResourceXMLDescription {
     }
 
     public static class PersistentResourceXMLBuilder {
-
-
         protected final PersistentResourceDefinition resourceDefinition;
         private final String namespaceURI;
         protected String xmlElementName;
@@ -346,9 +357,12 @@ public class PersistentResourceXMLDescription {
         protected boolean useValueAsElementName;
         protected boolean noAddOperation;
         protected AdditionalOperationsGenerator additionalOperationsGenerator;
+        @Deprecated
         protected final LinkedHashMap<String, AttributeDefinition> attributes = new LinkedHashMap<>();
+        protected final LinkedList<AttributeDefinition> attributeList = new LinkedList<>();
         protected final List<PersistentResourceXMLBuilder> children = new ArrayList<>();
         protected final LinkedHashMap<String, AttributeParser> attributeParsers = new LinkedHashMap<>();
+        protected final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
         protected boolean useElementsForGroups = true;
 
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
@@ -369,16 +383,28 @@ public class PersistentResourceXMLDescription {
         }
 
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute) {
+            this.attributeList.add(attribute);
             this.attributes.put(attribute.getXmlName(), attribute);
             return this;
         }
+
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser) {
+            this.attributeList.add(attribute);
             this.attributes.put(attribute.getXmlName(), attribute);
-            this.attributeParsers.put(attribute.getXmlName(),attributeParser);
+            this.attributeParsers.put(attribute.getXmlName(), attributeParser);
+            return this;
+        }
+
+        public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
+            this.attributeList.add(attribute);
+            this.attributes.put(attribute.getXmlName(), attribute);
+            this.attributeParsers.put(attribute.getXmlName(), attributeParser);
+            this.attributeMarshallers.put(attribute.getXmlName(), attributeMarshaller);
             return this;
         }
 
         public PersistentResourceXMLBuilder addAttributes(AttributeDefinition... attributes) {
+            Collections.addAll(this.attributeList, attributes);
             for (final AttributeDefinition at : attributes) {
                 this.attributes.put(at.getXmlName(), at);
             }
@@ -437,9 +463,10 @@ public class PersistentResourceXMLDescription {
 
         /**
          * Generates any additional operations required by the resource
-         * @param address The address of the resource
+         *
+         * @param address      The address of the resource
          * @param addOperation The add operation for the resource
-         * @param operations The operation list
+         * @param operations   The operation list
          */
         void additionalOperations(final PathAddress address, final ModelNode addOperation, final List<ModelNode> operations);
 
