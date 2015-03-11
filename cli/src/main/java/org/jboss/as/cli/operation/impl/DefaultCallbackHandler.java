@@ -307,7 +307,10 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     }
 
     @Override
-    public void addressOperationSeparator(int index) {
+    public void addressOperationSeparator(int index) throws CommandFormatException {
+        if(separator == SEPARATOR_NODE_TYPE_NAME) {
+            throw new CommandFormatException("Node type is not complete at index " + index);
+        }
         separator = SEPARATOR_ADDRESS_OPERATION;
         this.lastSeparatorIndex = index;
     }
