@@ -77,7 +77,7 @@
 
         <version.commons-io>2.4</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>1.2.0.Beta8</version.io.undertow>
+        <version.io.undertow>1.2.0.Beta10</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.16</version.log4j>
