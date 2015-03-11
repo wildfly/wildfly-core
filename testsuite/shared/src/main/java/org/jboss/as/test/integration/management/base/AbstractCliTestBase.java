@@ -39,8 +39,12 @@ public class AbstractCliTestBase {
     protected static CLIWrapper cli;
 
     public static void initCLI() throws Exception {
+        initCLI(true);
+    }
+
+    public static void initCLI(boolean connect) throws Exception {
         if (cli == null) {
-            cli = new CLIWrapper(true);
+            cli = new CLIWrapper(connect);
         }
     }
 

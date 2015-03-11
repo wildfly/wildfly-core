@@ -86,7 +86,7 @@ public class BlockerExtension implements Extension {
             .build();
 
     public static final AttributeDefinition FOO = SimpleAttributeDefinitionBuilder.create("foo", ModelType.BOOLEAN, true).build();
-
+    public static final String REGISTERED_MESSAGE = "Registered blocker-test operations";
 
     private static final EmptySubsystemParser PARSER = new EmptySubsystemParser("urn:wildfly:extension:blocker-test:1.0");
     private static final Logger log = Logger.getLogger(BlockerExtension.class.getCanonicalName());
@@ -120,7 +120,8 @@ public class BlockerExtension implements Extension {
             if (forHost) {
                 resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
             }
-            log.info("Registered blocker-test operations");
+            // Don't remove this as some tests check for it in the log
+            log.info(REGISTERED_MESSAGE);
         }
 
         @Override

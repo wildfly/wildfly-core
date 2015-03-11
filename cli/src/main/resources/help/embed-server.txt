@@ -1,0 +1,72 @@
+SYNOPSIS
+
+   embed-server [--admin-only=true|false]
+                [-c=config_file || --server=config=config_file]
+                [--empty-config --remove-existing-config]
+                [--jboss-home=rootdir]
+                [--stdout=discard|echo]
+
+DESCRIPTION
+
+   Launches a standalone server embedded in the CLI process.
+
+ARGUMENTS
+
+ --admin-only      - Whether the embedded server should be started
+                     in running mode "admin-only". The default is
+                     "true".
+
+ -c                - Name of the server configuration file to use
+                     (default is "standalone.xml")
+                     (Same as --server-config)
+
+ --empty-config    - Indicates the server should start with an empty
+                     configuration. If the specified server config
+                     file is not empty, an exception will be thrown
+                     and the server will not start, unless the
+                     --remove-existing option is also set
+
+ --jboss-home      - Filesystem path pointing to the root directory
+                     of the installation from which the embedded server
+                     should run. Only available if the CLI itself
+                     is not running in a modular classloading environment.
+                     In a non-modular classloading environment, if this
+                     option is not specified, the value of the
+                     environment variable JBOSS_HOME will be used.
+                     Must be specified if the environment variable
+                     JBOSS_HOME is not set.In a modular classloading
+                     environment it is assumed the CLI is running from
+                     the server installation itself and the JBOSS_HOME
+                     environment variable must be set.
+
+ --remove-existing - When the --empty-config option is used,
+                     indicates that any existing configuration
+                     file can be removed at server start
+
+ --server-config   - Name of the server configuration file to use
+                     (default is "standalone.xml")
+                     (Same as -c)
+
+ --std-out         - How to handle output to System.out from the
+                     embedded server. Legal values are "discard"
+                     and "echo". The "discard" value indicates
+                     that writes to System.out from the server
+                     should be discarded. The "echo" value means
+                     writes should be handled and appear as part
+                     of the CLI's own output to System.out. The
+                     default value is "discard". If "echo" is
+                     chosen and the CLI is running an interactive
+                     session, the user should recognize that
+                     asynchronous output from the server may
+                     interfere with the normal appearance of
+                     the CLI prompt.
+
+ --timeout         - Maximum time, in seconds, to wait for the
+                     server to reach a running (i.e. fully started)
+                     state once the embedded server is created.
+                     If unspecified, the command will block for
+                     as long as necessary, with no upper limit.
+                     If the value is less than 1, the command will
+                     return as soon as the embedded server has
+                     reached the point in its boot where it is
+                     manageable by the CLI.

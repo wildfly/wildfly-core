@@ -114,6 +114,9 @@
 
                             <!-- Workaround for nasty and hacky tests not cleaning up completely after themselves. -->
                             <runOrder>alphabetical</runOrder>
+                            <!-- This project includes tests of server embedding, so we cannot reuse forks
+                                 as the risk of cross-test pollution is too high -->
+                            <reuseForks>false</reuseForks>
 
                             <!-- Parameters to test cases. -->
                             <systemPropertyVariables combine.children="append">

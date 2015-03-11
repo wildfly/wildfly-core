@@ -129,7 +129,6 @@ public abstract class ScriptAction extends AbstractAction {
 
         @Override
         protected Object doInBackground() throws Exception {
-            PrintStream originalOut = System.out;
             ByteArrayOutputStream scriptOut = new ByteArrayOutputStream();
             PrintStream printOut = new PrintStream(scriptOut);
 
@@ -137,7 +136,7 @@ public abstract class ScriptAction extends AbstractAction {
             // that comes from core CLI.  The publish() method allows us to send messages
             // to the event dispatch thread safely and in order.
             try {
-                System.setOut(printOut);
+                cliGuiCtx.getCommmandContext().captureOutput(printOut);
                 cliGuiCtx.getCommandLine().setEnabled(false);
 
                 publish(new OutMessage(">>> Execute CLI script " + file, true));
@@ -166,7 +165,7 @@ public abstract class ScriptAction extends AbstractAction {
 
                 publish(new OutMessage(">>> Script complete.", true));
             } finally {
-                System.setOut(originalOut);
+                cliGuiCtx.getCommmandContext().releaseOutput();
                 cliGuiCtx.getCommandLine().setEnabled(true);
                 cliGuiCtx.getCommmandContext().handle("cd /"); // reset to root directory
             }

@@ -61,6 +61,7 @@ import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.logging.LoggingLogger;
+import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -148,10 +149,10 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
 
     private final PathManager pathManager;
 
-    protected LoggingResourceDefinition(final PathManager pathManager) {
+    protected LoggingResourceDefinition(final PathManager pathManager, final WildFlyLogContextSelector contextSelector) {
         super(SUBSYSTEM_PATH,
                 LoggingExtension.getResourceDescriptionResolver(),
-                new LoggingSubsystemAdd(pathManager),
+                new LoggingSubsystemAdd(pathManager, contextSelector),
                 ReloadRequiredRemoveStepHandler.INSTANCE);
         this.pathManager = pathManager;
     }

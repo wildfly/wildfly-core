@@ -221,7 +221,7 @@ final class BootstrapImpl implements Bootstrap {
                     ps.setStopping();
                 }
             } finally {
-                if (sc != null) {
+                if (sc != null && !sc.isShutdownComplete()) {
                     ServerLogger.ROOT_LOGGER.shutdownHookInvoked();
                     final CountDownLatch latch = new CountDownLatch(1);
                     sc.addTerminateListener(new ServiceContainer.TerminateListener() {

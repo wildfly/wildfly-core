@@ -22,6 +22,7 @@
 package org.jboss.as.cli.completion.mock;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -413,5 +414,15 @@ public class MockCommandContext implements CommandContext {
     @Override
     public ConnectionInfo getConnectionInfo() {
         return connInfo;
+    }
+
+    @Override
+    public void captureOutput(PrintStream captor) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void releaseOutput() {
+        // TODO Auto-generated method stub
     }
 }

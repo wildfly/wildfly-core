@@ -24,6 +24,7 @@ package org.jboss.as.cli.handlers;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -32,11 +33,13 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
+import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.CLIModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 
@@ -54,10 +57,13 @@ public class ReloadHandler extends BaseOperationCommand {
     private final ArgumentWithValue restartServers;
     private final ArgumentWithValue useCurrentDomainConfig;
     private final ArgumentWithValue useCurrentHostConfig;
+    private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
     private PerNodeOperationAccess hostReloadPermission;
 
-    public ReloadHandler(CommandContext ctx) {
+    public ReloadHandler(CommandContext ctx, AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
         super(ctx, "reload", true);
+
+        this.embeddedServerRef = embeddedServerRef;
 
         adminOnly = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--admin-only");
 
@@ -128,8 +134,13 @@ public class ReloadHandler extends BaseOperationCommand {
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         final ModelControllerClient client = ctx.getModelControllerClient();
         if(client == null) {
-            throw new CommandLineException("Connection is now available.");
+            throw new CommandLineException("Connection is not available.");
         }
+        if (embeddedServerRef.get() != null) {
+            doHandleEmbedded(ctx, client);
+            return;
+        }
+
         if(!(client instanceof CLIModelControllerClient)) {
             throw new CommandLineException("Unsupported ModelControllerClient implementation " + client.getClass().getName());
         }
@@ -162,6 +173,72 @@ public class ReloadHandler extends BaseOperationCommand {
         } catch(CommandLineException e) {
             ctx.disconnectController();
             throw e;
+        }
+    }
+
+    private void doHandleEmbedded(CommandContext ctx, ModelControllerClient client) throws CommandLineException {
+
+        final ModelNode op = this.buildRequestWithoutHeaders(ctx);
+        try {
+            final ModelNode response = client.execute(op);
+            if(!Util.isSuccess(response)) {
+                throw new CommandLineException(Util.getFailureDescription(response));
+            }
+        } catch(IOException e) {
+            // This shouldn't be possible, as this is a local client
+            StreamUtils.safeClose(client);
+            throw new CommandLineException("Failed to execute :reload", e);
+        }
+
+        final long start = System.currentTimeMillis();
+        final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000;
+        final ModelNode getStateOp = new ModelNode();
+        getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+        getStateOp.get(ClientConstants.NAME).set("server-state");
+
+        while (true) {
+            String serverState = null;
+            try {
+                final ModelNode response = client.execute(getStateOp);
+                if (Util.isSuccess(response)) {
+                    serverState = response.get(ClientConstants.RESULT).asString();
+                    if ("running".equals(serverState)) {
+                        // we're reloaded and the server is started
+                        break;
+                    }
+                }
+            } catch (IOException|IllegalStateException e) {
+                // ignore and try again
+                // IOException is because ModelControllerClient method sig includes it, although
+                // it should not happen with an embedded server
+                // IllegalStateException is because the embedded server ModelControllerClient will
+                // throw that when the server-state is "stopping"
+            }
+
+            if (System.currentTimeMillis() - start > timeoutMillis) {
+                if (!"starting".equals(serverState))  {
+                    ctx.disconnectController();
+                    throw new CommandLineException("Failed to establish connection in " + (System.currentTimeMillis() - start)
+                            + "ms");
+                } // else we don't wait any longer for start to finish. This is roughly consistent with
+                  // non-embedded behavior, where the reload command returns as soon as a connection is
+                  // re-established, not waiting for the server to completely start. In the embedded case
+                  // if admin-only is not used, returning from reload may take a bit longer than it does
+                  // non-embedded, because we will wait ctx.getConfig().getConnectionTimeout() + 1000
+                  // (or 6000 ms by default) for *start* to complete, while non-embedded will only wait
+                  // to get a connection, which may happen faster. But in the standard admin-only usage
+                  // expected with embedded, a start should happen so fast that the behavior difference
+                  // is not noticeable.
+                  // Waiting for full start is preferable with embedded because if server logging is
+                  // displayed in the console, log messages during boot can interfere with the CLI prompt
+            }
+
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                ctx.disconnectController();
+                throw new CommandLineException("Interrupted while pausing before reconnecting.", e);
+            }
         }
     }
 

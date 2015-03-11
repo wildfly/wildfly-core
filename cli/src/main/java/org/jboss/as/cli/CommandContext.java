@@ -22,6 +22,7 @@
 package org.jboss.as.cli;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.util.Collection;
 
 import org.jboss.as.cli.batch.BatchManager;
@@ -465,4 +466,19 @@ public interface CommandContext {
      *  @return information about the current connection to the server.
      */
     ConnectionInfo getConnectionInfo() ;
+
+    /**
+     * Redirect output to the given print stream.
+     * @param captor stream to which output should be written. Cannot be {@code null}
+     *
+     * @throws java.lang.IllegalStateException if output is already being captured
+     */
+    void captureOutput(PrintStream captor);
+
+    /**
+     * Stops redirecting output to the stream passed to {@link #captureOutput(java.io.PrintStream)}.
+     *
+     * @throws java.lang.IllegalStateException if output isn't currently being captured
+     */
+    void releaseOutput();
 }

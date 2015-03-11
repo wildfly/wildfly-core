@@ -105,6 +105,10 @@ public class CLIWrapper {
         Assert.assertTrue(sendConnect(cliAddress));
     }
 
+    public CommandContext getCommandContext() {
+        return ctx;
+    }
+
     public boolean isConnected() {
         return ctx.getModelControllerClient() != null;
     }
@@ -158,7 +162,7 @@ public class CLIWrapper {
             try {
                 ctx.handle(line);
             } catch (CommandLineException e) {
-                Assert.fail("Failed to execute line '" + line + "': " + e.getLocalizedMessage());
+                Assert.fail("Failed to execute line '" + line + "': " + e.toString());
             }
         }
         return true;

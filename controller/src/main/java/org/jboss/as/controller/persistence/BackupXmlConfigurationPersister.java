@@ -42,6 +42,7 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
 
     ConfigurationFile configurationFile;
     private final AtomicBoolean successfulBoot = new AtomicBoolean();
+
     /**
      * Construct a new instance.
      *
@@ -51,8 +52,36 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
      * @param rootDeparser the root model deparser
      */
     public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser, final XMLElementWriter<ModelMarshallingContext> rootDeparser) {
-        super(file.getBootFile(), rootElement, rootParser, rootDeparser);
+        super(file.getBootFile(), rootElement, rootParser, rootDeparser, false);
         this.configurationFile = file;
+    }
+
+    /**
+     * Construct a new instance.
+     *  @param file the configuration base file
+     * @param rootElement the root element of the configuration file
+     * @param rootParser the root model parser
+     * @param rootDeparser the root model deparser
+     * @param reload {@code true} if this is a reload
+     * @param allowEmpty {@code true} if it is ok if {@code ConfigurationFile.getBootFile()} points to an empty file
+     */
+    public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser,
+                                           final XMLElementWriter<ModelMarshallingContext> rootDeparser, boolean reload, boolean allowEmpty) {
+        super(file.getBootFile(), rootElement, rootParser, rootDeparser, isSuppressLoad(file, reload, allowEmpty));
+        this.configurationFile = file;
+    }
+
+    private static boolean isSuppressLoad(ConfigurationFile configurationFile, boolean reload, boolean allowEmpty) {
+        // We suppress load in two conditions:
+        // 1) Initial boot where the interaction policy says to ignore the config
+        // 2) Any case where allowEmpty is true and the boot file is empty
+        if (allowEmpty && configurationFile.getBootFile().length() == 0) {
+            return true;
+        }
+        ConfigurationFile.InteractionPolicy interactionPolicy = configurationFile.getInteractionPolicy();
+        boolean initialEmpty = (interactionPolicy == ConfigurationFile.InteractionPolicy.NEW
+                || interactionPolicy == ConfigurationFile.InteractionPolicy.DISCARD);
+        return initialEmpty && !reload;
     }
 
     public void registerAdditionalRootElement(final QName anotherRoot, final XMLElementReader<List<ModelNode>> parser){

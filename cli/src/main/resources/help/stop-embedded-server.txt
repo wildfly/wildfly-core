@@ -1,0 +1,11 @@
+SYNOPSIS
+
+   stop-embedded-server
+
+DESCRIPTION
+
+   Stop the standalone server currently embedded in the CLI process.
+
+ARGUMENTS
+
+   n/a.
