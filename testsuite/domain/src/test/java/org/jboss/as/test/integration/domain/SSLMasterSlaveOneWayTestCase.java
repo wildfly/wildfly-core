@@ -22,6 +22,7 @@
 package org.jboss.as.test.integration.domain;
 
 import java.io.File;
+import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -39,7 +40,9 @@ import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
 import org.jboss.dmr.ModelNode;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -70,26 +73,31 @@ public class SSLMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
 
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-
-        checkHostStatusOnMaster("slave");
-        masterManagementRealmSetup.setup(masterClient);
-        addLocalAuthentication(masterClient);
-        setMasterManagementNativeInterface(masterClient);
-        reloadMaster();
-        checkHostStatusOnMaster("master");
+        masterManagementRealmSetup.setup(domainMasterLifecycleUtil.getDomainClient());
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        setOriginMasterManagementNativeInterface();
-        reloadMaster();
-        checkHostStatusOnMaster("master");
         masterManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient());
 
         testSupport.stop();
         testSupport = null;
         domainMasterLifecycleUtil = null;
+
+        FileUtils.deleteDirectory(WORK_DIR);
+    }
+
+    @Before
+    public void setMasterManagementNativeInterface() throws Exception {
+        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+
+        addLocalAuthentication(masterClient);
+        setMasterManagementNativeInterfaceAndCheck(masterClient);
+    }
+
+    @After
+    public void setOriginMasterManagementNativeInterface() throws Exception {
+        setOriginMasterManagementNativeInterfaceAndCheck();
     }
 
 
@@ -97,6 +105,7 @@ public class SSLMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase
     public void testReadSlaveStatusFromMaster() throws Exception {
         checkHostStatusOnMaster("slave");
     }
+
 
     private static void addLocalAuthentication(DomainClient client) throws Exception {
         ModelNode operation = createOpNode("host=master/core-service=management/security-realm=" + MASTER_MANAGEMENT_REALM

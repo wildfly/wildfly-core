@@ -23,10 +23,10 @@ package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import java.io.File;
+import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
@@ -35,7 +35,9 @@ import org.jboss.as.test.integration.security.common.config.realm.Authentication
 import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -67,26 +69,30 @@ public class SSLMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveTestCase
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
 
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-
-        checkHostStatusOnMaster("slave");
-        masterManagementRealmSetup.setup(masterClient);
-        setMasterManagementNativeInterface(masterClient);
-        reloadMaster();
-        checkHostStatusOnMaster("master");
+        masterManagementRealmSetup.setup(domainMasterLifecycleUtil.getDomainClient());
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        setOriginMasterManagementNativeInterface();
-        reloadMaster();
-        checkHostStatusOnMaster("master");
         masterManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient());
 
         testSupport.stop();
         testSupport = null;
         domainMasterLifecycleUtil = null;
+
+        FileUtils.deleteDirectory(WORK_DIR);
     }
+
+    @Before
+    public void setMasterManagementNativeInterface() throws Exception {
+        setMasterManagementNativeInterfaceAndCheck(domainMasterLifecycleUtil.getDomainClient());
+    }
+
+    @After
+    public void setOriginMasterManagementNativeInterface() throws Exception {
+        setOriginMasterManagementNativeInterfaceAndCheck();
+    }
+
 
     @Test
     public void testReadSlaveStatusFromMaster() throws Exception {

@@ -82,20 +82,17 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         CoreUtils.createKeyMaterial(workDir);
     }
 
-    protected static void setMasterManagementNativeInterface(ModelControllerClient client) throws Exception {
-        ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
-                ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get("name").set("security-realm");
-        operation.get("value").set(MASTER_MANAGEMENT_REALM);
-        CoreUtils.applyUpdate(operation, client);
+    protected static void setMasterManagementNativeInterfaceAndCheck(ModelControllerClient client) throws Exception {
+        checkHostStatusOnMaster("slave");
+        setMasterManagementNativeInterface(client);
+        reloadMaster();
+        checkHostStatusOnMaster("master");
     }
 
-    protected static void setOriginMasterManagementNativeInterface() throws Exception {
-        ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
-                ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get("name").set("security-realm");
-        operation.get("value").set("ManagementRealm");
-        executeOverHttp(getMasterMgmtUri(), operation.toJSONString(true));
+    protected static void setOriginMasterManagementNativeInterfaceAndCheck() throws Exception {
+        setOriginMasterManagementNativeInterface();
+        reloadMaster();
+        checkHostStatusOnMaster("master");
     }
 
     protected static void reloadMaster() throws Exception {
@@ -118,6 +115,22 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         } while (System.currentTimeMillis() < time);
 
         Assert.fail("Cannot validate host '" + host + "' is running");
+    }
+
+    private static void setMasterManagementNativeInterface(ModelControllerClient client) throws Exception {
+        ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
+                ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get("name").set("security-realm");
+        operation.get("value").set(MASTER_MANAGEMENT_REALM);
+        CoreUtils.applyUpdate(operation, client);
+    }
+
+    private static void setOriginMasterManagementNativeInterface() throws Exception {
+        ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
+                ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get("name").set("security-realm");
+        operation.get("value").set("ManagementRealm");
+        executeOverHttp(getMasterMgmtUri(), operation.toJSONString(true));
     }
 
     private static URI getMasterMgmtUri() throws MalformedURLException, URISyntaxException {
