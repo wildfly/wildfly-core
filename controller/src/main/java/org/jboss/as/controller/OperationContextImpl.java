@@ -71,6 +71,7 @@ import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -715,7 +716,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             // See if the problem was addressability
             AuthorizationResult addressResult = authorize(opId, operation, false, ADDRESS);
             if (addressResult.getDecision() == AuthorizationResult.Decision.DENY) {
-                throw ControllerLogger.ROOT_LOGGER.managementResourceNotFound(activeStep.address);
+                throw new ResourceNotAddressableException(activeStep.address);
             }
             throw ControllerLogger.ROOT_LOGGER.unauthorized(activeStep.operationId.name, activeStep.address, authResult.getExplanation());
         }
@@ -1410,7 +1411,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         AuthorizationResult accessResult = authorize(activeStep.operationId, activeStep.operation, false, ADDRESS);
         if (accessResult.getDecision() == AuthorizationResult.Decision.DENY) {
             if (activeStep.address.size() > 0) {
-                throw ControllerLogger.ROOT_LOGGER.managementResourceNotFound(activeStep.address);
+                throw new ResourceNotAddressableException(activeStep.address);
             } else {
                 // WFLY-2037 -- the root resource isn't hidden; if we hit this it means the user isn't authorized
                 throw ControllerLogger.ROOT_LOGGER.unauthorized(activeStep.operationId.name, activeStep.address, accessResult.getExplanation());
@@ -1425,7 +1426,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private void authorizeAdd(boolean runtimeOnly) {
         AuthorizationResult accessResult = authorize(activeStep.operationId, activeStep.operation, false, ADDRESS);
         if (accessResult.getDecision() == AuthorizationResult.Decision.DENY) {
-            throw ControllerLogger.ROOT_LOGGER.managementResourceNotFound(activeStep.address);
+            throw new ResourceNotAddressableException(activeStep.address);
         }
         final Set<Action.ActionEffect> writeEffect = runtimeOnly ? WRITE_RUNTIME : WRITE_CONFIG;
         AuthorizationResult authResult = authorize(activeStep.operationId, activeStep.operation, true, writeEffect);

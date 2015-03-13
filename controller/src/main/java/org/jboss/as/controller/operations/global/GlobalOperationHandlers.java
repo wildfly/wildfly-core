@@ -24,10 +24,13 @@ package org.jboss.as.controller.operations.global;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE_DEPTH;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,7 +46,11 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.UnauthorizedException;
+import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
+import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -163,19 +170,24 @@ public class GlobalOperationHandlers {
         }
 
         private final FilteredData filteredData;
+        private final boolean ignoreMissingResource;
 
         protected AbstractMultiTargetHandler() {
-            this(null);
+            this(null, false);
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData) {
+            this(filteredData, false);
+        }
+
+        protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource) {
             this.filteredData = filteredData;
+            this.ignoreMissingResource = ignoreMissingResource;
         }
 
         protected FilteredData getFilteredData() {
             return filteredData;
         }
-
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
@@ -192,7 +204,7 @@ public class GlobalOperationHandlers {
                         new OperationStepHandler() {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                        doExecute(context, operation, localFilteredData);
+                        doExecute(context, operation, localFilteredData, true);
                     }
                 }), OperationContext.Stage.MODEL, true);
                 context.completeStep(new OperationContext.ResultHandler() {
@@ -205,7 +217,7 @@ public class GlobalOperationHandlers {
                     }
                 });
             } else {
-                doExecute(context, operation, filteredData);
+                doExecute(context, operation, filteredData, ignoreMissingResource);
             }
         }
 
@@ -216,9 +228,13 @@ public class GlobalOperationHandlers {
          * @param context      the operation context
          * @param operation    the original operation
          * @param filteredData tracking object for filtered data
+         * @param ignoreMissingResource {@code false} if execution should throw
+         *                          {@link org.jboss.as.controller.registry.Resource.NoSuchResourceException} if the
+         *                          targeted resource does not exist; {@code true} if it should simply
+         *                          not provide a result
          * @throws OperationFailedException
          */
-        abstract void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData) throws OperationFailedException;
+        abstract void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException;
     }
 
     public static final class ModelAddressResolver implements OperationStepHandler {
@@ -243,7 +259,7 @@ public class GlobalOperationHandlers {
         @Override
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            execute(address, PathAddress.EMPTY_ADDRESS, context);
+            execute(address, PathAddress.EMPTY_ADDRESS, context, false);
             context.completeStep(new OperationContext.ResultHandler() {
                 @Override
                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
@@ -266,20 +282,57 @@ public class GlobalOperationHandlers {
             });
         }
 
-        private void safeExecute(final PathAddress address, final PathAddress base, final OperationContext context) {
+        /**
+         * Wraps a call to {@link #execute(org.jboss.as.controller.PathAddress, org.jboss.as.controller.PathAddress, org.jboss.as.controller.OperationContext, boolean)}
+         * with logic to handle authorization and missing resource exceptions.
+         *
+         * @param address the full address of the original request
+         * @param base the portion of the address that has already been processed
+         * @param context  context of the request
+         * @param ignoreMissing {@code true} if this is being called for an "optional" portion of an address tree
+         *                                  and NoSuchResourceException should be ignored. A portion of an address
+         *                                  tree is optional if it is associated with a wildcard or multi-segment
+         *                                  element in {@code address}
+         */
+        private void safeExecute(final PathAddress address, final PathAddress base, final OperationContext context, boolean ignoreMissing) {
             try {
-                execute(address, base, context);
+                execute(address, base, context, ignoreMissing);
             } catch (UnauthorizedException e) {
                 // equivalent to the resource not existing
                 // Just report the failure to the filter and complete normally
                 filteredData.addReadRestrictedResource(base);
-            } catch (Resource.NoSuchResourceException e) {
+            } catch (ResourceNotAddressableException e) {
                 // Just report the failure to the filter and complete normally
                 filteredData.addAccessRestrictedResource(base);
+            } catch (Resource.NoSuchResourceException e) {
+                // It's possible this is a remote failure, in which case we
+                // don't get ResourceNotAddressableException. So see if
+                // it was due to any authorization denial
+                ModelNode toAuthorize = Util.createEmptyOperation(READ_RESOURCE_OPERATION, base);
+                AuthorizationResult.Decision decision = context.authorize(toAuthorize, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
+                if (decision == AuthorizationResult.Decision.DENY) {
+                    // Just report the failure to the filter and complete normally
+                    filteredData.addAccessRestrictedResource(base);
+                } else if (!ignoreMissing) {
+                    throw e;
+                }
             }
         }
 
-        private void execute(final PathAddress address, final PathAddress base, final OperationContext context) {
+        /**
+         * Resolve matching addresses for the portions of {@code address} equal to or below {@code base},
+         * adding a step to invoke the {@code this.handler} for each real address that is a leaf. Wildcards
+         * and multi-segment addresses are handled.
+         *
+         * @param address the full address of the original request
+         * @param base the portion of the address that has already been processed
+         * @param context  context of the request
+         * @param ignoreMissing {@code true} if this is being called for an "optional" portion of an address tree
+         *                                  and NoSuchResourceException should be ignored. A portion of an address
+         *                                  tree is optional if it is associated with a wildcard or multi-segment
+         *                                  element in {@code address}
+         */
+        private void execute(final PathAddress address, final PathAddress base, final OperationContext context, boolean ignoreMissing) {
             final Resource resource = context.readResource(base, false);
             final PathAddress current = address.subAddress(base.size());
             final Iterator<PathElement> iterator = current.iterator();
@@ -288,7 +341,7 @@ public class GlobalOperationHandlers {
                 if (element.isMultiTarget()) {
                     final String childType = element.getKey().equals("*") ? null : element.getKey();
                     final ImmutableManagementResourceRegistration registration = context.getResourceRegistration().getSubModel(base);
-                    if (registration.isRemote() || registration.isRuntimeOnly()) {
+                    if (registration.isRemote()) {// || registration.isRuntimeOnly()) {
                         // At least for proxies it should use the proxy operation handler
                         throw new IllegalStateException();
                     }
@@ -301,27 +354,25 @@ public class GlobalOperationHandlers {
                         }
                         if (element.isWildcard()) {
                             for (final String child : children) {
-                                // Double check if the child actually exists
-                                if (resource.hasChild(PathElement.pathElement(key, child))) {
-                                    safeExecute(address, base.append(PathElement.pathElement(key, child)), context);
-                                }
+                                // Recurse, handling exceptions
+                                safeExecute(address, base.append(PathElement.pathElement(key, child)), context, true);
                             }
                         } else {
+                            String[] segments = element.getSegments();
+                            // If there's more than 1 segment, treat that like a wildcard, and don't
+                            // fail on bits that disappear
+                            boolean ignore = ignoreMissing || segments.length > 1;
                             for (final String segment : element.getSegments()) {
                                 if (children.contains(segment)) {
-                                    // Double check if the child actually exists
-                                    if (resource.hasChild(PathElement.pathElement(key, segment))) {
-                                        safeExecute(address, base.append(PathElement.pathElement(key, segment)), context);
-                                    }
+                                    // Recurse, handling exceptions
+                                    safeExecute(address, base.append(PathElement.pathElement(key, segment)), context, ignore);
                                 }
                             }
                         }
                     }
                 } else {
-                    // Double check if the child actually exists
-                    if (resource.hasChild(element)) {
-                        safeExecute(address, base.append(element), context);
-                    }
+                    // Recurse, handling exceptions
+                    safeExecute(address, base.append(element), context, ignoreMissing);
                 }
             } else {
                 //final String operationName = operation.require(OP).asString();
@@ -336,7 +387,16 @@ public class GlobalOperationHandlers {
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         try {
                             handler.execute(context, operation);
-                            resultAddress.set(base.toModelNode());
+                            context.completeStep(new OperationContext.ResultHandler() {
+                                @Override
+                                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                                    if (resultItem.hasDefined(RESULT)) {
+                                        resultAddress.set(base.toModelNode());
+                                    } else {
+                                        resultItem.clear();
+                                    }
+                                }
+                            });
                         } catch (Resource.NoSuchResourceException e) {
                             // just discard the result to avoid leaking the inaccessible address
                         }
@@ -394,6 +454,39 @@ public class GlobalOperationHandlers {
                 final ModelNode result = this.result.add();
                 result.get(OP_ADDR).set(base.toModelNode());
                 context.addStep(result, newOp, handler, OperationContext.Stage.MODEL, true);
+            }
+        }
+    }
+
+    /**
+     * WFCORE-573 Wraps a response to a call where the expected resource may
+     * have disappeared with a flag to record that that has happened.
+     */
+    static class AvailableResponse {
+        boolean unavailable;
+        final ModelNode response;
+
+        AvailableResponse(ModelNode response) {
+            this.response = response;
+        }
+    }
+
+    /** WFCORE-573 Wrap a read-attribute call and handle disappearance of the target resource*/
+    static class AvailableResponseWrapper implements OperationStepHandler {
+        private final OperationStepHandler wrapped;
+        private final AvailableResponse availableResponse;
+
+        AvailableResponseWrapper(OperationStepHandler wrapped, AvailableResponse availableResponse) {
+            this.wrapped = wrapped;
+            this.availableResponse = availableResponse;
+        }
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            try {
+                wrapped.execute(context, operation);
+            } catch (Resource.NoSuchResourceException e) {
+                availableResponse.unavailable = true;
             }
         }
     }
