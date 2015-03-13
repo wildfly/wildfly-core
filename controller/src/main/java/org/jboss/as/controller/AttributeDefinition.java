@@ -626,7 +626,11 @@ public abstract class AttributeDefinition {
      *          if thrown by {@code writer}
      */
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException{
-        throw ControllerLogger.ROOT_LOGGER.couldNotMarshalAttributeAsElement(getName());
+        if (this.attributeMarshaller.isMarshallableAsElement()) {
+            this.attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+        } else {
+            throw ControllerLogger.ROOT_LOGGER.couldNotMarshalAttributeAsElement(getName());
+        }
     }
 
     /**

@@ -32,13 +32,17 @@ import org.jboss.dmr.ModelNode;
  */
 public class DefaultAttributeMarshaller extends AttributeMarshaller {
 
-
+    @Override
     public void marshallAsAttribute(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         if (isMarshallable(attribute, resourceModel, marshallDefault)) {
-            writer.writeAttribute(attribute.getXmlName(), resourceModel.get(attribute.getName()).asString());
+            writer.writeAttribute(attribute.getXmlName(), this.asString(resourceModel.get(attribute.getName())));
         }
     }
 
+    /**
+     * Use {@link #marshallAsElement(AttributeDefinition, ModelNode, boolean, XMLStreamWriter)} instead.
+     */
+    @Deprecated
     public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, XMLStreamWriter writer) throws XMLStreamException {
         marshallAsElement(attribute, resourceModel, true, writer);
     }
@@ -47,7 +51,7 @@ public class DefaultAttributeMarshaller extends AttributeMarshaller {
     public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         if (isMarshallable(attribute, resourceModel, marshallDefault)) {
             writer.writeStartElement(attribute.getXmlName());
-            String content = resourceModel.get(attribute.getName()).asString();
+            String content = this.asString(resourceModel.get(attribute.getName()));
             if (content.indexOf('\n') > -1) {
                 // Multiline content. Use the overloaded variant that staxmapper will format
                 writer.writeCharacters(content);
@@ -58,5 +62,14 @@ public class DefaultAttributeMarshaller extends AttributeMarshaller {
             }
             writer.writeEndElement();
         }
+    }
+
+    @Override
+    public boolean isMarshallableAsElement() {
+        return true;
+    }
+
+    protected String asString(ModelNode value) {
+        return value.asString();
     }
 }
