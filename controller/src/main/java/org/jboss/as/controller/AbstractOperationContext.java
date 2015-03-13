@@ -1030,6 +1030,10 @@ abstract class AbstractOperationContext implements OperationContext {
     @Override
     public final void revertReloadRequired() {
         if (processState.isReloadSupported()) {
+            //skip if reloadRequired() was  not called
+            if (this.activeStep.restartStamp == null) {
+                return;
+            }
             processState.revertReloadRequired(this.activeStep.restartStamp);
             if (activeStep.response.get(RESPONSE_HEADERS).hasDefined(OPERATION_REQUIRES_RELOAD)) {
                 activeStep.response.get(RESPONSE_HEADERS).remove(OPERATION_REQUIRES_RELOAD);
@@ -1044,6 +1048,10 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public final void revertRestartRequired() {
+        //skip if restartRequired() was  not called
+        if (this.activeStep.restartStamp == null) {
+            return;
+        }
         processState.revertRestartRequired(this.activeStep.restartStamp);
         if (activeStep.response.get(RESPONSE_HEADERS).hasDefined(OPERATION_REQUIRES_RESTART)) {
             activeStep.response.get(RESPONSE_HEADERS).remove(OPERATION_REQUIRES_RESTART);
