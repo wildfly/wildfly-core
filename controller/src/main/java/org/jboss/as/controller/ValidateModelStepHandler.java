@@ -18,7 +18,6 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
 import java.util.Set;
@@ -26,7 +25,6 @@ import java.util.Set;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -112,8 +110,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
         if (handler == null) {
             errorHandler.throwError();
         } else {
-            final ModelNode readAttr = Util.createOperation(ReadResourceHandler.DEFINITION, context.getCurrentAddress());
-            readAttr.get(NAME).set(attributeName);
+            final ModelNode readAttr = Util.getReadAttributeOperation(context.getCurrentAddress(), attributeName);
 
             //Do a read-attribute as an immediate step
             final ModelNode resultHolder = new ModelNode();
