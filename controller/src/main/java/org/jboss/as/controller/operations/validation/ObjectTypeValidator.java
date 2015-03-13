@@ -22,7 +22,7 @@
 
 package org.jboss.as.controller.operations.validation;
 
-
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +60,7 @@ public class ObjectTypeValidator extends ModelTypeValidator implements AllowedVa
                 if (allowedValues.containsKey(key)) {
                     allowedValues.get(key).getValidator().validateParameter(key, value.get(key));
                 } else {
-                    throw new OperationFailedException("invalid type key");
+                    throw ROOT_LOGGER.invalidKeyForObjectType(key, parameterName);
                 }
             }
         }
