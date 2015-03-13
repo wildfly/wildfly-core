@@ -32,7 +32,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 public class DelegatingResourceDefinition implements ResourceDefinition {
     protected volatile ResourceDefinition delegate;
 
-    public void setDelegate(ResourceDefinition delegate) {
+    protected void setDelegate(ResourceDefinition delegate) {
         this.delegate = delegate;
     }
 

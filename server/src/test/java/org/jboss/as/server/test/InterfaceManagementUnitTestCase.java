@@ -50,6 +50,7 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -111,7 +112,7 @@ public class InterfaceManagementUnitTestCase {
         final StringConfigurationPersister persister = new StringConfigurationPersister(Collections.<ModelNode>emptyList(), new StandaloneXml(null, null, extensionRegistry));
         extensionRegistry.setWriterRegistry(persister);
         final ControlledProcessState processState = new ControlledProcessState(true);
-        final ModelControllerService svc = new ModelControllerService(processState, persister, new DelegatingResourceDefinition());
+        final ModelControllerService svc = new ModelControllerService(processState, persister, new ServerDelegatingResourceDefinition());
         final ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         builder.install();
 
@@ -279,14 +280,14 @@ public class InterfaceManagementUnitTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         final StringConfigurationPersister persister;
         final ControlledProcessState processState;
-        final DelegatingResourceDefinition rootResourceDefinition;
+        final ServerDelegatingResourceDefinition rootResourceDefinition;
         final ServerEnvironment environment;
         final ExtensionRegistry extensionRegistry;
         volatile ManagementResourceRegistration rootRegistration;
         volatile Exception error;
 
 
-        ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final DelegatingResourceDefinition rootResourceDefinition) {
+        ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final ServerDelegatingResourceDefinition rootResourceDefinition) {
             super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY), persister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
                     AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
             this.persister = persister;
@@ -327,6 +328,13 @@ public class InterfaceManagementUnitTestCase {
                     persister, environment, processState, null, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
                     authorizer, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector()));
             super.start(context);
+        }
+    }
+
+    static final class ServerDelegatingResourceDefinition extends DelegatingResourceDefinition {
+        @Override
+        public void setDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
         }
     }
 

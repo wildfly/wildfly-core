@@ -51,6 +51,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
@@ -618,6 +619,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
         public TestDelegatingResourceDefinition(TestModelType type) {
             this.type = type;
+        }
+
+        @Override
+        public void setDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
         }
 
         @Override

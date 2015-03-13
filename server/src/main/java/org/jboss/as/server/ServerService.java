@@ -47,6 +47,7 @@ import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -149,7 +150,7 @@ public final class ServerService extends AbstractControllerService {
     private final RunningModeControl runningModeControl;
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final AbstractVaultReader vaultReader;
-    private final DelegatingResourceDefinition rootResourceDefinition;
+    private final ServerDelegatingResourceDefinition rootResourceDefinition;
 
     public static final String SERVER_NAME = "server";
 
@@ -159,7 +160,7 @@ public final class ServerService extends AbstractControllerService {
      * @param prepareStep the prepare step to use
      */
     private ServerService(final Bootstrap.Configuration configuration, final ControlledProcessState processState,
-                          final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final DelegatingResourceDefinition rootResourceDefinition,
+                          final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer) {
         super(getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
@@ -215,8 +216,8 @@ public final class ServerService extends AbstractControllerService {
                 .addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
                 .install();
 
-        DelegatingResourceDefinition rootResourceDefinition = new DelegatingResourceDefinition();
-        ServerService service = new ServerService(configuration, processState, null, bootstrapListener, rootResourceDefinition, runningModeControl, vaultReader, auditLogger, authorizer);
+
+        ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(), runningModeControl, vaultReader, auditLogger, authorizer);
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER, service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
@@ -455,6 +456,13 @@ public final class ServerService extends AbstractControllerService {
         @Override
         public synchronized ExecutorService getValue() throws IllegalStateException, IllegalArgumentException {
             return executorService;
+        }
+    }
+
+    static final class ServerDelegatingResourceDefinition extends DelegatingResourceDefinition{
+        @Override
+        public void setDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
         }
     }
 
