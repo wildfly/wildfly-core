@@ -217,6 +217,11 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         final Resource toRemove = getChild(address);
         if (toRemove != null) {
@@ -239,6 +244,11 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
 
     @Override
     public boolean isProxy() {
+        return false;
+    }
+
+    @Override
+    public boolean isOrderedChildren() {
         return false;
     }
 

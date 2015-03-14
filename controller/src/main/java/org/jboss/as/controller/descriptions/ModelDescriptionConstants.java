@@ -206,6 +206,7 @@ public class ModelDescriptionConstants {
     public static final String INCLUDE_DEFAULTS = "include-defaults";
     public static final String INCLUDE_RUNTIME = "include-runtime";
     public static final String INCLUDE_SINGLETONS = "include-singletons";
+    public static final String INDEX = "index";
     public static final String INET_ADDRESS = "inet-address";
     public static final String INHERITED = "inherited";
     public static final String INITIAL_SERVER_GROUPS = "initial-server-groups";

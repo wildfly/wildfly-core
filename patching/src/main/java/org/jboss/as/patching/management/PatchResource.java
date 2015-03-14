@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.AbstractModelResource;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
@@ -72,6 +73,11 @@ class PatchResource extends AbstractModelResource {
     @Override
     public boolean isRuntime() {
         return true;
+    }
+
+    @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings({"CloneDoesntCallSuperClone"})
@@ -157,6 +163,11 @@ class PatchResource extends AbstractModelResource {
 
         @Override
         public void register(String name, Resource resource) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void register(String value, int index, Resource resource) {
             throw new UnsupportedOperationException();
         }
 

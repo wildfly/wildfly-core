@@ -118,7 +118,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
     /** {@inheritDoc */
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        final Resource resource = createResource(context);
+        final Resource resource = createResource(context, operation);
         populateModel(context, operation, resource);
         recordCapabilitiesAndRequirements(context, operation, resource);
         //verify model for alternatives & requires
@@ -136,6 +136,21 @@ public class AbstractAddStepHandler implements OperationStepHandler {
                 }
             }, OperationContext.Stage.RUNTIME);
         }
+    }
+
+    /**
+     * Create the {@link Resource} that the {@link AbstractAddStepHandler#execute(OperationContext, ModelNode)}
+     * method operates on. This method is invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     * <p>
+     * This default implementation uses the {@link org.jboss.as.controller.OperationContext#createResource(PathAddress)
+     * default resource creation facility exposed by the context}. Subclasses wishing to create a custom resource
+     * type can override this method.
+     *
+     * @param context the operation context
+     * @param operation the operation
+     */
+    protected Resource createResource(final OperationContext context, final ModelNode operation) {
+        return createResource(context);
     }
 
     /**

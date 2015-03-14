@@ -177,6 +177,15 @@ public class LoggingResource implements Resource {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        final String type = address.getKey();
+        if (LOG_FILE.equals(type)) {
+            throw LoggingLogger.ROOT_LOGGER.cannotRegisterResourceOfType(type);
+        }
+        delegate.registerChild(address, index, resource);
+    }
+
+    @Override
     public Resource removeChild(final PathElement address) {
         final String type = address.getKey();
         if (LOG_FILE.equals(type)) {
@@ -283,5 +292,10 @@ public class LoggingResource implements Resource {
             }
             return false;
         }
+    }
+
+    @Override
+    public boolean isOrderedChildren() {
+        return delegate.isOrderedChildren();
     }
 }

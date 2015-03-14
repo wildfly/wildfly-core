@@ -122,6 +122,11 @@ abstract class AbstractPlatformMBeanResource implements Resource.ResourceEntry {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw PlatformMBeanLogger.ROOT_LOGGER.addingChildrenNotSupported();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         throw PlatformMBeanLogger.ROOT_LOGGER.removingChildrenNotSupported();
     }
@@ -153,6 +158,11 @@ abstract class AbstractPlatformMBeanResource implements Resource.ResourceEntry {
     @Override
     public PathElement getPathElement() {
         return pathElement;
+    }
+
+    @Override
+    public boolean isOrderedChildren() {
+        return false;
     }
 
     abstract ResourceEntry getChildEntry(String name);

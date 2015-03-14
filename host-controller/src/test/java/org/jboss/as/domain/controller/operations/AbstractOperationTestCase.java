@@ -440,6 +440,10 @@ public abstract class AbstractOperationTestCase {
             return toAdd;
         }
 
+        public Resource createResource(int index) {
+            throw new UnsupportedOperationException();
+        }
+
         public void addResource(PathAddress relativeAddress, Resource toAdd) {
             Resource model = root;
             final Iterator<PathElement> i = relativeAddress.iterator();
@@ -469,6 +473,10 @@ public abstract class AbstractOperationTestCase {
                     }
                 }
             }
+        }
+
+        public void addResource(int index, Resource toAdd) {
+            throw new UnsupportedOperationException();
         }
 
         public Resource readResource(PathAddress address) {

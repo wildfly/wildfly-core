@@ -34,6 +34,7 @@ public interface ResourceProvider extends Cloneable {
     boolean hasChildren();
     Set<String> children();
     void register(String name, Resource resource);
+    void register(String value, int index, Resource resource);
     Resource remove(String name);
     ResourceProvider clone();
 
@@ -54,5 +55,4 @@ public interface ResourceProvider extends Cloneable {
         }
 
     }
-
 }

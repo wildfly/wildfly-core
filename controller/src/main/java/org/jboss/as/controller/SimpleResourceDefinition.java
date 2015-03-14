@@ -55,6 +55,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final OperationEntry.Flag addRestartLevel;
     private final OperationEntry.Flag removeRestartLevel;
     private volatile DeprecationData deprecationData;
+    private final boolean orderedChildResource;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -77,6 +78,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.addRestartLevel = null;
         this.removeRestartLevel = null;
         this.deprecationData = null;
+        this.orderedChildResource = getOrderedChildResource();
     }
 
     /**
@@ -180,6 +182,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 ? OperationEntry.Flag.RESTART_ALL_SERVICES
                 : validateRestartLevel("removeRestartLevel", removeRestartLevel);
         this.deprecationData = deprecationData;
+        this.orderedChildResource = getOrderedChildResource();
     }
 
     @Override
@@ -248,7 +251,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         if (handler instanceof DescriptionProvider) {
             registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, (DescriptionProvider) handler, getFlagsSet(flags));
         } else {
-            registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, new DefaultResourceAddDescriptionProvider(registration, descriptionResolver), getFlagsSet(flags));
+            registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler,
+                    new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChildResource), getFlagsSet(flags));
         }
     }
 
@@ -315,5 +319,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
 
     protected DeprecationData getDeprecationData(){
         return this.deprecationData;
+    }
+
+    protected boolean getOrderedChildResource() {
+        return false;
     }
 }

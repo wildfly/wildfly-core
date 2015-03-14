@@ -3315,4 +3315,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 389, value = "Could not create an empty configuration at file %s as there is an existing non-empty configuration there")
     IllegalStateException rejectEmptyConfig(String absolutePath);
 
+    @Message(id = 390, value = "Indexed child resources can only be registered if the parent resource supports ordered children")
+    IllegalStateException indexedChildResourceRegistrationNotAvailable();
+
 }
