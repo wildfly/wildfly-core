@@ -182,6 +182,8 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                 SimpleListAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle);
             } else if (valueType instanceof MapAttributeDefinition) {
                 MapAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, bundle);
+            } else if (valueType instanceof PrimitiveListAttributeDefinition) {
+                PrimitiveListAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, bundle);
             } else if (valueType instanceof ObjectListAttributeDefinition) {
                 ObjectListAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, false, resolver, locale);
             }
