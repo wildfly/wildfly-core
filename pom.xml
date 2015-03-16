@@ -82,8 +82,8 @@
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.16</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds>
-        <version.org.apache.httpcomponents.httpclient>4.3.6</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.3.3</version.org.apache.httpcomponents.httpcore>
+        <version.org.apache.httpcomponents.httpclient>4.4</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpcore>4.4</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven>3.2.1</version.org.apache.maven>
         <version.org.apache.xerces>2.11.0.SP3</version.org.apache.xerces>
         <version.org.bouncycastle>1.50</version.org.bouncycastle>
