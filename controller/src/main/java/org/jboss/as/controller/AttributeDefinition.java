@@ -99,7 +99,7 @@ public abstract class AttributeDefinition {
                 wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.isValidateNull(), toCopy.isAllowExpression(), toCopy.getType()),
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
-                wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignficant(), toCopy.getParser(),
+                wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
                 toCopy.getAttributeGroup(), toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
     }
 
