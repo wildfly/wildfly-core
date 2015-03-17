@@ -90,6 +90,12 @@ abstract class AbstractClassificationResource implements Resource.ResourceEntry 
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        //TODO i18n
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         //TODO i18n
         throw new IllegalStateException("Not writable");
@@ -102,6 +108,11 @@ abstract class AbstractClassificationResource implements Resource.ResourceEntry 
 
     @Override
     public boolean isProxy() {
+        return false;
+    }
+
+    @Override
+    public boolean isOrderedChildren() {
         return false;
     }
 

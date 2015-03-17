@@ -167,6 +167,11 @@ class IgnoredDomainResourceRoot implements Resource.ResourceEntry {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         Resource result = null;
         if (IGNORED_RESOURCE_TYPE.equals(address.getKey())) {
@@ -217,6 +222,11 @@ class IgnoredDomainResourceRoot implements Resource.ResourceEntry {
 
     private boolean isMaster() {
         return ignoredRegistry.isMaster();
+    }
+
+    @Override
+    public boolean isOrderedChildren() {
+        return false;
     }
 
 }

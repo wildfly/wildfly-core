@@ -461,7 +461,18 @@ public interface OperationContext extends ExpressionResolver {
     Resource createResource(PathAddress address) throws UnsupportedOperationException;
 
     /**
-     * Add a new resource, relative to the executed operation address.  Since only one operation
+     * Create a new resource, relative to the executed operation address.  Since only one operation
+     * may write at a time, this operation may block until other writing operations have completed.
+     *
+     * @param index the index of the resource to be created in the parent resources children of this type
+     * @return the created resource
+     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws UnsupportedOperationException if the calling operation is not a model operation
+     */
+    Resource createResource(int index) throws UnsupportedOperationException;
+
+    /**
+     * Add a new resource, at the executed operation address.  Since only one operation
      * may write at a time, this operation may block until other writing operations have completed.
      *
      * @param address the (possibly empty) address where the resource should be added. Address is relative to the
@@ -471,6 +482,17 @@ public interface OperationContext extends ExpressionResolver {
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     void addResource(PathAddress address, Resource toAdd);
+
+    /**
+     * Add a new resource, at to the executed operation address.  Since only one operation
+     * may write at a time, this operation may block until other writing operations have completed.
+     *
+     * @param index the index of the resource to be created in the parent resources children of this type
+     * @param toAdd the new resource
+     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws UnsupportedOperationException if the calling operation is not a model operation
+     */
+    void addResource(int index, Resource toAdd);
 
     /**
      * Get the resource for read only operations, relative to the executed operation address. Reads never block.

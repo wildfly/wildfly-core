@@ -110,6 +110,11 @@ public class PlaceholderResource implements Resource {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw ControllerLogger.ROOT_LOGGER.immutableResource();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         return null;
     }
@@ -121,6 +126,11 @@ public class PlaceholderResource implements Resource {
 
     @Override
     public boolean isProxy() {
+        return false;
+    }
+
+    @Override
+    public boolean isOrderedChildren() {
         return false;
     }
 

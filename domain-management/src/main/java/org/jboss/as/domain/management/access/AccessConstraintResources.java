@@ -158,7 +158,6 @@ public class AccessConstraintResources {
             }
             return Collections.emptySet();
         }
-
     }
 
     private static class SensitivityClassificationResource extends AbstractClassificationResource {
@@ -210,7 +209,6 @@ public class AccessConstraintResources {
             }
             return Collections.emptySet();
         }
-
     }
 
 }

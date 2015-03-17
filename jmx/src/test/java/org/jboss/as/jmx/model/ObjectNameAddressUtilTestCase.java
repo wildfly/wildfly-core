@@ -143,6 +143,10 @@ public class ObjectNameAddressUtilTestCase {
             resources.put(address.getValue(), resource);
         }
 
+        @Override
+        public void registerChild(PathElement address, int index, Resource resource) {
+            throw new UnsupportedOperationException();
+        }
 
         //THe rest of these don't currently get called
         @Override
@@ -171,6 +175,11 @@ public class ObjectNameAddressUtilTestCase {
 
         @Override
         public boolean isProxy() {
+            return false;
+        }
+
+        @Override
+        public boolean isOrderedChildren() {
             return false;
         }
 

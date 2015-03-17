@@ -116,6 +116,5 @@ public class ApplicationClassificationTypeResourceDefinition extends SimpleResou
             }
             return Collections.emptySet();
         }
-
     }
 }

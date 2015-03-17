@@ -523,6 +523,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
+            public void register(String value, int index, Resource resource) {
+            }
+
+            @Override
             public Resource remove(String name) {
                 throw new UnsupportedOperationException();
             }
