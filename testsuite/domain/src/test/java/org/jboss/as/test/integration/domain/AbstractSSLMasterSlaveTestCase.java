@@ -34,6 +34,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -105,13 +106,13 @@ public abstract class AbstractSSLMasterSlaveTestCase {
 
     protected static void checkHostStatusOnMaster(String host) throws Exception {
         final URI mgmtURI = getMasterMgmtUri();
-        final String operation = getHostStateRunningOperationJson(host);
+        final String operation = createHostStateRunningOperationJson(host);
         final long time = System.currentTimeMillis() + TIMEOUT;
         do {
-            Thread.sleep(1000);
             if (isHostStateRunning(mgmtURI, operation)) {
                 return;
             }
+            Thread.sleep(100);
         } while (System.currentTimeMillis() < time);
 
         Assert.fail("Cannot validate host '" + host + "' is running");
@@ -138,7 +139,14 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static boolean isHostStateRunning(URI mgmtURI, String operation) throws IOException {
-        ModelNode responseNode = executeOverHttp(mgmtURI, operation);
+        ModelNode responseNode;
+        try {
+            responseNode = executeOverHttp(mgmtURI, operation);
+        } catch (HttpHostConnectException ex) {
+            // connection refused, host is not running
+            return false;
+        }
+
         if (responseNode != null && responseNode.get(OUTCOME).asString().equals(SUCCESS)) {
             final ModelNode resultNode = responseNode.require(RESULT);
             if ("running".equalsIgnoreCase(resultNode.asString())) {
@@ -150,14 +158,14 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static ModelNode executeOverHttp(URI mgmtURI, String operation) throws IOException {
-        CloseableHttpClient httpClient = getHttpClient(mgmtURI);
+        CloseableHttpClient httpClient = createHttpClient(mgmtURI);
         HttpEntity operationEntity = new StringEntity(operation, ContentType.APPLICATION_JSON);
         HttpPost httpPost = new HttpPost(mgmtURI);
         httpPost.setEntity(operationEntity);
 
         HttpResponse response;
         ModelNode responseNode;
-        try{
+        try {
             response = httpClient.execute(httpPost);
 
             int statusCode = response.getStatusLine().getStatusCode();
@@ -171,9 +179,6 @@ public abstract class AbstractSSLMasterSlaveTestCase {
             }
             responseNode = ModelNode.fromJSONStream(response.getEntity().getContent());
             EntityUtils.consume(entity);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
         } finally {
             httpClient.close();
         }
@@ -181,7 +186,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         return responseNode;
     }
 
-    private static CloseableHttpClient getHttpClient(URI mgmtURI) {
+    private static CloseableHttpClient createHttpClient(URI mgmtURI) {
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(SLAVE_HOST_USERNAME, SLAVE_HOST_PASSWORD);
         AuthScope authScope = new AuthScope(mgmtURI.getHost(), mgmtURI.getPort());
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -191,7 +196,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
                 .build();
     }
 
-    private static String getHostStateRunningOperationJson(String host) {
+    private static String createHostStateRunningOperationJson(String host) {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(HOST, host);
