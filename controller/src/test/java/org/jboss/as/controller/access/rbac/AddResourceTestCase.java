@@ -423,7 +423,7 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         void addAttribute(String name, boolean allowNull, Boolean nullSignificant, ModelNode defaultValue, AccessConstraintDefinition...constraints) {
             SimpleAttributeDefinitionBuilder builder = new SimpleAttributeDefinitionBuilder(name, ModelType.STRING, allowNull);
             if (nullSignificant != null) {
-                builder.setNullSignficant(nullSignificant);
+                builder.setNullSignificant(nullSignificant);
             }
             if (defaultValue != null) {
                 builder.setDefaultValue(defaultValue);

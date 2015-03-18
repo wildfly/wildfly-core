@@ -64,7 +64,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected boolean resourceOnly = false;
     protected DeprecationData deprecated = null;
     protected AccessConstraintDefinition[] accessConstraints;
-    protected Boolean nullSignficant;
+    protected Boolean nullSignificant;
     protected AttributeParser parser;
     protected String attributeGroup;
 
@@ -124,7 +124,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.attributeMarshaller = basis.getAttributeMarshaller();
         this.resourceOnly = basis.isResourceOnly();
         this.deprecated = basis.getDeprecationData();
-        this.nullSignficant = basis.getNilSignificant();
+        this.nullSignificant = basis.getNilSignificant();
         List<AccessConstraintDefinition> acl = basis.getAccessConstraints();
         this.accessConstraints = acl.toArray(new AccessConstraintDefinition[acl.size()]);
         this.parser = basis.getParser();
@@ -503,12 +503,20 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * the default value is whether the attribute {@link AttributeDefinition#isAllowNull() allows null} and
      * has a {@link AttributeDefinition#getDefaultValue() default value}.
      *
-     * @param nullSignficant {@code true} if an undefined value is significant
+     * @param nullSignificant {@code true} if an undefined value is significant
      * @return a builder that can be used to continue building the attribute definition
      */
-    public BUILDER setNullSignficant(boolean nullSignficant) {
-        this.nullSignficant = nullSignficant;
+    public BUILDER setNullSignificant(boolean nullSignificant) {
+        this.nullSignificant = nullSignificant;
         return (BUILDER) this;
+    }
+
+    /**
+     * @deprecated Use {@link #setNullSignificant(boolean)}.
+     */
+    @Deprecated
+    public BUILDER setNullSignficant(boolean nullSignficant) {
+        return setNullSignificant(nullSignficant);
     }
 
     /**
@@ -640,8 +648,16 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return copyConstraints(accessConstraints);
     }
 
+    public Boolean getNullSignificant() {
+        return nullSignificant;
+    }
+
+    /**
+     * @deprecated Use {@link #getNullSignificant()}.
+     */
+    @Deprecated
     public Boolean getNullSignficant() {
-        return nullSignficant;
+        return getNullSignificant();
     }
 
     public AttributeParser getParser() {
