@@ -147,6 +147,8 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                     if (resultAction == ResultAction.KEEP) {
                         contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, contentHash));
+                    } else if (resultAction == ResultAction.ROLLBACK) {
+                        contentRepository.removeContent(ModelContentReference.fromDeploymentName(name, contentHash));
                     }
                 }
             });
