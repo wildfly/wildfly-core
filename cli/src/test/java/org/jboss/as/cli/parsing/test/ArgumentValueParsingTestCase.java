@@ -424,6 +424,52 @@ public class ArgumentValueParsingTestCase {
         assertLoginModules(value);
     }
 
+    @Test
+    public void testWFCORE600() throws Exception {
+        ModelNode value = parse("[{ c=[s], m=s, p=[{k=a,v=b},{k=b,v=c}] }]");
+
+        assertEquals(ModelType.LIST, value.getType());
+        List<ModelNode> list = value.asList();
+        assertEquals(1, list.size());
+        value = list.get(0);
+        assertEquals(ModelType.OBJECT, value.getType());
+        assertEquals(3, value.keys().size());
+
+        assertTrue(value.hasDefined("c"));
+        ModelNode prop = value.get("c");
+        assertEquals(ModelType.LIST, prop.getType());
+        list = prop.asList();
+        assertEquals(1, list.size());
+        assertEquals("s", list.get(0).asString());
+
+        assertTrue(value.hasDefined("m"));
+        prop = value.get("m");
+        assertEquals(ModelType.STRING, prop.getType());
+        assertEquals("s", prop.asString());
+
+        assertTrue(value.hasDefined("p"));
+        prop = value.get("p");
+        assertEquals(ModelType.LIST, prop.getType());
+        list = prop.asList();
+        assertEquals(2, list.size());
+
+        value = list.get(0);
+        assertEquals(ModelType.OBJECT, value.getType());
+        assertEquals(2, value.keys().size());
+        assertTrue(value.hasDefined("k"));
+        assertEquals("a", value.get("k").asString());
+        assertTrue(value.hasDefined("v"));
+        assertEquals("b", value.get("v").asString());
+
+        value = list.get(1);
+        assertEquals(ModelType.OBJECT, value.getType());
+        assertEquals(2, value.keys().size());
+        assertTrue(value.hasDefined("k"));
+        assertEquals("b", value.get("k").asString());
+        assertTrue(value.hasDefined("v"));
+        assertEquals("c", value.get("v").asString());
+    }
+
     protected void assertLoginModules(ModelNode value) {
         assertNotNull(value);
         assertEquals(ModelType.LIST, value.getType());

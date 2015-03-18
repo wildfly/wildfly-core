@@ -91,7 +91,6 @@ public class CompositeState extends DefaultParsingState {
                 if(c == ']' || c == '}') {
                     if(ctx.meetIfLookedFor(c)) {
                         ctx.leaveState();
-                        ctx.advanceLocation(1);
                     }
                     return;
                 }
