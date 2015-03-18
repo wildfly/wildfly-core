@@ -80,7 +80,9 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
             ModelNode deprecated = addDeprecatedInfo(result);
             deprecated.get(ModelDescriptionConstants.REASON).set(descriptionResolver.getResourceDeprecatedDescription(locale, bundle));
         }
-
+        if (registration.isRuntimeOnly()){
+            result.get(ModelDescriptionConstants.STORAGE).set(ModelDescriptionConstants.RUNTIME_ONLY);
+        }
         AccessConstraintDescriptionProviderUtil.addAccessConstraints(result, registration.getAccessConstraints(), locale);
 
         // Sort the attribute descriptions based on attribute group and then attribute name

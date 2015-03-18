@@ -99,6 +99,7 @@ public class ModelTestModelDescriptionValidator {
         validResourceKeys.put(CHILDREN, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         validResourceKeys.put(ACCESS_CONSTRAINTS, AccessConstraintValidator.INSTANCE);
+        validResourceKeys.put(STORAGE, NullDescriptorValidator.INSTANCE);
         VALID_RESOURCE_KEYS = Collections.unmodifiableMap(validResourceKeys);
 
         Map<String, ArbitraryDescriptorValidator> validChildTypeKeys = new HashMap<String, ModelTestModelDescriptionValidator.ArbitraryDescriptorValidator>();

@@ -41,6 +41,7 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -50,6 +51,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
@@ -116,14 +118,14 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private final RunningModeControl runningModeControl;
     private final PathManagerService pathManagerService;
     private final ModelInitializer modelInitializer;
-    private final DelegatingResourceDefinition rootResourceDefinition;
+    private final TestDelegatingResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
     private final ExtensionRegistry extensionRegistry;
     private final AbstractVaultReader vaultReader;
     private volatile Initializer initializer;
 
     TestModelControllerService(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
-            TestModelType type, ModelInitializer modelInitializer, DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, ExtensionRegistry extensionRegistry,
+            TestModelType type, ModelInitializer modelInitializer, TestDelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, ExtensionRegistry extensionRegistry,
             AbstractVaultReader vaultReader) {
         super(processType, runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
                 new RuntimeExpressionResolver(vaultReader), Controller80x.INSTANCE);
@@ -149,7 +151,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     static TestModelControllerService create(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, ExtensionRegistry extensionRegistry) {
         return new TestModelControllerService(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer,
-                new DelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, new TestVaultReader());
+                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, new TestVaultReader());
     }
 
     InjectedValue<ContentRepository> getContentRepositoryInjector(){
@@ -497,7 +499,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                             hostName,
                             persister,
                             env,
-                            (HostRunningModeControl)runningModeControl,
+                            (HostRunningModeControl) runningModeControl,
                             hostFileRepository,
                             info,
                             null /*serverInventory*/,
@@ -612,11 +614,16 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
     }
 
-    private static class DelegatingResourceDefinition extends ModelTestModelControllerService.DelegatingResourceDefinition {
+    private static class TestDelegatingResourceDefinition extends DelegatingResourceDefinition {
         private final TestModelType type;
 
-        public DelegatingResourceDefinition(TestModelType type) {
+        public TestDelegatingResourceDefinition(TestModelType type) {
             this.type = type;
+        }
+
+        @Override
+        public void setDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
         }
 
         @Override
@@ -649,6 +656,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
                 return;
             }
             super.registerNotifications(resourceRegistration);
+        }
+
+        @Override
+        public boolean isRuntime() {
+            return false;
         }
     }
 

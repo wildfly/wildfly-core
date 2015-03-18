@@ -148,5 +148,10 @@ public class LegacyResourceDefinition implements ResourceDefinition {
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return Collections.emptyList();
     }
+
+    @Override
+    public boolean isRuntime() {
+        return false; //maybe read it from model description
+    }
 }
 

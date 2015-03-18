@@ -28,16 +28,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.ResourceBuilder;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -61,15 +61,11 @@ public class RegistryProxyControllerTestCase {
     ManagementResourceRegistration profileBReg;
     ManagementResourceRegistration profileAChildAReg;
 
+    final ResourceDefinition rootResource = ResourceBuilder.Factory.create(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE).build();
+
     @Before
     public void setup() {
-        DescriptionProvider rootDescriptionProvider = new DescriptionProvider() {
-            @Override
-            public ModelNode getModelDescription(final Locale locale) {
-                return new ModelNode();
-            }
-        };
-        root = ManagementResourceRegistration.Factory.create(rootDescriptionProvider);
+        root = ManagementResourceRegistration.Factory.create(rootResource);
         assertNotNull(root);
 
         profileAReg = registerSubModel(root, profileA);

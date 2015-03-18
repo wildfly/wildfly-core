@@ -80,10 +80,8 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.TransformingProxyController;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
@@ -91,7 +89,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
@@ -101,7 +98,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
@@ -205,7 +201,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private final IgnoredDomainResourceRegistry ignoredRegistry;
     private final PathManagerService pathManager;
     private final ExpressionResolver expressionResolver;
-    private final DelegatingResourceDefinition rootResourceDefinition;
+    private final DomainDelegatingResourceDefinition rootResourceDefinition;
     private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
 
     // @GuardedBy(this)
@@ -242,7 +238,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
-                ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DelegatingResourceDefinition(),
+                ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
                 hostExtensionRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry, auditLogger, authorizer);
         ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler = new ApplyMissingDomainModelResourcesHandler(service, environment, hostControllerInfo, ignoredRegistry);
         prepareStepHandler.initialize(applyMissingDomainModelResourcesHandler);
@@ -267,7 +263,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final BootstrapListener bootstrapListener,
                                          final PathManagerService pathManager,
                                          final ExpressionResolver expressionResolver,
-                                         final DelegatingResourceDefinition rootResourceDefinition,
+                                         final DomainDelegatingResourceDefinition rootResourceDefinition,
                                          final ExtensionRegistry hostExtensionRegistry,
                                          final ExtensionRegistry extensionRegistry,
                                          final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry,
@@ -1101,11 +1097,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
         return expressionResolver;
     }
 
-    private static class DelegatingResourceDefinition implements ResourceDefinition {
-        private volatile ResourceDefinition delegate;
-
+    private static class DomainDelegatingResourceDefinition extends org.jboss.as.controller.DelegatingResourceDefinition{
         void setDelegate(DomainRootDefinition delegate, ManagementResourceRegistration root) {
-            this.delegate = delegate;
+            super.setDelegate(delegate);
             delegate.initialize(root);
         }
 
@@ -1127,24 +1121,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
         @Override
         public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
             //These will be registered later
-        }
-
-        @Override
-        public PathElement getPathElement() {
-            return delegate.getPathElement();
-        }
-
-        @Override
-        public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-            return delegate.getDescriptionProvider(resourceRegistration);
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            if (delegate == null) {
-                return Collections.emptyList();
-            }
-            return delegate.getAccessConstraints();
         }
     }
 

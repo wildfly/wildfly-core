@@ -35,7 +35,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
@@ -388,17 +387,17 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
     }
 
     private static class TestResourceDefinition extends SimpleResourceDefinition {
-        TestResourceDefinition(PathElement pathElement) {
+        TestResourceDefinition(PathElement pathElement,AbstractAddStepHandler addStepHandler) {
             super(pathElement,
                     new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
+                    addStepHandler,
                     new AbstractRemoveStepHandler() {});
         }
     }
 
     private static class RootResourceDefinition extends TestResourceDefinition {
         RootResourceDefinition() {
-            super(PathElement.pathElement("root"));
+            super(PathElement.pathElement("root"),new AbstractAddStepHandler());
         }
 
         @Override
@@ -413,7 +412,7 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         private final List<AttributeDefinition> attributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
 
         ChildResourceDefinition(PathElement element, AccessConstraintDefinition...constraints){
-            super(element);
+            super(element, null);
             this.constraints = Collections.unmodifiableList(Arrays.asList(constraints));
         }
 
@@ -444,10 +443,9 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         }
 
         @Override
-        protected void registerAddOperation(ManagementResourceRegistration registration, OperationStepHandler handler, OperationEntry.Flag... flags) {
-            // Use an add handler that knows about our attributes
-            OperationStepHandler addHandler = new AbstractAddStepHandler(attributes){};
-            super.registerAddOperation(registration, addHandler, flags);
+        public void registerOperations(ManagementResourceRegistration registration) {
+            super.registerOperations(registration);
+            super.registerAddOperation(registration, new AbstractAddStepHandler(attributes), OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         }
 
         @Override

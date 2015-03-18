@@ -46,6 +46,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
     private DeprecationData deprecationData;
     private final List<ResourceBuilderRoot> children = new LinkedList<ResourceBuilderRoot>();
     private final ResourceBuilderRoot parent;
+    private boolean isRuntime = false;
 
 
     private ResourceBuilderRoot(PathElement pathElement, StandardResourceDescriptionResolver resourceResolver,
@@ -153,6 +154,12 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return this;
     }
 
+    @Override
+    public ResourceBuilder setRuntime() {
+        this.isRuntime = true;
+        return this;
+    }
+
     public ResourceBuilder pushChild(final PathElement pathElement) {
         return pushChild(pathElement, resourceResolver.getChildResolver(pathElement.getKey()));
     }
@@ -213,7 +220,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
         final ResourceBuilderRoot builder;
 
         private BuilderResourceDefinition(ResourceBuilderRoot builder) {
-            super(builder.pathElement, builder.resourceResolver, builder.addHandler, builder.removeHandler, builder.deprecationData);
+            super(builder.pathElement, builder.resourceResolver, builder.addHandler, builder.removeHandler, null, null, builder.deprecationData, builder.isRuntime);
             this.builder = builder;
         }
 

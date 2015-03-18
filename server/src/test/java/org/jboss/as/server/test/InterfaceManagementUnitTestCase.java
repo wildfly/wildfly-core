@@ -44,20 +44,18 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
@@ -65,7 +63,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.InterfaceDefinition;
@@ -115,7 +112,7 @@ public class InterfaceManagementUnitTestCase {
         final StringConfigurationPersister persister = new StringConfigurationPersister(Collections.<ModelNode>emptyList(), new StandaloneXml(null, null, extensionRegistry));
         extensionRegistry.setWriterRegistry(persister);
         final ControlledProcessState processState = new ControlledProcessState(true);
-        final ModelControllerService svc = new ModelControllerService(processState, persister, new DelegatingResourceDefinition());
+        final ModelControllerService svc = new ModelControllerService(processState, persister, new ServerDelegatingResourceDefinition());
         final ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         builder.install();
 
@@ -283,14 +280,14 @@ public class InterfaceManagementUnitTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         final StringConfigurationPersister persister;
         final ControlledProcessState processState;
-        final DelegatingResourceDefinition rootResourceDefinition;
+        final ServerDelegatingResourceDefinition rootResourceDefinition;
         final ServerEnvironment environment;
         final ExtensionRegistry extensionRegistry;
         volatile ManagementResourceRegistration rootRegistration;
         volatile Exception error;
 
 
-        ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final DelegatingResourceDefinition rootResourceDefinition) {
+        ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final ServerDelegatingResourceDefinition rootResourceDefinition) {
             super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY), persister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
                     AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
             this.persister = persister;
@@ -334,49 +331,10 @@ public class InterfaceManagementUnitTestCase {
         }
     }
 
-    private static class DelegatingResourceDefinition implements ResourceDefinition {
-        private volatile ResourceDefinition delegate;
-
-        void setDelegate(ResourceDefinition delegate) {
-            this.delegate = delegate;
-        }
-
+    static final class ServerDelegatingResourceDefinition extends DelegatingResourceDefinition {
         @Override
-        public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerOperations(resourceRegistration);
-        }
-
-        @Override
-        public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerChildren(resourceRegistration);
-        }
-
-        @Override
-        public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerAttributes(resourceRegistration);
-        }
-
-        @Override
-        public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerNotifications(resourceRegistration);
-        }
-
-        @Override
-        public PathElement getPathElement() {
-            return delegate.getPathElement();
-        }
-
-        @Override
-        public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-            return delegate.getDescriptionProvider(resourceRegistration);
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            if (delegate == null) {
-                return Collections.emptyList();
-            }
-            return delegate.getAccessConstraints();
+        public void setDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
         }
     }
 

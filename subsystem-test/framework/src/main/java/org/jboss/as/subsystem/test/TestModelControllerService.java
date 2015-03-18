@@ -38,6 +38,8 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -72,7 +74,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
                                          final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl, final ExtensionRegistry extensionRegistry,
                                          final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers) {
         super(additionalInit.getProcessType(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
-                ModelTestModelControllerService.DESC_PROVIDER, new ControlledProcessState(true), Controller80x.INSTANCE);
+                new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , new ControlledProcessState(true), Controller90x.INSTANCE);
         this.mainExtension = mainExtension;
         this.additionalInit = additionalInit;
         this.controllerInitializer = controllerInitializer;

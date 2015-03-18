@@ -24,7 +24,6 @@ package org.jboss.as.jmx.model;
 import static org.jboss.as.controller.PathElement.pathElement;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,8 +31,9 @@ import javax.management.ObjectName;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceBuilder;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -57,6 +57,7 @@ public class ObjectNameAddressUtilTestCase {
     static final PathElement BOTTOM_TWO = pathElement(BOTTOM, TWO);
     static final PathElement TOP_COMPLEX_VALUE = pathElement(TOP, COMPLEX_VALUE);
     static final PathElement COMPLEX_KEY_ONE = pathElement(COMPLEX_KEY, ONE);
+    static final ResourceDefinition rootResourceDef = ResourceBuilder.Factory.create(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
     static final Resource rootResource;
     static{
@@ -99,13 +100,7 @@ public class ObjectNameAddressUtilTestCase {
 
         NonResolvingResourceDescriptionResolver resolver = new NonResolvingResourceDescriptionResolver();
 
-        DescriptionProvider provider = new DescriptionProvider() {
-            @Override
-            public ModelNode getModelDescription(Locale locale) {
-                return new ModelNode();
-            }
-        };
-        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.create(provider);
+        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.create(rootResourceDef);
         ManagementResourceRegistration subsystemRegistration = rootRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subsystem", "foo"), resolver));
         ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("resource", "resourceA"), resolver));
         ManagementResourceRegistration subresourceRegistration = resourceRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subresource", "resourceB"), resolver));

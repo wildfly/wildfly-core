@@ -54,6 +54,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final OperationStepHandler removeHandler;
     private final OperationEntry.Flag addRestartLevel;
     private final OperationEntry.Flag removeRestartLevel;
+    private final boolean runtime;
     private volatile DeprecationData deprecationData;
 
     /**
@@ -77,6 +78,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.addRestartLevel = null;
         this.removeRestartLevel = null;
         this.deprecationData = null;
+        this.runtime = false;
     }
 
     /**
@@ -97,6 +99,20 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * {@link DefaultResourceDescriptionProvider} to describe the resource.
      *
      * @param pathElement         the path. Cannot be {@code null}.
+     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}
+     * @param isRuntime tells if resource is runtime
+     * @throws IllegalArgumentException if any parameter is {@code null}.
+     */
+    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, boolean isRuntime) {
+        this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
+                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
+    }
+
+    /**
+     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
+     * {@link DefaultResourceDescriptionProvider} to describe the resource.
+     *
+     * @param pathElement         the path. Cannot be {@code null}.
      * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
      * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
      *                            Can be {null}
@@ -108,6 +124,25 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
         this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null);
+    }
+
+    /**
+     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
+     * {@link DefaultResourceDescriptionProvider} to describe the resource.
+     *
+     * @param pathElement         the path. Cannot be {@code null}.
+     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
+     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
+     *                            Can be {null}
+     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
+     *                            Can be {null}
+     * @param isRuntime tells is resources is runtime or not
+     * @throws IllegalArgumentException if any parameter is {@code null}
+     */
+    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
+                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler, boolean isRuntime) {
+        this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
+                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
     }
 
     /**
@@ -167,6 +202,27 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
                                     final DeprecationData deprecationData) {
+        this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, deprecationData, false);
+    }
+
+
+    /**
+     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
+     * {@link DefaultResourceDescriptionProvider} to describe the resource.
+     *
+     * @param pathElement         the path. Can be {@code null}.
+     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
+     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
+     *                            Can be {null}
+     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
+     *                            Can be {null}
+     * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
+     * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
+     */
+    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
+                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
+                                    final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
+                                    final DeprecationData deprecationData, final boolean runtime) {
         if (descriptionResolver == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
         }
@@ -180,6 +236,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 ? OperationEntry.Flag.RESTART_ALL_SERVICES
                 : validateRestartLevel("removeRestartLevel", removeRestartLevel);
         this.deprecationData = deprecationData;
+        this.runtime = runtime;
     }
 
     @Override
@@ -261,10 +318,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param handler      operation handler to register
      * @param flags        with flags
      */
-    @SuppressWarnings("deprecation")
     protected void registerAddOperation(final ManagementResourceRegistration registration, final AbstractAddStepHandler handler,
                                         OperationEntry.Flag... flags) {
-        this.registerAddOperation(registration, (OperationStepHandler) handler, flags);
+        registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, new DefaultResourceAddDescriptionProvider(registration, descriptionResolver), getFlagsSet(flags));
     }
 
     @Deprecated
@@ -315,5 +371,10 @@ public class SimpleResourceDefinition implements ResourceDefinition {
 
     protected DeprecationData getDeprecationData(){
         return this.deprecationData;
+    }
+
+    @Override
+    public boolean isRuntime() {
+        return runtime;
     }
 }

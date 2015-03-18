@@ -28,6 +28,16 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
         super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel);
     }
 
+    protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler,
+                                           OperationStepHandler removeHandler, boolean isRuntime) {
+        super(pathElement, descriptionResolver, addHandler, removeHandler, isRuntime);
+    }
+
+    protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler,
+                                           OperationStepHandler removeHandler, OperationEntry.Flag addRestartLevel, OperationEntry.Flag removeRestartLevel, boolean isRuntime) {
+        super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, null, isRuntime);
+    }
+
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {

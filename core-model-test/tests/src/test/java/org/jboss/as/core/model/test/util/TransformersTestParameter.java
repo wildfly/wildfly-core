@@ -62,31 +62,30 @@ public class TransformersTestParameter extends ClassloaderParameter {
 
         List<TransformersTestParameter> data = new ArrayList<TransformersTestParameter>();
         //AS releases
-        if (includeLegacy) {
+        /*if (includeLegacy) {
             data.add(new TransformersTestParameter(ModelVersion.create(1, 2, 0), ModelTestControllerVersion.V7_1_2_FINAL));
             data.add(new TransformersTestParameter(ModelVersion.create(1, 3, 0), ModelTestControllerVersion.V7_1_3_FINAL));
-        }
-        data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.V7_2_0_FINAL));
+            data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.V7_2_0_FINAL));
+        }*/
         data.add(new TransformersTestParameter(ModelVersion.create(2, 0, 0), ModelTestControllerVersion.MASTER));
 
         //EAP releases - these will only get tested if the EAPRepositoryReachableUtil.TEST_TRANSFORMERS_EAP system property is set AND the EAP repostitory is available
         if (EAPRepositoryReachableUtil.isReachable()) {
-            if (includeLegacy) {
+            /*if (includeLegacy) {
                 data.add(new TransformersTestParameter(ModelVersion.create(1, 2, 0), ModelTestControllerVersion.EAP_6_0_0));
                 data.add(new TransformersTestParameter(ModelVersion.create(1, 3, 0), ModelTestControllerVersion.EAP_6_0_1));
-            }
-            data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_0));
-            data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_1));
+                data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_0));
+                data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.EAP_6_1_1));
+            }*/
             data.add(new TransformersTestParameter(ModelVersion.create(1, 5, 0), ModelTestControllerVersion.EAP_6_2_0));
             data.add(new TransformersTestParameter(ModelVersion.create(1, 6, 0), ModelTestControllerVersion.EAP_6_3_0));
-
         }
 
 
-        for (int i = 0 ; i < data.size() ; i++) {
+       /* for (int i = 0 ; i < data.size() ; i++) {
             Object entry = data.get(i);
             System.out.println("Parameter " + i + ": " + entry);
-        }
+        }*/
         return data;
     }
 

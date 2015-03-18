@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller;
 
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,11 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -61,12 +58,6 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition) {
         super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
-        this.processState = processState;
-    }
-    @SuppressWarnings("deprecation")
-    protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                         final DescriptionProvider rootDescriptionProvider) {
-        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
         this.processState = processState;
     }
 

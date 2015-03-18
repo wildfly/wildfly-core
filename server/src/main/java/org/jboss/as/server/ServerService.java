@@ -27,7 +27,6 @@ import static java.security.AccessController.doPrivileged;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
@@ -49,15 +49,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
@@ -154,7 +150,7 @@ public final class ServerService extends AbstractControllerService {
     private final RunningModeControl runningModeControl;
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final AbstractVaultReader vaultReader;
-    private final DelegatingResourceDefinition rootResourceDefinition;
+    private final ServerDelegatingResourceDefinition rootResourceDefinition;
 
     public static final String SERVER_NAME = "server";
 
@@ -164,7 +160,7 @@ public final class ServerService extends AbstractControllerService {
      * @param prepareStep the prepare step to use
      */
     private ServerService(final Bootstrap.Configuration configuration, final ControlledProcessState processState,
-                          final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final DelegatingResourceDefinition rootResourceDefinition,
+                          final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer) {
         super(getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
@@ -220,8 +216,8 @@ public final class ServerService extends AbstractControllerService {
                 .addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
                 .install();
 
-        DelegatingResourceDefinition rootResourceDefinition = new DelegatingResourceDefinition();
-        ServerService service = new ServerService(configuration, processState, null, bootstrapListener, rootResourceDefinition, runningModeControl, vaultReader, auditLogger, authorizer);
+
+        ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(), runningModeControl, vaultReader, auditLogger, authorizer);
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER, service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
@@ -463,6 +459,13 @@ public final class ServerService extends AbstractControllerService {
         }
     }
 
+    static final class ServerDelegatingResourceDefinition extends DelegatingResourceDefinition{
+        @Override
+        public void setDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
+        }
+    }
+
     static final class ServerScheduledExecutorService implements Service<ScheduledExecutorService> {
         private final ThreadFactory threadFactory;
         private ScheduledThreadPoolExecutor scheduledExecutorService;
@@ -503,52 +506,6 @@ public final class ServerService extends AbstractControllerService {
         @Override
         public synchronized ScheduledExecutorService getValue() throws IllegalStateException {
             return scheduledExecutorService;
-        }
-    }
-
-    private static class DelegatingResourceDefinition implements ResourceDefinition {
-        private volatile ResourceDefinition delegate;
-
-        void setDelegate(ResourceDefinition delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerOperations(resourceRegistration);
-        }
-
-        @Override
-        public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerChildren(resourceRegistration);
-        }
-
-        @Override
-        public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerAttributes(resourceRegistration);
-        }
-
-        @Override
-        public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
-            delegate.registerNotifications(resourceRegistration);
-        }
-
-        @Override
-        public PathElement getPathElement() {
-            return delegate.getPathElement();
-        }
-
-        @Override
-        public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-            return delegate.getDescriptionProvider(resourceRegistration);
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            if (delegate == null) {
-                return Collections.emptyList();
-            }
-            return delegate.getAccessConstraints();
         }
     }
 }

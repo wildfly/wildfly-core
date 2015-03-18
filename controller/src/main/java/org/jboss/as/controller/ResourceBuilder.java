@@ -70,6 +70,8 @@ public interface ResourceBuilder {
 
     ResourceBuilder deprecated(ModelVersion since);
 
+    ResourceBuilder setRuntime();
+
     ResourceDefinition build();
 
     class Factory {
