@@ -30,6 +30,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineCompleter;
+import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ArgumentWithValue;
@@ -163,7 +164,7 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
      * @see org.jboss.as.cli.handlers.CommandHandlerWithHelp#doHandle(org.jboss.as.cli.CommandContext)
      */
     @Override
-    protected void doHandle(CommandContext ctx) throws CommandFormatException {
+    protected void doHandle(CommandContext ctx) throws CommandLineException {
 
         final ParsedCommandLine args = ctx.getParsedCommandLine();
         final String action = this.action.getValue(args);

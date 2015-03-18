@@ -183,7 +183,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private final CliConfig config;
     private final ControllerAddressResolver addressResolver;
 
+    /** command registry */
     private final CommandRegistry cmdRegistry = new CommandRegistry();
+    /** loads command handlers from the domain management model extensions */
+    private ExtensionsLoader extLoader = new ExtensionsLoader(cmdRegistry, this);
 
     private Console console;
 
@@ -276,7 +279,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.cmdCompleter = null;
         operationHandler = new OperationRequestHandler();
         initStdIO();
-        initCommands();
+        try {
+            initCommands();
+        } catch (CommandLineException e) {
+            throw new CliInitializationException("Failed to initialize commands", e);
+        }
         config = CliConfigImpl.load(this);
         addressResolver = ControllerAddressResolver.newInstance(config, null);
         resolveParameterValues = config.isResolveParameterValues();
@@ -313,7 +320,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         silent = config.isSilent();
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
         initStdIO();
-        initCommands();
+        try {
+            initCommands();
+        } catch (CommandLineException e) {
+            throw new CliInitializationException("Failed to initialize commands", e);
+        }
 
         initSSLContext();
         initJaasConfig();
@@ -388,7 +399,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         }
     }
 
-    private void initCommands() {
+    private void initCommands() throws CommandLineException {
         cmdRegistry.registerHandler(new PrefixHandler(), "cd", "cn");
         cmdRegistry.registerHandler(new ClearScreenHandler(), "clear", "cls");
         cmdRegistry.registerHandler(new CommandCommandHandler(cmdRegistry), "command");
@@ -477,7 +488,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         registerExtraHandlers();
     }
 
-    private void registerExtraHandlers() {
+    private void registerExtraHandlers() throws CommandLineException {
         ServiceLoader<CommandHandlerProvider> loader = ServiceLoader.load(CommandHandlerProvider.class);
         for (CommandHandlerProvider provider : loader) {
             cmdRegistry.registerHandler(provider.createCommandHandler(this), provider.isTabComplete(), provider.getNames());
@@ -940,6 +951,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
             List<String> nodeTypes = Util.getNodeTypes(newClient, new DefaultOperationRequestAddress());
             domainMode = nodeTypes.contains(Util.SERVER_GROUP);
+
+            try {
+                extLoader.loadHandlers(currentAddress);
+            } catch (CommandLineException e) {
+                error(Util.getMessagesFromThrowable(e));
+            }
         }
     }
 
@@ -1079,6 +1096,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             domainMode = false;
             notifyListeners(CliEvent.DISCONNECTED);
             connInfoBean = null;
+            extLoader.resetHandlers();
         }
         promptConnectPart = null;
     }
