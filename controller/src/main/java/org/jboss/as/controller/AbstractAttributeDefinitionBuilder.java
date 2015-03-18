@@ -44,7 +44,7 @@ import org.jboss.dmr.ModelType;
 @SuppressWarnings("unchecked")
 public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends AbstractAttributeDefinitionBuilder, ATTRIBUTE extends AttributeDefinition> {
 
-    protected final String name;
+    protected String name;
     protected ModelType type;
     protected String xmlName;
     protected boolean allowNull;
@@ -139,6 +139,21 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     public abstract ATTRIBUTE build();
 
     /**
+     * Sets the {@link AttributeDefinition#getName() name} for the attribute, which is only needed
+     * if the attribute was created from an existing {@link SimpleAttributeDefinition} using
+     * {@link SimpleAttributeDefinitionBuilder#create(org.jboss.as.controller.SimpleAttributeDefinition)}
+     * method.
+     *
+     * @param name the attribute's name. {@code null} is not allowed
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setName(String name) {
+        assert name != null;
+        this.name = name;
+        return (BUILDER) this;
+    }
+
+    /**
      * Sets the {@link AttributeDefinition#getXmlName() xml name} for the attribute, which is only needed
      * if the name used for the attribute is different from its ordinary
      * {@link AttributeDefinition#getName() name in the model}. If not set the default value is the name
@@ -154,7 +169,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
 
     /**
      * Sets the {@link AttributeDefinition#getType() type} for the attribute.
-     * @param type the type. {@code null} is not allow
+     * @param type the type. {@code null} is not allowed
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setType(ModelType type) {
