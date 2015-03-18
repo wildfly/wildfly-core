@@ -81,6 +81,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     }
 
     private static final String JBOSS_HOME = "JBOSS_HOME";
+    private static final String JBOSS_HOME_PROPERTY = "jboss.home.dir";
 
     private static final String PATH_SEPARATOR = File.pathSeparator;
     private static final String MODULE_SEPARATOR = ",";
@@ -409,8 +410,13 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         if(modulesDir != null) {
             return modulesDir;
         }
-        final String modulesDirStr = WildFlySecurityManager.getEnvPropertyPrivileged(JBOSS_HOME, null);
+        // First check the environment variable
+        String modulesDirStr = WildFlySecurityManager.getEnvPropertyPrivileged(JBOSS_HOME, null);
         if(modulesDirStr == null) {
+            // Not found, check the system property, this may be set from a client using the CLI API to execute commands
+            modulesDirStr = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOME_PROPERTY, null);
+        }
+        if (modulesDirStr == null) {
             throw new CommandLineException(JBOSS_HOME + " environment variable is not set.");
         }
         modulesDir = new File(modulesDirStr, "modules");
