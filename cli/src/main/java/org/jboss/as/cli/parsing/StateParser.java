@@ -121,6 +121,8 @@ public class StateParser {
         CommandContext cmdCtx;
 
         private final Deque<Character> lookFor = new ArrayDeque<Character>();
+        /** to not meet the same character at the same position multiple times */
+        int lastMetLookForIndex = -1;
         private char deactivated;
 
         String parse() throws CommandFormatException {
@@ -374,10 +376,11 @@ public class StateParser {
 
         @Override
         public boolean meetIfLookedFor(char ch) {
-            if(lookFor.isEmpty() || lookFor.peek() != ch) {
+            if(lastMetLookForIndex == location || lookFor.isEmpty() || lookFor.peek() != ch) {
                 return false;
             }
             lookFor.pop();
+            lastMetLookForIndex = location;
             return true;
         }
 

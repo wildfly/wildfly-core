@@ -253,6 +253,7 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
                 throw new IllegalStateException("child is already initialized");
             }
             this.child = child.getValue();
+            onSeparator = false;
         }
         @Override
         public ModelNode getValue() {
@@ -319,6 +320,7 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
                     this.list = list;
                 }
             }
+            onSeparator = false;
         }
 
         @Override
@@ -375,6 +377,7 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
 
         @Override
         public void addChild(ValueState child) {
+            onSeparator = false;
             if(child.getName() == null) {
                 // the child should be the value
                 if(obj != null) {
