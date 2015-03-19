@@ -73,6 +73,8 @@ public class AccessAuditResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerSubModel(new JsonAuditLogFormatterResourceDefinition(auditLogger));
         resourceRegistration.registerSubModel(new FileAuditLogHandlerResourceDefinition(auditLogger, pathManager));
+        resourceRegistration.registerSubModel(new PeriodicRotatingFileAuditLogHandlerResourceDefinition(auditLogger, pathManager));
+        resourceRegistration.registerSubModel(new SizeRotatingFileAuditLogHandlerResourceDefinition(auditLogger, pathManager));
         resourceRegistration.registerSubModel(new SyslogAuditLogHandlerResourceDefinition(auditLogger, pathManager, environmentReader));
         resourceRegistration.registerSubModel(AuditLogLoggerResourceDefinition.createDefinition(auditLogger));
         if (!environmentReader.isServer()){

@@ -9,7 +9,11 @@
             <handlers>
                <file-handler name="file1" formatter="json-one" max-failure-count="${file.max-failure-count:30}" relative-to="jboss.server.data.dir" path="${file.path:audit-log.log}"/>
                <file-handler name="file2" formatter="json-one" path="${file2.path:audit-log.log}"/>
-               <syslog-handler name="syslog-udp" formatter="json-one" max-failure-count="${udp.max-failure-count:30}" syslog-format="${udp.format:RFC3164}" 
+               <periodic-rotating-file-handler name="periodic-file1" formatter="json-one" max-failure-count="${periodic-file1.max-failure-count:30}" relative-to="jboss.server.data.dir" path="${periodic-file1.path:audit-log.log}" suffix="${periodic-file1.suffix:.yyyy-MM-dd-hh-mm}"/>
+               <periodic-rotating-file-handler name="periodic-file2" formatter="json-one" path="${periodic-file2.path:audit-log.log}" suffix="${periodic-file2.suffix:.yyyy-MM-dd-hh-mm}"/>
+               <size-rotating-file-handler name="size-file1" formatter="json-one" max-failure-count="${size-file1.max-failure-count:30}" relative-to="jboss.server.data.dir" path="${size-file1.path:audit-log.log}" rotate-size="${size-file1.rotate-size:10m}" max-backup-index="${size-file1.max-backup-index:1}"/>
+               <size-rotating-file-handler name="size-file2" formatter="json-one" path="${size-file2.path:audit-log.log}"/>
+               <syslog-handler name="syslog-udp" formatter="json-one" max-failure-count="${udp.max-failure-count:30}" syslog-format="${udp.format:RFC3164}"
                      max-length="${udp.max-length:3064}" truncate="${udp.truncate:true}" facility="${facility:KERNEL}" app-name="${app.name:MyAppName}">
                   <udp host="${udp.host:testhost}" port="${udp.port:1514}"/>
                </syslog-handler>
@@ -41,6 +45,10 @@
                <handlers>
                   <handler name="file1"/>
                   <handler name="file2"/>
+                  <handler name="periodic-file1"/>
+                  <handler name="periodic-file2"/>
+                  <handler name="size-file1"/>
+                  <handler name="size-file2"/>
                   <handler name="syslog-udp"/>
                </handlers>
             </logger>

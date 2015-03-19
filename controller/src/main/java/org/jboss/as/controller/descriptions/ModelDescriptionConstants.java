@@ -235,6 +235,7 @@ public class ModelDescriptionConstants {
     public static final String MASK = "mask";
     public static final String MASTER = "master";
     public static final String MAX = "max";
+    public static final String MAX_BACKUP_INDEX = "max-backup-index";
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";
     public static final String MAX_FAILURE_COUNT = "max-failure-count";
     public static final String MAX_FAILURE_PERCENTAGE = "max-failure-percentage";
@@ -280,6 +281,7 @@ public class ModelDescriptionConstants {
     public static final String OUTCOME = "outcome";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
+    public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
     public static final String PATTERN = "pattern";
     public static final String PERSISTENT = "persistent";
@@ -362,6 +364,7 @@ public class ModelDescriptionConstants {
     public static final String ROLLOUT_PLAN = "rollout-plan";
     public static final String ROLLOUT_PLANS = "rollout-plans";
     public static final String ROLES_FILTER = "roles-filter";
+    public static final String ROTATE_SIZE = "rotate-size";
     public static final String RUNNING_MODE = "running-mode";
     public static final String RUNNING_SERVER = "server";
     public static final String RUNNING_TIME = "running-time";
@@ -393,6 +396,7 @@ public class ModelDescriptionConstants {
     public static final String SERVICES_MISSING_TRANSITIVE_DEPENDENCIES = "services-missing-transitive-dependencies";
     public static final String SERVICE_CONTAINER = "service-container";
     public static final String SINCE = "since";
+    public static final String SIZE_ROTATING_FILE_HANDLER = "size-rotating-file-handler";
     public static final String SOURCE_NETWORK = "source-network";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
@@ -428,6 +432,7 @@ public class ModelDescriptionConstants {
     public static final String SUBDEPLOYMENT = "subdeployment";
     public static final String SUBSYSTEM = "subsystem";
     public static final String SUCCESS = "success";
+    public static final String SUFFIX = "suffix";
     public static final String SUSPEND = "suspend";
     public static final String SUSPEND_SERVERS = "suspend-servers";
     public static final String SUSPEND_STATE = "suspend-state";

@@ -195,6 +195,18 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
         records = readFile(file, 3);
         ops = checkBootRecordHeader(records.get(2), 1, "core", false, false, false);
         checkOpsEqual(op, ops.get(0));
+
+        op = createAddSizeRotatingFileHandlerOperation("test-file", "test-formatter", "fail.log", "10m", 1);
+        executeForFailure(op);
+        records = readFile(file, 4);
+        ops = checkBootRecordHeader(records.get(3), 1, "core", false, false, false);
+        checkOpsEqual(op, ops.get(0));
+
+        op = createAddPeriodicRotatingFileHandlerOperation("test-file", "test-formatter", "fail.log", ".yyyy-MM-dd-hh");
+        executeForFailure(op);
+        records = readFile(file, 5);
+        ops = checkBootRecordHeader(records.get(4), 1, "core", false, false, false);
+        checkOpsEqual(op, ops.get(0));
     }
 
     @Test
