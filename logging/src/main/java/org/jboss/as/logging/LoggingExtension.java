@@ -71,10 +71,6 @@ public class LoggingExtension implements Extension {
 
     static final PathElement LOGGING_PROFILE_PATH = PathElement.pathElement(CommonAttributes.LOGGING_PROFILE);
 
-    /** @deprecated only present for use by an integration test hack */
-    @Deprecated
-    static WildFlyLogContextSelector CONTEXT_SELECTOR = WildFlyLogContextSelector.Factory.create();
-
     static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
     private static final int MANAGEMENT_API_MAJOR_VERSION = 3;
@@ -149,8 +145,6 @@ public class LoggingExtension implements Extension {
         }
         final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.Factory.create();
         LogContext.setLogContextSelector(contextSelector);
-        // Support a testsuite hack
-        CONTEXT_SELECTOR = contextSelector;
 
         // Install STDIO context selector
         StdioContext.setStdioContextSelector(new LogContextStdioContextSelector(StdioContext.getStdioContext()));
