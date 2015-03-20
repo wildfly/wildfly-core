@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment;
 
+import java.util.List;
+
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
@@ -34,14 +36,14 @@ import org.jboss.msc.service.ServiceTarget;
 final class DeploymentPhaseContextImpl extends SimpleAttachable implements DeploymentPhaseContext {
     private final ServiceTarget serviceTarget;
     private final ServiceRegistry serviceRegistry;
-    private final ServiceBuilder<?> nextPhaseBuilder;
+    private final List<DeploymentUnitPhaseDependency> dependencies;
     private final DeploymentUnit deploymentUnitContext;
     private final Phase phase;
 
-    DeploymentPhaseContextImpl(final ServiceTarget serviceTarget, final ServiceRegistry serviceRegistry, final ServiceBuilder<?> nextPhaseBuilder, final DeploymentUnit deploymentUnitContext, final Phase phase) {
+    DeploymentPhaseContextImpl(final ServiceTarget serviceTarget, final ServiceRegistry serviceRegistry, final List<DeploymentUnitPhaseDependency> dependencies, final DeploymentUnit deploymentUnitContext, final Phase phase) {
         this.serviceTarget = serviceTarget;
         this.serviceRegistry = serviceRegistry;
-        this.nextPhaseBuilder = nextPhaseBuilder;
+        this.dependencies = dependencies;
         this.deploymentUnitContext = deploymentUnitContext;
         this.phase = phase;
     }
@@ -73,11 +75,28 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
 
     @Override
     public <T> void addDependency(final ServiceName serviceName, final Class<T> type, final Injector<T> injector) {
-        nextPhaseBuilder.addDependency(serviceName, type, injector);
+        this.dependencies.add(new InjectorDeploymentPhaseDependency<>(serviceName, type, injector));
     }
 
     @Override
     public <T> void addDeploymentDependency(ServiceName serviceName, AttachmentKey<T> attachmentKey) {
         addToAttachmentList(Attachments.NEXT_PHASE_ATTACHABLE_DEPS, new AttachableDependency(attachmentKey, serviceName, true));
+    }
+
+    private static class InjectorDeploymentPhaseDependency<T> implements DeploymentUnitPhaseDependency {
+        private final ServiceName name;
+        private final Class<T> type;
+        private final Injector<T> injector;
+
+        public InjectorDeploymentPhaseDependency(ServiceName name, Class<T> type, Injector<T> injector) {
+            this.name = name;
+            this.type = type;
+            this.injector = injector;
+        }
+
+        @Override
+        public void register(ServiceBuilder<?> builder) {
+            builder.addDependency(this.name, this.type, this.injector);
+        }
     }
 }
