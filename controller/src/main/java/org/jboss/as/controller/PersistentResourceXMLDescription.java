@@ -45,6 +45,7 @@ public class PersistentResourceXMLDescription {
     protected final boolean noAddOperation;
     protected final AdditionalOperationsGenerator additionalOperationsGenerator;
     private boolean flushRequired = true;
+    private boolean childAlreadyRead = false;
     private final Map<String, AttributeParser> attributeParsers;
     private final Map<String, AttributeMarshaller> attributeMarshallers;
     private final boolean useElementsForGroups;
@@ -147,7 +148,9 @@ public class PersistentResourceXMLDescription {
                     parseAttributes(reader, op, attributesByGroup.get(reader.getLocalName()), wildcard);
                     ParseUtils.requireNoContent(reader);
                 } else {
-                    throw ParseUtils.unexpectedElement(reader);
+                    //don't break, as we read all attributes, we set that child was already read so readChildren wont do .nextTag()
+                    childAlreadyRead = true;
+                    return name;
                 }
             }
             flushRequired = false;
@@ -203,26 +206,28 @@ public class PersistentResourceXMLDescription {
             }
         } else {
             Map<String, PersistentResourceXMLDescription> children = getChildrenMap();
-            while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
-                PersistentResourceXMLDescription child = children.get(reader.getLocalName());
-                if (child != null) {
-                    if (child.xmlWrapperElement != null) {
-                        if (reader.getLocalName().equals(child.xmlWrapperElement)) {
-                            if (reader.hasNext() && reader.nextTag() == END_ELEMENT) { return; }
+            if (childAlreadyRead || (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
+                do {
+                    PersistentResourceXMLDescription child = children.get(reader.getLocalName());
+                    if (child != null) {
+                        if (child.xmlWrapperElement != null) {
+                            if (reader.getLocalName().equals(child.xmlWrapperElement)) {
+                                if (reader.hasNext() && reader.nextTag() == END_ELEMENT) { return; }
+                            } else {
+                                throw ParseUtils.unexpectedElement(reader);
+                            }
+                            child.parse(reader, parentAddress, list);
+                            while (reader.nextTag() != END_ELEMENT && !reader.getLocalName().equals(child.xmlWrapperElement)) {
+                                child.parse(reader, parentAddress, list);
+                            }
                         } else {
-                            throw ParseUtils.unexpectedElement(reader);
-                        }
-                        child.parse(reader, parentAddress, list);
-                        while (reader.nextTag() != END_ELEMENT && !reader.getLocalName().equals(child.xmlWrapperElement)) {
                             child.parse(reader, parentAddress, list);
                         }
-                    } else {
-                        child.parse(reader, parentAddress, list);
-                    }
 
-                } else {
-                    throw ParseUtils.unexpectedElement(reader, children.keySet());
-                }
+                    } else {
+                        throw ParseUtils.unexpectedElement(reader, children.keySet());
+                    }
+                } while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT);
             }
         }
     }

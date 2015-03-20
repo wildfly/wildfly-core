@@ -31,9 +31,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +44,6 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamSource;
 
-import com.sun.corba.se.spi.activation.Server;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
@@ -61,6 +60,7 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.staxmapper.FormattingXMLStreamWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
@@ -95,14 +95,7 @@ public class PersistentResourceXMLParserTestCase {
     }
 
     public static XMLExtendedStreamWriter createXMLStreamWriter(XMLStreamWriter writer) throws Exception {
-        // Use reflection to access package protected class FormattingXMLStreamWriter
-        // TODO: at some point the staxmapper API could be enhanced to make this unnecessary
-        Class clazz = Class.forName("org.jboss.staxmapper.FormattingXMLStreamWriter");
-        Object[] args = new Object[1];
-        args[0] = writer;
-        Constructor ctr = clazz.getConstructor(XMLStreamWriter.class);
-        ctr.setAccessible(true);
-        return (XMLExtendedStreamWriter) ctr.newInstance(args);
+        return new FormattingXMLStreamWriter(writer);
     }
 
     @Test
@@ -210,7 +203,7 @@ public class PersistentResourceXMLParserTestCase {
         List<ModelNode> operations = new ArrayList<>();
         mapper.parseDocument(operations, reader);
 
-        Assert.assertEquals(2, operations.size());
+        Assert.assertEquals(3, operations.size());
         ModelNode subsystem = opsToModel(operations);
 
         StringWriter stringWriter = new StringWriter();
@@ -229,11 +222,19 @@ public class PersistentResourceXMLParserTestCase {
 
             resource.remove("operation");
             PathAddress address = PathAddress.pathAddress(resource.remove("address"));
-            subsystem.get(address.getLastElement().getKeyValuePair()).set(resource);
+            subsystem.get(getAddress(address)).set(resource);
         }
-
-        //System.out.println("subsystem = " + subsystem);
         return subsystem;
+    }
+
+    private String[] getAddress(PathAddress address) {
+        String[] res = new String[(address.size()-1) * 2];
+        for (int i = 0; i < address.size()-1; i++) {
+            PathElement el = address.getElement(i+1);
+            res[i * 2] = el.getKey();
+            res[(i* 2) + 1] = el.getValue();
+        }
+        return res;
     }
 
     public static String normalizeXML(String xml) throws Exception {
@@ -358,6 +359,11 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(SECURITY_ENABLED);
                 return attributes;
             }
+
+            @Override
+            protected List<? extends PersistentResourceDefinition> getChildren() {
+                return Arrays.asList(BUFFER_CACHE_INSTANCE);
+            }
         };
 
 
@@ -443,6 +449,11 @@ public class PersistentResourceXMLParserTestCase {
                     .addChild(
                             builder(SERVER_INSTANCE)
                                     .addAttributes(SECURITY_ENABLED, STATISTICS_ENABLED)
+                                    .addChild(
+                                            builder(BUFFER_CACHE_INSTANCE)
+                                                    .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
+                                                    .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+                                    )
                     )
                     .build();
         }
