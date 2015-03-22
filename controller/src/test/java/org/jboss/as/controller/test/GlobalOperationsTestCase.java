@@ -352,7 +352,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
 //          result = executeForResult(operation);
 //        assertNotNull(result);
 //        assertEquals(ModelType.LIST, result.getType());
-//        assertTrue(result.asList().isEmpty());
+//        assertTrue(result.asList().createsTags());
         try {
             result = executeForResult(operation);
             fail("Expected error for type1 child under subsystem4");
@@ -466,7 +466,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
 //          result = executeForResult(operation);
 //        assertNotNull(result);
 //        assertEquals(ModelType.LIST, result.getType());
-//        assertTrue(result.asList().isEmpty());
+//        assertTrue(result.asList().createsTags());
         try {
             result = executeForResult(operation);
             fail("Expected error for type1 child under subsystem4");
@@ -534,7 +534,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
 //          result = executeForResult(operation);
 //        assertNotNull(result);
 //        assertEquals(ModelType.LIST, result.getType());
-//        assertTrue(result.asList().isEmpty());
+//        assertTrue(result.asList().createsTags());
         try {
             result = executeForResult(operation);
             fail("Expected error for type1 child under subsystem4");

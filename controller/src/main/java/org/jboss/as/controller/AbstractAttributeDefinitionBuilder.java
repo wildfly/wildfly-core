@@ -40,6 +40,7 @@ import org.jboss.dmr.ModelType;
  * @param <ATTRIBUTE> the type of {@link org.jboss.as.controller.AttributeDefinition} produced by the {@link #build()} method
  *
  * @author Tomaz Cerar
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends AbstractAttributeDefinitionBuilder, ATTRIBUTE extends AttributeDefinition> {
@@ -66,7 +67,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected AccessConstraintDefinition[] accessConstraints;
     protected Boolean nullSignificant;
     protected AttributeParser parser;
-    protected String attributeGroup;
+    protected AttributeGroup attributeGroup;
 
     /**
      * Creates a builder for an attribute with the give name and type. Equivalent to
@@ -522,12 +523,17 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     /**
      * Sets the name of the attribute group with which this attribute is associated.
      *
-     * @param attributeGroup the attribute group name. Cannot be an empty string but can be {@code null}
-     *                       if the attribute is not associated with a group.
+     * @param attributeGroupComponents the components that constitute attribute group name. Can be {@code null} if the attribute
+     *        is not associated with a group. Non of components can be {@code null} or empty string.
      * @return a builder that can be used to continue building the attribute definition
      */
-    public BUILDER setAttributeGroup(String attributeGroup) {
-        assert attributeGroup == null || attributeGroup.length() > 0;
+    public BUILDER setAttributeGroup(String... attributeGroupComponents) {
+        final AttributeGroup attributeGroup;
+        if (attributeGroupComponents == null) {
+            attributeGroup = null;
+        } else {
+            attributeGroup = new AttributeGroup(attributeGroupComponents);
+        }
         this.attributeGroup = attributeGroup;
         return (BUILDER) this;
     }
@@ -664,7 +670,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return parser;
     }
 
-    public String getAttributeGroup() {
+    public AttributeGroup getAttributeGroup() {
         return attributeGroup;
     }
 

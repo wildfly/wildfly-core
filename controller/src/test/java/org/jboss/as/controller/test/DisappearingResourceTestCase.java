@@ -277,7 +277,7 @@ public class DisappearingResourceTestCase extends AbstractControllerTestBase {
         attributeOutLatch.countDown();
 
         ModelNode op = Util.createOperation(READ_ATTRIBUTE_GROUP_OPERATION, CHILD_B_ADDRESS);
-        op.get(NAME).set(GROUP);
+        op.get(NAME).add(GROUP);
         ModelNode rsp = executeCheckForFailure(op);
         //noinspection ThrowableResultOfMethodCallIgnored
         assertTrue(rsp.toString(), rsp.get(FAILURE_DESCRIPTION).asString().contains(ControllerLogger.MGMT_OP_LOGGER.managementResourceNotFound(CHILD_B_ADDRESS).getMessage()));
@@ -289,7 +289,7 @@ public class DisappearingResourceTestCase extends AbstractControllerTestBase {
         attributeOutLatch.countDown();
 
         ModelNode op = Util.createOperation(READ_ATTRIBUTE_GROUP_OPERATION, CHILD_WILDCARD_ADDRESS);
-        op.get(NAME).set(GROUP);
+        op.get(NAME).add(GROUP);
         op.get(INCLUDE_RUNTIME).set(true);
         ModelNode result = executeForResult(op);
         assertEquals(result.toString(), ModelType.LIST, result.getType());
@@ -301,7 +301,7 @@ public class DisappearingResourceTestCase extends AbstractControllerTestBase {
         attributeOutLatch.countDown();
 
         ModelNode op = Util.createOperation(READ_ATTRIBUTE_GROUP_OPERATION, CHILD_WILDCARD_ADDRESS);
-        op.get(NAME).set(GROUP);
+        op.get(NAME).add(GROUP);
         op.get(INCLUDE_RUNTIME).set(true);
         ModelNode result = executeForResult(op);
         assertEquals(result.toString(), ModelType.LIST, result.getType());

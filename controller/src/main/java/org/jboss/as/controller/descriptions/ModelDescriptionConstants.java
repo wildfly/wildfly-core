@@ -171,6 +171,7 @@ public class ModelDescriptionConstants {
     public static final String FULL_REPLACE_DEPLOYMENT = "full-replace-deployment";
     public static final String GRACEFUL_SHUTDOWN_TIMEOUT = "graceful-shutdown-timeout";
     public static final String GROUP = "group";
+    public static final String GROUP_ELEMENT = "group-element";
     public static final String GROUP_ATTRIBUTE = "group-attribute";
     public static final String GROUP_DN_ATTRIBUTE = "group-dn-attribute";
     public static final String GROUP_NAME_ATTRIBUTE = "group-name-attribute";

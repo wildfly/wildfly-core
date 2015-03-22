@@ -85,7 +85,7 @@ public class ReadAttributeGroupTestCase extends AbstractControllerTestBase {
     @Test
     public void testSimpleAttributeGroup() throws Exception {
         ModelNode operation = createOperation(READ_ATTRIBUTE_GROUP_OPERATION, "subsystem", "basicSubsystem");
-        operation.get(NAME).set("group1");
+        operation.get(NAME).add("group1");
 
         ModelNode result = executeForResult(operation);
         assertNotNull(result);
@@ -100,7 +100,7 @@ public class ReadAttributeGroupTestCase extends AbstractControllerTestBase {
     @Test
     public void testRuntimeAttributeGroup() throws Exception {
         ModelNode operation = createOperation(READ_ATTRIBUTE_GROUP_OPERATION, "subsystem", "basicSubsystem");
-        operation.get(NAME).set("group1");
+        operation.get(NAME).add("group1");
         operation.get(INCLUDE_RUNTIME).set(true);
 
         ModelNode result = executeForResult(operation);
@@ -116,7 +116,7 @@ public class ReadAttributeGroupTestCase extends AbstractControllerTestBase {
     @Test
     public void testResolveAttributeGroup() throws Exception {
         ModelNode operation = createOperation(READ_ATTRIBUTE_GROUP_OPERATION, "subsystem", "basicSubsystem");
-        operation.get(NAME).set("group1");
+        operation.get(NAME).add("group1");
         operation.get(RESOLVE_EXPRESSIONS).set(true);
 
         ModelNode result = executeForResult(operation);
@@ -132,7 +132,7 @@ public class ReadAttributeGroupTestCase extends AbstractControllerTestBase {
      @Test
     public void testAliasAttributeGroup() throws Exception {
         ModelNode operation = createOperation(READ_ATTRIBUTE_GROUP_OPERATION, "subsystem", "basicSubsystem");
-        operation.get(NAME).set("group2");
+        operation.get(NAME).add("group2");
         operation.get(INCLUDE_ALIASES).set(true);
 
         ModelNode result = executeForResult(operation);

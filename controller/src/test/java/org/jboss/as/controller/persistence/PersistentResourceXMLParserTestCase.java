@@ -47,6 +47,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
+import org.jboss.as.controller.NestGroupedAttributesXMLDescription;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
@@ -75,6 +76,7 @@ import org.w3c.dom.ls.LSSerializer;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2015 Red Hat inc.
  * @author Tomaz Cerar
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 public class PersistentResourceXMLParserTestCase {
 
@@ -113,12 +115,21 @@ public class PersistentResourceXMLParserTestCase {
 
         ModelNode subsystem = opsToModel(operations);
 
-        assertEquals("bar", subsystem.get("resource", "foo", "cluster-attr1").asString());
-        assertEquals("baz", subsystem.get("resource", "foo", "cluster-attr2").asString());
-        assertEquals("alice", subsystem.get("resource", "foo", "security-my-attr1").asString());
-        assertEquals("bob", subsystem.get("resource", "foo", "security-my-attr2").asString());
-        assertEquals("bar2", subsystem.get("resource", "foo2", "cluster-attr1").asString());
-        assertEquals("baz2", subsystem.get("resource", "foo2", "cluster-attr2").asString());
+        assertEquals("yada", subsystem.get("resource", "resource1", "root-attr1").asString());
+        assertEquals("bar", subsystem.get("resource", "resource1", "base1-attr1").asString());
+        assertEquals("baz", subsystem.get("resource", "resource1", "base1-attr2").asString());
+        assertEquals("foo", subsystem.get("resource", "resource1", "base1-nested1-attr1").asString());
+        assertEquals("bob", subsystem.get("resource", "resource1", "base1-nested1-attr2").asString());
+        assertEquals("apple", subsystem.get("resource", "resource1", "base1-nested2-attr1").asString());
+        assertEquals("dog", subsystem.get("resource", "resource1", "base1-nested2-attr2").asString());
+        assertEquals("abc", subsystem.get("resource", "resource1", "base2-attr1").asString());
+        assertEquals("bah", subsystem.get("resource", "resource1", "base2-nested1-attr1").asString());
+
+        assertEquals("yada2", subsystem.get("resource", "resource2", "root-attr1").asString());
+        assertEquals("baz2", subsystem.get("resource", "resource2", "base1-attr2").asString());
+        assertEquals("bar2", subsystem.get("resource", "resource2", "base1-attr1").asString());
+        assertEquals("foo2", subsystem.get("resource", "resource2", "base1-nested1-attr1").asString());
+        assertEquals("bob2", subsystem.get("resource", "resource2", "base1-nested1-attr2").asString());
 
         StringWriter stringWriter = new StringWriter();
         XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance()
@@ -145,12 +156,21 @@ public class PersistentResourceXMLParserTestCase {
 
         ModelNode subsystem = opsToModel(operations);
 
-        assertEquals("bar", subsystem.get("resource", "foo", "cluster-attr1").asString());
-        assertEquals("baz", subsystem.get("resource", "foo", "cluster-attr2").asString());
-        assertEquals("alice", subsystem.get("resource", "foo", "security-my-attr1").asString());
-        assertEquals("bob", subsystem.get("resource", "foo", "security-my-attr2").asString());
-        assertEquals("bar2", subsystem.get("resource", "foo2", "cluster-attr1").asString());
-        assertEquals("baz2", subsystem.get("resource", "foo2", "cluster-attr2").asString());
+        assertEquals("yada", subsystem.get("resource", "resource1", "root-attr1").asString());
+        assertEquals("bar", subsystem.get("resource", "resource1", "base1-attr1").asString());
+        assertEquals("baz", subsystem.get("resource", "resource1", "base1-attr2").asString());
+        assertEquals("foo", subsystem.get("resource", "resource1", "base1-nested1-attr1").asString());
+        assertEquals("bob", subsystem.get("resource", "resource1", "base1-nested1-attr2").asString());
+        assertEquals("apple", subsystem.get("resource", "resource1", "base1-nested2-attr1").asString());
+        assertEquals("dog", subsystem.get("resource", "resource1", "base1-nested2-attr2").asString());
+        assertEquals("abc", subsystem.get("resource", "resource1", "base2-attr1").asString());
+        assertEquals("bah", subsystem.get("resource", "resource1", "base2-nested1-attr1").asString());
+
+        assertEquals("yada2", subsystem.get("resource", "resource2", "root-attr1").asString());
+        assertEquals("baz2", subsystem.get("resource", "resource2", "base1-attr2").asString());
+        assertEquals("bar2", subsystem.get("resource", "resource2", "base1-attr1").asString());
+        assertEquals("foo2", subsystem.get("resource", "resource2", "base1-nested1-attr1").asString());
+        assertEquals("bob2", subsystem.get("resource", "resource2", "base1-nested1-attr2").asString());
 
         StringWriter stringWriter = new StringWriter();
         XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance()
@@ -263,26 +283,52 @@ public class PersistentResourceXMLParserTestCase {
         protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "foo");
 
 
-        static final AttributeDefinition clusterAttr1 = create("cluster-attr1", ModelType.STRING)
-                .setAttributeGroup("cluster")
+        static final AttributeDefinition rootAttr1 = create("root-attr1", ModelType.STRING)
                 .setXmlName("attr1")
                 .build();
-        static final AttributeDefinition clusterAttr2 = create("cluster-attr2", ModelType.STRING)
-                .setAttributeGroup("cluster")
+
+        static final AttributeDefinition rootAttr2 = create("root-attr2", ModelType.STRING)
                 .setXmlName("attr2")
                 .build();
 
-        static final AttributeDefinition securityAttr1 = create("security-my-attr1", ModelType.STRING)
-                .setAttributeGroup("security")
-                .setXmlName("my-attr1")
+        static final AttributeDefinition base1Attr1 = create("base1-attr1", ModelType.STRING)
+                .setAttributeGroup("base1")
+                .setXmlName("attr1")
                 .build();
-        static final AttributeDefinition securityAttr2 = create("security-my-attr2", ModelType.STRING)
-                .setAttributeGroup("security")
-                .setXmlName("my-attr2")
+        static final AttributeDefinition base1Attr2 = create("base1-attr2", ModelType.STRING)
+                .setAttributeGroup("base1")
+                .setXmlName("attr2")
                 .build();
-        static final AttributeDefinition nonGroupAttr1 = create("non-group-attr", ModelType.STRING)
-                .setXmlName("no-attr1")
+
+        static final AttributeDefinition base1Nested1Attr1 = create("base1-nested1-attr1", ModelType.STRING)
+                .setAttributeGroup("base1","nested1")
+                .setXmlName("attr1")
                 .build();
+        static final AttributeDefinition base1Nested1Attr2 = create("base1-nested1-attr2", ModelType.STRING)
+                .setAttributeGroup("base1","nested1")
+                .setXmlName("attr2")
+                .build();
+
+        static final AttributeDefinition base1Nested2Attr1 = create("base1-nested2-attr1", ModelType.STRING)
+                .setAttributeGroup("base1","nested2")
+                .setXmlName("attr1")
+                .build();
+        static final AttributeDefinition base1Nested2Attr2 = create("base1-nested2-attr2", ModelType.STRING)
+                .setAttributeGroup("base1","nested2")
+                .setXmlName("attr2")
+                .build();
+
+        static final AttributeDefinition base2Attr1 = create("base2-attr1", ModelType.STRING)
+                .setAttributeGroup("base2")
+                .setXmlName("attr1")
+                .build();
+
+        static final AttributeDefinition base2Nested1Attr1 = create("base2-nested1-attr1", ModelType.STRING)
+                .setAttributeGroup("base2","nested1")
+                .setXmlName("attr1")
+                .build();
+
+
         static final StringListAttributeDefinition ALIAS = new StringListAttributeDefinition.Builder("alias")
                 .setAllowNull(true)
                 .setElementValidator(new StringLengthValidator(1))
@@ -328,11 +374,16 @@ public class PersistentResourceXMLParserTestCase {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
-                attributes.add(clusterAttr1);
-                attributes.add(clusterAttr1);
-                attributes.add(securityAttr1);
-                attributes.add(securityAttr2);
-                attributes.add(nonGroupAttr1);
+                attributes.add(rootAttr1);
+                attributes.add(rootAttr2);
+                attributes.add(base1Attr1);
+                attributes.add(base1Attr2);
+                attributes.add(base1Nested1Attr1);
+                attributes.add(base1Nested1Attr2);
+                attributes.add(base1Nested2Attr1);
+                attributes.add(base1Nested2Attr2);
+                attributes.add(base2Attr1);
+                attributes.add(base2Nested1Attr1);
                 attributes.add(ALIAS);
                 return attributes;
             }
@@ -391,14 +442,16 @@ public class PersistentResourceXMLParserTestCase {
                             builder(RESOURCE_INSTANCE)
                                     .setXmlWrapperElement("resources")
                                     .addAttributes(
-                                            // cluster group
-                                            clusterAttr1,
-                                            clusterAttr2,
-                                            // security group
-                                            securityAttr1,
-                                            securityAttr2,
-                                            //no group element
-                                            nonGroupAttr1,
+                                            rootAttr1,
+                                            rootAttr2,
+                                            base1Attr1,
+                                            base1Attr2,
+                                            base1Nested1Attr1,
+                                            base1Nested1Attr2,
+                                            base1Nested2Attr1,
+                                            base1Nested2Attr2,
+                                            base2Attr1,
+                                            base2Nested1Attr1,
                                             ALIAS
                                     )
                     )
@@ -420,14 +473,16 @@ public class PersistentResourceXMLParserTestCase {
                     .addChild(
                             builder(RESOURCE_INSTANCE)
                                     .addAttributes(
-                                            // cluster group
-                                            clusterAttr1,
-                                            clusterAttr2,
-                                            // security group
-                                            securityAttr1,
-                                            securityAttr2,
-                                            //no group element
-                                            nonGroupAttr1,
+                                            rootAttr1,
+                                            rootAttr2,
+                                            base1Attr1,
+                                            base1Attr2,
+                                            base1Nested1Attr1,
+                                            base1Nested1Attr2,
+                                            base1Nested2Attr1,
+                                            base1Nested2Attr2,
+                                            base2Attr1,
+                                            base2Nested1Attr1,
                                             ALIAS
                                     )
                     )
