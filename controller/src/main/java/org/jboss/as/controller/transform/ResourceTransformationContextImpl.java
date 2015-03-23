@@ -142,23 +142,6 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         return copy;
     }
 
-    public Resource createResource(final PathAddress element) {
-        final PathAddress absoluteAddress = this.current.append(element);
-        final PathAddress readAddress = this.read.append(element);
-        final Resource resource = Resource.Factory.create();
-        addTransformedRecursiveResourceFromRoot(absoluteAddress, readAddress, resource);
-        return resource;
-    }
-
-    public Resource createResource(final PathAddress element, Resource copy) {
-        final PathAddress absoluteAddress = this.current.append(element);
-        final PathAddress readAddress = this.read.append(element);
-        final Resource resource = Resource.Factory.create();
-        resource.writeModel(copy.getModel());
-        addTransformedRecursiveResourceFromRoot(absoluteAddress, readAddress, resource);
-        return resource;
-    }
-
     @Override
     public ResourceTransformationContext addTransformedResource(PathAddress address, Resource toAdd) {
         final PathAddress absoluteAddress = this.current.append(address);
@@ -171,11 +154,14 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         return addTransformedResourceFromRoot(absoluteAddress, absoluteAddress, toAdd);
     }
 
-    public ResourceTransformationContext addTransformedResourceFromRoot(PathAddress absoluteAddress, PathAddress read, Resource toAdd) {
+    private ResourceTransformationContext addTransformedResourceFromRoot(PathAddress absoluteAddress, PathAddress read, Resource toAdd) {
         // Only keep the mode, drop all children
-        final Resource copy = Resource.Factory.create();
+        final Resource copy;
         if (toAdd != null) {
+            copy = Resource.Factory.create(false, toAdd.getOrderedChildTypes());
             copy.writeModel(toAdd.getModel());
+        } else {
+            copy = Resource.Factory.create();
         }
         return addTransformedRecursiveResourceFromRoot(absoluteAddress, read, copy);
     }
@@ -189,6 +175,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
 
     private ResourceTransformationContext addTransformedRecursiveResourceFromRoot(final PathAddress absoluteAddress, final PathAddress read, final Resource toAdd) {
         Resource model = this.root;
+        Resource parent = null;
         if (absoluteAddress.size() > 0) {
             final Iterator<PathElement> i = absoluteAddress.iterator();
             while (i.hasNext()) {
@@ -200,8 +187,20 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
                     if (model.hasChild(element)) {
                         throw ControllerLogger.ROOT_LOGGER.duplicateResourceAddress(absoluteAddress);
                     } else {
+                        parent = model;
                         model.registerChild(element, toAdd);
                         model = toAdd;
+                        if (read.size() > 0) {
+                            //We might be able to deal with this better in the future, but for now
+                            //throw an error if the address was renamed and it was an ordered child type.
+                            Set<String> parentOrderedChildren = parent.getOrderedChildTypes();
+                            String readType = read.getLastElement().getKey();
+                            if (parentOrderedChildren.contains(readType)) {
+                                if (absoluteAddress.size() == 0 || !absoluteAddress.getLastElement().getKey().equals(readType)) {
+                                    throw ControllerLogger.ROOT_LOGGER.orderedChildTypeRenamed(read, absoluteAddress, readType, parentOrderedChildren);
+                                }
+                            }
+                        }
                     }
                 } else {
                     model = model.getChild(element);

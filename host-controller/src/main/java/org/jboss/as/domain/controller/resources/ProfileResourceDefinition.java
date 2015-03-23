@@ -46,7 +46,7 @@ import org.jboss.dmr.ModelType;
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-class ProfileResourceDefinition extends SimpleResourceDefinition {
+public class ProfileResourceDefinition extends SimpleResourceDefinition {
 
     private static OperationDefinition DESCRIBE = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.DESCRIBE, DomainResolver.getResolver(PROFILE, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)

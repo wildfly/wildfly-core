@@ -177,6 +177,15 @@ public class LoggingResource implements Resource {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        final String type = address.getKey();
+        if (LOG_FILE.equals(type)) {
+            throw LoggingLogger.ROOT_LOGGER.cannotRegisterResourceOfType(type);
+        }
+        delegate.registerChild(address, index, resource);
+    }
+
+    @Override
     public Resource removeChild(final PathElement address) {
         final String type = address.getKey();
         if (LOG_FILE.equals(type)) {
@@ -196,6 +205,11 @@ public class LoggingResource implements Resource {
     }
 
     @Override
+    public Set<String> getOrderedChildTypes() {
+        return Collections.emptySet();
+    }
+
+    @Override
     public Resource clone() {
         return new LoggingResource(delegate.clone(), pathManager);
     }
@@ -203,6 +217,7 @@ public class LoggingResource implements Resource {
     private boolean hasReadableFile(final String fileName) {
         return getChildrenNames(LOG_FILE).contains(fileName);
     }
+
 
     /**
      * Finds all the files in the {@code jboss.server.log.dir} that are defined on a known file handler.

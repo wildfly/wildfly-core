@@ -224,6 +224,14 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    public void addResource(PathAddress address, int index, Resource toAdd) {
+        acquireControllerLock();
+        PathAddress fullAddress = activeStep.address.append(address);
+        primaryContext.addResource(fullAddress, index, toAdd);
+    }
+
+
+    @Override
     public Resource readResource(PathAddress address) {
         return readResource(address, true);
     }

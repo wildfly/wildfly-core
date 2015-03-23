@@ -61,6 +61,10 @@ public class ReadMasterDomainModelUtil {
 
     public static final String DOMAIN_RESOURCE_MODEL = "domain-resource-model";
 
+    public static final String DOMAIN_RESOURCE_PROPERTIES = "domain-resource-properties";
+
+    public static final String ORDERED_CHILD_TYPES_PROPERTY = "ordered-child-types";
+
     private final Set<PathElement> newRootResources = new HashSet<>();
 
     private volatile List<ModelNode> describedResources;
@@ -123,8 +127,15 @@ public class ReadMasterDomainModelUtil {
             newRootResources.add(base.getLastElement());
         }
         final ModelNode description = new ModelNode();
-        description.get(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_ADDRESS).set(base.toModelNode());
-        description.get(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_MODEL).set(resource.getModel());
+        description.get(DOMAIN_RESOURCE_ADDRESS).set(base.toModelNode());
+        description.get(DOMAIN_RESOURCE_MODEL).set(resource.getModel());
+        Set<String> orderedChildren = resource.getOrderedChildTypes();
+        if (orderedChildren.size() > 0) {
+            ModelNode orderedChildTypes = description.get(DOMAIN_RESOURCE_PROPERTIES, ORDERED_CHILD_TYPES_PROPERTY);
+            for (String type : orderedChildren) {
+                orderedChildTypes.add(type);
+            }
+        }
         nodes.add(description);
         for (final String childType : resource.getChildTypes()) {
             for (final Resource.ResourceEntry entry : resource.getChildren(childType)) {
@@ -145,7 +156,7 @@ public class ReadMasterDomainModelUtil {
         final Resource root = Resource.Factory.create();
         for (ModelNode model : result.asList()) {
 
-            final PathAddress resourceAddress = PathAddress.pathAddress(model.require(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_ADDRESS));
+            final PathAddress resourceAddress = PathAddress.pathAddress(model.require(DOMAIN_RESOURCE_ADDRESS));
 
             if (resourceAddress.size() == 1) {
                 final PathElement element = resourceAddress.getElement(0);
@@ -165,13 +176,32 @@ public class ReadMasterDomainModelUtil {
                 if (resource.hasChild(e)) {
                     resource = resource.getChild(e);
                 } else {
-                    final Resource nr = Resource.Factory.create();
+                    /*
+                    {
+                        "domain-resource-address" => [
+                            ("profile" => "test"),
+                            ("subsystem" => "test")
+                        ],
+                        "domain-resource-model" => {},
+                        "domain-resource-properties" => {"ordered-child-types" => ["ordered-child"]}
+                    }*/
+                    final Resource nr;
+                    if (model.hasDefined(DOMAIN_RESOURCE_PROPERTIES, ORDERED_CHILD_TYPES_PROPERTY)) {
+                        List<ModelNode> list = model.get(DOMAIN_RESOURCE_PROPERTIES, ORDERED_CHILD_TYPES_PROPERTY).asList();
+                        Set<String> orderedChildTypes = new HashSet<String>(list.size());
+                        for (ModelNode type : list) {
+                            orderedChildTypes.add(type.asString());
+                        }
+                        nr = Resource.Factory.create(false, orderedChildTypes);
+                    } else {
+                        nr = Resource.Factory.create();
+                    }
                     resource.registerChild(e, nr);
                     resource = nr;
                 }
 
                 if (!i.hasNext()) {
-                    resource.getModel().set(model.require(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_MODEL));
+                    resource.getModel().set(model.require(DOMAIN_RESOURCE_MODEL));
                 }
             }
         }
@@ -189,7 +219,7 @@ public class ReadMasterDomainModelUtil {
     public static RequiredConfigurationHolder populateHostResolutionContext(final HostInfo hostInfo, final Resource root, final ExtensionRegistry extensionRegistry) {
         final RequiredConfigurationHolder rc = new RequiredConfigurationHolder();
         for (IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo info : hostInfo.getServerConfigInfos()) {
-            ReadMasterDomainModelUtil.processServerConfig(root, rc, info, extensionRegistry);
+            processServerConfig(root, rc, info, extensionRegistry);
         }
         return rc;
     }

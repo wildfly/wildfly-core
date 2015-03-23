@@ -461,16 +461,29 @@ public interface OperationContext extends ExpressionResolver {
     Resource createResource(PathAddress address) throws UnsupportedOperationException;
 
     /**
-     * Add a new resource, relative to the executed operation address.  Since only one operation
+     * Add a new resource, at the executed operation address.  Since only one operation
      * may write at a time, this operation may block until other writing operations have completed.
      *
      * @param address the (possibly empty) address where the resource should be added. Address is relative to the
      *                address of the operation being executed
      * @param toAdd the new resource
-     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws IllegalStateException if a resource already exists at the given address, or if the resource does not support ordered childred
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     void addResource(PathAddress address, Resource toAdd);
+
+    /**
+     * Add a new resource, at to the executed operation address.  Since only one operation
+     * may write at a time, this operation may block until other writing operations have completed.
+     *
+     * @param address the (possibly empty) address where the resource should be added. Address is relative to the
+     *                address of the operation being executed
+     * @param index the index of the resource to be created in the parent resources children of this type
+     * @param toAdd the new resource
+     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws UnsupportedOperationException if the calling operation is not a model operation
+     */
+    void addResource(PathAddress address, int index, Resource toAdd);
 
     /**
      * Get the resource for read only operations, relative to the executed operation address. Reads never block.

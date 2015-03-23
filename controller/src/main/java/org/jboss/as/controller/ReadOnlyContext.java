@@ -205,6 +205,12 @@ class ReadOnlyContext extends AbstractOperationContext {
         throw readOnlyContext();
     }
 
+    @Override
+    public void addResource(PathAddress address, int index, Resource toAdd) {
+        throw readOnlyContext();
+    }
+
+
     public Resource readResource(final PathAddress requestAddress) {
         return readResource(requestAddress, true);
     }

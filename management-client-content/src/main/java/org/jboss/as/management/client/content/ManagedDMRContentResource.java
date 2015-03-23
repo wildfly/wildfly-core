@@ -140,6 +140,11 @@ public class ManagedDMRContentResource implements Resource.ResourceEntry {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw ControllerLogger.ROOT_LOGGER.immutableResource();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         return null;
     }
@@ -167,5 +172,10 @@ public class ManagedDMRContentResource implements Resource.ResourceEntry {
     @Override
     public PathElement getPathElement() {
         return this.pathElement;
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return Collections.emptySet();
     }
 }

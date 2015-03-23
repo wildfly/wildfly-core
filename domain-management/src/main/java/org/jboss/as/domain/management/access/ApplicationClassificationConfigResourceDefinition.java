@@ -235,6 +235,5 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
                             core, core? null : configType, getPathElement().getValue());
             return registry.getAccessConstraintUtilizations(key);
         }
-
     }
 }

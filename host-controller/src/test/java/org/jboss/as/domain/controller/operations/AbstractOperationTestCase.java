@@ -57,7 +57,6 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -333,7 +332,7 @@ public abstract class AbstractOperationTestCase {
         }
 
         public void stepCompleted() {
-            
+
         }
 
         public ModelNode getFailureDescription() {
@@ -470,6 +469,10 @@ public abstract class AbstractOperationTestCase {
                     }
                 }
             }
+        }
+
+        public void addResource(PathAddress address, int index, Resource toAdd) {
+            throw new UnsupportedOperationException();
         }
 
         public Resource readResource(PathAddress address) {

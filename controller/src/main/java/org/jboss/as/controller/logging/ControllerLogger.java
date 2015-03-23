@@ -3326,4 +3326,9 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 396, value = "Resource %s is discarded on the target host %s")
     String discardedResourceTransformation(PathAddress address, String host);
 
+    @Message(id = 397, value = "Indexed child resources can only be registered if the parent resource supports ordered children. The parent of '%s' is not indexed")
+    IllegalStateException indexedChildResourceRegistrationNotAvailable(PathElement element);
+
+    @Message(id = 398, value = "An attempt was made to rename the resource found at %s to %s. However, '%s' is one of the resource types defined to be ordered on the parent resource %s")
+    OperationFailedRuntimeException orderedChildTypeRenamed(PathAddress read, PathAddress transformed, String type, Set<String> parentOrderedChildren);
 }

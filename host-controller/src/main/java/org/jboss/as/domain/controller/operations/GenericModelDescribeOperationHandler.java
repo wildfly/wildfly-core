@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -124,6 +125,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                         final ModelNode includeResult = includeRsp.get(RESULT);
                         if (includeResult.isDefined()) {
                             for (ModelNode op : includeResult.asList()) {
+                                addOrderedChildTypeInfo(resource, op);
                                 result.add(op);
                             }
                         }
@@ -131,6 +133,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                 }
                 if (!failed) {
                     for (final ModelNode childRsp : results.asList()) {
+                        addOrderedChildTypeInfo(resource, childRsp);
                         result.add(childRsp);
                     }
                     context.getResult().set(result);
@@ -222,6 +225,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                 // Allow the profile describe handler to process profile includes
                 processMore(context, operation, resource, address, includeResults);
                 if (!skipLocalAdd) {
+                    addOrderedChildTypeInfo(resource, add);
                     result.add(add);
                 }
 
@@ -242,9 +246,20 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
 
                         writeAttribute.get(NAME).set(attribute);
                         writeAttribute.get(VALUE).set(model.get(attribute));
+                        addOrderedChildTypeInfo(resource, writeAttribute);
                         result.add(writeAttribute);
                     }
                 }
+            }
+        }
+    }
+
+    private void addOrderedChildTypeInfo(Resource resource, ModelNode operation) {
+        Set<String> orderedChildTypes = resource.getOrderedChildTypes();
+        if (orderedChildTypes.size() > 0) {
+            ModelNode orderedChildTypeNode = operation.get(OPERATION_HEADERS, SyncModelOperationHandler.ORDERED_CHILD_TYPES_HEADER);
+            for (String type : orderedChildTypes) {
+                orderedChildTypeNode.add(type);
             }
         }
     }

@@ -21,11 +21,13 @@
  */
 
 package org.jboss.as.controller;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -118,7 +120,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
     /** {@inheritDoc */
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        final Resource resource = createResource(context);
+        final Resource resource = createResource(context, operation);
         populateModel(context, operation, resource);
         recordCapabilitiesAndRequirements(context, operation, resource);
         //verify model for alternatives & requires
@@ -136,6 +138,25 @@ public class AbstractAddStepHandler implements OperationStepHandler {
                 }
             }, OperationContext.Stage.RUNTIME);
         }
+    }
+
+    /**
+     * Create the {@link Resource} that the {@link AbstractAddStepHandler#execute(OperationContext, ModelNode)}
+     * method operates on. This method is invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     * <p>
+     * This default implementation uses the {@link org.jboss.as.controller.OperationContext#createResource(PathAddress)
+     * default resource creation facility exposed by the context}. Subclasses wishing to create a custom resource
+     * type can override this method.
+     *
+     * @param context the operation context
+     * @param operation the operation
+     */
+    protected Resource createResource(final OperationContext context, final ModelNode operation) {
+        ResourceCreator resourceCreator = getResourceCreator();
+        if (resourceCreator != null) {
+            return resourceCreator.createResoure(context, operation);
+        }
+        return createResource(context);
     }
 
     /**
@@ -380,5 +401,92 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     @Deprecated
     protected void rollbackRuntime(OperationContext context, final ModelNode operation, final ModelNode model, List<ServiceController<?>> controllers) {
         // no-op
+    }
+
+    /**
+     * Allows overriding of the standard resource creation. If {@code null} is returned, the
+     * standard resource creation mechanism will be used.
+     *
+     * @return the custom resource creator
+     */
+    protected ResourceCreator getResourceCreator() {
+        return null;
+    }
+
+    /**
+     * Interface to handle custom resource creation
+     */
+    protected interface ResourceCreator {
+        /**
+         * Create a resource
+         *
+         * @param context the operation context
+         * @param operation the operation
+         */
+        Resource createResoure(OperationContext context, ModelNode operation);
+    }
+
+    /**
+     * A resource creator that deals with creating parent resources which have ordered children,
+     * and putting the ordered children in the correct place in the parent
+     *
+     */
+    protected class OrderedResourceCreator implements ResourceCreator {
+        private final Set<String> orderedChildTypes;
+        private final boolean indexedAdd;
+
+        /**
+         * Constructor
+         *
+         * @param indexedAdd if ({@code true} this is the child of a parent with ordered children,
+         * and this child will be added at the {@code add-index} of the {@code add} operation in the
+         * parent's list of children of this type. If {@code false} this is a normal child, i.e. the
+         * insert will always happen at the end of the list as normal.
+         * @param orderedChildTypes if not {@code null} or empty, this indicates that this is a parent
+         * resource with ordered children, and the entries here are the type names of children which
+         * are ordered.
+         */
+        public OrderedResourceCreator(boolean indexedAdd, Set<String> orderedChildTypes) {
+            this.indexedAdd = indexedAdd;
+            this.orderedChildTypes = orderedChildTypes == null ? Collections.<String>emptySet() : orderedChildTypes;
+        }
+
+        /**
+         * Constructor
+         *
+         * @param indexedAdd if ({@code true} this is the child of a parent with ordered children,
+         * and this child will be added at the {@code add-index} of the {@code add} operation in the
+         * parent's list of children of this type. If {@code false} this is a normal child, i.e. the
+         * insert will always happen at the end of the list as normal.
+         * @param orderedChildTypes if not {@code null} or empty, this indicates that this is a parent
+         * resource with ordered children, and the entries here are the type names of children which
+         * are ordered.
+         */
+        public OrderedResourceCreator(boolean indexedAdd, String... orderedChildTypes) {
+            this.indexedAdd = indexedAdd;
+            Set<String> set = new HashSet<String>(orderedChildTypes.length);
+            for (String type : orderedChildTypes) {
+                set.add(type);
+            }
+            this.orderedChildTypes = set;
+        }
+
+        @Override
+        public Resource createResoure(OperationContext context, ModelNode operation) {
+            // Creates a parent with ordered children (if set is not empty)
+            Resource resource = Resource.Factory.create(false, orderedChildTypes);
+
+            // Attempts to do the insert if indexedAdd is true.
+            int index = -1;
+            if (indexedAdd && operation.hasDefined(ADD_INDEX)) {
+                index = operation.get(ADD_INDEX).asInt();
+            }
+            if (index >= 0) {
+                context.addResource(PathAddress.EMPTY_ADDRESS, operation.get(ADD_INDEX).asInt(), resource);
+            } else {
+                context.addResource(PathAddress.EMPTY_ADDRESS, resource);
+            }
+            return resource;
+        }
     }
 }

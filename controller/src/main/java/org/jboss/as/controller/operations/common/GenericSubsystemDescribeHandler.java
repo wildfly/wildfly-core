@@ -24,6 +24,7 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.Collections;
@@ -140,7 +141,7 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
             children = new TreeSet<PathElement>(comparator);
             children.addAll(registration.getChildAddresses(PathAddress.EMPTY_ADDRESS));
         }
-        result.add(createAddOperation(address, resource.getModel(), children));
+        result.add(createAddOperation(address, resource, children));
         for(final PathElement element : children) {
             if(element.isMultiTarget()) {
                 final String childType = element.getKey();
@@ -158,6 +159,18 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
                 describe(child, childAddress, result, childRegistration);
             }
         }
+    }
+
+    protected ModelNode createAddOperation(final ModelNode address, final Resource resource, final Set<PathElement> children) {
+        ModelNode addOp = createAddOperation(address, resource.getModel(), children);
+        Set<String> orderedChildTypes = resource.getOrderedChildTypes();
+        if (orderedChildTypes.size() > 0) {
+            ModelNode orderedChildTypeNode = addOp.get(OPERATION_HEADERS, ModelDescriptionConstants.ORDERED_CHILD_TYPES_HEADER);
+            for (String type : orderedChildTypes) {
+                orderedChildTypeNode.add(type);
+            }
+        }
+        return addOp;
     }
 
     protected ModelNode createAddOperation(final ModelNode address, final ModelNode subModel, final Set<PathElement> children) {

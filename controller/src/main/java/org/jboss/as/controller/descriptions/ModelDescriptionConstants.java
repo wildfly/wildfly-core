@@ -40,6 +40,7 @@ public class ModelDescriptionConstants {
     public static final String ACTIVE_OPERATION = "active-operation";
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
+    public static final String ADD_INDEX = "add-index";
     public static final String ADMIN_ONLY = "admin-only";
     public static final String ADMIN_ONLY_POLICY = "admin-only-policy";
     public static final String ADVANCED_FILTER = "advanced-filter";
@@ -406,6 +407,7 @@ public class ModelDescriptionConstants {
     public static final String SOURCE_NETWORK = "source-network";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
+    public static final String ORDERED_CHILD_TYPES_HEADER = "ordered-child-types";
     public static final String RELOAD_SERVERS = "reload-servers";
     public static final String RESTART_SERVERS = "restart-servers";
     public static final String RESUME_SERVERS = "resume-servers";

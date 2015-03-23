@@ -36,9 +36,11 @@ import java.util.TreeMap;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * Uses an analysis of registry metadata to provide a default description of an operation that adds a resource.
@@ -47,13 +49,24 @@ import org.jboss.dmr.ModelNode;
  */
 public class DefaultResourceAddDescriptionProvider implements DescriptionProvider {
 
+
+    private static AttributeDefinition INDEX = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ADD_INDEX, ModelType.INT, true).build();
+
     private final ImmutableManagementResourceRegistration registration;
     final ResourceDescriptionResolver descriptionResolver;
+    final boolean orderedChildResource;
 
     public DefaultResourceAddDescriptionProvider(final ImmutableManagementResourceRegistration registration,
                                                  final ResourceDescriptionResolver descriptionResolver) {
+        this(registration, descriptionResolver, false);
+    }
+
+    public DefaultResourceAddDescriptionProvider(final ImmutableManagementResourceRegistration registration,
+            final ResourceDescriptionResolver descriptionResolver,
+            final boolean orderedChildResource) {
         this.registration = registration;
         this.descriptionResolver = descriptionResolver;
+        this.orderedChildResource = orderedChildResource;
     }
 
     @Override
@@ -74,16 +87,18 @@ public class DefaultResourceAddDescriptionProvider implements DescriptionProvide
                 AttributeDefinition def = attributeAccess.getAttributeDefinition();
                 if (def != null) {
                     if (!def.isResourceOnly()){
-                        ModelNode attrDesc = new ModelNode();
-                        // def will add the description to attrDesc under "request-properties" => { attr
-                        def.addOperationParameterDescription(attrDesc, ADD, descriptionResolver, locale, bundle);
-                        sortedDescriptions.put(new AttributeDefinition.NameAndGroup(def), attrDesc.get(REQUEST_PROPERTIES, attr));
+                        addAttributeDescriptionToMap(sortedDescriptions, def, locale, bundle);
                     }
                 } else {
                     // Just stick in a placeholder;
                     sortedDescriptions.put(new AttributeDefinition.NameAndGroup(attr), new ModelNode());
                 }
             }
+        }
+
+        if (orderedChildResource) {
+            //Add the index property to the add operation
+            addAttributeDescriptionToMap(sortedDescriptions, INDEX, locale, bundle);
         }
 
         // Store the sorted descriptions into the overall result
@@ -98,5 +113,12 @@ public class DefaultResourceAddDescriptionProvider implements DescriptionProvide
 
 
         return result;
+    }
+
+    private void addAttributeDescriptionToMap(Map<AttributeDefinition.NameAndGroup, ModelNode> sortedDescriptions, AttributeDefinition def, Locale locale, ResourceBundle bundle) {
+        ModelNode attrDesc = new ModelNode();
+        // def will add the description to attrDesc under "request-properties" => { attr
+        def.addOperationParameterDescription(attrDesc, ADD, descriptionResolver, locale, bundle);
+        sortedDescriptions.put(new AttributeDefinition.NameAndGroup(def), attrDesc.get(REQUEST_PROPERTIES, def.getName()));
     }
 }

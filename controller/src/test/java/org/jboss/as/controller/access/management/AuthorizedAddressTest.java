@@ -323,8 +323,14 @@ public class AuthorizedAddressTest {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
+
         @Override
         public void addResource(PathAddress address, Resource toAdd) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void addResource(PathAddress address, int index, Resource toAdd) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
