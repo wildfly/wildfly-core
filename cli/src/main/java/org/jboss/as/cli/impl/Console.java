@@ -103,8 +103,8 @@ public interface Console {
             org.jboss.aesh.console.Console aeshConsole = null;
             try {
                 aeshConsole = new org.jboss.aesh.console.Console();
-            } catch (IOException e) {
-                throw new CliInitializationException(e);
+            } catch (Throwable e) {
+                throw new CliInitializationException("Failed to initialize Aesh console", e);
             }
 
             final org.jboss.aesh.console.Console finalAeshConsole = aeshConsole;
