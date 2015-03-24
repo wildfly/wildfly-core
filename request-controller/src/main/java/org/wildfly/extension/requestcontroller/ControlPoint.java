@@ -143,7 +143,7 @@ public class ControlPoint {
     /**
      * This task should only be called by a thread that has already been accepted from an entry point. It is used when
      * an existing running thread is about to offload to another thread, such as an executor service or async EJB.
-     *
+     * <p>
      * Note that this can still be rejected if the global request limit has been hit.
      * <p/>
      * If it returns {@code RUN} then the task should proceed as normal, and the {@link #requestComplete()} method
@@ -191,14 +191,15 @@ public class ControlPoint {
 
     /**
      * Queues a task to run when the request controller allows it. There are two use cases for this:
-     * <p/>
-     * - This allows for requests to be queued instead of dropped when the request limit has been hit
-     * - Timed jobs that are supposed to execute while the container is suspended can be queued to execute
-     * when it resumes
-     * <p/>
-     * Note that the task will be run withing the context of a {@link #beginRequest()} call, if the task
+     * <ol>
+     * <li>This allows for requests to be queued instead of dropped when the request limit has been hit</li>
+     * <li>Timed jobs that are supposed to execute while the container is suspended can be queued to execute
+     * when it resumes</li>
+     * </ol>
+     * <p>
+     * Note that the task will be run within the context of a {@link #beginRequest()} call, if the task
      * is executed there is no need to invoke on the control point again.
-     *
+     * </p>
      *
      *
      * @param task            The task to run
