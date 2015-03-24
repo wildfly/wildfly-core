@@ -31,7 +31,10 @@ import java.util.List;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -111,4 +114,49 @@ public abstract class OperationDefinition {
     }
 
     public abstract DescriptionProvider getDescriptionProvider();
+
+    public DeprecationData getDeprecationData() {
+        return deprecationData;
+    }
+
+    public boolean isDeprecated(){
+        return deprecationData != null;
+    }
+
+    public boolean isReplyAllowNull() {
+        return replyAllowNull;
+    }
+
+    public AttributeDefinition[] getReplyParameters() {
+        return replyParameters;
+    }
+
+    /**
+     * Validates operation model against the definition and its parameters
+     *
+     * @param operation model node of type {@link ModelType#OBJECT}, representing an operation request
+     * @throws OperationFailedException if the value is not valid
+     */
+    public void validateOperation(final ModelNode operation) throws OperationFailedException {
+        if (operation.hasDefined(ModelDescriptionConstants.OPERATION_NAME) && isDeprecated()) {
+            ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName());
+        }
+        for (AttributeDefinition ad : this.parameters) {
+            ad.validateOperation(operation);
+        }
+    }
+
+    /**
+     * validates operation against the definition and sets model for the parameters passed.
+     *
+     * @param operationObject model node of type {@link ModelType#OBJECT}, typically representing an operation request
+     * @param model           model node in which the value should be stored
+     * @throws OperationFailedException if the value is not valid
+     */
+    public final void validateAndSet(ModelNode operationObject, final ModelNode model) throws OperationFailedException {
+        validateOperation(operationObject);
+        for (AttributeDefinition ad : this.parameters) {
+            ad.validateAndSet(operationObject, model);
+        }
+    }
 }
