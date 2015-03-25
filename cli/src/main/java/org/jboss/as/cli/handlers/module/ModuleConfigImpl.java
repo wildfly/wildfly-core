@@ -22,7 +22,6 @@
 package org.jboss.as.cli.handlers.module;
 
 import java.io.StringWriter;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.jboss.staxmapper.FormattingXMLStreamWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
@@ -258,13 +258,6 @@ public class ModuleConfigImpl implements ModuleConfig {
     }
 
     public static XMLExtendedStreamWriter create(XMLStreamWriter writer) throws Exception {
-        // Use reflection to access package protected class FormattingXMLStreamWriter
-        // TODO: at some point the staxmapper API could be enhanced to make this unnecessary
-        Class<?> clazz = Class.forName("org.jboss.staxmapper.FormattingXMLStreamWriter");
-        Object [] args = new Object [1];
-        args[0] = writer;
-        Constructor<?> ctr = clazz.getConstructor( XMLStreamWriter.class );
-        ctr.setAccessible(true);
-        return (XMLExtendedStreamWriter)ctr.newInstance(args);
+        return new FormattingXMLStreamWriter(writer);
     }
 }

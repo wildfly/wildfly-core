@@ -21,8 +21,9 @@
  */
 package org.jboss.as.test.shared.staxmapper;
 
-import java.lang.reflect.Constructor;
 import javax.xml.stream.XMLStreamWriter;
+
+import org.jboss.staxmapper.FormattingXMLStreamWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
@@ -31,13 +32,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public class XMLExtendedStreamWriterFactory {
     public static XMLExtendedStreamWriter create(XMLStreamWriter writer) throws Exception {
-        // Use reflection to access package protected class FormattingXMLStreamWriter
-        // TODO: at some point the staxmapper API could be enhanced to make this unnecessary
-        Class clazz = Class.forName("org.jboss.staxmapper.FormattingXMLStreamWriter");
-        Object [] args = new Object [1];
-        args[0] = writer;
-        Constructor ctr = clazz.getConstructor( XMLStreamWriter.class );
-        ctr.setAccessible(true);
-        return (XMLExtendedStreamWriter)ctr.newInstance(args);
+        return new FormattingXMLStreamWriter(writer);
     }
 }

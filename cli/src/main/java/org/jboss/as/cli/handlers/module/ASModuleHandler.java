@@ -29,7 +29,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -55,6 +54,7 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.parsing.ExpressionBaseState;
 import org.jboss.as.cli.parsing.ParsingState;
 import org.jboss.as.cli.parsing.WordCharacterHandler;
+import org.jboss.staxmapper.FormattingXMLStreamWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -428,12 +428,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
 
     public static XMLExtendedStreamWriter create(XMLStreamWriter writer) throws CommandLineException {
         try {
-            // Use reflection to access package protected class FormattingXMLStreamWriter
-            // TODO: at some point the staxmapper API could be enhanced to make this unnecessary
-            Class<?> clazz = Class.forName("org.jboss.staxmapper.FormattingXMLStreamWriter");
-            Constructor<?> ctr = clazz.getConstructor( XMLStreamWriter.class );
-            ctr.setAccessible(true);
-            return (XMLExtendedStreamWriter)ctr.newInstance(new Object[]{writer});
+            return new FormattingXMLStreamWriter(writer);
         } catch (Exception e) {
             throw new CommandLineException("Failed to create xml stream writer.", e);
         }
