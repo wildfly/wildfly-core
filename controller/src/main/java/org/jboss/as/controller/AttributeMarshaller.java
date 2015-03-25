@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import java.util.Iterator;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -82,27 +84,24 @@ public abstract class AttributeMarshaller {
         return false;
     }
 
-    private static class ListMarshaller extends AttributeMarshaller {
+    private static class ListMarshaller extends DefaultAttributeMarshaller {
         private final char delimiter;
 
-        private ListMarshaller(char delimiter) {
+        ListMarshaller(char delimiter) {
             this.delimiter = delimiter;
         }
 
         @Override
-        public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+        protected String asString(ModelNode value) {
             StringBuilder builder = new StringBuilder();
-            if (resourceModel.hasDefined(attribute.getName())) {
-                for (ModelNode p : resourceModel.get(attribute.getName()).asList()) {
-                    builder.append(p.asString()).append(delimiter);
+            Iterator<ModelNode> values = value.asList().iterator();
+            while (values.hasNext()) {
+                builder.append(values.next().asString());
+                if (values.hasNext()) {
+                    builder.append(this.delimiter);
                 }
             }
-            if (builder.length() > 2) {
-                builder.setLength(builder.length() - 1);
-            }
-            if (builder.length() > 0) {
-                writer.writeAttribute(attribute.getXmlName(), builder.toString());
-            }
+            return builder.toString();
         }
     }
 
