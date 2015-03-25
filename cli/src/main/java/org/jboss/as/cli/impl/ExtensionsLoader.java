@@ -1,0 +1,188 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2015, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+package org.jboss.as.cli.impl;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.ServiceLoader;
+
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandHandlerProvider;
+import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.CommandRegistry;
+import org.jboss.as.cli.ControllerAddress;
+import org.jboss.as.cli.Util;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
+import org.jboss.modules.ModuleClassLoader;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.ModuleLoader;
+
+/**
+ *
+ * @author Alexey Loubyansky
+ */
+class ExtensionsLoader {
+
+    private final ModuleLoader moduleLoader;
+    private final CommandContext ctx;
+    private final CommandRegistry registry;
+
+    /** current address from which the commands are loaded, this could be null */
+    private ControllerAddress currentAddress;
+    /** commands loaded from the current address*/
+    private List<String> loadedCommands = Collections.emptyList();
+    /** error messages collected during loading the commands */
+    private List<String> errors = Collections.emptyList();
+
+    ExtensionsLoader(CommandRegistry registry, CommandContext ctx) {
+        assert registry != null : "command registry is null";
+        assert ctx != null : "command context is null";
+
+        if(getClass().getClassLoader() instanceof ModuleClassLoader) {
+            moduleLoader = ModuleLoader.forClassLoader(getClass().getClassLoader());
+        } else {
+            moduleLoader = null;
+        }
+
+        this.ctx = ctx;
+        this.registry = registry;
+    }
+
+    void resetHandlers() {
+        for(String cmd : loadedCommands) {
+            registry.remove(cmd);
+        }
+        currentAddress = null;
+        errors = Collections.emptyList();
+        loadedCommands = Collections.emptyList();
+    }
+
+    /**
+     * Using the client, iterates through the available domain management model extensions
+     * and tries to load CLI command handlers from their modules.
+     *
+     * @param registry
+     * @param address
+     * @param client
+     */
+    void loadHandlers(ControllerAddress address) throws CommandLineException {
+
+        ModelControllerClient client = ctx.getModelControllerClient();
+        assert client != null : "client is null";
+
+        if(moduleLoader == null) {
+            return;
+        }
+
+        if(address != null && currentAddress != null && address.equals(currentAddress)) {
+            return;
+        }
+
+        // remove previously loaded commands
+        resetHandlers();
+        currentAddress = address;
+
+        final ModelNode req = new ModelNode();
+        req.get(Util.ADDRESS).setEmptyList();
+        req.get(Util.OPERATION).set(Util.READ_CHILDREN_RESOURCES);
+        req.get(Util.CHILD_TYPE).set(Util.EXTENSION);
+
+        final ModelNode response;
+        try {
+            response = client.execute(req);
+        } catch (IOException e) {
+            throw new CommandLineException("Failed to read extensions", e);
+        }
+
+        if(!Util.isSuccess(response)) {
+            throw new CommandLineException("Failed to read extensions: " + Util.getFailureDescription(response));
+        }
+
+        final ModelNode result = response.get(Util.RESULT);
+        if(!result.isDefined()) {
+            throw new CommandLineException("Failed to read extensions: " + result.asString());
+        }
+
+        for(Property ext : result.asPropertyList()) {
+            ModelNode module = ext.getValue().get(Util.MODULE);
+            if(!module.isDefined()) {
+                addError("Extension " + ext.getName() + " is missing module attribute");
+            } else {
+                final ModuleIdentifier moduleId = ModuleIdentifier.create(module.asString());
+                ModuleClassLoader cl;
+                try {
+                    cl = moduleLoader.loadModule(moduleId).getClassLoader();
+                    ServiceLoader<CommandHandlerProvider> loader = ServiceLoader.load(CommandHandlerProvider.class, cl);
+                    for (CommandHandlerProvider provider : loader) {
+                        try {
+                            registry.registerHandler(provider.createCommandHandler(ctx), provider.isTabComplete(), provider.getNames());
+                            addCommands(Arrays.asList(provider.getNames()));
+                        } catch(CommandRegistry.RegisterHandlerException e) {
+                            addError(e.getLocalizedMessage());
+                            final List<String> addedCommands = new ArrayList<String>(Arrays.asList(provider.getNames()));
+                            addedCommands.removeAll(e.getNotAddedNames());
+                            addCommands(addedCommands);
+                        }
+                    }
+                } catch (ModuleLoadException e) {
+                    addError("Failed to load module " + module.asString() + " for extension " + ext.getName() + ": " + e.getLocalizedMessage());
+                }
+            }
+        }
+
+        if(!errors.isEmpty()) {
+            final StringBuilder buf = new StringBuilder();
+            buf.append("Errors caught while loading extensions:\n");
+            for(int i = 0; i < errors.size(); ++i) {
+                final String error = errors.get(i);
+                buf.append(i+1).append(") ").append(error).append(Util.LINE_SEPARATOR);
+            }
+            throw new CommandLineException(buf.toString());
+        }
+    }
+
+    private void addCommands(List<String> names) {
+        if(loadedCommands.isEmpty()) {
+            loadedCommands = new ArrayList<String>();
+        }
+        loadedCommands.addAll(names);
+    }
+
+    private void addError(String msg) {
+        switch(errors.size()) {
+            case 0:
+                errors = Collections.singletonList(msg);
+                break;
+            case 1:
+                errors = new ArrayList<String>(errors);
+            default:
+                errors.add(msg);
+        }
+    }
+}

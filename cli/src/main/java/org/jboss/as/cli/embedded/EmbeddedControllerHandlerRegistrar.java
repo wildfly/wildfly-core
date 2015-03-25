@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandRegistry;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -82,7 +83,7 @@ public class EmbeddedControllerHandlerRegistrar {
         modular = obj != null;
     }
 
-    public static AtomicReference<EmbeddedServerLaunch> registerEmbeddedCommands(CommandRegistry commandRegistry, CommandContext ctx) {
+    public static AtomicReference<EmbeddedServerLaunch> registerEmbeddedCommands(CommandRegistry commandRegistry, CommandContext ctx) throws CommandLineException {
         AtomicReference<EmbeddedServerLaunch> serverReference = new AtomicReference<>();
         if (hasModules) {
             commandRegistry.registerHandler(EmbedServerHandler.create(serverReference, ctx, modular), "embed-server");

@@ -34,7 +34,7 @@ import java.util.Map;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.junit.Assert;
+
 
 /**
  * @author Alexey Loubyansky
