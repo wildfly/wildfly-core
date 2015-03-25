@@ -246,6 +246,7 @@ public enum Phase {
     public static final int STRUCTURE_GLOBAL_MODULES                    = 0x1E00;
     public static final int STRUCTURE_NAMING_EXTERNAL_CONTEXTS          = 0x1F00;
     public static final int STRUCTURE_GLOBAL_REQUEST_CONTROLLER         = 0x2000;
+    public static final int STRUCTURE_WS_SERVICES_DEPS                  = 0x2100;
     public static final int STRUCTURE_DEFERRED_DEPLOYMENT_OVERLAY       = 0xF000; //needs to run after all structure processors
 
     // PARSE
@@ -512,7 +513,6 @@ public enum Phase {
     public static final int POST_MODULE_UNDERTOW_HANDLERS               = 0x2F00;
     public static final int POST_MODULE_EE_CONCURRENT_CONTEXT           = 0x3000;
     public static final int POST_MODULE_BATCH_ENVIRONMENT               = 0x3100;
-    public static final int POST_MODULE_WS_SERVICES_DEPS                = 0x3200;
     public static final int POST_MODULE_RAR_SERVICES_DEPS               = 0x3300;
     public static final int POST_MODULE_UNDERTOW_MODCLUSTER             = 0x3400;
     public static final int POST_MODULE_TRANSACTIONS_EE_CONCURRENCY     = 0x3500;
