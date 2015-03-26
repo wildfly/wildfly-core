@@ -28,7 +28,7 @@
     </properties>
 
     <exports>
-        <exclude path="org/jboss/wildfly/security/manager/_private"/>
+        <exclude path="org/wildfly/security/manager/_private"/>
     </exports>
 
     <resources>
