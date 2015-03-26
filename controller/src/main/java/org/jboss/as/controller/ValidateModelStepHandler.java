@@ -163,11 +163,17 @@ class ValidateModelStepHandler implements OperationStepHandler {
         PathAddress current = PathAddress.EMPTY_ADDRESS;
         Resource resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
         for (PathElement element : address) {
+            if (resource.isRuntime()){
+                return null;
+            }
             if (!resource.hasChild(element)) {
                 return null;
             }
             current = current.append(element);
             resource = context.readResourceFromRoot(current, false);
+        }
+        if (resource.isRuntime()) {
+            return null;
         }
         return resource;
     }
