@@ -22,6 +22,7 @@
 package org.jboss.as.server;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -67,6 +68,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         STANDALONE(ProcessType.STANDALONE_SERVER),
         /** Launched by another process in which the server is embedded */
         EMBEDDED(ProcessType.EMBEDDED_SERVER),
+        /** Launched as a self-contained (no filesystem) server */
+        SELF_CONTAINED(ProcessType.SELF_CONTAINED),
         /** Launched by a Java EE appclient */
         APPCLIENT(ProcessType.APPLICATION_CLIENT);
 
@@ -332,154 +335,195 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         // Java system-wide extension dirs
         javaExtDirs = getFilesFromProperty(JAVA_EXT_DIRS, props);
 
-        // Must have HOME_DIR
-        homeDir = getFileFromProperty(HOME_DIR, props);
-        if (homeDir == null) {
-            throw ServerLogger.ROOT_LOGGER.missingHomeDirConfiguration(HOME_DIR);
-        }
-        if (!homeDir.exists() || !homeDir.isDirectory()) {
-            throw ServerLogger.ROOT_LOGGER.homeDirectoryDoesNotExist(homeDir);
-        }
+        if ( launchType.equals( LaunchType.SELF_CONTAINED ) ) {
+            homeDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
+            serverBaseDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
+            serverLogDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
 
-        @SuppressWarnings("deprecation")
-        File tmp = getFileFromProperty(MODULES_DIR, props);
-        if (tmp == null) {
-            tmp = new File(homeDir, "modules");
-        } else if (!tmp.exists() || !tmp.isDirectory()) {
-            throw ServerLogger.ROOT_LOGGER.modulesDirectoryDoesNotExist(tmp);
-        }
-        modulesDir = tmp;
 
-        configureBundlesDir(props.getProperty(BUNDLES_DIR), props);
-
-        tmp = getFileFromProperty(SERVER_BASE_DIR, props);
-        if (tmp == null) {
-            tmp = new File(homeDir, standalone ? "standalone" : "domain/servers/" + serverName);
-        }
-        if (standalone) {
-            if (!tmp.exists()) {
-                throw ServerLogger.ROOT_LOGGER.serverBaseDirectoryDoesNotExist(tmp);
-            } else if (!tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.serverBaseDirectoryIsNotADirectory(tmp);
+            try {
+                File tmpDir = File.createTempFile( "wildfly-self-contained", ".d" );
+                if ( tmpDir.exists() ) {
+                    for ( int i = 0 ; i < 10 ; ++i ) {
+                        if ( tmpDir.exists() ) {
+                            if (deleteRecursively(tmpDir)) {
+                                break;
+                            }
+                            try {
+                                Thread.sleep( 100 );
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                        }
+                    }
+                    if ( tmpDir.exists() ) {
+                        throw ServerLogger.ROOT_LOGGER.unableToCreateSelfContainedDir();
+                    }
+                }
+                tmpDir.mkdirs();
+                tmpDir.deleteOnExit();
+                serverTempDir = tmpDir;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+
+            serverDataDir = serverTempDir;
+            modulesDir = null;
+            serverConfigurationDir = null;
+            serverConfigurationFile = null;
+            controllerTempDir = null;
+            domainBaseDir = null;
+            domainConfigurationDir = null;
+            WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
-            if (tmp.exists()) {
-                if (!tmp.isDirectory()) {
+
+            // Must have HOME_DIR
+            homeDir = getFileFromProperty(HOME_DIR, props);
+            if (homeDir == null) {
+                throw ServerLogger.ROOT_LOGGER.missingHomeDirConfiguration(HOME_DIR);
+            }
+            if (!homeDir.exists() || !homeDir.isDirectory()) {
+                throw ServerLogger.ROOT_LOGGER.homeDirectoryDoesNotExist(homeDir);
+            }
+
+            @SuppressWarnings("deprecation")
+            File tmp = getFileFromProperty(MODULES_DIR, props);
+            if (tmp == null) {
+                tmp = new File(homeDir, "modules");
+            } else if (!tmp.exists() || !tmp.isDirectory()) {
+                throw ServerLogger.ROOT_LOGGER.modulesDirectoryDoesNotExist(tmp);
+            }
+            modulesDir = tmp;
+
+            configureBundlesDir(props.getProperty(BUNDLES_DIR), props);
+
+            tmp = getFileFromProperty(SERVER_BASE_DIR, props);
+            if (tmp == null) {
+                tmp = new File(homeDir, standalone ? "standalone" : "domain/servers/" + serverName);
+            }
+            if (standalone) {
+                if (!tmp.exists()) {
+                    throw ServerLogger.ROOT_LOGGER.serverBaseDirectoryDoesNotExist(tmp);
+                } else if (!tmp.isDirectory()) {
                     throw ServerLogger.ROOT_LOGGER.serverBaseDirectoryIsNotADirectory(tmp);
                 }
+            } else {
+                if (tmp.exists()) {
+                    if (!tmp.isDirectory()) {
+                        throw ServerLogger.ROOT_LOGGER.serverBaseDirectoryIsNotADirectory(tmp);
+                    }
+                } else if (!tmp.mkdirs()) {
+                    throw ServerLogger.ROOT_LOGGER.couldNotCreateServerBaseDirectory(tmp);
+                }
             }
-            else if (!tmp.mkdirs()) {
-                throw ServerLogger.ROOT_LOGGER.couldNotCreateServerBaseDirectory(tmp);
+            serverBaseDir = tmp;
+
+
+            tmp = getFileFromProperty(SERVER_CONFIG_DIR, props);
+            if (tmp == null) {
+                tmp = new File(serverBaseDir, "configuration");
             }
-        }
-        serverBaseDir = tmp;
-
-
-        tmp = getFileFromProperty(SERVER_CONFIG_DIR, props);
-        if (tmp == null) {
-            tmp = new File(serverBaseDir, "configuration");
-        }
-        serverConfigurationDir = tmp;
-        if (standalone && (!serverConfigurationDir.exists() || !serverConfigurationDir.isDirectory())) {
-            throw ServerLogger.ROOT_LOGGER.configDirectoryDoesNotExist(serverConfigurationDir);
-        }
-
-        String defaultServerConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-        serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, serverConfig, configInteractionPolicy) : null;
-        // Adds a system property to indicate whether or not the server configuration should be persisted
-        @SuppressWarnings("deprecation")
-        final String propertyKey = JBOSS_PERSIST_SERVER_CONFIG;
-        WildFlySecurityManager.setPropertyPrivileged(propertyKey, Boolean.toString(configInteractionPolicy == null || !configInteractionPolicy.isReadOnly()));
-
-        tmp = getFileFromProperty(SERVER_DATA_DIR, props);
-        if (tmp == null) {
-            tmp = new File(serverBaseDir, "data");
-        }
-        serverDataDir = tmp;
-        if (serverDataDir.exists()) {
-            if (!serverDataDir.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.serverDataDirectoryIsNotDirectory(serverDataDir);
+            serverConfigurationDir = tmp;
+            if (standalone && (!serverConfigurationDir.exists() || !serverConfigurationDir.isDirectory())) {
+                throw ServerLogger.ROOT_LOGGER.configDirectoryDoesNotExist(serverConfigurationDir);
             }
-        } else {
-            if (!serverDataDir.mkdirs()) {
-                throw ServerLogger.ROOT_LOGGER.couldNotCreateServerDataDirectory(serverDataDir);
-            }
-        }
 
-        tmp = getFileFromProperty(SERVER_CONTENT_DIR, props);
-        if (tmp == null) {
+            String defaultServerConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
+            serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, serverConfig, configInteractionPolicy) : null;
+            // Adds a system property to indicate whether or not the server configuration should be persisted
             @SuppressWarnings("deprecation")
-            String deprecatedProp = SERVER_DEPLOY_DIR;
-            tmp = getFileFromProperty(deprecatedProp, props);
-        }
-        if (tmp == null) {
-            tmp = new File(serverDataDir, "content");
-        }
-        serverContentDir = tmp;
-        if (serverContentDir.exists()) {
-            if (!serverContentDir.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.serverContentDirectoryIsNotDirectory(serverContentDir);
+            final String propertyKey = JBOSS_PERSIST_SERVER_CONFIG;
+            WildFlySecurityManager.setPropertyPrivileged(propertyKey, Boolean.toString(configInteractionPolicy == null || !configInteractionPolicy.isReadOnly()));
+
+            tmp = getFileFromProperty(SERVER_DATA_DIR, props);
+            if (tmp == null) {
+                tmp = new File(serverBaseDir, "data");
             }
-        } else if (!serverContentDir.mkdirs()) {
-            throw ServerLogger.ROOT_LOGGER.couldNotCreateServerContentDirectory(serverContentDir);
-        }
+            serverDataDir = tmp;
+            if (serverDataDir.exists()) {
+                if (!serverDataDir.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.serverDataDirectoryIsNotDirectory(serverDataDir);
+                }
+            } else {
+                if (!serverDataDir.mkdirs()) {
+                    throw ServerLogger.ROOT_LOGGER.couldNotCreateServerDataDirectory(serverDataDir);
+                }
+            }
+
+            tmp = getFileFromProperty(SERVER_CONTENT_DIR, props);
+            if (tmp == null) {
+                @SuppressWarnings("deprecation")
+                String deprecatedProp = SERVER_DEPLOY_DIR;
+                tmp = getFileFromProperty(deprecatedProp, props);
+            }
+            if (tmp == null) {
+                tmp = new File(serverDataDir, "content");
+            }
+            serverContentDir = tmp;
+            if (serverContentDir.exists()) {
+                if (!serverContentDir.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.serverContentDirectoryIsNotDirectory(serverContentDir);
+                }
+            } else if (!serverContentDir.mkdirs()) {
+                throw ServerLogger.ROOT_LOGGER.couldNotCreateServerContentDirectory(serverContentDir);
+            }
 
 
-        tmp = getFileFromProperty(SERVER_LOG_DIR, props);
-        if (tmp == null) {
-            tmp = new File(serverBaseDir, "log");
-        }
-        if (tmp.exists()) {
-            if (!tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.logDirectoryIsNotADirectory(tmp);
+            tmp = getFileFromProperty(SERVER_LOG_DIR, props);
+            if (tmp == null) {
+                tmp = new File(serverBaseDir, "log");
             }
-        } else if (!tmp.mkdirs()) {
-            throw ServerLogger.ROOT_LOGGER.couldNotCreateLogDirectory(tmp);
-        }
-        serverLogDir = tmp;
+            if (tmp.exists()) {
+                if (!tmp.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.logDirectoryIsNotADirectory(tmp);
+                }
+            } else if (!tmp.mkdirs()) {
+                throw ServerLogger.ROOT_LOGGER.couldNotCreateLogDirectory(tmp);
+            }
+            serverLogDir = tmp;
 
-        tmp = configureServerTempDir(props.getProperty(SERVER_TEMP_DIR), props);
-        if (tmp.exists()) {
-            if (!tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.serverTempDirectoryIsNotADirectory(tmp);
+            tmp = configureServerTempDir(props.getProperty(SERVER_TEMP_DIR), props);
+            if (tmp.exists()) {
+                if (!tmp.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.serverTempDirectoryIsNotADirectory(tmp);
+                }
+            } else if (!tmp.mkdirs()) {
+                throw ServerLogger.ROOT_LOGGER.couldNotCreateServerTempDirectory(tmp);
             }
-        } else if (!tmp.mkdirs()){
-            throw ServerLogger.ROOT_LOGGER.couldNotCreateServerTempDirectory(tmp);
-        }
 
-        tmp = getFileFromProperty(CONTROLLER_TEMP_DIR, props);
-        if (tmp == null) {
-            tmp = serverTempDir;
-        }
-        if (tmp.exists()) {
-            if (!tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.controllerTempDirectoryIsNotADirectory(tmp);
+            tmp = getFileFromProperty(CONTROLLER_TEMP_DIR, props);
+            if (tmp == null) {
+                tmp = serverTempDir;
             }
-        } else if (!tmp.mkdirs()){
-            throw ServerLogger.ROOT_LOGGER.couldNotCreateControllerTempDirectory(tmp);
-        }
-        controllerTempDir = tmp;
+            if (tmp.exists()) {
+                if (!tmp.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.controllerTempDirectoryIsNotADirectory(tmp);
+                }
+            } else if (!tmp.mkdirs()) {
+                throw ServerLogger.ROOT_LOGGER.couldNotCreateControllerTempDirectory(tmp);
+            }
+            controllerTempDir = tmp;
 
-        // Optional paths for the domain mode
-        tmp = getFileFromProperty(DOMAIN_BASE_DIR, props);
-        if (tmp != null) {
-            if (!tmp.exists() || !tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.domainBaseDirDoesNotExist(tmp);
+            // Optional paths for the domain mode
+            tmp = getFileFromProperty(DOMAIN_BASE_DIR, props);
+            if (tmp != null) {
+                if (!tmp.exists() || !tmp.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.domainBaseDirDoesNotExist(tmp);
+                }
+                this.domainBaseDir = tmp;
+            } else {
+                this.domainBaseDir = null;
             }
-            this.domainBaseDir = tmp;
-        } else {
-            this.domainBaseDir = null;
-        }
-        tmp = getFileFromProperty(DOMAIN_CONFIG_DIR, props);
-        if (tmp != null) {
-            if (!tmp.exists() || !tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.domainConfigDirDoesNotExist(tmp);
+            tmp = getFileFromProperty(DOMAIN_CONFIG_DIR, props);
+            if (tmp != null) {
+                if (!tmp.exists() || !tmp.isDirectory()) {
+                    throw ServerLogger.ROOT_LOGGER.domainConfigDirDoesNotExist(tmp);
+                }
+                this.domainConfigurationDir = tmp;
+            } else {
+                this.domainConfigurationDir = null;
             }
-            this.domainConfigurationDir = tmp;
-        } else {
-            this.domainConfigurationDir = null;
         }
-
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
         if (maxThreads != null && maxThreads.length() > 0) {
@@ -507,14 +551,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         WildFlySecurityManager.setPropertyPrivileged(HOST_NAME, hostName);
         WildFlySecurityManager.setPropertyPrivileged(SERVER_NAME, serverName);
         WildFlySecurityManager.setPropertyPrivileged(NODE_NAME, nodeName);
-        WildFlySecurityManager.setPropertyPrivileged(HOME_DIR, homeDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(MODULES_DIR, modulesDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(SERVER_BASE_DIR, serverBaseDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(SERVER_CONFIG_DIR, serverConfigurationDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(SERVER_DATA_DIR, serverDataDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(SERVER_DEPLOY_DIR, serverContentDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(SERVER_LOG_DIR, serverLogDir.getAbsolutePath());
-        WildFlySecurityManager.setPropertyPrivileged(SERVER_TEMP_DIR, serverTempDir.getAbsolutePath());
+        setPathProperty(HOME_DIR, homeDir);
+        setPathProperty(MODULES_DIR, modulesDir);
+        setPathProperty(SERVER_BASE_DIR, serverBaseDir);
+        setPathProperty(SERVER_CONFIG_DIR, serverConfigurationDir);
+        setPathProperty(SERVER_DATA_DIR, serverDataDir);
+        setPathProperty(SERVER_DEPLOY_DIR, serverContentDir);
+        setPathProperty(SERVER_LOG_DIR, serverLogDir);
+        setPathProperty(SERVER_TEMP_DIR, serverTempDir);
 
         if(launchType.getProcessType() == ProcessType.DOMAIN_SERVER) {
             if(domainBaseDir != null) {
@@ -533,6 +577,29 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         } catch (Exception ex) {
             ServerLogger.ROOT_LOGGER.cannotAddURLStreamHandlerFactory(ex, VFS_MODULE_IDENTIFIER);
         }
+    }
+
+    private static boolean deleteRecursively(File f) {
+        if ( ! f.exists() ) {
+            return false;
+        }
+        if ( f.isDirectory() ) {
+            File[] children = f.listFiles();
+            for ( int i = 0 ; i < children.length ; ++i ) {
+                if ( ! deleteRecursively(children[i]) ) {
+                    return false;
+                }
+            }
+        }
+
+        return f.delete();
+    }
+
+    private void setPathProperty(String propertyName, File path) {
+        if (this.launchType == LaunchType.SELF_CONTAINED && path == null) {
+            return;
+        }
+        WildFlySecurityManager.setPropertyPrivileged(propertyName, path.getAbsolutePath());
     }
 
     private static void copyProperties(Properties src, Properties dest) {
@@ -883,6 +950,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     public boolean isStandalone() {
         return standalone;
+    }
+
+    /**
+     * Gets whether this server is a self-contained (no filesystem layout) or not.
+     * @return {@code true} if this server is self-contained
+     */
+    public boolean isSelfContained() {
+        return this.launchType == LaunchType.SELF_CONTAINED;
     }
 
     /**
