@@ -139,6 +139,9 @@ class OperationRouting {
             else if(address.size() > 1) {
                 PathElement first = address.getElement(1);
                 if (SERVER.equals(first.getKey())) {
+                    // A direct request to a server is not handled via two-phase handling
+                    // even if the request is for a write op. A write-op to a server
+                    // is illegal anyway, so there is no reason to handle it two-phase
                     routing =  new OperationRouting(targetHost, false);
                 }
             }

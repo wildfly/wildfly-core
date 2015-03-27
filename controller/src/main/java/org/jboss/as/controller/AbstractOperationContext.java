@@ -766,19 +766,27 @@ abstract class AbstractOperationContext implements OperationContext {
         // 1. operation is cancelled
         // 2. operation failed in model phase
         // 3. operation failed in runtime/verify and rollback_on_fail is set
-        // 4. isRollbackOnly
+        // 2. operation failed in domain phase
+        // 5. isRollbackOnly
         if (cancelled) {
             if (activeStep != null) {
                 activeStep.response.get(OUTCOME).set(CANCELLED);
                 activeStep.response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationCancelled());
                 activeStep.response.get(ROLLED_BACK).set(true);
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Rolling back on cancellation of operation %s on address %s in stage %s",
+                        activeStep.operationId.name, activeStep.operationId.address, currentStage);
             }
             resultAction = ResultAction.ROLLBACK;
         } else if (activeStep != null && activeStep.hasFailed()
-                && (isRollbackOnRuntimeFailure() || currentStage == Stage.MODEL)) {
+                && (isRollbackOnRuntimeFailure() || currentStage == Stage.MODEL || currentStage == Stage.DOMAIN)) {
             activeStep.response.get(OUTCOME).set(FAILED);
             activeStep.response.get(ROLLED_BACK).set(true);
             resultAction = ResultAction.ROLLBACK;
+            ControllerLogger.MGMT_OP_LOGGER.tracef("Rolling back on failed response %s to operation %s on address %s in stage %s",
+                    activeStep.response, activeStep.operationId.name, activeStep.operationId.address, currentStage);
+        } else if (activeStep != null && activeStep.hasFailed()) {
+            ControllerLogger.MGMT_OP_LOGGER.tracef("Not rolling back on failed response %s to operation %s on address %s in stage %s",
+                    activeStep.response, activeStep.operationId.name, activeStep.operationId.address, currentStage);
         }
         return resultAction != ResultAction.ROLLBACK;
     }
@@ -1172,6 +1180,7 @@ abstract class AbstractOperationContext implements OperationContext {
     class Step {
         private final Step parent;
         private final OperationStepHandler handler;
+        private final Stage forStage = AbstractOperationContext.this.currentStage;
         final ModelNode response;
         final ModelNode operation;
         final PathAddress address;
@@ -1343,6 +1352,11 @@ abstract class AbstractOperationContext implements OperationContext {
                     response.get(ROLLED_BACK).set(true);
                 } else {
                     response.get(OUTCOME).set(hasFailed() ? FAILED : SUCCESS);
+                }
+                if (ControllerLogger.MGMT_OP_LOGGER.isTraceEnabled()
+                        && (forStage == Stage.MODEL || forStage == Stage.DOMAIN)) {
+                    ControllerLogger.MGMT_OP_LOGGER.tracef("Final response for step handler %s handling %s in address %s is %s",
+                            handler, operationId.name, operationId.address, response);
                 }
 
             } finally {

@@ -46,7 +46,6 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
-import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -61,7 +60,6 @@ public class PrepareStepHandler  implements OperationStepHandler {
     private final OperationSlaveStepHandler slaveHandler;
 
     public PrepareStepHandler(final LocalHostControllerInfo localHostControllerInfo,
-                              final ContentRepository contentRepository,
                               final Map<String, ProxyController> hostProxies,
                               final Map<String, ProxyController> serverProxies,
                               final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
@@ -69,7 +67,7 @@ public class PrepareStepHandler  implements OperationStepHandler {
                               final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
         this.localHostControllerInfo = localHostControllerInfo;
         this.slaveHandler = new OperationSlaveStepHandler(localHostControllerInfo, serverProxies, ignoredDomainResourceRegistry, extensionRegistry);
-        this.coordinatorHandler = new OperationCoordinatorStepHandler(localHostControllerInfo, contentRepository, hostProxies, serverProxies, slaveHandler, runtimeIgnoreTransformationRegistry);
+        this.coordinatorHandler = new OperationCoordinatorStepHandler(localHostControllerInfo, hostProxies, serverProxies, slaveHandler, runtimeIgnoreTransformationRegistry);
     }
 
     public void initialize(ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler) {
@@ -85,7 +83,6 @@ public class PrepareStepHandler  implements OperationStepHandler {
                 && operation.get(OPERATION_HEADERS).hasDefined(EXECUTE_FOR_COORDINATOR)
                 && operation.get(OPERATION_HEADERS).get(EXECUTE_FOR_COORDINATOR).asBoolean()) {
             // Coordinator wants us to execute locally and send result including the steps needed for execution on the servers
-            // TODO verify this is actually the master requesting this
             slaveHandler.execute(context, operation);
         } else {
             // Assign a unique id to this operation to allow tying together of audit logs from various hosts/servers

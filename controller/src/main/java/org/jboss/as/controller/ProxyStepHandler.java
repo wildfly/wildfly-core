@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -29,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 
 import java.io.IOException;
@@ -169,10 +171,12 @@ public class ProxyStepHandler implements OperationStepHandler {
         if (finalResult != null) {
             // operation failed before it could commit
             ModelNode responseNode = finalResult.getResponseNode();
+            ControllerLogger.MGMT_OP_LOGGER.tracef("Remote operation %s failed before commit with response %s", operation, responseNode);
             context.getResult().set(responseNode.get(RESULT));
             ModelNode failureDesc = responseNode.get(FAILURE_DESCRIPTION);
             RuntimeException stdFailure = translateFailureDescription(failureDesc);
             if (stdFailure != null) {
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Converted failure response to %s", stdFailure);
                 throw stdFailure;
             }
             context.getFailureDescription().set(failureDesc);

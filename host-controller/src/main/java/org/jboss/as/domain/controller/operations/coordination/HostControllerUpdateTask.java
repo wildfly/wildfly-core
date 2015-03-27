@@ -85,8 +85,6 @@ class HostControllerUpdateTask {
 
     public ExecutedHostRequest execute(final ProxyOperationListener listener) {
 
-        HOST_CONTROLLER_LOGGER.tracef("Sending %s to %s", operation, name);
-
         final TransactionalProtocolClient client = proxyController.getProtocolClient();
         final OperationMessageHandler messageHandler = new DelegatingMessageHandler(context);
         final OperationAttachments operationAttachments = new DelegatingOperationAttachments(context);
@@ -104,8 +102,14 @@ class HostControllerUpdateTask {
                     if (!operation.equals(transformedOperation)) {
                         // push all operations (incl. read-only) to the servers
                         transformedOperation.get(OPERATION_HEADERS, ServerOperationsResolverHandler.DOMAIN_PUSH_TO_SERVERS).set(true);
+                        HOST_CONTROLLER_LOGGER.tracef("Sending %s (transformed to %s) to %s", operation, transformedOperation, name);
+                    } else {
+                        HOST_CONTROLLER_LOGGER.tracef("Sending %s (untransformed) to %s", transformedOperation, name);
                     }
+                } else {
+                    HOST_CONTROLLER_LOGGER.tracef("Sending %s (transformed to null) to %s", operation, name);
                 }
+
                 final AsyncFuture<OperationResponse> result = client.execute(subsystemListener, proxyOperation);
                 return new ExecutedHostRequest(result, transformationResult);
             } catch (IOException e) {
@@ -159,7 +163,7 @@ class HostControllerUpdateTask {
         @Override
         public boolean rejectOperation(ModelNode result) {
             // Check the host result for successful operations and see if we have to reject it
-            if(result.get(RESULT).has(DOMAIN_RESULTS)) {
+            if(result.has(RESULT, DOMAIN_RESULTS)) {
                 final ModelNode domainResults = result.get(RESULT, DOMAIN_RESULTS);
                 // Don't reject ignored operations
                 if(domainResults.getType() == ModelType.STRING && IGNORED.equals(domainResults.asString())) {
@@ -188,7 +192,7 @@ class HostControllerUpdateTask {
             if(reject) {
                 result.get(FAILURE_DESCRIPTION).set(getFailureDescription());
             }
-            if(result.get(RESULT).has(DOMAIN_RESULTS)) {
+            if(result.has(RESULT, DOMAIN_RESULTS)) {
                 final ModelNode domainResults = result.get(RESULT, DOMAIN_RESULTS);
                 if(domainResults.getType() == ModelType.STRING && IGNORED.equals(domainResults.asString())) {
                     // Untransformed
@@ -270,31 +274,32 @@ class HostControllerUpdateTask {
         @Override
         public void operationComplete(ProxyOperation operation, OperationResponse result) {
             try {
-                storeSubsystemVersions(operation.getOperation(), result.getResponseNode());
+                ModelNode responseNode = result.getResponseNode();
+                if (responseNode.hasDefined(RESULT, DOMAIN_RESULTS)) {
+                    storeSubsystemVersions(operation.getOperation(), responseNode.get(RESULT, DOMAIN_RESULTS));
+                }
             } finally {
                 delegate.operationComplete(operation, result);
             }
         }
 
-        private void storeSubsystemVersions(ModelNode operation, ModelNode response) {
+        private void storeSubsystemVersions(ModelNode operation, ModelNode resultNode) {
             PathAddress address = operation.hasDefined(OP_ADDR) ? PathAddress.pathAddress(operation.get(OP_ADDR)) : PathAddress.EMPTY_ADDRESS;
-            if (address.size() == 0 && COMPOSITE.equals(operation.get(OP).asString()) && response.hasDefined(RESULT)) {
+            if (address.size() == 0 && COMPOSITE.equals(operation.get(OP).asString())) {
                 // recurse
                 List<ModelNode> steps = operation.hasDefined(STEPS) ? operation.get(STEPS).asList() : Collections.<ModelNode>emptyList();
-                ModelNode result = response.get(RESULT);
                 for (int i = 0; i < steps.size(); i++) {
                     ModelNode stepOp = steps.get(i);
                     String resultID = "step-" + (i+1);
-                    if (result.hasDefined(resultID)) {
-                        storeSubsystemVersions(stepOp, result.get(resultID));
+                    if (resultNode.hasDefined(resultID, RESULT)) {
+                        storeSubsystemVersions(stepOp, resultNode.get(resultID, RESULT));
                     }
                 }
             } else if (address.size() == 1 && ADD.equals(operation.get(OP).asString())
-                        && EXTENSION.equals(address.getElement(0).getKey())
-                        && response.hasDefined(RESULT) && response.get(RESULT).hasDefined(DOMAIN_RESULTS)) {
+                        && EXTENSION.equals(address.getElement(0).getKey())) {
                 // Extract the subsystem info and store it
                 TransformationTarget target = transformers.getTarget();
-                for (Property p : response.get(RESULT, DOMAIN_RESULTS).asPropertyList()) {
+                for (Property p : resultNode.asPropertyList()) {
 
                     String[] version = p.getValue().asString().split("\\.");
                     int major = Integer.parseInt(version[0]);
@@ -304,7 +309,7 @@ class HostControllerUpdateTask {
                             p.getName(), address, major, minor);
                 }
                 // purge the subsystem version data from the response
-                response.get(RESULT).set(new ModelNode());
+                resultNode.set(new ModelNode());
             }
         }
     }

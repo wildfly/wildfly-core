@@ -61,7 +61,7 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
 
     @Override
     public void operationPrepared(final TransactionalProtocolClient.PreparedOperation<T> prepared) {
-        ControllerLogger.MGMT_OP_LOGGER.tracef("received prepared operation  %s", prepared.getOperation());
+        ControllerLogger.MGMT_OP_LOGGER.tracef("received prepared operation  %s", prepared);
         if(! queue.offer(prepared)) {
             prepared.rollback();
         }

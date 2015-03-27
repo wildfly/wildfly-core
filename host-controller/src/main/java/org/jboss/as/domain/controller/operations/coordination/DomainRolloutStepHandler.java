@@ -83,7 +83,7 @@ import org.jboss.dmr.Property;
  */
 public class DomainRolloutStepHandler implements OperationStepHandler {
 
-    private final DomainOperationContext domainOperationContext;
+    private final MultiphaseOverallContext multiphaseContext;
     private final Map<String, ProxyController> hostProxies;
     private final Map<String, ProxyController> serverProxies;
     private final ExecutorService executorService;
@@ -92,12 +92,12 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
     public DomainRolloutStepHandler(final Map<String, ProxyController> hostProxies,
                                     final Map<String, ProxyController> serverProxies,
-                                    final DomainOperationContext domainOperationContext,
+                                    final MultiphaseOverallContext multiphaseContext,
                                     final ModelNode rolloutPlan,
                                     final ExecutorService executorService) {
         this.hostProxies = hostProxies;
         this.serverProxies = serverProxies;
-        this.domainOperationContext = domainOperationContext;
+        this.multiphaseContext = multiphaseContext;
         this.providedRolloutPlan = rolloutPlan;
         this.executorService = executorService;
     }
@@ -115,26 +115,26 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         context.attachIfAbsent(CompositeOperationHandler.DOMAIN_EXECUTION_KEY, Boolean.TRUE);
 
         // Confirm no host failures
-        boolean pushToServers = !domainOperationContext.hasHostLevelFailures();
+        boolean pushToServers = !multiphaseContext.hasHostLevelFailures();
         if (pushToServers) {
-            ModelNode ourResult = domainOperationContext.getCoordinatorResult();
+            ModelNode ourResult = multiphaseContext.getLocalContext().getLocalResponse();
             if (ourResult.has(FAILURE_DESCRIPTION)) {
                 if (trace) {
                     HOST_CONTROLLER_LOGGER.tracef("coordinator failed: %s", ourResult);
                 }
                 pushToServers = false;
-                domainOperationContext.setCompleteRollback(true);
+                multiphaseContext.setCompleteRollback(true);
             } else {
                 if (trace) {
                     HOST_CONTROLLER_LOGGER.tracef("coordinator succeeded: %s", ourResult);
                 }
-                for (ModelNode hostResult : domainOperationContext.getHostControllerResults().values()) {
+                for (ModelNode hostResult : multiphaseContext.getHostControllerPreparedResults().values()) {
                     if (hostResult.has(FAILURE_DESCRIPTION)) {
                         if (trace) {
                             HOST_CONTROLLER_LOGGER.tracef("host failed: %s", hostResult);
                         }
                         pushToServers = false;
-                        domainOperationContext.setCompleteRollback(true);
+                        multiphaseContext.setCompleteRollback(true);
                         break;
                     }
                 }
@@ -143,7 +143,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
         if (pushToServers) {
             // We no longer roll back by default
-            domainOperationContext.setCompleteRollback(false);
+            multiphaseContext.setCompleteRollback(false);
 
             final Map<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> submittedTasks = new HashMap<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest>();
             final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults = new ArrayList<ServerTaskExecutor.ServerPreparedResponse>();
@@ -176,10 +176,10 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         boolean interrupted = false;
         // Inform the remote hosts whether to commit or roll back their updates
         // Do them all before reading results so the commits/rollbacks can be executed in parallel
-        boolean completeRollback = domainOperationContext.isCompleteRollback();
-        final String localHostName = domainOperationContext.getLocalHostInfo().getLocalHostName();
+        boolean completeRollback = multiphaseContext.isCompleteRollback();
+        final String localHostName = multiphaseContext.getLocalHostInfo().getLocalHostName();
         for(final ServerTaskExecutor.ServerPreparedResponse preparedResult : preparedResults) {
-            boolean rollback = completeRollback || domainOperationContext.isServerGroupRollback(preparedResult.getServerGroupName());
+            boolean rollback = completeRollback || multiphaseContext.isServerGroupRollback(preparedResult.getServerGroupName());
 
             // Clear any thread interrupted status to ensure the finalizeTransaction message goes out
             interrupted = Thread.interrupted() || interrupted;
@@ -226,32 +226,38 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             boolean patient = !interrupted;
             for (Map.Entry<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> entry : submittedTasks.entrySet()) {
                 final ServerTaskExecutor.ExecutedServerRequest request = entry.getValue();
+                final ServerIdentity sid = entry.getKey();
                 final Future<OperationResponse> future = request.getFinalResult();
                 try {
                     final OperationResponse finalResponse = future.isCancelled()
                             ? getCancelledResult()
                             : patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
-                    final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
+
+                    final ModelNode untransformedResponse = finalResponse.getResponseNode();
+                    HOST_CONTROLLER_LOGGER.tracef("Final response from %s is %s (untransformed)", sid, untransformedResponse);
+                    final ModelNode transformedResult = request.transformResult(untransformedResponse);
 
                     // Make sure any streams associated with the remote response are properly
                     // integrated with our response
                     ResponseAttachmentInputStreamSupport.handleDomainOperationResponseStreams(context, transformedResult, finalResponse.getInputStreams());
 
-                    domainOperationContext.addServerResult(entry.getKey(), transformedResult);
+                    HOST_CONTROLLER_LOGGER.tracef("Transformed final response from %s is %s", sid, transformedResult);
+
+                    multiphaseContext.addServerResult(sid, transformedResult);
                 } catch (InterruptedException e) {
                     future.cancel(true);
                     interrupted = true;
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
                     patient = false;
-                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(entry.getKey().getServerName(), entry.getKey().getHostName());
+                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
                 } catch (ExecutionException e) {
                     future.cancel(true);
-                    HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), entry.getKey().getServerName(), entry.getKey().getHostName());
+                    HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), sid.getServerName(), sid.getHostName());
                 } catch (TimeoutException e) {
                     future.cancel(true);
                     // This only happens if we were interrupted previously, so treat it that way
-                    CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(entry.getKey().getServerName(), entry.getKey().getHostName());
+                    CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
                 }
             }
         } finally {
@@ -270,10 +276,14 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     private void pushToServers(final OperationContext context, final Map<ServerIdentity,ServerTaskExecutor.ExecutedServerRequest> submittedTasks,
                                final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults) throws OperationFailedException {
 
-        final String localHostName = domainOperationContext.getLocalHostInfo().getLocalHostName();
-        Map<String, ModelNode> hostResults = new HashMap<String, ModelNode>(domainOperationContext.getHostControllerResults());
-        if (domainOperationContext.getCoordinatorResult().isDefined()) {
-            hostResults.put(localHostName, domainOperationContext.getCoordinatorResult());
+        final String localHostName = multiphaseContext.getLocalHostInfo().getLocalHostName();
+        Map<String, ModelNode> hostResults = new HashMap<String, ModelNode>(multiphaseContext.getHostControllerPreparedResults());
+        ModelNode coordinatorOps = multiphaseContext.getLocalContext().getLocalServerOps();
+        if (coordinatorOps.isDefined()) {
+            // Make a node structure that looks like a response from a remote slave
+            ModelNode localNode = new ModelNode();
+            localNode.get(RESULT, SERVER_OPERATIONS).set(coordinatorOps);
+            hostResults.put(localHostName, localNode);
         }
         Map<String, Map<ServerIdentity, ModelNode>> opsByGroup = getOpsByGroup(hostResults);
         if (opsByGroup.size() > 0) {
@@ -303,27 +313,27 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                     }
                     // Transform the server-results
                     final TransformingProxyController remoteProxyController = (TransformingProxyController) proxy;
-                    final OperationTransformer.TransformedOperation transformed = domainOperationContext.transformServerOperation(hostName, remoteProxyController, context, original);
+                    final OperationTransformer.TransformedOperation transformed = multiphaseContext.transformServerOperation(hostName, remoteProxyController, context, original);
                     final ModelNode transformedOperation = transformed.getTransformedOperation();
                     final OperationResultTransformer resultTransformer = transformed.getResultTransformer();
                     final TransactionalProtocolClient client = remoteProxyController.getProtocolClient();
                     return executeOperation(listener, client, server, transformedOperation, resultTransformer);
                 }
             };
-            RolloutPlanController rolloutPlanController = new RolloutPlanController(opsByGroup, rolloutPlan, domainOperationContext, taskExecutor, executorService);
+            RolloutPlanController rolloutPlanController = new RolloutPlanController(opsByGroup, rolloutPlan, multiphaseContext, taskExecutor, executorService);
             RolloutPlanController.Result planResult = rolloutPlanController.execute();
             if (trace) {
                 HOST_CONTROLLER_LOGGER.tracef("Rollout plan result is %s", planResult);
             }
             if (planResult == RolloutPlanController.Result.FAILED ||
-                    (planResult == RolloutPlanController.Result.PARTIAL && domainOperationContext.isCompleteRollback())) {
-                domainOperationContext.setCompleteRollback(true);
+                    (planResult == RolloutPlanController.Result.PARTIAL && multiphaseContext.isCompleteRollback())) {
+                multiphaseContext.setCompleteRollback(true);
                 // AS7-801 -- we need to record a failure description here so the local host change gets aborted
                 // Waiting to do it in the DomainFinalResultHandler on the way out is too late
                 // Create the result node first so the server results will end up before the failure stuff
                 context.getResult();
                 context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBack());
-                domainOperationContext.setFailureReported(true);
+                multiphaseContext.setFailureReported(true);
             }
         }
     }
@@ -451,14 +461,14 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     }
 
     private boolean collectDomainFailure(OperationContext context, final boolean isDomain) {
-        final ModelNode coordinator = domainOperationContext.getCoordinatorResult();
+        final ModelNode coordinator = multiphaseContext.getLocalContext().getLocalResponse();
         ModelNode domainFailure = null;
-        if (isDomain &&  coordinator != null && coordinator.has(FAILURE_DESCRIPTION)) {
+        if (isDomain && coordinator.has(FAILURE_DESCRIPTION)) {
             domainFailure = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
         }
         if (domainFailure != null) {
             context.getFailureDescription().get(DOMAIN_FAILURE_DESCRIPTION).set(domainFailure);
-            domainOperationContext.setFailureReported(true);
+            multiphaseContext.setFailureReported(true);
             return true;
         }
         return false;
@@ -466,7 +476,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
     private boolean collectHostFailures(final OperationContext context, final boolean isDomain) {
         ModelNode hostFailureResults = null;
-        for (Map.Entry<String, ModelNode> entry : domainOperationContext.getHostControllerResults().entrySet()) {
+        for (Map.Entry<String, ModelNode> entry : multiphaseContext.getHostControllerPreparedResults().entrySet()) {
             ModelNode hostResult = entry.getValue();
             if (hostResult.has(FAILURE_DESCRIPTION)) {
                 if (hostFailureResults == null) {
@@ -477,18 +487,18 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             }
         }
 
-        final ModelNode coordinator = domainOperationContext.getCoordinatorResult();
-        if (!isDomain && coordinator != null && coordinator.has(FAILURE_DESCRIPTION)) {
+        final ModelNode coordinator = multiphaseContext.getLocalContext().getLocalResponse();
+        if (!isDomain && coordinator.has(FAILURE_DESCRIPTION)) {
             if (hostFailureResults == null) {
                 hostFailureResults = new ModelNode();
             }
             final ModelNode desc = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
-            hostFailureResults.add(domainOperationContext.getLocalHostInfo().getLocalHostName(), desc);
+            hostFailureResults.add(multiphaseContext.getLocalHostInfo().getLocalHostName(), desc);
         }
 
         if (hostFailureResults != null) {
             context.getFailureDescription().get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureResults);
-            domainOperationContext.setFailureReported(true);
+            multiphaseContext.setFailureReported(true);
             return true;
         }
         return false;

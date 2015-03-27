@@ -37,6 +37,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -46,6 +48,7 @@ import java.io.IOException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
@@ -53,6 +56,7 @@ import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -63,24 +67,28 @@ import org.junit.Test;
 public class WildcardOperationsTestCase {
 
     private static final String WILDCARD = "*";
+    private static final PathElement SYS_PROP_ELEMENT = PathElement.pathElement(SYSTEM_PROPERTY, "wildcard-composite-op");
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(WildcardOperationsTestCase.class.getSimpleName());
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
         domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
         DomainTestSuite.stopSupport();
+    }
+
+    @After
+    public void cleanup() throws IOException {
+        ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT));
+        domainMasterLifecycleUtil.getDomainClient().execute(op);
     }
 
     @Test
@@ -103,161 +111,29 @@ public class WildcardOperationsTestCase {
 
     }
 
-    /**
-     * This is really a sanity test of non-wildcard composites that doesn't truly belong in
-     * this class. It was added as the work on WFCORE-282 was being done basically to help
-     * ensure it didn't break anything, and perhaps now covers some stuff not covered
-     * elsewhere.
-     *
-     * @throws IOException
-     * @throws MgmtOperationException
-     */
     @Test
-    public void testNormalCompositeOperation() throws IOException, MgmtOperationException {
+    public void testReadOnlyCompositeOperationWithWildCards() throws IOException, MgmtOperationException {
 
+        testCompositeOperationWithWildCards(true);
+    }
+
+    @Test
+    public void testReadWriteCompositeOperationWithWildCards() throws IOException, MgmtOperationException {
+
+        testCompositeOperationWithWildCards(false);
+    }
+
+    void testCompositeOperationWithWildCards(boolean readonly) throws IOException, MgmtOperationException {
         final ModelNode composite = new ModelNode();
         composite.get(OP).set(COMPOSITE);
         final ModelNode steps = composite.get(STEPS);
 
-        final ModelNode address = new ModelNode();
-        address.setEmptyList();
-
-        // host=slave
-        address.add(HOST, "slave");
-        steps.add().set(createReadResourceOperation(address));
-
-        // host=slave,server=main-three
-        address.add(RUNNING_SERVER, "main-three");
-        steps.add().set(createReadResourceOperation(address));
-
-        // host=slave,server=main-three,subsystem=io
-        address.add(SUBSYSTEM, "io");
-        steps.add().set(createReadResourceOperation(address));
-
-        // add steps involving a different host
-        address.setEmptyList();
-
-        // host=master
-        address.add(HOST, "master");
-        steps.add().set(createReadResourceOperation(address));
-
-        // host=master,server=main-one
-        address.add(RUNNING_SERVER, "main-one");
-        steps.add().set(createReadResourceOperation(address));
-
-        // host=master,server=main-one,subsystem=io
-        address.add(SUBSYSTEM, "io");
-        steps.add().set(createReadResourceOperation(address));
-
-        // Now repeat the whole thing, but nested
-
-        final ModelNode nested = steps.add();
-        nested.get(OP).set(COMPOSITE);
-        final ModelNode nestedSteps = nested.get(STEPS);
-
-        address.setEmptyList();
-
-        // host=slave
-        address.add(HOST, "slave");
-        nestedSteps.add().set(createReadResourceOperation(address));
-
-        // host=slave,server=main-three
-        address.add(RUNNING_SERVER, "main-three");
-        nestedSteps.add().set(createReadResourceOperation(address));
-
-        // host=slave,server=main-three,subsystem=io
-        address.add(SUBSYSTEM, "io");
-        nestedSteps.add().set(createReadResourceOperation(address));
-
-        // add steps involving a different host
-        address.setEmptyList();
-
-        // host=master
-        address.add(HOST, "master");
-        nestedSteps.add().set(createReadResourceOperation(address));
-
-        // host=master,server=main-one
-        address.add(RUNNING_SERVER, "main-one");
-        nestedSteps.add().set(createReadResourceOperation(address));
-
-        // host=master,server=main-one,subsystem=io
-        address.add(SUBSYSTEM, "io");
-        nestedSteps.add().set(createReadResourceOperation(address));
-
-        System.out.println(composite);
-
-        final ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
-        System.out.println(response);
-
-        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
-        assertTrue(response.toString(), response.hasDefined(RESULT));
-        assertFalse(response.toString(), response.has(SERVER_GROUPS));
-
-        validateCompositeResponse(response, true);
-
-
-    }
-
-    private void validateCompositeResponse(ModelNode response, boolean allowNested) {
-
-        int i = 0;
-        for (Property property : response.get(RESULT).asPropertyList()) {
-            assertEquals(property.getName() + " from " + response, "step-" + (++i), property.getName());
-            ModelNode item = property.getValue();
-            assertEquals(property.getName() + " from " + response, ModelType.OBJECT, item.getType());
-            assertEquals(property.getName() + " from " + response, SUCCESS, item.get(OUTCOME).asString());
-            assertTrue(property.getName() + " from " + response, item.hasDefined(RESULT));
-            ModelNode itemResult = item.get(RESULT);
-            assertEquals(property.getName() + " result " + itemResult, ModelType.OBJECT, itemResult.getType());
-            switch (i) {
-                case 1:
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(RUNNING_SERVER));
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(DIRECTORY_GROUPING));
-                    assertEquals(property.getName() + " result " + itemResult, "slave", itemResult.get(NAME).asString());
-                    break;
-                case 2:
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(SUBSYSTEM));
-                    assertEquals(property.getName() + " result " + itemResult, "main-three", itemResult.get(NAME).asString());
-                    assertEquals(property.getName() + " result " + itemResult, "slave", itemResult.get(HOST).asString());
-                    break;
-                case 3:
-                case 6:
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined("buffer-pool"));
-                    break;
-                case 4:
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(RUNNING_SERVER));
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(DIRECTORY_GROUPING));
-                    assertEquals(property.getName() + " result " + itemResult, "master", itemResult.get(NAME).asString());
-                    break;
-                case 5:
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(SUBSYSTEM));
-                    assertEquals(property.getName() + " result " + itemResult, "main-one", itemResult.get(NAME).asString());
-                    assertEquals(property.getName() + " result " + itemResult, "master", itemResult.get(HOST).asString());
-                    break;
-                case 7:
-                    if (allowNested) {
-                        // recurse
-                        validateCompositeResponse(item, false);
-                        break;
-                    } // else fall through
-                default:
-                    throw new IllegalStateException();
-            }
+        if (!readonly) {
+            ModelNode syspropAdd = Util.createAddOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT));
+            syspropAdd.get(VALUE).set("a");
+            steps.add().set(syspropAdd);
         }
 
-    }
-
-    @Test
-    public void testCompositeOperationWithWildCards() throws IOException, MgmtOperationException {
-
-        final ModelNode composite = new ModelNode();
-        composite.get(OP).set(COMPOSITE);
-        final ModelNode steps = composite.get(STEPS);
-
         final ModelNode address = new ModelNode();
         address.setEmptyList();
 
@@ -291,9 +167,14 @@ public class WildcardOperationsTestCase {
         nested.get(OP).set(COMPOSITE);
         final ModelNode nestedSteps = nested.get(STEPS);
 
+        if (!readonly) {
+            ModelNode syspropUpdated = Util.getWriteAttributeOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT), VALUE, "b");
+            nestedSteps.add().set(syspropUpdated);
+        }
+
         address.setEmptyList();
 
-        // Mix in a non-widlcard remote slave op
+        // Mix in a non-wildcard remote slave op
         address.add(HOST, "slave");
         nestedSteps.add().set(createReadResourceOperation(address));
 
@@ -320,13 +201,17 @@ public class WildcardOperationsTestCase {
         final ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
         assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
         assertTrue(response.toString(), response.hasDefined(RESULT));
-        assertFalse(response.toString(), response.has(SERVER_GROUPS));
+        if (readonly) {
+            assertFalse(response.toString(), response.has(SERVER_GROUPS));
+        } else {
+            assertTrue(response.toString(), response.has(SERVER_GROUPS));
+        }
 
-        validateWildCardCompositeResponse(response, true);
+        validateWildCardCompositeResponse(response, readonly, true);
 
     }
 
-    private void validateWildCardCompositeResponse(ModelNode response, boolean allowNested) {
+    private void validateWildCardCompositeResponse(ModelNode response, boolean readOnly, boolean allowNested) {
 
         int i = 0;
         for (Property property : response.get(RESULT).asPropertyList()) {
@@ -334,10 +219,17 @@ public class WildcardOperationsTestCase {
             ModelNode item = property.getValue();
             assertEquals(property.getName() + " from " + response, ModelType.OBJECT, item.getType());
             assertEquals(property.getName() + " from " + response, SUCCESS, item.get(OUTCOME).asString());
+
+            if (!readOnly && i == 1) {
+                // skip remaining validation of this one
+                continue;
+            }
+
             assertTrue(property.getName() + " from " + response, item.hasDefined(RESULT));
             ModelNode itemResult = item.get(RESULT);
             PathAddress pa = null;
-            switch (i) {
+            int validationIndex = readOnly ? i : i - 1;
+            switch (validationIndex) {
                 case 1:
                     assertEquals(property.getName() + " result " + itemResult, ModelType.OBJECT, itemResult.getType());
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
@@ -368,7 +260,7 @@ public class WildcardOperationsTestCase {
                 case 6:
                     if (allowNested) {
                         // recurse
-                        validateWildCardCompositeResponse(item, false);
+                        validateWildCardCompositeResponse(item, readOnly, false);
                         break;
                     } // else fall through
                 default:
@@ -383,13 +275,19 @@ public class WildcardOperationsTestCase {
         final ModelNode operation = createReadResourceOperation(address);
         final ModelNode result = DomainTestUtils.executeForResult(operation, client);
 
-        System.out.println(result);
         assertEquals(ModelType.LIST, result.getType());
 
         final PathAddress toMatch = PathAddress.pathAddress(operation.get(OP_ADDR));
         validateWildcardResponseList(toMatch, result);
 
         return result;
+    }
+
+    static ModelNode createReadResourceOperation(final ModelNode address) {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).set(address);
+        return operation;
     }
 
     private static void validateWildcardResponseList(PathAddress toMatch, ModelNode responseList) {
@@ -401,13 +299,6 @@ public class WildcardOperationsTestCase {
             assertTrue(responseItem.toString(), responseItem.hasDefined(RESULT));
         }
 
-    }
-
-    static ModelNode createReadResourceOperation(final ModelNode address) {
-        final ModelNode operation = new ModelNode();
-        operation.get(OP).set(READ_RESOURCE_OPERATION);
-        operation.get(OP_ADDR).set(address);
-        return operation;
     }
 
     static void assertMatchingAddress(PathAddress toMatch, ModelNode node) {

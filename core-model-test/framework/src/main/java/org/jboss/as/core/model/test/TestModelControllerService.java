@@ -600,7 +600,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
             HostModelUtil.createRootRegistry(
                     rootRegistration,
-                    env, ignoredRegistry,
+                    env,
+                    ignoredRegistry,
                     new HostModelRegistrar() {
 
                         @Override

@@ -77,7 +77,6 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestUti
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -85,10 +84,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.CompositeOperationHandler;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.SnapshotDeleteHandler;
 import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
@@ -751,21 +750,9 @@ public class CoreResourceManagementTestCase {
         validateFailedResponse(response);
 
         String errorCode = getNotAuthorizedErrorCode();
-        Assert.assertEquals(1, response.get(SERVER_GROUPS, "main-server-group", HOST, "master").keys().size());
-        Assert.assertEquals(1, response.get(SERVER_GROUPS, "main-server-group", HOST, "slave").keys().size());
-        ModelNode mainOneResult = response.get(SERVER_GROUPS, "main-server-group", HOST, "master", "main-one");
-        ModelNode mainThreeResult = response.get(SERVER_GROUPS, "main-server-group", HOST, "slave", "main-three");
-        Assert.assertTrue(mainOneResult.isDefined());
-        Assert.assertTrue(mainThreeResult.isDefined());
-
-        List<ModelNode> steps = new ArrayList<ModelNode>();
-        steps.add(mainOneResult);
-        steps.add(mainThreeResult);
-        for (ModelNode stepResponse : steps) {
-            ModelNode stepResult = stepResponse.get("response");
-            ModelNode desc = validateFailedResponse(stepResult);
-            Assert.assertTrue(desc.toString() + " does not contain " + errorCode, desc.toString().contains(errorCode));
-        }
+        Assert.assertTrue(response.toString(), response.get(FAILURE_DESCRIPTION).asString().contains(errorCode));
+        Assert.assertTrue(response.toString(), response.hasDefined(RESULT, "step-1", FAILURE_DESCRIPTION));
+        Assert.assertTrue(response.toString(), response.get(RESULT, "step-1", FAILURE_DESCRIPTION).asString().contains(errorCode));
     }
 
     /**
@@ -1051,7 +1038,7 @@ public class CoreResourceManagementTestCase {
             snapshots.add(listResult.get(DIRECTORY).asString() + fileSeparator + curr.asString());
         }
 
-        Assert.assertTrue(snapshots.contains(snapshot));
+        Assert.assertTrue(listResult.toString() + " has " + snapshot, snapshots.contains(snapshot));
 
         ModelNode deleteSnapshotOperation = new ModelNode();
         deleteSnapshotOperation.get(OP).set(SnapshotDeleteHandler.DEFINITION.getName());

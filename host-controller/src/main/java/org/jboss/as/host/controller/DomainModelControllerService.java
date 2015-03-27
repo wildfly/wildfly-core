@@ -233,7 +233,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry = new DomainControllerRuntimeIgnoreTransformationRegistry();
-        final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo, contentRepository,
+        final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry, runtimeIgnoreTransformationRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
@@ -486,7 +486,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     @Override
     protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
-        HostModelUtil.createRootRegistry(managementModel.getRootResourceRegistration(), environment, ignoredRegistry, this, processType, authorizer, modelControllerResource);
+        HostModelUtil.createRootRegistry(managementModel.getRootResourceRegistration(), environment,
+                ignoredRegistry, this, processType, authorizer, modelControllerResource);
         VersionModelInitializer.registerRootResource(managementModel.getRootResource(), environment != null ? environment.getProductConfig() : null);
         CoreManagementResourceDefinition.registerDomainResource(managementModel.getRootResource(), authorizer.getWritableAuthorizerConfiguration());
         this.modelNodeRegistration = managementModel.getRootResourceRegistration();

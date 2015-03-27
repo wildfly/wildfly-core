@@ -47,7 +47,6 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
-import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -58,7 +57,6 @@ import org.jboss.dmr.ModelNode;
 public class OperationCoordinatorStepHandler {
 
     private final LocalHostControllerInfo localHostControllerInfo;
-    private final ContentRepository contentRepository;
     private final Map<String, ProxyController> hostProxies;
     private final Map<String, ProxyController> serverProxies;
     private final OperationSlaveStepHandler localSlaveHandler;
@@ -66,13 +64,11 @@ public class OperationCoordinatorStepHandler {
     private volatile ExecutorService executorService;
 
     OperationCoordinatorStepHandler(final LocalHostControllerInfo localHostControllerInfo,
-                                    ContentRepository contentRepository,
                                     final Map<String, ProxyController> hostProxies,
                                     final Map<String, ProxyController> serverProxies,
                                     final OperationSlaveStepHandler localSlaveHandler,
                                     final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
         this.localHostControllerInfo = localHostControllerInfo;
-        this.contentRepository = contentRepository;
         this.hostProxies = hostProxies;
         this.serverProxies = serverProxies;
         this.localSlaveHandler = localSlaveHandler;
@@ -83,8 +79,6 @@ public class OperationCoordinatorStepHandler {
 
         // Determine routing
         OperationRouting routing = OperationRouting.determineRouting(context, operation, localHostControllerInfo, hostProxies.keySet());
-
-        HOST_CONTROLLER_LOGGER.trace(routing);
 
         if (!localHostControllerInfo.isMasterDomainController()
                 && !routing.isLocalOnly(localHostControllerInfo.getLocalHostName())) {
@@ -150,32 +144,33 @@ public class OperationCoordinatorStepHandler {
     }
 
     private void executeTwoPhaseOperation(OperationContext context, ModelNode operation, OperationRouting routing) throws OperationFailedException {
-        if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
-            HOST_CONTROLLER_LOGGER.trace("Executing two-phase");
-        }
+
+        HOST_CONTROLLER_LOGGER.trace("Executing two-phase");
 
         configureDomainUUID(operation);
 
-        DomainOperationContext overallContext = new DomainOperationContext(localHostControllerInfo);
+        MultiphaseOverallContext overallContext = new MultiphaseOverallContext(localHostControllerInfo);
 
         // Get a copy of the rollout plan so it doesn't get disrupted by any handlers
         ModelNode rolloutPlan = operation.hasDefined(OPERATION_HEADERS) && operation.get(OPERATION_HEADERS).has(ROLLOUT_PLAN)
             ? operation.get(OPERATION_HEADERS).remove(ROLLOUT_PLAN) : new ModelNode();
 
-        // A stage that on the way out fixes up the result/failure description. On the way in it does nothing
-        context.addStep(new DomainFinalResultHandler(overallContext), OperationContext.Stage.MODEL);
-
         final ModelNode slaveOp = operation.clone();
         slaveOp.get(OPERATION_HEADERS, EXECUTE_FOR_COORDINATOR).set(true);
         slaveOp.protect();
+
+        HostControllerExecutionSupport localHCES = null;
 
         // If necessary, execute locally first. This gets all of the Stage.MODEL, Stage.RUNTIME, Stage.VERIFY
         // steps registered. A failure in those will prevent the rest of the steps below executing
         String localHostName = localHostControllerInfo.getLocalHostName();
         if (routing.isLocalCallNeeded(localHostName)) {
-            ModelNode localResponse = overallContext.getCoordinatorResult();
-            localSlaveHandler.addSteps(context, slaveOp.clone(), localResponse, false);
+            localHCES = localSlaveHandler.addSteps(context, slaveOp.clone(), overallContext.getLocalContext());
         }
+
+        // Add a step that on the way out fixes up the result/failure description. On the way in it does nothing.
+        // We set the 'addFirst' param to 'true' so this is placed *before* any steps localSlaveHandler just added
+        context.addStep(new DomainFinalResultHandler(overallContext, localHCES), OperationContext.Stage.MODEL, true);
 
         if (localHostControllerInfo.isMasterDomainController()) {
 

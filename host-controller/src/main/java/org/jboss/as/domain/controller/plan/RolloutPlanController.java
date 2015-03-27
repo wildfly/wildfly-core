@@ -46,7 +46,7 @@ import java.util.concurrent.ExecutorService;
 import javax.security.auth.Subject;
 
 import org.jboss.as.domain.controller.ServerIdentity;
-import org.jboss.as.domain.controller.operations.coordination.DomainOperationContext;
+import org.jboss.as.domain.controller.operations.coordination.MultiphaseOverallContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -68,11 +68,11 @@ public class RolloutPlanController {
     private final Map<String, ServerUpdatePolicy> updatePolicies = new HashMap<String, ServerUpdatePolicy>();
     private final boolean shutdown;
     private final long gracefulShutdownPeriod;
-    private final DomainOperationContext domainOperationContext;
+    private final MultiphaseOverallContext domainOperationContext;
 
     public RolloutPlanController(final Map<String, Map<ServerIdentity, ModelNode>> opsByGroup,
                                  final ModelNode rolloutPlan,
-                                 final DomainOperationContext domainOperationContext,
+                                 final MultiphaseOverallContext domainOperationContext,
                                  final ServerTaskExecutor taskExecutor,
                                  final ExecutorService executor) {
         this.domainOperationContext = domainOperationContext;
