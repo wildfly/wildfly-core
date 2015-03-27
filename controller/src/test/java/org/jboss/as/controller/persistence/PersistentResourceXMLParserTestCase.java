@@ -203,7 +203,7 @@ public class PersistentResourceXMLParserTestCase {
         List<ModelNode> operations = new ArrayList<>();
         mapper.parseDocument(operations, reader);
 
-        Assert.assertEquals(3, operations.size());
+        Assert.assertEquals(4, operations.size());
         ModelNode subsystem = opsToModel(operations);
 
         StringWriter stringWriter = new StringWriter();
