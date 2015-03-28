@@ -475,7 +475,7 @@ class ModelControllerImpl implements ModelController {
 
         for (String name : resource.getChildTypes()) {
             for (ResourceEntry entry : resource.getChildren(name)) {
-                if (!entry.isProxy()) {
+                if (!entry.isProxy() && !entry.isRuntime()) {
                     addAllAddresses(current.append(entry.getPathElement()), entry, addresses);
                 }
             }
