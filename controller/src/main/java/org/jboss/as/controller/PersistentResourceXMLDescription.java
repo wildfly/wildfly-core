@@ -136,7 +136,9 @@ public class PersistentResourceXMLDescription {
         if (additionalOperationsGenerator != null) {
             additionalOperationsGenerator.additionalOperations(address, op, list);
         }
-        parseChildren(reader, address, list);
+        if (!reader.isEndElement()) { //only parse children if we are not on end of tag already
+            parseChildren(reader, address, list);
+        }
     }
 
     private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
