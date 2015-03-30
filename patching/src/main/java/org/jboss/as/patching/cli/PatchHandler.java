@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -58,10 +59,13 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.patching.Constants;
+import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.logging.PatchLogger;
+import org.jboss.as.patching.metadata.BundledPatch.BundledPatchEntry;
 import org.jboss.as.patching.metadata.Identity;
 import org.jboss.as.patching.metadata.Patch;
+import org.jboss.as.patching.metadata.PatchBundleXml;
 import org.jboss.as.patching.metadata.PatchElement;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.patching.tool.PatchOperationBuilder;
@@ -414,15 +418,23 @@ public class PatchHandler extends CommandHandlerWithHelp {
         }
         ZipFile patchZip = null;
         InputStream is = null;
-        Patch patch;
         try {
             patchZip = new ZipFile(patchFile);
-            final ZipEntry patchXmlEntry = patchZip.getEntry("patch.xml");
+            ZipEntry patchXmlEntry = patchZip.getEntry(PatchBundleXml.MULTI_PATCH_XML);
             if(patchXmlEntry == null) {
-                throw new CommandLineException("Failed to locate patch.xml inside " + patchFile.getAbsolutePath());
+                patchXmlEntry = patchZip.getEntry(PatchXml.PATCH_XML);
+                if(patchXmlEntry == null) {
+                    throw new CommandLineException("Neither " + PatchBundleXml.MULTI_PATCH_XML + " nor " + PatchXml.PATCH_XML+
+                            " were found in " + patchFile.getAbsolutePath());
+                }
+                is = patchZip.getInputStream(patchXmlEntry);
+                final Patch patch = PatchXml.parse(is).resolvePatch(null, null);
+                displayPatchXml(ctx, patch);
+            } else {
+                is = patchZip.getInputStream(patchXmlEntry);
+                final List<BundledPatchEntry> patches = PatchBundleXml.parse(is).getPatches();
+                displayPatchBundleXml(ctx, patches, patchZip);
             }
-            is = patchZip.getInputStream(patchXmlEntry);
-            patch = PatchXml.parse(is).resolvePatch(null, null);
         } catch (ZipException e) {
             throw new CommandLineException("Failed to open " + patchFile.getAbsolutePath(), e);
         } catch (IOException e) {
@@ -445,7 +457,54 @@ public class PatchHandler extends CommandHandlerWithHelp {
                 }
             }
         }
+    }
 
+    private void displayPatchBundleXml(CommandContext ctx, List<BundledPatchEntry> patches, ZipFile patchZip) throws CommandLineException {
+
+        if(patches.isEmpty()) {
+            return;
+        }
+
+        for(BundledPatchEntry bundledPatch : patches) {
+            final ZipEntry bundledZip = patchZip.getEntry(bundledPatch.getPatchPath());
+            if(bundledZip == null) {
+                throw new CommandLineException("Patch file not found in the bundle: " + bundledPatch.getPatchPath());
+            }
+
+            InputStream is = null;
+            ZipInputStream bundledPatchIs = null;
+            try {
+                is = patchZip.getInputStream(bundledZip);
+                bundledPatchIs = new ZipInputStream(is);
+                ZipEntry bundledPatchXml = bundledPatchIs.getNextEntry();
+                while(bundledPatchXml != null) {
+                    if(PatchXml.PATCH_XML.equals(bundledPatchXml.getName())) {
+                        break;
+                    }
+                    bundledPatchXml = bundledPatchIs.getNextEntry();
+                }
+                if(bundledPatchXml == null) {
+                    throw new CommandLineException("Failed to locate " + PatchXml.PATCH_XML + " in bundled patch " + bundledPatch.getPatchPath());
+                }
+                final Patch patch = PatchXml.parse(bundledPatchIs).resolvePatch(null, null);
+
+                if(verbose.isPresent(ctx.getParsedCommandLine())) {
+                    // to make the separation better in the verbose mode
+                    ctx.printLine("CONTENT OF " + bundledPatch.getPatchPath() + ':' + Util.LINE_SEPARATOR);
+                }
+
+                displayPatchXml(ctx, patch);
+                ctx.printLine("");
+            } catch (Exception e) {
+                throw new CommandLineException("Failed to inspect " + bundledPatch.getPatchPath(), e);
+            } finally {
+                IoUtils.safeClose(bundledPatchIs);
+                IoUtils.safeClose(is);
+            }
+        }
+    }
+
+    private void displayPatchXml(CommandContext ctx, Patch patch) throws CommandLineException {
         final Identity identity = patch.getIdentity();
         SimpleTable table = new SimpleTable(2);
         table.addLine(new String[]{"Patch ID:", patch.getPatchId()});
@@ -458,7 +517,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
         }
         ctx.printLine(table.toString(false));
 
-        if(verbose.isPresent(parsedLine)) {
+        if(verbose.isPresent(ctx.getParsedCommandLine())) {
             ctx.printLine("");
             ctx.printLine("ELEMENTS");
             for(PatchElement e : patch.getElements()) {
@@ -619,5 +678,4 @@ public class PatchHandler extends CommandHandlerWithHelp {
         }
         return Collections.singletonList(new File(root, param));
     }
-
 }
