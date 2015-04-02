@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
@@ -353,9 +354,16 @@ interface HostControllerExecutionSupport {
                     HostControllerExecutionSupport po = steps.get(i);
                     if (po.getDomainOperation() != null) {
                         String label = "step-" + (++resultStep);
-                        ModelNode stepResultNode = resultNode.get(label);
-                        ModelNode formattedStepResultNode = po.getFormattedDomainResult(stepResultNode);
-                        allSteps.get("step-" + (i + 1)).set(formattedStepResultNode);
+                        ModelNode stepResponseNode = resultNode.get(label);
+                        ModelNode formattedStepResponseNode;
+                        if (po instanceof MultiStepOpExecutionSupport) {
+                            formattedStepResponseNode = stepResponseNode.clone();
+                            ModelNode stepResultNode = stepResponseNode.get(RESULT);
+                            formattedStepResponseNode.get(RESULT).set(po.getFormattedDomainResult(stepResultNode));
+                        } else {
+                            formattedStepResponseNode = po.getFormattedDomainResult(stepResponseNode);
+                        }
+                        allSteps.get("step-" + (i + 1)).set(formattedStepResponseNode);
                     }
                     else {
                         allSteps.get("step-" + (i + 1), OUTCOME).set(IGNORED);
