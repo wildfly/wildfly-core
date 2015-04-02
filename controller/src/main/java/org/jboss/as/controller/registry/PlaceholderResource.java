@@ -129,7 +129,7 @@ public class PlaceholderResource implements Resource {
         return INSTANCE;
     }
 
-    public static class PlaceholderResourceEntry extends PlaceholderResource implements ResourceEntry {
+    public static class PlaceholderResourceEntry extends PlaceholderResource implements Resource.ResourceEntry {
 
         final PathElement path;
 

@@ -48,7 +48,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String[] DEFAULT_VM_ARGUMENTS = {
             "-Xms64m",
             "-Xmx512m",
-            "-XX:MaxPermSize=256m",
+            //"-XX:MaxPermSize=256m",
             "-Djava.net.preferIPv4Stack=true"
     };
 
