@@ -396,6 +396,29 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
+         * @param hostName   the remote host
+         * @param port       the port
+         * @param handler    CallbackHandler to obtain authentication information for the call.
+         * @param sslContext a pre-initialised SSLContext
+         * @param connectionTimeout
+         * @param saslOptions Additional options to be passed to the SASL mechanism.
+         * @return A model controller client
+         * @throws UnknownHostException if the host cannot be found
+         */
+        public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout, final Map<String, String> saslOptions) throws UnknownHostException {
+            return create(new ClientConfigurationImpl.Builder()
+                    .setConnectionTimeout(connectionTimeout)
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setSaslOptions(saslOptions)
+                    .setSslContext(sslContext)
+                    .build());
+        }
+
+        /**
+         * Create a client instance for a remote address and port and CallbackHandler.
+         *
          * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
          * @param hostName   the remote host
          * @param port       the port
@@ -417,6 +440,32 @@ public interface ModelControllerClient extends Closeable {
                     .setSslContext(sslContext)
                     .build());
         }
+
+        /**
+         * Create a client instance for a remote address and port and CallbackHandler.
+         *
+         * @param hostName   the remote host
+         * @param port       the port
+         * @param handler    CallbackHandler to obtain authentication information for the call.
+         * @param sslContext a pre-initialised SSLContext
+         * @param connectionTimeout
+         * @param saslOptions Additional options to be passed to the SASL mechanism.
+         * @param clientBindAddress the address to which the client will bind.
+         * @return A model controller client
+         * @throws UnknownHostException if the host cannot be found
+         */
+        public static ModelControllerClient create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout, final Map<String, String> saslOptions, final String clientBindAddress) throws UnknownHostException {
+            return create(new ClientConfigurationImpl.Builder()
+                    .setClientBindAddress(clientBindAddress)
+                    .setConnectionTimeout(connectionTimeout)
+                    .setHandler(handler)
+                    .setHostName(hostName)
+                    .setPort(port)
+                    .setSaslOptions(saslOptions)
+                    .setSslContext(sslContext)
+                    .build());
+        }
+
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
