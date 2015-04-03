@@ -25,6 +25,7 @@ package org.jboss.as.host.controller;
 import java.io.DataInput;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -44,8 +45,8 @@ import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.as.host.controller.discovery.DiscoveryHostStategy;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
+import org.jboss.as.host.controller.discovery.RemoteDomainControllerConnectionConfiguration;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
 import org.jboss.as.protocol.ProtocolChannelClient;
@@ -128,7 +129,6 @@ class RemoteDomainConnection extends FutureManagementChannel {
         this.username = username;
         this.realm = realm;
         this.discoveryOptions = discoveryOptions;
-        DiscoveryHostStategy.DEFAULT_STRATEGY.organize(this.discoveryOptions);
         this.executorService = executorService;
         this.channelHandler = new ManagementChannelHandler(this, executorService);
         this.scheduledExecutorService = scheduledExecutorService;
@@ -262,22 +262,14 @@ class RemoteDomainConnection extends FutureManagementChannel {
                         DiscoveryOption discoveryOption = i.next();
                         URI masterURI = null;
                         try {
-                            discoveryOption.discover();
-                            String scheme = discoveryOption.getRemoteDomainControllerProtocol();
-                            String host = discoveryOption.getRemoteDomainControllerHost();
-                            int port = discoveryOption.getRemoteDomainControllerPort();
-                            masterURI = new URI(scheme, null, host, port, null, null, null);
-                            setUri(masterURI);
-                            HostControllerLogger.ROOT_LOGGER.debugf("trying to reconnect to remote host-controller at %s", masterURI);
-                            try {
-                                Connection connection = connectionManager.connect();
-                                HostControllerLogger.ROOT_LOGGER.connectedToMaster(masterURI);
-                                return connection;
-                            } catch (IOException ioe) {
-                                // If the cause is one of the irrecoverable ones, unwrap and throw it on
-                                RemoteDomainConnectionService.rethrowIrrecoverableConnectionFailures(ioe);
-                                // Something else; throw it on
-                                throw ioe;
+                            List<RemoteDomainControllerConnectionConfiguration> remoteDcConfigs = discoveryOption.discover();
+                            for (RemoteDomainControllerConnectionConfiguration remoteDcConfig : remoteDcConfigs) {
+                                try {
+                                    return connect(remoteDcConfig);
+                                } catch (IOException ioe) {
+                                    // If the cause is one of the irrecoverable ones, unwrap and throw it on
+                                    RemoteDomainConnectionService.rethrowIrrecoverableConnectionFailures(ioe);
+                                }
                             }
                         } catch (Exception e) {
                             RemoteDomainConnectionService.logConnectionException(masterURI, discoveryOption, i.hasNext(), e);
@@ -287,6 +279,15 @@ class RemoteDomainConnection extends FutureManagementChannel {
                 }
             }
         });
+    }
+
+    private Connection connect(RemoteDomainControllerConnectionConfiguration remoteDcConfig) throws URISyntaxException, IOException, SlaveRegistrationException {
+        URI masterURI = new URI(remoteDcConfig.getProtocol(), null, remoteDcConfig.getHost(), remoteDcConfig.getPort(), null, null, null);
+        setUri(masterURI);
+        HostControllerLogger.ROOT_LOGGER.debugf("trying to reconnect to remote host-controller at %s", masterURI);
+        Connection connection = connectionManager.connect();
+        HostControllerLogger.ROOT_LOGGER.connectedToMaster(masterURI);
+        return connection;
     }
 
     /**

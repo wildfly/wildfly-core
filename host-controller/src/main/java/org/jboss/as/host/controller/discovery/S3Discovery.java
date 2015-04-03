@@ -23,13 +23,13 @@
 package org.jboss.as.host.controller.discovery;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
-import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.discovery.Constants.ACCESS_KEY;
 import static org.jboss.as.host.controller.discovery.Constants.LOCATION;
 import static org.jboss.as.host.controller.discovery.Constants.PREFIX;
 import static org.jboss.as.host.controller.discovery.Constants.PRE_SIGNED_DELETE_URL;
 import static org.jboss.as.host.controller.discovery.Constants.PRE_SIGNED_PUT_URL;
 import static org.jboss.as.host.controller.discovery.Constants.SECRET_ACCESS_KEY;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,9 +80,6 @@ public class S3Discovery implements DiscoveryOption {
     private String pre_signed_delete_url = null;
 
     private AWSAuthConnection conn = null;
-    private String remoteDcHost;
-    private int remoteDcPort;
-    private String remoteDcProtocol;
 
     /**
      * Create the S3Discovery option.
@@ -113,7 +110,7 @@ public class S3Discovery implements DiscoveryOption {
     public void allowDiscovery(List<DomainControllerManagementInterface> interfaces) {
         try {
             // Write the domain controller data to an S3 file
-            List<DomainControllerData> data = new ArrayList<DomainControllerData>(interfaces.size());
+            List<DomainControllerData> data = new ArrayList<>(interfaces.size());
             for (DomainControllerManagementInterface managementInterface : interfaces) {
                 data.add(new DomainControllerData(managementInterface.getProtocol().toString(), managementInterface.getHost(), managementInterface.getPort()));
             }
@@ -131,22 +128,22 @@ public class S3Discovery implements DiscoveryOption {
                     }
                     return -1;
                 }});
-        writeToFile(data, MASTER);
-        }
-        catch (Exception e) {
+            writeToFile(data, MASTER);
+        } catch (Exception e) {
             ROOT_LOGGER.cannotWriteDomainControllerData(e);
         }
     }
 
     @Override
-    public void discover() {
+    public List<RemoteDomainControllerConnectionConfiguration> discover() {
         // Read the domain controller data from an S3 file
         List<DomainControllerData> dataDc = readFromFile(MASTER);
-        List<StaticDiscovery> options = new ArrayList<StaticDiscovery>(dataDc.size());
+        List<RemoteDomainControllerConnectionConfiguration> options = new ArrayList<>(dataDc.size());
         for (DomainControllerData data : dataDc) {
             if (data != null) {
                 // Validate and set the host and port
-                StaticDiscovery discovery = new StaticDiscovery(data.getProtocol(), data.getHost(), data.getPort());
+                RemoteDomainControllerConnectionConfiguration discovery = new RemoteDomainControllerConnectionConfiguration(
+                        data.getProtocol(), data.getHost(), data.getPort());
                 String host = data.getHost();
                 try {
                     // Use the static discovery AD's. They don't allow undefined.
@@ -154,9 +151,9 @@ public class S3Discovery implements DiscoveryOption {
                             .validateParameter(StaticDiscoveryResourceDefinition.HOST.getName(),
                                     host == null ? new ModelNode() : new ModelNode(host));
                     StaticDiscoveryResourceDefinition.PORT.getValidator()
-                            .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(discovery.getRemoteDomainControllerPort()));
+                            .validateParameter(StaticDiscoveryResourceDefinition.PORT.getName(), new ModelNode(discovery.getPort()));
                     StaticDiscoveryResourceDefinition.PROTOCOL.getValidator()
-                            .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(discovery.getRemoteDomainControllerProtocol()));
+                            .validateParameter(StaticDiscoveryResourceDefinition.PROTOCOL.getName(), new ModelNode(discovery.getProtocol()));
                     options.add(discovery);
                 } catch (OperationFailedException e) {
                 }
@@ -167,31 +164,13 @@ public class S3Discovery implements DiscoveryOption {
         if (options.isEmpty()) {
             throw HostControllerLogger.ROOT_LOGGER.failedMarshallingDomainControllerData();
         }
-        DiscoveryHostStategy.DEFAULT_STRATEGY.organize(options);
-        setRemoteDomainControllerHost(options.get(0).getRemoteDomainControllerHost());
-        setRemoteDomainControllerPort(options.get(0).getRemoteDomainControllerPort());
-        setRemoteDomainControllerProtocol(options.get(0).getRemoteDomainControllerProtocol());
+        return options;
     }
 
     @Override
     public void cleanUp() {
         // Remove the S3 file
         remove(MASTER);
-    }
-
-    @Override
-    public String getRemoteDomainControllerHost() {
-        return remoteDcHost;
-    }
-
-    @Override
-    public int getRemoteDomainControllerPort() {
-        return remoteDcPort;
-    }
-
-    @Override
-    public String getRemoteDomainControllerProtocol() {
-        return remoteDcProtocol;
     }
 
     @Override
@@ -359,17 +338,5 @@ public class S3Discovery implements DiscoveryOption {
         catch(Exception e) {
             ROOT_LOGGER.cannotRemoveS3File(e);
         }
-    }
-
-    private void setRemoteDomainControllerHost(String host) {
-        remoteDcHost = host;
-    }
-
-    private void setRemoteDomainControllerPort(int port) {
-        remoteDcPort = port;
-    }
-
-    private void setRemoteDomainControllerProtocol(String protocol) {
-        remoteDcProtocol = protocol;
     }
 }

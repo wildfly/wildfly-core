@@ -48,11 +48,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.sasl.SaslException;
-
 import org.jboss.as.controller.CurrentOperationIdHolder;
+
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -85,6 +84,7 @@ import org.jboss.as.domain.controller.operations.PullDownDataForServerConfigOnSl
 import org.jboss.as.domain.controller.operations.coordination.DomainControllerLockIdUtils;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
+import org.jboss.as.host.controller.discovery.RemoteDomainControllerConnectionConfiguration;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
@@ -247,25 +247,28 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
            URI masterURI = null;
            try {
                // Determine the remote DC host and port to use
-               discoveryOption.discover();
-               String host = discoveryOption.getRemoteDomainControllerHost();
-               int port = discoveryOption.getRemoteDomainControllerPort();
-               String protocol = discoveryOption.getRemoteDomainControllerProtocol();
-               masterURI = new URI(protocol, null, host, port, null, null, null);
-               connection.setUri(masterURI);
+               List<RemoteDomainControllerConnectionConfiguration> remoteDcConfigs = discoveryOption.discover();
                while (!connected) {
-                   try {
-                       // Try to connect to the domain controller
-                       connection.connect();
-                       connected = true;
-                   } catch (IOException e) {
-                       // If the cause is one of the irrecoverable ones, unwrap and throw it on
-                       rethrowIrrecoverableConnectionFailures(e);
+                   IOException ex = null;
+                   for (RemoteDomainControllerConnectionConfiguration remoteDcConfig : remoteDcConfigs) {
+                       try {
+                           masterURI = new URI(remoteDcConfig.getProtocol(), null, remoteDcConfig.getHost(), remoteDcConfig.getPort(), null, null, null);
+                           connection.setUri(masterURI);
+                           connection.connect();
+                           connected = true;
+                           break;
+                       } catch (IOException e) {
+                           // If the cause is one of the irrecoverable ones, unwrap and throw it on
+                           rethrowIrrecoverableConnectionFailures(e);
 
-                       // Something else; we can retry if time remains
-                       HostControllerLogger.ROOT_LOGGER.cannotConnect(masterURI, e);
+                           // Something else; we can retry if time remains
+                           HostControllerLogger.ROOT_LOGGER.cannotConnect(masterURI, e);
+                           ex = e;
+                       }
+                   }
+                   if (ex != null) {
                        if (System.currentTimeMillis() > endTime) {
-                           throw HostControllerLogger.ROOT_LOGGER.connectionToMasterTimeout(e, retries, timeout);
+                           throw HostControllerLogger.ROOT_LOGGER.connectionToMasterTimeout(ex, retries, timeout);
                        }
 
                        try {
