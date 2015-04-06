@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ABSOLUTE_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -282,7 +283,7 @@ public class ProxyStepHandler implements OperationStepHandler {
         } else {
             ModelNode result = responseHeaders.clone();
             for (ModelNode accItem : result.get(ACCESS_CONTROL).asList()) {
-                ModelNode itemAddrNode = accItem.get("absolute-address");
+                ModelNode itemAddrNode = accItem.get(ABSOLUTE_ADDRESS);
                 PathAddress itemAddr = PathAddress.pathAddress(itemAddrNode);
                 itemAddrNode.set(proxyController.getProxyNodeAddress().append(itemAddr).toModelNode());
             }

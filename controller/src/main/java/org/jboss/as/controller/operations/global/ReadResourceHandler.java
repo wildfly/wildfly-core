@@ -177,11 +177,13 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             } catch (ResourceNotAddressableException rnae) {
                 // Just report the failure to the filter and complete normally
                 reportInaccesible(context, operation, filteredData);
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Caught ResourceNotAddressableException in %s", this);
             } catch (Resource.NoSuchResourceException nsre) {
                 // It's possible this is a remote failure, in which case we
                 // don't get ResourceNotAddressableException. So see if
                 // it was due to any authorization denial
                 AuthorizationResult.Decision decision = context.authorize(operation, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Caught NoSuchResourceException in %s. Authorization decision is %s", this ,decision);
                 if (decision == AuthorizationResult.Decision.DENY) {
                     // Just report the failure to the filter and complete normally
                     reportInaccesible(context, operation, filteredData);
@@ -193,6 +195,8 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
                 filteredData.addReadRestrictedResource(pa);
                 context.getResult().set(new ModelNode());
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Caught UnauthorizedException in %s", this);
+
             }
         }
     }
