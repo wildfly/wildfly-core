@@ -115,7 +115,9 @@ public class MapOperations {
 
         void updateModel(final OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException {
             String key = KEY.resolveModelAttribute(context, model).asString();
-            context.getResult().set(attribute.get(key));
+            if (attribute.hasDefined(key)) {
+                context.getResult().set(attribute.get(key));
+            }
         }
     }
 

@@ -165,7 +165,9 @@ public class ListOperations {
 
         void updateModel(final OperationContext context, ModelNode model, ListAttributeDefinition attributeDefinition, ModelNode listAttribute) throws OperationFailedException {
             int index = INDEX.resolveModelAttribute(context, model).asInt();
-            context.getResult().set(listAttribute.get(index));
+            if (listAttribute.hasDefined(index)) {
+                context.getResult().set(listAttribute.get(index));
+            }
         }
     }
 
