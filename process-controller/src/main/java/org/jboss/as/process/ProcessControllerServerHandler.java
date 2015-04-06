@@ -260,7 +260,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 processName = readUTFZBytes(dataStream);
                                 processController.killProcess(processName);
                             } else {
-                                ProcessLogger.SERVER_LOGGER.tracef("Ignoring destroy_process message from untrusted source");
+                                ProcessLogger.SERVER_LOGGER.tracef("Ignoring kill_process message from untrusted source");
                             }
                             dataStream.close();
                             break;
