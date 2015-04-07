@@ -55,9 +55,11 @@ import org.jboss.dmr.ModelNode;
 public class ProxyStepHandler implements OperationStepHandler {
 
     private final ProxyController proxyController;
+    private final boolean forServer;
 
     public ProxyStepHandler(final ProxyController proxyController) {
         this.proxyController = proxyController;
+        this.forServer = proxyController.getProxyNodeAddress().getLastElement().getKey().equals(RUNNING_SERVER);
     }
 
     @Override
@@ -239,6 +241,9 @@ public class ProxyStepHandler implements OperationStepHandler {
                             if (context.getProcessType() == ProcessType.HOST_CONTROLLER && responseNode.has(SERVER_GROUPS)) {
                                 context.getServerResults().set(responseNode.get(SERVER_GROUPS));
                             }
+                            if (responseNode.hasDefined(RESPONSE_HEADERS)) {
+                                context.getResponseHeaders().set(processResponseHeaders(responseNode.get(RESPONSE_HEADERS)));
+                            }
 
                             // Make sure any streams associated with the remote response are properly
                             // integrated with our response
@@ -264,6 +269,20 @@ public class ProxyStepHandler implements OperationStepHandler {
             if (!completeStepCalled && txRef.get() != null) {
                 txRef.get().rollback();
             }
+        }
+    }
+
+    private ModelNode processResponseHeaders(ModelNode responseHeaders) {
+        if (!responseHeaders.hasDefined(ACCESS_CONTROL) || !forServer) {
+            return responseHeaders;
+        } else {
+            ModelNode result = responseHeaders.clone();
+            for (ModelNode accItem : result.get(ACCESS_CONTROL).asList()) {
+                ModelNode itemAddrNode = accItem.get("absolute-address");
+                PathAddress itemAddr = PathAddress.pathAddress(itemAddrNode);
+                itemAddrNode.set(proxyController.getProxyNodeAddress().append(itemAddr).toModelNode());
+            }
+            return result;
         }
     }
 
