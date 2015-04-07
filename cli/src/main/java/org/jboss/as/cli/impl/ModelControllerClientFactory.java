@@ -30,6 +30,7 @@ import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.protocol.ProtocolTimeoutHandler;
 
 /**
@@ -59,7 +60,17 @@ public interface ModelControllerClientFactory {
                 ConnectionCloseHandler closeHandler, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
             // TODO - Make use of the ProtocolTimeoutHandler
             Map<String, String> saslOptions = disableLocalAuth ? DISABLED_LOCAL_AUTH : ENABLED_LOCAL_AUTH;
-            return ModelControllerClient.Factory.create(address.getProtocol(), address.getHost(), address.getPort(), handler, sslContext, connectionTimeout, saslOptions, clientBindAddress);
+            ModelControllerClientConfiguration config = new ModelControllerClientConfiguration.Builder()
+                    .setProtocol(address.getProtocol())
+                    .setHostName(address.getHost())
+                    .setPort(address.getPort())
+                    .setHandler(handler)
+                    .setSslContext(sslContext)
+                    .setConnectionTimeout(connectionTimeout)
+                    .setSaslOptions(saslOptions)
+                    .setClientBindAddress(clientBindAddress)
+                    .build();
+            return ModelControllerClient.Factory.create(config);
         }
     };
 
