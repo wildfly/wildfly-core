@@ -47,10 +47,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Properties;
+import java.util.jar.Attributes.Name;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.jar.Attributes.Name;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
@@ -58,7 +59,9 @@ import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.ZipUtils;
 import org.jboss.as.patching.installation.InstalledImage;
 import org.jboss.as.patching.installation.PatchableTarget;
+import org.jboss.as.patching.metadata.BundledPatch;
 import org.jboss.as.patching.metadata.Patch;
+import org.jboss.as.patching.metadata.PatchBundleXml;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.protocol.StreamUtils;
 
@@ -235,6 +238,21 @@ public class TestUtils {
             } finally {
                 StreamUtils.safeClose(fis);
             }
+        }
+    }
+
+    public static void createPatchBundleXMLFile(File dir, final List<BundledPatch.BundledPatchEntry> patches) throws Exception {
+        File bundleXMLFile = new File(dir, "patches.xml");
+        FileOutputStream fos = new FileOutputStream(bundleXMLFile);
+        try {
+            PatchBundleXml.marshal(fos, new BundledPatch() {
+                @Override
+                public List<BundledPatchEntry> getPatches() {
+                    return patches;
+                }
+            });
+        } finally {
+            safeClose(fos);
         }
     }
 

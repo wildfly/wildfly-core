@@ -63,7 +63,7 @@ public class SimpleTable {
         return columnLengths.length;
     }
 
-    public void addLine(String[] line) {
+    public void addLine(String... line) {
         if(line == null) {
            throw new IllegalArgumentException("The line can't be null.");
         }

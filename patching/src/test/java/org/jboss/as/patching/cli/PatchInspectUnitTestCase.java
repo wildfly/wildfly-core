@@ -35,20 +35,31 @@ import static org.jboss.as.patching.runner.TestUtils.createZippedPatchFile;
 import static org.jboss.as.patching.runner.TestUtils.dump;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.touch;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.patching.IoUtils;
+import org.jboss.as.patching.metadata.BundledPatch;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.patching.runner.AbstractTaskTestCase;
 import org.jboss.as.patching.runner.ContentModificationUtils;
+import org.jboss.as.patching.runner.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -139,9 +150,9 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
         final String patchID2 = randomString();
         final String patchElementId2 = randomString();
 
-        ContentModification fileModified2 = fileModified; //ContentModificationUtils.modifyMisc(patchDir, patchID2, "another file update", miscFile, "bin", fileName);
-        ContentModification moduleModified2 = moduleModified; //ContentModificationUtils.modifyModule(patchDir, patchElementId2, patchedModule, "another module update");
-        ContentModification bundleModified2 = bundleModified; //ContentModificationUtils.modifyBundle(patchDir, patchElementId2, patchedBundle, "another bundle update");
+        ContentModification fileModified2 = fileModified;
+        ContentModification moduleModified2 = moduleModified;
+        ContentModification bundleModified2 = bundleModified;
 
         final String patchID2Descr = "This is cumulative patch 2";
         final String cpElementDescr = "CP element";
@@ -169,28 +180,81 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID, "http://test.one", true,
                 productConfig.getProductName(), productConfig.getProductVersion(), patchIDDescr);
 
-        Map<String,String> element = new HashMap<String,String>();
-        element.put("Patch ID", patchElementId);
-        element.put("Name", "base");
-        element.put("Type", "layer");
-        element.put("Description", oneOffElementDescr);
+        final Map<String,String> oneOffElements = new HashMap<String,String>();
+        oneOffElements.put("Patch ID", patchElementId);
+        oneOffElements.put("Name", "base");
+        oneOffElements.put("Type", "layer");
+        oneOffElements.put("Description", oneOffElementDescr);
         bytesOs.reset();
         ctx.handle("patch inspect " + zippedOneOff.getAbsolutePath() + " --verbose");
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID, "http://test.one", true,
-                productConfig.getProductName(), productConfig.getProductVersion(), patchIDDescr, Collections.singletonList(element));
+                productConfig.getProductName(), productConfig.getProductVersion(), patchIDDescr, Collections.singletonList(oneOffElements));
 
         bytesOs.reset();
         ctx.handle("patch inspect " + zippedCP);
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID2, "http://test.two", false,
                 productConfig.getProductName(), productConfig.getProductVersion(), patchID2Descr);
 
-        element.put("Patch ID", patchElementId2);
-        element.put("Name", "base");
-        element.put("Type", "layer");
-        element.put("Description", cpElementDescr);
+        final Map<String,String> cpElements = new HashMap<String,String>();
+        cpElements.put("Patch ID", patchElementId2);
+        cpElements.put("Name", "base");
+        cpElements.put("Type", "layer");
+        cpElements.put("Description", cpElementDescr);
         bytesOs.reset();
         ctx.handle("patch inspect " + zippedCP + " --verbose");
         CLIPatchInfoUtil.assertPatchInfo(bytesOs.toByteArray(), patchID2, "http://test.two", false,
-                productConfig.getProductName(), productConfig.getProductVersion(), patchID2Descr, Collections.singletonList(element));
+                productConfig.getProductName(), productConfig.getProductVersion(), patchID2Descr, Collections.singletonList(cpElements));
+
+        // Bundle
+        final File patchBundleDir = mkdir(tempDir, "bundle");
+        IoUtils.copy(zippedOneOff, new File(patchBundleDir, zippedOneOff.getName()));
+        IoUtils.copy(zippedCP, new File(patchBundleDir, zippedCP.getName()));
+        final List<BundledPatch.BundledPatchEntry> bundledPatches = new ArrayList<BundledPatch.BundledPatchEntry>();
+        bundledPatches.add(new BundledPatch.BundledPatchEntry(patchID, zippedOneOff.getName()));
+        bundledPatches.add(new BundledPatch.BundledPatchEntry(patchID2, zippedCP.getName()));
+        TestUtils.createPatchBundleXMLFile(patchBundleDir, bundledPatches);
+        final File zippedBundle = createZippedPatchFile(patchBundleDir, "patch-bundle.zip");
+
+        bytesOs.reset();
+        ctx.handle("patch inspect " + zippedBundle);
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bytesOs.toByteArray());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(bis));
+        try {
+            assertTrue(reader.ready());
+            CLIPatchInfoUtil.assertPatchInfo(reader, patchID, "http://test.one", true, productConfig.getProductName(),
+                    productConfig.getProductVersion(), patchIDDescr);
+            assertTrue(reader.ready());
+            CLIPatchInfoUtil.assertPatchInfo(reader, patchID2, "http://test.two", false, productConfig.getProductName(),
+                    productConfig.getProductVersion(), patchID2Descr);
+            assertFalse(reader.ready());
+        } finally {
+            IoUtils.safeClose(bis);
+        }
+
+        bytesOs.reset();
+        ctx.handle("patch inspect " + zippedBundle + " --verbose");
+
+        bis = new ByteArrayInputStream(bytesOs.toByteArray());
+        reader = new BufferedReader(new InputStreamReader(bis));
+        try {
+            assertTrue(reader.ready());
+            assertEquals("CONTENT OF " + zippedOneOff.getName() + ':', reader.readLine());
+            assertTrue(reader.ready());
+            assertEquals("", reader.readLine());
+            assertTrue(reader.ready());
+            CLIPatchInfoUtil.assertPatchInfo(reader, patchID, "http://test.one", true,
+                    productConfig.getProductName(), productConfig.getProductVersion(), patchIDDescr, Collections.singletonList(oneOffElements));
+            assertTrue(reader.ready());
+            assertEquals("CONTENT OF " + zippedCP.getName() + ':', reader.readLine());
+            assertTrue(reader.ready());
+            assertEquals("", reader.readLine());
+            assertTrue(reader.ready());
+            CLIPatchInfoUtil.assertPatchInfo(reader, patchID2, "http://test.two", false,
+                    productConfig.getProductName(), productConfig.getProductVersion(), patchID2Descr, Collections.singletonList(cpElements));
+            assertFalse(reader.ready());
+        } finally {
+            IoUtils.safeClose(bis);
+        }
     }
 }

@@ -53,15 +53,17 @@ public class CLIPatchInfoUtil {
         final ByteArrayInputStream bis = new ByteArrayInputStream(info);
         final InputStreamReader reader = new InputStreamReader(bis);
         final BufferedReader buf = new BufferedReader(reader);
-
-        final Map<String,String> actual;
         try {
-            actual = parseTable(buf);
+            assertPatchInfo(buf, patchId, link, oneOff, targetName, targetVersion, description);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to read input", e);
-        } finally {
             IoUtils.safeClose(buf);
         }
+    }
+
+    public static void assertPatchInfo(BufferedReader buf, String patchId, String link, boolean oneOff, String targetName, String targetVersion,
+            String description) throws IOException {
+
+        final Map<String,String> actual = parseTable(buf);
 
         final Map<String,String> expected = new HashMap<String,String>();
         expected.put(PATCH_ID, patchId);
@@ -76,9 +78,30 @@ public class CLIPatchInfoUtil {
 
     public static void assertPatchInfo(byte[] info, String patchId, String link, boolean oneOff, String targetName, String targetVersion,
             String description, List<Map<String,String>> elements) {
+
         final ByteArrayInputStream bis = new ByteArrayInputStream(info);
         final InputStreamReader reader = new InputStreamReader(bis);
         final BufferedReader buf = new BufferedReader(reader);
+
+        try {
+            assertPatchInfo(buf, patchId, link, oneOff, targetName, targetVersion, description, elements);
+            if (buf.ready()) {
+                final StringBuilder str = new StringBuilder();
+                String line;
+                while ((line = buf.readLine()) != null) {
+                    str.append(line).append("\n");
+                }
+                Assert.fail("The output contained more info: " + str.toString());
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read the input", e);
+        } finally {
+            IoUtils.safeClose(buf);
+        }
+    }
+
+    public static void assertPatchInfo(BufferedReader buf, String patchId, String link, boolean oneOff, String targetName, String targetVersion,
+            String description, List<Map<String,String>> elements) throws IOException {
 
         final Map<String,String> expected = new HashMap<String,String>();
         expected.put(PATCH_ID, patchId);
@@ -88,44 +111,29 @@ public class CLIPatchInfoUtil {
         expected.put(DESCR, description);
         expected.put("Link", link);
 
-        try {
-            Map<String, String> actual = parseTable(buf);
-            Assert.assertEquals(expected, actual);
+        Map<String, String> actual = parseTable(buf);
+        Assert.assertEquals(expected, actual);
 
-            if(buf.ready()) {
-                String readLine = buf.readLine();
-                if(!"ELEMENTS".equals(readLine)) {
-                    Assert.fail("Expected 'ELEMENTS' but was '" + readLine + "'");
-                }
-                if(!buf.ready()) {
-                    Assert.fail("Expected an empty line");
-                }
-                readLine = buf.readLine();
-                if(readLine == null || !readLine.isEmpty()) {
-                    Assert.fail("Expected an empty line but received '" + readLine + "'");
-                }
+        if (buf.ready()) {
+            String readLine = buf.readLine();
+            if (!"ELEMENTS".equals(readLine)) {
+                Assert.fail("Expected 'ELEMENTS' but was '" + readLine + "'");
             }
+            if (!buf.ready()) {
+                Assert.fail("Expected an empty line");
+            }
+            readLine = buf.readLine();
+            if (readLine == null || !readLine.isEmpty()) {
+                Assert.fail("Expected an empty line but received '" + readLine + "'");
+            }
+        }
 
-            for (Map<String, String> e : elements) {
-                if (!buf.ready()) {
-                    Assert.fail("No more output");
-                }
-                actual = parseTable(buf);
-                Assert.assertEquals(e, actual);
+        for (Map<String, String> e : elements) {
+            if (!buf.ready()) {
+                Assert.fail("No more output");
             }
-
-            if (buf.ready()) {
-                final StringBuilder str = new StringBuilder();
-                String line;
-                while ((line = buf.readLine()) != null) {
-                    str.append(line).append("\n");
-                }
-                Assert.fail("The output contained more info: " + str.toString());
-            }
-        } catch (IOException e1) {
-            throw new IllegalStateException("Failed to read the input", e1);
-        } finally {
-            IoUtils.safeClose(buf);
+            actual = parseTable(buf);
+            Assert.assertEquals(e, actual);
         }
     }
 
