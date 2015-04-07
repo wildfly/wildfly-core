@@ -219,6 +219,7 @@ public interface ModelControllerClient extends Closeable {
                     .setHandler(handler)
                     .setHostName(address.getHostAddress())
                     .setPort(port)
+                    .setSaslOptions(saslOptions)
                     .build());
         }
 
