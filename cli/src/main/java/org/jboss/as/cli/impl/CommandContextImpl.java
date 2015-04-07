@@ -955,7 +955,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             try {
                 extLoader.loadHandlers(currentAddress);
             } catch (CommandLineException e) {
-                error(Util.getMessagesFromThrowable(e));
+                printLine(Util.getMessagesFromThrowable(e));
             }
         }
     }
