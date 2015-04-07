@@ -1,0 +1,19 @@
+SYNOPSIS
+
+    extension-commands (--errors | --help)
+
+DESCRIPTION
+
+    In case the --errors argument is present the command will print detailed
+    error messages collected during the last attempt to load additional CLI
+    commands from the management extensions registered in the management model.
+    Without arguments the command does nothing.
+    
+
+ARGUMENTS
+
+ --errors  - optional, instructs to print error messages collected during
+             the last attempt to load additional CLI commands from
+             the management extensions registered in the management model.
+ 
+ --help    - optional, prints this message.
