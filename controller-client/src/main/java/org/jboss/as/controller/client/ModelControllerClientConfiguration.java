@@ -113,7 +113,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
      */
     String getClientBindAddress();
 
-    static class Builder {
+    class Builder {
         private String hostName;
         private String clientBindAddress;
         private int port;
@@ -126,46 +126,97 @@ public interface ModelControllerClientConfiguration extends Closeable {
         public Builder() {
         }
 
+        /**
+         * Sets the remote host name to which the client should connect.
+         *
+         * @param hostName the host name. Cannot be {@code null}
+         * @return a builder to allow continued configuration
+         */
         public Builder setHostName(String hostName) {
             this.hostName = hostName;
             return this;
         }
 
+        /**
+         * Sets the local address to which the client socket should be bound.
+         *
+         * @param clientBindAddress the local address, or {@code null} to choose one automatically
+         * @return a builder to allow continued configuration
+         */
         public Builder setClientBindAddress(String clientBindAddress) {
             this.clientBindAddress = clientBindAddress;
             return this;
         }
 
+        /**
+         * Sets the remote port to which the client should connect
+         * @param port the port
+         * @return a builder to allow continued configuration
+         */
         public Builder setPort(int port) {
             this.port = port;
             return this;
         }
 
+        /**
+         * Sets the handler for callbacks to obtain authentication information.
+         *
+         * @param handler the handler, or {@code null} if callbacks are not supported.
+         *
+         * @return a builder to allow continued configuration
+         */
         public Builder setHandler(CallbackHandler handler) {
             this.handler = handler;
             return this;
         }
 
+        /**
+         * Sets the SASL options for the remote connection
+         * @param saslOptions the sasl options
+         * @return a builder to allow continued configuration
+         */
         public Builder setSaslOptions(Map<String, String> saslOptions) {
             this.saslOptions = saslOptions;
             return this;
         }
 
+        /**
+         * Sets the SSL context for the remote connection
+         * @param sslContext the SSL context
+         * @return a builder to allow continued configuration
+         */
         public Builder setSslContext(SSLContext sslContext) {
             this.sslContext = sslContext;
             return this;
         }
 
+        /**
+         * Sets the protocol to use for communicating with the remote process.
+         *
+         * @param protocol the protocol, or {@code null} if a default protocol for the
+         *                 {@link #setPort(int) specified port} should be used
+         * @return a builder to allow continued configuration
+         */
         public Builder setProtocol(String protocol) {
             this.protocol = protocol;
             return this;
         }
 
+        /**
+         * Maximum time, in milliseconds, to wait for the connection to be established
+         * @param connectionTimeout the timeout
+         * @return a builder to allow continued configuration
+         */
         public Builder setConnectionTimeout(int connectionTimeout) {
             this.connectionTimeout = connectionTimeout;
             return this;
         }
 
+        /**
+         * Builds the configuration object based on this builder's settings.
+         *
+         * @return the configuration
+         */
         public ModelControllerClientConfiguration build() {
            return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContext,
                    Factory.createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress);
@@ -173,11 +224,11 @@ public interface ModelControllerClientConfiguration extends Closeable {
 
     }
 
-    @Deprecated
     /**
-     * @deprecated Use ModelControllerClientConfiguration.Builder instead.
+     * @deprecated Use {@link org.jboss.as.controller.client.ModelControllerClientConfiguration.Builder} instead.
      */
-    static class Factory {
+    @Deprecated
+    class Factory {
         // Global count of created pools
         private static final AtomicInteger executorCount = new AtomicInteger();
         // Global thread group for created pools. WFCORE-5 static to avoid leaking whenever createDefaultExecutor is called

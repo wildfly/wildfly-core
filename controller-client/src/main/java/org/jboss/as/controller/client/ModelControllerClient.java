@@ -358,7 +358,7 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
-         * @param connectionTimeout
+         * @param connectionTimeout maximum time, in milliseconds, to wait for the connection to be established
          * @return A model controller client
          * @throws UnknownHostException if the host cannot be found
          */
@@ -401,7 +401,7 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
-         * @param connectionTimeout
+         * @param connectionTimeout maximum time, in milliseconds, to wait for the connection to be established
          * @param saslOptions Additional options to be passed to the SASL mechanism.
          * @return A model controller client
          * @throws UnknownHostException if the host cannot be found
@@ -425,7 +425,7 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
-         * @param connectionTimeout
+         * @param connectionTimeout maximum time, in milliseconds, to wait for the connection to be established
          * @param saslOptions Additional options to be passed to the SASL mechanism.
          * @return A model controller client
          * @throws UnknownHostException if the host cannot be found
@@ -449,7 +449,7 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
-         * @param connectionTimeout
+         * @param connectionTimeout maximum time, in milliseconds, to wait for the connection to be established
          * @param saslOptions Additional options to be passed to the SASL mechanism.
          * @param clientBindAddress the address to which the client will bind.
          * @return A model controller client
@@ -475,7 +475,7 @@ public interface ModelControllerClient extends Closeable {
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
          * @param sslContext a pre-initialised SSLContext
-         * @param connectionTimeout
+         * @param connectionTimeout maximum time, in milliseconds, to wait for the connection to be established
          * @param saslOptions Additional options to be passed to the SASL mechanism.
          * @param clientBindAddress the address to which the client will bind.
          * @return A model controller client
