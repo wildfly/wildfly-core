@@ -49,16 +49,16 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class DeploymentScannerService implements Service<DeploymentScanner> {
 
-    private long interval;
+    private final long interval;
     private TimeUnit unit = TimeUnit.MILLISECONDS;
-    private boolean enabled;
-    private boolean autoDeployZipped;
-    private boolean autoDeployExploded;
-    private boolean autoDeployXml;
-    private Long deploymentTimeout;
+    private final boolean enabled;
+    private final boolean autoDeployZipped;
+    private final boolean autoDeployExploded;
+    private final boolean autoDeployXml;
+    private final Long deploymentTimeout;
     private final String relativeTo;
     private final String path;
-    private boolean rollbackOnRuntimeFailure;
+    private final boolean rollbackOnRuntimeFailure;
 
     /**
      * The created scanner.
@@ -83,10 +83,15 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      * @param relativeTo        the relative to
      * @param path              the path
      * @param scanInterval      the scan interval
+     * @param unit
+     * @param autoDeployZip
+     * @param autoDeployExploded
+     * @param autoDeployXml
      * @param scanEnabled       scan enabled
      * @param deploymentTimeout the deployment timeout
      * @param rollbackOnRuntimeFailure rollback on runtime failures
      * @param bootTimeService   the deployment scanner used in the boot time scan
+     * @param scheduledExecutorService
      * @return the controller for the deployment scanner service
      */
     public static ServiceController<DeploymentScanner> addService(final ServiceTarget serviceTarget, final String name, final String relativeTo, final String path,

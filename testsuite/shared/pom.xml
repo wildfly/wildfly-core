@@ -130,6 +130,16 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-test-runner</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-deployment-scanner</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
 </project>

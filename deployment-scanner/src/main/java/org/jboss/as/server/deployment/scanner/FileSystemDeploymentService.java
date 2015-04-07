@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -67,8 +68,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
-
 import org.jboss.as.controller.OperationFailedException;
+
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.deployment.DeploymentAddHandler;
 import org.jboss.as.server.deployment.DeploymentDeployHandler;
@@ -146,6 +147,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private final String relativeTo;
     private final String relativePath;
     private final PropertyChangeListener propertyChangeListener;
+    private Future<?> undeployScanTask;
 
     private class DeploymentScanRunnable implements Runnable {
 
@@ -153,6 +155,8 @@ class FileSystemDeploymentService implements DeploymentScanner {
         public void run() {
             try {
                 scan();
+            } catch (RejectedExecutionException e) {
+                //Do nothing as this happens if a scan occurs during a reload of shutdown of a server.
             } catch (Exception e) {
                 ROOT_LOGGER.scanException(e, deploymentDir.getAbsolutePath());
             }
@@ -193,10 +197,14 @@ class FileSystemDeploymentService implements DeploymentScanner {
                     if (ControlledProcessState.State.RUNNING == evt.getNewValue()) {
                          synchronized (this) {
                             if (scanEnabled) {
-                                scheduledExecutor.execute(new UndeployScanRunnable());
+                                undeployScanTask = scheduledExecutor.submit(new UndeployScanRunnable());
                             }
                         }
                     } else if (ControlledProcessState.State.STOPPING == evt.getNewValue()) {
+                        if(undeployScanTask != null) {
+                            undeployScanTask.cancel(true);
+                            undeployScanTask = null;
+                        }
                         processStateService.removePropertyChangeListener(propertyChangeListener);
                     }
                 }
@@ -311,6 +319,10 @@ class FileSystemDeploymentService implements DeploymentScanner {
         cancelScan();
         safeClose(deploymentOperations);
         this.deploymentOperations = null;
+        if (undeployScanTask != null) {
+            undeployScanTask.cancel(true);
+        }
+        this.undeployScanTask = null;
     }
 
     /** Allow DeploymentScannerService to set the factory on the boot-time scanner */
@@ -415,8 +427,11 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 for (String toUndeploy : scannedDeployments) {
                     scannerTasks.add(new UndeployTask(toUndeploy, deploymentDir, scanContext.scanStartTime, true));
                 }
-
-                executeScannerTasks(scannerTasks, deploymentOperations, true, new ScanResult());
+                try {
+                    executeScannerTasks(scannerTasks, deploymentOperations, true, new ScanResult());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
 
                 ROOT_LOGGER.tracef("Forced undeploy scan complete");
             } catch (Exception e) {
@@ -501,9 +516,11 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 for (Map.Entry<String, DeploymentMarker> missing : scanContext.toRemove.entrySet()) {
                     scannerTasks.add(new UndeployTask(missing.getKey(), missing.getValue().parentFolder, scanContext.scanStartTime, false));
                 }
-
-                executeScannerTasks(scannerTasks, deploymentOperations, oneOffScan, scanResult);
-
+                try {
+                    executeScannerTasks(scannerTasks, deploymentOperations, oneOffScan, scanResult);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
                 ROOT_LOGGER.tracef("Scan complete");
                 firstScan = false;
             }
@@ -513,7 +530,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
     }
 
     private void executeScannerTasks(List<ScannerTask> scannerTasks, DeploymentOperations deploymentOperations,
-                                     boolean oneOffScan, ScanResult scanResult) {
+                                     boolean oneOffScan, ScanResult scanResult) throws InterruptedException {
         // Process the tasks
         if (scannerTasks.size() > 0) {
             List<ModelNode> updates = new ArrayList<ModelNode>(scannerTasks.size());
@@ -530,32 +547,40 @@ class FileSystemDeploymentService implements DeploymentScanner {
             boolean first = true;
             while (!updates.isEmpty() && (first || !oneOffScan)) {
                 first = false;
-
-                final Future<ModelNode> futureResults = deploymentOperations.deploy(getCompositeUpdate(updates), scheduledExecutor);
                 final ModelNode results;
                 try {
-                    results = futureResults.get(deploymentTimeout, TimeUnit.SECONDS);
-                } catch (TimeoutException e) {
-                    futureResults.cancel(true);
-                    final ModelNode failure = new ModelNode();
-                    failure.get(OUTCOME).set(FAILED);
-                    failure.get(FAILURE_DESCRIPTION).set(DeploymentScannerLogger.ROOT_LOGGER.deploymentTimeout(deploymentTimeout));
-                    for (ScannerTask task : scannerTasks) {
-                        task.handleFailureResult(failure);
+                    final Future<ModelNode> futureResults = deploymentOperations.deploy(getCompositeUpdate(updates), scheduledExecutor);
+                    try {
+                        results = futureResults.get(deploymentTimeout, TimeUnit.SECONDS);
+                    } catch (TimeoutException e) {
+                        futureResults.cancel(true);
+                        final ModelNode failure = new ModelNode();
+                        failure.get(OUTCOME).set(FAILED);
+                        failure.get(FAILURE_DESCRIPTION).set(DeploymentScannerLogger.ROOT_LOGGER.deploymentTimeout(deploymentTimeout));
+                        for (ScannerTask task : scannerTasks) {
+                            task.handleFailureResult(failure);
+                        }
+                        break;
+                    } catch (InterruptedException e) {
+                        futureResults.cancel(true);
+                        throw e;
+                    } catch (Exception e) {
+                        ROOT_LOGGER.fileSystemDeploymentFailed(e);
+                        futureResults.cancel(true);
+                        final ModelNode failure = new ModelNode();
+                        failure.get(OUTCOME).set(FAILED);
+                        failure.get(FAILURE_DESCRIPTION).set(e.getMessage());
+                        for (ScannerTask task : scannerTasks) {
+                            task.handleFailureResult(failure);
+                        }
+                        break;
                     }
-                    break;
-                } catch (Exception e) {
-                    ROOT_LOGGER.fileSystemDeploymentFailed(e);
-                    futureResults.cancel(true);
-                    final ModelNode failure = new ModelNode();
-                    failure.get(OUTCOME).set(FAILED);
-                    failure.get(FAILURE_DESCRIPTION).set(e.getMessage());
+                } catch(RejectedExecutionException ex) { //The executor was closed and no task could be submitted.
                     for (ScannerTask task : scannerTasks) {
-                        task.handleFailureResult(failure);
+                        task.removeInProgressMarker();
                     }
                     break;
                 }
-
                 final List<ModelNode> toRetry = new ArrayList<ModelNode>();
                 final List<ScannerTask> retryTasks = new ArrayList<ScannerTask>();
                 if (results.hasDefined(RESULT)) {
@@ -1039,15 +1064,15 @@ class FileSystemDeploymentService implements DeploymentScanner {
      */
     private void cancelScan() {
         if (rescanIncompleteTask != null) {
-            rescanIncompleteTask.cancel(false);
+            rescanIncompleteTask.cancel(true);
             rescanIncompleteTask = null;
         }
         if (rescanUndeployTask != null) {
-            rescanUndeployTask.cancel(false);
+            rescanUndeployTask.cancel(true);
             rescanUndeployTask = null;
         }
         if (scanTask != null) {
-            scanTask.cancel(false);
+            scanTask.cancel(true);
             scanTask = null;
         }
     }

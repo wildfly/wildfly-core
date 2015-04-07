@@ -83,8 +83,11 @@ public class Server {
             if (JBOSS_ARGS != null) {
                 commandBuilder.addServerArguments(JBOSS_ARGS.split("\\s+"));
             }
-
-            log.infof("Starting container with: {0}", commandBuilder.build());
+            StringBuilder builder = new StringBuilder("Starting container with: ");
+            for(String arg : commandBuilder.build()) {
+                builder.append(arg).append(" ");
+            }
+            log.info(builder.toString());
             process = Launcher.of(commandBuilder)
                     // Redirect the output and error stream to a file
                     .setRedirectErrorStream(true)

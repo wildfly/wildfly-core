@@ -1,0 +1,10 @@
+RULE Reload server when deploying files
+CLASS org.jboss.as.server.deployment.scanner.FileSystemDeploymentService
+METHOD executeScannerTasks
+HELPER org.jboss.byteman.ServerReloadHelper
+AT LINE 545
+BIND NOTHING
+IF TRUE
+DO
+reloadServer($2)
+ENDRULE
