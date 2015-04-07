@@ -18,30 +18,35 @@
 
 package org.jboss.as.controller.operation.global;
 
+import static org.jboss.as.controller.SimpleAttributeDefinitionBuilder.create;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-
-import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
-import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
+import org.jboss.as.controller.operations.global.WriteAttributeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -62,6 +67,17 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
             .setAllowNull(true)
             .setStorageRuntime()
             .build();
+
+    private static final AttributeDefinition ATTR_1 = create("attr1", ModelType.STRING)
+            .setAllowNull(true)
+            .build();
+    private static final AttributeDefinition attr2 = create("attr2", ModelType.BOOLEAN)
+            .setAllowNull(false)
+            .build();
+    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, attr2).build();
+    //ObjectListAttributeDefinition attr = ObjectListAttributeDefinition.Builder.of(MY_LIST_OF_OBJECTS, objectDefinition).build();
+
+
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
 
     private static ModelNode runtimeListAttributeValue = new ModelNode();
@@ -136,7 +152,17 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
 
                     }
-                })
+                }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, new AbstractWriteAttributeHandler() {
+                    @Override
+                    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
+                        return false;
+                    }
+
+                    @Override
+                    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
+
+                    }
+                } )
                 .build();
     }
 
@@ -153,9 +179,19 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
      */
 
+    @Before
+    public void setup() throws OperationFailedException {
+        executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
+    }
+
+    @After
+    public void cleanup() throws OperationFailedException {
+        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
+    }
+
+
     @Test
     public void testReadAttribute() throws OperationFailedException {
-        executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
 
         ModelNode op = createOperation("map-put", TEST_ADDRESS);
         op.get("name").set(MAP_ATTRIBUTE.getName());
@@ -202,55 +238,21 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         op.get("name").set(LIST_ATTRIBUTE.getName() + "[1]");
         Assert.assertEquals("value2", executeForResult(op).asString());
 
+    }
 
-
-
-      /*  map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
-        Assert.assertEquals(1, map.size());
-        Assert.assertEquals("map-value", map.get("map-key"));
-
-
-        op = createOperation("map-put", TEST_ADDRESS);
-        op.get("name").set(MAP_ATTRIBUTE.getName());
-        op.get("key").set("map-key");
-        op.get("value").set("map-value2");
+    @Test
+    public void testComplexAttributes() throws OperationFailedException {
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName());
+        ModelNode value = new ModelNode();
+        value.get(ATTR_1.getName()).set("attr1-string");
+        value.get(attr2.getName()).set("attr2-boolean");
+        op.get("value").set(value);
         executeCheckNoFailure(op);
 
-        //check for properly updated existing key
-        op = createOperation("map-get", TEST_ADDRESS);
-        op.get("name").set(MAP_ATTRIBUTE.getName());
-        op.get("key").set("map-key");
-        Assert.assertEquals("map-value2", executeForResult(op).asString());
-
-        //add second entry
-        op = createOperation("map-put", TEST_ADDRESS);
-        op.get("name").set(MAP_ATTRIBUTE.getName());
-        op.get("key").set("map-key2");
-        op.get("value").set("map-value2");
-        executeCheckNoFailure(op);
-
-        map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
-        Assert.assertEquals(2, map.size());
-        Assert.assertEquals("map-value2", map.get("map-key"));
-        Assert.assertEquals("map-value2", map.get("map-key2"));
-
-        //remove second entry
-        op = createOperation("map-remove", TEST_ADDRESS);
-        op.get("name").set(MAP_ATTRIBUTE.getName());
-        op.get("key").set("map-key2");
-        executeCheckNoFailure(op);
-
-        map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
-        Assert.assertEquals(1, map.size());
-        Assert.assertEquals("map-value2", map.get("map-key"));
-        Assert.assertFalse(map.containsKey("map-key2"));
-
-        //clear map
-        op = createOperation("map-clear", TEST_ADDRESS);
-        op.get("name").set(MAP_ATTRIBUTE.getName());
-        executeCheckNoFailure(op);
-        map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
-        Assert.assertTrue(map.isEmpty());*/
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_1.getName());
+        Assert.assertEquals("attr1-string", executeForResult(op).asString());
     }
 
 }
