@@ -97,7 +97,7 @@ class ExtensionsLoader {
         assert client != null : "client is null";
 
         if(moduleLoader == null) {
-            return;
+            throw new CommandLineException("Wanring! The CLI is running in a non-modular environment and cannot load commands from management extensions.");
         }
 
         if(address != null && currentAddress != null && address.equals(currentAddress)) {
@@ -117,16 +117,16 @@ class ExtensionsLoader {
         try {
             response = client.execute(req);
         } catch (IOException e) {
-            throw new CommandLineException("Failed to read extensions", e);
+            throw new CommandLineException("Extensions loader failed to read extensions", e);
         }
 
         if(!Util.isSuccess(response)) {
-            throw new CommandLineException("Failed to read extensions: " + Util.getFailureDescription(response));
+            throw new CommandLineException("Extensions loader failed to read extensions: " + Util.getFailureDescription(response));
         }
 
         final ModelNode result = response.get(Util.RESULT);
         if(!result.isDefined()) {
-            throw new CommandLineException("Failed to read extensions: " + result.asString());
+            throw new CommandLineException("Extensions loader failed to read extensions: " + result.asString());
         }
 
         for(Property ext : result.asPropertyList()) {
@@ -151,14 +151,15 @@ class ExtensionsLoader {
                         }
                     }
                 } catch (ModuleLoadException e) {
-                    addError("Failed to load module " + module.asString() + " for extension " + ext.getName() + ": " + e.getLocalizedMessage());
+                    addError("Module " + module.asString() + " from extension " + ext.getName() +
+                            " available on the server couldn't be loaded locally: " + e.getLocalizedMessage());
                 }
             }
         }
 
         if(!errors.isEmpty()) {
             final StringBuilder buf = new StringBuilder();
-            buf.append("Errors caught while loading extensions:\n");
+            buf.append("Warning! The following problems were encountered while looking for additional commands in extensions:\n");
             for(int i = 0; i < errors.size(); ++i) {
                 final String error = errors.get(i);
                 buf.append(i+1).append(") ").append(error).append(Util.LINE_SEPARATOR);
