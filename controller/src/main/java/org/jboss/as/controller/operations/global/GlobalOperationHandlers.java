@@ -32,7 +32,6 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -65,33 +64,6 @@ import org.jboss.dmr.ModelType;
  */
 public class GlobalOperationHandlers {
 
-
-    private static final Set<String> GLOBAL_READ_OPERATION_NAMES;
-    static {
-        Set<String> set = new HashSet<String>();
-        set.add(ReadResourceHandler.DEFINITION.getName());
-        set.add(ReadAttributeHandler.DEFINITION.getName());
-        set.add(ReadResourceDescriptionHandler.DEFINITION.getName());
-        set.add(ReadChildrenNamesHandler.DEFINITION.getName());
-        set.add(ReadChildrenTypesHandler.DEFINITION.getName());
-        set.add(ReadChildrenResourcesHandler.DEFINITION.getName());
-        set.add(ReadOperationNamesHandler.DEFINITION.getName());
-        set.add(ReadOperationDescriptionHandler.DEFINITION.getName());
-        set.add(ReadResourceDescriptionHandler.CheckResourceAccessHandler.DEFINITION.getName());
-        set.add(MapOperations.MAP_PUT_DEFINITION.getName());
-        set.add(MapOperations.MAP_GET_DEFINITION.getName());
-        set.add(MapOperations.MAP_CLEAR_DEFINITION.getName());
-        set.add(MapOperations.MAP_REMOVE_DEFINITION.getName());
-        set.add(ListOperations.LIST_ADD_DEFINITION.getName());
-        set.add(ReadAttributeGroupNamesHandler.DEFINITION.getName());
-        set.add(ReadAttributeGroupHandler.DEFINITION.getName());
-
-        GLOBAL_READ_OPERATION_NAMES = Collections.unmodifiableSet(set);
-    }
-
-    public static boolean isGlobalReadOperation(String operationName) {
-        return GLOBAL_READ_OPERATION_NAMES.contains(operationName);
-    }
 
     public static void registerGlobalOperations(ManagementResourceRegistration root, ProcessType processType) {
         if( processType == ProcessType.HOST_CONTROLLER) {
