@@ -25,6 +25,8 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -32,14 +34,12 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
-import org.jboss.as.controller.operations.global.WriteAttributeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
@@ -71,11 +71,12 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
     private static final AttributeDefinition ATTR_1 = create("attr1", ModelType.STRING)
             .setAllowNull(true)
             .build();
-    private static final AttributeDefinition attr2 = create("attr2", ModelType.BOOLEAN)
+    private static final AttributeDefinition ATTR_2 = create("attr2", ModelType.BOOLEAN)
             .setAllowNull(false)
             .build();
-    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, attr2).build();
-    //ObjectListAttributeDefinition attr = ObjectListAttributeDefinition.Builder.of(MY_LIST_OF_OBJECTS, objectDefinition).build();
+    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2).build();
+    private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setAllowNull(true).build();
+    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE2 = ObjectTypeAttributeDefinition.Builder.of("complex-attribute2", OBJECT_LIST).build();
 
 
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
@@ -105,6 +106,9 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                         LIST_ATTRIBUTE.validateAndSet(operation, model);
                         MAP_ATTRIBUTE.validateAndSet(operation, model);
                         MAP_ATTRIBUTE2.validateAndSet(operation, model);
+                        COMPLEX_ATTRIBUTE.validateAndSet(operation, model);
+                        OBJECT_LIST.validateAndSet(operation, model);
+                        COMPLEX_ATTRIBUTE2.validateAndSet(operation, model);
                     }
 
                 })
@@ -152,17 +156,9 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
 
                     }
-                }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, new AbstractWriteAttributeHandler() {
-                    @Override
-                    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
-                        return false;
-                    }
-
-                    @Override
-                    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
-
-                    }
-                } )
+                }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE))
+                .addReadWriteAttribute(OBJECT_LIST, null, new ModelOnlyWriteAttributeHandler(OBJECT_LIST))
+                .addReadWriteAttribute(COMPLEX_ATTRIBUTE2, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE2))
                 .build();
     }
 
@@ -242,17 +238,73 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
     @Test
     public void testComplexAttributes() throws OperationFailedException {
+        //test set
         ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
         op.get("name").set(COMPLEX_ATTRIBUTE.getName());
         ModelNode value = new ModelNode();
         value.get(ATTR_1.getName()).set("attr1-string");
-        value.get(attr2.getName()).set("attr2-boolean");
+        value.get(ATTR_2.getName()).set(true);
         op.get("value").set(value);
         executeCheckNoFailure(op);
 
+        //test read-attribute(name=complex-attribute.attr1)
         op = createOperation("read-attribute", TEST_ADDRESS);
         op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_1.getName());
         Assert.assertEquals("attr1-string", executeForResult(op).asString());
+        //test read-attribute(name=complex-attribute.attr2)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_2.getName());
+        Assert.assertTrue(executeForResult(op).asBoolean());
+
+        //test List<Object>
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName());
+        value = new ModelNode();
+        for (int i = 0; i <= 5; i++) {
+            ModelNode item = value.add();
+            item.get(ATTR_1.getName()).set("value" + i);
+            item.get(ATTR_2.getName()).set(true);
+        }
+        op.get("value").set(value);
+        executeCheckNoFailure(op);
+
+
+        //test read-attribute(name=object-list[1])
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[1]");
+        Assert.assertTrue(executeForResult(op).isDefined());
+
+        //test read-attribute(name=object-list[1].attr1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[3].attr1");
+        Assert.assertEquals("value3", executeForResult(op).asString());
+
+
+        //test read-attribute(name=object-list[-3].attr1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[-3].attr1");
+        executeCheckForFailure(op);
+
+
+        //complex attribute with list with complex attributes
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName());
+        value = new ModelNode();
+
+        ModelNode listValue = value.get(OBJECT_LIST.getName());
+        for (int i = 0; i <= 5; i++) {
+            ModelNode item = listValue.add();
+            item.get(ATTR_1.getName()).set("value" + i);
+            item.get(ATTR_2.getName()).set(true);
+        }
+        op.get("value").set(value);
+        executeCheckNoFailure(op);
+
+        //test read-attribute(name=complex-attribute2.object-list[1].attr1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName() + "[3].attr1");
+        Assert.assertEquals("value3", executeForResult(op).asString());
     }
 
 }
