@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment.scanner.api;
 
-import org.jboss.as.server.deployment.scanner.DeploymentOperations;
 import org.jboss.msc.service.ServiceName;
 
 /**

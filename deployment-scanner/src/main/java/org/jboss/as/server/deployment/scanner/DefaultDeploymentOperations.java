@@ -34,12 +34,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -57,7 +58,7 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
     }
 
     @Override
-    public Future<ModelNode> deploy(final ModelNode operation, final ScheduledExecutorService scheduledExecutor) {
+    public Future<ModelNode> deploy(final ModelNode operation, final ExecutorService executorService) {
         return controllerClient.executeAsync(operation, OperationMessageHandler.DISCARD);
     }
 

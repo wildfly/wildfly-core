@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -58,6 +59,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceTarget;
@@ -245,7 +247,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
         }
 
         @Override
-        public Future<ModelNode> deploy(final ModelNode operation, final ScheduledExecutorService scheduledExecutor) {
+        public Future<ModelNode> deploy(final ModelNode operation, final ExecutorService executorService) {
             try {
                 deploymentOperation.set(operation);
                 final FutureTask<ModelNode> task = new FutureTask<ModelNode>(new Callable<ModelNode>() {
@@ -255,7 +257,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
                         return deploymentResults.get();
                     }
                 });
-                scheduledExecutor.submit(task);
+                executorService.submit(task);
                 return task;
             } finally {
                 scanDoneLatch.countDown();

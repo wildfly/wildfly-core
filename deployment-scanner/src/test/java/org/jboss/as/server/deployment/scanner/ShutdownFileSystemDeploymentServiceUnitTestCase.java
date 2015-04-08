@@ -55,12 +55,12 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RunnableScheduledFuture;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +71,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.threads.AsyncFuture;
@@ -634,7 +635,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Future<ModelNode> deploy(final ModelNode operation, ScheduledExecutorService scheduledExecutor) {
+        public Future<ModelNode> deploy(final ModelNode operation, ExecutorService executorService) {
             ready = true;
             logger.info("Ready to deploy");
             synchronized(lock) {

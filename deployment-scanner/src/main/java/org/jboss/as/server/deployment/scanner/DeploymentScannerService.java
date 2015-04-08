@@ -31,6 +31,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;

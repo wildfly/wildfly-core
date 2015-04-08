@@ -64,6 +64,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -80,6 +81,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
@@ -2318,7 +2320,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Future<ModelNode> deploy(final ModelNode operation, ScheduledExecutorService scheduledExecutor) {
+        public Future<ModelNode> deploy(final ModelNode operation, ExecutorService executorService) {
             ready = true;
             return delegate.deploy(operation, null);
         }
