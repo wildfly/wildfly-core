@@ -22,14 +22,14 @@
 
 package org.jboss.as.test.integration.management.interfaces;
 
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
-import org.jboss.dmr.ModelNode;
-
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Map;
+
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientConfiguration;
+import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
@@ -62,12 +62,13 @@ public class NativeManagementInterface implements ManagementInterface {
     }
 
     public static ManagementInterface create(String host, int port, final String username, final String password) {
-        try {
-            ModelControllerClient client = ModelControllerClient.Factory.create(host, port,
-                    new RbacAdminCallbackHandler(username, password),  SASL_OPTIONS);
-            return new NativeManagementInterface(client);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        ModelControllerClientConfiguration config = new ModelControllerClientConfiguration.Builder()
+                .setHostName(host)
+                .setPort(port)
+                .setHandler(new RbacAdminCallbackHandler(username, password))
+                .setSaslOptions(SASL_OPTIONS)
+                .build();
+        ModelControllerClient client = ModelControllerClient.Factory.create(config);
+        return new NativeManagementInterface(client);
     }
 }

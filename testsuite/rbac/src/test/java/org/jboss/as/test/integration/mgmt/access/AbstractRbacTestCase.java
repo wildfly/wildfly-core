@@ -29,7 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
+
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.junit.AfterClass;
@@ -71,11 +73,15 @@ public class AbstractRbacTestCase {
     }
 
     private ModelControllerClient createClient(String userName) throws UnknownHostException {
-        return ModelControllerClient.Factory.create(managementClient.getMgmtProtocol(),
-                managementClient.getMgmtAddress(),
-                managementClient.getMgmtPort(),
-                new RbacAdminCallbackHandler(userName),
-                SASL_OPTIONS);
+        ModelControllerClientConfiguration config = new ModelControllerClientConfiguration.Builder()
+                .setProtocol(managementClient.getMgmtProtocol())
+                .setHostName(managementClient.getMgmtAddress())
+                .setPort(managementClient.getMgmtPort())
+                .setHandler(new RbacAdminCallbackHandler(userName))
+                .setSaslOptions(SASL_OPTIONS)
+                .build();
+
+        return ModelControllerClient.Factory.create(config);
     }
 
     public static void removeClientForUser(String userName) throws IOException {

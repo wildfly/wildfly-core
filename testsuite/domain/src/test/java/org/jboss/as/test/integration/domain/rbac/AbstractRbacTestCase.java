@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
@@ -155,12 +156,14 @@ public abstract class AbstractRbacTestCase {
 
     private ModelControllerClient createClient(String userName, boolean allowLocalAuth,
                                                WildFlyManagedConfiguration clientConfig) throws UnknownHostException {
-
-        return ModelControllerClient.Factory.create(clientConfig.getHostControllerManagementProtocol(),
-                clientConfig.getHostControllerManagementAddress(),
-                clientConfig.getHostControllerManagementPort(),
-                new RbacAdminCallbackHandler(userName),
-                allowLocalAuth ? Collections.<String, String>emptyMap() : SASL_OPTIONS);
+        ModelControllerClientConfiguration config = new ModelControllerClientConfiguration.Builder()
+                .setProtocol(clientConfig.getHostControllerManagementProtocol())
+                .setHostName(clientConfig.getHostControllerManagementAddress())
+                .setPort(clientConfig.getHostControllerManagementPort())
+                .setHandler(new RbacAdminCallbackHandler(userName))
+                .setSaslOptions(allowLocalAuth ? Collections.<String, String>emptyMap() : SASL_OPTIONS)
+                .build();
+        return ModelControllerClient.Factory.create(config);
     }
 
     public static void removeClientForUser(String userName, boolean allowLocalAuth) throws IOException {
