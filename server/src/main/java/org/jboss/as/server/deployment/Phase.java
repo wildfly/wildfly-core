@@ -250,6 +250,7 @@ public enum Phase {
     public static final int STRUCTURE_DEFERRED_DEPLOYMENT_OVERLAY       = 0xF000; //needs to run after all structure processors
 
     // PARSE
+    public static final int PARSE_SECURITY_ENABLED                      = 0x0080;
     public static final int PARSE_EE_MODULE_NAME                        = 0x0100;
     public static final int PARSE_EJB_DEFAULT_DISTINCT_NAME             = 0x0110;
     public static final int PARSE_EAR_SUBDEPLOYMENTS_ISOLATION_DEFAULT  = 0x0200;
