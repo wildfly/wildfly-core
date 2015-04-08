@@ -58,7 +58,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
             .setAllowNull(true)
             .setAllowDuplicates(false)
             .build();
-    private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("my-map-attribute", true)
+    private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("map-attribute", true)
             .setAllowNull(true)
             .setStorageRuntime()
             .build();
@@ -74,7 +74,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
     private static final AttributeDefinition ATTR_2 = create("attr2", ModelType.BOOLEAN)
             .setAllowNull(false)
             .build();
-    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2).build();
+    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2, MAP_ATTRIBUTE).build();
     private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setAllowNull(true).build();
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE2 = ObjectTypeAttributeDefinition.Builder.of("complex-attribute2", OBJECT_LIST).build();
 
@@ -293,18 +293,42 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         value = new ModelNode();
 
         ModelNode listValue = value.get(OBJECT_LIST.getName());
+
         for (int i = 0; i <= 5; i++) {
             ModelNode item = listValue.add();
             item.get(ATTR_1.getName()).set("value" + i);
             item.get(ATTR_2.getName()).set(true);
+            ModelNode mapValue = item.get(MAP_ATTRIBUTE.getName());
+            mapValue.get("key1").set("value1");
+            mapValue.get("key2").set("value2");
         }
+
         op.get("value").set(value);
         executeCheckNoFailure(op);
 
         //test read-attribute(name=complex-attribute2.object-list[1].attr1)
         op = createOperation("read-attribute", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName() + "[3].attr1");
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[3].attr1");
         Assert.assertEquals("value3", executeForResult(op).asString());
+
+        //test :read-attribute(name=complex-attribute2.object-list[1].map-attribute.key1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName() + "[1].map-attribute.key1");
+        Assert.assertEquals("value1", executeForResult(op).asString());
+
+
+        //test :map-get(name=complex-attribute2.object-list[1].map-attribute key=key1)
+        op = createOperation("map-get", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName() + "[1].map-attribute");
+        op.get("key").set("key1");
+        Assert.assertEquals("value1", executeForResult(op).asString());
+
+
+        //test :list-get(name=complex-attribute2.object-list index=1)
+        op = createOperation("list-get", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName());
+        op.get("index").set(1);
+        Assert.assertEquals(3, executeForResult(op).asList().size()); //there should be 3 attributes on this list element
     }
 
 }

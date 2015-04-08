@@ -19,6 +19,8 @@
 package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -66,7 +68,12 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         ModelNode operationModel = new ModelNode();
         populateModel(operation, operationModel);
-        final String attributeName = NAME.resolveModelAttribute(context, operationModel).asString();
+        String attributeName = NAME.resolveModelAttribute(context, operationModel).asString();
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
+        String attributeExpression = attributeName;
+        if (useEnhancedSyntax) {
+            attributeName = extractAttributeName(attributeName);
+        }
         final AttributeAccess attributeAccess = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
         if (attributeAccess == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
@@ -76,7 +83,12 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
 
         Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
-        ModelNode model = resource.getModel().get(attributeName);
+        final ModelNode model;
+        if (useEnhancedSyntax){
+            model = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression,resource.getModel());
+        }else {
+            model = resource.getModel().get(attributeName);
+        }
         updateModel(context, operationModel, attributeAccess.getAttributeDefinition(),  model);
         if (requiredReadWriteAccess) {
             //debugf("Value '%s' for key '%s' being replaced by value '%s'.", oldValue, key, value);

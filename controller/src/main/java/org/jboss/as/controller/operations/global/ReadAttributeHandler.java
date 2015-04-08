@@ -22,17 +22,15 @@
 
 package org.jboss.as.controller.operations.global;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.resolveAttribute;
 
-import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
@@ -45,7 +43,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -54,7 +51,6 @@ import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -185,84 +181,12 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
             if (useEnhancedSyntax){
-                ModelNode resolved = resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
+                ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
                 context.getResult().set(resolved);
             }
         }
     }
 
-    private void resolveAttribute(OperationContext context, ModelNode operation, String attributeName, boolean defaults, ImmutableManagementResourceRegistration registry, boolean enhancedSyntax) throws OperationFailedException {
-        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
-        final ModelNode subModel = resource.getModel();
-        if (enhancedSyntax){
-            context.getResult().set(resolveEnhancedSyntax(attributeName,subModel));
-        }else if (subModel.hasDefined(attributeName)) {
-            final ModelNode result = subModel.get(attributeName);
-            context.getResult().set(result);
-        } else {
-            // No defined value in the model. See if we should reply with a default from the metadata,
-            // reply with undefined, or fail because it's a non-existent attribute name
-            final ModelNode nodeDescription = getNodeDescription(registry, context, operation);
-            if (defaults && nodeDescription.get(ATTRIBUTES).hasDefined(attributeName) &&
-                    nodeDescription.get(ATTRIBUTES, attributeName).hasDefined(DEFAULT)) {
-                final ModelNode result = nodeDescription.get(ATTRIBUTES, attributeName, DEFAULT);
-                context.getResult().set(result);
-            } else if (subModel.has(attributeName) || nodeDescription.get(ATTRIBUTES).has(attributeName)) {
-                // model had no defined value, but we treat its existence in the model or the metadata
-                // as proof that it's a legit attribute name
-                context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
-            } else {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
-            }
-        }
-    }
-
-    private static final Pattern ENHANCED_SYNTAX_PATTERN = Pattern.compile("(.*[\\.\\[\\]].*)");
-    private static final Pattern BRACKETS_PATTERN = Pattern.compile("(.*)\\[(\\d+)\\]");
-    private static final Pattern EXTRACT_NAME_PATTERN = Pattern.compile("^(.*?)[\\.\\[].*");
-    private static boolean containsEnhancedSyntax(String attributeName){
-        return ENHANCED_SYNTAX_PATTERN.matcher(attributeName).matches();
-    }
-
-    private static String extractAttributeName(String expression){
-        Matcher matcher = EXTRACT_NAME_PATTERN.matcher(expression);
-        if (matcher.matches()){
-            return matcher.group(1);
-        }else {
-            return expression;
-        }
-    }
-
-    private static ModelNode resolveEnhancedSyntax(final String attributeExpression, final ModelNode model) throws OperationFailedException {
-        ModelNode result = model;
-        for (String part : attributeExpression.split("\\.")){
-            Matcher matcher = BRACKETS_PATTERN.matcher(part);
-            if (matcher.matches()){
-                String attribute = matcher.group(1);
-                int index = Integer.parseInt(matcher.group(2));
-                ModelNode list = attribute.isEmpty()?result:result.get(attribute); // in case we want to additionally resolve already loaded attribute, this usually applies to attributes that have custom read handlers
-                if (list.isDefined() && list.getType() == ModelType.LIST){
-                    result = list.asList().get(index);
-                }else{
-                    throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list",attributeExpression));
-                }
-            }else{
-                if (result.has(part)) {
-                    result = result.get(part);
-                }else{
-                    throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s'",attributeExpression));
-                }
-            }
-        }
-        return result;
-    }
-
-
-    private ModelNode getNodeDescription(ImmutableManagementResourceRegistration registry, OperationContext context, ModelNode operation) throws OperationFailedException {
-        final DescriptionProvider descriptionProvider = registry.getModelDescription(PathAddress.EMPTY_ADDRESS);
-        final Locale locale = GlobalOperationHandlers.getLocale(context, operation);
-        return descriptionProvider.getModelDescription(locale);
-    }
 
     private static class AuthorizeAttributeReadHandler implements OperationStepHandler {
 
