@@ -514,7 +514,7 @@ final class HandlerOperations {
 
         @Override
         public void performRuntime(final OperationContext context, final HandlerConfiguration configuration, final ModelNode operation, final String name, final ModelNode model) throws OperationFailedException {
-            // Get the handler name
+            // Get the handler name, uses the operation to get the single handler name being added
             final String handlerName = HANDLER_NAME.resolveModelAttribute(context, operation).asString();
             if (name.equals(handlerName)) {
                 throw createOperationFailure(LoggingLogger.ROOT_LOGGER.cannotAddHandlerToSelf(configuration.getName()));
@@ -551,6 +551,7 @@ final class HandlerOperations {
 
         @Override
         public void performRuntime(final OperationContext context, final HandlerConfiguration configuration, final ModelNode operation, final String name, final ModelNode model) throws OperationFailedException {
+            // Uses the operation to get the single handler name being added
             configuration.removeHandlerName(HANDLER_NAME.resolveModelAttribute(context, operation).asString());
         }
     };
