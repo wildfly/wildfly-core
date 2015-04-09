@@ -5,6 +5,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -412,6 +413,14 @@ public class PersistentResourceXMLDescription {
 
         public PersistentResourceXMLBuilder addAttributes(AttributeDefinition... attributes) {
             Collections.addAll(this.attributeList, attributes);
+            for (final AttributeDefinition at : attributes) {
+                this.attributes.put(at.getXmlName(), at);
+            }
+            return this;
+        }
+
+        public PersistentResourceXMLBuilder addAttributes(Collection<? extends AttributeDefinition> attributes) {
+            this.attributeList.addAll(attributes);
             for (final AttributeDefinition at : attributes) {
                 this.attributes.put(at.getXmlName(), at);
             }
