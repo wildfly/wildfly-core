@@ -27,6 +27,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONT
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.SERVER_ADD_ATTRIBUTES;
@@ -93,8 +94,10 @@ public class DeploymentAddHandler implements OperationStepHandler {
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);
 
         ModelNode newModel = resource.getModel();
+        // The 'persistent' and 'owner' parameters are hidden internal API, so handle them specifically
         PERSISTENT.validateAndSet(operation, newModel);
-        // Store the rest of the attributes.
+        OWNER.validateAndSet(operation, newModel);
+        // Store the rest of the parameters that are documented parameters to this op.
         for (AttributeDefinition def : SERVER_ADD_ATTRIBUTES) {
             def.validateAndSet(operation, newModel);
         }

@@ -35,12 +35,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +58,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -77,6 +78,7 @@ import java.util.regex.Pattern;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -111,6 +113,9 @@ public class FileSystemDeploymentServiceUnitTestCase {
     private static final Random random = new Random(System.currentTimeMillis());
 
     private static final DiscardTaskExecutor executor = new DiscardTaskExecutor();
+
+    private static final PathAddress resourceAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, DeploymentScannerExtension.SUBSYSTEM_NAME),
+            PathElement.pathElement(DeploymentScannerExtension.SCANNERS_PATH.getKey(), DeploymentScannerExtension.DEFAULT_SCANNER_NAME));
 
     private static AutoDeployTestSupport testSupport;
     private File tmpDir;
@@ -1105,7 +1110,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         //Deploy externally loaded deployment
         ts.controller.added.put("foo.war", bytes);
         ts.controller.deployed.put("foo.war", bytes);
-        ts.controller.externallyDeployed.add("foo.war");
+        ts.controller.externallyDeployed.put("foo.war", null);
         ts.controller.addCompositeSuccessResponse(1);
         ts.testee.scan();
 
@@ -1161,8 +1166,6 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertEquals(1, ts.controller.added.size());
         assertEquals(1, ts.controller.deployed.size());
     }
-
-    // FIXME remove this marker used to make it easy to find these tests in the IDE
 
     /**
      * Tests that autodeploy does not happen by default.
@@ -1714,12 +1717,12 @@ public class FileSystemDeploymentServiceUnitTestCase {
     public void testForcedUndeployment() throws Exception {
         MockServerController sc = new MockServerController("foo.war", "failure.ear");
         TesteeSet ts = createTestee(sc);
-        ts.controller.externallyDeployed.add("foo.war");
+        ts.controller.externallyDeployed.put("foo.war", null);
         ts.controller.addCompositeSuccessResponse(1);
-        assertThat(ts.controller.deployed.size() , is(2));
+        assertThat(ts.controller.deployed.size(), is(2));
         //ts.testee.scan(true, new DefaultDeploymentOperations(sc), true);
         ts.testee.forcedUndeployScan();
-        assertThat(ts.controller.deployed.size() , is(1)); //Only non persistent deployments should be undeployed.
+        assertThat(ts.controller.deployed.size(), is(1)); //Only non persistent deployments should be undeployed.
         assertThat(ts.controller.deployed.keySet(), hasItems("foo.war"));
     }
 
@@ -1773,7 +1776,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     public void testNoUndeployment() throws Exception {
         MockServerController sc = new MockServerController("foo.war", "failure.ear");
         TesteeSet ts = createTestee(sc);
-        ts.controller.externallyDeployed.add("foo.war");
+        ts.controller.externallyDeployed.put("foo.war", null);
         ts.controller.addCompositeSuccessResponse(1);
         assertThat(ts.controller.deployed.size(), is(2));
         try {
@@ -1810,6 +1813,65 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
     }
 
+    /**
+     * Test that a scanner does not interfere with a deployment it does not own. Basic case with
+     * a persistent deployment but no owner; i.e. a typical deployment added by the user via CLI or console.
+     */
+    @Test
+    public void testIgnoreExternalPersistentDeployment() throws Exception {
+        testIgnoreExternalDeployment(null);
+    }
+
+    /**
+     * Test that a scanner does not interfere with a deployment it does not own. WFCORE-632 case. where external deployment
+     * is not persistent, but is not owned by a scanner.
+     */
+    @Test
+    public void testIgnoreExternalNonPersistentDeployment() throws Exception {
+        testIgnoreExternalDeployment(new ExternalDeployment(null, false));
+    }
+
+    /**
+     * Test that a scanner does not interfere with a deployment it does not own. WFCORE-65 case. where external deployment
+     * is owned by a different scanner.
+     */
+    @Test
+    public void testIgnoreExternalScannerDeployment() throws Exception {
+        PathAddress externalScanner = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, DeploymentScannerExtension.SUBSYSTEM_NAME),
+                PathElement.pathElement(DeploymentScannerExtension.SCANNERS_PATH.getKey(), "other"));
+
+        testIgnoreExternalDeployment(new ExternalDeployment(externalScanner, false));
+    }
+
+    private void testIgnoreExternalDeployment(ExternalDeployment externalDeployment) throws Exception {
+        File war = createFile("foo.war");
+        File dodeploy = createFile("foo.war" + FileSystemDeploymentService.DO_DEPLOY);
+        File deployed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYED);
+        File undeployed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.UNDEPLOYED);
+        File failed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.FAILED_DEPLOY);
+        TesteeSet ts = createTestee();
+
+        //Deploy externally loaded deployment
+        byte[] bytes = randomHash();
+        ts.controller.added.put("external.war", bytes);
+        ts.controller.deployed.put("external.war", bytes);
+        ts.controller.externallyDeployed.put("external.war", externalDeployment);
+
+        // Scan
+        ts.controller.addCompositeSuccessResponse(1);
+        ts.testee.scan();
+
+        assertTrue(war.exists());
+        assertFalse(dodeploy.exists());
+        assertTrue(deployed.exists());
+        assertFalse(undeployed.exists());
+        assertFalse(failed.exists());
+        assertEquals(2, ts.controller.added.size());
+        assertEquals(2, ts.controller.deployed.size());
+        assertEquals(bytes, ts.controller.added.get("external.war"));
+        assertEquals(bytes, ts.controller.deployed.get("external.war"));
+    }
+
     private TesteeSet createTestee(String... existingContent) throws OperationFailedException {
         return createTestee(new MockServerController(existingContent));
     }
@@ -1827,7 +1889,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     }
 
     private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor, DeploymentOperations ops) throws OperationFailedException {
-        final FileSystemDeploymentService testee = new FileSystemDeploymentService(null, tmpDir, null, sc, executor, null);
+        final FileSystemDeploymentService testee = new FileSystemDeploymentService(resourceAddress, null, tmpDir, null, sc, executor, null);
         testee.startScanner(ops);
         return new TesteeSet(testee, sc);
     }
@@ -1905,7 +1967,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         private final List<Response> responses = new ArrayList<Response>(1);
         private final Map<String, byte[]> added = new HashMap<String, byte[]>();
         private final Map<String, byte[]> deployed = new HashMap<String, byte[]>();
-        private final Set<String> externallyDeployed = new HashSet<String>();
+        private final Map<String, ExternalDeployment> externallyDeployed = new HashMap<String, ExternalDeployment>();
 
         @Override
         public ModelNode execute(ModelNode operation) throws IOException {
@@ -2103,7 +2165,25 @@ public class FileSystemDeploymentServiceUnitTestCase {
             result.setEmptyObject();
             for (String deployment : added.keySet()) {
                 result.get(deployment, ENABLED).set(deployed.containsKey(deployment));
-                result.get(deployment, PERSISTENT).set(externallyDeployed.contains(deployment));
+                if (externallyDeployed.containsKey(deployment)) {
+                    ExternalDeployment externalDeployment = externallyDeployed.get(deployment);
+                    if (externalDeployment != null) {
+                        // Report what a different owner (e.g. different scanner) would configure
+                        result.get(deployment, PERSISTENT).set(externalDeployment.persistent);
+                        ModelNode ownerNode = result.get(deployment, OWNER);
+                        if (externalDeployment.ownerAddress != null) {
+                            ownerNode.set(externalDeployment.ownerAddress.toModelNode());
+                        } // else leave undefined
+                    } else {
+                        // Report what a non-scanner deployment would configure
+                        result.get(deployment, PERSISTENT).set(true);
+                        result.get(deployment, OWNER).set(new ModelNode());
+                    }
+                } else {
+                    // Report what our scanner would configure
+                    result.get(deployment, PERSISTENT).set(false);
+                    result.get(deployment, OWNER).set(resourceAddress.toModelNode());
+                }
             }
             return content;
         }
@@ -2336,10 +2416,20 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Set<String> getPersistentDeployments() {
-            return delegate.getPersistentDeployments();
+        public Set<String> getUnrelatedDeployments(ModelNode owner) {
+            return delegate.getUnrelatedDeployments(owner);
         }
 
+    }
+
+    private static class ExternalDeployment {
+        private final PathAddress ownerAddress;
+        private final boolean persistent;
+
+        private ExternalDeployment(PathAddress ownerAddress, boolean persistent) {
+            this.ownerAddress = ownerAddress;
+            this.persistent = persistent;
+        }
     }
 
     private static byte[] randomHash() {

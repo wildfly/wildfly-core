@@ -25,9 +25,9 @@ package org.jboss.as.server.deployment.scanner;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -88,7 +88,7 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
     }
 
     @Override
-    public Set<String> getPersistentDeployments() {
+    public Set<String> getUnrelatedDeployments(ModelNode owner) {
         final ModelNode op = Util.getEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, new ModelNode());
         op.get(CHILD_TYPE).set(DEPLOYMENT);
         ModelNode response;
@@ -101,7 +101,7 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
         final Set<String> deployments = new HashSet<String>();
         if (result.isDefined()) {
             for (Property property : result.asPropertyList()) {
-                if(property.getValue().get(PERSISTENT).asBoolean(true)) {
+                if(!owner.equals(property.getValue().get(OWNER))) {
                     deployments.add(property.getName());
                 }
             }

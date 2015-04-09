@@ -57,13 +57,15 @@ public interface DeploymentOperations extends Closeable {
      */
     Map<String, Boolean> getDeploymentsStatus();
 
-    /**
-     * Gets the names of deployments currently in the configuration model that are persistent
-     * and thus should not be modified by a deployment scanner.
+    /** 
+     * Gets the names of deployments currently in the configuration model that are not owned by {@code owner} 
      *
-     * @return a set of names of unrelated deployments. Will not be {@code null}
+     * @param owner node of type LIST with elements of type PROPERTY whose data represents the address of the 
+     *              management resource associated with the caller. Cannot be {@code null} or an empty list 
+     *
+     * @return a set of names of unrelated deployments. Will not be {@code null} 
      */
-    Set<String> getPersistentDeployments();
+    Set<String> getUnrelatedDeployments(ModelNode owner);
 
     /**
      * Factory for creating a {@code DeploymentOperations} instance.

@@ -279,6 +279,7 @@ public class ModelDescriptionConstants {
     public static final String OUTBOUND_CONNECTION = "outbound-connection";
     /** Use this standard operation address field in the operation *description* ModelNode */
     public static final String OUTCOME = "outcome";
+    public static final String OWNER = "owner";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
