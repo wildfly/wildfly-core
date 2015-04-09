@@ -21,21 +21,22 @@
  */
 package org.jboss.as.test.integration.domain;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+
 import java.io.File;
+
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.test.integration.domain.AbstractSSLMasterSlaveTestCase.MASTER_MANAGEMENT_REALM;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
-import org.jboss.as.test.integration.security.common.SecurityTestConstants;
 import org.jboss.as.test.integration.security.common.CoreUtils;
+import org.jboss.as.test.integration.security.common.SecurityTestConstants;
 import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
@@ -44,6 +45,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -51,6 +53,7 @@ import org.junit.Test;
  *
  * @author Ondrej Kotek <okotek@redhat.com>
  */
+@Ignore("WFCORE-634")
 public class SSLMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-master-slave-1way-workdir");
