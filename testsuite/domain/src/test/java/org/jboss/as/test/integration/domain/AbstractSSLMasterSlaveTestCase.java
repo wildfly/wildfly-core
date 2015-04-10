@@ -34,7 +34,6 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -142,7 +141,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         ModelNode responseNode;
         try {
             responseNode = executeOverHttp(mgmtURI, operation);
-        } catch (HttpHostConnectException ex) {
+        } catch (IOException ex) {
             // connection refused, host is not running
             return false;
         }
