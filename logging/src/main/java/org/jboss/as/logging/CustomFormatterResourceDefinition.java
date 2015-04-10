@@ -108,7 +108,7 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
                 final ModelNode moduleNameNode = MODULE.resolveModelAttribute(context, model);
                 final String moduleName = moduleNameNode.isDefined() ? moduleNameNode.asString() : null;
                 configuration = logContextConfiguration.addFormatterConfiguration(moduleName, className, name);
-                final ModelNode properties = PROPERTIES.resolveModelAttribute(context, operation);
+                final ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
                 if (properties.isDefined()) {
                     for (Property property : properties.asPropertyList()) {
                         configuration.setPropertyValueString(property.getName(), property.getValue().asString());

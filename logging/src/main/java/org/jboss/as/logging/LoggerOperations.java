@@ -205,7 +205,7 @@ final class LoggerOperations {
 
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final LoggerConfiguration configuration, final String name, final ModelNode model) throws OperationFailedException {
-            // Get the handler name
+            // Get the handler name, uses the operation to get the single handler name being added
             final String handlerName = HANDLER_NAME.resolveModelAttribute(context, operation).asString();
             final String loggerName = getLogManagerLoggerName(name);
             if (configuration.getHandlerNames().contains(handlerName)) {
@@ -242,6 +242,7 @@ final class LoggerOperations {
 
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final LoggerConfiguration configuration, final String name, final ModelNode model) throws OperationFailedException {
+            // Uses the operation to get the single handler name being added
             configuration.removeHandlerName(HANDLER_NAME.resolveModelAttribute(context, operation).asString());
         }
     };
