@@ -74,6 +74,16 @@
     <dependencies>
         <dependency>
             <groupId>org.jboss</groupId>
+            <artifactId>jboss-dmr</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.modules</groupId>
+            <artifactId>jboss-modules</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss</groupId>
             <artifactId>staxmapper</artifactId>
         </dependency>
 
@@ -85,6 +95,12 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -95,6 +111,12 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -140,6 +162,7 @@
             <artifactId>jboss-stdio</artifactId>
         </dependency>
 
+        <!-- Test dependencies -->
         <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman</artifactId>
@@ -161,6 +184,12 @@
         <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman-bmunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-controller-client</artifactId>
             <scope>test</scope>
         </dependency>
 

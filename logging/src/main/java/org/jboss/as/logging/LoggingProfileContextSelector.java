@@ -22,10 +22,10 @@
 
 package org.jboss.as.logging;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.jboss.logmanager.LogContext;
-import org.jboss.util.collection.ConcurrentSkipListMap;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -33,7 +33,7 @@ import org.jboss.util.collection.ConcurrentSkipListMap;
 public final class LoggingProfileContextSelector {
     private static final LoggingProfileContextSelector INSTANCE = new LoggingProfileContextSelector();
 
-    private final ConcurrentMap<String, LogContext> profileContexts = new ConcurrentSkipListMap<String, LogContext>();
+    private final ConcurrentMap<String, LogContext> profileContexts = new ConcurrentHashMap<>();
 
     private LoggingProfileContextSelector() {
 
