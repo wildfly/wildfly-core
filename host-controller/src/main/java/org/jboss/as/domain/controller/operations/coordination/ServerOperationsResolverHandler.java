@@ -74,41 +74,36 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
     private final HostControllerExecutionSupport hostControllerExecutionSupport;
     private final PathAddress originalAddress;
     private final ImmutableManagementResourceRegistration originalRegistration;
-    private final ModelNode localResponse;
+    private final MultiPhaseLocalContext multiPhaseLocalContext;
 
     ServerOperationsResolverHandler(final ServerOperationResolver resolver,
                                     final HostControllerExecutionSupport hostControllerExecutionSupport,
                                     final PathAddress originalAddress,
                                     final ImmutableManagementResourceRegistration originalRegistration,
-                                    final ModelNode response) {
+                                    final MultiPhaseLocalContext multiPhaseLocalContext) {
         this.resolver = resolver;
         this.hostControllerExecutionSupport = hostControllerExecutionSupport;
         this.originalAddress = originalAddress;
         this.originalRegistration = originalRegistration;
-        this.localResponse = response;
+        this.multiPhaseLocalContext = multiPhaseLocalContext;
     }
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
-        if (context.hasFailureDescription()) {
-            localResponse.get(FAILURE_DESCRIPTION).set(context.getFailureDescription());
-            // We do not allow failures on the host controllers
+        if (multiPhaseLocalContext.getLocalResponse().has(FAILURE_DESCRIPTION)) {
+            // We do not allow failures on the host controllers in a 2-phase op
             context.setRollbackOnly();
         } else {
 
             // Temporary hack to prevent CompositeOperationHandler throwing away domain failure data
             context.attachIfAbsent(CompositeOperationHandler.DOMAIN_EXECUTION_KEY, Boolean.TRUE);
 
+            // Figure out what server ops are needed to correspond to the domain op we have
             boolean nullDomainOp = hostControllerExecutionSupport.getDomainOperation() == null;
-
             // Transformed operations might need to simulate certain behavior, so allow read-only operations to be pushed as well
-            final boolean pushToServers;
-            if(operation.hasDefined(OPERATION_HEADERS)) {
-                pushToServers = operation.get(OPERATION_HEADERS, DOMAIN_PUSH_TO_SERVERS).asBoolean(false);
-            } else {
-                pushToServers = false;
-            }
+            final boolean pushToServers= operation.hasDefined(OPERATION_HEADERS) && operation.get(OPERATION_HEADERS, DOMAIN_PUSH_TO_SERVERS).asBoolean(false);
+
             HostControllerExecutionSupport.ServerOperationProvider provider = nullDomainOp
                 ? NO_OP_PROVIDER
                 : new HostControllerExecutionSupport.ServerOperationProvider() {
@@ -123,19 +118,42 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
                                 op.get(OPERATION_HEADERS).remove(CALLER_TYPE);
                             }
                         }
+
+                        HOST_CONTROLLER_LOGGER.tracef("Server ops for %s -- %s", domainOp, ops);
                         return ops;
                     }
                 };
             Map<ServerIdentity, ModelNode> serverOps = hostControllerExecutionSupport.getServerOps(provider);
 
-            ModelNode domainOpResult = nullDomainOp ? new ModelNode(IGNORED) : (context.hasResult() ? context.getResult() : new ModelNode());
+            // Format that data and provide it to the coordinator
+            ModelNode formattedServerOps = getFormattedServerOps(serverOps);
 
-            ModelNode overallResult = localResponse == null ? context.getResult() : localResponse.get(RESULT);
-            createOverallResult(serverOps, domainOpResult, overallResult);
+            if (multiPhaseLocalContext.isCoordinator()) {
+                // We're the coordinator, so just stash the server ops in the multiphase context
+                // for use in the rollout plan
+                multiPhaseLocalContext.getLocalServerOps().set(formattedServerOps);
+                if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
+                    HOST_CONTROLLER_LOGGER.tracef("%s server ops local response node is %s", getClass().getSimpleName(), formattedServerOps);
+                }
+            } else {
+                // We're not the coordinator, so we need to propagate the server ops
+                // to the coordinator via the response we send in the prepare part of Stage.DONE
+                // So, change the context result to the special format used for this data
+                ModelNode localResult = nullDomainOp ? new ModelNode(IGNORED) : multiPhaseLocalContext.getLocalResponse().get(RESULT);
+                ModelNode domainResult = hostControllerExecutionSupport.getFormattedDomainResult(localResult);
 
-            if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
-                HOST_CONTROLLER_LOGGER.tracef("%s responseNode is %s", getClass().getSimpleName(), overallResult);
+                ModelNode contextResult = context.getResult();
+                contextResult.setEmptyObject();
+                contextResult.get(DOMAIN_RESULTS).set(domainResult);
+                contextResult.get(SERVER_OPERATIONS).set(formattedServerOps);
+
+
+                if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
+                    HOST_CONTROLLER_LOGGER.tracef("%s server ops remote response node is %s", getClass().getSimpleName(), contextResult);
+                }
+
             }
+
         }
     }
 
@@ -154,14 +172,8 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
         return result;
     }
 
-    private void createOverallResult(final Map<ServerIdentity, ModelNode> serverOps,
-                                     final ModelNode localResult, final ModelNode overallResult) {
-
-        ModelNode domainResult = hostControllerExecutionSupport.getFormattedDomainResult(localResult);
-        overallResult.setEmptyObject();
-        overallResult.get(DOMAIN_RESULTS).set(domainResult);
-
-        ModelNode serverOpsNode = overallResult.get(SERVER_OPERATIONS);
+    private ModelNode getFormattedServerOps(Map<ServerIdentity, ModelNode> serverOps) {
+        ModelNode serverOpsNode = new ModelNode();
 
         // Group servers with the same ops together to save bandwidth
         final Map<ModelNode, Set<ServerIdentity>> bundled = new HashMap<ModelNode, Set<ServerIdentity>>();
@@ -182,5 +194,6 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
             }
             setNode.get(OP).set(entry.getKey());
         }
+        return serverOpsNode;
     }
 }

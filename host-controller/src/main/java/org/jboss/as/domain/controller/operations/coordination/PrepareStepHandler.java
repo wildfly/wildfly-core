@@ -32,24 +32,20 @@ import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST
 import static org.jboss.as.domain.controller.operations.coordination.OperationCoordinatorStepHandler.configureDomainUUID;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
-import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -64,7 +60,6 @@ public class PrepareStepHandler  implements OperationStepHandler {
     private final OperationSlaveStepHandler slaveHandler;
 
     public PrepareStepHandler(final LocalHostControllerInfo localHostControllerInfo,
-                              final ContentRepository contentRepository,
                               final Map<String, ProxyController> hostProxies,
                               final Map<String, ProxyController> serverProxies,
                               final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
@@ -72,7 +67,7 @@ public class PrepareStepHandler  implements OperationStepHandler {
                               final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry) {
         this.localHostControllerInfo = localHostControllerInfo;
         this.slaveHandler = new OperationSlaveStepHandler(localHostControllerInfo, serverProxies, ignoredDomainResourceRegistry, extensionRegistry);
-        this.coordinatorHandler = new OperationCoordinatorStepHandler(localHostControllerInfo, contentRepository, hostProxies, serverProxies, slaveHandler, runtimeIgnoreTransformationRegistry);
+        this.coordinatorHandler = new OperationCoordinatorStepHandler(localHostControllerInfo, hostProxies, serverProxies, slaveHandler, runtimeIgnoreTransformationRegistry);
     }
 
     public void initialize(ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler) {
@@ -88,7 +83,6 @@ public class PrepareStepHandler  implements OperationStepHandler {
                 && operation.get(OPERATION_HEADERS).hasDefined(EXECUTE_FOR_COORDINATOR)
                 && operation.get(OPERATION_HEADERS).get(EXECUTE_FOR_COORDINATOR).asBoolean()) {
             // Coordinator wants us to execute locally and send result including the steps needed for execution on the servers
-            // TODO verify this is actually the master requesting this
             slaveHandler.execute(context, operation);
         } else {
             // Assign a unique id to this operation to allow tying together of audit logs from various hosts/servers
@@ -132,14 +126,9 @@ public class PrepareStepHandler  implements OperationStepHandler {
 
     static void executeDirectOperation(OperationContext context, ModelNode operation) throws OperationFailedException {
         final String operationName =  operation.require(OP).asString();
-        OperationStepHandler stepHandler;
+
         final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
-        if (registration != null) {
-            stepHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, operationName);
-        } else {
-            stepHandler = resolveWildcardOperationHandler(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName,
-                    context.getRootResourceRegistration());
-        }
+        final OperationStepHandler stepHandler = context.getRootResourceRegistration().getOperationHandler(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
         if (stepHandler != null) {
             context.addStep(stepHandler, OperationContext.Stage.MODEL);
         } else {
@@ -150,41 +139,6 @@ public class PrepareStepHandler  implements OperationStepHandler {
                 context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
             }
         }
-    }
-
-    private static OperationStepHandler resolveWildcardOperationHandler(final PathAddress address, final String operationName,
-                                                                 final ImmutableManagementResourceRegistration rootRegistration) {
-        OperationStepHandler result = null;
-        if (address.size() > 0) {
-            // For wildcard elements, check specific registrations where the same OSH is used
-            // for all such registrations
-            PathElement pe = address.getLastElement();
-            if (pe.isWildcard()) {
-                String type = pe.getKey();
-                PathAddress parent = address.subAddress(0, address.size() - 1);
-                Set<PathElement> children = rootRegistration.getChildAddresses(parent);
-                if (children != null) {
-                    OperationStepHandler found = null;
-                    for (PathElement child : children) {
-                        if (type.equals(child.getKey())) {
-                            OperationEntry oe = rootRegistration.getOperationEntry(parent.append(child), operationName);
-                            OperationStepHandler osh = oe == null ? null : oe.getOperationHandler();
-                            if (osh == null || (found != null && !found.equals(osh))) {
-                                // Not all children have the same handler; give up
-                                found = null;
-                                break;
-                            }
-                            // We have a candidate OSH
-                            found = osh;
-                        }
-                    }
-                    if (found != null) {
-                        result = found;
-                    }
-                }
-            }
-        }
-        return result;
     }
 
 }

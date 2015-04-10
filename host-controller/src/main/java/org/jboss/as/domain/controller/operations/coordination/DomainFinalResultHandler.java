@@ -40,6 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -52,30 +53,41 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * Assembles the overall result for a domain operation from individual host and server results.
+ * Assembles the overall result for a domain operation from individual host and server results. This handler does
+ * nothing in {@code execute} except registering a {@link org.jboss.as.controller.OperationContext.ResultHandler}.
+ * The work is done in the result handler, which processes data gathered by other handlers.
+ * <p>This handler should be registered before any of the typical kinds of handlers that actually deal with
+ * the resource and operation indicated by the management operation. This ensures that its result handler
+ * will execute after any result handler registered by those other handlers, ensuring that this handler will
+ * see all available data.</p>
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class DomainFinalResultHandler implements OperationStepHandler {
+class DomainFinalResultHandler implements OperationStepHandler {
 
-    private final DomainOperationContext domainOperationContext;
+    private final MultiphaseOverallContext multiphaseContext;
+    private final HostControllerExecutionSupport executionSupport;
 
-    public DomainFinalResultHandler(DomainOperationContext domainOperationContext) {
-        this.domainOperationContext = domainOperationContext;
+    DomainFinalResultHandler(MultiphaseOverallContext multiphaseContext, HostControllerExecutionSupport executionSupport) {
+        this.multiphaseContext = multiphaseContext;
+        this.executionSupport = executionSupport;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
+        // Just register a result handler.
+
         context.completeStep(new OperationContext.ResultHandler() {
             @Override
             public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                DomainControllerLogger.CONTROLLER_LOGGER.tracef("Establishing final response -- result action is %s", resultAction);
                 // On the way out, fix up the response
                 final boolean isDomain = isDomainOperation(operation);
                 boolean shouldContinue = collectDomainFailure(context, isDomain);
@@ -84,10 +96,26 @@ public class DomainFinalResultHandler implements OperationStepHandler {
 
                     ModelNode contextResult = context.getResult();
                     contextResult.setEmptyObject(); // clear out any old data
-                    contextResult.set(getDomainResults(operation));
+
+                    // Format any local response for easy searching, putting it in the same format
+                    // a slave would send in response to DomainSlaveHandler
+                    ModelNode localDomainFormatted;
+                    if (executionSupport == null) {
+                        localDomainFormatted = new ModelNode();
+                    } else {
+                        ModelNode localResponse = multiphaseContext.getLocalContext().getLocalResponse();
+                        localDomainFormatted = localResponse.clone();
+                        localDomainFormatted.get(RESULT).clear();
+                        ModelNode domainResults = executionSupport.getFormattedDomainResult(localResponse.get(RESULT));
+                        localDomainFormatted.get(RESULT, DOMAIN_RESULTS).set(domainResults);
+                        DomainControllerLogger.CONTROLLER_LOGGER.tracef("Domain formatted result for local response %s is %s",
+                                localResponse, localDomainFormatted);
+                    }
+
+                    contextResult.set(getDomainResults(operation, localDomainFormatted));
 
                     // If we have server results we know all was ok on the slaves
-                    Map<ServerIdentity, ModelNode> serverResults = domainOperationContext.getServerResults();
+                    Map<ServerIdentity, ModelNode> serverResults = multiphaseContext.getServerResults();
                     if (serverResults.size() > 0) {
                         populateServerGroupResults(context, serverResults);
                     } else {
@@ -107,9 +135,9 @@ public class DomainFinalResultHandler implements OperationStepHandler {
     }
 
     private boolean collectDomainFailure(OperationContext context, final boolean isDomain) {
-        final ModelNode coordinator = domainOperationContext.getCoordinatorResult();
+        final ModelNode coordinator = multiphaseContext.getLocalContext().getLocalResponse();
         ModelNode domainFailure = null;
-        if (isDomain &&  coordinator != null && coordinator.has(FAILURE_DESCRIPTION)) {
+        if (isDomain && coordinator.has(FAILURE_DESCRIPTION)) {
             domainFailure = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
         }
         if (domainFailure != null) {
@@ -125,7 +153,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         // We ignore a context failure description if the request failed on all servers, as the
         // DomainRolloutStepHandler would have had to set that to trigger model rollback
         // but we still want to record the server results so the user can see the problem
-        if (!domainOperationContext.isFailureReported() && context.hasFailureDescription()) {
+        if (!multiphaseContext.isFailureReported() && context.hasFailureDescription()) {
             ModelNode formattedFailure = new ModelNode();
             if (isDomain) {
                 ModelNode failure = context.getFailureDescription();
@@ -137,7 +165,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
                 ModelNode hostFailureProperty = new ModelNode();
                 ModelNode contextFailure = context.getFailureDescription();
                 ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
-                hostFailureProperty.add(domainOperationContext.getLocalHostInfo().getLocalHostName(), hostFailure);
+                hostFailureProperty.add(multiphaseContext.getLocalHostInfo().getLocalHostName(), hostFailure);
 
                 formattedFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureProperty);
             }
@@ -150,7 +178,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
 
     private boolean collectHostFailures(final OperationContext context, final boolean isDomain) {
         ModelNode hostFailureResults = null;
-        for (Map.Entry<String, ModelNode> entry : domainOperationContext.getHostControllerResults().entrySet()) {
+        for (Map.Entry<String, ModelNode> entry : multiphaseContext.getHostControllerPreparedResults().entrySet()) {
             ModelNode hostResult = entry.getValue();
             if (hostResult.has(FAILURE_DESCRIPTION)) {
                 if (hostFailureResults == null) {
@@ -161,13 +189,13 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             }
         }
 
-        final ModelNode coordinator = domainOperationContext.getCoordinatorResult();
-        if (!isDomain && coordinator != null && coordinator.has(FAILURE_DESCRIPTION)) {
+        final ModelNode coordinator = multiphaseContext.getLocalContext().getLocalResponse();
+        if (!isDomain && coordinator.has(FAILURE_DESCRIPTION)) {
             if (hostFailureResults == null) {
                 hostFailureResults = new ModelNode();
             }
             final ModelNode desc = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
-            hostFailureResults.get(domainOperationContext.getLocalHostInfo().getLocalHostName()).set(desc);
+            hostFailureResults.get(multiphaseContext.getLocalHostInfo().getLocalHostName()).set(desc);
         }
 
         if (hostFailureResults != null) {
@@ -188,38 +216,84 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         return true;
     }
 
-    private ModelNode getDomainResults(final ModelNode operation, final String... stepLabels) {
-        ResponseProvider provider = new ResponseProvider(operation, domainOperationContext.getLocalHostInfo().getLocalHostName());
-        ModelNode result;
+    private ModelNode getDomainResults(final ModelNode operation, final ModelNode localDomainFormatted, final String... stepLabels) {
+        ResponseProvider provider = new ResponseProvider(operation, multiphaseContext.getLocalHostInfo().getLocalHostName());
+        DomainControllerLogger.CONTROLLER_LOGGER.tracef("Provider for %s is %s", operation, provider);
+        ModelNode result = null;
         if (!provider.isLeaf()) {
             result = new ModelNode();
+
+            ModelNode compositeResult;
+            if (stepLabels.length == 0) {
+                // Initial request; we're already dealing with the result node
+                compositeResult = result;
+            } else {
+                // Add a wrapper 'response'
+                // Outcome for composite is 'success' or we would not be here
+                result.get(OUTCOME).set(SUCCESS);
+                compositeResult = result.get(RESULT);
+            }
+
             String[] nextStepLabels = new String[stepLabels.length + 1];
             System.arraycopy(stepLabels, 0, nextStepLabels, 0, stepLabels.length);
             int i = 1;
-
             for (ModelNode step : provider.getChildren()) {
                 String childStepLabel = "step-" + i++;
                 nextStepLabels[stepLabels.length] = childStepLabel;
-                result.get(childStepLabel).set(getDomainResults(step, nextStepLabels));
+                compositeResult.get(childStepLabel).set(getDomainResults(step, localDomainFormatted, nextStepLabels));
             }
         } else if (provider.getServer() == null) {
             String hostName = provider.getHost();
-            boolean forMaster = hostName.equals(domainOperationContext.getLocalHostInfo().getLocalHostName());
-            ModelNode hostResponse = forMaster ? domainOperationContext.getCoordinatorResult()
-                    : domainOperationContext.getHostControllerResults().get(hostName);
-                result = getHostControllerResult(hostResponse, stepLabels);
-        } else {
-            result = domainOperationContext.getServerResult(provider.getHost(), provider.getServer(), stepLabels);
-        }
 
+            if (hostName.equals(multiphaseContext.getLocalHostInfo().getLocalHostName())) {
+                result = getHostControllerResult(localDomainFormatted, stepLabels);
+            } else {
+                ModelNode hostFinalResult = multiphaseContext.getHostControllerFinalResults().get(hostName);
+                if (hostFinalResult != null) {
+                    result = getHostControllerResult(hostFinalResult, stepLabels);
+                } else {
+                    // Perhaps cancelled; see if there's a prepared result
+                    ModelNode preparedResult = multiphaseContext.getHostControllerPreparedResults().get(hostName);
+                    if (preparedResult != null) {
+                        result = getHostControllerResult(preparedResult, stepLabels);
+                    }
+                }
+            }
+        } else {
+            result = multiphaseContext.getServerResult(provider.getHost(), provider.getServer(), stepLabels);
+        }
+        DomainControllerLogger.CONTROLLER_LOGGER.tracef("Domain result for %s is %s", operation, result);
         return result == null ? new ModelNode() : result;
     }
 
     private ModelNode getHostControllerResult(final ModelNode fullResult, final String... stepLabels) {
         ModelNode result = null;
-        if (fullResult != null && fullResult.hasDefined(RESULT) && fullResult.get(RESULT).hasDefined(DOMAIN_RESULTS)) {
+        if (fullResult != null && fullResult.hasDefined(RESULT, DOMAIN_RESULTS)) {
             ModelNode domainResults = fullResult.get(RESULT, DOMAIN_RESULTS);
-            result = domainResults.get(stepLabels);
+            if (stepLabels.length == 0) {
+                result = domainResults;
+            } else {
+                ModelNode source = domainResults;
+                for (int i = 0; i < stepLabels.length; i++) {
+                    if (i == 0) {
+                        if (source.hasDefined(stepLabels[i])) {
+                            source = source.get(stepLabels[i]);
+                        } else {
+                            source = new ModelNode();
+                            break;
+                        }
+                    } else {
+                        if (source.hasDefined(RESULT, stepLabels[i])) {
+                            source = source.get(RESULT, stepLabels[i]);
+                        } else {
+                            source = new ModelNode();
+                            break;
+                        }
+
+                    }
+                }
+                result = source;
+            }
             if (result.has(OUTCOME) && !result.hasDefined(OUTCOME)) {
                 if (result.hasDefined(FAILURE_DESCRIPTION)) {
                     result.get(OUTCOME).set(FAILED);
@@ -228,6 +302,11 @@ public class DomainFinalResultHandler implements OperationStepHandler {
                 }
             }
         }
+        if (DomainControllerLogger.CONTROLLER_LOGGER.isTraceEnabled()) {
+            DomainControllerLogger.CONTROLLER_LOGGER.tracef("Host result from %s at %s is %s",
+                    fullResult, Arrays.asList(stepLabels), result);
+        }
+
         return result;
     }
 
@@ -250,7 +329,7 @@ public class DomainFinalResultHandler implements OperationStepHandler {
         ModelNode failureReport = new ModelNode();
         for (String groupName : groupNames) {
             final ModelNode groupNode = new ModelNode();
-            boolean groupFailure = domainOperationContext.isServerGroupRollback(groupName);
+            boolean groupFailure = multiphaseContext.isServerGroupRollback(groupName);
             if (groupFailure) {
                 // TODO revisit if we should report this for the whole group, since the result might not be accurate
                 // groupNode.get(ROLLED_BACK).set(true);
@@ -321,14 +400,21 @@ public class DomainFinalResultHandler implements OperationStepHandler {
             if (addrSize == 0) {
                 host = localHostName;
                 server = null;
-            } else if (HOST.equals(opAddr.getElement(0).getKey())) {
+            } else if (HOST.equals(opAddr.getElement(0).getKey()) && !opAddr.getElement(0).isMultiTarget()) {
                 host = opAddr.getElement(0).getValue();
-                if (addrSize > 1 && SERVER.equals(opAddr.getElement(1).getKey())) {
+                if (addrSize > 1 && SERVER.equals(opAddr.getElement(1).getKey())
+                        && !opAddr.getElement(1).isMultiTarget()) {
                     server =  opAddr.getElement(1).getValue();
-                    composite = composite && addrSize == 2;
+                    //composite = composite && addrSize == 2;
                 } else {
                     server = null;
                 }
+                // 'composite' is false for any op targeted at 'host=x'
+                // If address isn't host=x/server=y, then it just isn't a true
+                // composite op, it's some other op named "composite"
+                // If address *is* host=x/server=y then in this class'
+                // processing we can treat the result as a leaf node anyway
+                composite = false;
             } else {
                 // A domain op
                 host = localHostName;
@@ -362,6 +448,11 @@ public class DomainFinalResultHandler implements OperationStepHandler {
 
         private boolean isLeaf() {
             return children == null;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "{host=" + host + ", server=" + server + ", children=" + children + "}";
         }
     }
 }

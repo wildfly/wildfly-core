@@ -22,20 +22,23 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_RESULTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
 import java.util.Map;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
@@ -49,7 +52,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class OperationSlaveStepHandler {
+class OperationSlaveStepHandler {
 
     private final LocalHostControllerInfo localHostControllerInfo;
     private final Map<String, ProxyController> serverProxies;
@@ -58,7 +61,8 @@ public class OperationSlaveStepHandler {
     private volatile ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler;
 
     OperationSlaveStepHandler(final LocalHostControllerInfo localHostControllerInfo, Map<String, ProxyController> serverProxies,
-                              IgnoredDomainResourceRegistry ignoredDomainResourceRegistry, ExtensionRegistry extensionRegistry) {
+                              final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
+                              final ExtensionRegistry extensionRegistry) {
         this.localHostControllerInfo = localHostControllerInfo;
         this.serverProxies = serverProxies;
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
@@ -80,7 +84,8 @@ public class OperationSlaveStepHandler {
             context.attach(DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID_ATTACHMENT, id);
         }
 
-        final HostControllerExecutionSupport hostControllerExecutionSupport = addSteps(context, operation, null, true);
+        final MultiPhaseLocalContext localContext = new MultiPhaseLocalContext(false);
+        final HostControllerExecutionSupport hostControllerExecutionSupport = addSteps(context, operation, localContext);
 
         //Add the missing resources step first
         if (missingResources != null) {
@@ -88,23 +93,41 @@ public class OperationSlaveStepHandler {
             context.addStep(applyMissingResourcesOp, applyMissingDomainModelResourcesHandler, OperationContext.Stage.MODEL, true);
         }
 
-
-
-        // In case the actual operation fails make sure the result still gets formatted
-        context.completeStep(new OperationContext.RollbackHandler() {
+        context.completeStep(new OperationContext.ResultHandler() {
             @Override
-            public void handleRollback(OperationContext context, ModelNode operation) {
-                if (hostControllerExecutionSupport.getDomainOperation() != null) {
-                    final ModelNode domainResult = hostControllerExecutionSupport.getFormattedDomainResult(context.getResult());
-                    context.getResult().set(domainResult);
+            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+
+                if (resultAction == OperationContext.ResultAction.KEEP) {
+
+                    // Replace the special format response ServerOperationsResolverHandler
+                    // used to send the prepared response to the coordinator with one that
+                    // has the final data. To save bandwidth we also drop any 'server-operations'
+                    // that were in the prepared response as those are no longer relevant.
+                    ModelNode result = context.getResult();
+                    result.setEmptyObject();
+                    ModelNode domainFormatted = hostControllerExecutionSupport.getFormattedDomainResult(localContext.getLocalResponse().get(RESULT));
+                    result.get(DOMAIN_RESULTS).set(domainFormatted);
+                } else {
+                    // The actual operation failed but make sure the result still gets formatted
+                    if (hostControllerExecutionSupport.getDomainOperation() != null) {
+                        ModelNode localResponse = localContext.getLocalResponse();
+                        if (localResponse.has(FAILURE_DESCRIPTION)) {
+                            context.getFailureDescription().set(localResponse.get(FAILURE_DESCRIPTION));
+                        }
+                        if (localResponse.has(RESULT)) {
+                            context.getResult().set(localResponse.get(RESULT));
+                        }
+                    }
                 }
             }
         });
     }
 
-    HostControllerExecutionSupport addSteps(final OperationContext context, final ModelNode operation, final ModelNode response, final boolean recordResponse) throws OperationFailedException {
+    HostControllerExecutionSupport addSteps(final OperationContext context, final ModelNode operation, final MultiPhaseLocalContext multiPhaseLocalContext) throws OperationFailedException {
         final PathAddress originalAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         final ImmutableManagementResourceRegistration originalRegistration = context.getResourceRegistration();
+
+        final ModelNode localResponse = multiPhaseLocalContext.getLocalResponse();
 
         final HostControllerExecutionSupport hostControllerExecutionSupport =
                 HostControllerExecutionSupport.Factory.create(operation, localHostControllerInfo.getLocalHostName(),
@@ -116,12 +139,12 @@ public class OperationSlaveStepHandler {
             if (originalRegistration == null) {
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(originalAddress));
             }
-            addBasicStep(context, domainOp);
+            addBasicStep(context, domainOp, localResponse);
         }
 
         ServerOperationResolver resolver = new ServerOperationResolver(localHostControllerInfo.getLocalHostName(), serverProxies);
         ServerOperationsResolverHandler sorh = new ServerOperationsResolverHandler(
-                resolver, hostControllerExecutionSupport, originalAddress, originalRegistration, response);
+                resolver, hostControllerExecutionSupport, originalAddress, originalRegistration, multiPhaseLocalContext);
         context.addStep(sorh, OperationContext.Stage.DOMAIN);
 
         return hostControllerExecutionSupport;
@@ -133,12 +156,12 @@ public class OperationSlaveStepHandler {
      * @param operation the operation
      * @throws OperationFailedException if no handler is registered for the operation
      */
-    private void addBasicStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+    private void addBasicStep(OperationContext context, ModelNode operation, ModelNode localReponse) throws OperationFailedException {
         final String operationName = operation.require(OP).asString();
 
         final OperationStepHandler stepHandler = context.getResourceRegistration().getOperationHandler(PathAddress.EMPTY_ADDRESS, operationName);
         if(stepHandler != null) {
-            context.addStep(operation, stepHandler, OperationContext.Stage.MODEL);
+            context.addStep(localReponse, operation, stepHandler, OperationContext.Stage.MODEL);
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR))));
         }

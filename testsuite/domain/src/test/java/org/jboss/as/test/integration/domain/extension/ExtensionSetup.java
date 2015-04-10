@@ -66,12 +66,20 @@ public class ExtensionSetup {
 
     public static void addExtensionAndSubsystem(final DomainTestSupport support) throws IOException, MgmtOperationException {
         DomainClient masterClient = support.getDomainMasterLifecycleUtil().getDomainClient();
-        PathAddress profileAddress = PathAddress.pathAddress("profile", "profile-a");
-
-        PathAddress subsystemAddress = profileAddress.append("subsystem", "1");
 
         ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress("extension", TestExtension.MODULE_NAME));
         DomainTestUtils.executeForResult(addExtension, masterClient);
+
+        for (String profileName : new String[]{"profile-a", "profile-b", "profile-shared"}) {
+            addExtensionAndSubsystem(masterClient, profileName);
+        }
+    }
+
+    private static void addExtensionAndSubsystem(final DomainClient masterClient, String profileName) throws IOException, MgmtOperationException {
+
+        PathAddress profileAddress = PathAddress.pathAddress("profile", profileName);
+
+        PathAddress subsystemAddress = profileAddress.append("subsystem", "1");
 
         ModelNode addSubsystem = Util.createAddOperation(subsystemAddress);
         addSubsystem.get("name").set("dummy name");

@@ -22,8 +22,10 @@
 
 package org.jboss.as.controller.operations.global;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ABSOLUTE_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILTERED_ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILTERED_CHILDREN_TYPES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNREADABLE_CHILDREN;
 
 import java.util.HashSet;
@@ -101,6 +103,7 @@ class FilteredData {
         return result;
     }
 
+    /** Report on the filtered data in DMR . */
     ModelNode toModelNode() {
         ModelNode result = null;
         if (map != null) {
@@ -108,9 +111,9 @@ class FilteredData {
             for (Map.Entry<PathAddress, ResourceData> entry : map.entrySet()) {
                 ModelNode item = new ModelNode();
                 PathAddress pa = entry.getKey();
-                item.get("absolute-address").set(pa.toModelNode());
+                item.get(ABSOLUTE_ADDRESS).set(pa.toModelNode());
                 ResourceData rd = entry.getValue();
-                item.get("relative-address").set(pa.subAddress(baseAddressLength).toModelNode());
+                item.get(RELATIVE_ADDRESS).set(pa.subAddress(baseAddressLength).toModelNode());
                 ModelNode attrs = new ModelNode().setEmptyList();
                 if (rd.attributes != null) {
                     for (String attr : rd.attributes) {
@@ -145,6 +148,36 @@ class FilteredData {
             }
         }
         return result;
+    }
+
+    /**
+     * Take data exported via {@link #toModelNode()} and store it locally. This is so filtering
+     * information from a remote process can be incorporated with local data.
+     *
+     * @param modelNode a defined node of type LIST
+     * @param addressPrefix address that should be added as a prefix to absolute addresses in {@code modelNode}
+     */
+    void populate(ModelNode modelNode, PathAddress addressPrefix) {
+        for (ModelNode item : modelNode.asList()) {
+            PathAddress absAddr = addressPrefix.append(PathAddress.pathAddress(item.get(ABSOLUTE_ADDRESS)));
+            if (item.hasDefined(FILTERED_ATTRIBUTES)) {
+                for (ModelNode node : item.get(FILTERED_ATTRIBUTES).asList()) {
+                    addReadRestrictedAttribute(absAddr, node.asString());
+                }
+            }
+            if (item.hasDefined(UNREADABLE_CHILDREN)) {
+                for (Property prop : item.get(UNREADABLE_CHILDREN).asPropertyList()) {
+                    PathElement pe = PathElement.pathElement(prop.getName(), prop.getValue().asString());
+                    addReadRestrictedResource(PathAddress.pathAddress(absAddr, pe));
+                }
+            }
+            if (item.hasDefined(FILTERED_CHILDREN_TYPES)) {
+                for (ModelNode type : item.get(FILTERED_CHILDREN_TYPES).asList()) {
+                    PathElement pe = PathElement.pathElement(type.asString());
+                    addAccessRestrictedResource(PathAddress.pathAddress(absAddr, pe));
+                }
+            }
+        }
     }
 
     private ResourceData getResourceData(PathAddress fullAddress) {

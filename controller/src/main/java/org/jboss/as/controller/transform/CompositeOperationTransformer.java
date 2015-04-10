@@ -98,6 +98,7 @@ class CompositeOperationTransformer implements OperationTransformer {
             this.steps = steps;
         }
 
+        // TODO WFCORE-624
         @Override
         public boolean rejectOperation(final ModelNode preparedResult) {
             for(final Step step : steps) {
@@ -105,9 +106,15 @@ class CompositeOperationTransformer implements OperationTransformer {
                     continue;
                 }
                 final String resultIdx = "step-" + step.getResultingIdx();
-                final ModelNode stepResult = preparedResult.get(RESULT, resultIdx);
+                // WFCORE-622 partial workaround. If there's no step-x node, assume it's a mismatch between
+                // the result being checked and our list of steps. Don't modify the result.
+                // This doesn't solve the problem of mismatched checks of steps that do exist,
+                // but it prevents pollution of the result with spurious child nodes for irrelevant steps.
+                final ModelNode stepResult = preparedResult.hasDefined(RESULT, resultIdx)
+                        ? preparedResult.get(RESULT, resultIdx)
+                        : new ModelNode();
                 // ignored operations have no effect
-                if(IGNORED.equals(stepResult.get(OUTCOME).asString())) {
+                if(stepResult.hasDefined(OUTCOME) && IGNORED.equals(stepResult.get(OUTCOME).asString())) {
                     continue;
                 }
                 final TransformedOperation stepPolicy = step.getResult();
@@ -128,10 +135,12 @@ class CompositeOperationTransformer implements OperationTransformer {
             return "";
         }
 
+        // TODO WFCORE-624
         @Override
         public ModelNode transformResult(final ModelNode original) {
             final ModelNode response = original.clone();
             final ModelNode result = response.get(RESULT).setEmptyObject();
+            boolean modified = false;
             for(final Step step : steps) {
                 final String stepIdx = "step-" + step.getStepCount();
                 // Set a successful result for discarded steps
@@ -141,10 +150,16 @@ class CompositeOperationTransformer implements OperationTransformer {
                 }
 
                 final String resultIdx = "step-" + step.getResultingIdx();
-                final ModelNode stepResult = original.get(RESULT, resultIdx);
+                // WFCORE-622 partial workaround. If there's no step-x node, assume it's a mismatch between
+                // the result being checked and our list of steps. Don't modify the result.
+                // This doesn't solve the problem of mismatched checks of steps that do exist,
+                // but it prevents pollution of the result with spurious child nodes for irrelevant steps.
+                final ModelNode stepResult = original.hasDefined(RESULT, resultIdx)
+                        ? original.get(RESULT, resultIdx) : new ModelNode();
                 // Mark ignored steps as successful
-                if(IGNORED.equals(stepResult.get(OUTCOME).asString())) {
+                if(stepResult.hasDefined(OUTCOME) && IGNORED.equals(stepResult.get(OUTCOME).asString())) {
                     result.get(stepIdx).set(SUCCESSFUL);
+                    modified = true;
                 } else {
                     final OperationResultTransformer transformer = step.getResult();
                     // In case this is the failed step
@@ -153,10 +168,14 @@ class CompositeOperationTransformer implements OperationTransformer {
                         stepResult.get(OUTCOME).set(FAILED);
                         stepResult.get(FAILURE_DESCRIPTION).set(step.getResult().getFailureDescription());
                     }
-                    result.get(stepIdx).set(transformer.transformResult(stepResult));
+                    ModelNode transformed = transformer.transformResult(stepResult);
+                    if (transformed.isDefined() || original.has(RESULT, resultIdx)) {
+                        result.get(stepIdx).set(transformer.transformResult(stepResult));
+                        modified = true;
+                    }
                 }
             }
-            return response;
+            return modified ? response : original;
         }
     }
 

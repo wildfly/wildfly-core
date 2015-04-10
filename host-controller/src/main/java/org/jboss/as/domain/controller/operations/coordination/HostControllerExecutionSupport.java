@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
@@ -49,7 +50,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
@@ -142,7 +142,7 @@ interface HostControllerExecutionSupport {
             final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
             if (address.size() > 0) {
                 PathElement first = address.getElement(0);
-                if (HOST.equals(first.getKey())) {
+                if (HOST.equals(first.getKey()) && !first.isMultiTarget()) {
                     targetHost = first.getValue();
                     if (address.size() > 1 && RUNNING_SERVER.equals(address.getElement(1).getKey())) {
                         runningServerTarget = address.getElement(1);
@@ -169,10 +169,10 @@ interface HostControllerExecutionSupport {
                 final Resource domainModel = domainModelProvider.getDomainModel();
                 final Resource hostModel = domainModel.getChild(PathElement.pathElement(HOST, targetHost));
                 if (runningServerTarget.isMultiTarget()) {
-                    // TODO WFLY-723
-                    throw DomainControllerLogger.ROOT_LOGGER.unsupportedWildcardOperation();
+                    return new DomainOpExecutionSupport(operation, PathAddress.EMPTY_ADDRESS);
                 } else {
                     final String serverName = runningServerTarget.getValue();
+                    // TODO prevent NPE
                     final String serverGroup = hostModel.getChild(PathElement.pathElement(SERVER_CONFIG, serverName)).getModel().require(GROUP).asString();
                     final ServerIdentity serverIdentity = new ServerIdentity(targetHost, serverGroup, serverName);
                     result = new DirectServerOpExecutionSupport(serverIdentity, runningServerOp);
@@ -348,16 +348,22 @@ interface HostControllerExecutionSupport {
 
             @Override
             public ModelNode getFormattedDomainResult(ModelNode resultNode) {
-
                 ModelNode allSteps = new ModelNode();
                 int resultStep = 0;
                 for (int i = 0; i < steps.size(); i++) {
                     HostControllerExecutionSupport po = steps.get(i);
                     if (po.getDomainOperation() != null) {
                         String label = "step-" + (++resultStep);
-                        ModelNode stepResultNode = resultNode.get(label);
-                        ModelNode formattedStepResultNode = po.getFormattedDomainResult(stepResultNode);
-                        allSteps.get("step-" + (i + 1)).set(formattedStepResultNode);
+                        ModelNode stepResponseNode = resultNode.get(label);
+                        ModelNode formattedStepResponseNode;
+                        if (po instanceof MultiStepOpExecutionSupport) {
+                            formattedStepResponseNode = stepResponseNode.clone();
+                            ModelNode stepResultNode = stepResponseNode.get(RESULT);
+                            formattedStepResponseNode.get(RESULT).set(po.getFormattedDomainResult(stepResultNode));
+                        } else {
+                            formattedStepResponseNode = po.getFormattedDomainResult(stepResponseNode);
+                        }
+                        allSteps.get("step-" + (i + 1)).set(formattedStepResponseNode);
                     }
                     else {
                         allSteps.get("step-" + (i + 1), OUTCOME).set(IGNORED);

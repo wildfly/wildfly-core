@@ -119,6 +119,10 @@ public class Util {
         return getWriteAttributeOperation(PathAddress.pathAddress(address), attributeName, value);
     }
 
+    public static ModelNode getWriteAttributeOperation(final PathAddress  address, String attributeName, String value) {
+        return getWriteAttributeOperation(address, attributeName, new ModelNode().set(value));
+    }
+
     public static ModelNode getWriteAttributeOperation(final PathAddress address, String attributeName, ModelNode value) {
         ModelNode op = createEmptyOperation(WRITE_ATTRIBUTE_OPERATION, address);
         op.get(NAME).set(attributeName);

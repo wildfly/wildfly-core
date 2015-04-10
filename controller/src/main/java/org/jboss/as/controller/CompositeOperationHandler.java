@@ -107,7 +107,9 @@ public final class CompositeOperationHandler implements OperationStepHandler {
         for (int i = size - 1; i >= 0; i --) {
             final ModelNode subOperation = list.get(i);
             String stepName = "step-" + (i+1);
-            context.addStep(responseMap.get(stepName).setEmptyObject(), subOperation, stepHandlerMap.get(stepName), OperationContext.Stage.MODEL, true);
+            final OperationStepHandler osh = stepHandlerMap.get(stepName);
+            context.addStep(responseMap.get(stepName).setEmptyObject(), subOperation, osh, OperationContext.Stage.MODEL, true);
+            ControllerLogger.MGMT_OP_LOGGER.tracef("Registered composite op step for %s using %s", subOperation, osh);
         }
 
         context.completeStep(new OperationContext.RollbackHandler() {

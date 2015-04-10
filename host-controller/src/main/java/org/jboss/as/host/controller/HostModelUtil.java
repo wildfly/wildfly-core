@@ -73,7 +73,8 @@ public class HostModelUtil {
     }
 
 
-    public static void createRootRegistry(final ManagementResourceRegistration root, final HostControllerEnvironment environment,
+    public static void createRootRegistry(final ManagementResourceRegistration root,
+                                          final HostControllerEnvironment environment,
                                           final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                                           final HostModelRegistrar hostModelRegistrar,
                                           final ProcessType processType,

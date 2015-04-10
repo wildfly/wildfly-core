@@ -37,6 +37,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({
         AuditLogTestCase.class,
+        CompositeOperationTestCase.class,
         CoreResourceManagementTestCase.class,
         DeploymentRolloutFailureTestCase.class,
         DirectoryGroupingByTypeTestCase.class,
@@ -54,7 +55,8 @@ import org.junit.runners.Suite;
         ResponseStreamTestCase.class,
         ServerRestartRequiredTestCase.class,
         ValidateAddressOperationTestCase.class,
-        ValidateOperationOperationTestCase.class
+        ValidateOperationOperationTestCase.class,
+        WildcardOperationsTestCase.class
 })
 public class DomainTestSuite {
 

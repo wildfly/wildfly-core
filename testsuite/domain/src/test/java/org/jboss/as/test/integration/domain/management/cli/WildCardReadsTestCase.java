@@ -100,4 +100,19 @@ public class WildCardReadsTestCase extends AbstractCliTestBase {
         Assert.assertEquals(1, generic.asInt());
         Assert.assertEquals(specific, generic.get(0).get(ModelDescriptionConstants.RESULT));
     }
+
+    @Test
+    public void testCompositeOperation() throws IOException {
+        cli.sendLine("/host=*/server=*/subsystem=*:read-resource()");
+        CLIOpResult opResult = cli.readAllAsOpResult();
+        Assert.assertTrue(opResult.isIsOutcomeSuccess());
+        ModelNode specific = opResult.getResponseNode().get(ModelDescriptionConstants.RESULT);
+        Assert.assertEquals(ModelType.LIST, specific.getType());
+
+        for (final ModelNode result : specific.asList()) {
+            Assert.assertTrue(result.hasDefined(ModelDescriptionConstants.OP_ADDR));
+            Assert.assertTrue(result.hasDefined(ModelDescriptionConstants.RESULT));
+        }
+    }
+
 }

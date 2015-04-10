@@ -22,37 +22,40 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.TransformingProxyController;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_OPERATIONS;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
 /**
- * Stores overall contextual information for an operation executing on the domain.
+ * Stores overall contextual information for a multi-phase operation executing on the domain.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class DomainOperationContext {
+public final class MultiphaseOverallContext {
 
     private final LocalHostControllerInfo localHostInfo;
-    private final ModelNode coordinatorResult = new ModelNode();
-    private final ConcurrentMap<String, ModelNode> hostControllerResults = new ConcurrentHashMap<String, ModelNode>();
+    private final MultiPhaseLocalContext localContext = new MultiPhaseLocalContext(true);
+    private final ConcurrentMap<String, ModelNode> hostControllerPreparedResults = new ConcurrentHashMap<String, ModelNode>();
+    private final ConcurrentMap<String, ModelNode> hostControllerFinalResults = new ConcurrentHashMap<String, ModelNode>();
     private final ConcurrentMap<ServerIdentity, ModelNode> serverResults = new ConcurrentHashMap<ServerIdentity, ModelNode>();
     private final ConcurrentMap<String, HostControllerUpdateTask.ExecutedHostRequest> finalResultFutures = new ConcurrentHashMap<String, HostControllerUpdateTask.ExecutedHostRequest>();
 
@@ -60,35 +63,43 @@ public class DomainOperationContext {
     private volatile boolean completeRollback = true;
     private volatile boolean failureReported;
 
-    public DomainOperationContext(final LocalHostControllerInfo localHostInfo) {
+    MultiphaseOverallContext(final LocalHostControllerInfo localHostInfo) {
         this.localHostInfo = localHostInfo;
     }
 
-    public LocalHostControllerInfo getLocalHostInfo() {
+    LocalHostControllerInfo getLocalHostInfo() {
         return localHostInfo;
     }
 
-    public ModelNode getCoordinatorResult() {
-        return coordinatorResult;
+    MultiPhaseLocalContext getLocalContext() {
+        return localContext;
     }
 
-    public Map<String, ModelNode> getHostControllerResults() {
-        return new HashMap<String, ModelNode>(hostControllerResults);
+    Map<String, ModelNode> getHostControllerPreparedResults() {
+        return new HashMap<String, ModelNode>(hostControllerPreparedResults);
     }
 
-    public void addHostControllerResult(String hostId, ModelNode hostResult) {
-        hostControllerResults.put(hostId, hostResult);
+    void addHostControllerPreparedResult(String hostId, ModelNode hostResult) {
+        hostControllerPreparedResults.put(hostId, hostResult);
     }
 
-    public Map<ServerIdentity, ModelNode> getServerResults() {
+    Map<String, ModelNode> getHostControllerFinalResults() {
+        return new HashMap<String, ModelNode>(hostControllerFinalResults);
+    }
+
+    void addHostControllerFinalResult(String hostId, ModelNode hostResult) {
+        hostControllerFinalResults.put(hostId, hostResult);
+    }
+
+    Map<ServerIdentity, ModelNode> getServerResults() {
         return new HashMap<ServerIdentity, ModelNode>(serverResults);
     }
 
-    public void addServerResult(ServerIdentity serverId, ModelNode serverResult) {
+    void addServerResult(ServerIdentity serverId, ModelNode serverResult) {
         serverResults.put(serverId, serverResult);
     }
 
-    public boolean isCompleteRollback() {
+    boolean isCompleteRollback() {
         return completeRollback;
     }
 
@@ -96,21 +107,22 @@ public class DomainOperationContext {
         this.completeRollback = completeRollback;
     }
 
-    public boolean isServerGroupRollback(String serverGroup) {
+    boolean isServerGroupRollback(String serverGroup) {
         Boolean ok = serverGroupStatuses.get(serverGroup);
         return ok == null || ok.booleanValue();
     }
 
     public void setServerGroupRollback(String serverGroup, boolean rollback) {
-        serverGroupStatuses.put(serverGroup, Boolean.valueOf(rollback));
+        serverGroupStatuses.put(serverGroup, rollback);
     }
 
     public boolean hasHostLevelFailures() {
+        ModelNode coordinatorResult = localContext.getLocalResponse();
         boolean domainFailed = coordinatorResult.isDefined() && coordinatorResult.has(FAILURE_DESCRIPTION);
         if (domainFailed) {
             return true;
         }
-        for (ModelNode hostResult : hostControllerResults.values()) {
+        for (ModelNode hostResult : hostControllerPreparedResults.values()) {
             if (hostResult.has(FAILURE_DESCRIPTION)) {
                 return true;
             }
@@ -140,13 +152,18 @@ public class DomainOperationContext {
             result = new ModelNode();
             ModelNode hostResults;
             if (hostName.equals(localHostInfo.getLocalHostName())) {
-                hostResults = coordinatorResult;
+                hostResults = new ModelNode();
+                hostResults.get(RESULT, SERVER_OPERATIONS).set(localContext.getLocalServerOps());
             } else {
-                hostResults = hostControllerResults.get(hostName);
+                hostResults = hostControllerPreparedResults.get(hostName);
             }
             String[] translatedSteps = getTranslatedSteps(serverName, hostResults, stepLabels);
-            if (translatedSteps != null && serverResult.hasDefined(RESULT)) {
-                result.set(serverResult.get(RESULT).get(translatedSteps));
+            if (translatedSteps != null && serverResult.hasDefined(translatedSteps)) {
+                if (DomainControllerLogger.CONTROLLER_LOGGER.isTraceEnabled()) {
+                    DomainControllerLogger.CONTROLLER_LOGGER.tracef("Translated steps for %s/%s[%s] are %s",
+                            hostName, serverName, Arrays.asList(stepLabels), Arrays.asList(translatedSteps));
+                }
+                result.set(serverResult.get(translatedSteps));
             }
         }
         return result;
@@ -179,14 +196,15 @@ public class DomainOperationContext {
         String[] result = null;
         ModelNode domainMappedOp = getDomainMappedOperation(serverName, hostResults);
         if (domainMappedOp != null) {
-            result = new String[stepLabels.length];
+            result = new String[stepLabels.length * 2];
             ModelNode level = domainMappedOp;
             for (int i = 0; i < stepLabels.length; i++) {
                 String translated = getTranslatedStepIndex(stepLabels[i], level);
                 if (translated == null) {
                     return null;
                 }
-                result[i] = translated;
+                result[i * 2] = RESULT;
+                result[(i * 2) + 1] = translated;
                 level = level.get(stepLabels[i]);
             }
         }
