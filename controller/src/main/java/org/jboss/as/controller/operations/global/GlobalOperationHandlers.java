@@ -693,7 +693,7 @@ public class GlobalOperationHandlers {
             }
             if (!element.isWildcard()) {
                 ImmutableManagementResourceRegistration childReg = registry.getSubModel(PathAddress.pathAddress(element));
-                if (childReg != null && childReg.isRuntimeOnly()) {
+                if (childReg != null && childReg.isRemote()) {
                     set.add(element.getValue());
                 }
             }
