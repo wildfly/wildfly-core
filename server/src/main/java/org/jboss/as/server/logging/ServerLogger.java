@@ -1111,4 +1111,8 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 224, value="Could not mount overlay %s as parent %s is not a directory")
     void couldNotMountOverlay(String path, VirtualFile parent);
+
+    @Message(id = 225, value="Unable to create temporary directory")
+    RuntimeException unableToCreateSelfContainedDir();
+
 }

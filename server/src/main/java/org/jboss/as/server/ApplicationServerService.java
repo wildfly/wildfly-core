@@ -35,6 +35,7 @@ import java.util.TreeSet;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.selfcontained.SelfContainedContentRepository;
 import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.logging.ServerLogger;
@@ -71,6 +72,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private final RunningModeControl runningModeControl;
     private final ControlledProcessState processState;
     private final boolean standalone;
+    private final boolean selfContained;
     private volatile FutureServiceContainer futureContainer;
     private volatile long startTime;
 
@@ -81,6 +83,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         runningModeControl = configuration.getRunningModeControl();
         startTime = configuration.getStartTime();
         standalone = configuration.getServerEnvironment().isStandalone();
+        selfContained = configuration.getServerEnvironment().isSelfContained();
         this.processState = processState;
     }
 
@@ -134,7 +137,11 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         bootstrapListener.getStabilityMonitor().addController(myController);
         // Install either a local or remote content repository
         if(standalone) {
-            ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir());
+            if ( selfContained ) {
+                SelfContainedContentRepository.addService(serviceTarget);
+            } else {
+                ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir());
+            }
         } else {
             RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir());
         }

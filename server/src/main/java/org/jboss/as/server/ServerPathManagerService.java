@@ -26,6 +26,8 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 
+import java.io.File;
+
 /**
  * Service containing the paths for a server
  *
@@ -37,13 +39,13 @@ public class ServerPathManagerService extends PathManagerService {
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(SERVICE_NAME, service);
 
         // Add environment paths
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.HOME_DIR, serverEnvironment.getHomeDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.SERVER_BASE_DIR, serverEnvironment.getServerBaseDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.SERVER_CONFIG_DIR, serverEnvironment.getServerConfigurationDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.SERVER_DATA_DIR, serverEnvironment.getServerDataDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.SERVER_LOG_DIR, serverEnvironment.getServerLogDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.SERVER_TEMP_DIR, serverEnvironment.getServerTempDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, ServerEnvironment.CONTROLLER_TEMP_DIR, serverEnvironment.getControllerTempDir().getAbsolutePath());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.HOME_DIR, serverEnvironment.getHomeDir());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.SERVER_BASE_DIR, serverEnvironment.getServerBaseDir());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.SERVER_CONFIG_DIR, serverEnvironment.getServerConfigurationDir());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.SERVER_DATA_DIR, serverEnvironment.getServerDataDir());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.SERVER_LOG_DIR, serverEnvironment.getServerLogDir());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.SERVER_TEMP_DIR, serverEnvironment.getServerTempDir());
+        addAbsolutePath(service, serviceTarget, ServerEnvironment.CONTROLLER_TEMP_DIR, serverEnvironment.getControllerTempDir());
 
         // Add system paths
         service.addHardcodedAbsolutePath(serviceTarget, "user.dir", System.getProperty("user.dir"));
@@ -61,6 +63,14 @@ public class ServerPathManagerService extends PathManagerService {
         }
 
         return serviceBuilder.install();
+    }
+
+    private static void addAbsolutePath(ServerPathManagerService service, ServiceTarget serviceTarget, String name, File path) {
+        if (path == null) {
+            return;
+        }
+
+        service.addHardcodedAbsolutePath(serviceTarget, name, path.getAbsolutePath());
     }
 
 }
