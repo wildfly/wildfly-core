@@ -39,6 +39,7 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ParameterCorrector;
+import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
@@ -54,9 +55,9 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.deployment.AbstractDeploymentUnitService;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -97,6 +98,7 @@ public class DeploymentAttributes {
                         || resourceModel.get(attribute.getName()).getType() != ModelType.BOOLEAN
                         || !resourceModel.get(attribute.getName()).asBoolean();
             }
+
             @Override
             public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
                 ModelNode value = resourceModel.hasDefined(attribute.getName()) ? resourceModel.get(attribute.getName()) : new ModelNode(false);
@@ -108,6 +110,10 @@ public class DeploymentAttributes {
         .build();
     public static final AttributeDefinition PERSISTENT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PERSISTENT, ModelType.BOOLEAN, false)
         .build();
+    public static final AttributeDefinition OWNER = PrimitiveListAttributeDefinition.Builder.of(ModelDescriptionConstants.OWNER, ModelType.PROPERTY)
+            .setAllowNull(true)
+            .build();
+
     public static final AttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.STATUS, ModelType.STRING, false)
         .setValidator(new EnumValidator<AbstractDeploymentUnitService.DeploymentStatus>(AbstractDeploymentUnitService.DeploymentStatus.class, false))
         .build();
@@ -197,10 +203,10 @@ public class DeploymentAttributes {
 
 
     /** Attributes for server deployment resource */
-    public static final AttributeDefinition[] SERVER_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, CONTENT_RESOURCE, ENABLED, PERSISTENT, STATUS, ENABLED_TIME, ENABLED_TIMESTAMP, DISABLED_TIME, DISABLED_TIMESTAMP};
+    public static final AttributeDefinition[] SERVER_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, CONTENT_RESOURCE, ENABLED, PERSISTENT, OWNER, STATUS, ENABLED_TIME, ENABLED_TIMESTAMP, DISABLED_TIME, DISABLED_TIMESTAMP};
 
     /** Attributes for server deployment add */
-    public static final AttributeDefinition[] SERVER_ADD_ATTRIBUTES = new AttributeDefinition[] { RUNTIME_NAME_NILLABLE, CONTENT_ALL, ENABLED};// 'hide' the persistent attribute from users
+    public static final AttributeDefinition[] SERVER_ADD_ATTRIBUTES = new AttributeDefinition[] { RUNTIME_NAME_NILLABLE, CONTENT_ALL, ENABLED};// 'hide' the persistent and owner attributes from users
 
     /** Attributes for server group deployment add */
     public static final AttributeDefinition[] SERVER_GROUP_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, ENABLED};

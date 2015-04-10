@@ -28,9 +28,11 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.ControlledProcessStateService;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
@@ -49,6 +51,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class DeploymentScannerService implements Service<DeploymentScanner> {
 
+    private final PathAddress resourceAddress;
     private final long interval;
     private TimeUnit unit = TimeUnit.MILLISECONDS;
     private final boolean enabled;
@@ -79,28 +82,28 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      * Add the deployment scanner service to a batch.
      *
      * @param serviceTarget     the service target
-     * @param name              the repository name
+     * @param resourceAddress   the address of the resource that manages the service
      * @param relativeTo        the relative to
      * @param path              the path
      * @param scanInterval      the scan interval
-     * @param unit
-     * @param autoDeployZip
-     * @param autoDeployExploded
-     * @param autoDeployXml
+     * @param unit              the unit of {@code scanInterval}
+     * @param autoDeployZip     whether zipped content should be auto-deployed
+     * @param autoDeployExploded whether exploded content should be auto-deployed
+     * @param autoDeployXml     whether xml content should be auto-deployed
      * @param scanEnabled       scan enabled
      * @param deploymentTimeout the deployment timeout
      * @param rollbackOnRuntimeFailure rollback on runtime failures
      * @param bootTimeService   the deployment scanner used in the boot time scan
-     * @param scheduledExecutorService
+     * @param scheduledExecutorService executor to use for asynchronous tasks
      * @return the controller for the deployment scanner service
      */
-    public static ServiceController<DeploymentScanner> addService(final ServiceTarget serviceTarget, final String name, final String relativeTo, final String path,
+    public static ServiceController<DeploymentScanner> addService(final ServiceTarget serviceTarget, final PathAddress resourceAddress, final String relativeTo, final String path,
                                                                   final int scanInterval, TimeUnit unit, final boolean autoDeployZip,
                                                                   final boolean autoDeployExploded, final boolean autoDeployXml, final boolean scanEnabled, final long deploymentTimeout, boolean rollbackOnRuntimeFailure,
                                                                   final FileSystemDeploymentService bootTimeService, final ScheduledExecutorService scheduledExecutorService) {
-        final DeploymentScannerService service = new DeploymentScannerService(relativeTo, path, scanInterval, unit, autoDeployZip,
+        final DeploymentScannerService service = new DeploymentScannerService(resourceAddress, relativeTo, path, scanInterval, unit, autoDeployZip,
                 autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
-        final ServiceName serviceName = getServiceName(name);
+        final ServiceName serviceName = getServiceName(resourceAddress.getLastElement().getValue());
 
         return serviceTarget.addService(serviceName, service)
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
@@ -112,9 +115,10 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 .install();
     }
 
-    private DeploymentScannerService(final String relativeTo, final String path, final int interval, final TimeUnit unit, final boolean autoDeployZipped,
-                             final boolean autoDeployExploded, final boolean autoDeployXml, final boolean enabled, final long deploymentTimeout,
-                             final boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService) {
+    private DeploymentScannerService(PathAddress resourceAddress, final String relativeTo, final String path, final int interval, final TimeUnit unit, final boolean autoDeployZipped,
+                                     final boolean autoDeployExploded, final boolean autoDeployXml, final boolean enabled, final long deploymentTimeout,
+                                     final boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService) {
+        this.resourceAddress = resourceAddress;
         this.relativeTo = relativeTo;
         this.path = path;
         this.interval = interval;
@@ -153,7 +157,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                     callbackHandle = pathManager.registerCallback(pathName, PathManager.ReloadServerCallback.create(), PathManager.Event.UPDATED, PathManager.Event.REMOVED);
                 }
 
-                final FileSystemDeploymentService scanner = new FileSystemDeploymentService(relativeTo, new File(pathName),
+                final FileSystemDeploymentService scanner = new FileSystemDeploymentService(resourceAddress, relativeTo, new File(pathName),
                         relativePath, factory, scheduledExecutorValue.getValue(), controlledProcessStateServiceValue.getValue());
 
                 scanner.setScanInterval(unit.toMillis(interval));

@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -58,6 +59,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceTarget;
@@ -117,8 +119,8 @@ class DeploymentScannerAdd implements OperationStepHandler {
                 if (relativeTo != null) {
                     relativePath = new File(pathManager.getPathEntry(relativeTo).resolvePath());
                 }
-
-                bootTimeScanner = new FileSystemDeploymentService(relativeTo, new File(pathName), relativePath, null, scheduledExecutorService,
+                PathAddress ownerAddress = context.getCurrentAddress();
+                bootTimeScanner = new FileSystemDeploymentService(ownerAddress, relativeTo, new File(pathName), relativePath, null, scheduledExecutorService,
                         (ControlledProcessStateService) context.getServiceRegistry(false).getService(ControlledProcessStateService.SERVICE_NAME).getValue());
                 bootTimeScanner.setAutoDeployExplodedContent(autoDeployExp);
                 bootTimeScanner.setAutoDeployZippedContent(autoDeployZip);
@@ -214,8 +216,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
     static void performRuntime(final OperationContext context, ModelNode operation, ModelNode model,
                                 final ScheduledExecutorService executorService,
                                 final FileSystemDeploymentService bootTimeScanner) throws OperationFailedException {
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String name = address.getLastElement().getValue();
+        final PathAddress address = context.getCurrentAddress();
         final String path = DeploymentScannerDefinition.PATH.resolveModelAttribute(context, model).asString();
         final Boolean enabled = SCAN_ENABLED.resolveModelAttribute(context, model).asBoolean();
         final Integer interval = SCAN_INTERVAL.resolveModelAttribute(context, model).asInt();
@@ -226,7 +227,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
         final Long deploymentTimeout = DEPLOYMENT_TIMEOUT.resolveModelAttribute(context, model).asLong();
         final Boolean rollback = RUNTIME_FAILURE_CAUSES_ROLLBACK.resolveModelAttribute(context, model).asBoolean();
         final ServiceTarget serviceTarget = context.getServiceTarget();
-        DeploymentScannerService.addService(serviceTarget, name, relativeTo, path, interval, TimeUnit.MILLISECONDS,
+        DeploymentScannerService.addService(serviceTarget, address, relativeTo, path, interval, TimeUnit.MILLISECONDS,
                 autoDeployZip, autoDeployExp, autoDeployXml, enabled, deploymentTimeout, rollback, bootTimeScanner, executorService);
 
     }
@@ -245,7 +246,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
         }
 
         @Override
-        public Future<ModelNode> deploy(final ModelNode operation, final ScheduledExecutorService scheduledExecutor) {
+        public Future<ModelNode> deploy(final ModelNode operation, final ExecutorService executorService) {
             try {
                 deploymentOperation.set(operation);
                 final FutureTask<ModelNode> task = new FutureTask<ModelNode>(new Callable<ModelNode>() {
@@ -255,7 +256,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
                         return deploymentResults.get();
                     }
                 });
-                scheduledExecutor.submit(task);
+                executorService.submit(task);
                 return task;
             } finally {
                 scanDoneLatch.countDown();
@@ -273,7 +274,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
         }
 
         @Override
-        public Set<String> getPersistentDeployments() {
+        public Set<String> getUnrelatedDeployments(ModelNode owner) {
             return Collections.emptySet();
         }
     }

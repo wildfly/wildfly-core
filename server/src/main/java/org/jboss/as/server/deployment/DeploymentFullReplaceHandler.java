@@ -26,6 +26,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONT
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
@@ -137,11 +138,13 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         // deploymentModel.get(NAME).set(name); // already there
         deploymentModel.get(RUNTIME_NAME.getName()).set(runtimeName);
         deploymentModel.get(CONTENT).set(content);
-        //Persistent is hidden from CLI users so let's set this to true here if it is not defined
+        // The 'persistent' and 'owner' parameters are hidden internal API, so handle them specifically
+        // Persistent is hidden from CLI users so let's set this to true here if it is not defined
         if (!operation.hasDefined(PERSISTENT.getName())) {
             operation.get(PERSISTENT.getName()).set(true);
         }
         PERSISTENT.validateAndSet(operation, deploymentModel);
+        OWNER.validateAndSet(operation, deploymentModel);
 
         // ENABLED stays as is if not present in operation
         boolean wasDeployed = true;

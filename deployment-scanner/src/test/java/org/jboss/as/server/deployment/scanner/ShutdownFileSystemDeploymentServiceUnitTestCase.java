@@ -39,6 +39,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
 
@@ -55,22 +56,24 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RunnableScheduledFuture;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.threads.AsyncFuture;
@@ -95,6 +98,10 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
     private static final Random random = new Random(System.currentTimeMillis());
 
     private static final DiscardTaskExecutor executor = new DiscardTaskExecutor();
+
+    private static final PathAddress resourceAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, DeploymentScannerExtension.SUBSYSTEM_NAME),
+            PathElement.pathElement(DeploymentScannerExtension.SCANNERS_PATH.getKey(), DeploymentScannerExtension.DEFAULT_SCANNER_NAME));
+
 
     private static AutoDeployTestSupport testSupport;
     private File tmpDir;
@@ -139,7 +146,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         final DiscardTaskExecutor myExecutor = new DiscardTaskExecutor();
         MockServerController sc = new MockServerController(myExecutor);
         final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc);
-        final FileSystemDeploymentService testee = new FileSystemDeploymentService(null, tmpDir, null, sc, myExecutor, null);
+        final FileSystemDeploymentService testee = new FileSystemDeploymentService(resourceAddress, null, tmpDir, null, sc, myExecutor, null);
         testee.setAutoDeployZippedContent(true);
         sc.addCompositeSuccessResponse(1);
         testSupport.createZip(deployment, 0, false, false, true, true);
@@ -634,7 +641,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Future<ModelNode> deploy(final ModelNode operation, ScheduledExecutorService scheduledExecutor) {
+        public Future<ModelNode> deploy(final ModelNode operation, ExecutorService executorService) {
             ready = true;
             logger.info("Ready to deploy");
             synchronized(lock) {
@@ -654,8 +661,8 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public Set<String> getPersistentDeployments() {
-            return delegate.getPersistentDeployments();
+        public Set<String> getUnrelatedDeployments(ModelNode owner) {
+            return delegate.getUnrelatedDeployments(owner);
         }
 
     }

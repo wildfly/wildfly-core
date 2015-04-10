@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
@@ -66,10 +67,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
+
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.OperationFailedException;
-
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.deployment.DeploymentAddHandler;
 import org.jboss.as.server.deployment.DeploymentDeployHandler;
@@ -78,6 +80,7 @@ import org.jboss.as.server.deployment.DeploymentRedeployHandler;
 import org.jboss.as.server.deployment.DeploymentRemoveHandler;
 import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.server.deployment.scanner.ZipCompletionScanner.NonScannableZipException;
+import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
@@ -144,6 +147,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private volatile boolean rollbackOnRuntimeFailure;
     private volatile long deploymentTimeout = DEFAULT_DEPLOYMENT_TIMEOUT;
 
+    private final ModelNode resourceAddress;
     private final String relativeTo;
     private final String relativePath;
     private final PropertyChangeListener propertyChangeListener;
@@ -165,17 +169,17 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
     private final DeploymentScanRunnable scanRunnable = new DeploymentScanRunnable();
 
-    FileSystemDeploymentService(final String relativeTo, final File deploymentDir, final File relativeToDir,
+    FileSystemDeploymentService(final PathAddress resourceAddress, final String relativeTo, final File deploymentDir, final File relativeToDir,
                                 final DeploymentOperations.Factory deploymentOperationsFactory,
                                 final ScheduledExecutorService scheduledExecutor,
                                 final ControlledProcessStateService processStateService)
             throws OperationFailedException {
-        if (scheduledExecutor == null) {
-            throw DeploymentScannerLogger.ROOT_LOGGER.nullVar("scheduledExecutor");
-        }
-        if (deploymentDir == null) {
-            throw DeploymentScannerLogger.ROOT_LOGGER.nullVar("deploymentDir");
-        }
+
+        assert resourceAddress != null;
+        assert resourceAddress.size() > 0;
+        assert scheduledExecutor != null;
+        assert deploymentDir != null;
+
         if (!deploymentDir.exists()) {
             throw DeploymentScannerLogger.ROOT_LOGGER.directoryDoesNotExist(deploymentDir.getAbsolutePath());
         }
@@ -185,6 +189,8 @@ class FileSystemDeploymentService implements DeploymentScanner {
         if (!deploymentDir.canWrite()) {
             throw DeploymentScannerLogger.ROOT_LOGGER.directoryNotWritable(deploymentDir.getAbsolutePath());
         }
+        this.resourceAddress = resourceAddress.toModelNode();
+        this.resourceAddress.protect();
         this.relativeTo = relativeTo;
         this.deploymentDir = deploymentDir;
         this.deploymentOperationsFactory = deploymentOperationsFactory;
@@ -1288,6 +1294,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
             final ModelNode addOp = Util.getEmptyOperation(DeploymentAddHandler.OPERATION_NAME, address);
             addOp.get(CONTENT).set(createContent());
             addOp.get(PERSISTENT).set(false);
+            addOp.get(OWNER).set(resourceAddress);
             final ModelNode deployOp = Util.getEmptyOperation(DeploymentDeployHandler.OPERATION_NAME, address);
             return getCompositeUpdate(addOp, deployOp);
         }
@@ -1314,6 +1321,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
             replaceOp.get(NAME).set(deploymentName);
             replaceOp.get(CONTENT).set(createContent());
             replaceOp.get(PERSISTENT).set(false);
+            replaceOp.get(OWNER).set(resourceAddress);
             replaceOp.get(ENABLED).set(true);
             return replaceOp;
         }
@@ -1477,7 +1485,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
         private ScanContext(final DeploymentOperations deploymentOperations) {
             registeredDeployments = deploymentOperations.getDeploymentsStatus();
-            persistentDeployments = deploymentOperations.getPersistentDeployments();
+            persistentDeployments = deploymentOperations.getUnrelatedDeployments(resourceAddress);
         }
     }
 
