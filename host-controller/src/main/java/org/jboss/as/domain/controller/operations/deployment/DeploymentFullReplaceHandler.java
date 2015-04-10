@@ -153,7 +153,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         deploymentModel.get(CONTENT).set(content);
 
         // Update server groups
-        final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS);
+        final Resource root = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         if (root.hasChild(PathElement.pathElement(SERVER_GROUP))) {
             ModelNode enabled = correctedOperation.get(ENABLED.getName());
             for (final Resource.ResourceEntry serverGroupResource : root.getChildren(SERVER_GROUP)) {
