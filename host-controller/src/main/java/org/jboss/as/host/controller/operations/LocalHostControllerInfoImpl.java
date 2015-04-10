@@ -24,11 +24,9 @@ package org.jboss.as.host.controller.operations;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.host.controller.discovery.DiscoveryHostStategy;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 
@@ -209,7 +207,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     void addRemoteDomainControllerDiscoveryOption(DiscoveryOption discoveryOption) {
         this.remoteDiscoveryOptions.add(discoveryOption);
-        DiscoveryHostStategy.DEFAULT_STRATEGY.organize(this.remoteDiscoveryOptions);
     }
 
     void setRemoteDomainControllerIgnoreUnaffectedConfiguration(boolean ignore) {

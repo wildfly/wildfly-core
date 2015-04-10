@@ -42,34 +42,12 @@ public interface DiscoveryOption {
     /**
      *  Determine the host name and port of the remote domain controller.
      *  This method is intended to be called by a slave host controller.
+     *  @return the list of connection parameters to the remote domain controller.
      */
-    void discover();
+    List<RemoteDomainControllerConnectionConfiguration> discover();
 
     /**
      * Clean up anything that was created for domain controller discovery.
      */
     void cleanUp();
-
-    /**
-     *  Gets the host name of the remote domain controller.
-     *  This method may return null.
-     *
-     *  @return the host name
-     */
-    String getRemoteDomainControllerHost();
-
-    /**
-     * Gets the port of the remote domain controller.
-     *
-     * @return the port number
-     */
-    int getRemoteDomainControllerPort();
-
-    /**
-     *  Gets the protocol to communicate with the domain controller.
-     *  This method may return null.
-     *
-     * @return the protocol to use.
-     */
-    String getRemoteDomainControllerProtocol();
 }
