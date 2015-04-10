@@ -278,6 +278,7 @@ public class ModelParserUtils {
                 def.registerAttributes(rootRegistration);
                 def.registerOperations(rootRegistration);
                 def.registerChildren(rootRegistration);
+                def.registerNotifications(rootRegistration);
             }
         });
 
