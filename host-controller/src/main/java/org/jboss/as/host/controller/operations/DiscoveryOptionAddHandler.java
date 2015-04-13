@@ -92,10 +92,12 @@ public class DiscoveryOptionAddHandler extends AbstractDiscoveryOptionAddHandler
         }
 
         try {
-            ModuleIdentifier moduleID = ModuleIdentifier.fromString(moduleName);
+            ModuleIdentifier moduleID = moduleName != null
+                    ? ModuleIdentifier.fromString(moduleName)
+                    : Module.forClass(getClass()).getIdentifier();
             final Class<? extends DiscoveryOption> discoveryOptionClass = Module.loadClassFromCallerModuleLoader(moduleID, discoveryOptionClassName)
                     .asSubclass(DiscoveryOption.class);
-            final Constructor<? extends DiscoveryOption> constructor = discoveryOptionClass.getConstructor(new Class[]{Map.class});
+            final Constructor<? extends DiscoveryOption> constructor = discoveryOptionClass.getConstructor(Map.class);
             final DiscoveryOption discoveryOption = constructor.newInstance(discoveryOptionProperties);
             hostControllerInfo.addRemoteDomainControllerDiscoveryOption(discoveryOption);
         } catch (Exception e) {

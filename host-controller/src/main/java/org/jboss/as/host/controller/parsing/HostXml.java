@@ -1837,7 +1837,7 @@ public class HostXml extends CommonXml {
         final ModelNode addOp = Util.getEmptyOperation(ADD, new ModelNode());
         list.add(addOp);
 
-        final Set<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.MODULE, Attribute.CODE);
+        final Set<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.CODE);
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             requireNoNamespaceAttribute(reader, i);
