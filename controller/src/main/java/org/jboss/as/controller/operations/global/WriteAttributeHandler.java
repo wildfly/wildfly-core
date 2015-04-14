@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.NAME;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.VALUE;
 
@@ -41,8 +43,6 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.operations.validation.ParametersValidator;
-import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -61,21 +61,32 @@ public class WriteAttributeHandler implements OperationStepHandler {
 
     public static final OperationStepHandler INSTANCE = new WriteAttributeHandler();
 
-    private ParametersValidator nameValidator = new ParametersValidator();
-
     WriteAttributeHandler() {
-        nameValidator.registerValidator(NAME.getName(), new StringLengthValidator(1));
+
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        nameValidator.validate(operation);
-        final String attributeName = operation.require(NAME.getName()).asString();
+        NAME.validateOperation(operation);
+        final ModelNode nameModel = GlobalOperationAttributes.NAME.resolveModelAttribute(context, operation);
         final PathAddress address = context.getCurrentAddress();
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         if (registry == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
         }
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(nameModel.asString());
+        final String attributeName;
+        final String attributeExpression;
+        if (useEnhancedSyntax){
+            attributeExpression = nameModel.asString();
+            attributeName = extractAttributeName(nameModel.asString());
+        }else{
+            attributeName = nameModel.asString();
+            attributeExpression = attributeName;
+        }
+
+
+
         final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
         if (attributeAccess == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
@@ -101,16 +112,11 @@ public class WriteAttributeHandler implements OperationStepHandler {
                 // if the attribute is stored in the configuration, we can read its
                 // old and new value from the resource's model before and after executing its write handler
                 final ModelNode oldValue = currentValue.clone();
-                OperationStepHandler writeHandler = attributeAccess.getWriteHandler();
-                ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(writeHandler.getClass());
-                try {
-                    writeHandler.execute(context, operation);
-                    ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-                    ModelNode newValue = model.has(attributeName) ? model.get(attributeName) : new ModelNode();
-                    emitAttributeValueWrittenNotification(context, address, attributeName, oldValue, newValue);
-                } finally {
-                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
-                }
+                doExecuteInternal(context, operation, attributeAccess, attributeName, currentValue, useEnhancedSyntax, attributeExpression);
+                ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+                ModelNode newValue = model.has(attributeName) ? model.get(attributeName) : new ModelNode();
+                emitAttributeValueWrittenNotification(context, address, attributeName, oldValue, newValue);
+
             } else {
                 assert attributeAccess.getStorageType() == AttributeAccess.Storage.RUNTIME;
 
@@ -138,7 +144,7 @@ public class WriteAttributeHandler implements OperationStepHandler {
                 context.addStep(new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        doExecuteInternal(context, operation, attributeAccess);
+                        doExecuteInternal(context, operation, attributeAccess, attributeName, oldValue.get(RESULT), useEnhancedSyntax, attributeExpression);
                     }
                 }, currentStage);
 
@@ -156,7 +162,10 @@ public class WriteAttributeHandler implements OperationStepHandler {
         }
     }
 
-    private void doExecuteInternal(OperationContext context, ModelNode operation, AttributeAccess attributeAccess) throws OperationFailedException {
+    private void doExecuteInternal(OperationContext context, ModelNode operation, AttributeAccess attributeAccess, String attributeName, ModelNode currentValue, boolean useEnhancedSyntax, String attributeExpression) throws OperationFailedException {
+        if (useEnhancedSyntax){
+            operation = getEnhancedSyntaxResolvedOperation(operation, currentValue, attributeName, attributeExpression);
+        }
         OperationStepHandler writeHandler = attributeAccess.getWriteHandler();
         ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(writeHandler.getClass());
         try {
@@ -176,5 +185,16 @@ public class WriteAttributeHandler implements OperationStepHandler {
         data.get(GlobalNotifications.NEW_VALUE).set(newValue);
         Notification notification = new Notification(ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION, address, ControllerLogger.ROOT_LOGGER.attributeValueWritten(attributeName, oldValue, newValue), data);
         context.emit(notification);
+    }
+
+    private ModelNode getEnhancedSyntaxResolvedOperation(ModelNode originalOperation, ModelNode currentModel, String attributeName, String attributeExpression) throws OperationFailedException {
+        ModelNode writeOp = originalOperation.clone();
+        ModelNode diffValue =  originalOperation.get(ModelDescriptionConstants.VALUE);
+        ModelNode old = new ModelNode();
+        old.get(attributeName).set(currentModel);
+        ModelNode fullValue = EnhancedSyntaxSupport.updateWithEnhancedSyntax(attributeExpression, old, diffValue);
+        writeOp.get(ModelDescriptionConstants.NAME).set(attributeName);
+        writeOp.get(ModelDescriptionConstants.VALUE).set(fullValue.get(attributeName));
+        return writeOp;
     }
 }

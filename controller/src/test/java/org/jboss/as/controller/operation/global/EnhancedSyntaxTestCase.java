@@ -55,12 +55,12 @@ import org.junit.Test;
 public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
     private static final StringListAttributeDefinition LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder("my-list-attribute")
-            .setAllowNull(true)
             .setAllowDuplicates(false)
+            .setAllowNull(true)
             .build();
     private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("map-attribute", true)
             .setAllowNull(true)
-            .setStorageRuntime()
+           // .setStorageRuntime()
             .build();
 
     private static final PropertiesAttributeDefinition MAP_ATTRIBUTE2 = new PropertiesAttributeDefinition.Builder("my-map-attribute2", true)
@@ -81,7 +81,6 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
 
-    private static ModelNode runtimeListAttributeValue = new ModelNode();
     private static ModelNode runtimeMap2AttributeValue = new ModelNode();
 
     @Override
@@ -113,34 +112,9 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addReadWriteAttribute(LIST_ATTRIBUTE, new OperationStepHandler() {
-                    @Override
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        context.getResult().set(runtimeListAttributeValue);
-                    }
-                }, new AbstractWriteAttributeHandler() {
-                    @Override
-                    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
-                        runtimeListAttributeValue = operation.get(VALUE);
-                        return false;
-                    }
-
-                    @Override
-                    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
-
-                    }
-                })
-                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new AbstractWriteAttributeHandler() {
-                    @Override
-                    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
-                        return false;
-                    }
-
-                    @Override
-                    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
-
-                    }
-                }).addReadWriteAttribute(MAP_ATTRIBUTE2, new OperationStepHandler() {
+                .addReadWriteAttribute(LIST_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(LIST_ATTRIBUTE))
+                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(MAP_ATTRIBUTE))
+                .addReadWriteAttribute(MAP_ATTRIBUTE2, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.getResult().set(runtimeMap2AttributeValue);
@@ -313,22 +287,174 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
         //test :read-attribute(name=complex-attribute2.object-list[1].map-attribute.key1)
         op = createOperation("read-attribute", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName() + "[1].map-attribute.key1");
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute.key1");
         Assert.assertEquals("value1", executeForResult(op).asString());
 
 
         //test :map-get(name=complex-attribute2.object-list[1].map-attribute key=key1)
         op = createOperation("map-get", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName() + "[1].map-attribute");
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute");
         op.get("key").set("key1");
         Assert.assertEquals("value1", executeForResult(op).asString());
 
 
         //test :list-get(name=complex-attribute2.object-list index=1)
         op = createOperation("list-get", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName()+"."+OBJECT_LIST.getName());
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
         op.get("index").set(1);
         Assert.assertEquals(3, executeForResult(op).asList().size()); //there should be 3 attributes on this list element
+    }
+
+
+    @Test
+    public void testWriteAttribute() throws OperationFailedException {
+
+        //test :write-attribute(name="map-attribute.map-key" value="map-value")
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName() + ".map-key");
+        op.get("value").set("map-value");
+        executeCheckNoFailure(op);
+
+        op = createOperation("map-get", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key");
+        Assert.assertEquals("map-value", executeForResult(op).asString());
+
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName() + ".map-key.sub-key"); //invalid and need to fail
+        op.get("value").set("map-value");
+        executeForFailure(op);
+
+        //test list elements
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName() + "[-1]");
+        op.get("value").set("value1");
+        executeCheckNoFailure(op);
+
+        //add second value
+        op.get("value").set("value2");
+        executeCheckNoFailure(op);
+
+
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        ModelNode res = executeForResult(op);
+        Assert.assertTrue(res.isDefined());
+        // return value of list-attribute on index 0
+        // :read-attribute(name=map-attribute.myKey)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName() + "[0]");
+        Assert.assertEquals("value1", executeForResult(op).asString());
+
+        op.get("name").set(LIST_ATTRIBUTE.getName() + "[1]");
+        Assert.assertEquals("value2", executeForResult(op).asString());
+    }
+
+    @Test
+    public void testComplexWrite() throws OperationFailedException {
+         //test write-attribute(name="complex-attribute.attr1, value="attr1-string")
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_1.getName());
+        op.get("value").set("attr1-string");
+        executeCheckNoFailure(op);
+
+        //test write-attribute(name="complex-attribute.attr2, value=true)
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_2.getName());
+        op.get("value").set(true);
+        executeCheckNoFailure(op);
+
+        //test read-attribute(name=complex-attribute.attr1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_1.getName());
+        Assert.assertEquals("attr1-string", executeForResult(op).asString());
+        //test read-attribute(name=complex-attribute.attr2)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE.getName() + "." + ATTR_2.getName());
+        Assert.assertTrue(executeForResult(op).asBoolean());
+
+        //test List<Object>
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        for (int i = 0; i <= 5; i++) {
+            op.get("name").set(OBJECT_LIST.getName() + "[-1].attr1"); // add new element
+            op.get("value").set("value"+i);
+            executeCheckNoFailure(op);
+        }
+        //test read-attribute(name=object-list[1])
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[1]");
+        Assert.assertTrue(executeForResult(op).isDefined());
+
+        //test read-attribute(name=object-list[1].attr1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[3].attr1");
+        Assert.assertEquals("value3", executeForResult(op).asString());
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[3].attr1"); // update element on index 3
+        op.get("value").set("updated");
+        executeCheckNoFailure(op);
+
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[3].attr1");
+        Assert.assertEquals("updated", executeForResult(op).asString());
+
+        //complex attribute with list with complex attributes
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName());
+        ModelNode value = new ModelNode();
+
+        ModelNode listValue = value.get(OBJECT_LIST.getName());
+
+        for (int i = 0; i <= 5; i++) {
+            ModelNode item = listValue.add();
+            item.get(ATTR_1.getName()).set("value" + i);
+            item.get(ATTR_2.getName()).set(true);
+            ModelNode mapValue = item.get(MAP_ATTRIBUTE.getName());
+            mapValue.get("key1").set("value1");
+            mapValue.get("key2").set("value2");
+        }
+
+        op.get("value").set(value);
+        executeCheckNoFailure(op);
+
+        //test read-attribute(name=complex-attribute2.object-list[1].attr1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[3].attr1");
+        Assert.assertEquals("value3", executeForResult(op).asString());
+
+        //test :read-attribute(name=complex-attribute2.object-list[1].map-attribute.key1)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute.key1");
+        Assert.assertEquals("value1", executeForResult(op).asString());
+
+        //test :write-attribute(name=complex-attribute2.object-list[1].map-attribute.key1)
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute.key1");
+        Assert.assertEquals("updated-value", executeForResult(op).asString());
+
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute.key1");
+        Assert.assertEquals("updated-value", executeForResult(op).asString());
+
+        //test :write-attribute(name=complex-attribute2.object-list[-1].map-attribute.key1)
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[-1].map-attribute.key1");
+        Assert.assertEquals("added-value", executeForResult(op).asString());
+
+        //test :map-get(name=complex-attribute2.object-list[t].map-attribute key=key1)
+        op = createOperation("map-get", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[5].map-attribute");
+        op.get("key").set("key1");
+        Assert.assertEquals("added-value", executeForResult(op).asString());
+
+        //test :list-get(name=complex-attribute2.object-list index=5)
+        op = createOperation("list-get", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
+        op.get("index").set(1);
+        Assert.assertEquals(2, executeForResult(op).asList().size()); //there should be 3 attributes on this list element
+
     }
 
 }

@@ -41,7 +41,7 @@ import org.jboss.dmr.ModelType;
 class EnhancedSyntaxSupport {
 
     static final Pattern ENHANCED_SYNTAX_PATTERN = Pattern.compile("(.*[\\.\\[\\]].*)");
-    static final Pattern BRACKETS_PATTERN = Pattern.compile("(.*)\\[(\\d+)\\]");
+    static final Pattern BRACKETS_PATTERN = Pattern.compile("(.*)\\[(-?\\d+)\\]");
     static final Pattern EXTRACT_NAME_PATTERN = Pattern.compile("^(.*?)[\\.\\[].*");
 
     static void resolveAttribute(OperationContext context, ModelNode operation, String attributeName, boolean defaults, ImmutableManagementResourceRegistration registry, boolean enhancedSyntax) throws OperationFailedException {
@@ -92,7 +92,7 @@ class EnhancedSyntaxSupport {
                 int index = Integer.parseInt(matcher.group(2));
                 ModelNode list = attribute.isEmpty()?result:result.get(attribute); // in case we want to additionally resolve already loaded attribute, this usually applies to attributes that have custom read handlers
                 if (list.isDefined() && list.getType() == ModelType.LIST){
-                    result = list.asList().get(index);
+                    result = list.get(index);
                 }else{
                     throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list",attributeExpression));
                 }
@@ -106,6 +106,33 @@ class EnhancedSyntaxSupport {
         }
         return result;
     }
+
+   static ModelNode updateWithEnhancedSyntax(final String attributeExpression, final ModelNode oldValue, final ModelNode newValue) throws OperationFailedException {
+            ModelNode result = oldValue;
+            for (String part : attributeExpression.split("\\.")) {
+                Matcher matcher = BRACKETS_PATTERN.matcher(part);
+                if (matcher.matches()) {
+                    String attribute = matcher.group(1);
+                    int index = Integer.parseInt(matcher.group(2));
+                    ModelNode list = attribute.isEmpty() ? result : result.get(attribute); // in case we want to additionally resolve already loaded attribute, this usually applies to attributes that have custom read handlers
+                    if (index < 0){
+                        result = list.add();
+                    }else if (list.isDefined() && list.getType() == ModelType.LIST) {
+                        result = list.get(index);
+                    }else {
+                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list", attributeExpression));
+                    }
+                } else {
+                    if (!result.isDefined() || result.getType() == ModelType.OBJECT){
+                        result = result.get(part);
+                    }else{
+                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s'",attributeExpression));
+                    }
+                }
+            }
+            result.set(newValue);
+            return oldValue;
+        }
 
     static ModelNode getNodeDescription(ImmutableManagementResourceRegistration registry, OperationContext context, ModelNode operation) throws OperationFailedException {
         final DescriptionProvider descriptionProvider = registry.getModelDescription(PathAddress.EMPTY_ADDRESS);
