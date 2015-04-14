@@ -431,21 +431,28 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
         //test :write-attribute(name=complex-attribute2.object-list[1].map-attribute.key1)
         op = createOperation("write-attribute", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute.key1");
-        Assert.assertEquals("updated-value", executeForResult(op).asString());
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[3].map-attribute.key1");
+        op.get("value").set("updated-value");
+        executeCheckNoFailure(op);
 
         op = createOperation("read-attribute", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[1].map-attribute.key1");
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[3].map-attribute.key1");
         Assert.assertEquals("updated-value", executeForResult(op).asString());
 
         //test :write-attribute(name=complex-attribute2.object-list[-1].map-attribute.key1)
         op = createOperation("write-attribute", TEST_ADDRESS);
         op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[-1].map-attribute.key1");
+        op.get("value").set("added-value");
+        executeCheckNoFailure(op);
+
+
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6].map-attribute.key1");
         Assert.assertEquals("added-value", executeForResult(op).asString());
 
         //test :map-get(name=complex-attribute2.object-list[t].map-attribute key=key1)
         op = createOperation("map-get", TEST_ADDRESS);
-        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[5].map-attribute");
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6].map-attribute");
         op.get("key").set("key1");
         Assert.assertEquals("added-value", executeForResult(op).asString());
 
@@ -453,7 +460,21 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         op = createOperation("list-get", TEST_ADDRESS);
         op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
         op.get("index").set(1);
-        Assert.assertEquals(2, executeForResult(op).asList().size()); //there should be 3 attributes on this list element
+        Assert.assertEquals(3, executeForResult(op).asList().size()); //there should be 3 attributes on this list element
+
+
+        //test :map-put(name=complex-attribute2.object-list[t].map-attribute key=map-put-key value="map-put-value")
+        op = createOperation("map-put", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6].map-attribute");
+        op.get("key").set("map-put-key");
+        op.get("value").set("map-put-value");
+        executeCheckNoFailure(op);
+
+
+        op = createOperation("map-get", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6].map-attribute");
+        op.get("key").set("map-put-key");
+        Assert.assertEquals("map-put-value", executeForResult(op).asString());
 
     }
 

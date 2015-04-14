@@ -92,10 +92,8 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
         updateModel(context, operationModel, attributeAccess.getAttributeDefinition(),  model);
         if (requiredReadWriteAccess) {
             //debugf("Value '%s' for key '%s' being replaced by value '%s'.", oldValue, key, value);
-            //lets validate it first
-            attributeAccess.getAttributeDefinition().getValidator().validateParameter(attributeName, model);//todo move this to write-attribute operation!
             ModelNode writeOperation = Util.createOperation(WriteAttributeHandler.DEFINITION, address);
-            writeOperation.get(NAME.getName()).set(attributeName);
+            writeOperation.get(NAME.getName()).set(useEnhancedSyntax?attributeExpression:attributeName);
             writeOperation.get(ModelDescriptionConstants.VALUE).set(model);
             context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL);
         }

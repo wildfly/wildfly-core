@@ -91,10 +91,14 @@ class EnhancedSyntaxSupport {
                 String attribute = matcher.group(1);
                 int index = Integer.parseInt(matcher.group(2));
                 ModelNode list = attribute.isEmpty()?result:result.get(attribute); // in case we want to additionally resolve already loaded attribute, this usually applies to attributes that have custom read handlers
-                if (list.isDefined() && list.getType() == ModelType.LIST){
+                if (list.isDefined() && list.getType() == ModelType.LIST && index >=0){
                     result = list.get(index);
                 }else{
-                    throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list",attributeExpression));
+                    if (index < 0) {
+                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', invalid index '%d'", attributeExpression, index));
+                    }else {
+                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list", attributeExpression));
+                    }
                 }
             }else{
                 if (result.has(part)) {
