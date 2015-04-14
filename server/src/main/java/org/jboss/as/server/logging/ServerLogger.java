@@ -1115,4 +1115,42 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 225, value="Unable to create temporary directory")
     RuntimeException unableToCreateSelfContainedDir();
 
+    /**
+     * Creates a {@link RuntimeException}
+     * @param e the underlying exception
+     * @return
+     */
+    @Message(id = 226, value = "Runtime Exception:")
+    RuntimeException runtimeException(@Cause Throwable e);
+
+    /**
+     * Create a {@link org.jboss.as.server.services.security.VaultReaderException} to indicate there was an exception while reading from the vault
+     * @param t underlying exception
+     * @return {@link org.jboss.as.server.services.security.VaultReaderException}
+     */
+    @Message(id = 227, value = "Vault Reader Exception:")
+    VaultReaderException vaultReaderException(@Cause Throwable t);
+
+    /**
+     * Create a {@link SecurityException}
+     * @param t underlying exception
+     * @return {@link SecurityException}
+     */
+    @Message(id = 228, value = "Security Exception")
+    SecurityException securityException(@Cause Throwable t);
+
+    /**
+     * Create a {@link SecurityException}
+     * @param msg message that is passed in creating the exception
+     * @return {@link SecurityException}
+     */
+    @Message(id = 229, value = "Security Exception: %s")
+    SecurityException securityException(String msg);
+
+    /**
+     * Create a {@link SecurityException} to indicate that the vault is not initialized
+     * @return {@link SecurityException}
+     */
+    @Message(id = 230, value = "Vault is not initialized")
+    SecurityException vaultNotInitializedException();
 }
