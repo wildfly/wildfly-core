@@ -120,7 +120,7 @@ public interface DeploymentMountProvider {
                     scheduledExecutorService =  Executors.newScheduledThreadPool(2, threadFactory);
                     tempFileProvider = TempFileProvider.create("temp", scheduledExecutorService, true);
                 } catch (IOException e) {
-                    throw ServerLogger.ROOT_LOGGER.failedCreatingTempProvider();
+                    throw ServerLogger.ROOT_LOGGER.failedCreatingTempProvider(e);
                 }
                 ServerLogger.ROOT_LOGGER.debugf("%s started", DeploymentMountProvider.class.getSimpleName());
             }
