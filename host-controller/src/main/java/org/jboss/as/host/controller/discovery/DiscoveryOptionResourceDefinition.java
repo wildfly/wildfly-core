@@ -57,7 +57,7 @@ public class DiscoveryOptionResourceDefinition extends SimpleResourceDefinition 
         .setStorageRuntime()
         .build();
 
-    public static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING)
+    public static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING, true)
         .setDefaultValue(new ModelNode(DEFAULT_MODULE))
         .setValidator(new StringLengthValidator(1))
         .setStorageRuntime()
