@@ -77,7 +77,8 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
             RbacUtil.DEPLOYER_USER, RbacUtil.ADMINISTRATOR_USER, RbacUtil.AUDITOR_USER,
             RbacUtil.SUPERUSER_USER };
 
-    private static final String SCOPED_ROLE = "core-service=management/access=authorization/server-group-scoped-role=";
+    protected static final String SCOPED_ROLE = "core-service=management/access=authorization/server-group-scoped-role=";
+    protected static final String HOST_SCOPED_ROLE = "core-service=management/access=authorization/host-scoped-role=";
 
     private static final ModelNode WFLY_2089_OP;
     private static final ModelNode WFLY_1916_OP;

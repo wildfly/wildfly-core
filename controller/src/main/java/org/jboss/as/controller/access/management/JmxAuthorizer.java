@@ -33,11 +33,20 @@ import org.jboss.as.controller.access.Authorizer;
 public interface JmxAuthorizer extends Authorizer {
 
     /**
-     * Gets whether JMX calls to non-facade mbeans (i.e. those that result in invocations to
+     * Sets whether JMX calls to non-facade mbeans (i.e. those that result in invocations to
      * {@link Authorizer#authorizeJmxOperation(org.jboss.as.controller.access.Caller, org.jboss.as.controller.access.Environment,
-     * org.jboss.as.controller.access.JmxAction)}) should be treated as 'sensitive'.
+     * org.jboss.as.controller.access.JmxAction, org.jboss.as.controller.access.JmxTarget)}) should be treated as 'sensitive'.
      *
      * @param sensitive {@code true} if non-facade mbean calls are sensitive; {@code false} otherwise
      */
     void setNonFacadeMBeansSensitive(boolean sensitive);
+
+    /**
+     * Gets whether JMX calls to non-facade mbeans (i.e. those that result in invocations to
+     * {@link Authorizer#authorizeJmxOperation(org.jboss.as.controller.access.Caller, org.jboss.as.controller.access.Environment,
+     * org.jboss.as.controller.access.JmxAction, org.jboss.as.controller.access.JmxTarget)}) should be treated as 'sensitive'.
+     *
+     * @return {@code true} if non-facade mbean calls are sensitive; {@code false} otherwise
+     */
+    boolean isNonFacadeMBeansSensitive();
 }

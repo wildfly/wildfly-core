@@ -92,6 +92,7 @@ import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -120,10 +121,11 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     private final Set<MBeanServerPlugin> delegates = new CopyOnWriteArraySet<MBeanServerPlugin>();
 
     private volatile JmxAuthorizer authorizer;
+    private volatile JmxEffect jmxEffect;
 
     /**
      * If no suitable delegate is found in the set of delegates, the rootMBeanServer will handle the JMX operations.
-     *  @param rootMBeanServer JMX root MBeanServer (can not be {@code null})
+     * @param rootMBeanServer JMX root MBeanServer (can not be {@code null})
      * @param rootMBeanServerDelegate can be {@code null} if the {@link PluggableMBeanServerBuilder} is not used
      */
     PluggableMBeanServerImpl(MBeanServer rootMBeanServer, MBeanServerDelegate rootMBeanServerDelegate) {
@@ -143,10 +145,16 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         authorizer.setNonFacadeMBeansSensitive(sensitive);
     }
 
+    void setJmxEffect(JmxEffect effect) {
+        this.jmxEffect = effect;
+    }
+
+    @Override
     public void addPlugin(MBeanServerPlugin delegate) {
         delegates.add(delegate);
     }
 
+    @Override
     public void removePlugin(MBeanServerPlugin delegate) {
         delegates.remove(delegate);
     }
@@ -160,9 +168,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         try {
             // findDelegate does not work for a pattern ObjectName
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(ADD_NOTIFICATION_LISTENER, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, ADD_NOTIFICATION_LISTENER, null, JmxAction.Impact.READ_ONLY);
             delegate.addNotificationListener(name, listener, filter, handback);
         } catch (Exception e) {
             error = e;
@@ -184,9 +190,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(ADD_NOTIFICATION_LISTENER, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, ADD_NOTIFICATION_LISTENER, null, JmxAction.Impact.READ_ONLY);
             delegate.addNotificationListener(name, listener, filter, handback);
         } catch (Exception e) {
             error = e;
@@ -211,9 +215,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, CREATE_MBEAN, null, JmxAction.Impact.WRITE);
             return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name, params, signature), delegate);
         } catch (Exception e) {
             error = e;
@@ -240,9 +242,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, CREATE_MBEAN, null, JmxAction.Impact.WRITE);
             return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name, loaderName, params, signature), delegate);
 
         } catch (Exception e) {
@@ -269,9 +269,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, CREATE_MBEAN, null, JmxAction.Impact.WRITE);
             return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name, loaderName), delegate);
         } catch (Exception e) {
             error = e;
@@ -296,9 +294,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(CREATE_MBEAN, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, CREATE_MBEAN, null, JmxAction.Impact.WRITE);
             return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.createMBean(className, name), delegate);
         } catch (Exception e) {
             error = e;
@@ -322,10 +318,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                //Special authorization
-                authorizeSuperUserOrAdministrator(DESERIALIZE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, name, DESERIALIZE);
             return delegate.deserialize(name, data);
         } catch (Exception e) {
             error = e;
@@ -345,10 +339,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = true;
         try {
-            if (delegate.shouldAuthorize()) {
-                //Special authorization
-                authorizeSuperUserOrAdministrator(DESERIALIZE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, DESERIALIZE);
             return delegate.deserialize(className, data);
         } catch (Exception e) {
             error = e;
@@ -369,10 +361,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = true;
         try {
-            if (delegate.shouldAuthorize()) {
-                //Special authorization
-                authorizeSuperUserOrAdministrator(DESERIALIZE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, loaderName, DESERIALIZE);
             return delegate.deserialize(className, loaderName, data);
         } catch (Exception e) {
             error = e;
@@ -394,9 +384,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(GET_ATTRIBUTE, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, GET_ATTRIBUTE, attribute, JmxAction.Impact.READ_ONLY);
             return delegate.getAttribute(name, attribute);
         } catch (Exception e) {
             error = e;
@@ -421,7 +409,9 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         try {
             delegate = findDelegate(name);
             if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(GET_ATTRIBUTES, readOnly, true);
+                for(String attribute : attributes) {
+                    authorizeMBeanOperation(delegate, name, GET_ATTRIBUTES, attribute, JmxAction.Impact.READ_ONLY);
+                }
             }
             return delegate.getAttributes(name, attributes);
         } catch (Exception e) {
@@ -443,10 +433,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegate(loaderName);
-            if (delegate.shouldAuthorize()) {
-                //Special authorization
-                authorizeSuperUserOrAdministrator(GET_CLASSLOADER);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, loaderName, GET_CLASSLOADER);
             return delegate.getClassLoader(loaderName);
         } catch (Exception e) {
             error = e;
@@ -466,10 +454,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(mbeanName);
-            if (delegate.shouldAuthorize()) {
-                //Special authorization
-                authorizeSuperUserOrAdministrator(GET_CLASSLOADER_FOR);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, mbeanName, GET_CLASSLOADER_FOR);
             return delegate.getClassLoaderFor(mbeanName);
         } catch (Exception e) {
             error = e;
@@ -488,10 +474,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = true;
         try {
-            if (delegate.shouldAuthorize()) {
-                //Special authorization
-                authorizeSuperUserOrAdministrator(GET_CLASSLOADER_REPOSITORY);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, GET_CLASSLOADER_REPOSITORY);
             return delegate.getClassLoaderRepository();
         } catch (Exception e) {
             error = e;
@@ -557,7 +541,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegates.size() > 0) {
                 for (MBeanServerPlugin delegate : delegates) {
                     //Only include the count if the user is authorized to see the beans in the domain
-                    if (!delegate.shouldAuthorize() || authorizeSensitiveOperation(GET_MBEAN_COUNT, true, false)) {
+                    if (authorizeMBeanOperation(delegate, ObjectName.WILDCARD, GET_MBEAN_COUNT, null, JmxAction.Impact.READ_ONLY, false)) {
                         i += delegate.getMBeanCount();
                         if (delegate.shouldAuditLog()) {
                             shouldLog = true;
@@ -565,7 +549,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                     }
                 }
             }
-            if (!rootMBeanServer.shouldAuthorize() || authorizeSensitiveOperation(GET_MBEAN_COUNT, true, false)) {
+            if (authorizeMBeanOperation(rootMBeanServer, ObjectName.WILDCARD, GET_MBEAN_COUNT, null, JmxAction.Impact.READ_ONLY, false)) {
                 //Only include the count if the user is authorized to see the beans in the domain
                 i += rootMBeanServer.getMBeanCount();
                 shouldLog = true;
@@ -592,8 +576,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize() && logAndAuthorize) {
-                authorizeSensitiveOperation(GET_MBEAN_INFO, readOnly, true);
+            if (logAndAuthorize) {
+                authorizeMBeanOperation(delegate, name, GET_MBEAN_INFO, null, JmxAction.Impact.READ_ONLY);
             }
             return delegate.getMBeanInfo(name);
         } catch (Exception e) {
@@ -619,9 +603,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(GET_OBJECT_INSTANCE, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, GET_OBJECT_INSTANCE, null, JmxAction.Impact.READ_ONLY);
             return delegate.getObjectInstance(name);
         } catch (Exception e) {
             error = e;
@@ -642,9 +624,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = false;
         try {
-            if (delegate.shouldAuthorize()) {
-                authorizeSuperUserOrAdministrator(INSTANTIATE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, INSTANTIATE);
             return delegate.instantiate(className, params, signature);
         } catch (Exception e) {
             error = e;
@@ -667,9 +648,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = false;
         try {
-            if (delegate.shouldAuthorize()) {
-                authorizeSuperUserOrAdministrator(INSTANTIATE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, loaderName, INSTANTIATE);
             return delegate.instantiate(className, loaderName, params, signature);
         } catch (Exception e) {
             error = e;
@@ -691,9 +671,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = false;
         try {
-            if (delegate.shouldAuthorize()) {
-                authorizeSuperUserOrAdministrator(INSTANTIATE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, INSTANTIATE);
             return delegate.instantiate(className, loaderName);
         } catch (Exception e) {
             error = e;
@@ -714,9 +693,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         MBeanServerPlugin delegate = rootMBeanServer;
         final boolean readOnly = false;
         try {
-            if (delegate.shouldAuthorize()) {
-                authorizeSuperUserOrAdministrator(INSTANTIATE);
-            }
+            //Special authorization
+            authorizeClassloadingOperation(delegate, INSTANTIATE);
             return delegate.instantiate(className);
         } catch (Exception e) {
             error = e;
@@ -742,9 +720,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             //Need to determine impact of the operation
             readOnly = isOperationReadOnly(name, operationName, signature);
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(INVOKE, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, INVOKE, null, readOnly ? JmxAction.Impact.READ_ONLY : JmxAction.Impact.WRITE);
             return delegate.invoke(name, operationName, params, signature);
         } catch (Exception e) {
             error = e;
@@ -766,9 +742,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(IS_INSTANCE_OF, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, IS_INSTANCE_OF, null, JmxAction.Impact.READ_ONLY);
             return delegate.isInstanceOf(name, className);
         } catch (Exception e) {
             error = e;
@@ -790,9 +764,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             if (delegates.size() > 0) {
                 for (MBeanServerPlugin delegate : delegates) {
                     if (delegate.accepts(name) && delegate.isRegistered(name)) {
-                        if (delegate.shouldAuthorize()) {
-                            authorizeSensitiveOperation(IS_REGISTERED, readOnly, true);
-                        }
+                        authorizeMBeanOperation(delegate, name, IS_REGISTERED, null, JmxAction.Impact.READ_ONLY);
                         if (delegate.shouldAuditLog()) {
                             shouldAuditLog = true;
                         }
@@ -802,9 +774,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             }
             // check if it's registered with the root (a.k.a platform) MBean server
             shouldAuditLog = true;
-            if (rootMBeanServer.shouldAuthorize()) {
-                authorizeSensitiveOperation(IS_REGISTERED, readOnly, true);
-            }
+            authorizeMBeanOperation(rootMBeanServer, name, IS_REGISTERED, null, JmxAction.Impact.READ_ONLY);
             return rootMBeanServer.isRegistered(name);
         } catch (Exception e) {
             error = e;
@@ -828,7 +798,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 for (MBeanServerPlugin delegate : delegates) {
                     if (name == null || (name.getDomain() != null && delegate.accepts(name))) {
                         //Only include the mbeans if the user is authorized to see the beans in the domain
-                        if (!delegate.shouldAuthorize() || authorizeSensitiveOperation(QUERY_MBEANS, true, false)) {
+                        if (authorizeMBeanOperation(delegate, name, QUERY_MBEANS, null, JmxAction.Impact.READ_ONLY, false)) {
                             result.addAll(delegate.queryMBeans(name, query));
                             if (delegate.shouldAuditLog()) {
                                 shouldAuditLog = true;
@@ -838,7 +808,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 }
             }
             //Only include the mbeans if the user is authorized to see the beans in the domain
-            if (!rootMBeanServer.shouldAuthorize() || authorizeSensitiveOperation(QUERY_MBEANS, true, false)) {
+            if (authorizeMBeanOperation(rootMBeanServer, name, QUERY_MBEANS, null, JmxAction.Impact.READ_ONLY, false)) {
                 result.addAll(rootMBeanServer.queryMBeans(name, query));
                 shouldAuditLog = true;
             }
@@ -864,7 +834,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 for (MBeanServerPlugin delegate : delegates) {
                     if (name == null || (name.getDomain() != null && delegate.accepts(name))) {
                         //Only include the mbeans if the user is authorized to see the beans in the domain
-                        if (!delegate.shouldAuthorize() || authorizeSensitiveOperation(QUERY_NAMES, true, false)) {
+                        if (authorizeMBeanOperation(delegate, name, QUERY_NAMES, null, JmxAction.Impact.READ_ONLY, false)) {
                             result.addAll(delegate.queryNames(name, query));
                             if (delegate.shouldAuditLog()) {
                                 shouldAuditLog = true;
@@ -874,7 +844,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 }
             }
             //Only include the mbeans if the user is authorized to see the beans in the domain
-            if (!rootMBeanServer.shouldAuthorize() || authorizeSensitiveOperation(QUERY_NAMES, true, false)) {
+            if (authorizeMBeanOperation(rootMBeanServer, name, QUERY_NAMES, null, JmxAction.Impact.READ_ONLY, false)) {
                 result.addAll(rootMBeanServer.queryNames(name, query));
                 shouldAuditLog = true;
             }
@@ -897,9 +867,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(REGISTER_MBEAN, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, REGISTER_MBEAN, null, JmxAction.Impact.WRITE);
             return checkNotAReservedDomainRegistrationIfObjectNameWasChanged(name, delegate.registerMBean(object, name), delegate);
         } catch (Exception e) {
             error = e;
@@ -975,9 +943,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(REMOVE_NOTIFICATION_LISTENER, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, REMOVE_NOTIFICATION_LISTENER, null, JmxAction.Impact.READ_ONLY);
             delegate.removeNotificationListener(name, listener, filter, handback);
         } catch (Exception e) {
             error = e;
@@ -999,9 +965,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(REMOVE_NOTIFICATION_LISTENER, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, REMOVE_NOTIFICATION_LISTENER, null, JmxAction.Impact.READ_ONLY);
             delegate.removeNotificationListener(name, listener);
         } catch (Exception e) {
             error = e;
@@ -1023,9 +987,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(REMOVE_NOTIFICATION_LISTENER, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, REMOVE_NOTIFICATION_LISTENER, null, JmxAction.Impact.READ_ONLY);
             delegate.removeNotificationListener(name, listener, filter, handback);
         } catch (Exception e) {
             error = e;
@@ -1047,9 +1009,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = true;
         try {
             delegate = findDelegateForNewObject(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(REMOVE_NOTIFICATION_LISTENER, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, REMOVE_NOTIFICATION_LISTENER, null, JmxAction.Impact.READ_ONLY);
             delegate.removeNotificationListener(name, listener);
         } catch (Exception e) {
             error = e;
@@ -1071,9 +1031,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(SET_ATTRIBUTE, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, SET_ATTRIBUTE, attribute.getName(), JmxAction.Impact.WRITE);
             delegate.setAttribute(name, attribute);
         } catch (Exception e) {
             error = e;
@@ -1098,8 +1056,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(SET_ATTRIBUTES, readOnly, true);
+            for( Attribute attribute : attributes.asList()) {
+                authorizeMBeanOperation(delegate, name, SET_ATTRIBUTES, attribute.getName(), JmxAction.Impact.WRITE);
             }
             return delegate.setAttributes(name, attributes);
         } catch (Exception e) {
@@ -1121,9 +1079,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final boolean readOnly = false;
         try {
             delegate = findDelegate(name);
-            if (delegate.shouldAuthorize()) {
-                authorizeSensitiveOperation(UNREGISTER_MBEAN, readOnly, true);
-            }
+            authorizeMBeanOperation(delegate, name, UNREGISTER_MBEAN, null, JmxAction.Impact.WRITE);
             delegate.unregisterMBean(name);
         } catch (Exception e) {
             error = e;
@@ -1229,11 +1185,19 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         }
     }
 
-    boolean authorizeSensitiveOperation(String methodName, boolean readOnly, boolean exception) throws MBeanException {
-        if (authorizer != null) {
-            final JmxAction target = new JmxAction(methodName, readOnly ? JmxAction.Impact.READ_ONLY : JmxAction.Impact.WRITE);
+    private void authorizeMBeanOperation(MBeanServerPlugin delegate, ObjectName name, String methodName,
+                                         String attributeName, JmxAction.Impact impact) throws MBeanException {
+        authorizeMBeanOperation(delegate, name, methodName, attributeName, impact, true);
+    }
+
+    private boolean authorizeMBeanOperation(MBeanServerPlugin delegate, ObjectName name, String methodName,
+                                            String attributeName, JmxAction.Impact impact,
+                                            boolean exception) throws MBeanException {
+        if (authorizer != null && delegate.shouldAuthorize()) {
+            JmxTarget target = new JmxTarget(methodName, name, isNonFacadeMBeansSensitive(), jmxEffect, jmxEffect);
+            JmxAction action = new JmxAction(methodName, impact, attributeName);
             //TODO populate the 'environment' variable
-            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(), null, target);
+            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(), null, action, target);
             if (authorizationResult.getDecision() != Decision.PERMIT) {
                 if (exception) {
                     throw JmxLogger.ROOT_LOGGER.unauthorized();
@@ -1245,15 +1209,20 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         return true;
     }
 
-    boolean authorizeSuperUserOrAdministrator(String methodName) throws MBeanException {
-        if (authorizer != null) {
+    private void authorizeClassloadingOperation(MBeanServerPlugin delegate, String methodName) throws MBeanException {
+        authorizeClassloadingOperation(delegate, ObjectName.WILDCARD, methodName);
+    }
+
+    private void authorizeClassloadingOperation(MBeanServerPlugin delegate, ObjectName objectName, String methodName) throws MBeanException {
+        if (authorizer != null && delegate.shouldAuthorize()) {
+            JmxTarget target = new JmxTarget(methodName, objectName, isNonFacadeMBeansSensitive(), jmxEffect, jmxEffect);
+            JmxAction action = new JmxAction(methodName, JmxAction.Impact.CLASSLOADING);
             //TODO populate the 'environment' variable
-            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(), null, new JmxAction(methodName, JmxAction.Impact.EXTRA_SENSITIVE));
+            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(), null, action, target);
             if (authorizationResult.getDecision() != Decision.PERMIT) {
                 throw JmxLogger.ROOT_LOGGER.unauthorized();
             }
         }
-        return true;
     }
 
     private String[] nullAsEmpty(String[] array) {
@@ -1268,6 +1237,10 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             return NO_ARGS;
         }
         return array;
+    }
+
+    private boolean isNonFacadeMBeansSensitive() {
+        return authorizer == null ? false : authorizer.isNonFacadeMBeansSensitive();
     }
 
     MBeanServerDelegate getMBeanServerDelegate() {
@@ -1340,7 +1313,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             }
             Set<T> principals = subject.getPrincipals(clazz);
             assert principals.size() <= 1;
-            if (principals.size() == 0) {
+            if (principals.isEmpty()) {
                 return null;
             }
             return principals.iterator().next();

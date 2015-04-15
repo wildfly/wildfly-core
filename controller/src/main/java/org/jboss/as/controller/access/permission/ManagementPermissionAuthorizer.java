@@ -29,21 +29,18 @@ import java.util.Enumeration;
 import java.util.Set;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
-import org.jboss.as.controller.access.JmxAction.Impact;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
-import org.jboss.as.controller.access.rbac.StandardRole;
-import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -52,16 +49,10 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
 public class ManagementPermissionAuthorizer implements Authorizer {
-
-    /** A fake action for JMX, just to have an operation with superuser permissions */
-    private static final Action FAKE_JMX_ACTION = new Action(Util.createOperation("test", PathAddress.EMPTY_ADDRESS), null);
-
     private final PermissionFactory permissionFactory;
-    private final JmxPermissionFactory jmxPermissionFactory;
 
-    public ManagementPermissionAuthorizer(PermissionFactory permissionFactory, JmxPermissionFactory jmxPermissionFactory) {
+    public ManagementPermissionAuthorizer(PermissionFactory permissionFactory) {
         this.permissionFactory = permissionFactory;
-        this.jmxPermissionFactory = jmxPermissionFactory;
     }
 
     @Override
@@ -83,8 +74,7 @@ public class ManagementPermissionAuthorizer implements Authorizer {
     @Override
     public AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetAttribute target) {
         assert assertSameAddress(action, target.getTargetResource());
-        // TODO a direct "booting" flag might be better
-        if (callEnvironment.getProcessState() == ControlledProcessState.State.STARTING) {
+        if (isServerBooting(callEnvironment)) {
             return AuthorizationResult.PERMITTED;
         }
         PermissionCollection userPerms = permissionFactory.getUserPermissions(caller, callEnvironment, action, target);
@@ -95,8 +85,7 @@ public class ManagementPermissionAuthorizer implements Authorizer {
     @Override
     public AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetResource target) {
         assert assertSameAddress(action, target);
-        // TODO a direct "booting" flag might be better
-        if (callEnvironment.getProcessState() == ControlledProcessState.State.STARTING) {
+        if (isServerBooting(callEnvironment)) {
             return AuthorizationResult.PERMITTED;
         }
         PermissionCollection userPerms = permissionFactory.getUserPermissions(caller, callEnvironment, action, target);
@@ -127,25 +116,13 @@ public class ManagementPermissionAuthorizer implements Authorizer {
     }
 
     @Override
-    public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action) {
-        Set<String> roles = jmxPermissionFactory.getUserRoles(caller, null, FAKE_JMX_ACTION, (TargetResource) null);
-        if (action.getImpact() == Impact.EXTRA_SENSITIVE) {
-            return authorize(roles, StandardRole.SUPERUSER, StandardRole.ADMINISTRATOR);
-        } else if (jmxPermissionFactory.isNonFacadeMBeansSensitive()) {
-            if (action.getImpact() == Impact.READ_ONLY) {
-                return authorize(roles, StandardRole.SUPERUSER, StandardRole.ADMINISTRATOR, StandardRole.AUDITOR);
-            } else {
-                return authorize(roles, StandardRole.SUPERUSER, StandardRole.ADMINISTRATOR);
-            }
-        } else {
-            if (action.getImpact() == Impact.READ_ONLY) {
-                //Everybody can read mbeans when not sensitive
-                return AuthorizationResult.PERMITTED;
-                //authorize(exception, roles, StandardRole.SUPERUSER, StandardRole.ADMINISTRATOR, StandardRole.OPERATOR, StandardRole.MAINTAINER, StandardRole.AUDITOR, StandardRole.MONITOR, StandardRole.DEPLOYER);
-            } else {
-                return authorize(roles, StandardRole.SUPERUSER, StandardRole.ADMINISTRATOR, StandardRole.OPERATOR, StandardRole.MAINTAINER);
-            }
+    public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        if (isServerBooting(callEnvironment)) {
+            return AuthorizationResult.PERMITTED;
         }
+        PermissionCollection userPerms = permissionFactory.getUserPermissions(caller, callEnvironment, action, target);
+        PermissionCollection requiredPerms = permissionFactory.getRequiredPermissions(action, target);
+        return authorize(userPerms, requiredPerms);
     }
 
     @Override
@@ -154,11 +131,7 @@ public class ManagementPermissionAuthorizer implements Authorizer {
         return null;
     }
 
-    private AuthorizationResult authorize(Set<String> callerRoles, StandardRole...roles) {
-        for (StandardRole role : roles) {
-            if (callerRoles.contains(role.getOfficialForm())) {
-                return AuthorizationResult.PERMITTED;
-            }
-        }
-        return new AuthorizationResult(Decision.DENY);
-    }}
+    private boolean isServerBooting(Environment callEnvironment) {
+        return callEnvironment != null && callEnvironment.getProcessState() == ControlledProcessState.State.STARTING;
+    }
+}

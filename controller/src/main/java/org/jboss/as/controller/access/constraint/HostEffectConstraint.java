@@ -30,6 +30,8 @@ import java.util.Set;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.HostEffect;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -223,6 +225,11 @@ public class HostEffectConstraint extends AbstractConstraint implements Constrai
                 return GLOBAL_REQUIRED;
             }
             return new HostEffectConstraint(hostEffect.getAffectedHosts());
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, JmxAction action, JmxTarget target) {
+            return getRequiredConstraint(target.getHostEffect());
         }
 
         @Override

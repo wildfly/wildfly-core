@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.mgmt.access.jmx;
+package org.wildfly.test.jmx;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;

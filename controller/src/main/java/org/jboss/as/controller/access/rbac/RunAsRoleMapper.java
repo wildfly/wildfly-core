@@ -32,6 +32,8 @@ import java.util.Set;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -67,6 +69,12 @@ public class RunAsRoleMapper implements RoleMapper {
     public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetResource resource) {
         Set<String> runAsRoles = getOperationHeaderRoles(action.getOperation());
         return mapRoles(caller, realRoleMapper.mapRoles(caller, callEnvironment, action, resource), runAsRoles, true);
+    }
+
+    @Override
+    public Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        // There's no mechanism for setting run-as roles over JMX
+        return realRoleMapper.mapRoles(caller, callEnvironment, action, target);
     }
 
     @Override

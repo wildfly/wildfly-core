@@ -36,32 +36,33 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
 import org.jboss.as.controller.access.Caller;
+import org.jboss.as.controller.access.CombinationPolicy;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
+import org.jboss.as.controller.access.constraint.ConstraintFactory;
+import org.jboss.as.controller.access.constraint.ScopingConstraint;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConstraint;
 import org.jboss.as.controller.access.constraint.AuditConstraint;
 import org.jboss.as.controller.access.constraint.Constraint;
-import org.jboss.as.controller.access.constraint.ConstraintFactory;
 import org.jboss.as.controller.access.constraint.HostEffectConstraint;
 import org.jboss.as.controller.access.constraint.NonAuditConstraint;
-import org.jboss.as.controller.access.constraint.ScopingConstraint;
 import org.jboss.as.controller.access.constraint.SensitiveTargetConstraint;
 import org.jboss.as.controller.access.constraint.SensitiveVaultExpressionConstraint;
 import org.jboss.as.controller.access.constraint.ServerGroupEffectConstraint;
 import org.jboss.as.controller.access.constraint.TopRoleConstraint;
 import org.jboss.as.controller.access.permission.AllPermissionsCollection;
 import org.jboss.as.controller.access.permission.CombinationManagementPermission;
-import org.jboss.as.controller.access.CombinationPolicy;
-import org.jboss.as.controller.access.permission.JmxPermissionFactory;
 import org.jboss.as.controller.access.permission.ManagementPermission;
 import org.jboss.as.controller.access.permission.ManagementPermissionCollection;
 import org.jboss.as.controller.access.permission.PermissionFactory;
 import org.jboss.as.controller.access.permission.SimpleManagementPermission;
+import org.jboss.as.controller.logging.ControllerLogger;
 
 /**
  * Default {@link org.jboss.as.controller.access.permission.PermissionFactory} implementation that supports
@@ -69,7 +70,7 @@ import org.jboss.as.controller.access.permission.SimpleManagementPermission;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-public class DefaultPermissionFactory implements PermissionFactory, JmxPermissionFactory, AuthorizerConfiguration.ScopedRoleListener {
+public class DefaultPermissionFactory implements PermissionFactory, AuthorizerConfiguration.ScopedRoleListener {
 
     private static final PermissionCollection NO_PERMISSIONS = new NoPermissionsCollection();
     private final RoleMapper roleMapper;
@@ -109,12 +110,8 @@ public class DefaultPermissionFactory implements PermissionFactory, JmxPermissio
     }
 
     @Override
-    public Set<String> getUserRoles(Caller caller, Environment callEnvironment, Action action, TargetResource target){
-        return roleMapper.mapRoles(caller, callEnvironment, action, target);
-    }
-
-    public boolean isNonFacadeMBeansSensitive() {
-        return authorizerConfiguration.isNonFacadeMBeansSensitive();
+    public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        return getUserPermissions(roleMapper.mapRoles(caller, callEnvironment, action, target));
     }
 
     private PermissionCollection getUserPermissions(Set<String> roles) {
@@ -207,6 +204,21 @@ public class DefaultPermissionFactory implements PermissionFactory, JmxPermissio
 
     @Override
     public PermissionCollection getRequiredPermissions(Action action, TargetResource target) {
+        PermsHolder currentPerms = configureRolePermissions();
+        ConstraintFactory[] currentFactories = currentPerms.constraintFactories;
+        ManagementPermissionCollection result = new ManagementPermissionCollection(SimpleManagementPermission.class);
+        for (Action.ActionEffect actionEffect : action.getActionEffects()) {
+            Constraint[] constraints = new Constraint[currentFactories.length];
+            for (int i = 0; i < constraints.length; i++) {
+                constraints[i] = currentFactories[i].getRequiredConstraint(actionEffect, action, target);
+            }
+            result.add(new SimpleManagementPermission(actionEffect, constraints));
+        }
+        return result;
+    }
+
+    @Override
+    public PermissionCollection getRequiredPermissions(JmxAction action, JmxTarget target) {
         PermsHolder currentPerms = configureRolePermissions();
         ConstraintFactory[] currentFactories = currentPerms.constraintFactories;
         ManagementPermissionCollection result = new ManagementPermissionCollection(SimpleManagementPermission.class);

@@ -23,7 +23,7 @@
 package org.jboss.as.test.integration.mgmt.access;
 
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
-import org.jboss.as.test.integration.mgmt.access.jmx.JMXServiceDeploymentSetupTask;
+import org.wildfly.test.jmx.JMXServiceDeploymentSetupTask;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;

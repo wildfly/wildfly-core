@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -148,6 +150,11 @@ public class SensitiveTargetConstraint extends AllowAllowNotConstraint {
         protected int internalCompare(AbstractConstraintFactory other) {
             // We have no preference
             return 0;
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, JmxAction action, JmxTarget target) {
+            return (action.getImpact() == JmxAction.Impact.CLASSLOADING || target.isNonFacadeMBeansSensitive()) ? SENSITIVE : NOT_SENSITIVE;
         }
     }
 }

@@ -70,18 +70,22 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     private final InjectedValue<ManagementModelIntegration.ManagementModelProvider> managementModelProviderValue = new InjectedValue<ManagementModelIntegration.ManagementModelProvider>();
     private final ProcessType processType;
     private final boolean isMasterHc;
+    private final JmxEffect jmxEffect;
     private PluggableMBeanServer mBeanServer;
     private MBeanServerPlugin showModelPlugin;
 
     private MBeanServerService(final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                final boolean coreMBeanSensitivity,
-            final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer, final ProcessType processType, final boolean isMasterHc) {
+                               final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer,
+                               final JmxEffect jmxEffect,
+                               final ProcessType processType, final boolean isMasterHc) {
         this.resolvedDomainName = resolvedDomainName;
         this.expressionsDomainName = expressionsDomainName;
         this.legacyWithProperPropertyFormat = legacyWithProperPropertyFormat;
         this.coreMBeanSensitivity = coreMBeanSensitivity;
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.jmxEffect = jmxEffect;
         this.processType = processType;
         this.isMasterHc = isMasterHc;
     }
@@ -89,11 +93,13 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     @SafeVarargs
     public static ServiceController<?> addService(final ServiceTarget batchBuilder, final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                                   final boolean coreMBeanSensitivity,
-                                                  final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer,
+                                                  final ManagedAuditLogger auditLoggerInfo,
+                                                  final JmxAuthorizer authorizer,
+                                                  final JmxEffect jmxEffect,
                                                   final ProcessType processType, final boolean isMasterHc,
                                                   final ServiceListener<? super PluggableMBeanServer>... listeners) {
         final MBeanServerService service = new MBeanServerService(resolvedDomainName, expressionsDomainName, legacyWithProperPropertyFormat,
-                coreMBeanSensitivity, auditLoggerInfo, authorizer, processType, isMasterHc);
+                coreMBeanSensitivity, auditLoggerInfo, authorizer, jmxEffect, processType, isMasterHc);
         final ServiceName modelControllerName = processType == ProcessType.HOST_CONTROLLER ?
                 DOMAIN_CONTROLLER_NAME : Services.JBOSS_SERVER_CONTROLLER;
         return batchBuilder.addService(MBeanServerService.SERVICE_NAME, service)
@@ -113,6 +119,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         MBeanServerDelegate delegate = platform instanceof PluggableMBeanServerImpl ? ((PluggableMBeanServerImpl)platform).getMBeanServerDelegate() : null;
         pluggable.setAuditLogger(auditLoggerInfo);
         pluggable.setAuthorizer(authorizer);
+        pluggable.setJmxEffect(jmxEffect);
         authorizer.setNonFacadeMBeansSensitive(coreMBeanSensitivity);
         if (resolvedDomainName != null || expressionsDomainName != null) {
             //TODO make these configurable

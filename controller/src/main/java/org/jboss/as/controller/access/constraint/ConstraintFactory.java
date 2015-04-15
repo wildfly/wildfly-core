@@ -23,6 +23,8 @@
 package org.jboss.as.controller.access.constraint;
 
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -72,4 +74,16 @@ public interface ConstraintFactory extends Comparable<ConstraintFactory> {
      * @return the constraint. Cannot return {@code null}
      */
     Constraint getRequiredConstraint(Action.ActionEffect actionEffect, Action action, TargetResource target);
+
+    /**
+     * Provides a constraint appropriate for the given {@code action} and {@code target}
+     *
+     *
+     * @param actionEffect the {@link org.jboss.as.controller.access.Action.ActionEffect} for which the constraint is relevant
+     * @param action the action
+     * @param target the jmx bean that is the target of the action
+     *
+     * @return the constraint. Cannot return {@code null}
+     */
+    Constraint getRequiredConstraint(Action.ActionEffect actionEffect, JmxAction action, JmxTarget target);
 }

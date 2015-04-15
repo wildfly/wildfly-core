@@ -61,14 +61,15 @@ public interface Authorizer {
     AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetResource target);
 
     /**
-     * Authorize a JMX operation. This operation should NOT be called for the non-management facade MBeans
+     * Authorize a JMX operation. This operation should NOT be called for the management facade MBeans
      *
      * @param caller the caller. Cannot be {@code null}
      * @param callEnvironment the call environment. Cannot be {@code null}
      * @param action the action being authorized. Cannot be {@code null}
+     * @param target the target of the action. Cannot be {@code null}
      * @return the authorization result. Will not be {@code null}
      */
-    AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action);
+    AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target);
 
     /**
      * Gets the set of roles the caller can run as taking into account any requested 'run as' roles.
