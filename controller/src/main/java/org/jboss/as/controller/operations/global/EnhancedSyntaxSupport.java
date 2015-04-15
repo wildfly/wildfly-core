@@ -95,16 +95,16 @@ class EnhancedSyntaxSupport {
                     result = list.get(index);
                 }else{
                     if (index < 0) {
-                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', invalid index '%d'", attributeExpression, index));
+                        throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpressionIndex(attributeExpression, index);
                     }else {
-                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list", attributeExpression));
+                        throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpressionList(attributeExpression);
                     }
                 }
             }else{
                 if (result.has(part)) {
                     result = result.get(part);
                 }else{
-                    throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s'",attributeExpression));
+                    throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpression(attributeExpression);
                 }
             }
         }
@@ -124,13 +124,13 @@ class EnhancedSyntaxSupport {
                     }else if (list.isDefined() && list.getType() == ModelType.LIST) {
                         result = list.get(index);
                     }else {
-                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s', type is not a list", attributeExpression));
+                        throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpressionList(attributeExpression);
                     }
                 } else {
                     if (!result.isDefined() || result.getType() == ModelType.OBJECT){
                         result = result.get(part);
                     }else{
-                        throw new OperationFailedException(String.format("Could not resolve attribute expression: '%s'",attributeExpression));
+                        throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpression(attributeExpression);
                     }
                 }
             }

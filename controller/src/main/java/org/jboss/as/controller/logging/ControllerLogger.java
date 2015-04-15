@@ -3318,4 +3318,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 390, value = "An invalid key '%s' has been supplied for parameter '%s'")
     OperationFailedException invalidKeyForObjectType(String key, String parameter);
 
+    @Message(id = 391, value = "Could not resolve attribute expression: '%s', invalid index '%d'")
+    OperationFailedException couldNotResolveExpressionIndex(String attributeExpression, int index);
+
+    @Message(id = 392, value = "Could not resolve attribute expression: '%s', type is not a list")
+    OperationFailedException couldNotResolveExpressionList(String attributeExpression);
+
+    @Message(id = 393, value = "Could not resolve attribute expression: '%s'")
+    OperationFailedException couldNotResolveExpression(String attributeExpression);
+
 }
