@@ -438,7 +438,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
     private static Resource nullSafeReadResource(final OperationContext context, final ImmutableManagementResourceRegistration registry) {
 
         Resource result;
-        if (registry != null && registry.isRuntimeOnly()) {
+        if (registry != null && registry.isRemote()) {
             try {
                 // BES 2015/02/12 (WFCORE-539) -- following comment and use of 'true' I can't understand,
                 // as the only use of 'resource' is to get the model or the children names,
