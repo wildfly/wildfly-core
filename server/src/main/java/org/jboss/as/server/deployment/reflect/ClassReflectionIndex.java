@@ -22,6 +22,10 @@
 
 package org.jboss.as.server.deployment.reflect;
 
+import static java.lang.reflect.Modifier.ABSTRACT;
+import static java.lang.reflect.Modifier.PUBLIC;
+import static java.lang.reflect.Modifier.STATIC;
+
 import org.jboss.invocation.proxy.MethodIdentifier;
 
 import java.lang.reflect.Constructor;
@@ -70,7 +74,14 @@ public final class ClassReflectionIndex<T> {
             addMethod(methods, method);
             addMethodByTypeName(methodsByTypeName, method);
         }
-
+        //add default method
+        for (Method method : indexedClass.getMethods()) {
+            if (method.getDeclaringClass().isInterface() && (method.getModifiers() & (ABSTRACT | PUBLIC | STATIC)) == PUBLIC) {
+                method.setAccessible(true);
+                addMethod(methods, method);
+                addMethodByTypeName(methodsByTypeName, method);
+            }
+        }
         this.methods = methods;
         this.methodsByTypeName = methodsByTypeName;
         // -- constructors --
