@@ -42,7 +42,7 @@ import java.util.Set;
 
 /** A content-repository capable of providing a static bit of content.
  *
- * @see org.jboss.as.selfcontained.SelfContainedContentService
+ * @see org.jboss.as.selfcontained.ContentProvider
  *
  * @author Bob McWhirter
  */
@@ -52,14 +52,14 @@ public class SelfContainedContentRepository implements ContentRepository, Servic
     public static void addService(ServiceTarget serviceTarget) {
         SelfContainedContentRepository contentRepository = new SelfContainedContentRepository();
         serviceTarget.addService(SERVICE_NAME, contentRepository)
-                .addDependency( SelfContainedContentService.NAME, VirtualFile.class, contentRepository.getContentInjector() )
+                .addDependency( ContentProvider.NAME, ContentProvider.class, contentRepository.getContentProviderInjector() )
                 .install();
     }
 
-    private InjectedValue<VirtualFile> contentInjector = new InjectedValue<>();
+    private InjectedValue<ContentProvider> contentProviderInjector = new InjectedValue<>();
 
-    public Injector<VirtualFile> getContentInjector() {
-        return this.contentInjector;
+    public Injector<ContentProvider> getContentProviderInjector() {
+        return this.contentProviderInjector;
     }
 
     @Override
@@ -73,17 +73,17 @@ public class SelfContainedContentRepository implements ContentRepository, Servic
 
     @Override
     public VirtualFile getContent(byte[] hash) {
-        // the [0] array is a sentinal for the self-contained content.
-        if ( hash.length == 1 && hash[0] == 0 ) {
-            return this.contentInjector.getValue();
+        // A single-element array is the sentinal
+        if ( hash.length == 1 ) {
+            return this.contentProviderInjector.getValue().getContent( hash[0] );
         }
         return null;
     }
 
     @Override
     public boolean hasContent(byte[] hash) {
-        if ( hash.length == 1 && hash[0] == 0 ){
-            return true;
+        if ( hash.length == 1 ) {
+            return this.contentProviderInjector.getValue().getContent( hash[0] ) != null;
         }
         return false;
     }
