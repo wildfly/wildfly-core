@@ -36,9 +36,9 @@ import org.jboss.stdio.LoggingOutputStream;
 import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
+import org.jboss.vfs.VirtualFile;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
-import java.io.File;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
@@ -67,7 +67,7 @@ public final class SelfContainedContainer {
      *
      * @param containerDefinition The container definition.
      */
-    public void start(final List<ModelNode> containerDefinition, File content) {
+    public void start(final List<ModelNode> containerDefinition, VirtualFile content) {
         Thread.currentThread().setContextClassLoader(Module.getCallerModule().getClassLoader());
         try {
             if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
