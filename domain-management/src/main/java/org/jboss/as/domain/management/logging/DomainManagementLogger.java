@@ -55,6 +55,7 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:bgaisford@punagroup.com">Brandon Gaisford</a>
  */
 @MessageLogger(projectCode = "WFLYDM", length = 4)
 public interface DomainManagementLogger extends BasicLogger {
@@ -1116,6 +1117,14 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = 105, value = "The suffix (%s) is invalid. A suffix must be a valid date format.")
     OperationFailedException invalidSuffix(String suffix);
+
+    /**
+     * A message indicating file permissions problems found with mgmt-users.properties.
+     *
+     * @return a {@link String} for the message.
+     */
+    @Message(id = 106, value = "File permissions problems found while attempting to update %s file.")
+    String filePermissionsProblemsFound(String file);
 
     /**
      * Information message saying the username and password must be different.
