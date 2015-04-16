@@ -33,10 +33,11 @@ import org.jboss.as.domain.management.security.adduser.AddUser.Interactiveness;
 import org.jboss.as.domain.management.security.adduser.AddUser.RealmMode;
 
 /**
-* Place holder object to pass between the state
-*
-* @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
-*/
+ * Place holder object to pass between the state
+ *
+ * @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
+ * @author <a href="mailto:bgaisford@punagroup.com">Brandon Gaisford</a>
+ */
 public class StateValues {
     private final RuntimeOptions options;
     private AddUser.Interactiveness howInteractive = Interactiveness.INTERACTIVE;
@@ -52,6 +53,8 @@ public class StateValues {
     private Set<String> enabledKnownUsers = new HashSet<String>();
     private Set<String> disabledKnownUsers = new HashSet<String>();
     private Map<String, String> knownGroups;
+    private boolean validFilePermissions = true;
+    private String filePermissionsProblemPath;
 
     public StateValues() {
         options = new RuntimeOptions();
@@ -188,5 +191,21 @@ public class StateValues {
 
     public RuntimeOptions getOptions() {
         return options;
+    }
+
+    public boolean isValidFilePermissions() {
+        return validFilePermissions;
+    }
+
+    public void setValidFilePermissions(boolean validFilePermissions) {
+        this.validFilePermissions = validFilePermissions;
+    }
+
+    public String getFilePermissionsProblemPath() {
+        return filePermissionsProblemPath;
+    }
+
+    public void setFilePermissionsProblemPath(String filePermissionsProblemPath) {
+        this.filePermissionsProblemPath = filePermissionsProblemPath;
     }
 }
