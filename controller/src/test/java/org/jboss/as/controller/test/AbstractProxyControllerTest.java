@@ -652,7 +652,9 @@ public abstract class AbstractProxyControllerTest {
                 }
             });
 
-            rootRegistration.registerSubModel(ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"), new NonResolvingResourceDescriptionResolver()).build());
+            rootRegistration.registerSubModel(ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"), new NonResolvingResourceDescriptionResolver())
+                    .addReadOnlyAttribute(TestUtils.createNillableAttribute("name",ModelType.STRING))
+                    .build());
 
             PathElement serverAElement = PathElement.pathElement(SERVER, "serverA");
             rootRegistration.registerProxyController(serverAElement, createProxyController(proxy.getValue(), PathAddress.pathAddress(serverAElement)));

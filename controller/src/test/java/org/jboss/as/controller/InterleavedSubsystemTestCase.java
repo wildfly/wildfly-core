@@ -24,8 +24,6 @@ package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
@@ -54,6 +52,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
@@ -110,14 +109,14 @@ public class InterleavedSubsystemTestCase {
         assertTrue(result.hasDefined(RESULT));
         assertTrue(result.get(RESULT).hasDefined(EXTENSION));
         assertTrue(result.get(RESULT, EXTENSION).hasDefined("a"));
-        assertTrue(result.get(RESULT, EXTENSION, "a").hasDefined(MODULE));
-        assertEquals("a", result.get(RESULT, EXTENSION, "a", MODULE).asString());
+        assertTrue(result.get(RESULT, EXTENSION, "a").hasDefined(MODULE.getName()));
+        assertEquals("a", result.get(RESULT, EXTENSION, "a", MODULE.getName()).asString());
         assertTrue(result.get(RESULT, EXTENSION).hasDefined("b"));
-        assertTrue(result.get(RESULT, EXTENSION, "b").hasDefined(MODULE));
-        assertEquals("b", result.get(RESULT, EXTENSION, "b", MODULE).asString());
+        assertTrue(result.get(RESULT, EXTENSION, "b").hasDefined(MODULE.getName()));
+        assertEquals("b", result.get(RESULT, EXTENSION, "b", MODULE.getName()).asString());
         assertTrue(result.get(RESULT, EXTENSION).hasDefined("c"));
-        assertTrue(result.get(RESULT, EXTENSION, "c").hasDefined(MODULE));
-        assertEquals("c", result.get(RESULT, EXTENSION, "c", MODULE).asString());
+        assertTrue(result.get(RESULT, EXTENSION, "c").hasDefined(MODULE.getName()));
+        assertEquals("c", result.get(RESULT, EXTENSION, "c", MODULE.getName()).asString());
         assertTrue(result.get(RESULT).hasDefined(SUBSYSTEM));
         assertTrue(result.get(RESULT, SUBSYSTEM).hasDefined("a"));
         assertTrue(result.get(RESULT, SUBSYSTEM, "a").hasDefined("attribute"));
@@ -130,6 +129,8 @@ public class InterleavedSubsystemTestCase {
         assertTrue(result.get(RESULT, SUBSYSTEM, "c", "attribute").asBoolean());
 
     }
+    static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinition("attribute", ModelType.BOOLEAN, true);
+    static final AttributeDefinition MODULE = new SimpleAttributeDefinition("module", ModelType.STRING, true);
 
     public static class InterleavedSubsystemModelControllerService extends TestModelControllerService {
 
@@ -151,9 +152,14 @@ public class InterleavedSubsystemTestCase {
                     new NonResolvingResourceDescriptionResolver(),
                     new FakeExtensionAddHandler(rootRegistration, getMutableRootResourceRegistrationProvider()),
                     ReloadRequiredRemoveStepHandler.INSTANCE
-            );
+            ){
+                @Override
+                public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+                    super.registerAttributes(resourceRegistration);
+                    resourceRegistration.registerReadOnlyAttribute(MODULE, null);
+                }
+            };
             rootRegistration.registerSubModel(subsystemResource);
-
 
         }
 
@@ -172,16 +178,21 @@ public class InterleavedSubsystemTestCase {
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
 
-            final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-            String module = address.getLastElement().getValue();
-            resource.getModel().get(MODULE).set(module);
+            String module = context.getCurrentAddressValue();
+            resource.getModel().get(MODULE.getName()).set(module);
 
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(SUBSYSTEM, module),
                     new NonResolvingResourceDescriptionResolver(),
                     new FakeSubsystemAddHandler(),
                     ReloadRequiredRemoveStepHandler.INSTANCE
-            );
+            ){
+                @Override
+                public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+                    super.registerAttributes(resourceRegistration);
+                    resourceRegistration.registerReadOnlyAttribute(ATTRIBUTE_DEFINITION, null);
+                }
+            };
             rootRegistration.registerSubModel(subsystemResource);
         }
     }

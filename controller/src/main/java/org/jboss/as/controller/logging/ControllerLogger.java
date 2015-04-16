@@ -2310,7 +2310,7 @@ public interface ControllerLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = 201, value = "Unknown attribute %s")
+    @Message(id = 201, value = "Unknown attribute '%s'")
     String unknownAttribute(String name);
 
     /**

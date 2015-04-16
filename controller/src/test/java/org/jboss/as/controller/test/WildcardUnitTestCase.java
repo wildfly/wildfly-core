@@ -39,6 +39,7 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -67,7 +68,6 @@ public class WildcardUnitTestCase extends AbstractControllerTestBase {
         read.get(OP_ADDR).set(address);
 
         ModelNode result = controller.execute(read, null, null, null);
-        System.out.println(result);
         result = result.get("result");
 
         Assert.assertEquals(4, result.asInt()); // A,B one,two
@@ -111,5 +111,11 @@ public class WildcardUnitTestCase extends AbstractControllerTestBase {
             final ManagementResourceRegistration servers = hosts.registerSubModel(new SimpleResourceDefinition(server, new NonResolvingResourceDescriptionResolver()));
             final ManagementResourceRegistration subsystems = servers.registerSubModel(new SimpleResourceDefinition(subsystem, new NonResolvingResourceDescriptionResolver()));
             final ManagementResourceRegistration connectors = subsystems.registerSubModel(new SimpleResourceDefinition(connector, new NonResolvingResourceDescriptionResolver()));
+        connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("1", ModelType.STRING), null);
+        connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("2", ModelType.STRING), null);
+        connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("3", ModelType.STRING), null);
+        connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("4", ModelType.STRING), null);
+        connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("5", ModelType.STRING), null);
+        connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("6", ModelType.STRING), null);
     }
 }

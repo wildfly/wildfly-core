@@ -45,6 +45,7 @@ import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
@@ -56,6 +57,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.rbac.StandardRole;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -67,7 +69,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManagerService;
@@ -84,6 +85,7 @@ import org.jboss.as.jmx.MBeanServerService;
 import org.jboss.as.jmx.test.util.AbstractControllerTestBase;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -102,7 +104,9 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
     volatile MBeanServer server;
 
     private static final String TEST_USER = "test";
-    private static final String LAUNCH_TYPE = "launch-type";
+    private static final AttributeDefinition LAUNCH_TYPE = SimpleAttributeDefinitionBuilder.create("launch-type", ModelType.STRING)
+            .setStorageRuntime()
+            .build();
     private static final String TYPE_STANDALONE = "STANDALONE";
 
     private final static ObjectName OBJECT_NAME;
@@ -550,7 +554,7 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.getResult().set(TYPE_STANDALONE);
             }
-        }, AttributeAccess.Storage.RUNTIME);
+        });
 
         TestServiceListener listener = new TestServiceListener();
         listener.reset(1);

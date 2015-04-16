@@ -261,11 +261,6 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    public void registerReadOnlyAttribute(String attributeName, OperationStepHandler readHandler, AttributeAccess.Storage storage) {
-        getDelegate().registerReadOnlyAttribute(attributeName, readHandler, storage);
-    }
-
-    @Override
     public void registerReadOnlyAttribute(AttributeDefinition definition, OperationStepHandler readHandler) {
         getDelegate().registerReadOnlyAttribute(definition, readHandler);
     }

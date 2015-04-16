@@ -44,6 +44,9 @@ public class TestUtils {
     public static AttributeDefinition createAttribute(String name, ModelType type) {
         return createAttribute(name, type, null, false);
     }
+    public static AttributeDefinition createNillableAttribute(String name, ModelType type) {
+        return createAttribute(name, type, null, true);
+    }
 
     public static AttributeDefinition createAttribute(String name, ModelType type, String groupName) {
         return createAttribute(name, type, groupName, false);

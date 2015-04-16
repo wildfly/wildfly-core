@@ -62,7 +62,9 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.test.TestUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
@@ -652,7 +654,11 @@ public class ModelControllerImplUnitTestCase {
                     PathElement.pathElement("child"),
                     new NonResolvingResourceDescriptionResolver()
             );
-            rootRegistration.registerSubModel(childResource);
+            rootRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attr1", ModelType.INT), null);
+            rootRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attr2", ModelType.INT), null);
+            ManagementResourceRegistration childRegistration = rootRegistration.registerSubModel(childResource);
+            childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute1", ModelType.INT), null);
+            childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute2", ModelType.INT), null);
         }
 
     }
