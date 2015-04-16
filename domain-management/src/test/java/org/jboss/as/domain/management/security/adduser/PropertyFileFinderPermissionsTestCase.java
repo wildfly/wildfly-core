@@ -69,6 +69,12 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
         return propertyUserFile;
     }
 
+    // As we're reusing StateValues across invocation of PropertyFileFinder execute()
+    // we need to reset permissions state prior to executing newxt test.
+    private void resetStateValuePermissionsFlags() {
+        values.setValidFilePermissions(true);
+        values.setFilePermissionsProblemPath(null);
+    }
 
     @Test
     public void testPropertyFileFinderFilePermissions() throws IOException {
@@ -91,6 +97,8 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
             State nextState = propertyFileFinder.execute();
             assertTrue(nextState instanceof ErrorState);
             standaloneDir.setReadable(true);
+            // Don't forget to reset permissions state
+            resetStateValuePermissionsFlags();
         }
 
         // Test parent dir without execute
@@ -98,6 +106,8 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
             State nextState = propertyFileFinder.execute();
             assertTrue(nextState instanceof ErrorState);
             standaloneDir.setExecutable(true);
+            // Don't forget to reset permissions state
+            resetStateValuePermissionsFlags();
         }
 
         // Test file without read
@@ -105,6 +115,8 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
             State nextState = propertyFileFinder.execute();
             assertTrue(nextState instanceof ErrorState);
             standaloneMgmtUserFile.setReadable(true);
+            // Don't forget to reset permissions state
+            resetStateValuePermissionsFlags();
         }
 
         // Test file without write
@@ -112,6 +124,8 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
             State nextState = propertyFileFinder.execute();
             assertTrue(nextState instanceof ErrorState);
             standaloneMgmtUserFile.setWritable(true);
+            // Don't forget to reset permissions state
+            resetStateValuePermissionsFlags();
         }
 
     }
