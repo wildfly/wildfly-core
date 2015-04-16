@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import static java.lang.System.getProperty;
+import static java.lang.System.setProperty;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
  */
-public class PropertyFileFinderTestCase extends PropertyTestHelper {
+public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
 
 
     @Before
@@ -85,7 +86,7 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
         State propertyFileFinder = new PropertyFileFinder(consoleMock, values);
         State nextState = propertyFileFinder.execute();
         assertTrue(nextState instanceof PromptRealmState);
-        assertTrue("Expected to find the "+USER_NAME+" in the list of known enabled users",values.getEnabledKnownUsers().contains(USER_NAME));
+        assertTrue("Expected to find the " + USER_NAME + " in the list of known enabled users", values.getEnabledKnownUsers().contains(USER_NAME));
         assertTrue("Expected the values.getPropertiesFiles() contained the "+standaloneMgmtUserFile,values.getUserFiles().contains(standaloneMgmtUserFile));
         assertTrue("Expected the values.getPropertiesFiles() contained the "+domainMgmtUserFile,values.getUserFiles().contains(domainMgmtUserFile));
     }
@@ -123,6 +124,62 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
 
         assertUserPropertyFile(newUserName);
         consoleBuilder.validate();
+    }
+
+    @Test
+    public void testPropertyFileFinderFilePermissions() throws IOException {
+
+        String oldJavaTempDir = getProperty("java.io.tmpdir");
+
+        setProperty("java.io.tmpdir", oldJavaTempDir+File.separator+"permissions");
+        values.getOptions().setJBossHome(getProperty("java.io.tmpdir"));
+
+        File domainMgmtUserFile = createPropertyFile("mgmt-users.properties", "domain");
+        File standaloneMgmtUserFile = createPropertyFile("mgmt-users.properties", "standalone");
+        File domainMgmtGroupFile = createPropertyFile("mgmt-groups.properties", "domain");
+        File standaloneMgmtGroupFile = createPropertyFile("mgmt-groups.properties", "standalone");
+
+        System.setProperty("jboss.server.config.user.dir", standaloneMgmtUserFile.getParent());
+        System.setProperty("jboss.domain.config.user.dir", domainMgmtUserFile.getParent());
+        System.setProperty("jboss.server.config.group.dir", standaloneMgmtGroupFile.getParent());
+        System.setProperty("jboss.domain.config.group.dir", domainMgmtGroupFile.getParent());
+
+        File standaloneDir = standaloneMgmtUserFile.getParentFile();
+        State propertyFileFinder = new PropertyFileFinder(consoleMock, values);
+
+        // Test parent dir without read
+        if(standaloneDir.setReadable(false)) {
+            State nextState = propertyFileFinder.execute();
+            assertTrue(nextState instanceof ErrorState);
+            standaloneDir.setReadable(true);
+        }
+
+//        File permissionsMgmtUserFile2 = createPropertyFile("mgmt-users.properties", "permissions2");
+//        File permissionsMgmtGroupFile2 = createPropertyFile("mgmt-groups.properties", "permissions2");
+//        System.setProperty("jboss.domain.config.user.dir", permissionsMgmtUserFile2.getParent());
+//        System.setProperty("jboss.domain.config.group.dir", permissionsMgmtGroupFile2.getParent());
+//
+//        File permissionsDir2 = permissionsMgmtUserFile2.getParentFile();
+//        State propertyFileFinder2 = new PropertyFileFinder(consoleMock, values);
+//
+//        // Test parent dir without execute
+//        if(permissionsDir2.setExecutable(false)) {
+//            State nextState = propertyFileFinder2.execute();
+//            assertTrue(nextState instanceof ErrorState);
+//            permissionsDir2.setExecutable(true);
+//        }
+
+
+        // Test properties file not writable
+//        if(permissionsMgmtUserFile.setWritable(false)) {
+//
+//        }
+
+
+        // be sure to restore java temp dir
+        setProperty("java.io.tmpdir", oldJavaTempDir);
+        values.getOptions().setJBossHome(getProperty("java.io.tmpdir"));
+
     }
 
 
