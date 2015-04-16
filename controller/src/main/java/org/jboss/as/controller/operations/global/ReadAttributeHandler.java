@@ -24,14 +24,11 @@ package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
-import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.resolveAttribute;
 
-import java.util.Set;
-
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -51,6 +48,7 @@ import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -162,16 +160,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
 
-
         if (attributeAccess == null) {
-            final Set<String> children = context.getResourceRegistration().getChildNames(PathAddress.EMPTY_ADDRESS);
-            if (children.contains(attributeName)) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeRegisteredOnResource(attributeName, operation.get(OP_ADDR)));
-            } else {
-                resolveAttribute(context, operation, attributeExpression, defaults, registry, useEnhancedSyntax);
-            }
-        } else if (attributeAccess.getReadHandler() == null) {
-            resolveAttribute(context, operation, attributeExpression, defaults, registry, useEnhancedSyntax);
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
+        }
+        assert attributeAccess.getAttributeDefinition() != null;
+
+        if (attributeAccess.getReadHandler() == null) {
+            resolveAttribute(context, attributeAccess.getAttributeDefinition(), attributeExpression, defaults, useEnhancedSyntax);
         } else {
             OperationStepHandler handler = attributeAccess.getReadHandler();
             ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
@@ -180,7 +175,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
-            if (useEnhancedSyntax){
+            if (useEnhancedSyntax) {
                 ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
                 context.getResult().set(resolved);
             }
@@ -249,6 +244,25 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             // simply returning them unresolved.
             ModelNode resolved = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(result);
             context.getResult().set(resolved);
+        }
+    }
+
+    static void resolveAttribute(OperationContext context, AttributeDefinition attribute, String attributeSyntax, boolean defaults, boolean enhancedSyntax) throws OperationFailedException {
+        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
+        final ModelNode subModel = resource.getModel();
+        if (enhancedSyntax) {
+            context.getResult().set(EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeSyntax, subModel));
+        } else if (subModel.hasDefined(attribute.getName())) {
+            final ModelNode result = subModel.get(attribute.getName());
+            context.getResult().set(result);
+        } else if (defaults && attribute.getDefaultValue() != null) {
+            // No defined value in the model. See if we should reply with a default from the metadata,
+            // reply with undefined, or fail because it's a non-existent attribute name
+            context.getResult().set(attribute.getDefaultValue());
+        } else {
+            // model had no defined value, but we treat its existence in the model or the metadata
+            // as proof that it's a legit attribute name
+            context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
         }
     }
 }
