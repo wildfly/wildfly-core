@@ -59,6 +59,8 @@ public class PropertyFileFinder implements State {
 
     private ConsoleWrapper theConsole;
     private final StateValues stateValues;
+    private boolean validFilePermissions = true;
+    private String filePermissionsProblemPath;
 
     public PropertyFileFinder(ConsoleWrapper theConsole, final StateValues stateValues) {
         this.theConsole = theConsole;
@@ -79,9 +81,9 @@ public class PropertyFileFinder implements State {
                 : APPLICATION_USERS_PROPERTIES : fileName;
         if (!findFiles(foundFiles, fileName)) {
             return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.propertiesFileNotFound(fileName), null, stateValues);
-        } else if(!stateValues.isValidFilePermissions()) {
+        } else if(!validFilePermissions) {
             return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.filePermissionsProblemsFound(
-                    stateValues.getFilePermissionsProblemPath() + File.separator + fileName), null, stateValues);
+                    filePermissionsProblemPath + File.separator + fileName), null, stateValues);
         }
         fileName = stateValues.getOptions().getGroupProperties();
 
@@ -97,9 +99,9 @@ public class PropertyFileFinder implements State {
             fileName = fileName == null ? APPLICATION_ROLES_PROPERTIES : fileName;
             if (!findFiles(foundGroupFiles, fileName) && groupFileMandatory) {
                 return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.propertiesFileNotFound(fileName), null, stateValues);
-            } else if(!stateValues.isValidFilePermissions()) {
+            } else if(!validFilePermissions) {
                 return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.filePermissionsProblemsFound(
-                        stateValues.getFilePermissionsProblemPath() + File.separator + fileName), null, stateValues);
+                        filePermissionsProblemPath + File.separator + fileName), null, stateValues);
             }
             stateValues.setGroupFiles(foundGroupFiles);
             try {
@@ -279,27 +281,28 @@ public class PropertyFileFinder implements State {
     }
 
     /**
-     * This method performs a series of permissions checks given the passed directory and full properties file path.
+     * This method performs a series of permissions checks given a directory and properties file path.
      *
      * 1 - Check whether the parent directory dirPath has proper execute and read permissions
-     * 2 - Check whether full properties file path is readable and writable
+     * 2 - Check whether properties file path is readable and writable
      *
-     * If either of the permissions checks fail, setValidFilePermissions flag and setFilePermissionsProblemPath
-     * in StateValues
+     * If either of the permissions checks fail, update validFilePermissions and filePermissionsProblemPath
+     * appropriately.
+     *
      */
     private void validatePermissions(final File dirPath, final File file) {
 
         // Check execute and read permissions for parent dirPath
         if( !dirPath.canExecute() || !dirPath.canRead()  ) {
-            stateValues.setValidFilePermissions(false);
-            stateValues.setFilePermissionsProblemPath(dirPath.getAbsolutePath());
+            validFilePermissions = false;
+            filePermissionsProblemPath = dirPath.getAbsolutePath();
             return;
         }
 
         // Check read and write permissions for properties file
         if( !file.canRead() || !file.canWrite() ) {
-            stateValues.setValidFilePermissions(false);
-            stateValues.setFilePermissionsProblemPath(dirPath.getAbsolutePath());
+            validFilePermissions = false;
+            filePermissionsProblemPath = dirPath.getAbsolutePath();
         }
 
     }
