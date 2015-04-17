@@ -96,6 +96,8 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
             standaloneDir.setReadable(true);
         }
 
+        propertyFileFinder = new PropertyFileFinder(consoleMock, values);
+
         // Test parent dir without execute
         if(standaloneDir.setExecutable(false)) {
             State nextState = propertyFileFinder.execute();
@@ -103,12 +105,16 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
             standaloneDir.setExecutable(true);
         }
 
+        propertyFileFinder = new PropertyFileFinder(consoleMock, values);
+
         // Test file without read
         if(standaloneMgmtUserFile.setReadable(false)) {
             State nextState = propertyFileFinder.execute();
             assertTrue(nextState instanceof ErrorState);
             standaloneMgmtUserFile.setReadable(true);
         }
+
+        propertyFileFinder = new PropertyFileFinder(consoleMock, values);
 
         // Test file without write
         if(standaloneMgmtUserFile.setWritable(false)) {
