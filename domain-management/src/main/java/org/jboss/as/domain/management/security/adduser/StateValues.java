@@ -52,6 +52,7 @@ public class StateValues {
     private Set<String> enabledKnownUsers = new HashSet<String>();
     private Set<String> disabledKnownUsers = new HashSet<String>();
     private Map<String, String> knownGroups;
+
     public StateValues() {
         options = new RuntimeOptions();
     }
