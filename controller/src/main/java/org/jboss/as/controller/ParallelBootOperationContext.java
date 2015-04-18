@@ -351,6 +351,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    public ServiceName getCapabilityServiceName(String capabilityName, Class<?> type) {
+        return primaryContext.getCapabilityServiceName(capabilityName, type, activeStep);
+    }
+
+    @Override
     void releaseStepLocks(Step step) {
         if(lockStep == step) {
             controller.releaseLock(operationId);

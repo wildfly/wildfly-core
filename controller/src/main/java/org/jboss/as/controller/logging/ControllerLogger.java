@@ -3312,4 +3312,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 393, value = "Could not resolve attribute expression: '%s'")
     OperationFailedException couldNotResolveExpression(String attributeExpression);
 
+    @Message(id = 394, value = "Capability '%s' does not provide services of type '%s'")
+    IllegalArgumentException invalidCapabilityServiceType(String capabilityName, Class<?> serviceType);
+
 }

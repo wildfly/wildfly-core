@@ -661,6 +661,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
+            return null;
+        }
+
+        @Override
         public void emit(Notification notification) {
             // no-op
         }

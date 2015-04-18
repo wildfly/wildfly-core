@@ -886,6 +886,19 @@ public interface OperationContext extends ExpressionResolver {
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType);
 
     /**
+     * Gets the name of a service associated with a given capability, if there is one.
+     * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
+     * @return the name of the service. Will not return {@code null}
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
+     */
+    ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType);
+
+    /**
      * Whether normally this operation would require a runtime step. It returns {@code true in the following cases}
      * <ul>
      *  <li>The process is a server, and it is running in NORMAL (i.e. not admin-only) mode.</li>

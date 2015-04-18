@@ -368,4 +368,9 @@ class ReadOnlyContext extends AbstractOperationContext {
     public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
         throw readOnlyContext();
     }
+
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityName, Class<?> type) {
+        throw readOnlyContext();
+    }
 }

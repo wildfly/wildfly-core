@@ -23,6 +23,7 @@
 package org.jboss.as.controller.capability.registry;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * {@link RuntimeCapabilityRegistry} implementation that simply delegates to another
@@ -100,6 +101,11 @@ public class DelegatingRuntimeCapabilityRegistry implements RuntimeCapabilityReg
     @Override
     public <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType) {
         return getDelegate().getCapabilityRuntimeAPI(capabilityName, context, apiType);
+    }
+
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
+        return getDelegate().getCapabilityServiceName(capabilityName, context, serviceType);
     }
 
     private RuntimeCapabilityRegistry getDelegate() {

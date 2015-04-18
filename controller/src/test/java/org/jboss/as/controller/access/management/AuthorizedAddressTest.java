@@ -526,6 +526,11 @@ public class AuthorizedAddressTest {
         }
 
         @Override
+        public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
         public void emit(Notification notification) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }

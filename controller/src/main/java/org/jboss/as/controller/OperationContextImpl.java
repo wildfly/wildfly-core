@@ -1377,6 +1377,18 @@ final class OperationContextImpl extends AbstractOperationContext {
         return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, context, apiType);
     }
 
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
+        return getCapabilityServiceName(capabilityName, serviceType, activeStep);
+    }
+
+    ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, Step step) {
+        assert isControllingThread();
+        assertCapabilitiesAvailable(currentStage);
+        CapabilityContext context = createCapabilityContext(step);
+        return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, context, serviceType);
+    }
+
     private void rejectUserDomainServerUpdates() {
         if (isModelUpdateRejectionRequired()) {
             ModelNode op = activeStep.operation;

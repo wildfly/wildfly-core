@@ -101,6 +101,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
@@ -1350,6 +1351,21 @@ class ModelControllerImpl implements ModelController {
 
         @Override
         public synchronized  <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext capabilityContext, Class<T> apiType) {
+            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, capabilityContext);
+            Object api = reg.getCapability().getRuntimeAPI();
+            if (api == null) {
+                throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
+            }
+            return apiType.cast(api);
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
+            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
+            return reg.getCapability().getServiceNameProvider().getCapabilityServiceName(serviceType);
+        }
+
+        private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
             CapabilityId capabilityId = findSatisfactoryCapability(capabilityName, capabilityContext);
             if (capabilityId == null) {
                 if (forServer) {
@@ -1358,12 +1374,7 @@ class ModelControllerImpl implements ModelController {
                     throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
                 }
             }
-            RuntimeCapabilityRegistration reg = capabilities.get(capabilityId);
-            Object api = reg.getCapability().getRuntimeAPI();
-            if (api == null) {
-                throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
-            }
-            return apiType.cast(api);
+            return capabilities.get(capabilityId);
         }
 
         synchronized CapabilityRegistryImpl copy() {

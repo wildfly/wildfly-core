@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import org.jboss.msc.service.ServiceName;
+
 /**
  * Registry of {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} available in the runtime.
  *
@@ -41,4 +43,6 @@ public interface RuntimeCapabilityRegistry extends CapabilityRegistry<RuntimeCap
      * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
      */
     <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType);
+
+    ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType);
 }
