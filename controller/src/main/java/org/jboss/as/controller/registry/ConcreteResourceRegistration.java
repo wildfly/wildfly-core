@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller.registry;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION;
 
 import java.util.ArrayList;
@@ -46,13 +45,11 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.descriptions.DefaultResourceDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
 import org.jboss.as.controller.registry.OperationEntry.EntryType;
-import org.jboss.dmr.ModelNode;
 
 @SuppressWarnings("deprecation")
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
@@ -285,15 +282,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public void registerReadOnlyAttribute(final String attributeName, final OperationStepHandler readHandler, AttributeAccess.Storage storage) {
-        checkPermission();
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, null, null);
-        if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
-            throw alreadyRegistered("attribute", attributeName);
-        }
-    }
-
-    @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
@@ -497,25 +485,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         } else {
             checkPermission();
             final Map<String, AttributeAccess> snapshot = attributesUpdater.get(this);
-            AttributeAccess access = snapshot.get(attributeName);
-            if (access == null && hasNoAlternativeWildcardRegistration()) {
-                // If there is metadata for an attribute but no AttributeAccess, assume RO. Can't
-                // be writable without a registered handler. This opens the possibility that out-of-date metadata
-                // for attribute "foo" can lead to a read of non-existent-in-model "foo" with
-                // an unexpected undefined value returned. But it removes the possibility of a
-                // dev forgetting to call registry.registerReadOnlyAttribute("foo", null) resulting
-                // in the valid attribute "foo" not being readable
-                DescriptionProvider provider = resourceDefinition.getDescriptionProvider(this);
-                if (provider instanceof DefaultResourceDescriptionProvider){
-                    return null; // attribute was not registered so it does not exist. no need to read resource description as we wont find anything and cause SO
-                }
-                //todo get rid of this fallback loop as with code cleanup we wont need it anymore.
-                final ModelNode desc = resourceDefinition.getDescriptionProvider(this).getModelDescription(null);
-                if (desc.has(ATTRIBUTES) && desc.get(ATTRIBUTES).keys().contains(attributeName)) {
-                    access = new AttributeAccess(AccessType.READ_ONLY, Storage.CONFIGURATION, null, null, null, null);
-                }
-            }
-            return access;
+            return snapshot.get(attributeName);
         }
     }
 

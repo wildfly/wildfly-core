@@ -26,12 +26,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
+import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
 
 import java.util.Locale;
 import java.util.Set;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -153,58 +155,35 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
 
     private void doExecuteInternal(OperationContext context, ModelNode operation) throws OperationFailedException {
         validator.validate(operation);
-        final String attributeName = operation.require(GlobalOperationAttributes.NAME.getName()).asString();
-        final boolean defaults = operation.get(GlobalOperationAttributes.INCLUDE_DEFAULTS.getName()).asBoolean(true);
+        String attributeName = GlobalOperationAttributes.NAME.resolveModelAttribute(context, operation).asString();
+        final boolean defaults = GlobalOperationAttributes.INCLUDE_DEFAULTS.resolveModelAttribute(context,operation).asBoolean();
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
+        String attributeExpression = attributeName;
+        if (useEnhancedSyntax){
+            attributeName = extractAttributeName(attributeName);
+        }
 
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
 
-
+        /*if (attributeAccess == null) {
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
+        }*/
+        //todo this is only here until wildfly-full is fixed
         if (attributeAccess == null) {
             final Set<String> children = context.getResourceRegistration().getChildNames(PathAddress.EMPTY_ADDRESS);
             if (children.contains(attributeName)) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeRegisteredOnResource(attributeName, operation.get(OP_ADDR)));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeRegisteredOnResource(attributeName, context.getCurrentAddress().toModelNode()));
             } else {
-                final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
-                final ModelNode subModel = resource.getModel();
-                if (subModel.hasDefined(attributeName)) {
-                    final ModelNode result = subModel.get(attributeName);
-                    context.getResult().set(result);
-                } else {
-                    // No defined value in the model. See if we should reply with a default from the metadata,
-                    // reply with undefined, or fail because it's a non-existent attribute name
-                    final ModelNode nodeDescription = getNodeDescription(registry, context, operation);
-                    if (defaults && nodeDescription.get(ATTRIBUTES).hasDefined(attributeName) &&
-                            nodeDescription.get(ATTRIBUTES, attributeName).hasDefined(DEFAULT)) {
-                        final ModelNode result = nodeDescription.get(ATTRIBUTES, attributeName, DEFAULT);
-                        context.getResult().set(result);
-                    } else if (subModel.has(attributeName) || nodeDescription.get(ATTRIBUTES).has(attributeName)) {
-                        // model had no defined value, but we treat its existence in the model or the metadata
-                        // as proof that it's a legit attribute name
-                        context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
-                    } else {
-                        throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
-                    }
-                }
+                resolveAttribute(context, operation, attributeExpression, defaults, registry, useEnhancedSyntax);
             }
-        } else if (attributeAccess.getReadHandler() == null) {
-            final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
-            final ModelNode subModel = resource.getModel();
-            // We know the attribute name is legit as it's in the registry, so this case is simpler
-            if (subModel.hasDefined(attributeName) || !defaults) {
-                final ModelNode result = subModel.get(attributeName);
-                context.getResult().set(result);
-            } else {
-                // It wasn't in the model, but user wants a default value from metadata if there is one
-                final ModelNode nodeDescription = getNodeDescription(registry, context, operation);
-                if (nodeDescription.get(ATTRIBUTES).hasDefined(attributeName) &&
-                        nodeDescription.get(ATTRIBUTES, attributeName).hasDefined(DEFAULT)) {
-                    final ModelNode result = nodeDescription.get(ATTRIBUTES, attributeName, DEFAULT);
-                    context.getResult().set(result);
-                } else {
-                    context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
-                }
-            }
+            return;
+        }
+
+        assert attributeAccess.getAttributeDefinition() != null;
+
+        if (attributeAccess.getReadHandler() == null) {
+            resolveAttribute(context, attributeAccess.getAttributeDefinition(), attributeExpression, defaults, useEnhancedSyntax);
         } else {
             OperationStepHandler handler = attributeAccess.getReadHandler();
             ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
@@ -213,14 +192,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
+            if (useEnhancedSyntax) {
+                ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
+                context.getResult().set(resolved);
+            }
         }
     }
 
-    private ModelNode getNodeDescription(ImmutableManagementResourceRegistration registry, OperationContext context, ModelNode operation) throws OperationFailedException {
-        final DescriptionProvider descriptionProvider = registry.getModelDescription(PathAddress.EMPTY_ADDRESS);
-        final Locale locale = GlobalOperationHandlers.getLocale(context, operation);
-        return descriptionProvider.getModelDescription(locale);
-    }
 
     private static class AuthorizeAttributeReadHandler implements OperationStepHandler {
 
@@ -285,4 +263,61 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             context.getResult().set(resolved);
         }
     }
+
+    static void resolveAttribute(OperationContext context, AttributeDefinition attribute, String attributeSyntax, boolean defaults, boolean enhancedSyntax) throws OperationFailedException {
+        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
+        final ModelNode subModel = resource.getModel();
+        if (enhancedSyntax) {
+            context.getResult().set(EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeSyntax, subModel));
+        } else if (subModel.hasDefined(attribute.getName())) {
+            final ModelNode result = subModel.get(attribute.getName());
+            context.getResult().set(result);
+        } else if (defaults && attribute.getDefaultValue() != null) {
+            // No defined value in the model. See if we should reply with a default from the metadata,
+            // reply with undefined, or fail because it's a non-existent attribute name
+            context.getResult().set(attribute.getDefaultValue());
+        } else {
+            // model had no defined value, but we treat its existence in the model or the metadata
+            // as proof that it's a legit attribute name
+            context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
+        }
+    }
+
+    /**
+     *
+     * @deprecated here as legacy fallback, until we fix the wildlfly full
+     */
+    @Deprecated
+    private static void resolveAttribute(OperationContext context, ModelNode operation, String attributeName, boolean defaults, ImmutableManagementResourceRegistration registry, boolean enhancedSyntax) throws OperationFailedException {
+          final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
+          final ModelNode subModel = resource.getModel();
+          if (enhancedSyntax){
+              context.getResult().set(EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeName, subModel));
+          }else if (subModel.hasDefined(attributeName)) {
+              final ModelNode result = subModel.get(attributeName);
+              context.getResult().set(result);
+          } else {
+              // No defined value in the model. See if we should reply with a default from the metadata,
+              // reply with undefined, or fail because it's a non-existent attribute name
+              final ModelNode nodeDescription = getNodeDescription(registry, context, operation);
+              if (defaults && nodeDescription.get(ATTRIBUTES).hasDefined(attributeName) &&
+                      nodeDescription.get(ATTRIBUTES, attributeName).hasDefined(DEFAULT)) {
+                  final ModelNode result = nodeDescription.get(ATTRIBUTES, attributeName, DEFAULT);
+                  context.getResult().set(result);
+              } else if (subModel.has(attributeName) || nodeDescription.get(ATTRIBUTES).has(attributeName)) {
+                  // model had no defined value, but we treat its existence in the model or the metadata
+                  // as proof that it's a legit attribute name
+                  context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
+              } else {
+                  throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
+              }
+          }
+      }
+
+    private static ModelNode getNodeDescription(ImmutableManagementResourceRegistration registry, OperationContext context, ModelNode operation) throws OperationFailedException {
+          final DescriptionProvider descriptionProvider = registry.getModelDescription(PathAddress.EMPTY_ADDRESS);
+          final Locale locale = GlobalOperationHandlers.getLocale(context, operation);
+          return descriptionProvider.getModelDescription(locale);
+      }
+
 }

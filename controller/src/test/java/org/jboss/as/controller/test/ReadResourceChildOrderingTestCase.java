@@ -38,6 +38,7 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,7 +84,8 @@ public class ReadResourceChildOrderingTestCase extends AbstractControllerTestBas
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        registration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = registration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver()));
+        child.registerReadOnlyAttribute(TestUtils.createNillableAttribute("prop", ModelType.STRING), null);
 
         managementModel.getRootResource().getModel().set(model);
     }

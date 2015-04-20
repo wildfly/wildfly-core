@@ -93,7 +93,7 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.getResult().set(runtimeMapAttributeValue);
                     }
-                }, new AbstractWriteAttributeHandler() {
+                }, new AbstractWriteAttributeHandler(LIST_ATTRIBUTE) {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         runtimeListAttributeValue = operation.get(VALUE);

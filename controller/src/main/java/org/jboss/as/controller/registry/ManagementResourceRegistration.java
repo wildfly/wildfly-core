@@ -267,22 +267,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      */
     void registerReadWriteAttribute(AttributeDefinition definition, OperationStepHandler readHandler, OperationStepHandler writeHandler);
 
-
-    /**
-     * Records that the given attribute can be read from but not written to, and
-     * optionally provides an operation handler for the read.
-     *
-     * @param attributeName the name of the attribute. Cannot be {@code null}
-     * @param readHandler the handler for attribute reads. May be {@code null}
-     *                    in which case the default handling is used
-     * @param storage the storage type for this attribute
-     * @throws IllegalArgumentException if {@code attributeName} is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link ManagementResourceRegistration#registerReadOnlyAttribute(org.jboss.as.controller.AttributeDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerReadOnlyAttribute(String attributeName, OperationStepHandler readHandler, AttributeAccess.Storage storage);
-
     /**
      * Records that the given attribute can be read from but not written to, and
      * optionally provides an operation handler for the read. The attribute is assumed to be

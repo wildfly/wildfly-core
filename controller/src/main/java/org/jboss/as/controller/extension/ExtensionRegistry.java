@@ -136,7 +136,6 @@ public class ExtensionRegistry {
      * @param runningModeControl the process' running mode
      * @param auditLogger logger for auditing changes
      * @param authorizer hook for exposing access control information to the JMX subsystem
-     * @param hostControllerInfoAccessor the host controller
      *
      * @deprecated Remove once there has been a core release and we can update wildfly
      */
@@ -946,13 +945,6 @@ public class ExtensionRegistry {
         public void registerReadWriteAttribute(AttributeDefinition definition, OperationStepHandler readHandler, OperationStepHandler writeHandler) {
             deployments.registerReadWriteAttribute(definition, readHandler, writeHandler);
             subdeployments.registerReadWriteAttribute(definition, readHandler, writeHandler);
-        }
-
-        @SuppressWarnings("deprecation")
-        @Override
-        public void registerReadOnlyAttribute(String attributeName, OperationStepHandler readHandler, AttributeAccess.Storage storage) {
-            deployments.registerReadOnlyAttribute(attributeName, readHandler, storage);
-            subdeployments.registerReadOnlyAttribute(attributeName, readHandler, storage);
         }
 
         @Override

@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -89,13 +88,13 @@ public class ListOperations {
 
         @Override
         public void updateModel(OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException {
-            if (attributeDefinition.getType() != ModelType.LIST || !(attributeDefinition instanceof ListAttributeDefinition)) {
-                throw ControllerLogger.MGMT_OP_LOGGER.attributeIsWrongType(attributeDefinition.getName(), ModelType.LIST,attributeDefinition.getType());
+            if (attribute.getType() != ModelType.LIST && attributeDefinition.getType() != ModelType.LIST) {
+                throw ControllerLogger.MGMT_OP_LOGGER.attributeIsWrongType(attributeDefinition.getName(), ModelType.LIST, attributeDefinition.getType());
             }
-            updateModel(context, model, (ListAttributeDefinition) attributeDefinition, attribute);
+            updateModel(context, model, attribute);
         }
 
-        abstract void updateModel(final OperationContext context, ModelNode model, ListAttributeDefinition attributeDefinition, ModelNode listAttribute) throws OperationFailedException;
+        abstract void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException;
 
     }
 
@@ -111,7 +110,7 @@ public class ListOperations {
             super(VALUE, INDEX);
         }
 
-        void updateModel(final OperationContext context, ModelNode model, ListAttributeDefinition attributeDefinition, ModelNode listAttribute) throws OperationFailedException {
+        void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException {
             String value = VALUE.resolveModelAttribute(context, model).asString();
             ModelNode indexNode = INDEX.resolveModelAttribute(context, model);
 
@@ -138,7 +137,7 @@ public class ListOperations {
             super(VALUE, INDEX);
         }
 
-        void updateModel(final OperationContext context, ModelNode model, ListAttributeDefinition attributeDefinition, ModelNode listAttribute) throws OperationFailedException {
+        void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException {
             ModelNode value = VALUE.resolveModelAttribute(context, model);
             ModelNode index = INDEX.resolveModelAttribute(context, model);
             List<ModelNode> res = new ArrayList<>(listAttribute.asList());
@@ -160,10 +159,10 @@ public class ListOperations {
      */
     public static class ListGetHandler extends AbstractListHandler {
         private ListGetHandler() {
-            super(INDEX);
+            super(false, INDEX);
         }
 
-        void updateModel(final OperationContext context, ModelNode model, ListAttributeDefinition attributeDefinition, ModelNode listAttribute) throws OperationFailedException {
+        void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException {
             int index = INDEX.resolveModelAttribute(context, model).asInt();
             if (listAttribute.hasDefined(index)) {
                 context.getResult().set(listAttribute.get(index));
@@ -183,7 +182,7 @@ public class ListOperations {
             super();
         }
 
-        void updateModel(final OperationContext context, ModelNode model, ListAttributeDefinition attributeDefinition, ModelNode listAttribute) throws OperationFailedException {
+        void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException {
             listAttribute.setEmptyList();
         }
     }

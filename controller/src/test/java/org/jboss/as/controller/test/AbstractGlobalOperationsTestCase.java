@@ -170,6 +170,19 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), new NonResolvingResourceDescriptionResolver()));
         AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG, "number");
         profileASub2Reg.registerReadWriteAttribute(longAttr, null, new ModelOnlyWriteAttributeHandler(longAttr));
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("type", ModelType.TYPE), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("string1", ModelType.STRING), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("string2", ModelType.STRING), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("property", ModelType.STRING), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("object", ModelType.OBJECT), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("list", ModelType.LIST), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("int", ModelType.INT), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("expression", ModelType.STRING), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("double", ModelType.DOUBLE), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("bytes", ModelType.BYTES), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("bigdecimal", ModelType.BIG_DECIMAL), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("biginteger", ModelType.BIG_INTEGER), null);
+        profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("boolean", ModelType.BOOLEAN), null);
 
 
         ManagementResourceRegistration profileBSub3Reg = profileReg.registerSubModel(
