@@ -2406,6 +2406,21 @@ final class OperationContextImpl extends AbstractOperationContext {
             return getClass().getSimpleName() + "{" + getName() + "}";
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ProfileCapabilityContext that = (ProfileCapabilityContext) o;
+
+            return profileName.equals(that.profileName);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return profileName.hashCode();
+        }
     }
 
 }
