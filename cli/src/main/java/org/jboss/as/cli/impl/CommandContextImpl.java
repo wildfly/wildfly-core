@@ -186,7 +186,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     /** command registry */
     private final CommandRegistry cmdRegistry = new CommandRegistry();
     /** loads command handlers from the domain management model extensions */
-    private ExtensionsLoader extLoader = new ExtensionsLoader(cmdRegistry, this);
+    private ExtensionsLoader extLoader;
 
     private Console console;
 
@@ -486,6 +486,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerRef), "shutdown");
 
         registerExtraHandlers();
+
+        extLoader = new ExtensionsLoader(cmdRegistry, this);
     }
 
     private void registerExtraHandlers() throws CommandLineException {
@@ -955,7 +957,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             try {
                 extLoader.loadHandlers(currentAddress);
             } catch (CommandLineException e) {
-                error(Util.getMessagesFromThrowable(e));
+                printLine(Util.getMessagesFromThrowable(e));
             }
         }
     }
