@@ -712,7 +712,9 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 final String deploymentName = fileName.substring(0, fileName.length() - markerStatus.length());
 
                 if (FAILED_DEPLOY.equals(markerStatus)) {
-                    scanContext.reattemptFailedDeployments.add(deploymentName);
+                    if (!scanContext.firstScanDeployments.add(deploymentName)) {
+                        continue;
+                    }
                     ROOT_LOGGER.reattemptingFailedDeployment(deploymentName);
                 }
 
@@ -741,7 +743,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
                     if (!isAutoDeployDisabled(child)) {
                         long timestamp = getDeploymentTimestamp(child);
                         synchronizeScannerStatus(scanContext, directory, fileName, timestamp);
-                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.reattemptFailedDeployments.contains(fileName)) {
+                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.firstScanDeployments.contains(fileName)) {
                             continue;
                         }
 
@@ -751,6 +753,9 @@ class FileSystemDeploymentService implements DeploymentScanner {
                                 if (isZipComplete(child)) {
                                     final String path = relativeTo == null ? child.getAbsolutePath() : relativePath + fileName;
                                     final boolean archive = child.isFile();
+                                    if(firstScan){
+                                        scanContext.firstScanDeployments.add(fileName);
+                                    }
                                     addContentAddingTask(path, archive, fileName, child, timestamp, scanContext);
                                 } else {
                                     //we need to make sure that the file was not deleted while
@@ -774,7 +779,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
                 if (autoDeployXml) {
                     if (!isAutoDeployDisabled(child)) {
                         long timestamp = getDeploymentTimestamp(child);
-                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.reattemptFailedDeployments.contains(fileName)) {
+                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.firstScanDeployments.contains(fileName)) {
                             continue;
                         }
 
@@ -782,6 +787,9 @@ class FileSystemDeploymentService implements DeploymentScanner {
                         if (marker == null || marker.lastModified != timestamp) {
                             if (isXmlComplete(child)) {
                                 final String path = relativeTo == null ? child.getAbsolutePath() : relativePath + fileName;
+                                if(firstScan){
+                                    scanContext.firstScanDeployments.add(fileName);
+                                }
                                 addContentAddingTask(path, true, fileName, child, timestamp, scanContext);
                             } else {
                                 //we need to make sure that the file was not deleted while
@@ -1471,9 +1479,9 @@ class FileSystemDeploymentService implements DeploymentScanner {
          */
         private final HashSet<String> prematureExplodedDeletions = new HashSet<String>();
         /**
-         * Failed deployments to reattempt in next firstScan during boot
+         * Deployments to attempt in next firstScan during boot
          */
-        private final HashSet<String> reattemptFailedDeployments = new HashSet<String>();
+        private final HashSet<String> firstScanDeployments = new HashSet<String>();
         /**
          * Auto-deployable files detected by the scan where ZipScanner threw a NonScannableZipException
          */
