@@ -742,7 +742,7 @@ public interface ServerLogger extends BasicLogger {
      * @return a {@link StartException} for the error.
      */
     @Message(id = 113, value = "Failed to create temp file provider")
-    StartException failedCreatingTempProvider();
+    StartException failedCreatingTempProvider(@Cause Throwable cause);
 
     @Message(id = 114, value = "%s cannot be defined when either %s or %s is also defined")
     OperationFailedException illegalCombinationOfHttpManagementInterfaceConfigurations(String interfaceAttr,
