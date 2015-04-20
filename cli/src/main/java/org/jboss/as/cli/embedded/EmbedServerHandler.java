@@ -201,16 +201,6 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             server.start();
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);
-            ctx.bindClient(mcc);
-            // Stop the server on any disconnect event
-            ctx.addEventListener(new CliEventListener() {
-                @Override
-                public void cliEvent(CliEvent event, CommandContext ctx) {
-                    if (event == CliEvent.DISCONNECTED) {
-                        StopEmbeddedServerHandler.cleanup(serverReference);
-                    }
-                }
-            });
             if (bootTimeout == null || bootTimeout > 0) {
                 // Poll for server state. Alternative would be to get ControlledProcessStateService
                 // and do reflection stuff to read the state and register for change notifications
@@ -243,13 +233,27 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
                 if ("starting".equals(status)) {
                     assert bootTimeout != null; // we'll assume the loop didn't run for decades
-                    // Disconnecting will trigger the event listener above, to stop server and restore environment
-                    ctx.disconnectController();
+                    // Stop server and restore environment
+                    StopEmbeddedServerHandler.cleanup(serverReference);
                     throw new CommandLineException("Embedded server did not exit 'starting' status within " +
                             TimeUnit.MILLISECONDS.toSeconds(bootTimeout) + " seconds");
                 }
 
             }
+            // Expose the client to the rest of the CLI last so nothing can be done with
+            // it until we're ready
+            ctx.bindClient(mcc);
+
+            // Stop the server on any disconnect event
+            ctx.addEventListener(new CliEventListener() {
+                @Override
+                public void cliEvent(CliEvent event, CommandContext ctx) {
+                    if (event == CliEvent.DISCONNECTED) {
+                        StopEmbeddedServerHandler.cleanup(serverReference);
+                    }
+                }
+            });
+
             ok = true;
         } catch (ServerStartException e) {
             throw new CommandLineException("Cannot start embedded server", e);
