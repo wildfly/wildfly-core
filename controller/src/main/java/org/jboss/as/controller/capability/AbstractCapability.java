@@ -34,6 +34,7 @@ import java.util.Set;
 public abstract class AbstractCapability {
 
     private final String name;
+    private final boolean dynamic;
     private final Set<String> requirements;
     private final Set<String> optionalRequirements;
 
@@ -43,9 +44,11 @@ public abstract class AbstractCapability {
      * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
      * @param optionalRequirements names of other capabilities upon which this capability has an optional requirement. May be {@code null}
      */
-    protected AbstractCapability(final String name, final Set<String> requirements, final Set<String> optionalRequirements) {
+    protected AbstractCapability(final String name, final boolean dynamic,
+                                 final Set<String> requirements, final Set<String> optionalRequirements) {
         assert name != null;
         this.name = name;
+        this.dynamic = dynamic;
         if (requirements != null && !requirements.isEmpty()) {
             this.requirements = Collections.unmodifiableSet(new HashSet<String>(requirements));
         } else {
@@ -63,9 +66,10 @@ public abstract class AbstractCapability {
      * @param name the name of the capability. Cannot be {@code null}
      * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
      */
-    protected AbstractCapability(final String name, final String... requirements) {
+    protected AbstractCapability(final String name, final boolean dynamic, final String... requirements) {
         assert name != null;
         this.name = name;
+        this.dynamic = dynamic;
         if (requirements != null && requirements.length > 0) {
             Set<String> set = new HashSet<>(requirements.length);
             Collections.addAll(set, requirements);
@@ -77,9 +81,12 @@ public abstract class AbstractCapability {
     }
 
     /**
-     * Gets the name of the capability.
+     * Gets the basic name of the capability. If {@link #isDynamicallyNamed()} returns {@code true}
+     * this will be the basic name of the capability, not including any dynamic portions.
      *
      * @return the name. Will not be {@code null}
+     *
+     * @see #getDynamicName(String)
      */
     public String getName() {
         return name;
@@ -101,6 +108,30 @@ public abstract class AbstractCapability {
      */
     public Set<String> getOptionalRequirements() {
         return optionalRequirements;
+    }
+
+    /**
+     * Gets whether this capability is a dynamically named one, whose runtime variants
+     * will have a dynamic element added to the base name provided by {@link #getName()}.
+     *
+     * @return {@code true} if this capability is dynamically named
+     */
+    public boolean isDynamicallyNamed() {
+        return dynamic;
+    }
+
+    /**
+     * Gets the full name of a capbility, including a dynamic element
+     * @param dynamicNameElement the dynamic portion of the name. Cannot be {@code null}
+     * @return the full capability name
+     *
+     * @throws IllegalStateException if {@link #isDynamicallyNamed()} returns {@code false}
+     */
+    public String getDynamicName(String dynamicNameElement) {
+        if (!dynamic) {
+            throw new IllegalStateException();
+        }
+        return name + "." + dynamicNameElement;
     }
 
 //    /**

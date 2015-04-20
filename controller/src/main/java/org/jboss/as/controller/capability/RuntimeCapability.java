@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jboss.msc.service.ServiceName;
+
 /**
  * A capability exposed in a running WildFly process.
  *
@@ -35,8 +37,41 @@ import java.util.Set;
  */
 public class RuntimeCapability<T> extends AbstractCapability  {
 
+    /**
+     * Constructs a full capability name from a static base name and a dynamic element.
+     *
+     * @param baseName the base name. Cannot be {@code null}
+     * @param dynamicNameElement  the dynamic portion of the name. Cannot be {@code null}
+     * @return the full capability name. Will not return {@code null}
+     */
+    public static String buildDynamicCapabilityName(String baseName, String dynamicNameElement) {
+        assert baseName != null;
+        assert dynamicNameElement != null;
+        return baseName + "." + dynamicNameElement;
+    }
+
+    /**
+     * Creates a fully named capability from a {@link #isDynamicallyNamed() dynamically named} base
+     * capability. Capability providers should use this method to generate fully named capabilities in logic
+     * that handles dynamically named resources.
+     *
+     * @param base the base capability. Cannot be {@code null}, and {@link #isDynamicallyNamed()} must return {@code true}
+     * @param dynamicElement the dynamic portion of the full capability name. Cannot be {@code null} or empty
+     * @param <T> the type of the runtime API object exposed by the capability
+     * @return the fully name capability.
+     */
+    public static <T> RuntimeCapability<T> fromBaseCapability(RuntimeCapability<T> base, String dynamicElement) {
+        assert base != null;
+        assert base.isDynamicallyNamed();
+        assert dynamicElement != null;
+        assert dynamicElement.length() > 0;
+        return new RuntimeCapability<T>(base.getName(), dynamicElement, base.serviceNameProvider, base.runtimeAPI,
+                base.getRequirements(), base.getOptionalRequirements());
+    }
+
     private final ServiceNameProvider serviceNameProvider;
     private final T runtimeAPI;
+    private final String dynamicNameElement;
 
     /**
      * Creates a new capability
@@ -49,9 +84,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     @Deprecated
     public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements, Set<String> optionalRequirements) {
-        super(name, requirements, optionalRequirements);
+        super(name, false, requirements, optionalRequirements);
         this.runtimeAPI = runtimeAPI;
         this.serviceNameProvider = new ServiceNameProvider.DefaultProvider(name);
+        this.dynamicNameElement = null;
     }
 
     /**
@@ -78,9 +114,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     @Deprecated
     public RuntimeCapability(String name, T runtimeAPI, String... requirements) {
-        super(name, requirements);
+        super(name, false, requirements);
         this.runtimeAPI = runtimeAPI;
         this.serviceNameProvider = new ServiceNameProvider.DefaultProvider(name);
+        this.dynamicNameElement = null;
     }
 
     /**
@@ -89,19 +126,33 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * @param builder builder for the capability. Cannot be {@code null}
      */
     private RuntimeCapability(Builder<T> builder) {
-        super(builder.name, builder.requirements, builder.optionalRequirements);
+        super(builder.baseName, builder.dynamic, builder.requirements, builder.optionalRequirements);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceNameProvider = builder.getServiceNameProvider();
+        this.dynamicNameElement = null;
+    }
+
+    private RuntimeCapability(String baseName, String dynamicElement, ServiceNameProvider provider, T runtimeAPI,
+                              Set<String> requirements, Set<String> optionalRequirements) {
+        super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements, optionalRequirements);
+        this.runtimeAPI = runtimeAPI;
+        this.serviceNameProvider = provider;
+        this.dynamicNameElement = dynamicElement;
     }
 
     /**
-     * Gets the provider of service names that callers can use to determine
-     * the name of service provided by this capability.
+     * Gets the name of service provided by this capability whose value is of the given type.
      *
-     * @return the service name provider. Will not be {@code null}
+     * @param serviceType the expected type of the service's value. Cannot be {@code null}
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
      */
-    public ServiceNameProvider getServiceNameProvider() {
-        return serviceNameProvider;
+    public ServiceName getCapabilityServiceName(Class serviceType) {
+        return dynamicNameElement == null
+                ? serviceNameProvider.getCapabilityServiceName(serviceType)
+                : serviceNameProvider.getCapabilityServiceName(serviceType, dynamicNameElement);
     }
 
     /**
@@ -120,23 +171,34 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * @param <T> the type of the runtime API object exposed by the capability
      */
     public static class Builder<T> {
-        private final String name;
+        private final String baseName;
         private final T runtimeAPI;
+        private final boolean dynamic;
         private ServiceNameProvider serviceNameProvider;
         private Set<String> requirements;
         private Set<String> optionalRequirements;
 
         /**
-         * Create a builder for a capability with no custom runtime API.
+         * Create a builder for a non-dynamic capability with no custom runtime API.
          * @param name the name of the capability. Cannot be {@code null} or empty.
          * @return the builder
          */
         public static Builder<Void> of(String name) {
-            return new Builder<Void>(name, null);
+            return new Builder<Void>(name, false, null);
         }
 
         /**
-         * Create a builder for a capability that installs services with the given value type.
+         * Create a builder for a possibly dynamic capability with no custom runtime API.
+         * @param name the name of the capability. Cannot be {@code null} or empty.
+         * @param dynamic {@code true} if the capability is a base capability for dynamically named capabilities
+         * @return the builder
+         */
+        public static Builder<Void> of(String name, boolean dynamic) {
+            return new Builder<Void>(name, dynamic, null);
+        }
+
+        /**
+         * Create a builder for a non-dynamic capability that installs services with the given value type.
          * A {@link org.jboss.as.controller.capability.ServiceNameProvider.DefaultProvider default service name provider}
          * will be used by the capability.
          * @param name  the name of the capability. Cannot be {@code null} or empty.
@@ -144,25 +206,51 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          * @return the builder
          */
         public static Builder<Void> of(String name, Class<?> serviceType) {
-            return new Builder<Void>(name, null).setServiceType(serviceType);
+            return new Builder<Void>(name, false, null).setServiceType(serviceType);
         }
 
         /**
-         * Create a builder for a capability that provides the given custom runtime API.
+         * Create a builder for a possibly dynamic capability that installs services with the given value type.
+         * A {@link org.jboss.as.controller.capability.ServiceNameProvider.DefaultProvider default service name provider}
+         * will be used by the capability.
+         * @param name  the name of the capability. Cannot be {@code null} or empty.
+         * @param dynamic {@code true} if the capability is a base capability for dynamically named capabilities
+         * @param serviceType the value type of the service installed by the capability
+         * @return the builder
+         */
+        public static Builder<Void> of(String name, boolean dynamic, Class<?> serviceType) {
+            return new Builder<Void>(name, dynamic, null).setServiceType(serviceType);
+        }
+
+        /**
+         * Create a builder for a non-dynamic capability that provides the given custom runtime API.
          * @param name the name of the capability. Cannot be {@code null} or empty.
          * @param runtimeAPI the custom API implementation exposed by the capability
          * @param <T> the type of the runtime API object exposed by the capability
          * @return the builder
          */
         public static <T> Builder<T> of(String name, T runtimeAPI) {
-            return new Builder<T>(name, runtimeAPI);
+            return new Builder<T>(name, false, runtimeAPI);
         }
 
-        private Builder(String name, T runtimeAPI) {
-            assert name != null;
-            assert name.length() > 0;
-            this.name = name;
+        /**
+         * Create a builder for a possibly dynamic capability that provides the given custom runtime API.
+         * @param name the name of the capability. Cannot be {@code null} or empty.
+         * @param dynamic {@code true} if the capability is a base capability for dynamically named capabilities
+         * @param runtimeAPI the custom API implementation exposed by the capability
+         * @param <T> the type of the runtime API object exposed by the capability
+         * @return the builder
+         */
+        public static <T> Builder<T> of(String name, boolean dynamic, T runtimeAPI) {
+            return new Builder<T>(name, dynamic, runtimeAPI);
+        }
+
+        private Builder(String baseName, boolean dynamic, T runtimeAPI) {
+            assert baseName != null;
+            assert baseName.length() > 0;
+            this.baseName = baseName;
             this.runtimeAPI = runtimeAPI;
+            this.dynamic = dynamic;
         }
 
         /**
@@ -175,7 +263,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          * @throws IllegalStateException if a {@code ServiceNameProvider} or service type has previously been configured
          */
         public Builder<T> setServiceType(Class<?> type) {
-            return setServiceNameProvider(new ServiceNameProvider.DefaultProvider(name, type));
+            return setServiceNameProvider(new ServiceNameProvider.DefaultProvider(baseName, type));
         }
 
         /**
@@ -233,7 +321,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         }
 
         private ServiceNameProvider getServiceNameProvider() {
-            return serviceNameProvider == null ? new ServiceNameProvider.DefaultProvider(name) : serviceNameProvider;
+            return serviceNameProvider == null ? new ServiceNameProvider.DefaultProvider(baseName) : serviceNameProvider;
         }
     }
 }

@@ -1360,9 +1360,9 @@ class ModelControllerImpl implements ModelController {
         }
 
         @Override
-        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
+        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class serviceType) {
             RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
-            return reg.getCapability().getServiceNameProvider().getCapabilityServiceName(serviceType);
+            return reg.getCapability().getCapabilityServiceName(serviceType);
         }
 
         private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {

@@ -49,6 +49,20 @@ public interface ServiceNameProvider {
     ServiceName getCapabilityServiceName(Class<?> serviceType);
 
     /**
+     * Gets the name of a service provided by the capability, including a dynamic portion
+     * of the capability name that won't be known at compile time.
+     *
+     * @param serviceType the expected type of the service's value. Cannot be {@code null}
+     * @param dynamicPortion the dynamic portion of the name. Cannot be {@code null}
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
+     *
+     */
+    ServiceName getCapabilityServiceName(Class<?> serviceType, String dynamicPortion);
+
+    /**
      * Default {@link ServiceNameProvider} implementation that provides
      * a service name that is created by splitting the capability name
      * on any '.' character.
@@ -118,6 +132,14 @@ public interface ServiceNameProvider {
             }
 
             return result;
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(Class<?> serviceType, String dynamicPortion) {
+            if (dynamicPortion == null){
+                throw ControllerLogger.MGMT_OP_LOGGER.nullVar("dynamicPortion");
+            }
+            return getCapabilityServiceName(serviceType).append(dynamicPortion);
         }
     }
 }
