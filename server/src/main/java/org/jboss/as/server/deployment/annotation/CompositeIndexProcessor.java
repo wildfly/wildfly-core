@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment.annotation;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.SubDeploymentMarker;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ModuleIndexBuilder;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
@@ -152,7 +154,13 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         final Iterator<Resource> iterator = module.iterateResources(filter);
         while (iterator.hasNext()) {
             Resource resource = iterator.next();
-            indexer.index(resource.openStream());
+            if(resource.getName().endsWith(".class")) {
+                try (InputStream in = resource.openStream()) {
+                    indexer.index(in);
+                } catch (Exception e) {
+                    ServerLogger.DEPLOYMENT_LOGGER.cannotIndexClass(resource.getName(), resource.getURL().toExternalForm(), e);
+                }
+            }
         }
         return indexer.complete();
     }
