@@ -53,11 +53,14 @@ import org.jboss.msc.service.StartException;
  * The first state executed, responsible for searching for the relevant properties files.
  *
  * @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
+ * @author <a href="mailto:bgaisford@punagroup.com">Brandon Gaisford</a>
  */
 public class PropertyFileFinder implements State {
 
     private ConsoleWrapper theConsole;
     private final StateValues stateValues;
+    private boolean validFilePermissions = true;
+    private String filePermissionsProblemPath;
 
     public PropertyFileFinder(ConsoleWrapper theConsole, final StateValues stateValues) {
         this.theConsole = theConsole;
@@ -78,6 +81,9 @@ public class PropertyFileFinder implements State {
                 : APPLICATION_USERS_PROPERTIES : fileName;
         if (!findFiles(foundFiles, fileName)) {
             return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.propertiesFileNotFound(fileName), null, stateValues);
+        } else if(!validFilePermissions) {
+            return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.filePermissionsProblemsFound(
+                    filePermissionsProblemPath + File.separator + fileName), null, stateValues);
         }
         fileName = stateValues.getOptions().getGroupProperties();
 
@@ -93,6 +99,9 @@ public class PropertyFileFinder implements State {
             fileName = fileName == null ? APPLICATION_ROLES_PROPERTIES : fileName;
             if (!findFiles(foundGroupFiles, fileName) && groupFileMandatory) {
                 return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.propertiesFileNotFound(fileName), null, stateValues);
+            } else if(!validFilePermissions) {
+                return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.filePermissionsProblemsFound(
+                        filePermissionsProblemPath + File.separator + fileName), null, stateValues);
             }
             stateValues.setGroupFiles(foundGroupFiles);
             try {
@@ -181,7 +190,9 @@ public class PropertyFileFinder implements State {
 
     private boolean findFiles(final List<File> foundFiles, final String fileName) {
         File singleFile = new File(fileName);
-        if (singleFile.exists()) {
+
+        // Check for existence and writability (Windows file may have Read-Only bit set)
+        if (singleFile.exists() && singleFile.canWrite()) {
             foundFiles.add(singleFile);
             return true;
         }
@@ -226,8 +237,15 @@ public class PropertyFileFinder implements State {
     private File buildFilePath(final String serverConfigUserDirPropertyName, final String suppliedConfigDir,
             final String serverConfigDirPropertyName, final String serverBaseDirPropertyName, final String defaultBaseDir,
             final String fileName) {
-        return new File(buildDirPath(serverConfigUserDirPropertyName, suppliedConfigDir, serverConfigDirPropertyName,
-                serverBaseDirPropertyName, defaultBaseDir), fileName);
+
+        File dirPath = buildDirPath(serverConfigUserDirPropertyName, suppliedConfigDir, serverConfigDirPropertyName,
+                serverBaseDirPropertyName, defaultBaseDir);
+
+        File file = new File(dirPath, fileName);
+        validatePermissions(dirPath, file);
+
+        return file;
+
     }
 
     /**
@@ -260,6 +278,33 @@ public class PropertyFileFinder implements State {
         }
 
         return new File(new File(stateValues.getOptions().getJBossHome(), defaultBaseDir), "configuration");
+    }
+
+    /**
+     * This method performs a series of permissions checks given a directory and properties file path.
+     *
+     * 1 - Check whether the parent directory dirPath has proper execute and read permissions
+     * 2 - Check whether properties file path is readable and writable
+     *
+     * If either of the permissions checks fail, update validFilePermissions and filePermissionsProblemPath
+     * appropriately.
+     *
+     */
+    private void validatePermissions(final File dirPath, final File file) {
+
+        // Check execute and read permissions for parent dirPath
+        if( !dirPath.canExecute() || !dirPath.canRead()  ) {
+            validFilePermissions = false;
+            filePermissionsProblemPath = dirPath.getAbsolutePath();
+            return;
+        }
+
+        // Check read and write permissions for properties file
+        if( !file.canRead() || !file.canWrite() ) {
+            validFilePermissions = false;
+            filePermissionsProblemPath = dirPath.getAbsolutePath();
+        }
+
     }
 
 }

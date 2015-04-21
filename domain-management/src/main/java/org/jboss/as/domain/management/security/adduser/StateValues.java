@@ -33,10 +33,10 @@ import org.jboss.as.domain.management.security.adduser.AddUser.Interactiveness;
 import org.jboss.as.domain.management.security.adduser.AddUser.RealmMode;
 
 /**
-* Place holder object to pass between the state
-*
-* @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
-*/
+ * Place holder object to pass between the state
+ *
+ * @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
+ */
 public class StateValues {
     private final RuntimeOptions options;
     private AddUser.Interactiveness howInteractive = Interactiveness.INTERACTIVE;

@@ -22,7 +22,6 @@
 
 package org.jboss.as.domain.management.security.adduser;
 
-import org.jboss.as.domain.management.security.adduser.AddUser;
 import org.jboss.as.domain.management.security.adduser.AddUser.FileMode;
 import org.jboss.msc.service.StartException;
 import org.junit.Before;
@@ -76,9 +75,13 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
     public void overridePropertyfileLocationRead() throws IOException {
         File domainMgmtUserFile = createPropertyFile("mgmt-users.properties", "domain");
         File standaloneMgmtUserFile = createPropertyFile("mgmt-users.properties", "standalone");
+        File domainMgmtGroupFile = createPropertyFile("mgmt-groups.properties", "domain");
+        File standaloneMgmtGroupFile = createPropertyFile("mgmt-groups.properties", "standalone");
 
         System.setProperty("jboss.server.config.user.dir", standaloneMgmtUserFile.getParent());
         System.setProperty("jboss.domain.config.user.dir", domainMgmtUserFile.getParent());
+        System.setProperty("jboss.server.config.group.dir", standaloneMgmtGroupFile.getParent());
+        System.setProperty("jboss.domain.config.group.dir", domainMgmtGroupFile.getParent());
         State propertyFileFinder = new PropertyFileFinder(consoleMock, values);
         State nextState = propertyFileFinder.execute();
         assertTrue(nextState instanceof PromptRealmState);
@@ -100,6 +103,8 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
         values.setFileMode(FileMode.APPLICATION);
         System.setProperty("jboss.server.config.user.dir", domainUserFile.getParent());
         System.setProperty("jboss.domain.config.user.dir", standaloneUserFile.getParent());
+        System.setProperty("jboss.server.config.role.dir", domainRolesFile.getParent());
+        System.setProperty("jboss.domain.config.role.dir", standaloneRolesFile.getParent());
         State propertyFileFinder = new PropertyFileFinder(consoleMock, values);
         State nextState = propertyFileFinder.execute();
         assertTrue(nextState instanceof PromptRealmState);
