@@ -144,7 +144,14 @@ class DomainApiHandler implements HttpHandler {
                 dmr = convertPostRequest(exchange, encode);
                 cachable = false;
             }
-            operationParameterBuilder.pretty(dmr.hasDefined("json.pretty") && dmr.get("json.pretty").asBoolean());
+            //operationParameterBuilder.pretty(dmr.hasDefined("json.pretty") && dmr.get("json.pretty").asBoolean());
+            boolean pretty = false;
+            if (dmr.hasDefined(JSON_PRETTY)) {
+                String jsonPretty = dmr.get(JSON_PRETTY).asString();
+                pretty = jsonPretty.equals("true") || jsonPretty.equals("1");
+            }
+            operationParameterBuilder.pretty(pretty);
+
         } catch (Exception e) {
             ROOT_LOGGER.debugf("Unable to construct ModelNode '%s'", e.getMessage());
             Common.sendError(exchange, false, e.toString());
