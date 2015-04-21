@@ -875,21 +875,44 @@ public class ManagementXml {
                 case SERVER_IDENTITIES:
                     switch (expectedNs.getMajorVersion()) {
                         case 1:
+                            switch (expectedNs) {
+                                case DOMAIN_1_3:
+                                case DOMAIN_1_4:
+                                case DOMAIN_1_5:
+                                case DOMAIN_1_6:
+                                    parseServerIdentities_1_0(reader, expectedNs, realmAddress, list);
+                                    break;
+                                default:
+                                    parseServerIdentities_1_7_and_3_0(reader, expectedNs, realmAddress, list);
+                                    break;
+                            }
+                            break;
                         case 2:
                             parseServerIdentities_1_0(reader, expectedNs, realmAddress, list);
                             break;
                         default:
-                            parseServerIdentities_3_0(reader, expectedNs, realmAddress, list);
+                            parseServerIdentities_1_7_and_3_0(reader, expectedNs, realmAddress, list);
                     }
                     break;
                 case AUTHENTICATION: {
                     switch (expectedNs.getMajorVersion()) {
                         case 1:
+                            switch (expectedNs) {
+                                case DOMAIN_1_3:
+                                case DOMAIN_1_4:
+                                case DOMAIN_1_5:
+                                case DOMAIN_1_6:
+                                    parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
+                                    break;
+                                default:
+                                    parseAuthentication_1_7_and_3_0(reader, expectedNs, realmAddress, list);
+                            }
+                            break;
                         case 2:
                             parseAuthentication_1_3(reader, expectedNs, realmAddress, list);
                             break;
                         default:
-                            parseAuthentication_3_0(reader, expectedNs, realmAddress, list);
+                            parseAuthentication_1_7_and_3_0(reader, expectedNs, realmAddress, list);
                     }
                     break;
                 }
@@ -959,7 +982,7 @@ public class ManagementXml {
                                 parseSSL_1_0(reader, expectedNs, realmAddress, list);
                                 break;
                             default:
-                                parseSSL_2_2(reader, expectedNs, realmAddress, list);
+                                parseSSL_1_7_and_2_2(reader, expectedNs, realmAddress, list);
                                 break;
                         }
                     }
@@ -972,7 +995,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseServerIdentities_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list)
+    private static void parseServerIdentities_1_7_and_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list)
             throws XMLStreamException {
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -985,7 +1008,7 @@ public class ManagementXml {
                     break;
                 }
                 case SSL: {
-                    parseSSL_2_2(reader, expectedNs, realmAddress, list);
+                    parseSSL_1_7_and_2_2(reader, expectedNs, realmAddress, list);
                     break;
                 }
                 case KERBEROS: {
@@ -1068,7 +1091,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseSSL_2_2(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+    private static void parseSSL_1_7_and_2_2(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
 
         ModelNode ssl = new ModelNode();
         ssl.get(OP).set(ADD);
@@ -1532,7 +1555,7 @@ public class ManagementXml {
                                     parseLdapAuthentication_1_4(reader, expectedNs, realmAddress, list);
                                     break;
                                 default:
-                                    parseLdapAuthentication_2_0(reader, expectedNs, realmAddress, list);
+                                    parseLdapAuthentication_1_7_and_2_0(reader, expectedNs, realmAddress, list);
                                     break;
                             }
 
@@ -1604,7 +1627,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseAuthentication_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+    private static void parseAuthentication_1_7_and_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
             final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
 
         // Only one truststore can be defined.
@@ -1641,7 +1664,7 @@ public class ManagementXml {
                     if (usernamePasswordFound) {
                         throw unexpectedElement(reader);
                     }
-                    parseLdapAuthentication_2_0(reader, expectedNs, realmAddress, list);
+                    parseLdapAuthentication_1_7_and_2_0(reader, expectedNs, realmAddress, list);
                     usernamePasswordFound = true;
                     break;
                 }
@@ -1918,14 +1941,7 @@ public class ManagementXml {
         }
     }
 
-
-    private static void parseLdapAuthentication_1_4(final XMLExtendedStreamReader reader, final Namespace expectedNs,
-            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
-        ModelNode addr = realmAddress.clone().add(AUTHENTICATION, LDAP);
-        ModelNode ldapAuthentication = Util.getEmptyOperation(ADD, addr);
-
-        list.add(ldapAuthentication);
-
+    private static void parseLdapAuthenticationAttributes_1_4(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
         Set<Attribute> required = EnumSet.of(Attribute.CONNECTION, Attribute.BASE_DN);
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -1937,23 +1953,23 @@ public class ManagementXml {
                 required.remove(attribute);
                 switch (attribute) {
                     case CONNECTION: {
-                        LdapAuthenticationResourceDefinition.CONNECTION.parseAndSetParameter(value, ldapAuthentication, reader);
+                        LdapAuthenticationResourceDefinition.CONNECTION.parseAndSetParameter(value, operation, reader);
                         break;
                     }
                     case BASE_DN: {
-                        LdapAuthenticationResourceDefinition.BASE_DN.parseAndSetParameter(value, ldapAuthentication, reader);
+                        LdapAuthenticationResourceDefinition.BASE_DN.parseAndSetParameter(value, operation, reader);
                         break;
                     }
                     case RECURSIVE: {
-                        LdapAuthenticationResourceDefinition.RECURSIVE.parseAndSetParameter(value, ldapAuthentication, reader);
+                        LdapAuthenticationResourceDefinition.RECURSIVE.parseAndSetParameter(value, operation, reader);
                         break;
                     }
                     case USER_DN: {
-                        LdapAuthenticationResourceDefinition.USER_DN.parseAndSetParameter(value, ldapAuthentication, reader);
+                        LdapAuthenticationResourceDefinition.USER_DN.parseAndSetParameter(value, operation, reader);
                         break;
                     }
                     case ALLOW_EMPTY_PASSWORDS: {
-                        LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.parseAndSetParameter(value, ldapAuthentication, reader);
+                        LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.parseAndSetParameter(value, operation, reader);
                         break;
                     }
                     default: {
@@ -1966,6 +1982,63 @@ public class ManagementXml {
         if (required.size() > 0) {
             throw missingRequired(reader, required);
         }
+    }
+
+    private static void parseLdapAuthenticationAttributes_2_0(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
+        Set<Attribute> required = EnumSet.of(Attribute.CONNECTION, Attribute.BASE_DN);
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                required.remove(attribute);
+                switch (attribute) {
+                    case CONNECTION: {
+                        LdapAuthenticationResourceDefinition.CONNECTION.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                    case BASE_DN: {
+                        LdapAuthenticationResourceDefinition.BASE_DN.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                    case RECURSIVE: {
+                        LdapAuthenticationResourceDefinition.RECURSIVE.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                    case USER_DN: {
+                        LdapAuthenticationResourceDefinition.USER_DN.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                    case ALLOW_EMPTY_PASSWORDS: {
+                        LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                    case USERNAME_LOAD: {
+                        LdapAuthenticationResourceDefinition.USERNAME_LOAD.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+
+        if (required.size() > 0) {
+            throw missingRequired(reader, required);
+        }
+    }
+
+    private static void parseLdapAuthentication_1_4(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+            final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
+        ModelNode addr = realmAddress.clone().add(AUTHENTICATION, LDAP);
+        ModelNode ldapAuthentication = Util.getEmptyOperation(ADD, addr);
+
+        list.add(ldapAuthentication);
+
+        parseLdapAuthenticationAttributes_1_4(reader, ldapAuthentication);
 
         boolean choiceFound = false;
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -1998,56 +2071,22 @@ public class ManagementXml {
         }
     }
 
-    private static void parseLdapAuthentication_2_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+
+
+    private static void parseLdapAuthentication_1_7_and_2_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
             final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
         ModelNode addr = realmAddress.clone().add(AUTHENTICATION, LDAP);
         ModelNode ldapAuthentication = Util.getEmptyOperation(ADD, addr);
 
         list.add(ldapAuthentication);
 
-        Set<Attribute> required = EnumSet.of(Attribute.CONNECTION, Attribute.BASE_DN);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                required.remove(attribute);
-                switch (attribute) {
-                    case CONNECTION: {
-                        LdapAuthenticationResourceDefinition.CONNECTION.parseAndSetParameter(value, ldapAuthentication, reader);
-                        break;
-                    }
-                    case BASE_DN: {
-                        LdapAuthenticationResourceDefinition.BASE_DN.parseAndSetParameter(value, ldapAuthentication, reader);
-                        break;
-                    }
-                    case RECURSIVE: {
-                        LdapAuthenticationResourceDefinition.RECURSIVE.parseAndSetParameter(value, ldapAuthentication, reader);
-                        break;
-                    }
-                    case USER_DN: {
-                        LdapAuthenticationResourceDefinition.USER_DN.parseAndSetParameter(value, ldapAuthentication, reader);
-                        break;
-                    }
-                    case ALLOW_EMPTY_PASSWORDS: {
-                        LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.parseAndSetParameter(value, ldapAuthentication, reader);
-                        break;
-                    }
-                    case USERNAME_LOAD: {
-                        LdapAuthenticationResourceDefinition.USERNAME_LOAD.parseAndSetParameter(value, ldapAuthentication, reader);
-                        break;
-                    }
-                    default: {
-                        throw unexpectedAttribute(reader, i);
-                    }
-                }
-            }
-        }
-
-        if (required.size() > 0) {
-            throw missingRequired(reader, required);
+        switch (expectedNs.getMajorVersion()) {
+            case 1:
+                parseLdapAuthenticationAttributes_1_4(reader, ldapAuthentication);
+                break;
+            default:
+                parseLdapAuthenticationAttributes_2_0(reader, ldapAuthentication);
+                break;
         }
 
         ModelNode addLdapCache = null;
@@ -2515,8 +2554,7 @@ public class ManagementXml {
         }
     }
 
-
-
+    // 1.5 and on, 2.0 and on, 3.0 and on.
     private static void parseLdapAuthorization_1_5(final XMLExtendedStreamReader reader, final Namespace expectedNs,
             final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
         ModelNode addr = realmAddress.clone().add(AUTHORIZATION, LDAP);
@@ -2570,12 +2608,13 @@ public class ManagementXml {
                     break;
                 }
                 case GROUP_SEARCH: {
-                    switch (expectedNs.getMajorVersion()) {
-                        case 1: // 1.5 up to but not including 2.0
+                    switch (expectedNs) {
+                        case DOMAIN_1_5:
+                        case DOMAIN_1_6:
                             parseGroupSearch_1_5(reader, expectedNs, addr, list);
                             break;
-                        default: // 2.0 and onwards
-                            parseGroupSearch_2_0(reader, expectedNs, addr, list);
+                        default:
+                            parseGroupSearch_1_7_and_2_0(reader, expectedNs, addr, list);
                             break;
                     }
                     break;
@@ -2815,6 +2854,7 @@ public class ManagementXml {
         addOp.get(OP_ADDR).set(parentAddress.clone().add(ADVANCED_FILTER));
     }
 
+    // 1.5 and 1.6 ONLY
     private static void parseGroupSearch_1_5(final XMLExtendedStreamReader reader, final Namespace expectedNs,
             final ModelNode ldapAddress, final List<ModelNode> list) throws XMLStreamException {
         // Add operation to be defined by parsing a child element, however the attribute FORCE is common here.
@@ -2888,7 +2928,7 @@ public class ManagementXml {
         list.add(childAdd);
     }
 
-    private static void parseGroupSearch_2_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+    private static void parseGroupSearch_1_7_and_2_0(final XMLExtendedStreamReader reader, final Namespace expectedNs,
             final ModelNode ldapAddress, final List<ModelNode> list) throws XMLStreamException {
         // Add operation to be defined by parsing a child element, however the attribute FORCE is common here.
         final ModelNode childAdd = new ModelNode();
@@ -2944,18 +2984,18 @@ public class ManagementXml {
                     break;
                 case PRINCIPAL_TO_GROUP:
                     filterFound = true;
+                    // 1.7, 2.0, 2.1, 3.0
                     switch (expectedNs) {
                         case DOMAIN_2_0:
                             parsePrincipalToGroup_1_5(reader, expectedNs, address, childAdd);
                             break;
                         default:
                             switch (expectedNs.getMajorVersion()) {
-                                case 1:
                                 case 2:
                                     parsePrincipalToGroup_1_6_and_2_1(reader, expectedNs, address, childAdd);
                                     break;
-                                default:
-                                    parsePrincipalToGroup_3_0(reader, expectedNs, address, childAdd);
+                                default: // i.e. 1.7 onwards and 3.0 onwards
+                                    parsePrincipalToGroup_1_7_and_3_0(reader, expectedNs, address, childAdd);
                                     break;
                             }
                     }
@@ -3012,7 +3052,7 @@ public class ManagementXml {
         }
     }
 
-    private static void parseGroupToPrincipalAttributes_3_0(final XMLExtendedStreamReader reader, final ModelNode addOp) throws XMLStreamException {
+    private static void parseGroupToPrincipalAttributes_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode addOp) throws XMLStreamException {
         boolean baseDnFound = false;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -3052,15 +3092,19 @@ public class ManagementXml {
     private static void parseGroupToPrincipal(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode parentAddress,
             final ModelNode addOp) throws XMLStreamException {
 
-        // NOTE: Should be wrapped in a switch(expectedNS) if minor version differences need to be accounted for.
-        switch (expectedNs.getMajorVersion()) {
-            case 1:
-            case 2:
+        switch (expectedNs) {
+            case DOMAIN_1_5:
                 parseGroupToPrincipalAttributes_1_5_and_2_0(reader, addOp);
                 break;
             default:
-                parseGroupToPrincipalAttributes_3_0(reader, addOp);
-                break;
+                switch (expectedNs.getMajorVersion()) {
+                    case 2:
+                        parseGroupToPrincipalAttributes_1_5_and_2_0(reader, addOp);
+                        break;
+                    default: // i.e. 1.6 onwards and 3.0 onwards.
+                        parseGroupToPrincipalAttributes_1_6_and_3_0(reader, addOp);
+                        break;
+                }
         }
 
         boolean elementFound = false;
@@ -3173,7 +3217,7 @@ public class ManagementXml {
         addOp.get(OP_ADDR).set(parentAddress.clone().add(PRINCIPAL_TO_GROUP));
     }
 
-    private static void parsePrincipalToGroup_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode parentAddress,
+    private static void parsePrincipalToGroup_1_7_and_3_0(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode parentAddress,
             final ModelNode addOp) throws XMLStreamException {
 
         final int count = reader.getAttributeCount();

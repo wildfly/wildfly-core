@@ -497,13 +497,21 @@ public class AuditLogXml {
                 case UDP:
                 case TCP:
                 case TLS: {
-                    switch (expectedNs.getMajorVersion()) {
-                        case 1:
-                        case 2:
+                    switch (expectedNs) {
+                        case DOMAIN_1_5:
+                        case DOMAIN_1_6:
                             parseSyslogAuditLogHandlerProtocol_1_5(reader, add.get(OP_ADDR), expectedNs, list, element);
                             break;
                         default:
-                            parseSyslogAuditLogHandlerProtocol3_0(reader, add.get(OP_ADDR), expectedNs, list, element);
+                            switch (expectedNs.getMajorVersion()) {
+                                case 2:
+                                    parseSyslogAuditLogHandlerProtocol_1_5(reader, add.get(OP_ADDR), expectedNs, list, element);
+                                    break;
+                                default:
+                                    parseSyslogAuditLogHandlerProtocol_1_7_and_3_0(reader, add.get(OP_ADDR), expectedNs, list,
+                                            element);
+                                    break;
+                            }
                     }
                     break;
                 }
@@ -577,7 +585,7 @@ public class AuditLogXml {
         }
     }
 
-    private void parseSyslogAuditLogHandlerProtocol3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list, final Element protocolElement) throws XMLStreamException {
+    private void parseSyslogAuditLogHandlerProtocol_1_7_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list, final Element protocolElement) throws XMLStreamException {
         PathAddress protocolAddress = PathAddress.pathAddress(address.clone().add(PROTOCOL, protocolElement.getLocalName()));
         ModelNode add = Util.createAddOperation(protocolAddress);
         list.add(add);
