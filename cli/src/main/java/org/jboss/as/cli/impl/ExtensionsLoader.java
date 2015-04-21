@@ -35,6 +35,7 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -60,7 +61,7 @@ class ExtensionsLoader {
     /** error messages collected during loading the commands */
     private List<String> errors = Collections.emptyList();
 
-    ExtensionsLoader(CommandRegistry registry, CommandContext ctx) {
+    ExtensionsLoader(CommandRegistry registry, CommandContext ctx) throws CommandLineException {
         assert registry != null : "command registry is null";
         assert ctx != null : "command context is null";
 
@@ -72,6 +73,8 @@ class ExtensionsLoader {
 
         this.ctx = ctx;
         this.registry = registry;
+
+        registry.registerHandler(new ExtensionCommandsHandler(), false, ExtensionCommandsHandler.NAME);
     }
 
     void resetHandlers() {
@@ -97,6 +100,7 @@ class ExtensionsLoader {
         assert client != null : "client is null";
 
         if(moduleLoader == null) {
+            ctx.printLine("Warning! The CLI is running in a non-modular environment and cannot load commands from management extensions.");
             return;
         }
 
@@ -117,16 +121,16 @@ class ExtensionsLoader {
         try {
             response = client.execute(req);
         } catch (IOException e) {
-            throw new CommandLineException("Failed to read extensions", e);
+            throw new CommandLineException("Extensions loader failed to read extensions", e);
         }
 
         if(!Util.isSuccess(response)) {
-            throw new CommandLineException("Failed to read extensions: " + Util.getFailureDescription(response));
+            throw new CommandLineException("Extensions loader failed to read extensions: " + Util.getFailureDescription(response));
         }
 
         final ModelNode result = response.get(Util.RESULT);
         if(!result.isDefined()) {
-            throw new CommandLineException("Failed to read extensions: " + result.asString());
+            throw new CommandLineException("Extensions loader failed to read extensions: " + result.asString());
         }
 
         for(Property ext : result.asPropertyList()) {
@@ -151,19 +155,14 @@ class ExtensionsLoader {
                         }
                     }
                 } catch (ModuleLoadException e) {
-                    addError("Failed to load module " + module.asString() + " for extension " + ext.getName() + ": " + e.getLocalizedMessage());
+                    addError("Module " + module.asString() + " from extension " + ext.getName() +
+                            " available on the server couldn't be loaded locally: " + e.getLocalizedMessage());
                 }
             }
         }
 
         if(!errors.isEmpty()) {
-            final StringBuilder buf = new StringBuilder();
-            buf.append("Errors caught while loading extensions:\n");
-            for(int i = 0; i < errors.size(); ++i) {
-                final String error = errors.get(i);
-                buf.append(i+1).append(") ").append(error).append(Util.LINE_SEPARATOR);
-            }
-            throw new CommandLineException(buf.toString());
+            ctx.printLine("Warning! There were errors trying to load extensions. For more details, please, execute 'extension-commands --errors'");
         }
     }
 
@@ -183,6 +182,30 @@ class ExtensionsLoader {
                 errors = new ArrayList<String>(errors);
             default:
                 errors.add(msg);
+        }
+    }
+
+    class ExtensionCommandsHandler extends CommandHandlerWithHelp {
+
+        private static final String NAME = "extension-commands";
+
+        private final ArgumentWithoutValue errorsArg = new ArgumentWithoutValue(this, "--errors");
+
+        ExtensionCommandsHandler() {
+            super(NAME);
+        }
+
+        @Override
+        protected void doHandle(CommandContext ctx) throws CommandLineException {
+            if (errorsArg.isPresent(ctx.getParsedCommandLine()) && !errors.isEmpty()) {
+                final StringBuilder buf = new StringBuilder();
+                buf.append("The following problems were encountered while looking for additional commands in extensions:\n");
+                for (int i = 0; i < errors.size(); ++i) {
+                    final String error = errors.get(i);
+                    buf.append(i + 1).append(") ").append(error).append(Util.LINE_SEPARATOR);
+                }
+                ctx.printLine(buf.toString());
+            }
         }
     }
 }
