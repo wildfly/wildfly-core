@@ -24,26 +24,27 @@ package org.jboss.as.server;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
-import org.jboss.as.process.ExitCodes;
+import org.jboss.as.selfcontained.ContentProvider;
+import org.jboss.as.selfcontained.ContentProviderServiceActivator;
 import org.jboss.as.selfcontained.SelfContainedConfigurationPersister;
-import org.jboss.as.selfcontained.SelfContainedContentServiceActivator;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceActivator;
+import org.jboss.msc.service.ServiceContainer;
 import org.jboss.stdio.LoggingOutputStream;
 import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
-import java.io.File;
-import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -56,8 +57,6 @@ import java.util.concurrent.ExecutorService;
  * @author Bob McWhirter
  */
 public final class SelfContainedContainer {
-    // Capture System.out and System.err before they are redirected by STDIO
-    private static final PrintStream STDERR = System.err;
 
     public SelfContainedContainer() {
     }
@@ -67,15 +66,12 @@ public final class SelfContainedContainer {
      *
      * @param containerDefinition The container definition.
      */
-    public void start(final List<ModelNode> containerDefinition, File content) {
+    public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
         Thread.currentThread().setContextClassLoader(Module.getCallerModule().getClassLoader());
-        try {
-            if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
-                // Make sure our original stdio is properly captured.
-                try {
-                    Class.forName(org.jboss.logmanager.handlers.ConsoleHandler.class.getName(), true, org.jboss.logmanager.handlers.ConsoleHandler.class.getClassLoader());
-                } catch (Throwable ignored) {
-                }
+        if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
+            try {
+                Class.forName(org.jboss.logmanager.handlers.ConsoleHandler.class.getName(), true, org.jboss.logmanager.handlers.ConsoleHandler.class.getClassLoader());
+
                 // Install JBoss Stdio to avoid any nasty crosstalk, after command line arguments are processed.
                 StdioContext.install();
                 final StdioContext context = StdioContext.create(
@@ -84,41 +80,27 @@ public final class SelfContainedContainer {
                         new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stderr"), org.jboss.logmanager.Level.ERROR)
                 );
                 StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
-            }
 
-            Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
-            ServerEnvironment serverEnvironment = determineEnvironment( WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED);
-            if (serverEnvironment == null) {
-                abort(null);
-            } else {
-                final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
-                final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
-                configuration.setConfigurationPersisterFactory(
-                        new Bootstrap.ConfigurationPersisterFactory() {
-                            @Override
-                            public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                                SelfContainedConfigurationPersister persister = new SelfContainedConfigurationPersister( containerDefinition );
-                                configuration.getExtensionRegistry().setWriterRegistry(persister);
-                                return persister;
-                            }
-                        });
-                configuration.setModuleLoader(Module.getBootModuleLoader());
-
-                bootstrap.bootstrap(configuration, Collections.<ServiceActivator>singletonList(new SelfContainedContentServiceActivator(content))).get();
+            } catch (Throwable ignored) {
             }
-        } catch (Throwable t) {
-            abort(t);
         }
-    }
 
-    private static void abort(Throwable t) {
-        try {
-            if (t != null) {
-                t.printStackTrace(STDERR);
-            }
-        } finally {
-            SystemExiter.exit(ExitCodes.FAILED);
-        }
+        Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
+        ServerEnvironment serverEnvironment = determineEnvironment(WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED);
+        final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
+        final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+        configuration.setConfigurationPersisterFactory(
+                new Bootstrap.ConfigurationPersisterFactory() {
+                    @Override
+                    public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
+                        SelfContainedConfigurationPersister persister = new SelfContainedConfigurationPersister(containerDefinition);
+                        configuration.getExtensionRegistry().setWriterRegistry(persister);
+                        return persister;
+                    }
+                });
+        configuration.setModuleLoader(Module.getBootModuleLoader());
+
+        return bootstrap.startup(configuration, Collections.<ServiceActivator>singletonList(new ContentProviderServiceActivator(contentProvider))).get();
     }
 
     public static ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType) {

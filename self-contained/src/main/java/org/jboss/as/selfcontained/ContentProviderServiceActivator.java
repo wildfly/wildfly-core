@@ -25,36 +25,26 @@ package org.jboss.as.selfcontained;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
 import org.jboss.msc.service.ServiceRegistryException;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
+import org.jboss.msc.service.ValueService;
+import org.jboss.msc.value.ImmediateValue;
 
-import java.io.File;
-import java.io.IOException;
-
-/** Activator for the SelfContainedContentService.
- *
- * @see org.jboss.as.selfcontained.SelfContainedContentService
+/**
+ * Activator for the self-contained ContentProvider.
  *
  * @author Bob McWhirter
  */
-public class SelfContainedContentServiceActivator implements ServiceActivator {
+public class ContentProviderServiceActivator implements ServiceActivator {
 
-    private final File content;
+    private final ContentProvider contentProvider;
 
-    public SelfContainedContentServiceActivator(File content) {
-        this.content = content;
+    public ContentProviderServiceActivator(ContentProvider contentProvider) {
+        this.contentProvider = contentProvider;
     }
 
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
-        VirtualFile mountPoint = VFS.getRootVirtualFile().getChild( "ROOT.war" );
-        try {
-            VFS.mountReal( content, mountPoint );
-            SelfContainedContentService service = new SelfContainedContentService( mountPoint );
-            serviceActivatorContext.getServiceTarget().addService( SelfContainedContentService.NAME, service ).install();
-        } catch (IOException e) {
-            throw new ServiceRegistryException(e);
-        }
-
+        serviceActivatorContext.getServiceTarget()
+                .addService( ContentProvider.NAME, new ValueService<ContentProvider>( new ImmediateValue<ContentProvider>( this.contentProvider ) ) )
+                .install();
     }
 }
