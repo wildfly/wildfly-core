@@ -103,8 +103,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue moduleArg;
     private final ArgumentWithValue slot;
     private final ArgumentWithValue resourceDelimiter;
-
-    private File modulesDir;
+    private final ArgumentWithValue modulePath;
 
     public ASModuleHandler(CommandContext ctx) {
         super("module", false);
@@ -116,7 +115,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 String path = buffer.replace('.', File.separatorChar);
                 String modulesPath;
                 try {
-                    modulesPath = getModulesDir().getAbsolutePath() + File.separatorChar;
+                    modulesPath = getModulesDir(ctx.getParsedCommandLine()).getAbsolutePath() + File.separatorChar;
                 } catch (CommandLineException e) {
                     return -1;
                 }
@@ -145,6 +144,14 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             }
         };
         name.addRequiredPreceding(action);
+
+        modulePath = new FileSystemPathArgument(this, pathCompleter, "--module-path"){
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                return action.isPresent(ctx.getParsedCommandLine()) && super.canAppearNext(ctx);
+            }
+
+        };
 
         mainClass = new AddModuleArgument("--main-class");
 
@@ -212,7 +219,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
 
                 final File moduleDir;
                 try {
-                    moduleDir = new File(getModulesDir(), moduleName.replace('.', File.separatorChar));
+                    moduleDir = new File(getModulesDir(ctx.getParsedCommandLine()), moduleName.replace('.', File.separatorChar));
                 } catch (CommandLineException e) {
                     return java.util.Collections.emptyList();
                 }
@@ -278,7 +285,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             resourceFiles[i] = f;
         }
 
-        final File moduleDir = getModulePath(getModulesDir(), moduleName, slot.getValue(parsedCmd));
+        final File moduleDir = getModulePath(getModulesDir(parsedCmd), moduleName, slot.getValue(parsedCmd));
         if(moduleDir.exists()) {
             throw new CommandLineException("Module " + moduleName + " already exists at " + moduleDir.getAbsolutePath());
         }
@@ -367,7 +374,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private void removeModule(ParsedCommandLine parsedCmd) throws CommandLineException {
 
         final String moduleName = name.getValue(parsedCmd, true);
-        final File modulesDir = getModulesDir();
+        final File modulesDir = getModulesDir(parsedCmd);
         File modulePath = getModulePath(modulesDir, moduleName, slot.getValue(parsedCmd));
         if(!modulePath.exists()) {
             throw new CommandLineException("Failed to locate module " + moduleName + " at " + modulePath.getAbsolutePath());
@@ -406,20 +413,31 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         return new File(modulesDir, moduleName.replace('.', File.separatorChar) + File.separatorChar + (slot == null ? "main" : slot));
     }
 
-    protected File getModulesDir() throws CommandLineException {
-        if(modulesDir != null) {
-            return modulesDir;
+    protected File getModulesDir(ParsedCommandLine parsedCmd) throws CommandLineException {
+        File modulesDir = null;
+        String modulesDirStr = null;
+
+        // First see if the user provided a module location
+        if (modulePath.isPresent(parsedCmd)) {
+            modulesDirStr = modulePath.getValue(parsedCmd, false);
+            if(modulesDirStr != null) {
+                modulesDir = new File(modulesDirStr);
+            }
         }
-        // First check the environment variable
-        String modulesDirStr = WildFlySecurityManager.getEnvPropertyPrivileged(JBOSS_HOME, null);
-        if(modulesDirStr == null) {
-            // Not found, check the system property, this may be set from a client using the CLI API to execute commands
-            modulesDirStr = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOME_PROPERTY, null);
+
+        if(modulesDirStr == null){
+            // Second check the environment variable
+            modulesDirStr = WildFlySecurityManager.getEnvPropertyPrivileged(JBOSS_HOME, null);
+            // Still not found, check the system property, this may be set from a client using the CLI API to execute commands
+            if (modulesDirStr == null) {
+                modulesDirStr = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOME_PROPERTY, null);
+            }
+            if (modulesDirStr == null) {
+                throw new CommandLineException(JBOSS_HOME + " environment variable is not set.");
+            }
+            modulesDir = new File(modulesDirStr, "modules");
         }
-        if (modulesDirStr == null) {
-            throw new CommandLineException(JBOSS_HOME + " environment variable is not set.");
-        }
-        modulesDir = new File(modulesDirStr, "modules");
+
         if(!modulesDir.exists()) {
             throw new CommandLineException("Failed to locate the modules dir on the filesystem: " + modulesDir.getAbsolutePath());
         }
