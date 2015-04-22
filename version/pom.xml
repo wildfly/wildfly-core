@@ -29,12 +29,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.Beta5</version>
+        <version>1.0.0.CR1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-version</artifactId>
-    <version>1.0.0.Beta5</version>
+    <version>1.0.0.CR1-SNAPSHOT</version>
 
     <name>WildFly: Version</name>
 
