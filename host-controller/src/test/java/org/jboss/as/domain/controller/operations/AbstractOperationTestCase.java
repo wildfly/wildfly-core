@@ -641,6 +641,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+            return false;
+        }
+
+        @Override
         public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
             // no-op;
         }

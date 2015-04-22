@@ -350,6 +350,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+        throw readOnlyContext();
+    }
+
+    @Override
     public void requireOptionalCapability(String required, String dependent, String attribute) {
         throw readOnlyContext();
     }

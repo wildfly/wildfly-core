@@ -1262,7 +1262,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
-        RuntimeRequirementRegistration requirementRegistration = createRequirementRegistration(required, dependent, step, attribute);
+        RuntimeRequirementRegistration requirementRegistration = createRequirementRegistration(required, dependent, false, step, attribute);
         managementModel.getCapabilityRegistry().registerAdditionalCapabilityRequirement(requirementRegistration);
         recordRequirement(required, requirementRegistration.getDependentContext(), step);
     }
@@ -1285,15 +1285,20 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public boolean requestOptionalCapability(String required, String dependent, String attribute) {
-        return requestOptionalCapability(required, dependent, activeStep, attribute);
+        return requestOptionalCapability(required, dependent, false, activeStep, attribute);
     }
 
-    boolean requestOptionalCapability(String required, String dependent, Step step, String attribute) {
+    @Override
+    public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+        return requestOptionalCapability(required, dependent, true, activeStep, attribute);
+    }
+
+    boolean requestOptionalCapability(String required, String dependent, boolean runtimeOnly, Step step, String attribute) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
         ensureLocalCapabilityRegistry();
         RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
-        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, step, attribute);
+        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
         CapabilityContext context = registration.getDependentContext();
         if (registry.hasCapability(required, context)) {
             registry.registerAdditionalCapabilityRequirement(registration);
@@ -1309,7 +1314,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     void requireOptionalCapability(String required, String dependent, Step step, String attribute) throws OperationFailedException {
-        if (!requestOptionalCapability(required, dependent, step, attribute)) {
+        if (!requestOptionalCapability(required, dependent, false, step, attribute)) {
             String msg = ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing();
             if (getProcessType().isServer()) {
                 msg += "\n" + ControllerLogger.ROOT_LOGGER.formattedCapabilityName(required);
@@ -1329,7 +1334,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
-        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, step, null);
+        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, false, step, null);
         managementModel.getCapabilityRegistry().removeCapabilityRequirement(registration);
         removeRequirement(required, registration.getDependentContext(), step);
     }
@@ -1663,10 +1668,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private RuntimeRequirementRegistration createRequirementRegistration(String required, String dependent, Step step, String attribute) {
+    private RuntimeRequirementRegistration createRequirementRegistration(String required, String dependent,
+                                                                         boolean runtimeOnly, Step step, String attribute) {
         CapabilityContext context = createCapabilityContext(step);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
-        return new RuntimeRequirementRegistration(required, dependent, context, rp);
+        return new RuntimeRequirementRegistration(required, dependent, context, rp, runtimeOnly);
     }
 
     private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability capability, Step step, String attribute) {

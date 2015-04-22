@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.capability;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -66,7 +67,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert dynamicElement != null;
         assert dynamicElement.length() > 0;
         return new RuntimeCapability<T>(base.getName(), dynamicElement, base.serviceNameProvider, base.runtimeAPI,
-                base.getRequirements(), base.getOptionalRequirements());
+                base.getRequirements(), base.getOptionalRequirements(),
+                base.getRuntimeOnlyRequirements(), base.getDynamicRequirements(), base.getDynamicOptionalRequirements());
     }
 
     private final ServiceNameProvider serviceNameProvider;
@@ -84,7 +86,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     @Deprecated
     public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements, Set<String> optionalRequirements) {
-        super(name, false, requirements, optionalRequirements);
+        super(name, false, requirements, optionalRequirements, null, null, null);
         this.runtimeAPI = runtimeAPI;
         this.serviceNameProvider = new ServiceNameProvider.DefaultProvider(name);
         this.dynamicNameElement = null;
@@ -114,27 +116,32 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     @Deprecated
     public RuntimeCapability(String name, T runtimeAPI, String... requirements) {
-        super(name, false, requirements);
+        super(name, false, new HashSet<>(Arrays.asList(requirements)), null, null, null, null);
         this.runtimeAPI = runtimeAPI;
         this.serviceNameProvider = new ServiceNameProvider.DefaultProvider(name);
         this.dynamicNameElement = null;
     }
 
     /**
-     * Creates a new capability
-     *
-     * @param builder builder for the capability. Cannot be {@code null}
+     * Constructor for use by the builder.
      */
     private RuntimeCapability(Builder<T> builder) {
-        super(builder.baseName, builder.dynamic, builder.requirements, builder.optionalRequirements);
+        super(builder.baseName, builder.dynamic, builder.requirements, builder.optionalRequirements,
+                builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceNameProvider = builder.getServiceNameProvider();
         this.dynamicNameElement = null;
     }
 
+    /**
+     * Constructor for use by {@link #fromBaseCapability(RuntimeCapability, String)}
+     */
     private RuntimeCapability(String baseName, String dynamicElement, ServiceNameProvider provider, T runtimeAPI,
-                              Set<String> requirements, Set<String> optionalRequirements) {
-        super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements, optionalRequirements);
+                              Set<String> requirements, Set<String> optionalRequirements,
+                              Set<String> runtimeOnlyRequirements, Set<String> dynamicRequirements,
+                              Set<String> dynamicOptionalRequirements) {
+        super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements,
+                optionalRequirements, runtimeOnlyRequirements, dynamicRequirements, dynamicOptionalRequirements);
         this.runtimeAPI = runtimeAPI;
         this.serviceNameProvider = provider;
         this.dynamicNameElement = dynamicElement;
@@ -177,6 +184,9 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         private ServiceNameProvider serviceNameProvider;
         private Set<String> requirements;
         private Set<String> optionalRequirements;
+        private Set<String> runtimeOnlyRequirements;
+        private Set<String> dynamicRequirements;
+        private Set<String> dynamicOptionalRequirements;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -308,6 +318,55 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 this.optionalRequirements = new HashSet<>(requirements.length);
             }
             Collections.addAll(this.optionalRequirements, requirements);
+            return this;
+        }
+
+        /**
+         * Adds the names of other capabilities that this capability optionally uses,
+         * but only if they are present in the runtime. The persistent configuration of
+         * the capability being built will never mandate the presence of these capabilities.
+         *
+         * @param requirements the capability names
+         * @return the builder
+         */
+        public Builder<T> addRuntimeOnlyRequirements(String... requirements) {
+            assert requirements != null;
+            if (this.runtimeOnlyRequirements == null) {
+                this.runtimeOnlyRequirements = new HashSet<>(requirements.length);
+            }
+            Collections.addAll(this.runtimeOnlyRequirements, requirements);
+            return this;
+        }
+
+        /**
+         * Adds the the names of other dynamically named capabilities upon a concrete instance of which this
+         * capability will have a hard requirement once the full name is known
+         *
+         * @param requirements the capability names
+         * @return the builder
+         */
+        public Builder<T> addDynamicRequirements(String... requirements) {
+            assert requirements != null;
+            if (this.dynamicRequirements == null) {
+                this.dynamicRequirements = new HashSet<>(requirements.length);
+            }
+            Collections.addAll(this.dynamicRequirements, requirements);
+            return this;
+        }
+
+        /**
+         * Adds the the names of other dynamically named capabilities upon a concrete instance of which this
+         * capability will have an optional requirement once the full name is known
+         *
+         * @param requirements the capability names
+         * @return the builder
+         */
+        public Builder<T> addDynamicOptionalRequirements(String... requirements) {
+            assert requirements != null;
+            if (this.dynamicOptionalRequirements == null) {
+                this.dynamicOptionalRequirements = new HashSet<>(requirements.length);
+            }
+            Collections.addAll(this.dynamicOptionalRequirements, requirements);
             return this;
         }
 

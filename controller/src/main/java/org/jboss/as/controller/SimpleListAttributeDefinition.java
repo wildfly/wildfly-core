@@ -72,6 +72,23 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
         return result;
     }
 
+    @Override
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (attributeValue.isDefined()) {
+            for (ModelNode element : attributeValue.asList()) {
+                valueType.addCapabilityRequirements(context, element);
+            }
+        }
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (attributeValue.isDefined()) {
+            for (ModelNode element : attributeValue.asList()) {
+                valueType.removeCapabilityRequirements(context, element);
+            }
+        }
+    }
 
     @Override
     protected void addValueTypeDescription(final ModelNode node, final ResourceBundle bundle) {

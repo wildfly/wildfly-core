@@ -786,14 +786,11 @@ public interface OperationContext extends ExpressionResolver {
     void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute);
 
     /**
-     * Requests that one of a capability's optional requirements hereafter be treated as required, until the process is
-     * stopped or reloaded. This request will only be granted if the required capability is already present.
+     * <strong>Deprecated</strong>; use {@link #hasOptionalCapability(String, String, String)}
      * <p>
-     * This method should be used in preference to {@link #registerAdditionalCapabilityRequirement(String, String, String)}
-     * when the caller's own configuration doesn't impose a hard requirement for the {@code required} capability, but,
-     * if it is present it will be used. Once the caller declares an intent to use the capability by invoking this
-     * method and getting a {@code true} response, thereafter the system is aware that {@code dependent} is actually
-     * using {@code required} so thereafter it treats that as a hard requirement.
+     * Differs from {@link #hasOptionalCapability(String, String, String)} in that once the caller declares an intent
+     * to use the {@code required}capability by invoking this method and getting a {@code true} response, thereafter
+     * the system treats that as a hard requirement. However, there is no valid use case for that behavior.
      * </p>
      *
      * @param required the name of the required capability. Cannot be {@code null}
@@ -805,8 +802,36 @@ public interface OperationContext extends ExpressionResolver {
      *
      * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
      *                                          complete set of capabilities is not known until the end of the model stage.
+     *
+     * @deprecated Will be moved in WildFly 10; use {@link #hasOptionalCapability(String, String, String)}
      */
+    @Deprecated
     boolean requestOptionalCapability(String required, String dependent, String attribute);
+
+    /**
+     * Checks whether one of a capability's optional and runtime-only requirements is present. Only for use in cases
+     * where the {@code dependent} capability's persistent configuration does not <strong>mandate</strong> the presence
+     * of the {@code requested} capability, but the capability will use it at runtime if it is present.
+     * <p>
+     * This method should be used in preference to {@link #registerAdditionalCapabilityRequirement(String, String, String)}
+     * when the caller's own configuration doesn't impose a hard requirement for the {@code requested} capability, but,
+     * if it is present it will be used. Once the caller declares an intent to use the capability by invoking this
+     * method and getting a {@code true} response, thereafter the system is aware that {@code dependent} is actually
+     * using {@code requested}, but <strong>will not</strong> prevent configuration changes that make {@code requested}
+     * unavailable.
+     * </p>
+     *
+     * @param requested the name of the requested capability. Cannot be {@code null}
+     * @param dependent the name of the capability that requires the other capability. Cannot be {@code null}
+     * @param attribute the name of the attribute that triggered this requirement, or {@code null} if no single
+     *                  attribute was responsible
+     * @return {@code true} if the requested capability is present; {@code false} if not. If {@code true}, hereafter
+     *         {@code dependent}'s requirement for {@code requested} will not be treated as optional.
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     */
+    boolean hasOptionalCapability(String requested, String dependent, String attribute);
 
     /**
      * Requests that one of a capability's optional requirements hereafter be treated as required, until the process is

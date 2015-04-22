@@ -209,7 +209,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * Any changes made by this method will automatically be discarded if the operation rolls back.
      * </p>
      * <p>
-     * This default implementation registers any capabilities provided to the constructor.
+     * This default implementation registers any capabilities provided to the constructor and asks any
+     * {@code AttributeDefinition} provided to the constructor to
+     * {@link AttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode) add capability requirements}.
      * </p>
      *
      * @param context the context. Will not be {@code null}
@@ -224,6 +226,12 @@ public class AbstractAddStepHandler implements OperationStepHandler {
                 context.registerCapability(RuntimeCapability.fromBaseCapability(capability, context.getCurrentAddressValue()), null);
             } else {
                 context.registerCapability(capability, null);
+            }
+        }
+        ModelNode model = resource.getModel();
+        for (AttributeDefinition ad : attributes) {
+            if (model.hasDefined(ad.getName())) {
+                ad.addCapabilityRequirements(context, model.get(ad.getName()));
             }
         }
     }

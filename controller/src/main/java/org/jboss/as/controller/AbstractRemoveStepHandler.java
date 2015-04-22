@@ -33,6 +33,8 @@ import java.util.Set;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -121,6 +123,17 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
                 context.deregisterCapability(capability.getDynamicName(context.getCurrentAddressValue()));
             } else {
                 context.deregisterCapability(capability.getName());
+            }
+        }
+        ModelNode model = resource.getModel();
+        ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
+        for (String attr : mrr.getAttributeNames(PathAddress.EMPTY_ADDRESS)) {
+            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
+            if (aa != null) {
+                AttributeDefinition ad = aa.getAttributeDefinition();
+                if (ad != null && model.hasDefined(ad.getName())) {
+                    ad.removeCapabilityRequirements(context, model.get(ad.getName()));
+                }
             }
         }
     }

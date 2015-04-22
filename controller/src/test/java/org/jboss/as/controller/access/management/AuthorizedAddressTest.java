@@ -506,6 +506,11 @@ public class AuthorizedAddressTest {
         }
 
         @Override
+        public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
         public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }

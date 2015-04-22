@@ -87,6 +87,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
             syntheticOp.get(attributeName).set(newValue);
             attributeDefinition.validateAndSet(syntheticOp, submodel);
             newValue = submodel.get(attributeName);
+            recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, currentValue);
         } else {
             defaultValue = null;
             submodel.get(attributeName).set(newValue);
@@ -199,6 +200,21 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
     @Deprecated
     protected void validateResolvedValue(final String attributeName, final ModelNode resolvedValue) throws OperationFailedException {
         // TODO remove
+    }
+
+    /**
+     * Record any new requirements for other {@link org.jboss.as.controller.capability.RuntimeCapability capabilities}
+     * that now exist as a result of this operation, or remove any existing requirements that no longer exist.
+     *
+     * @param context the context. Will not be {@code null}
+     * @param attributeDefinition the definition of the attribute being modified. Will not be {@code null}
+     * @param newValue the new value of the attribute
+     * @param oldValue the previous value of the attribute
+     */
+    protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition,
+                                                     ModelNode newValue, ModelNode oldValue) {
+        attributeDefinition.removeCapabilityRequirements(context, oldValue);
+        attributeDefinition.addCapabilityRequirements(context, newValue);
     }
 
     /**
