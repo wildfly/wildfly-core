@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -49,13 +50,13 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
             "-Xms64m",
             "-Xmx512m",
             "-XX:MaxPermSize=256m",
-            "-Djava.net.preferIPv4Stack=true"
+            "-Djava.net.preferIPv4Stack=true",
+            "-Djboss.modules.system.pkgs=org.jboss.byteman"
     };
 
     private final Path wildflyHome;
     private boolean useSecMgr;
     private final List<String> modulesDirs;
-    private final List<String> systemPackages;
     private Path logDir;
     private Path configDir;
     private final Arguments serverArgs;
@@ -65,8 +66,6 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         this.wildflyHome = wildflyHome;
         useSecMgr = false;
         modulesDirs = new ArrayList<>();
-        systemPackages = new ArrayList<>();
-        systemPackages.add("org.jboss.byteman");
         serverArgs = new Arguments();
         addDefaultModuleDir = true;
     }
@@ -199,11 +198,9 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         }
         if (!modulesDirs.isEmpty()) {
             if (addDefaultModuleDir) result.append(File.pathSeparator);
-            int index = 0;
-            final int len = modulesDirs.size();
-            for (String dir : modulesDirs) {
-                result.append(dir);
-                if (++index < len) {
+            for (Iterator<String>iterator = modulesDirs.iterator(); iterator.hasNext();) {
+                result.append(iterator.next());
+                if (iterator.hasNext()) {
                     result.append(File.pathSeparator);
                 }
             }
@@ -307,138 +304,6 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     public T setConfigurationDirectory(final Path path) {
         configDir = validateAndNormalizeDir(path, true);
         return getThis();
-    }
-
-    /**
-     * Adds a system package name to pass to the module loader ignoring {@code null} values.
-     *
-     * @param packageName the package name
-     *
-     * @return the builder
-     */
-    public T addSystemPackage(final String packageName) {
-        if (packageName != null) {
-            systemPackages.add(packageName);
-        }
-        return getThis();
-    }
-
-    /**
-     * Adds a system package name to pass to the module loader ignoring {@code null} values.
-     *
-     * @param pkg the package
-     *
-     * @return the builder
-     */
-    public T addSystemPackage(final Package pkg) {
-        if (pkg != null) {
-            addSystemPackage(pkg.getName());
-        }
-        return getThis();
-    }
-
-    /**
-     * Adds the package names to the system packages for the module loader ignoring {@code null} values.
-     *
-     * @param packageNames the package names to add
-     *
-     * @return the builder
-     */
-    public T addSystemPackages(final String... packageNames) {
-        if (packageNames != null) {
-            for (String name : packageNames) {
-                addSystemPackage(name);
-            }
-        }
-        return getThis();
-    }
-
-    /**
-     * Adds the package names to the system packages for the module loader ignoring {@code null} values.
-     *
-     * @param packages the packages to add
-     *
-     * @return the builder
-     */
-    public T addSystemPackages(final Package... packages) {
-        if (packages != null) {
-            for (Package pkg : packages) {
-                addSystemPackage(pkg);
-            }
-        }
-        return getThis();
-    }
-
-    /**
-     * Adds the package names to the system packages for the module loader ignoring {@code null} values.
-     *
-     * @param packageNames the package names to add
-     *
-     * @return the builder
-     */
-    public T addSystemPackages(final Iterable<String> packageNames) {
-        if (packageNames != null) {
-            for (String name : packageNames) {
-                addSystemPackage(name);
-            }
-        }
-        return getThis();
-    }
-
-    /**
-     * Sets the system packages for the module loader ignoring {@code null} values.
-     * <p/>
-     * If the array is {@code null} any previous packages added are cleared and no new packages are added.
-     *
-     * @param packageNames the package names to add
-     *
-     * @return the builder
-     */
-    public T setSystemPackages(final String... packageNames) {
-        systemPackages.clear();
-        if (packageNames != null) {
-            for (String name : packageNames) {
-                addSystemPackage(name);
-            }
-        }
-        return getThis();
-    }
-
-    /**
-     * Sets system packages for the module loader ignoring {@code null} values.
-     * <p/>
-     * If the array is {@code null} any previous packages added are cleared and no new packages are added.
-     *
-     * @param packages the packages to add
-     *
-     * @return the builder
-     */
-    public T setSystemPackages(final Package... packages) {
-        systemPackages.clear();
-        if (packages != null) {
-            for (Package pkg : packages) {
-                addSystemPackage(pkg);
-            }
-        }
-        return getThis();
-    }
-
-    /**
-     * Returns the command line argument for the system module packages.
-     *
-     * @return the command line argument
-     */
-    public String getSystemPackages() {
-        int index = 0;
-        final int len = systemPackages.size();
-        final StringBuilder result = new StringBuilder("-Djboss.modules.system.pkgs=");
-        for (String name : systemPackages) {
-            result.append(name);
-            if (++index < len) {
-                result.append(',');
-            }
-        }
-        return result.toString();
     }
 
     /**

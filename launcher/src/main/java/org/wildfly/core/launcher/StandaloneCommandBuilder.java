@@ -102,22 +102,28 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     public StandaloneCommandBuilder addJavaOption(final String jvmArg) {
         if (jvmArg != null && !jvmArg.trim().isEmpty()) {
             final Argument argument = Arguments.parse(jvmArg);
-            if (argument.getKey().equals(SERVER_BASE_DIR)) {
-                if (argument.getValue() != null) {
-                    setBaseDirectory(argument.getValue());
-                }
-            } else if (argument.getKey().equals(SERVER_CONFIG_DIR)) {
-                if (argument.getValue() != null) {
-                    setConfigurationDirectory(argument.getValue());
-                }
-            } else if (argument.getKey().equals(SERVER_LOG_DIR)) {
-                if (argument.getValue() != null) {
-                    setLogDirectory(argument.getValue());
-                }
-            } else if (argument.getKey().equals(SECURITY_MANAGER_PROP)) {
-                setUseSecurityManager(true);
-            } else {
-                javaOpts.add(argument);
+            switch (argument.getKey()) {
+                case SERVER_BASE_DIR:
+                    if (argument.getValue() != null) {
+                        setBaseDirectory(argument.getValue());
+                    }
+                    break;
+                case SERVER_CONFIG_DIR:
+                    if (argument.getValue() != null) {
+                        setConfigurationDirectory(argument.getValue());
+                    }
+                    break;
+                case SERVER_LOG_DIR:
+                    if (argument.getValue() != null) {
+                        setLogDirectory(argument.getValue());
+                    }
+                    break;
+                case SECURITY_MANAGER_PROP:
+                    setUseSecurityManager(true);
+                    break;
+                default:
+                    javaOpts.add(argument);
+                    break;
             }
         }
         return this;
@@ -410,7 +416,6 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         final List<String> cmd = new ArrayList<>();
         cmd.add("-D[Standalone]");
         cmd.addAll(getJavaOptions());
-        cmd.add(getSystemPackages());
         if (modulesLocklessArg != null) {
             cmd.add(modulesLocklessArg);
         }
@@ -446,7 +451,6 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
             sb.setLength(0);
         }
 
-        // TODO (jrp) FreeBSD may require -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider
         cmd.addAll(getServerArguments());
         return cmd;
     }
