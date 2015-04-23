@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -45,14 +46,24 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String HOME_DIR = "jboss.home.dir";
     static final String SECURITY_MANAGER_ARG = "-secmgr";
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
-    // TODO (jrp) should java.awt.headless=true be added?
-    static final String[] DEFAULT_VM_ARGUMENTS = {
-            "-Xms64m",
-            "-Xmx512m",
-            "-XX:MaxPermSize=256m",
-            "-Djava.net.preferIPv4Stack=true",
-            "-Djboss.modules.system.pkgs=org.jboss.byteman"
-    };
+    static final String[] DEFAULT_VM_ARGUMENTS;
+
+    static {
+        final String jvmVersion = System.getProperty("java.specification.version");
+        final Collection<String> javaOpts = new ArrayList<>();
+        // Default JVM parameters for all versions
+        javaOpts.add("-Xms64m");
+        javaOpts.add("-Xmx512m");
+        javaOpts.add("-Djava.net.preferIPv4Stack=true");
+        javaOpts.add("-Djava.awt.headless=true");
+        javaOpts.add("-Djboss.modules.system.pkgs=org.jboss.byteman");
+
+        // Versions below 8 should add a MaxPermSize
+        if (VersionComparator.compareVersion(jvmVersion, "1.8") < 0) {
+            javaOpts.add("-XX:MaxPermSize=256m");
+        }
+        DEFAULT_VM_ARGUMENTS = javaOpts.toArray(new String[javaOpts.size()]);
+    }
 
     private final Path wildflyHome;
     private boolean useSecMgr;
