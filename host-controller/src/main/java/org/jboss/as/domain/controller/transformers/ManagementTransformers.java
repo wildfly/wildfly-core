@@ -58,7 +58,7 @@ class ManagementTransformers {
         // Discard the domain level core-service=management resource and its children unless RBAC is enabled
         // Configuring rbac details is OK (i.e. discarable), so long as the provider is not enabled
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(CoreManagementResourceDefinition.PATH_ELEMENT, currentVersion);
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_6);
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_7);
         builder.setCustomResourceTransformer(new ResourceTransformer() {
             @Override
             public void transformResource(ResourceTransformationContext context, PathAddress address, Resource resource) throws OperationFailedException {

@@ -44,6 +44,7 @@ public enum ModelTestControllerVersion {
 
     EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"), //EAP 6.2 is the earliest version we support for transformers
     EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.4.0"),
+    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0")
     ;
 
     private final String mavenGavVersion;
