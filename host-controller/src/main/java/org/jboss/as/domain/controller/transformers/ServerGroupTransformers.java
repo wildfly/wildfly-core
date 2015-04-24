@@ -23,17 +23,12 @@
 package org.jboss.as.domain.controller.transformers;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.transform.TransformationContext;
-import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * Transformer registration for the server-group resources.
@@ -47,31 +42,12 @@ class ServerGroupTransformers {
 
         //////////////////////////////////
         //The EAP/AS 7.x chains
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_6)
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_7)
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .end();
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
-        builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_6, DomainTransformers.VERSION_1_4);
-
-        builder = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_4, DomainTransformers.VERSION_1_3)
-                .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT, ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET)
-                .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
-                    @Override
-                    protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue,
-                            TransformationContext context) {
-                        //7.1.x had a strict type for the management-susbsystem-endpoint attribute, convert that here if it comes in as a string
-                        if (attributeValue.isDefined() && attributeValue.getType() == ModelType.STRING) {
-                            attributeValue.set(attributeValue.asBoolean());
-                        }
-                    }
-                }, ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT)
-                .end();
-        DeploymentTransformers.registerTransformers1_3_AndBelow(builder);
-        SystemPropertyTransformers.registerTransformers1_3_AndBelow(builder);
-        JvmTransformers.registerTransformers1_3_AndBelow(builder);
 
         //////////////////////////////////
         //The WildFly chains
