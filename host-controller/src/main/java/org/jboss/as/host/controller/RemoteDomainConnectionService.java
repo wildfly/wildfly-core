@@ -43,6 +43,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -59,6 +60,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
@@ -83,6 +85,7 @@ import org.jboss.as.domain.controller.operations.FetchMissingConfigurationHandle
 import org.jboss.as.domain.controller.operations.SyncDomainModelOperationHandler;
 import org.jboss.as.domain.controller.operations.SyncServerGroupOperationHandler;
 import org.jboss.as.domain.controller.operations.coordination.DomainControllerLockIdUtils;
+import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.RemoteDomainControllerConnectionConfiguration;
@@ -170,6 +173,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private final HostControllerEnvironment hostControllerEnvironment;
     private final RunningMode runningMode;
     private final File tempDir;
+    private final Map<String, ProxyController> serverProxies;
 
     /** Used to invoke ModelController ops on the master */
     private volatile ModelControllerClient masterProxy;
@@ -194,7 +198,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                           final DomainController domainController,
                                           final HostControllerEnvironment hostControllerEnvironment,
                                           final ExecutorService executor,
-                                          final RunningMode runningMode){
+                                          final RunningMode runningMode,
+                                          final Map<String, ProxyController> serverProxies){
         this.controller = controller;
         this.extensionRegistry = extensionRegistry;
         this.productConfig = productConfig;
@@ -208,6 +213,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         this.executor = executor;
         this.runningMode = runningMode;
         this.tempDir = hostControllerEnvironment.getDomainTempDir();
+        this.serverProxies = serverProxies;
     }
 
     public static Future<MasterDomainControllerClient> install(final ServiceTarget serviceTarget, final ModelController controller, final ExtensionRegistry extensionRegistry,
@@ -218,10 +224,11 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                                                final DomainController domainController,
                                                                final HostControllerEnvironment hostControllerEnvironment,
                                                                final ExecutorService executor,
-                                                               final RunningMode currentRunningMode) {
+                                                               final RunningMode currentRunningMode,
+                                                               final Map<String, ProxyController> serverProxies) {
         RemoteDomainConnectionService service = new RemoteDomainConnectionService(controller, extensionRegistry, localHostControllerInfo,
                 productConfig, remoteFileRepository, ignoredDomainResourceRegistry, operationExecutor, domainController,
-                hostControllerEnvironment, executor, currentRunningMode);
+                hostControllerEnvironment, executor, currentRunningMode, serverProxies);
         ServiceBuilder<MasterDomainControllerClient> builder = serviceTarget.addService(MasterDomainControllerClient.SERVICE_NAME, service)
                 .addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpointInjector)
                 .addDependency(ServerInventoryService.SERVICE_NAME, ServerInventory.class, service.serverInventoryInjector)
@@ -420,7 +427,11 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 syncOperation.get(DOMAIN_MODEL).set(result.get(RESULT));
 
                 // Execute the handler to synchronize the model
-                final SyncServerGroupOperationHandler handler = new SyncServerGroupOperationHandler(localHostInfo.getLocalHostName(), original, ignoredDomainResourceRegistry, extensionRegistry, operationExecutor);
+                SyncModelParameters parameters =
+                        new SyncModelParameters(domainController, ignoredDomainResourceRegistry,
+                                hostControllerEnvironment, extensionRegistry, operationExecutor, false, serverProxies);
+                final SyncServerGroupOperationHandler handler =
+                        new SyncServerGroupOperationHandler(localHostInfo.getLocalHostName(), original, parameters);
                 context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
                 // Complete the remote tx on the master depending on the outcome
                 // This cannot be executed as another step
@@ -540,7 +551,11 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
      */
     private boolean applyRemoteDomainModel(final List<ModelNode> bootOperations, final HostInfo hostInfo) {
         try {
-            final SyncDomainModelOperationHandler handler = new SyncDomainModelOperationHandler(hostInfo, extensionRegistry, ignoredDomainResourceRegistry, operationExecutor);
+            SyncModelParameters parameters =
+                    new SyncModelParameters(domainController, ignoredDomainResourceRegistry,
+                            hostControllerEnvironment, extensionRegistry, operationExecutor, true, serverProxies);
+            final SyncDomainModelOperationHandler handler =
+                    new SyncDomainModelOperationHandler(hostInfo, parameters);
             final ModelNode operation = APPLY_DOMAIN_MODEL.clone();
             operation.get(DOMAIN_MODEL).set(bootOperations);
 

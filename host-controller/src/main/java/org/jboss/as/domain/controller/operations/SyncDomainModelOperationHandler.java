@@ -28,8 +28,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
+import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.host.controller.mgmt.HostInfo;
 
 /**
@@ -46,15 +45,17 @@ public class SyncDomainModelOperationHandler extends SyncModelHandlerBase {
     private final HostInfo hostInfo;
     private final ExtensionRegistry extensionRegistry;
 
-    public SyncDomainModelOperationHandler(HostInfo hostInfo, ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
-        super(extensionRegistry, ignoredResourceRegistry, operationExecutor);
+    public SyncDomainModelOperationHandler(HostInfo hostInfo,
+                                           SyncModelParameters parameters) {
+        super(parameters);
         this.hostInfo = hostInfo;
-        this.extensionRegistry = extensionRegistry;
+        this.extensionRegistry = parameters.getExtensionRegistry();
     }
 
     @Override
     Transformers.ResourceIgnoredTransformationRegistry createRegistry(OperationContext context, Resource remoteModel, Set<String> remoteExtensions) {
-        final ReadMasterDomainModelUtil.RequiredConfigurationHolder rc = ReadMasterDomainModelUtil.populateHostResolutionContext(hostInfo, remoteModel, extensionRegistry);
+        final ReadMasterDomainModelUtil.RequiredConfigurationHolder rc =
+                ReadMasterDomainModelUtil.populateHostResolutionContext(hostInfo, remoteModel, extensionRegistry);
         return ReadMasterDomainModelUtil.createHostIgnoredRegistry(hostInfo, rc, true);
     }
 

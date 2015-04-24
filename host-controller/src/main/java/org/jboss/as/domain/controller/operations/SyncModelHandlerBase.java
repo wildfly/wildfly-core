@@ -35,10 +35,9 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.dmr.ModelNode;
 
@@ -56,14 +55,10 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         OPERATION.get(OP_ADDR).setEmptyList();
     }
 
-    private final ExtensionRegistry extensionRegistry;
-    private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
-    private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
+    private final SyncModelParameters parameters;
 
-    protected SyncModelHandlerBase(ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
-        this.extensionRegistry = extensionRegistry;
-        this.ignoredResourceRegistry = ignoredResourceRegistry;
-        this.operationExecutor = operationExecutor;
+    protected SyncModelHandlerBase(SyncModelParameters parameters) {
+        this.parameters = parameters;
     }
 
     abstract Transformers.ResourceIgnoredTransformationRegistry createRegistry(OperationContext context, Resource remoteModel, Set<String> remoteExtensions);
@@ -78,6 +73,7 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
 
         // Describe the local model
         final ReadDomainModelHandler readModelHandler = new ReadDomainModelHandler(ignoredTransformationRegistry, TRANSFORMERS);
+        final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
         final ModelNode localModel = operationExecutor.executeReadOnly(OPERATION, readModelHandler, ModelController.OperationTransactionControl.COMMIT);
         if (localModel.hasDefined(FAILURE_DESCRIPTION)) {
             context.getFailureDescription().set(localModel.get(FAILURE_DESCRIPTION));
@@ -104,8 +100,10 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
                 final ModelNode result = localOperations.get(RESULT);
-                final SyncModelOperationHandler handler = new SyncModelOperationHandler(result.asList(), remote, remoteExtensions, ignoredResourceRegistry, operationExecutor, extensionRegistry);
+                final SyncModelOperationHandler handler =
+                        new SyncModelOperationHandler(result.asList(), remote, remoteExtensions, parameters);
                 context.addStep(operation, handler, OperationContext.Stage.MODEL, true);
             }
         }, OperationContext.Stage.MODEL, true);

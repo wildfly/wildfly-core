@@ -765,7 +765,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 this,
                 environment,
                 getExecutorServiceInjector().getValue(),
-                currentRunningMode);
+                currentRunningMode,
+                serverProxies);
         MasterDomainControllerClient masterDomainControllerClient = getFuture(clientFuture);
         //Registers us with the master and gets down the master copy of the domain model to our DC
         //TODO make sure that the RDCS checks env.isUseCachedDC, and if true falls through to that

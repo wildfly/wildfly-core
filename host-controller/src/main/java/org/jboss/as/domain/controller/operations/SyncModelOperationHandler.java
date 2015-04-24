@@ -54,13 +54,12 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
-import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.dmr.ModelNode;
 
@@ -80,24 +79,17 @@ class SyncModelOperationHandler implements OperationStepHandler {
     private final Resource remoteModel;
     private final List<ModelNode> localOperations;
     private final Set<String> missingExtensions;
-    private final ExtensionRegistry extensionRegistry;
-    private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
-    private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
+    private final SyncModelParameters parameters;
 
     SyncModelOperationHandler(List<ModelNode> localOperations, Resource remoteModel, Set<String> missingExtensions,
-                              IgnoredDomainResourceRegistry ignoredResourceRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor,
-                              ExtensionRegistry extensionRegistry) {
+                              SyncModelParameters parameters) {
         this.localOperations = localOperations;
         this.remoteModel = remoteModel;
         this.missingExtensions = missingExtensions;
-        this.ignoredResourceRegistry = ignoredResourceRegistry;
-        this.operationExecutor = operationExecutor;
-        this.extensionRegistry = extensionRegistry;
+        this.parameters = parameters;
     }
 
-    @Override
-    public void execute(OperationContext context, ModelNode original) throws OperationFailedException {
-
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         // In case we want to automatically ignore extensions we would need to add them before describing the operations
         // This is also required for resolving the corresponding OperationStepHandler here
 //        final ManagementResourceRegistration registration = context.getResourceRegistrationForUpdate();
@@ -120,6 +112,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
         // Describe the operations based on the remote model
         final ReadMasterDomainOperationsHandler readOperationsHandler = new ReadMasterDomainOperationsHandler();
+        final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
         final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteModel, readOperationsHandler, ModelController.OperationTransactionControl.COMMIT);
         if (result.hasDefined(FAILURE_DESCRIPTION)) {
             context.getFailureDescription().set(result.get(FAILURE_DESCRIPTION));
@@ -146,11 +139,11 @@ class SyncModelOperationHandler implements OperationStepHandler {
         ops.addAll(operations);
         Collections.reverse(ops);
 
-        for (final ModelNode operation : ops) {
+        for (final ModelNode op : ops) {
 
-            final String operationName = operation.require(OP).asString();
-            final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            if (ignoredResourceRegistry.isResourceExcluded(address)) {
+            final String operationName = op.require(OP).asString();
+            final PathAddress address = PathAddress.pathAddress(op.require(OP_ADDR));
+            if (parameters.getIgnoredResourceRegistry().isResourceExcluded(address)) {
                 continue;
             }
             // Ignore all extension:add operations, since we've added them before
@@ -161,7 +154,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
             final ImmutableManagementResourceRegistration rootRegistration = context.getRootResourceRegistration();
             final OperationStepHandler stepHandler = rootRegistration.getOperationHandler(address, operationName);
             if(stepHandler != null) {
-                context.addStep(operation, stepHandler, OperationContext.Stage.MODEL, true);
+                context.addStep(op, stepHandler, OperationContext.Stage.MODEL, true);
             } else {
                 final ImmutableManagementResourceRegistration child = rootRegistration.getSubModel(address);
                 if (child == null) {
@@ -170,6 +163,16 @@ class SyncModelOperationHandler implements OperationStepHandler {
                     context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
                 }
             }
+
+        }
+
+        if (operations.size() > 0 && parameters.isFullModelTransfer() && !context.isBooting()) {
+            //Only do this is if it is a full model transfer as a result of a _reconnect_ to the DC.
+            //When fetching missing configuration while connected, the servers will get put into reload-required as a
+            // result of changing the server-group, profile or the socket-binding-group
+            context.addStep(new SyncServerStateOperationHandler(parameters, operations),
+                    OperationContext.Stage.MODEL,
+                    true);
         }
     }
 

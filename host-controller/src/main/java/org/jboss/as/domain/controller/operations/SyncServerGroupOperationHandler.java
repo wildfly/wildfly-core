@@ -29,11 +29,9 @@ import java.util.Set;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
+import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 
 /**
  * This operation handler is only getting executed on a slave host-controller, synchronizing the model for a
@@ -48,16 +46,14 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
 
     private final String localHostName;
     private final Resource originalModel;
-    private final ExtensionRegistry extensionRegistry;
-    private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
+    private final SyncModelParameters parameters;
 
-    public SyncServerGroupOperationHandler(String localHostName, Resource originalDomainModel, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
-                                           ExtensionRegistry extensionRegistry, HostControllerRegistrationHandler.OperationExecutor operationExecutor) {
-        super(extensionRegistry, ignoredDomainResourceRegistry, operationExecutor);
+    public SyncServerGroupOperationHandler(String localHostName, Resource originalDomainModel,
+                                           SyncModelParameters parameters) {
+        super(parameters);
         this.localHostName = localHostName;
         this.originalModel = originalDomainModel;
-        this.extensionRegistry = extensionRegistry;
-        this.ignoredResourceRegistry = ignoredDomainResourceRegistry;
+        this.parameters = parameters;
     }
 
     /**
@@ -78,14 +74,14 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
         final Resource original = this.originalModel;
 
         // Process the required using the remote model to include content which may not be available locally
-        ReadMasterDomainModelUtil.processHostModel(rc, remote, hostModel, extensionRegistry);
+        ReadMasterDomainModelUtil.processHostModel(rc, remote, hostModel, parameters.getExtensionRegistry());
         // Process the original
-        ReadMasterDomainModelUtil.processHostModel(rc, original, original.getChild(host), extensionRegistry);
+        ReadMasterDomainModelUtil.processHostModel(rc, original, original.getChild(host), parameters.getExtensionRegistry());
 
         final Transformers.ResourceIgnoredTransformationRegistry delegate = new Transformers.ResourceIgnoredTransformationRegistry() {
             @Override
             public boolean isResourceTransformationIgnored(PathAddress address) {
-                return ignoredResourceRegistry.isResourceExcluded(address);
+                return parameters.getIgnoredResourceRegistry().isResourceExcluded(address);
             }
         };
         return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, true, delegate);
