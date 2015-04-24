@@ -1,9 +1,13 @@
 <subsystem xmlns="urn:jboss:domain:test:1.0">
     <resources>
-          <resource name="foo" no-attr1="yada" alias="localhost,some.host" >
-              <cluster attr1="bar" attr2="baz"/>
-              <security my-attr1="alice" my-attr2="bob"/>
-          </resource>
+        <resource name="resource1" attr1="yada" alias="localhost,some.host">
+            <base1 attr1="bar" attr2="baz">
+                <nested1 attr1="foo" attr2="bob"/>
+            </base1>
+            <base2 attr1="abc">
+                <nested1 attr1="bah"/>
+            </base2>
+        </resource>
     </resources>
     <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3" />
     <buffer-cache name="extra" buffer-size="1025" buffers-per-region="1054" max-regions="15"/>

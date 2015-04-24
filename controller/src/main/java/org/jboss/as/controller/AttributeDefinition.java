@@ -58,6 +58,7 @@ import org.jboss.dmr.ModelType;
  * methods for validation.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 public abstract class AttributeDefinition {
 
@@ -84,7 +85,7 @@ public abstract class AttributeDefinition {
     private final List<AccessConstraintDefinition> accessConstraints;
     private final Boolean nilSignificant;
     private final AttributeParser parser;
-    private final String attributeGroup;
+    private final AttributeGroup attributeGroup;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Expected to be a common use case; no one-offs.
@@ -167,7 +168,7 @@ public abstract class AttributeDefinition {
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
+                                Boolean nilSignificant, AttributeParser parser, final AttributeGroup attributeGroup, ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -290,7 +291,7 @@ public abstract class AttributeDefinition {
      *
      * @return the name of the group, or {@code null} if the attribute is not associated with a group
      */
-    public String getAttributeGroup() {
+    public AttributeGroup getAttributeGroup() {
         return attributeGroup;
     }
 
@@ -781,7 +782,11 @@ public abstract class AttributeDefinition {
         result.get(ModelDescriptionConstants.TYPE).set(type);
         result.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
         if (attributeGroup != null) {
-            result.get(ModelDescriptionConstants.ATTRIBUTE_GROUP).set(attributeGroup);
+            final ModelNode attributeGroupNode = new ModelNode();
+            for (final String component : attributeGroup) {
+                attributeGroupNode.add(component);
+            }
+            result.get(ModelDescriptionConstants.ATTRIBUTE_GROUP).set(attributeGroupNode);
         }
         result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(isAllowExpression());
         if (forOperation) {
@@ -996,7 +1001,7 @@ public abstract class AttributeDefinition {
     public static final class NameAndGroup implements Comparable<NameAndGroup> {
 
         private final String name;
-        private final String group;
+        private final AttributeGroup group;
 
         public NameAndGroup(AttributeDefinition ad) {
             this(ad.getName(), ad.getAttributeGroup());
@@ -1007,7 +1012,7 @@ public abstract class AttributeDefinition {
             this.group = null;
         }
 
-        public NameAndGroup(String name, String group) {
+        public NameAndGroup(String name, AttributeGroup group) {
             this.name = name;
             this.group = group;
         }
@@ -1016,7 +1021,7 @@ public abstract class AttributeDefinition {
             return name;
         }
 
-        public String getGroup() {
+        public AttributeGroup getGroup() {
             return group;
         }
 
@@ -1030,7 +1035,7 @@ public abstract class AttributeDefinition {
             } else if (o.group == null) {
                 return 1;
             } else {
-                int groupComp = group.compareTo(o.group);
+                int groupComp = this.group.compareTo(o.group);
                 if (groupComp != 0) {
                     return groupComp;
                 }

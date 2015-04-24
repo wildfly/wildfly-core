@@ -105,7 +105,7 @@ public class ReadAttributeGroupTestCase extends AbstractRbacTestCase {
         ModelControllerClient client = getClientForUser(userName);
         assertTrue(canExecuteOperation(client, READ_ATTRIBUTE_GROUP_OPERATION, TEST_DS));
         ModelNode operation = createOpNode(TEST_DS, READ_ATTRIBUTE_GROUP_OPERATION);
-        operation.get(NAME).set("security");
+        operation.get(NAME).add("security");
         ModelNode attributesNode = RbacUtil.executeOperation(client, operation, Outcome.SUCCESS).get(RESULT);
         assertThat(attributesNode.isDefined(), is(true));
         List<Property> attributes = attributesNode.asPropertyList();

@@ -25,10 +25,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.ATTRIBUTE_GROUP;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_RUNTIME;
-import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.NAME;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +53,7 @@ import org.jboss.as.controller.operations.global.GlobalOperationHandlers.Abstrac
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.AttributeGroup;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -60,11 +61,12 @@ import org.jboss.dmr.ModelType;
  * {@link org.jboss.as.controller.OperationStepHandler} returning the attributes of a resource for a given attribute-group.
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_GROUP_OPERATION, ControllerResolver.getResolver("global"))
-            .setParameters(NAME, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, INCLUDE_ALIASES)
+            .setParameters(ATTRIBUTE_GROUP, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, INCLUDE_ALIASES)
             .setReadOnly()
             .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
@@ -77,7 +79,7 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
             .build();
 
     public static final OperationDefinition RESOLVE_DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_GROUP_OPERATION, ControllerResolver.getResolver("global"))
-            .setParameters(NAME, RESOLVE, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, INCLUDE_ALIASES)
+            .setParameters(ATTRIBUTE_GROUP, RESOLVE, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, INCLUDE_ALIASES)
             .setReadOnly()
             .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
@@ -149,8 +151,8 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
         final boolean aliases = operation.get(ModelDescriptionConstants.INCLUDE_ALIASES).asBoolean(false);
         final boolean defaults = operation.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).asBoolean(true);
         final boolean resolve = RESOLVE.resolveModelAttribute(context, operation).asBoolean();
-        final ModelNode groupNameNode = NAME.resolveModelAttribute(context, operation);
-        final String groupName = groupNameNode.isDefined() ? groupNameNode.asString() : null;
+        final ModelNode groupNode = ATTRIBUTE_GROUP.resolveModelAttribute(context, operation);
+        final AttributeGroup group = groupNode.isDefined() ? new AttributeGroup(groupNode.asList()) : null;
         final FilteredData localFilteredData = new FilteredData(address);
 
         final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics = includeRutime
@@ -168,7 +170,7 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
             final AttributeDefinition ad = access.getAttributeDefinition();
             if ((aliases || !access.getFlags().contains(AttributeAccess.Flag.ALIAS))
                     && (includeRutime || access.getStorageType() == AttributeAccess.Storage.CONFIGURATION)
-                    && (groupName == null || groupName.equals(ad.getAttributeGroup()))) {
+                    && (group == null || group.equals(ad.getAttributeGroup()))) {
                 Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> responseMap = access.getAccessType() == AttributeAccess.AccessType.METRIC ? metrics : otherAttributes;
                 AttributeDefinition.NameAndGroup nag = ad == null ? new AttributeDefinition.NameAndGroup(attributeName) : new AttributeDefinition.NameAndGroup(ad);
                 addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, responseMap);

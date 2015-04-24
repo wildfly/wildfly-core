@@ -62,8 +62,9 @@ public class ReadAttributeGroupNamesHandler implements OperationStepHandler {
         TreeSet<String> groupNames = new TreeSet<String>();
         for (final String attributeName : attributeNames) {
             final AttributeAccess attribute = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
-            if (attribute.getAttributeDefinition().getAttributeGroup() != null) {
-                groupNames.add(attribute.getAttributeDefinition().getAttributeGroup());
+            final String attributeGroup = attribute.getAttributeDefinition().getAttributeGroup().toString();
+            if (attributeGroup != null) {
+                groupNames.add(attributeGroup);
             }
         }
         for (String groupName : groupNames) {

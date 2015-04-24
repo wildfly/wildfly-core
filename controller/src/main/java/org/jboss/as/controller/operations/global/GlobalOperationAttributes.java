@@ -21,8 +21,11 @@
  */
 package org.jboss.as.controller.operations.global;
 
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -32,6 +35,7 @@ import org.jboss.dmr.ModelType;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 class GlobalOperationAttributes {
 
@@ -90,4 +94,26 @@ class GlobalOperationAttributes {
     .setAllowNull(true)
     .build();
 
+    static final AttributeDefinition GROUP_ELEMENT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.GROUP_ELEMENT, ModelType.STRING, true)
+    .setAllowNull(false)
+    .build();
+
+    static final SimpleListAttributeDefinition ATTRIBUTE_GROUP = new SimpleListAttributeDefinition.Builder(ModelDescriptionConstants.NAME, GROUP_ELEMENT)
+    .setAllowNull(true)
+    .setCorrector(StringToListCorrector.INSTANCE)
+    .build();
+
+    private static class StringToListCorrector implements ParameterCorrector {
+        private static final StringToListCorrector INSTANCE = new StringToListCorrector();
+
+        @Override
+        public ModelNode correct(final ModelNode newValue, final ModelNode currentValue) {
+            ModelNode result = newValue;
+            if (newValue.getType() == ModelType.STRING) {
+                result = new ModelNode();
+                result.add(newValue);
+            }
+            return result;
+        }
+    }
 }
