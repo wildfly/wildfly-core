@@ -27,8 +27,11 @@ import java.util.Properties;
 public enum ModelTestControllerVersion {
     //AS releases
     MASTER (CurrentVersion.VERSION, false, null),
+    @Deprecated
     V7_1_2_FINAL ("7.1.2.Final", false, "7.1.2", false),
+    @Deprecated
     V7_1_3_FINAL ("7.1.3.Final", false, "7.1.2", false),
+    @Deprecated
     V7_2_0_FINAL ("7.2.0.Final", false, "7.2.0" ,false),
 
     //WILDFLY RELEASES
@@ -37,13 +40,18 @@ public enum ModelTestControllerVersion {
     WILDFLY_8_2_0_FINAL ("8.2.0.Final", false, "8.0.0", false),
 
     //EAP releases
+    @Deprecated
     EAP_6_0_0 ("7.1.2.Final-redhat-1", true, "7.1.2", false),
+    @Deprecated
     EAP_6_0_1 ("7.1.3.Final-redhat-4", true, "7.1.2", false),
+    @Deprecated
     EAP_6_1_0 ("7.2.0.Final-redhat-8", true, "7.2.0", false),
+    @Deprecated
     EAP_6_1_1 ("7.2.1.Final-redhat-10", true, "7.2.0" ,false),
 
     EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"), //EAP 6.2 is the earliest version we support for transformers
     EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.4.0"),
+    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.4.0"),
     ;
 
     private final String mavenGavVersion;
@@ -93,7 +101,7 @@ public enum ModelTestControllerVersion {
                 props.load(ModelTestControllerVersion.class.getResourceAsStream("version.properties"));
                 VERSION = props.getProperty("as.version");
             } catch (Exception e) {
-                VERSION = "8.0.0.Beta2-SNAPSHOT";
+                VERSION = "9.0.0.CR1-SNAPSHOT";
                 e.printStackTrace();
             }
         }
