@@ -206,6 +206,9 @@ public class PersistentResourceXMLDescription {
             if (flushRequired && attributeGroups.isEmpty()) {
                 ParseUtils.requireNoContent(reader);
             }
+            if (childAlreadyRead) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
         } else {
             Map<String, PersistentResourceXMLDescription> children = getChildrenMap();
             if (childAlreadyRead || (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
@@ -293,10 +296,11 @@ public class PersistentResourceXMLDescription {
                 writer.writeEndElement();
             }
         } else {
+            final boolean empty = attributeGroups.isEmpty() && propertyAttributes.isEmpty() && children.isEmpty();
             if (useValueAsElementName) {
                 writeStartElement(writer, namespaceURI, resourceDefinition.getPathElement().getValue());
             } else if (isSubsystem) {
-                startSubsystemElement(writer, namespaceURI, children.isEmpty());
+                startSubsystemElement(writer, namespaceURI, empty);
             } else {
                 writeStartElement(writer, namespaceURI, xmlElementName);
             }
@@ -305,7 +309,7 @@ public class PersistentResourceXMLDescription {
             persistChildren(writer, model);
 
             // Do not attempt to write end element if the <subsystem/> has no elements!
-            if (!isSubsystem || !children.isEmpty()) {
+            if (!isSubsystem || !empty) {
                 writer.writeEndElement();
             }
         }
