@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-import javax.xml.stream.XMLStreamConstants;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -47,12 +47,18 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  *
  * @author Jason T. Greene
  * @author Tomaz Cerar<
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 //todo maybe replace with SimpleMapAttributeDefinition?
 public final class PropertiesAttributeDefinition extends MapAttributeDefinition {
 
+    final boolean wrapXmlElement;
+    final String wrapperElement;
+
     private PropertiesAttributeDefinition(final Builder builder) {
         super(builder);
+        this.wrapXmlElement = builder.wrapXmlElement;
+        this.wrapperElement = builder.wrapperElement;
     }
 
     @Override
@@ -95,15 +101,17 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
     }
 
     public void parse(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
-        while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
-            if (reader.getLocalName().equals(getXmlName())) {
-                final String[] array = requireAttributes(reader, org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName());
-                parseAndAddParameterElement(array[0], array[1], operation, reader);
-                ParseUtils.requireNoContent(reader);
-            } else {
-                throw ParseUtils.unexpectedElement(reader);
-            }
-        }
+        final String[] array = requireAttributes(reader, org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName());
+        parseAndAddParameterElement(array[0], array[1], operation, reader);
+        ParseUtils.requireNoContent(reader);
+    }
+
+    public boolean isWrapped() {
+        return wrapXmlElement;
+    }
+
+    public String getWrapperElement() {
+        return wrapperElement;
     }
 
     private static class PropertiesAttributeMarshaller extends AttributeMarshaller {
