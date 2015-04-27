@@ -22,7 +22,7 @@
 package org.jboss.as.controller.remote;
 
 import static java.security.AccessController.doPrivileged;
-import static org.jboss.as.controller.logging.ControllerLogger.SERVER_MANAGEMENT_LOGGER;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -86,7 +86,7 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     /** {@inheritDoc} */
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        SERVER_MANAGEMENT_LOGGER.debugf("Starting operation handler service %s", context.getController().getName());
+        MGMT_OP_LOGGER.debugf("Starting operation handler service %s", context.getController().getName());
         responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutor.getValue());
 
         final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);

@@ -18,7 +18,7 @@
  */
 package org.jboss.as.controller.interfaces;
 
-import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -92,7 +92,7 @@ public class LoopbackAddressInterfaceCriteria extends AbstractInterfaceCriteria 
         } catch (UnknownHostException e) {
             // One time only log a warning
             if (!unknownHostLogged) {
-                SERVER_LOGGER.cannotResolveAddress(this.address);
+                MGMT_OP_LOGGER.cannotResolveAddress(this.address);
                 unknownHostLogged = true;
             }
         }

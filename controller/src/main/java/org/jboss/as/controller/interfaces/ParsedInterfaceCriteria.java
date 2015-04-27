@@ -24,7 +24,7 @@ package org.jboss.as.controller.interfaces;
 
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
-import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -107,7 +107,7 @@ public final class ParsedInterfaceCriteria {
                     if (criterion instanceof WildcardInetAddressInterfaceCriteria) {
                         // AS7-1668: stop processing and just return the any binding.
                         if (nodes.size() > 1) {
-                            SERVER_LOGGER.wildcardAddressDetected();
+                            MGMT_OP_LOGGER.wildcardAddressDetected();
                         }
                         return ParsedInterfaceCriteria.ANY;
                     }

@@ -57,7 +57,7 @@ public abstract class AbstractLegacyExtension implements Extension {
         if (context.getProcessType() == ProcessType.DOMAIN_SERVER) {
             // Do nothing. This allows an extension=cmp:add op that's really targeted
             // to legacy servers to work
-            ControllerLogger.SERVER_MANAGEMENT_LOGGER.ignoringUnsupportedLegacyExtension(subsystemNames, extensionName);
+            ControllerLogger.MGMT_OP_LOGGER.ignoringUnsupportedLegacyExtension(subsystemNames, extensionName);
             return;
         } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
             throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
