@@ -105,7 +105,7 @@ class ConcurrentGroupServerUpdatePolicy {
                 if (failed) {
                     this.failed = true;
                 }
-                DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER.tracef("Recorded group result for '%s': failed = %s",
+                DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Recorded group result for '%s': failed = %s",
                         serverGroup, failed);
                 notifyAll();
             }

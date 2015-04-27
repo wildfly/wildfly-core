@@ -71,11 +71,6 @@ public interface DomainControllerLogger extends BasicLogger {
     DomainControllerLogger DEPLOYMENT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.deployment");
 
     /**
-     * A logger with the category of {@code org.jboss.as.domain.deployment}.
-     */
-    DomainControllerLogger DOMAIN_DEPLOYMENT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.deployment");
-
-    /**
      * A logger with the category of {@code org.jboss.as.host.controller}.
      */
     DomainControllerLogger HOST_CONTROLLER_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.host.controller");

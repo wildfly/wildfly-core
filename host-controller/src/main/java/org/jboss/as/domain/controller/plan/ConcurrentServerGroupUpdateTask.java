@@ -54,7 +54,7 @@ class ConcurrentServerGroupUpdateTask extends AbstractServerGroupRolloutTask imp
                     outstanding.add(task.getServerIdentity());
                 }
             } else {
-                DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER.tracef("Skipping server update task for %s", identity);
+                DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Skipping server update task for %s", identity);
             }
         }
         boolean interrupted = false;
@@ -71,7 +71,7 @@ class ConcurrentServerGroupUpdateTask extends AbstractServerGroupRolloutTask imp
         }
 
         if (!outstanding.isEmpty()) {
-            DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER.interruptedAwaitingPreparedResponse(getClass().getSimpleName(), outstanding);
+            DomainControllerLogger.HOST_CONTROLLER_LOGGER.interruptedAwaitingPreparedResponse(getClass().getSimpleName(), outstanding);
             for (ServerIdentity identity : outstanding) {
                 executor.cancelTask(identity);
             }

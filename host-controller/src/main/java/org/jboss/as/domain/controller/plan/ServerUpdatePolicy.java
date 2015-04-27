@@ -136,7 +136,7 @@ class ServerUpdatePolicy {
         boolean serverFailed = response.has(FAILURE_DESCRIPTION);
 
 
-        DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER.tracef("Recording server result for '%s': failed = %s",
+        DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Recording server result for '%s': failed = %s",
                 server, server);
 
         synchronized (this) {
