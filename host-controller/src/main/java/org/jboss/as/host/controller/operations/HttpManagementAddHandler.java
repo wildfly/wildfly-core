@@ -22,14 +22,13 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.host.controller.logging.HostControllerLogger.AS_ROOT_LOGGER;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.addValidatingHandler;
 
+import java.util.Collection;
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
-import java.util.Collection;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -139,7 +138,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         String securityRealm = hostControllerInfo.getHttpManagementSecurityRealm();
         Collection<String> allowedOrigins = hostControllerInfo.getAllowedOrigins();
 
-        AS_ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
+        ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
 
         ConsoleMode consoleMode = ConsoleMode.CONSOLE;
         if (runningMode == RunningMode.ADMIN_ONLY) {
@@ -171,7 +170,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
-            AS_ROOT_LOGGER.noSecurityRealmDefined();
+            ROOT_LOGGER.noSecurityRealmDefined();
         }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
