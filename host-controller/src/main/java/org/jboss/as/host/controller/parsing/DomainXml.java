@@ -50,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
@@ -75,10 +76,10 @@ import java.util.concurrent.ExecutorService;
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
@@ -86,6 +87,7 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
+import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
@@ -93,6 +95,7 @@ import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.ManagementXml;
+import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
@@ -160,31 +163,32 @@ public class DomainXml extends CommonXml {
         writer.writeStartDocument();
         writer.writeStartElement(Element.DOMAIN.getLocalName());
 
-        writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
+        writer.writeDefaultNamespace(CURRENT.getUriString());
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
         DomainRootDefinition.NAME.marshallAsAttribute(modelNode, false, writer);
 
-        writeNewLine(writer);
+        WriteUtils.writeNewLine(writer);
 
         if (modelNode.hasDefined(EXTENSION)) {
             extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
             writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(PATH)) {
             writePaths(writer, modelNode.get(PATH), true);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
-            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
+            // We use CURRENT here as we only support writing the most recent.
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new DomainXmlDelegate());
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(PROFILE)) {
@@ -193,11 +197,11 @@ public class DomainXml extends CommonXml {
                 writeProfile(writer, profile.getName(), profile.getValue(), context);
             }
             writer.writeEndElement();
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(INTERFACE)) {
             writeInterfaces(writer, modelNode.get(INTERFACE));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
             writer.writeStartElement(Element.SOCKET_BINDING_GROUPS.getLocalName());
@@ -205,15 +209,15 @@ public class DomainXml extends CommonXml {
                 writeSocketBindingGroup(writer, property.getValue(), false);
             }
             writer.writeEndElement();
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(DEPLOYMENT)) {
             writeDomainDeployments(writer, modelNode.get(DEPLOYMENT));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(DEPLOYMENT_OVERLAY)) {
             writeDeploymentOverlays(writer, modelNode.get(DEPLOYMENT_OVERLAY));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(SERVER_GROUP)) {
             writer.writeStartElement(Element.SERVER_GROUPS.getLocalName());
@@ -221,15 +225,15 @@ public class DomainXml extends CommonXml {
                 writeServerGroup(writer, property.getName(), property.getValue());
             }
             writer.writeEndElement();
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(MANAGEMENT_CLIENT_CONTENT)) {
             writeManagementClientContent(writer, modelNode.get(MANAGEMENT_CLIENT_CONTENT));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         writer.writeEndElement();
-        writeNewLine(writer);
+        WriteUtils.writeNewLine(writer);
         writer.writeEndDocument();
     }
 
@@ -476,8 +480,8 @@ public class DomainXml extends CommonXml {
             element = nextElement(reader, expectedNs);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
-            managementXml.parseManagement(reader, address, expectedNs, list, false);
+            ManagementXml managementXml = ManagementXml.newInstance(expectedNs, new DomainXmlDelegate());
+            managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, expectedNs);
         }
         if (element == Element.PROFILES) {
@@ -612,7 +616,6 @@ public class DomainXml extends CommonXml {
 
     void parseSocketBindingGroup_1_0(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
             final Namespace expectedNs, final List<ModelNode> updates) throws XMLStreamException {
-        final Set<String> includedGroups = new HashSet<String>();
         // unique socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -670,7 +673,6 @@ public class DomainXml extends CommonXml {
 
     void parseSocketBindingGroup_1_1(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
             final Namespace expectedNs, final List<ModelNode> updates) throws XMLStreamException {
-        final Set<String> includedGroups = new HashSet<String>();
         // both outbound-socket-bindings and socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -1035,7 +1037,7 @@ public class DomainXml extends CommonXml {
             for (String uniqueName : deploymentNames) {
                 final ModelNode deployment = modelNode.get(uniqueName);
                 writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-                writeAttribute(writer, Attribute.NAME, uniqueName);
+                WriteUtils.writeAttribute(writer, Attribute.NAME, uniqueName);
                 DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
                 final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
                 for (ModelNode contentItem : contentItems) {
@@ -1055,7 +1057,7 @@ public class DomainXml extends CommonXml {
             for (String uniqueName : deploymentNames) {
                 final ModelNode deployment = modelNode.get(uniqueName);
                 writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-                writeAttribute(writer, Attribute.NAME, uniqueName);
+                WriteUtils.writeAttribute(writer, Attribute.NAME, uniqueName);
                 DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
                 DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
                 writer.writeEndElement();
@@ -1093,7 +1095,7 @@ public class DomainXml extends CommonXml {
         }
         if (group.hasDefined(DEPLOYMENT_OVERLAY)) {
             writeDeploymentOverlays(writer, group.get(DEPLOYMENT_OVERLAY));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         // System properties
         if (group.hasDefined(SYSTEM_PROPERTY)) {
@@ -1116,23 +1118,24 @@ public class DomainXml extends CommonXml {
         }
     }
 
-    private class ManagementXmlDelegate extends ManagementXml.Delegate {
+    private class DomainXmlDelegate implements ManagementXmlDelegate {
 
         @Override
-        public void parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
-            // Not supported yet
-            throw new UnsupportedOperationException();
+        public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
+                List<ModelNode> operationsList) throws XMLStreamException {
+            throw unexpectedElement(reader);
         }
 
         @Override
-        public void parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
-            // Not supported yet
-            throw new UnsupportedOperationException();
+        public boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
+                List<ModelNode> operationsList) throws XMLStreamException {
+            throw unexpectedElement(reader);
         }
 
         @Override
-        public void parseAccessControl(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
-                final List<ModelNode> list) throws XMLStreamException {
+        public boolean parseAccessControl(XMLExtendedStreamReader reader, ManagementXml managementXml, ModelNode address,
+                Namespace expectedNs, List<ModelNode> operationsList) throws XMLStreamException {
+
             ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
 
             final int count = reader.getAttributeCount();
@@ -1148,12 +1151,12 @@ public class DomainXml extends CommonXml {
                     ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
                     ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
 
-                    list.add(op);
+                    operationsList.add(op);
                 } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
                     ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
                     ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
 
-                    list.add(op);
+                    operationsList.add(op);
                 } else{
                     throw unexpectedAttribute(reader, i);
                 }
@@ -1164,16 +1167,16 @@ public class DomainXml extends CommonXml {
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case ROLE_MAPPING:
-                        ManagementXml.parseAccessControlRoleMapping(reader, accAuthzAddr, expectedNs, list);
+                        managementXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
                         break;
                     case SERVER_GROUP_SCOPED_ROLES:
-                        ManagementXml.parseServerGroupScopedRoles(reader, accAuthzAddr, expectedNs, list);
+                        managementXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
                         break;
                     case HOST_SCOPED_ROLES:
-                        ManagementXml.parseHostScopedRoles(reader, accAuthzAddr, expectedNs, list);
+                        managementXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
                         break;
                     case CONSTRAINTS: {
-                        ManagementXml.parseAccessControlConstraints(reader, accAuthzAddr, expectedNs, list);
+                        managementXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
                         break;
                     }
                     default: {
@@ -1181,7 +1184,13 @@ public class DomainXml extends CommonXml {
                     }
                 }
             }
+
+            return true;
         }
 
+
+
+
     }
+
 }

@@ -58,6 +58,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.Namespace.DOMAIN_1_0;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
@@ -97,10 +98,12 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
+import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
+import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
 import org.jboss.as.host.controller.discovery.DiscoveryOptionResourceDefinition;
 import org.jboss.as.host.controller.discovery.StaticDiscoveryResourceDefinition;
 import org.jboss.as.host.controller.ignored.IgnoredDomainTypeResourceDefinition;
@@ -190,7 +193,7 @@ public class HostXml extends CommonXml {
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
-        writeNewLine(writer);
+        WriteUtils.writeNewLine(writer);
 
         if (modelNode.hasDefined(EXTENSION)) {
             extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
@@ -198,24 +201,24 @@ public class HostXml extends CommonXml {
 
         if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
             writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(PATH)) {
             writePaths(writer, modelNode.get(PATH), false);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         boolean hasCoreServices = modelNode.hasDefined(CORE_SERVICE);
         if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
             writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (hasCoreServices) {
-            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new HostXmlDelegate());
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(DOMAIN_CONTROLLER)) {
@@ -231,12 +234,12 @@ public class HostXml extends CommonXml {
                 discoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, ModelDescriptionConstants.OPTIONS);
             }
             writeDomainController(writer, modelNode.get(DOMAIN_CONTROLLER), ignoredResources, discoveryOptions);
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(INTERFACE)) {
             writeInterfaces(writer, modelNode.get(INTERFACE));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(JVM)) {
             writer.writeStartElement(Element.JVMS.getLocalName());
@@ -244,7 +247,7 @@ public class HostXml extends CommonXml {
                 JvmXml.writeJVMElement(writer, jvm.getName(), jvm.getValue());
             }
             writer.writeEndElement();
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(SERVER_CONFIG)) {
@@ -252,7 +255,7 @@ public class HostXml extends CommonXml {
             // Write the directory grouping
             HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
             writeServers(writer, modelNode.get(SERVER_CONFIG));
-            writeNewLine(writer);
+            WriteUtils.writeNewLine(writer);
             writer.writeEndElement();
         } else if (modelNode.hasDefined(DIRECTORY_GROUPING)) {
             // In case there are no servers defined, write an empty element, preserving the directory grouping
@@ -263,7 +266,7 @@ public class HostXml extends CommonXml {
         writeHostProfile(writer, context);
 
         writer.writeEndElement();
-        writeNewLine(writer);
+        WriteUtils.writeNewLine(writer);
         writer.writeEndDocument();
     }
 
@@ -338,8 +341,8 @@ public class HostXml extends CommonXml {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
-            managementXml.parseManagement(reader, address, DOMAIN_1_0, list, false);
+            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, new HostXmlDelegate());
+            managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, DOMAIN_1_0);
         }
         if (element == Element.DOMAIN_CONTROLLER) {
@@ -438,8 +441,8 @@ public class HostXml extends CommonXml {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
-            managementXml.parseManagement(reader, address, namespace, list, true);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, new HostXmlDelegate());
+            managementXml.parseManagement(reader, address, list, true);
             element = nextElement(reader, namespace);
         } else {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
@@ -552,8 +555,8 @@ public class HostXml extends CommonXml {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = new ManagementXml(new ManagementXmlDelegate());
-            managementXml.parseManagement(reader, address, namespace, list, true);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, new HostXmlDelegate());
+            managementXml.parseManagement(reader, address, list, true);
             element = nextElement(reader, namespace);
         } else {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
@@ -2297,7 +2300,7 @@ public class HostXml extends CommonXml {
                 case STATIC_DISCOVERY: {
                     final ModelNode staticDiscoveryOption = property.getValue();
                     writer.writeStartElement(element.getLocalName());
-                    writeAttribute(writer, Attribute.NAME, optionName);
+                    WriteUtils.writeAttribute(writer, Attribute.NAME, optionName);
                     StaticDiscoveryResourceDefinition.PROTOCOL.marshallAsAttribute(staticDiscoveryOption, writer);
                     StaticDiscoveryResourceDefinition.HOST.marshallAsAttribute(staticDiscoveryOption, writer);
                     StaticDiscoveryResourceDefinition.PORT.marshallAsAttribute(staticDiscoveryOption, writer);
@@ -2307,7 +2310,7 @@ public class HostXml extends CommonXml {
                 case DISCOVERY_OPTION: {
                     final ModelNode discoveryOption = property.getValue();
                     writer.writeStartElement(element.getLocalName());
-                    writeAttribute(writer, Attribute.NAME, optionName);
+                    WriteUtils.writeAttribute(writer, Attribute.NAME, optionName);
                     DiscoveryOptionResourceDefinition.CODE.marshallAsAttribute(discoveryOption, writer);
                     DiscoveryOptionResourceDefinition.MODULE.marshallAsAttribute(discoveryOption, writer);
                     if (discoveryOption.hasDefined(PROPERTIES)) {
@@ -2326,8 +2329,8 @@ public class HostXml extends CommonXml {
     private void writeDiscoveryOptionProperties(XMLExtendedStreamWriter writer, ModelNode discoveryOptionProperties) throws XMLStreamException {
         for (Property property : discoveryOptionProperties.asPropertyList()) {
             writer.writeStartElement(Element.PROPERTY.getLocalName());
-            writeAttribute(writer, Attribute.NAME, property.getName());
-            writeAttribute(writer, Attribute.VALUE, property.getValue().asString());
+            WriteUtils.writeAttribute(writer, Attribute.NAME, property.getName());
+            WriteUtils.writeAttribute(writer, Attribute.VALUE, property.getValue().asString());
             writer.writeEndElement();
         }
     }
@@ -2339,7 +2342,7 @@ public class HostXml extends CommonXml {
 
             writer.writeStartElement(Element.SERVER.getLocalName());
 
-            writeAttribute(writer, Attribute.NAME, prop.getName());
+            WriteUtils.writeAttribute(writer, Attribute.NAME, prop.getName());
             ServerConfigResourceDefinition.GROUP.marshallAsAttribute(server, writer);
             ServerConfigResourceDefinition.AUTO_START.marshallAsAttribute(server, writer);
             ServerConfigResourceDefinition.UPDATE_AUTO_START_WITH_SERVER_STATUS.marshallAsAttribute(server, writer);
@@ -2398,13 +2401,13 @@ public class HostXml extends CommonXml {
         writer.writeEndElement();
     }
 
-    private class ManagementXmlDelegate extends ManagementXml.Delegate {
+    private class HostXmlDelegate implements ManagementXmlDelegate {
 
         AuditLogXml auditLogDelegate = new AuditLogXml(true);
 
         @Override
-        public void parseManagementInterfaces(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
-                                              final List<ModelNode> list) throws XMLStreamException {
+        public boolean parseManagementInterfaces(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
+                List<ModelNode> operationsList) throws XMLStreamException {
 
             requireNoAttributes(reader);
             boolean interfaceDefined = false;
@@ -2416,16 +2419,16 @@ public class HostXml extends CommonXml {
                         interfaceDefined = true;
                         switch (expectedNs) {
                             case DOMAIN_1_0:
-                                parseNativeManagementInterface1_0(reader, address, list);
+                                parseNativeManagementInterface1_0(reader, address, operationsList);
                                 break;
                             case DOMAIN_1_1:
                             case DOMAIN_1_2:
                             case DOMAIN_1_3:
                             case DOMAIN_1_4:
-                                parseManagementInterface1_1(reader, address, false, expectedNs, list);
+                                parseManagementInterface1_1(reader, address, false, expectedNs, operationsList);
                                 break;
                             default:
-                                parseManagementInterface_1_5(reader, address, false, expectedNs, list);
+                                parseManagementInterface_1_5(reader, address, false, expectedNs, operationsList);
                         }
                         break;
                     }
@@ -2433,16 +2436,16 @@ public class HostXml extends CommonXml {
                         interfaceDefined = true;
                         switch (expectedNs) {
                             case DOMAIN_1_0:
-                                parseHttpManagementInterface1_0(reader, address, list);
+                                parseHttpManagementInterface1_0(reader, address, operationsList);
                                 break;
                             case DOMAIN_1_1:
                             case DOMAIN_1_2:
                             case DOMAIN_1_3:
                             case DOMAIN_1_4:
-                                parseManagementInterface1_1(reader, address, true, expectedNs, list);
+                                parseManagementInterface1_1(reader, address, true, expectedNs, operationsList);
                                 break;
                             default:
-                                parseManagementInterface_1_5(reader, address, true, expectedNs, list);
+                                parseManagementInterface_1_5(reader, address, true, expectedNs, operationsList);
                                 break;
                         }
                         break;
@@ -2456,16 +2459,20 @@ public class HostXml extends CommonXml {
             if (!interfaceDefined) {
                 throw missingOneOf(reader, EnumSet.of(Element.NATIVE_INTERFACE, Element.HTTP_INTERFACE));
             }
+
+            return true;
         }
 
         @Override
-        protected void parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list)
-                throws XMLStreamException {
+        public boolean parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
+                List<ModelNode> list) throws XMLStreamException {
             auditLogDelegate.parseAuditLog(reader, address, expectedNs, list);
+
+            return true;
         }
 
         @Override
-        protected void writeNativeManagementProtocol(final XMLExtendedStreamWriter writer, final ModelNode protocol)
+        public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol)
                 throws XMLStreamException {
 
             writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
@@ -2478,10 +2485,12 @@ public class HostXml extends CommonXml {
             NativeManagementResourceDefinition.NATIVE_PORT.marshallAsAttribute(protocol, writer);
 
             writer.writeEndElement();
+
+            return true;
         }
 
         @Override
-        protected void writeHttpManagementProtocol(final XMLExtendedStreamWriter writer, final ModelNode protocol)
+        public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol)
                 throws XMLStreamException {
 
             writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
@@ -2500,11 +2509,17 @@ public class HostXml extends CommonXml {
             HttpManagementResourceDefinition.SECURE_INTERFACE.marshallAsAttribute(protocol, writer);
 
             writer.writeEndElement();
+
+            return true;
         }
 
         @Override
-        protected void writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
+        public boolean writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
             auditLogDelegate.writeAuditLog(writer, auditLog);
+
+            return true;
         }
+
     }
+
 }
