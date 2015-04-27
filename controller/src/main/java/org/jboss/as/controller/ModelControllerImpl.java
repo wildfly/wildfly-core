@@ -318,8 +318,11 @@ class ModelControllerImpl implements ModelController {
             if (operation.hasDefined(OPERATION_HEADERS)) {
                 ModelNode operationHeaders = operation.get(OPERATION_HEADERS);
                 // Internal domain ManagementRequestHandler impls will set a header to track an op through the domain
+                // This header will only be set at this point if the request came in that way; for user-originated
+                // requests on this process the header is added later during op execution by OperationCoordinatorStepHandler
                 if (operationHeaders.hasDefined(DOMAIN_UUID)) {
                     accessContext.setDomainUuid(operationHeaders.get(DOMAIN_UUID).asString());
+                    accessContext.setDomainRollout(true);
                 }
                 // Native and http ManagementRequestHandler impls, plus those used for intra-domain comms
                 // will always set a header to specify the access mechanism. JMX directly sets it on the accessContext
@@ -343,7 +346,7 @@ class ModelControllerImpl implements ModelController {
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport, false);
+                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessContext, notificationSupport, false);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);

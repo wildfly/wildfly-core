@@ -22,9 +22,11 @@
 package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
 import java.io.BufferedInputStream;
@@ -75,10 +77,12 @@ class DomainApiUploadHandler implements HttpHandler {
                     dmr.get("operation").set("upload-deployment-stream");
                     dmr.get("address").setEmptyList();
                     dmr.get("input-stream-index").set(0);
+                    ModelNode headers = dmr.get(OPERATION_HEADERS);
+                    headers.get(ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
+                    headers.get(CALLER_TYPE).set(USER);
 
                     OperationBuilder operation = new OperationBuilder(dmr);
                     operation.addInputStream(in);
-                    dmr.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
                     response = modelController.execute(dmr, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT, operation.build());
                     if (!response.get(OUTCOME).asString().equals(SUCCESS)){
                         Common.sendError(exchange, false, response);
