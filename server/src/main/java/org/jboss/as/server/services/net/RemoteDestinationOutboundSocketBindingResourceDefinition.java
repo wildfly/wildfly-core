@@ -26,6 +26,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -41,6 +42,11 @@ import org.jboss.dmr.ModelType;
  * @author Jaikiran Pai
  */
 public class RemoteDestinationOutboundSocketBindingResourceDefinition extends OutboundSocketBindingResourceDefinition {
+
+    static final RuntimeCapability<Void> OUTBOUND_SOCKET_BINDING_CAPABILITY =
+            RuntimeCapability.Builder.of(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME,
+                    true, OutboundSocketBinding.class)
+                    .build(); // TODO require interface capability
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING);
 
@@ -64,7 +70,8 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
         super(PATH,
                 ControllerResolver.getResolver(ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING),
                 RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                new ServiceRemoveStepHandler(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME, RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE), true);
+                new ServiceRemoveStepHandler(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME, RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE,
+                        OUTBOUND_SOCKET_BINDING_CAPABILITY));
     }
 
     @Override

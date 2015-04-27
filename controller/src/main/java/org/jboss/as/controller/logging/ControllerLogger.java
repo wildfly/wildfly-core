@@ -3349,4 +3349,15 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 404, value = "The binding name '%s' in socket binding group '%s' is not unique. Names must be unique across socket-binding, local-destination-outbound-socket-binding and remote-destination-outbound-socket-binding")
     OperationFailedException bindingNameNotUnique(String name, String groupName);
+
+    @Message(id = 405, value = "The capability '%s' required by capability '%s' in context '%s' is available in one or " +
+            "more socket binding groups, but not all socket binding capabilities required by '%s' can be resolved from a " +
+            "single socket binding group, so this configuration is invalid")
+    String inconsistentCapabilityContexts(String requiredName, String dependentName, String dependentContext, String dependentContextAgain);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 406, value = "Capability '%s' in context '%s' associated with resource '%s' requires capability '%s'. " +
+            "It is available in one or more socket binding groups, but not all socket binding capabilities required by " +
+            "'%s' can be resolved from a single socket binding group, so this configuration is invalid")
+    void inconsistentCapabilityContexts(String dependentName, String dependentContext, String address, String requiredName, String dependentContextAgain);
 }

@@ -27,6 +27,7 @@ import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -42,11 +43,19 @@ import org.jboss.dmr.ModelType;
  */
 public class LocalDestinationOutboundSocketBindingResourceDefinition extends OutboundSocketBindingResourceDefinition {
 
+    static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
+    static final RuntimeCapability<Void> OUTBOUND_SOCKET_BINDING_CAPABILITY =
+            RuntimeCapability.Builder.of(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME,
+                    true, OutboundSocketBinding.class)
+                    .addDynamicRequirements(SOCKET_BINDING_CAPABILITY_NAME)
+                    .build(); // TODO require interface capability
+
     public static final SimpleAttributeDefinition SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_REF, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT, SOURCE_INTERFACE, FIXED_SOURCE_PORT, SOCKET_BINDING_REF};
@@ -57,7 +66,8 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
         super(PathElement.pathElement(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
                 ControllerResolver.getResolver(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
                 LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                new ServiceRemoveStepHandler(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME, LocalDestinationOutboundSocketBindingAddHandler.INSTANCE), false);
+                new ServiceRemoveStepHandler(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME, LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
+                        OUTBOUND_SOCKET_BINDING_CAPABILITY));
     }
 
     @Override
