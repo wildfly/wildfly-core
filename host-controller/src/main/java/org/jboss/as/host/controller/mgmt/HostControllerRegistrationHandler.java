@@ -508,7 +508,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 try {
                     sendFailedResponse(responseChannel, errorCode, message);
                 } catch (IOException e) {
-                    HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER.debugf(e, "failed to process message");
+                    DOMAIN_LOGGER.debugf(e, "failed to process message");
                 }
                 activeOperation.getResultHandler().done(null);
                 addFailureEvent(error);
@@ -535,7 +535,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 try {
                     sendResponse(responseChannel, DomainControllerProtocol.PARAM_OK, null);
                 } catch (IOException e) {
-                    HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER.debugf(e, "failed to process message");
+                    DOMAIN_LOGGER.debugf(e, "failed to process message");
                 }
                 activeOperation.getResultHandler().done(null);
             }

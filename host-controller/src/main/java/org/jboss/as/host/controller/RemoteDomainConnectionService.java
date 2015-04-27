@@ -489,7 +489,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             // Execute the operation
             result = controller.execute(operation, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT, OperationAttachments.EMPTY);
         } catch (Exception e) {
-            HostControllerLogger.DOMAIN_LOGGER.failedToApplyDomainConfig(e);
+            HostControllerLogger.ROOT_LOGGER.failedToApplyDomainConfig(e);
             return false;
         }
         // If it did not success, don't register it at the DC
@@ -497,7 +497,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         boolean success = SUCCESS.equals(outcome);
         if (!success) {
             ModelNode failureDesc = result.hasDefined(FAILURE_DESCRIPTION) ? result.get(FAILURE_DESCRIPTION) : new ModelNode();
-            HostControllerLogger.DOMAIN_LOGGER.failedToApplyDomainConfig(outcome, failureDesc);
+            HostControllerLogger.ROOT_LOGGER.failedToApplyDomainConfig(outcome, failureDesc);
         }
         return success;
     }

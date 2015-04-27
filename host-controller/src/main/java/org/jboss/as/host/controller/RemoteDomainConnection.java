@@ -529,23 +529,23 @@ class RemoteDomainConnection extends FutureManagementChannel {
                         future = channelHandler.executeRequest(ManagementPingRequest.INSTANCE, null).getResult();
                         Long id = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                         if (remoteInstanceID != null && !remoteInstanceID.equals(id)) {
-                            HostControllerLogger.DOMAIN_LOGGER.masterHostControllerChanged();
+                            HostControllerLogger.ROOT_LOGGER.masterHostControllerChanged();
                             fail = true;
                         } else {
                             remoteInstanceID = id;
                         }
                     }
                 } catch (IOException e) {
-                    HostControllerLogger.DOMAIN_LOGGER.debug("Caught exception sending ping request", e);
+                    HostControllerLogger.ROOT_LOGGER.debug("Caught exception sending ping request", e);
                 } catch (InterruptedException e) {
                     safeCancel(future);
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException e) {
-                    HostControllerLogger.DOMAIN_LOGGER.debug("Caught exception sending ping request", e);
+                    HostControllerLogger.ROOT_LOGGER.debug("Caught exception sending ping request", e);
                 } catch (TimeoutException e) {
                     fail = true;
                     safeCancel(future);
-                    HostControllerLogger.DOMAIN_LOGGER.masterHostControllerUnreachable(TIMEOUT);
+                    HostControllerLogger.ROOT_LOGGER.masterHostControllerUnreachable(TIMEOUT);
                 } finally {
                     if (fail) {
                         Channel channel = null;

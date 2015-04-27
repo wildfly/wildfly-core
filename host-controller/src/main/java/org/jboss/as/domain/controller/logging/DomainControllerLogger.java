@@ -57,7 +57,10 @@ import org.jboss.modules.ModuleLoadException;
 public interface DomainControllerLogger extends BasicLogger {
 
     /**
-     * A logger with the category of the package.
+     * A logger with the category of {@code org.jboss.as.domain.controller}.
+     * <strong>Usage:</strong> Use this in OSH code related to the resources persisted in domain.xml, or
+     * in code specific to the function of the master Host Controller, e.g. the registration/deregistration
+     * of slave Host Contollers.
      */
     DomainControllerLogger ROOT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.controller");
 
@@ -68,6 +71,8 @@ public interface DomainControllerLogger extends BasicLogger {
 
     /**
      * A logger with the category of {@code org.jboss.as.host.controller}.
+     * <strong>Usage:</strong> Use this in code related to Host Controller functionality, except
+     * for areas described in the documentation of {@link #ROOT_LOGGER}.
      */
     DomainControllerLogger HOST_CONTROLLER_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.host.controller");
 

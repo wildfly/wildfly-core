@@ -60,19 +60,19 @@ import org.jboss.remoting3.Channel;
 public interface HostControllerLogger extends BasicLogger {
 
     /**
-     * A logger with a category of the package name.
+     * A logger with a category of {@code org.jboss.as.host.controller}.
+     * <strong>Usage:</strong> Use this in code related to Host Controller functionality, except
+     * for areas described in the documentation of {@link #DOMAIN_LOGGER}.
      */
     HostControllerLogger ROOT_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.host.controller");
 
     /**
-     * A logger with a category of {@code org.jboss.as.domain.controller.mgmt}.
+     * A logger with a category of {@code org.jboss.as.domain.controller}.
+     * <strong>Usage:</strong> Use this in OSH code related to the resources persisted in domain.xml, or
+     * in code specific to the function of the master Host Controller, e.g. the registration/deregistration
+     * of slave Host Contollers.
      */
-    HostControllerLogger CONTROLLER_MANAGEMENT_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.domain.controller.mgmt");
-
-    /**
-     * A logger with a category of {@code org.jboss.as.domain}
-     */
-    HostControllerLogger DOMAIN_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.domain");
+    HostControllerLogger DOMAIN_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.domain.controller");
 
     /**
      * Logs a warning message indicating the remote domain controller could not connect.
