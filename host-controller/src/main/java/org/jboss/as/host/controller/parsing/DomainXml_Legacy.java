@@ -89,15 +89,20 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class DomainXml_Legacy extends CommonXml {
+class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
+
+    private final AccessControlXml accessControlXml;
 
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
+    private final Namespace namespace;
 
-    DomainXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry) {
+    DomainXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
         super();
+        accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
+        this.namespace = namespace;
     }
 
     @Override
@@ -108,24 +113,24 @@ class DomainXml_Legacy extends CommonXml {
         Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
         switch (readerNS) {
             case DOMAIN_1_0: {
-                readDomainElement1_0(reader, new ModelNode(), readerNS, nodes);
+                readDomainElement1_0(reader, new ModelNode(), nodes);
                 break;
             }
             case DOMAIN_1_1:
             case DOMAIN_1_2:
-                readDomainElement1_1(reader, new ModelNode(), readerNS, nodes);
+                readDomainElement1_1(reader, new ModelNode(), nodes);
                 break;
             case DOMAIN_1_3:
-                readDomainElement1_3(reader, new ModelNode(), readerNS, nodes);
+                readDomainElement1_3(reader, new ModelNode(), nodes);
                 break;
             case DOMAIN_1_4:
-                readDomainElement1_4(reader, new ModelNode(), readerNS, nodes);
+                readDomainElement1_4(reader, new ModelNode(), nodes);
                 break;
             default:
                 // Instead of having to list the remaining versions we just check it is actually a valid version.
                 for (Namespace current : Namespace.domainValues()) {
                     if (readerNS.equals(current)) {
-                        readDomainElement2_0(reader, new ModelNode(), readerNS, nodes);
+                        readDomainElement2_0(reader, new ModelNode(), nodes);
                         return;
                     }
                 }
@@ -138,7 +143,7 @@ class DomainXml_Legacy extends CommonXml {
         throw new UnsupportedOperationException();
     }
 
-    void readDomainElement1_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void readDomainElement1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -147,40 +152,40 @@ class DomainXml_Legacy extends CommonXml {
 
         // Content
         // Handle elements: sequence
-        Element element = nextElement(reader, expectedNs);
+        Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
-            extensionXml.parseExtensions(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            extensionXml.parseExtensions(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SYSTEM_PROPERTIES) {
-            parseSystemProperties(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseSystemProperties(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PATHS) {
-            parsePaths(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parsePaths(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PROFILES) {
-            parseProfiles(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseProfiles(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
-            parseDomainSocketBindingGroups(reader, address, expectedNs, list, interfaceNames);
-            element = nextElement(reader, expectedNs);
+            parseDomainSocketBindingGroups(reader, address, list, interfaceNames);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
-            parseDeployments(reader, address, expectedNs, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
+            parseDeployments(reader, address, namespace, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
                     EnumSet.of(Element.CONTENT, Element.FS_ARCHIVE, Element.FS_EXPLODED), false);
-            element = nextElement(reader, expectedNs);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SERVER_GROUPS) {
-            parseServerGroups(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseServerGroups(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         if (element != null) {
             throw unexpectedElement(reader);
@@ -189,7 +194,7 @@ class DomainXml_Legacy extends CommonXml {
         initializeRolloutPlans(address, list);
     }
 
-    void readDomainElement1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void readDomainElement1_1(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -198,44 +203,44 @@ class DomainXml_Legacy extends CommonXml {
 
         // Content
         // Handle elements: sequence
-        Element element = nextElement(reader, expectedNs);
+        Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
-            extensionXml.parseExtensions(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            extensionXml.parseExtensions(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SYSTEM_PROPERTIES) {
-            parseSystemProperties(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseSystemProperties(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PATHS) {
-            parsePaths(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parsePaths(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PROFILES) {
-            parseProfiles(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseProfiles(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
-            parseDomainSocketBindingGroups(reader, address, expectedNs, list, interfaceNames);
-            element = nextElement(reader, expectedNs);
+            parseDomainSocketBindingGroups(reader, address, list, interfaceNames);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
-            parseDeployments(reader, address, expectedNs, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
+            parseDeployments(reader, address, namespace, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
                     EnumSet.of(Element.CONTENT, Element.FS_ARCHIVE, Element.FS_EXPLODED), false);
-            element = nextElement(reader, expectedNs);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SERVER_GROUPS) {
-            parseServerGroups(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseServerGroups(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT_CLIENT_CONTENT) {
-            parseManagementClientContent(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseManagementClientContent(reader, address, list);
+            element = nextElement(reader, namespace);
         } else if (element == null) {
             // Always add op(s) to set up management-client-content resources
             initializeRolloutPlans(address, list);
@@ -244,53 +249,53 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    void readDomainElement1_3(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void readDomainElement1_3(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
         // attributes
-        readDomainElementAttributes_1_3(reader, expectedNs, address, list);
+        readDomainElementAttributes_1_3(reader, address, list);
 
         // Content
         // Handle elements: sequence
-        Element element = nextElement(reader, expectedNs);
+        Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
-            extensionXml.parseExtensions(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            extensionXml.parseExtensions(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SYSTEM_PROPERTIES) {
-            parseSystemProperties(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseSystemProperties(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PATHS) {
-            parsePaths(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parsePaths(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PROFILES) {
-            parseProfiles(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseProfiles(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
-            parseDomainSocketBindingGroups(reader, address, expectedNs, list, interfaceNames);
-            element = nextElement(reader, expectedNs);
+            parseDomainSocketBindingGroups(reader, address, list, interfaceNames);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
-            parseDeployments(reader, address, expectedNs, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
+            parseDeployments(reader, address, namespace, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
                     EnumSet.of(Element.CONTENT, Element.FS_ARCHIVE, Element.FS_EXPLODED), false);
-            element = nextElement(reader, expectedNs);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SERVER_GROUPS) {
-            parseServerGroups(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseServerGroups(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT_CLIENT_CONTENT) {
-            parseManagementClientContent(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseManagementClientContent(reader, address, list);
+            element = nextElement(reader, namespace);
         } else if (element == null) {
             // Always add op(s) to set up management-client-content resources
             initializeRolloutPlans(address, list);
@@ -299,57 +304,57 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    void readDomainElement1_4(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void readDomainElement1_4(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
         // attributes
-        readDomainElementAttributes_1_3(reader, expectedNs, address, list);
+        readDomainElementAttributes_1_3(reader, address, list);
 
         // Content
         // Handle elements: sequence
-        Element element = nextElement(reader, expectedNs);
+        Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
-            extensionXml.parseExtensions(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            extensionXml.parseExtensions(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SYSTEM_PROPERTIES) {
-            parseSystemProperties(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseSystemProperties(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PATHS) {
-            parsePaths(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parsePaths(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PROFILES) {
-            parseProfiles(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseProfiles(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
-            parseDomainSocketBindingGroups(reader, address, expectedNs, list, interfaceNames);
-            element = nextElement(reader, expectedNs);
+            parseDomainSocketBindingGroups(reader, address, list, interfaceNames);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
-            parseDeployments(reader, address, expectedNs, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
+            parseDeployments(reader, address, namespace, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
                     EnumSet.of(Element.CONTENT, Element.FS_ARCHIVE, Element.FS_EXPLODED), false);
-            element = nextElement(reader, expectedNs);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENT_OVERLAYS) {
-            parseDeploymentOverlays(reader, expectedNs, new ModelNode(), list, true, false);
-            element = nextElement(reader, expectedNs);
+            parseDeploymentOverlays(reader, namespace, new ModelNode(), list, true, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SERVER_GROUPS) {
-            parseServerGroups(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseServerGroups(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT_CLIENT_CONTENT) {
-            parseManagementClientContent(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseManagementClientContent(reader, address, list);
+            element = nextElement(reader, namespace);
         } else if (element == null) {
             // Always add op(s) to set up management-client-content resources
             initializeRolloutPlans(address, list);
@@ -358,62 +363,62 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    void readDomainElement2_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void readDomainElement2_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
         // attributes
-        readDomainElementAttributes_1_3(reader, expectedNs, address, list);
+        readDomainElementAttributes_1_3(reader, address, list);
 
         // Content
         // Handle elements: sequence
-        Element element = nextElement(reader, expectedNs);
+        Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
-            extensionXml.parseExtensions(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            extensionXml.parseExtensions(reader, address, namespace, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SYSTEM_PROPERTIES) {
-            parseSystemProperties(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseSystemProperties(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PATHS) {
-            parsePaths(reader, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parsePaths(reader, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(expectedNs, new DomainXmlDelegate(AccessControlXml.newInstance(expectedNs)));
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
             managementXml.parseManagement(reader, address, list, false);
-            element = nextElement(reader, expectedNs);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.PROFILES) {
-            parseProfiles(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseProfiles(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, expectedNs, list, false);
-            element = nextElement(reader, expectedNs);
+            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
-            parseDomainSocketBindingGroups(reader, address, expectedNs, list, interfaceNames);
-            element = nextElement(reader, expectedNs);
+            parseDomainSocketBindingGroups(reader, address, list, interfaceNames);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
-            parseDeployments(reader, address, expectedNs, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
+            parseDeployments(reader, address, namespace, list, EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME),
                     EnumSet.of(Element.CONTENT, Element.FS_ARCHIVE, Element.FS_EXPLODED), false);
-            element = nextElement(reader, expectedNs);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENT_OVERLAYS) {
-            parseDeploymentOverlays(reader, expectedNs, new ModelNode(), list, true, false);
-            element = nextElement(reader, expectedNs);
+            parseDeploymentOverlays(reader, namespace, new ModelNode(), list, true, false);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.SERVER_GROUPS) {
-            parseServerGroups(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseServerGroups(reader, address, list);
+            element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT_CLIENT_CONTENT) {
-            parseManagementClientContent(reader, address, expectedNs, list);
-            element = nextElement(reader, expectedNs);
+            parseManagementClientContent(reader, address, list);
+            element = nextElement(reader, namespace);
         } else if (element == null) {
             // Always add op(s) to set up management-client-content resources
             initializeRolloutPlans(address, list);
@@ -452,7 +457,7 @@ class DomainXml_Legacy extends CommonXml {
         readDomainElementAttributes_1_0(reader, address, list);
     }
 
-    protected void readDomainElementAttributes_1_3(XMLExtendedStreamReader reader, Namespace expectedNs, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+    protected void readDomainElementAttributes_1_3(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             Namespace ns = Namespace.forUri(reader.getAttributeNamespace(i));
@@ -489,21 +494,20 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
-            final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
+    void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET_BINDING_GROUP: {
-                    switch (expectedNs) {
+                    switch (namespace) {
                         case DOMAIN_1_0:
                             // parse 1.0 socket binding group
-                            this.parseSocketBindingGroup_1_0(reader, interfaces, address, expectedNs, list);
+                            parseSocketBindingGroup_1_0(reader, interfaces, address, list);
                             break;
                         default:
                             // parse 1.1 socket binding group
-                            this.parseSocketBindingGroup_1_1(reader, interfaces, address, expectedNs, list);
+                            parseSocketBindingGroup_1_1(reader, interfaces, address, list);
                             break;
                     }
                     break;
@@ -516,7 +520,7 @@ class DomainXml_Legacy extends CommonXml {
     }
 
     void parseSocketBindingGroup_1_0(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
-            final Namespace expectedNs, final List<ModelNode> updates) throws XMLStreamException {
+            final List<ModelNode> updates) throws XMLStreamException {
         // unique socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -544,7 +548,7 @@ class DomainXml_Legacy extends CommonXml {
 
         // Handle elements
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case INCLUDE: {
@@ -573,7 +577,7 @@ class DomainXml_Legacy extends CommonXml {
     }
 
     void parseSocketBindingGroup_1_1(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
-            final Namespace expectedNs, final List<ModelNode> updates) throws XMLStreamException {
+            final List<ModelNode> updates) throws XMLStreamException {
         // both outbound-socket-bindings and socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -603,7 +607,7 @@ class DomainXml_Legacy extends CommonXml {
 
         // Handle elements
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 /* This will be reintroduced for 7.2.0, leave commented out
@@ -636,13 +640,13 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    void parseServerGroups(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void parseServerGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         final Set<String> names = new HashSet<String>();
 
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             Element serverGroup = Element.forName(reader.getLocalName());
             if (Element.SERVER_GROUP != serverGroup) {
                 throw unexpectedElement(reader);
@@ -700,15 +704,15 @@ class DomainXml_Legacy extends CommonXml {
             boolean sawDeployments = false;
 
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                requireNamespace(reader, expectedNs);
+                requireNamespace(reader, namespace);
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case JVM: {
-                        JvmXml.parseJvm(reader, groupAddress, expectedNs, list, new HashSet<String>(), false);
+                        JvmXml.parseJvm(reader, groupAddress, namespace, list, new HashSet<String>(), false);
                         break;
                     }
                     case SOCKET_BINDING_GROUP: {
-                        if(expectedNs.compareTo(Namespace.DOMAIN_3_0) >= 0) {
+                        if(namespace.compareTo(Namespace.DOMAIN_3_0) >= 0) {
                             parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
                                 ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET,
                                 ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
@@ -724,18 +728,18 @@ class DomainXml_Legacy extends CommonXml {
                         }
                         sawDeployments = true;
                         List<ModelNode> deployments = new ArrayList<ModelNode>();
-                        parseDeployments(reader, groupAddress, expectedNs, deployments,
+                        parseDeployments(reader, groupAddress, namespace, deployments,
                                 EnumSet.of(Attribute.NAME, Attribute.RUNTIME_NAME, Attribute.ENABLED),
                                 Collections.<Element>emptySet(), true);
                         list.addAll(deployments);
                         break;
                     }
                     case DEPLOYMENT_OVERLAYS: {
-                        parseDeploymentOverlays(reader, expectedNs, groupAddress, list, false, true);
+                        parseDeploymentOverlays(reader, namespace, groupAddress, list, false, true);
                         break;
                     }
                     case SYSTEM_PROPERTIES: {
-                        parseSystemProperties(reader, groupAddress, expectedNs, list, false);
+                        parseSystemProperties(reader, groupAddress, namespace, list, false);
                         break;
                     }
                     default:
@@ -746,13 +750,13 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    void parseProfiles(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    void parseProfiles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         final Set<String> names = new HashSet<String>();
 
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             Element element = Element.forName(reader.getLocalName());
             if (Element.PROFILE != element) {
                 throw unexpectedElement(reader);
@@ -793,7 +797,7 @@ class DomainXml_Legacy extends CommonXml {
                     case DOMAIN_1_1:
                     case DOMAIN_1_2:
                     case DOMAIN_1_3: {
-                        requireNamespace(reader, expectedNs);
+                        requireNamespace(reader, namespace);
                         // include should come first
                         if (profileOps.size() > 0) {
                             throw unexpectedElement(reader);
@@ -853,12 +857,12 @@ class DomainXml_Legacy extends CommonXml {
         }
     }
 
-    private void parseManagementClientContent(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
+    private void parseManagementClientContent(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         boolean rolloutPlansAdded = false;
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case ROLLOUT_PLANS: {
@@ -899,84 +903,78 @@ class DomainXml_Legacy extends CommonXml {
         list.add(addOp);
     }
 
+    /*
+     * ManagamentXmlDelegate Methods
+     */
 
+    @Override
+    public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
+        throw unexpectedElement(reader);
+    }
 
-    private class DomainXmlDelegate implements ManagementXmlDelegate {
+    @Override
+    public boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
+        throw unexpectedElement(reader);
+    }
 
-        private final AccessControlXml accessControlXml;
+    @Override
+    public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
 
-        private DomainXmlDelegate(final AccessControlXml accessControlXml) {
-            this.accessControlXml = accessControlXml;
-        }
+        ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
 
-        @Override
-        public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> operationsList) throws XMLStreamException {
-            throw unexpectedElement(reader);
-        }
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
 
-        @Override
-        public boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> operationsList) throws XMLStreamException {
-            throw unexpectedElement(reader);
-        }
-
-        @Override
-        public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address,
-                Namespace expectedNs, List<ModelNode> operationsList) throws XMLStreamException {
-
-            ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
-
-            final int count = reader.getAttributeCount();
-            for (int i = 0; i < count; i++) {
-
-                final String value = reader.getAttributeValue(i);
-                if (!isNoNamespaceAttribute(reader, i)) {
-                    throw ParseUtils.unexpectedAttribute(reader, i);
-                }
-
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                if (attribute == Attribute.PROVIDER) {
-                    ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
-                    ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
-
-                    operationsList.add(op);
-                } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
-                    ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
-                    ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
-
-                    operationsList.add(op);
-                } else{
-                    throw unexpectedAttribute(reader, i);
-                }
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
             }
 
-            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                requireNamespace(reader, expectedNs);
-                final Element element = Element.forName(reader.getLocalName());
-                switch (element) {
-                    case ROLE_MAPPING:
-                        accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
-                        break;
-                    case SERVER_GROUP_SCOPED_ROLES:
-                        accessControlXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
-                        break;
-                    case HOST_SCOPED_ROLES:
-                        accessControlXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
-                        break;
-                    case CONSTRAINTS: {
-                        accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
-                        break;
-                    }
-                    default: {
-                        throw unexpectedElement(reader);
-                    }
-                }
-            }
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            if (attribute == Attribute.PROVIDER) {
+                ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
 
-            return true;
+                operationsList.add(op);
+            } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
+                ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
+
+                operationsList.add(op);
+            } else {
+                throw unexpectedAttribute(reader, i);
+            }
         }
 
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case ROLE_MAPPING:
+                    accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
+                    break;
+                case SERVER_GROUP_SCOPED_ROLES:
+                    accessControlXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
+                    break;
+                case HOST_SCOPED_ROLES:
+                    accessControlXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
+                    break;
+                case CONSTRAINTS: {
+                    accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+
+        return true;
     }
 
 }

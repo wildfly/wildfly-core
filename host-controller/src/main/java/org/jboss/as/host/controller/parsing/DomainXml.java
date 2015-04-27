@@ -61,7 +61,7 @@ public class DomainXml extends CommonXml {
             case 1:
             case 2:
             case 3:
-                new DomainXml_Legacy(extensionXml, extensionRegistry).readElement(reader, nodes);
+                new DomainXml_Legacy(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
             default:
                 new DomainXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);

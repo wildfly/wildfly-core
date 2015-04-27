@@ -63,7 +63,7 @@ public class StandaloneXml extends CommonXml {
             case 1:
             case 2:
             case 3:
-                new StandaloneXml_Legacy(extensionXml, extensionRegistry).readElement(reader, operationList);
+                new StandaloneXml_Legacy(extensionXml, extensionRegistry, readerNS).readElement(reader, operationList);
                 break;
             default:
                 new StandaloneXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, operationList);

@@ -168,7 +168,7 @@ class ManagementXml_4 extends ManagementXml {
                     if (++securityRealmsCount > 1) {
                         throw unexpectedElement(reader);
                     }
-                    if (delegate.parseSecurityRealms(reader, managementAddress, namespace, list) == false) {
+                    if (delegate.parseSecurityRealms(reader, managementAddress, list) == false) {
                         parseSecurityRealms(reader, managementAddress, list);
                     }
 
@@ -178,7 +178,7 @@ class ManagementXml_4 extends ManagementXml {
                     if (++connectionsCount > 1) {
                         throw unexpectedElement(reader);
                     }
-                    if (delegate.parseOutboundConnections(reader, managementAddress, namespace, list) == false) {
+                    if (delegate.parseOutboundConnections(reader, managementAddress, list) == false) {
                         parseOutboundConnections(reader, managementAddress, list);
                     }
 
@@ -189,20 +189,20 @@ class ManagementXml_4 extends ManagementXml {
                         throw unexpectedElement(reader);
                     }
 
-                    if (delegate.parseManagementInterfaces(reader, managementAddress, namespace, list) == false) {
+                    if (delegate.parseManagementInterfaces(reader, managementAddress, list) == false) {
                         throw unexpectedElement(reader);
                     }
 
                     break;
                 }
                 case AUDIT_LOG: {
-                    if (delegate.parseAuditLog(reader, managementAddress, namespace, list) == false) {
+                    if (delegate.parseAuditLog(reader, managementAddress, list) == false) {
                         throw unexpectedElement(reader);
                     }
                     break;
                 }
                 case ACCESS_CONTROL: {
-                    if (delegate.parseAccessControl(reader, managementAddress, namespace, list) == false) {
+                    if (delegate.parseAccessControl(reader, managementAddress, list) == false) {
                         throw unexpectedElement(reader);
                     }
 

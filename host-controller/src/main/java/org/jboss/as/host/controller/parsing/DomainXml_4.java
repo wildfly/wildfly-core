@@ -110,7 +110,9 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class DomainXml_4 extends CommonXml {
+class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
+
+    private final AccessControlXml accessControlXml;
 
     private final Namespace namespace;
     private final ExtensionXml extensionXml;
@@ -118,6 +120,7 @@ class DomainXml_4 extends CommonXml {
 
     DomainXml_4(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
         super();
+        accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
         this.namespace = namespace;
@@ -168,7 +171,7 @@ class DomainXml_4 extends CommonXml {
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
             // We use CURRENT here as we only support writing the most recent.
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new DomainXmlDelegate(AccessControlXml.newInstance(CURRENT)));
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
             WriteUtils.writeNewLine(writer);
         }
@@ -242,7 +245,7 @@ class DomainXml_4 extends CommonXml {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, new DomainXmlDelegate(AccessControlXml.newInstance(namespace)));
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -746,89 +749,85 @@ class DomainXml_4 extends CommonXml {
         }
     }
 
-    private class DomainXmlDelegate implements ManagementXmlDelegate {
+    /*
+     * ManagamentXmlDelegate Methods
+     */
 
-        private final AccessControlXml accessControlXml;
+    @Override
+    public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
+        throw unexpectedElement(reader);
+    }
 
-        private DomainXmlDelegate(final AccessControlXml accessControlXml) {
-            this.accessControlXml = accessControlXml;
-        }
+    @Override
+    public boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
+        throw unexpectedElement(reader);
+    }
 
-        @Override
-        public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> operationsList) throws XMLStreamException {
-            throw unexpectedElement(reader);
-        }
+    @Override
+    public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
 
-        @Override
-        public boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> operationsList) throws XMLStreamException {
-            throw unexpectedElement(reader);
-        }
+        ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
 
-        @Override
-        public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address,
-                Namespace expectedNs, List<ModelNode> operationsList) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
 
-            ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
-
-            final int count = reader.getAttributeCount();
-            for (int i = 0; i < count; i++) {
-
-                final String value = reader.getAttributeValue(i);
-                if (!isNoNamespaceAttribute(reader, i)) {
-                    throw ParseUtils.unexpectedAttribute(reader, i);
-                }
-
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                if (attribute == Attribute.PROVIDER) {
-                    ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
-                    ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
-
-                    operationsList.add(op);
-                } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
-                    ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
-                    ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
-
-                    operationsList.add(op);
-                } else{
-                    throw unexpectedAttribute(reader, i);
-                }
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
             }
 
-            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                requireNamespace(reader, expectedNs);
-                final Element element = Element.forName(reader.getLocalName());
-                switch (element) {
-                    case ROLE_MAPPING:
-                        accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
-                        break;
-                    case SERVER_GROUP_SCOPED_ROLES:
-                        accessControlXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
-                        break;
-                    case HOST_SCOPED_ROLES:
-                        accessControlXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
-                        break;
-                    case CONSTRAINTS: {
-                        accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
-                        break;
-                    }
-                    default: {
-                        throw unexpectedElement(reader);
-                    }
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            if (attribute == Attribute.PROVIDER) {
+                ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
+
+                operationsList.add(op);
+            } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
+                ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
+
+                operationsList.add(op);
+            } else {
+                throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case ROLE_MAPPING:
+                    accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
+                    break;
+                case SERVER_GROUP_SCOPED_ROLES:
+                    accessControlXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
+                    break;
+                case HOST_SCOPED_ROLES:
+                    accessControlXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
+                    break;
+                case CONSTRAINTS: {
+                    accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
                 }
             }
-
-            return true;
         }
 
-        @Override
-        public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
-            accessControlXml.writeAccessControl(writer, accessAuthorization);
+        return true;
+    }
 
-            return true;
-        }
+    @Override
+    public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
+        accessControlXml.writeAccessControl(writer, accessAuthorization);
 
+        return true;
     }
 
 }

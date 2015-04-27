@@ -87,15 +87,21 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class StandaloneXml_Legacy extends CommonXml {
+class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
+
+    private final AccessControlXml accessControlXml;
+    private AuditLogXml auditLogDelegate = new AuditLogXml(false);
 
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
+    private final Namespace namespace;
 
-    StandaloneXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry) {
+    StandaloneXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
         super();
+        accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
+        this.namespace = namespace;
     }
 
     public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
@@ -213,7 +219,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, new StandaloneXmlDelegate(AccessControlXml.newInstance(DOMAIN_1_0)));
+            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, this);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, DOMAIN_1_0);
         }
@@ -232,7 +238,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
         // Single socket binding group
         if (element == Element.SOCKET_BINDING_GROUP) {
-            parseSocketBindingGroup_1_0(reader, interfaceNames, address, DOMAIN_1_0, list);
+            parseSocketBindingGroup_1_0(reader, interfaceNames, address, list);
             element = nextElement(reader, DOMAIN_1_0);
         }
         if (element == Element.DEPLOYMENTS) {
@@ -324,7 +330,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, new StandaloneXmlDelegate(AccessControlXml.newInstance(namespace)));
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -342,7 +348,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
         // Single socket binding group
         if (element == Element.SOCKET_BINDING_GROUP) {
-            parseSocketBindingGroup_1_1(reader, interfaceNames, address, namespace, list);
+            parseSocketBindingGroup_1_1(reader, interfaceNames, address, list);
             element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
@@ -432,7 +438,7 @@ class StandaloneXml_Legacy extends CommonXml {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, new StandaloneXmlDelegate(AccessControlXml.newInstance(namespace)));
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -450,7 +456,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
         // Single socket binding group
         if (element == Element.SOCKET_BINDING_GROUP) {
-            parseSocketBindingGroup_1_1(reader, interfaceNames, address, namespace, list);
+            parseSocketBindingGroup_1_1(reader, interfaceNames, address, list);
             element = nextElement(reader, namespace);
         }
         if (element == Element.DEPLOYMENTS) {
@@ -468,13 +474,12 @@ class StandaloneXml_Legacy extends CommonXml {
         }
     }
 
-    private void parseManagementInterfaces_1_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
-                                               final List<ModelNode> list) throws XMLStreamException {
+    private void parseManagementInterfaces_1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         requireNoAttributes(reader);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case NATIVE_INTERFACE: {
@@ -492,8 +497,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
     }
 
-    private void parseHttpManagementInterface1_0(final XMLExtendedStreamReader reader, final ModelNode address,
-                                                 final List<ModelNode> list) throws XMLStreamException {
+    private void parseHttpManagementInterface1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         final ModelNode mgmtSocket = new ModelNode();
         mgmtSocket.get(OP).set(ADD);
@@ -598,32 +602,32 @@ class StandaloneXml_Legacy extends CommonXml {
         list.add(mgmtSocket);
     }
 
-    private void parseManagementInterfaces_1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
+    private void parseManagementInterfaces_1_1(final XMLExtendedStreamReader reader, final ModelNode address,
                                                final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case NATIVE_INTERFACE: {
-                    switch (expectedNs.getMajorVersion()) {
+                    switch (namespace.getMajorVersion()) {
                         case 1: // Will not be 1.0 as this method is called for 1.1 and above.
-                            parseManagementInterface1_1(reader, address, false, expectedNs, list);
+                            parseManagementInterface1_1(reader, address, false, list);
                             break;
                         default: // 2.0 and onwards.
-                            parseManagementInterface2_0(reader, address, false, expectedNs, list);
+                            parseManagementInterface2_0(reader, address, false, list);
                             break;
                     }
                     break;
                 }
                 case HTTP_INTERFACE: {
-                    switch (expectedNs.getMajorVersion()) {
+                    switch (namespace.getMajorVersion()) {
                         case 1: // Will not be 1.0 as this method is called for 1.1 and above.
-                            parseManagementInterface1_1(reader, address, true, expectedNs, list);
+                            parseManagementInterface1_1(reader, address, true, list);
                             break;
                         default:
-                            parseManagementInterface2_0(reader, address, true, expectedNs, list);
+                            parseManagementInterface2_0(reader, address, true, list);
                             break;
                     }
                     break;
@@ -639,7 +643,7 @@ class StandaloneXml_Legacy extends CommonXml {
         }
     }
 
-    private void parseManagementInterface1_1(XMLExtendedStreamReader reader, ModelNode address, boolean http, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
+    private void parseManagementInterface1_1(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list) throws XMLStreamException {
         final ModelNode operationAddress = address.clone();
         operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
@@ -676,7 +680,7 @@ class StandaloneXml_Legacy extends CommonXml {
 
         // Handle elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET:
@@ -819,13 +823,13 @@ class StandaloneXml_Legacy extends CommonXml {
         }
     }
 
-    private void parseManagementInterface2_0(XMLExtendedStreamReader reader, ModelNode address, boolean http, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
+    private void parseManagementInterface2_0(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list) throws XMLStreamException {
         final ModelNode operationAddress = address.clone();
         operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
 
         // Handle attributes
-        switch (expectedNs.getMajorVersion()) {
+        switch (namespace.getMajorVersion()) {
             case 2:
                 if (http) {
                     parseHttpManagementInterfaceAttributes2_0(reader, addOp);
@@ -843,7 +847,7 @@ class StandaloneXml_Legacy extends CommonXml {
 
         // Handle elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET:
@@ -1016,7 +1020,7 @@ class StandaloneXml_Legacy extends CommonXml {
     }
 
     private void parseSocketBindingGroup_1_0(final XMLExtendedStreamReader reader, final Set<String> interfaces,
-                                             final ModelNode address, final Namespace expectedNs, final List<ModelNode> updates) throws XMLStreamException {
+                                             final ModelNode address, final List<ModelNode> updates) throws XMLStreamException {
 
         // unique names socket-binding(s)
         final Set<String> uniqueBindingNames = new HashSet<String>();
@@ -1069,7 +1073,7 @@ class StandaloneXml_Legacy extends CommonXml {
 
         // Handle elements
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET_BINDING: {
@@ -1087,7 +1091,7 @@ class StandaloneXml_Legacy extends CommonXml {
     }
 
     private void parseSocketBindingGroup_1_1(final XMLExtendedStreamReader reader, final Set<String> interfaces,
-                                             final ModelNode address, final Namespace expectedNs, final List<ModelNode> updates) throws XMLStreamException {
+                                             final ModelNode address, final List<ModelNode> updates) throws XMLStreamException {
 
         // unique names for both socket-binding and outbound-socket-binding(s)
         final Set<String> uniqueBindingNames = new HashSet<String>();
@@ -1140,7 +1144,7 @@ class StandaloneXml_Legacy extends CommonXml {
 
         // Handle elements
         while (reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
+            requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET_BINDING: {
@@ -1216,89 +1220,84 @@ class StandaloneXml_Legacy extends CommonXml {
         throw new UnsupportedOperationException();
     }
 
-    private class StandaloneXmlDelegate implements ManagementXmlDelegate {
+    /*
+     * ManagamentXmlDelegate Methods
+     */
 
-        final AccessControlXml accessControlXml;
-        AuditLogXml auditLogDelegate = new AuditLogXml(false);
+    @Override
+    public boolean parseManagementInterfaces(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
 
-        private StandaloneXmlDelegate(AccessControlXml accessControlXml) {
-            this.accessControlXml = accessControlXml;
+        switch (namespace) {
+            case DOMAIN_1_0:
+                parseManagementInterfaces_1_0(reader, address, operationsList);
+                break;
+            default:
+                parseManagementInterfaces_1_1(reader, address, operationsList);
         }
 
-        @Override
-        public boolean parseManagementInterfaces(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> operationsList) throws XMLStreamException {
+        return true;
+    }
 
-            switch (expectedNs) {
-                case DOMAIN_1_0:
-                    parseManagementInterfaces_1_0(reader, address, expectedNs, operationsList);
+    @Override
+    public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
+            throws XMLStreamException {
+
+        ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            if (attribute == Attribute.PROVIDER) {
+                ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
+
+                operationsList.add(op);
+            } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
+                ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
+
+                operationsList.add(op);
+            } else {
+                throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case ROLE_MAPPING: {
+                    accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
                     break;
-                default:
-                    parseManagementInterfaces_1_1(reader, address, expectedNs, operationsList);
-            }
-
-            return true;
-        }
-
-        @Override
-        public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> operationsList) throws XMLStreamException {
-
-            ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
-
-            final int count = reader.getAttributeCount();
-            for (int i = 0; i < count; i++) {
-
-                final String value = reader.getAttributeValue(i);
-                if (!isNoNamespaceAttribute(reader, i)) {
-                    throw ParseUtils.unexpectedAttribute(reader, i);
                 }
-
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                if (attribute == Attribute.PROVIDER) {
-                    ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
-                    ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
-
-                    operationsList.add(op);
-                } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
-                    ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
-                    ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr, AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
-
-                    operationsList.add(op);
-                } else {
-                    throw unexpectedAttribute(reader, i);
+                case CONSTRAINTS: {
+                    accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
                 }
             }
-
-            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                requireNamespace(reader, expectedNs);
-                final Element element = Element.forName(reader.getLocalName());
-                switch (element) {
-                    case ROLE_MAPPING: {
-                        accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
-                        break;
-                    }
-                    case CONSTRAINTS: {
-                        accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
-                        break;
-                    }
-                    default: {
-                        throw unexpectedElement(reader);
-                    }
-                }
-            }
-
-            return true;
         }
 
-        @Override
-        public boolean parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-                List<ModelNode> list) throws XMLStreamException {
-            auditLogDelegate.parseAuditLog(reader, address, expectedNs, list);
+        return true;
+    }
 
-            return true;
-        }
+    @Override
+    public boolean parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)
+            throws XMLStreamException {
+        auditLogDelegate.parseAuditLog(reader, address, namespace, list);
 
+        return true;
     }
 
 }

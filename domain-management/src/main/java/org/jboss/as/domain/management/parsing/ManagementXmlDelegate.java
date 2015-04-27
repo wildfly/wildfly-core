@@ -27,7 +27,6 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
@@ -60,8 +59,7 @@ public interface ManagementXmlDelegate {
      * @param operationsList list to which any operations should be added
      * @throws XMLStreamException
      */
-    default boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-            List<ModelNode> operationsList) throws XMLStreamException {
+    default boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList) throws XMLStreamException {
         return false;
     }
 
@@ -77,8 +75,7 @@ public interface ManagementXmlDelegate {
      * @param operationsList list to which any operations should be added
      * @throws XMLStreamException
      */
-    default boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
-            List<ModelNode> operationsList) throws XMLStreamException {
+    default boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList) throws XMLStreamException {
         return false;
     }
 
@@ -92,7 +89,7 @@ public interface ManagementXmlDelegate {
      * @param operationsList list to which any operations should be added
      * @throws XMLStreamException
      */
-    default boolean parseManagementInterfaces(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> operationsList) throws XMLStreamException {
+    default boolean parseManagementInterfaces(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList) throws XMLStreamException {
         return false;
     }
 
@@ -106,12 +103,11 @@ public interface ManagementXmlDelegate {
      * @param operationsList list to which any operations should be added
      * @throws XMLStreamException
      */
-    default boolean parseAccessControl(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
-                            final List<ModelNode> operationsList) throws XMLStreamException {
+    default boolean parseAccessControl(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> operationsList) throws XMLStreamException {
         return false;
     }
 
-    default boolean parseAuditLog(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    default boolean parseAuditLog(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         return false;
     }
 
