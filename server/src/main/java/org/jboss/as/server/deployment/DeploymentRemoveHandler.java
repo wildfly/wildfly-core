@@ -117,11 +117,11 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                                         if(newHash.isEmpty() || !newHash.contains(HashUtil.bytesToHexString(hash))) {
                                             contentRepository.removeContent(ModelContentReference.fromDeploymentName(name, hash));
                                         } else {
-                                            ServerLogger.DEPLOYMENT_LOGGER.undeployingDeploymentHasBeenRedeployed(name);
+                                            ServerLogger.ROOT_LOGGER.undeployingDeploymentHasBeenRedeployed(name);
                                         }
                                     } catch (Exception e) {
                                         //TODO
-                                        ServerLogger.DEPLOYMENT_LOGGER.failedToRemoveDeploymentContent(e, HashUtil.bytesToHexString(hash));
+                                        ServerLogger.ROOT_LOGGER.failedToRemoveDeploymentContent(e, HashUtil.bytesToHexString(hash));
                                     }
                                 }
                             }

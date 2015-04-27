@@ -152,7 +152,7 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
                 if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                     // The deployment content is missing, which would be a fatal boot error if we were going to actually
                     // install services. In ADMIN-ONLY mode we allow it to give the admin a chance to correct the problem
-                    ServerLogger.DEPLOYMENT_LOGGER.reportAdminOnlyMissingDeploymentOverlayContent(HashUtil.bytesToHexString(hash), deploymentOverlayName, contentName);
+                    ServerLogger.ROOT_LOGGER.reportAdminOnlyMissingDeploymentOverlayContent(HashUtil.bytesToHexString(hash), deploymentOverlayName, contentName);
 
                 } else {
                     throw ServerLogger.ROOT_LOGGER.noSuchDeploymentOverlayContentAtBoot(HashUtil.bytesToHexString(hash), deploymentOverlayName, contentName);
