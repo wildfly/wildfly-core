@@ -22,15 +22,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.domain.controller.logging.DomainControllerLogger.DEPLOYMENT_LOGGER;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.jboss.as.controller.HashUtil;
 
+import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationFailedException;
@@ -133,10 +133,10 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
                     if (contentRepository != null && (newHashes.isEmpty() || !newHashes.contains(HashUtil.bytesToHexString(hash)))) {
                         contentRepository.removeContent(ModelContentReference.fromModelAddress(address, hash));
                     } else if(contentRepository != null) {
-                        DomainControllerLogger.DEPLOYMENT_LOGGER.undeployingDeploymentHasBeenRedeployed(address.getLastElement().getValue());
+                        ROOT_LOGGER.undeployingDeploymentHasBeenRedeployed(address.getLastElement().getValue());
                     }
                 } catch (Exception e) {
-                    DEPLOYMENT_LOGGER.debugf(e, "Exception occurred removing %s", Arrays.asList(hash));
+                    ROOT_LOGGER.debugf(e, "Exception occurred removing %s", Arrays.asList(hash));
                 }
             }
         }
@@ -163,10 +163,10 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
                     } else if (newHashes.isEmpty() || !newHashes.contains(HashUtil.bytesToHexString(hash))) {
                         fileRepository.deleteDeployment(ModelContentReference.fromModelAddress(address, hash));
                     } else {
-                        DomainControllerLogger.DEPLOYMENT_LOGGER.undeployingDeploymentHasBeenRedeployed(address.getLastElement().getValue());
+                        ROOT_LOGGER.undeployingDeploymentHasBeenRedeployed(address.getLastElement().getValue());
                     }
                 } catch (Exception e) {
-                    DEPLOYMENT_LOGGER.debugf(e, "Exception occurred removing %s", Arrays.asList(hash));
+                    ROOT_LOGGER.debugf(e, "Exception occurred removing %s", Arrays.asList(hash));
                 }
             }
         }

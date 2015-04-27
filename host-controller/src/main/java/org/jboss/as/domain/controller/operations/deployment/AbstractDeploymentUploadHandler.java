@@ -18,7 +18,7 @@
  */
 package org.jboss.as.domain.controller.operations.deployment;
 
-import static org.jboss.as.domain.controller.logging.DomainControllerLogger.DEPLOYMENT_LOGGER;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,7 +78,7 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
                 }
             }
             catch (IOException e) {
-                throw DEPLOYMENT_LOGGER.caughtIOExceptionUploadingContent(e);
+                throw ROOT_LOGGER.caughtIOExceptionUploadingContent(e);
             }
         }
         // else this is a slave domain controller and we should ignore this operation
@@ -92,7 +92,7 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
                 is.close();
             }
             catch (Exception e) {
-                DEPLOYMENT_LOGGER.caughtExceptionClosingInputStream(e);
+                ROOT_LOGGER.caughtExceptionClosingInputStream(e);
             }
         }
     }
