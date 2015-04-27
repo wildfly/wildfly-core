@@ -29,11 +29,11 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.CR1-SNAPSHOT</version>
+        <version>1.0.0.Beta6</version>
     </parent>
 
     <artifactId>wildfly-remoting-parent</artifactId>
-    <version>1.0.0.CR1-SNAPSHOT</version>
+    <version>1.0.0.Beta6</version>
     <packaging>pom</packaging>
 
     <name>WildFly: Remoting Subsystem parent</name>
