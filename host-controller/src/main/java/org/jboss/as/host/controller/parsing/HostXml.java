@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.parsing;
 
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -73,7 +75,7 @@ public class HostXml extends CommonXml {
                 new HostXml_Legacy(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml).readElement(reader, operationList);
                 break;
             default:
-                new HostXml_Legacy(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml).readElement(reader, operationList);
+                new HostXml_4(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
         }
     }
@@ -81,7 +83,7 @@ public class HostXml extends CommonXml {
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new HostXml_Legacy(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml).writeContent(writer, context);
+        new HostXml_4(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
     }
 
 }

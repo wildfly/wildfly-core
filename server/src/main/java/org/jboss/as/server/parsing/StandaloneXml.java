@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.parsing;
 
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -64,7 +66,7 @@ public class StandaloneXml extends CommonXml {
                 new StandaloneXml_Legacy(extensionXml, extensionRegistry).readElement(reader, operationList);
                 break;
             default:
-                new StandaloneXml_Legacy(extensionXml, extensionRegistry).readElement(reader, operationList);
+                new StandaloneXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, operationList);
                 break;
         }
 
@@ -72,7 +74,7 @@ public class StandaloneXml extends CommonXml {
 
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_Legacy(extensionXml, extensionRegistry).writeContent(writer, context);
+        new StandaloneXml_4(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
     }
 
 }

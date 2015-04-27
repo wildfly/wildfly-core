@@ -21,6 +21,7 @@
  */
 package org.jboss.as.host.controller.parsing;
 
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -63,14 +64,14 @@ public class DomainXml extends CommonXml {
                 new DomainXml_Legacy(extensionXml, extensionRegistry).readElement(reader, nodes);
                 break;
             default:
-                new DomainXml_Legacy(extensionXml, extensionRegistry).readElement(reader, nodes);
+                new DomainXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        new DomainXml_Legacy(extensionXml, extensionRegistry).writeContent(writer, context);
+        new DomainXml_4(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
     }
 
 }

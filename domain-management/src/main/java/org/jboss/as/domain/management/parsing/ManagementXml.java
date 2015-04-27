@@ -47,8 +47,7 @@ public abstract class ManagementXml {
             case 3:
                 return new ManagementXml_Legacy(namespace, delegate);
             default:
-                return new ManagementXml_Legacy(namespace, delegate); // TODO - This will create the implementation for version
-                                                                      // 4.
+                return new ManagementXml_4(namespace, delegate);
         }
     }
 
