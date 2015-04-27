@@ -45,6 +45,7 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
+import org.jboss.as.host.controller.model.jvm.JvmAttributes;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.process.DefaultJvmUtils;
@@ -129,10 +130,16 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         final String jvmName = serverVMName != null ? serverVMName : groupVMName;
         final ModelNode hostVM = jvmName != null ? hostModel.get(JVM, jvmName) : null;
 
-        this.jvmElement = new JvmElement(jvmName,
-                resolveNilableExpressions(hostVM, expressionResolver, false),
-                resolveNilableExpressions(groupVM, expressionResolver, false),
-                resolveNilableExpressions(serverVM, expressionResolver, false));
+        // if host JVM and server JVM names are same then merge them first
+        if (hostVM != null && hostVM.isDefined()) {
+            ModelNode combinedHostServerVMNodes = combineSameHostServerVMNodes(hostVM, serverVM);
+            this.jvmElement = new JvmElement(jvmName, resolveNilableExpressions(groupVM, expressionResolver, false),
+                    resolveNilableExpressions(combinedHostServerVMNodes, expressionResolver, false));
+        } else {
+            this.jvmElement = new JvmElement(jvmName, resolveNilableExpressions(hostVM, expressionResolver, false),
+                    resolveNilableExpressions(groupVM, expressionResolver, false), resolveNilableExpressions(serverVM,
+                            expressionResolver, false));
+        }
     }
 
     private static ModelNode resolveNilableExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {
@@ -429,6 +436,66 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             path = new File(path, segment);
         }
         return path.getAbsoluteFile();
+    }
+
+    /**
+     * Combine the Host VM and Server VM properties.
+     *
+     * @param hostVM            the Host VM Settings.
+     * @param serverVM          the Server VM Settings.
+     * @return the merged VM settings returned as ModelNode as JVM name is same for the Host and Server VM.
+     */
+    private ModelNode combineSameHostServerVMNodes(ModelNode hostVM, ModelNode serverVM) {
+        if(serverVM == null) {
+            return hostVM;
+        }
+
+        if (!serverVM.hasDefined(JvmAttributes.JVM_AGENT_LIB)) {
+            serverVM.get(JvmAttributes.JVM_AGENT_LIB).set(hostVM.get(JvmAttributes.JVM_AGENT_LIB));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_AGENT_PATH)) {
+            serverVM.get(JvmAttributes.JVM_AGENT_PATH).set(hostVM.get(JvmAttributes.JVM_AGENT_PATH));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_DEBUG_ENABLED)) {
+            serverVM.get(JvmAttributes.JVM_DEBUG_ENABLED).set(hostVM.get(JvmAttributes.JVM_DEBUG_ENABLED));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_DEBUG_OPTIONS)) {
+            serverVM.get(JvmAttributes.JVM_DEBUG_OPTIONS).set(hostVM.get(JvmAttributes.JVM_DEBUG_OPTIONS));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_ENV_CLASSPATH_IGNORED)) {
+            serverVM.get(JvmAttributes.JVM_ENV_CLASSPATH_IGNORED).set(hostVM.get(JvmAttributes.JVM_ENV_CLASSPATH_IGNORED));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_ENV_VARIABLES)) {
+            serverVM.get(JvmAttributes.JVM_ENV_VARIABLES).set(hostVM.get(JvmAttributes.JVM_ENV_VARIABLES));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_LAUNCH_COMMAND)) {
+            serverVM.get(JvmAttributes.JVM_LAUNCH_COMMAND).set(hostVM.get(JvmAttributes.JVM_LAUNCH_COMMAND));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_HEAP)) {
+            serverVM.get(JvmAttributes.JVM_HEAP).set(hostVM.get(JvmAttributes.JVM_HEAP));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_MAX_HEAP)) {
+            serverVM.get(JvmAttributes.JVM_MAX_HEAP).set(hostVM.get(JvmAttributes.JVM_MAX_HEAP));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_JAVA_AGENT)) {
+            serverVM.get(JvmAttributes.JVM_JAVA_AGENT).set(hostVM.get(JvmAttributes.JVM_JAVA_AGENT));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_JAVA_HOME)) {
+            serverVM.get(JvmAttributes.JVM_JAVA_HOME).set(hostVM.get(JvmAttributes.JVM_JAVA_HOME));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_OPTIONS)) {
+            serverVM.get(JvmAttributes.JVM_OPTIONS).set(hostVM.get(JvmAttributes.JVM_OPTIONS));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_PERMGEN)) {
+            serverVM.get(JvmAttributes.JVM_PERMGEN).set(hostVM.get(JvmAttributes.JVM_PERMGEN));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_MAX_PERMGEN)) {
+            serverVM.get(JvmAttributes.JVM_MAX_PERMGEN).set(hostVM.get(JvmAttributes.JVM_MAX_PERMGEN));
+        }
+        if (!serverVM.hasDefined(JvmAttributes.JVM_STACK)) {
+            serverVM.get(JvmAttributes.JVM_STACK).set(hostVM.get(JvmAttributes.JVM_STACK));
+        }
+        return serverVM;
     }
 
 }
