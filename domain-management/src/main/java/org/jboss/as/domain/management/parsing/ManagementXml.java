@@ -61,18 +61,6 @@ public abstract class ManagementXml {
     public abstract void parseManagement(final XMLExtendedStreamReader reader, final ModelNode address,
             final List<ModelNode> list, boolean requireNativeInterface) throws XMLStreamException;
 
-    // TODO - This next set of parse methods should really be split into their own utility class.
-
-    public abstract void parseAccessControlConstraints(final XMLExtendedStreamReader reader, final ModelNode accAuthzAddr,
-            final List<ModelNode> list) throws XMLStreamException;
-
-    public abstract void parseAccessControlRoleMapping(final XMLExtendedStreamReader reader, final ModelNode accContAddr,
-            final List<ModelNode> list) throws XMLStreamException;
-
-    public abstract void parseServerGroupScopedRoles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException;
-
-    public abstract void parseHostScopedRoles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException;
-
     // TODO - Writing should be based on what is actually in the model, the delegate should be the final check if interfaces are
     // really disallowed.
 

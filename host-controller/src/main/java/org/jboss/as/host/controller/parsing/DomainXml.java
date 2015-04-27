@@ -94,6 +94,7 @@ import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
+import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
@@ -186,7 +187,7 @@ public class DomainXml extends CommonXml {
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
             // We use CURRENT here as we only support writing the most recent.
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new DomainXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new DomainXmlDelegate(AccessControlXml.newInstance(CURRENT)));
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
             WriteUtils.writeNewLine(writer);
         }
@@ -480,7 +481,7 @@ public class DomainXml extends CommonXml {
             element = nextElement(reader, expectedNs);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(expectedNs, new DomainXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(expectedNs, new DomainXmlDelegate(AccessControlXml.newInstance(expectedNs)));
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, expectedNs);
         }
@@ -1120,6 +1121,12 @@ public class DomainXml extends CommonXml {
 
     private class DomainXmlDelegate implements ManagementXmlDelegate {
 
+        private final AccessControlXml accessControlXml;
+
+        private DomainXmlDelegate(final AccessControlXml accessControlXml) {
+            this.accessControlXml = accessControlXml;
+        }
+
         @Override
         public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
                 List<ModelNode> operationsList) throws XMLStreamException {
@@ -1133,7 +1140,7 @@ public class DomainXml extends CommonXml {
         }
 
         @Override
-        public boolean parseAccessControl(XMLExtendedStreamReader reader, ManagementXml managementXml, ModelNode address,
+        public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address,
                 Namespace expectedNs, List<ModelNode> operationsList) throws XMLStreamException {
 
             ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
@@ -1167,16 +1174,16 @@ public class DomainXml extends CommonXml {
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case ROLE_MAPPING:
-                        managementXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
+                        accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
                         break;
                     case SERVER_GROUP_SCOPED_ROLES:
-                        managementXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
+                        accessControlXml.parseServerGroupScopedRoles(reader, accAuthzAddr, operationsList);
                         break;
                     case HOST_SCOPED_ROLES:
-                        managementXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
+                        accessControlXml.parseHostScopedRoles(reader, accAuthzAddr, operationsList);
                         break;
                     case CONSTRAINTS: {
-                        managementXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
+                        accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
                         break;
                     }
                     default: {
@@ -1188,6 +1195,12 @@ public class DomainXml extends CommonXml {
             return true;
         }
 
+        @Override
+        public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
+            accessControlXml.writeAccessControl(writer, accessAuthorization);
+
+            return true;
+        }
 
 
 

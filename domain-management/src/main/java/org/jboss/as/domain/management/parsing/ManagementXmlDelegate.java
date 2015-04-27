@@ -96,20 +96,17 @@ public interface ManagementXmlDelegate {
         return false;
     }
 
-    // TODO - Instead of this loop back to ManagementXml it may be better to split out the 'utility' methods used when parsing access control to their own class.
-
     /**
      * Parse {@link Element#ACCESS_CONTROL} content.
      * <p>This default implementation throws {@code UnsupportedOperationException}; override to support.</p>
      *
      * @param reader the xml reader
-     * @param managementXml the {@link ManagementXml} instance to enable parsing to be passed back.
      * @param address the address of the parent resource for any added resources
      * @param expectedNs the expected namespace for any children
      * @param operationsList list to which any operations should be added
      * @throws XMLStreamException
      */
-    default boolean parseAccessControl(final XMLExtendedStreamReader reader, final ManagementXml managementXml, final ModelNode address, final Namespace expectedNs,
+    default boolean parseAccessControl(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
                             final List<ModelNode> operationsList) throws XMLStreamException {
         return false;
     }
@@ -144,6 +141,10 @@ public interface ManagementXmlDelegate {
      * @throws XMLStreamException
      */
     default boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
+        return false;
+    }
+
+    default boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
         return false;
     }
 

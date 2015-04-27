@@ -84,6 +84,7 @@ import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
+import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -232,7 +233,7 @@ public class StandaloneXml extends CommonXml {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, new StandaloneXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, new StandaloneXmlDelegate(AccessControlXml.newInstance(DOMAIN_1_0)));
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, DOMAIN_1_0);
         }
@@ -343,7 +344,7 @@ public class StandaloneXml extends CommonXml {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, new StandaloneXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, new StandaloneXmlDelegate(AccessControlXml.newInstance(namespace)));
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -451,7 +452,7 @@ public class StandaloneXml extends CommonXml {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, new StandaloneXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, new StandaloneXmlDelegate(AccessControlXml.newInstance(namespace)));
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -1268,7 +1269,7 @@ public class StandaloneXml extends CommonXml {
         }
 
         if (modelNode.hasDefined(CORE_SERVICE)) {
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new StandaloneXmlDelegate());
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, new StandaloneXmlDelegate(AccessControlXml.newInstance(CURRENT)));
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
             WriteUtils.writeNewLine(writer);
         }
@@ -1367,7 +1368,12 @@ public class StandaloneXml extends CommonXml {
 
     private class StandaloneXmlDelegate implements ManagementXmlDelegate {
 
+        final AccessControlXml accessControlXml;
         AuditLogXml auditLogDelegate = new AuditLogXml(false);
+
+        private StandaloneXmlDelegate(AccessControlXml accessControlXml) {
+            this.accessControlXml = accessControlXml;
+        }
 
         @Override
         public boolean parseManagementInterfaces(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
@@ -1385,7 +1391,7 @@ public class StandaloneXml extends CommonXml {
         }
 
         @Override
-        public boolean parseAccessControl(XMLExtendedStreamReader reader, ManagementXml managementXml, ModelNode address, Namespace expectedNs,
+        public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs,
                 List<ModelNode> operationsList) throws XMLStreamException {
 
             ModelNode accAuthzAddr = address.clone().add(ACCESS, AUTHORIZATION);
@@ -1419,11 +1425,11 @@ public class StandaloneXml extends CommonXml {
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case ROLE_MAPPING: {
-                        managementXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
+                        accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
                         break;
                     }
                     case CONSTRAINTS: {
-                        managementXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
+                        accessControlXml.parseAccessControlConstraints(reader, accAuthzAddr, operationsList);
                         break;
                     }
                     default: {
@@ -1496,6 +1502,16 @@ public class StandaloneXml extends CommonXml {
             }
 
             writer.writeEndElement();
+
+            return true;
+        }
+
+
+
+        @Override
+        public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization)
+                throws XMLStreamException {
+            accessControlXml.writeAccessControl(writer, accessAuthorization);
 
             return true;
         }
