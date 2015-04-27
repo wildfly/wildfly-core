@@ -40,6 +40,7 @@ import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamSource;
@@ -52,6 +53,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentResourceXMLParser;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
@@ -75,6 +77,7 @@ import org.w3c.dom.ls.LSSerializer;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2015 Red Hat inc.
  * @author Tomaz Cerar
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 public class PersistentResourceXMLParserTestCase {
 
@@ -149,6 +152,8 @@ public class PersistentResourceXMLParserTestCase {
         assertEquals("baz", subsystem.get("resource", "foo", "cluster-attr2").asString());
         assertEquals("alice", subsystem.get("resource", "foo", "security-my-attr1").asString());
         assertEquals("bob", subsystem.get("resource", "foo", "security-my-attr2").asString());
+        assertEquals("val", subsystem.get("resource", "foo", "properties", "prop").asString());
+        assertEquals("val", subsystem.get("resource", "foo", "wrapped-properties", "prop").asString());
         assertEquals("bar2", subsystem.get("resource", "foo2", "cluster-attr1").asString());
         assertEquals("baz2", subsystem.get("resource", "foo2", "cluster-attr2").asString());
 
@@ -160,6 +165,49 @@ public class PersistentResourceXMLParserTestCase {
         String out = stringWriter.toString();
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
 
+    }
+
+    @Test(expected = XMLStreamException.class)
+    public void testInvalidGroups() throws Exception {
+        MyParser parser = new AttributeGroupParser();
+        String xml =
+                "<subsystem xmlns=\"" + MyParser.NAMESPACE + "\">" +
+                        "   <invalid/>" +
+                        "</subsystem>";
+        StringReader strReader = new StringReader(xml);
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(MyParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+    }
+
+    @Test
+    public void testChildlessResource() throws Exception {
+        MyParser parser = new ChildlessParser();
+        String xml =
+                "<subsystem xmlns=\"" + MyParser.NAMESPACE + "\">" +
+                        "   <cluster attr1=\"alice\"/>" +
+                        "</subsystem>";
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(MyParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance()
+                .createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
     @Test
@@ -290,6 +338,21 @@ public class PersistentResourceXMLParserTestCase {
                 .setAttributeMarshaller(AttributeMarshaller.COMMA_STRING_LIST)
                 .build();
 
+        static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(
+                "properties", true)
+                .setWrapXmlElement(false)
+                .setXmlName("property")
+                .setAllowExpression(true)
+                .build();
+
+        static final PropertiesAttributeDefinition WRAPPED_PROPERTIES = new PropertiesAttributeDefinition.Builder(
+                "wrapped-properties", true)
+                .setWrapXmlElement(true)
+                .setWrapperElement("wrapped-properties")
+                .setXmlName("property")
+                .setAllowExpression(true)
+                .build();
+
         static final SimpleAttributeDefinition BUFFER_SIZE = new SimpleAttributeDefinitionBuilder("buffer-size", ModelType.INT)
                 .setAllowNull(true)
                 .setDefaultValue(new ModelNode(1024))
@@ -333,6 +396,8 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(securityAttr1);
                 attributes.add(securityAttr2);
                 attributes.add(nonGroupAttr1);
+                attributes.add(PROPERTIES);
+                attributes.add(WRAPPED_PROPERTIES);
                 attributes.add(ALIAS);
                 return attributes;
             }
@@ -399,6 +464,8 @@ public class PersistentResourceXMLParserTestCase {
                                             securityAttr2,
                                             //no group element
                                             nonGroupAttr1,
+                                            PROPERTIES,
+                                            WRAPPED_PROPERTIES,
                                             ALIAS
                                     )
                     )
@@ -428,6 +495,8 @@ public class PersistentResourceXMLParserTestCase {
                                             securityAttr2,
                                             //no group element
                                             nonGroupAttr1,
+                                            PROPERTIES,
+                                            WRAPPED_PROPERTIES,
                                             ALIAS
                                     )
                     )
@@ -455,6 +524,16 @@ public class PersistentResourceXMLParserTestCase {
                                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                                     )
                     )
+                    .build();
+        }
+    }
+
+    static class ChildlessParser extends MyParser {
+
+        @Override
+        public PersistentResourceXMLDescription getParserDescription() {
+            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+                    .addAttributes(clusterAttr1)
                     .build();
         }
     }

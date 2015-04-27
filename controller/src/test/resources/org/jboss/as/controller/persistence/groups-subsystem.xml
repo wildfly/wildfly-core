@@ -20,6 +20,10 @@
     <resource name="foo" no-attr1="yada" alias="localhost,some.host">
         <cluster attr1="bar" attr2="baz"/>
         <security my-attr1="alice" my-attr2="bob"/>
+        <property name="prop" value="val"/>
+        <wrapped-properties>
+            <property name="prop" value="val"/>
+        </wrapped-properties>
     </resource>
     <resource name="foo2" no-attr1="blah" alias="localhost,some.host,bah,boh,yak">
         <cluster attr1="bar2" attr2="baz2"/>
