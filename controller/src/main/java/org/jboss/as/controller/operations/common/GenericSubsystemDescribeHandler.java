@@ -24,7 +24,6 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.Collections;
@@ -127,10 +126,12 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
         }
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
         final ModelNode result = context.getResult();
-        describe(resource, address, result, context.getResourceRegistration());
+        describe(context.getAttachment(OrderedChildTypesAttachment.KEY), resource,
+                address, result, context.getResourceRegistration());
     }
 
-    protected void describe(final Resource resource, final ModelNode address, ModelNode result, final ImmutableManagementResourceRegistration registration) {
+    protected void describe(final OrderedChildTypesAttachment orderedChildTypesAttachment, final Resource resource,
+                            final ModelNode address, ModelNode result, final ImmutableManagementResourceRegistration registration) {
         if(resource == null || registration.isRemote() || registration.isRuntimeOnly() || resource.isProxy() || resource.isRuntime() || registration.isAlias()) {
             return;
         }
@@ -141,7 +142,7 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
             children = new TreeSet<PathElement>(comparator);
             children.addAll(registration.getChildAddresses(PathAddress.EMPTY_ADDRESS));
         }
-        result.add(createAddOperation(address, resource, children));
+        result.add(createAddOperation(orderedChildTypesAttachment, address, resource, children));
         for(final PathElement element : children) {
             if(element.isMultiTarget()) {
                 final String childType = element.getKey();
@@ -149,26 +150,23 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
                     final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childType, entry.getName())));
                     final ModelNode childAddress = address.clone();
                     childAddress.add(childType, entry.getName());
-                    describe(entry, childAddress, result, childRegistration);
+                    describe(orderedChildTypesAttachment, entry, childAddress, result, childRegistration);
                 }
             } else {
                 final Resource child = resource.getChild(element);
                 final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(element));
                 final ModelNode childAddress = address.clone();
                 childAddress.add(element.getKey(), element.getValue());
-                describe(child, childAddress, result, childRegistration);
+                describe(orderedChildTypesAttachment, child, childAddress, result, childRegistration);
             }
         }
     }
 
-    protected ModelNode createAddOperation(final ModelNode address, final Resource resource, final Set<PathElement> children) {
+    protected ModelNode createAddOperation(final OrderedChildTypesAttachment orderedChildTypesAttachment,
+                                           final ModelNode address, final Resource resource, final Set<PathElement> children) {
         ModelNode addOp = createAddOperation(address, resource.getModel(), children);
-        Set<String> orderedChildTypes = resource.getOrderedChildTypes();
-        if (orderedChildTypes.size() > 0) {
-            ModelNode orderedChildTypeNode = addOp.get(OPERATION_HEADERS, ModelDescriptionConstants.ORDERED_CHILD_TYPES_HEADER);
-            for (String type : orderedChildTypes) {
-                orderedChildTypeNode.add(type);
-            }
+        if (orderedChildTypesAttachment != null) {
+            orderedChildTypesAttachment.addOrderedChildResourceTypes(PathAddress.pathAddress(address), resource);
         }
         return addOp;
     }

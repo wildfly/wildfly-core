@@ -30,7 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -58,6 +58,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -125,7 +126,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                         final ModelNode includeResult = includeRsp.get(RESULT);
                         if (includeResult.isDefined()) {
                             for (ModelNode op : includeResult.asList()) {
-                                addOrderedChildTypeInfo(resource, op);
+                                addOrderedChildTypeInfo(context, resource, op);
                                 result.add(op);
                             }
                         }
@@ -133,7 +134,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                 }
                 if (!failed) {
                     for (final ModelNode childRsp : results.asList()) {
-                        addOrderedChildTypeInfo(resource, childRsp);
+                        addOrderedChildTypeInfo(context, resource, childRsp);
                         result.add(childRsp);
                     }
                     context.getResult().set(result);
@@ -225,7 +226,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
                 // Allow the profile describe handler to process profile includes
                 processMore(context, operation, resource, address, includeResults);
                 if (!skipLocalAdd) {
-                    addOrderedChildTypeInfo(resource, add);
+                    addOrderedChildTypeInfo(context, resource, add);
                     result.add(add);
                 }
 
@@ -246,7 +247,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
 
                         writeAttribute.get(NAME).set(attribute);
                         writeAttribute.get(VALUE).set(model.get(attribute));
-                        addOrderedChildTypeInfo(resource, writeAttribute);
+                        addOrderedChildTypeInfo(context, resource, writeAttribute);
                         result.add(writeAttribute);
                     }
                 }
@@ -254,13 +255,10 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
         }
     }
 
-    private void addOrderedChildTypeInfo(Resource resource, ModelNode operation) {
-        Set<String> orderedChildTypes = resource.getOrderedChildTypes();
-        if (orderedChildTypes.size() > 0) {
-            ModelNode orderedChildTypeNode = operation.get(OPERATION_HEADERS, SyncModelOperationHandler.ORDERED_CHILD_TYPES_HEADER);
-            for (String type : orderedChildTypes) {
-                orderedChildTypeNode.add(type);
-            }
+    private void addOrderedChildTypeInfo(OperationContext context, Resource resource, ModelNode operation) {
+        OrderedChildTypesAttachment attachment = context.getAttachment(OrderedChildTypesAttachment.KEY);
+        if (attachment != null) {
+            attachment.addOrderedChildResourceTypes(PathAddress.pathAddress(operation.get(OP_ADDR)), resource);
         }
     }
 

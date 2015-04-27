@@ -133,7 +133,6 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     final boolean localIndexedAdd;
 
     public AbstractOrderedChildResourceSyncModelTestCase(boolean registerExtraChildren, boolean localIndexedAdd) {
-        this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
         this.registerExtraChildren = registerExtraChildren;
         this.localIndexedAdd = localIndexedAdd;
     }

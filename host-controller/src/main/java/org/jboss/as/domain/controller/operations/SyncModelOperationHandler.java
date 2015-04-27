@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
@@ -53,8 +52,8 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -74,19 +73,19 @@ import org.jboss.dmr.ModelNode;
  */
 class SyncModelOperationHandler implements OperationStepHandler {
 
-    static final String ORDERED_CHILD_TYPES_HEADER = ModelDescriptionConstants.ORDERED_CHILD_TYPES_HEADER;
-
     private final Resource remoteModel;
     private final List<ModelNode> localOperations;
     private final Set<String> missingExtensions;
     private final SyncModelParameters parameters;
+    private final OrderedChildTypesAttachment localOrderedChildTypes;
 
     SyncModelOperationHandler(List<ModelNode> localOperations, Resource remoteModel, Set<String> missingExtensions,
-                              SyncModelParameters parameters) {
+                              SyncModelParameters parameters, OrderedChildTypesAttachment localOrderedChildTypes) {
         this.localOperations = localOperations;
         this.remoteModel = remoteModel;
         this.missingExtensions = missingExtensions;
         this.parameters = parameters;
+        this.localOrderedChildTypes = localOrderedChildTypes;
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -111,6 +110,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         readOp.get(OP_ADDR).setEmptyList();
 
         // Describe the operations based on the remote model
+        final OrderedChildTypesAttachment orderedChildTypesAttachment = new OrderedChildTypesAttachment();
         final ReadMasterDomainOperationsHandler readOperationsHandler = new ReadMasterDomainOperationsHandler();
         final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
         final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteModel, readOperationsHandler, ModelController.OperationTransactionControl.COMMIT);
@@ -126,8 +126,8 @@ class SyncModelOperationHandler implements OperationStepHandler {
         final Node remoteRoot = new Node(null, PathAddress.EMPTY_ADDRESS);
 
         // Process the local and remote operations
-        process(currentRoot, localOperations);
-        process(remoteRoot, remoteOperations);
+        process(currentRoot, localOperations, localOrderedChildTypes);
+        process(remoteRoot, remoteOperations, readOperationsHandler.getOrderedChildTypes());
 
         // Compare the nodes and create the operations to sync the model
         final List<ModelNode> operations = new ArrayList<>();
@@ -433,7 +433,8 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
     }
 
-    private void process(Node rootNode, final List<ModelNode> operations) {
+    private void process(Node rootNode, final List<ModelNode> operations,
+                         OrderedChildTypesAttachment orderedChildTypesAttachment) {
 
         for (final ModelNode operation : operations) {
             final String operationName = operation.get(OP).asString();
@@ -442,7 +443,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
             if (address.size() == 0) {
                 node = rootNode;
             } else {
-                node = rootNode.getOrCreate(null, address.iterator(), PathAddress.EMPTY_ADDRESS);
+                node = rootNode.getOrCreate(null, address.iterator(), PathAddress.EMPTY_ADDRESS, orderedChildTypesAttachment);
             }
             if (operationName.equals(ADD)) {
                 node.add = operation;
@@ -451,18 +452,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 node.attributes.put(name, operation);
             } else {
                 node.operations.add(operation);
-            }
-
-            if (operation.hasDefined(OPERATION_HEADERS, SyncModelOperationHandler.ORDERED_CHILD_TYPES_HEADER)) {
-                final ModelNode headers = operation.get(OPERATION_HEADERS);
-                List<ModelNode> orderedChildTypes =
-                        headers.remove(SyncModelOperationHandler.ORDERED_CHILD_TYPES_HEADER).asList();
-                if (headers.keys().size() == 0) {
-                    operation.remove(OPERATION_HEADERS);
-                }
-                for (ModelNode childType : orderedChildTypes ) {
-                    node.orderedChildTypes.add(childType.asString());
-                }
             }
         }
     }
@@ -482,7 +471,8 @@ class SyncModelOperationHandler implements OperationStepHandler {
             this.address = address;
         }
 
-        Node getOrCreate(final PathElement element, final Iterator<PathElement> i, PathAddress current) {
+        Node getOrCreate(final PathElement element, final Iterator<PathElement> i, PathAddress current,
+                         OrderedChildTypesAttachment orderedChildTypesAttachment) {
 
             if (i.hasNext()) {
                 final PathElement next = i.next();
@@ -496,8 +486,12 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 if (node == null) {
                     node = new Node(next, addr);
                     children.put(next, node);
+                    Set<String> orderedChildTypes = orderedChildTypesAttachment.getOrderedChildTypes(addr);
+                    if (orderedChildTypes != null) {
+                        node.orderedChildTypes.addAll(orderedChildTypes);
+                    }
                 }
-                return node.getOrCreate(next, i, addr);
+                return node.getOrCreate(next, i, addr, orderedChildTypesAttachment);
             } else if (element == null) {
                 throw new IllegalStateException();
             } else {

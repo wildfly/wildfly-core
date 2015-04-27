@@ -35,6 +35,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
@@ -85,6 +86,7 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         final Resource transformedResource = ReadMasterDomainModelUtil.createResourceFromDomainModelOp(localModel.get(RESULT), localExtensions);
 
         // Create the local describe operations
+        final OrderedChildTypesAttachment orderedChildTypesAttachment = new OrderedChildTypesAttachment();
         final ReadMasterDomainOperationsHandler readOperationHandler = new ReadMasterDomainOperationsHandler();
         final ModelNode localOperations = operationExecutor.executeReadOnly(OPERATION, transformedResource, readOperationHandler, ModelController.OperationTransactionControl.COMMIT);
         if (localOperations.hasDefined(FAILURE_DESCRIPTION)) {
@@ -103,13 +105,10 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
                 final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
                 final ModelNode result = localOperations.get(RESULT);
                 final SyncModelOperationHandler handler =
-                        new SyncModelOperationHandler(result.asList(), remote, remoteExtensions, parameters);
+                        new SyncModelOperationHandler(result.asList(), remote, remoteExtensions,
+                                parameters, readOperationHandler.getOrderedChildTypes());
                 context.addStep(operation, handler, OperationContext.Stage.MODEL, true);
             }
         }, OperationContext.Stage.MODEL, true);
-
-
     }
-
-
 }

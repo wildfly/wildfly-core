@@ -407,7 +407,6 @@ public class ModelDescriptionConstants {
     public static final String SOURCE_NETWORK = "source-network";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
-    public static final String ORDERED_CHILD_TYPES_HEADER = "ordered-child-types";
     public static final String RELOAD_SERVERS = "reload-servers";
     public static final String RESTART_SERVERS = "restart-servers";
     public static final String RESUME_SERVERS = "resume-servers";

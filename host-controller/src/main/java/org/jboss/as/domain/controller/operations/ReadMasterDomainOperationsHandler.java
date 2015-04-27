@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -61,15 +62,20 @@ public class ReadMasterDomainOperationsHandler implements OperationStepHandler {
         DEFAULT_FILTER.addReject(PathAddress.pathAddress(PathElement.pathElement(HOST)));
     }
 
+    private final OrderedChildTypesAttachment orderedChildTypesAttachment = new OrderedChildTypesAttachment();
+
     ReadMasterDomainOperationsHandler() {
-        //
     }
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
         context.attach(PathAddressFilter.KEY, DEFAULT_FILTER);
+        context.attach(OrderedChildTypesAttachment.KEY, orderedChildTypesAttachment);
         context.addStep(operation, GenericModelDescribeOperationHandler.INSTANCE, OperationContext.Stage.MODEL, true);
     }
 
+    OrderedChildTypesAttachment getOrderedChildTypes() {
+        return orderedChildTypesAttachment;
+    }
 }
