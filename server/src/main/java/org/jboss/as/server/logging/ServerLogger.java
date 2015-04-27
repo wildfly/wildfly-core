@@ -92,7 +92,7 @@ public interface ServerLogger extends BasicLogger {
     ServerLogger CONFIG_LOGGER = Logger.getMessageLogger(ServerLogger.class, "org.jboss.as.config");
 
     /**
-     * A logger with the category {@code org.jboss.as.warn.fdlimit}.
+     * A logger with the category {@code org.jboss.as.warn.fd-limit}.
      */
     ServerLogger FD_LIMIT_LOGGER = Logger.getMessageLogger(ServerLogger.class, "org.jboss.as.warn.fd-limit");
 
