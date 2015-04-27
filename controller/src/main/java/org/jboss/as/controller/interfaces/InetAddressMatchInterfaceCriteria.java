@@ -25,7 +25,7 @@
  */
 package org.jboss.as.controller.interfaces;
 
-import static org.jboss.as.controller.logging.ControllerLogger.SERVER_LOGGER;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANY_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INET_ADDRESS;
 
@@ -111,7 +111,7 @@ public class InetAddressMatchInterfaceCriteria extends AbstractInterfaceCriteria
             InetAddress toMatch = getAddress();
             // One time only warn against use of wildcard addresses
             if (!anyLocalLogged && toMatch.isAnyLocalAddress()) {
-                SERVER_LOGGER.invalidWildcardAddress(this.address, INET_ADDRESS, ANY_ADDRESS);
+                MGMT_OP_LOGGER.invalidWildcardAddress(this.address, INET_ADDRESS, ANY_ADDRESS);
                 anyLocalLogged = true;
             }
 
@@ -125,7 +125,7 @@ public class InetAddressMatchInterfaceCriteria extends AbstractInterfaceCriteria
         } catch (UnknownHostException e) {
             // One time only log a warning
             if (!unknownHostLogged) {
-                SERVER_LOGGER.cannotResolveAddress(this.address);
+                MGMT_OP_LOGGER.cannotResolveAddress(this.address);
                 unknownHostLogged = true;
             }
             return null;

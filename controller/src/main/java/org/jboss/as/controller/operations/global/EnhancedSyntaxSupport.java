@@ -60,16 +60,16 @@ class EnhancedSyntaxSupport {
                     result = list.get(index);
                 } else {
                     if (index < 0) {
-                        throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpressionIndex(attributeExpression, index);
+                        throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpressionIndex(attributeExpression, index);
                     } else {
-                        throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpressionList(attributeExpression);
+                        throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpressionList(attributeExpression);
                     }
                 }
             } else {
                 if (result.has(part)) {
                     result = result.get(part);
                 } else {
-                    throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpression(attributeExpression);
+                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
                 }
             }
         }
@@ -89,13 +89,13 @@ class EnhancedSyntaxSupport {
                 } else if (list.isDefined() && list.getType() == ModelType.LIST) {
                     result = list.get(index);
                 } else {
-                    throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpressionList(attributeExpression);
+                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpressionList(attributeExpression);
                 }
             } else {
                 if (!result.isDefined() || result.getType() == ModelType.OBJECT) {
                     result = result.get(part);
                 } else {
-                    throw ControllerLogger.SERVER_LOGGER.couldNotResolveExpression(attributeExpression);
+                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
                 }
             }
         }
