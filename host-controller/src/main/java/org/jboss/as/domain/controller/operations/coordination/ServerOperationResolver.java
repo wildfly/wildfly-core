@@ -281,7 +281,7 @@ public class ServerOperationResolver {
                     return Collections.emptyMap();
                 }
                 default:
-                    throw DomainControllerLogger.ROOT_LOGGER.unexpectedInitialPathKey(address.getElement(0).getKey());
+                    throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexpectedInitialPathKey(address.getElement(0).getKey());
             }
         }
     }
@@ -597,7 +597,7 @@ public class ServerOperationResolver {
                 }
                 case SERVER:
                 default:
-                    throw DomainControllerLogger.ROOT_LOGGER.unexpectedInitialPathKey(address.getElement(0).getKey());
+                    throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexpectedInitialPathKey(address.getElement(0).getKey());
             }
         }
     }

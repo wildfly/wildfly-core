@@ -138,7 +138,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
         final ModelNode coordinator = multiphaseContext.getLocalContext().getLocalResponse();
         ModelNode domainFailure = null;
         if (isDomain && coordinator.has(FAILURE_DESCRIPTION)) {
-            domainFailure = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+            domainFailure = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode(DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexplainedFailure());
         }
         if (domainFailure != null) {
             ModelNode fullFailure = new ModelNode();
@@ -160,11 +160,11 @@ class DomainFinalResultHandler implements OperationStepHandler {
                 if (failure.isDefined())
                     formattedFailure.get(DOMAIN_FAILURE_DESCRIPTION).set(failure);
                 else
-                    formattedFailure.get(DOMAIN_FAILURE_DESCRIPTION).set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+                    formattedFailure.get(DOMAIN_FAILURE_DESCRIPTION).set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexplainedFailure());
             } else {
                 ModelNode hostFailureProperty = new ModelNode();
                 ModelNode contextFailure = context.getFailureDescription();
-                ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+                ModelNode hostFailure = contextFailure.isDefined() ? contextFailure : new ModelNode(DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexplainedFailure());
                 hostFailureProperty.add(multiphaseContext.getLocalHostInfo().getLocalHostName(), hostFailure);
 
                 formattedFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureProperty);
@@ -184,7 +184,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
                 if (hostFailureResults == null) {
                     hostFailureResults = new ModelNode();
                 }
-                final ModelNode desc = hostResult.hasDefined(FAILURE_DESCRIPTION) ? hostResult.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+                final ModelNode desc = hostResult.hasDefined(FAILURE_DESCRIPTION) ? hostResult.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexplainedFailure());
                 hostFailureResults.get(entry.getKey()).set(desc);
             }
         }
@@ -194,7 +194,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
             if (hostFailureResults == null) {
                 hostFailureResults = new ModelNode();
             }
-            final ModelNode desc = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.ROOT_LOGGER.unexplainedFailure());
+            final ModelNode desc = coordinator.hasDefined(FAILURE_DESCRIPTION) ? coordinator.get(FAILURE_DESCRIPTION) : new ModelNode().set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexplainedFailure());
             hostFailureResults.get(multiphaseContext.getLocalHostInfo().getLocalHostName()).set(desc);
         }
 
@@ -354,10 +354,10 @@ class DomainFinalResultHandler implements OperationStepHandler {
         if (!serverGroupSuccess) {
             if (failureReport.isDefined()) {
                 ModelNode fullFailure = new ModelNode();
-                fullFailure.get(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBackWithCause()).set(failureReport);
+                fullFailure.get(DomainControllerLogger.HOST_CONTROLLER_LOGGER.operationFailedOrRolledBackWithCause()).set(failureReport);
                 context.getFailureDescription().set(fullFailure);
             } else {
-                context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.operationFailedOrRolledBack());
+                context.getFailureDescription().set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.operationFailedOrRolledBack());
             }
         }
     }

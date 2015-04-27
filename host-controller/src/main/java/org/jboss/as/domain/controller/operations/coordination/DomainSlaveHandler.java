@@ -164,10 +164,10 @@ public class DomainSlaveHandler implements OperationStepHandler {
                         final ModelNode result = new ModelNode();
                         result.get(OUTCOME).set(FAILED);
                         if (e instanceof InterruptedException) {
-                            result.get(FAILURE_DESCRIPTION).set(DomainControllerLogger.ROOT_LOGGER.interruptedAwaitingResultFromHost(entry.getKey()));
+                            result.get(FAILURE_DESCRIPTION).set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.interruptedAwaitingResultFromHost(entry.getKey()));
                             interrupted = true;
                         } else {
-                            result.get(FAILURE_DESCRIPTION).set(DomainControllerLogger.ROOT_LOGGER.exceptionAwaitingResultFromHost(entry.getKey(), e.getMessage()));
+                            result.get(FAILURE_DESCRIPTION).set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.exceptionAwaitingResultFromHost(entry.getKey(), e.getMessage()));
                         }
                         multiphaseContext.addHostControllerPreparedResult(hostName, result);
                     }

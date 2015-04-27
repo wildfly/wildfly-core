@@ -110,7 +110,7 @@ class ServerUpdatePolicy {
      */
     public boolean canUpdateServer(ServerIdentity server) {
         if (!serverGroupName.equals(server.getServerGroupName()) || !servers.contains(server)) {
-            throw DomainControllerLogger.ROOT_LOGGER.unknownServer(server);
+            throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.unknownServer(server);
         }
 
         if (!parent.canChildProceed())
@@ -130,7 +130,7 @@ class ServerUpdatePolicy {
     public void recordServerResult(ServerIdentity server, ModelNode response) {
 
         if (!serverGroupName.equals(server.getServerGroupName()) || !servers.contains(server)) {
-            throw DomainControllerLogger.ROOT_LOGGER.unknownServer(server);
+            throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.unknownServer(server);
         }
 
         boolean serverFailed = response.has(FAILURE_DESCRIPTION);

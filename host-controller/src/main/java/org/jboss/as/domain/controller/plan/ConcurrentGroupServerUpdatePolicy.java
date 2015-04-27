@@ -110,7 +110,7 @@ class ConcurrentGroupServerUpdatePolicy {
                 notifyAll();
             }
             else {
-                throw DomainControllerLogger.ROOT_LOGGER.unknownServerGroup(serverGroup);
+                throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.unknownServerGroup(serverGroup);
             }
         }
     }

@@ -66,7 +66,7 @@ abstract class AbstractServerGroupRolloutTask implements Runnable {
 
             });
         } catch (Throwable t) {
-            DomainControllerLogger.ROOT_LOGGER.debugf(t, "failed to process task %s", tasks.iterator().next().getOperation());
+            DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf(t, "failed to process task %s", tasks.iterator().next().getOperation());
         }
     }
 
