@@ -65,11 +65,6 @@ public interface DomainControllerLogger extends BasicLogger {
     DomainControllerLogger ROOT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.controller");
 
     /**
-     * A logger with the category of {@code org.jboss.as.controller}.
-     */
-    DomainControllerLogger CONTROLLER_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.controller");
-
-    /**
      * A logger with the category of {@code org.jboss.as.host.controller}.
      * <strong>Usage:</strong> Use this in code related to Host Controller functionality, except
      * for areas described in the documentation of {@link #ROOT_LOGGER}.

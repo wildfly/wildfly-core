@@ -27,7 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.host.controller.logging.HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
 
 import java.io.DataInput;
@@ -172,7 +172,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             final String serverName = input.readUTF();
             final int operationId = input.readInt();
             serverProcessName = serverName;
-            CONTROLLER_MANAGEMENT_LOGGER.serverConnected(serverName, context.getChannel());
+            ROOT_LOGGER.serverConnected(serverName, context.getChannel());
             // Execute the registration request
             context.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
                 @Override
@@ -258,7 +258,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             expectHeader(input, DomainServerProtocol.PARAM_SERVER_NAME);
             final String serverName = input.readUTF();
             final Channel channel = context.getChannel();
-            CONTROLLER_MANAGEMENT_LOGGER.serverConnected(serverName, channel);
+            ROOT_LOGGER.serverConnected(serverName, channel);
             context.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
                 @Override
                 public void execute(final ManagementRequestContext<Void> requestContext) throws Exception {
@@ -354,7 +354,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             try {
                 writeResponse(channel, (ManagementRequestHeader) header, error);
             } catch(IOException ioe) {
-                HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
+                HostControllerLogger.ROOT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
             }
         }
     }
@@ -376,7 +376,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             try {
                 writeResponse(channel, (ManagementRequestHeader) header, param);
             } catch(IOException ioe) {
-                HostControllerLogger.CONTROLLER_MANAGEMENT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
+                HostControllerLogger.ROOT_LOGGER.tracef(ioe, "failed to write error response for %s on channel: %s", header, channel);
             }
         }
     }

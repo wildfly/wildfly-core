@@ -87,7 +87,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
         context.completeStep(new OperationContext.ResultHandler() {
             @Override
             public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                DomainControllerLogger.CONTROLLER_LOGGER.tracef("Establishing final response -- result action is %s", resultAction);
+                DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Establishing final response -- result action is %s", resultAction);
                 // On the way out, fix up the response
                 final boolean isDomain = isDomainOperation(operation);
                 boolean shouldContinue = collectDomainFailure(context, isDomain);
@@ -108,7 +108,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
                         localDomainFormatted.get(RESULT).clear();
                         ModelNode domainResults = executionSupport.getFormattedDomainResult(localResponse.get(RESULT));
                         localDomainFormatted.get(RESULT, DOMAIN_RESULTS).set(domainResults);
-                        DomainControllerLogger.CONTROLLER_LOGGER.tracef("Domain formatted result for local response %s is %s",
+                        DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Domain formatted result for local response %s is %s",
                                 localResponse, localDomainFormatted);
                     }
 
@@ -209,7 +209,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
                 fullFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureResults);
                 context.getFailureDescription().set(fullFailure);
             } else {
-                DomainControllerLogger.CONTROLLER_LOGGER.debugf("Failure description is not of type OBJECT '%s'", context.getFailureDescription());
+                DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf("Failure description is not of type OBJECT '%s'", context.getFailureDescription());
             }
             return false;
         }
@@ -218,7 +218,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
 
     private ModelNode getDomainResults(final ModelNode operation, final ModelNode localDomainFormatted, final String... stepLabels) {
         ResponseProvider provider = new ResponseProvider(operation, multiphaseContext.getLocalHostInfo().getLocalHostName());
-        DomainControllerLogger.CONTROLLER_LOGGER.tracef("Provider for %s is %s", operation, provider);
+        DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Provider for %s is %s", operation, provider);
         ModelNode result = null;
         if (!provider.isLeaf()) {
             result = new ModelNode();
@@ -262,7 +262,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
         } else {
             result = multiphaseContext.getServerResult(provider.getHost(), provider.getServer(), stepLabels);
         }
-        DomainControllerLogger.CONTROLLER_LOGGER.tracef("Domain result for %s is %s", operation, result);
+        DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Domain result for %s is %s", operation, result);
         return result == null ? new ModelNode() : result;
     }
 
@@ -302,8 +302,8 @@ class DomainFinalResultHandler implements OperationStepHandler {
                 }
             }
         }
-        if (DomainControllerLogger.CONTROLLER_LOGGER.isTraceEnabled()) {
-            DomainControllerLogger.CONTROLLER_LOGGER.tracef("Host result from %s at %s is %s",
+        if (DomainControllerLogger.HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
+            DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Host result from %s at %s is %s",
                     fullResult, Arrays.asList(stepLabels), result);
         }
 

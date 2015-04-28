@@ -42,7 +42,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
-import static org.jboss.as.domain.controller.logging.DomainControllerLogger.CONTROLLER_LOGGER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
 import java.util.ArrayList;
@@ -257,7 +256,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                 } catch (TimeoutException e) {
                     future.cancel(true);
                     // This only happens if we were interrupted previously, so treat it that way
-                    CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
+                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
                 }
             }
         } finally {

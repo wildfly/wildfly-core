@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.domain.controller.logging.DomainControllerLogger.CONTROLLER_LOGGER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
 import java.util.ArrayList;
@@ -239,13 +238,13 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
                     patient = false;
-                    CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
+                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 } catch (ExecutionException e) {
-                    CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), hostName);
+                    HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), hostName);
                 } catch (TimeoutException e) {
                     // This only happens if we were interrupted previously, so treat it that way
                     future.cancel(true);
-                    CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
+                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 }
             }
 
