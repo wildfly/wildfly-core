@@ -1127,12 +1127,12 @@ public interface DomainManagementLogger extends BasicLogger {
     String filePermissionsProblemsFound(String file);
 
     /**
-     * A message indicating an unsupported reosource in the model during marshalling.
+     * A message indicating an unsupported resource in the model during marshalling.
      *
      * @param name the name of the resource.
      * @return The exception for the error.
      */
-    @Message(id = 107, value = "Unsupported resource '%s'")
+    @Message(id = 108, value = "Unsupported resource '%s'")
     IllegalStateException unsupportedResource(String name);
 
     /**
