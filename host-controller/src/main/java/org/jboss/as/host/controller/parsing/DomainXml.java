@@ -60,7 +60,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -644,7 +644,7 @@ public class DomainXml extends CommonXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case INCLUDE: {
-                    ROOT_LOGGER.warnIgnoringSocketBindingGroupInclude(reader.getLocation());
+                    HOST_CONTROLLER_LOGGER.warnIgnoringSocketBindingGroupInclude(reader.getLocation());
 
                     /* This will be reintroduced for 7.2.0, leave commented out
                      final String includedGroup = readStringAttributeElement(reader, Attribute.SOCKET_BINDING_GROUP.getLocalName());
@@ -900,7 +900,7 @@ public class DomainXml extends CommonXml {
                         }
                         //Remove support for profile includes until 7.2.0
                         if (ns == Namespace.DOMAIN_1_0) {
-                            ROOT_LOGGER.warnIgnoringProfileInclude(reader.getLocation());
+                            HOST_CONTROLLER_LOGGER.warnIgnoringProfileInclude(reader.getLocation());
                         }
                         throw unexpectedElement(reader);
                         /* This will be reintroduced for 7.2.0, leave commented out
