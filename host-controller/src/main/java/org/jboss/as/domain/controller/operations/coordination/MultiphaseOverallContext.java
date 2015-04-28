@@ -159,8 +159,8 @@ public final class MultiphaseOverallContext {
             }
             String[] translatedSteps = getTranslatedSteps(serverName, hostResults, stepLabels);
             if (translatedSteps != null && serverResult.hasDefined(translatedSteps)) {
-                if (DomainControllerLogger.CONTROLLER_LOGGER.isTraceEnabled()) {
-                    DomainControllerLogger.CONTROLLER_LOGGER.tracef("Translated steps for %s/%s[%s] are %s",
+                if (DomainControllerLogger.HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
+                    DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Translated steps for %s/%s[%s] are %s",
                             hostName, serverName, Arrays.asList(stepLabels), Arrays.asList(translatedSteps));
                 }
                 result.set(serverResult.get(translatedSteps));

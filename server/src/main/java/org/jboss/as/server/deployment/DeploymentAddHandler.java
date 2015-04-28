@@ -189,7 +189,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                     // The deployment content is missing, which would be a fatal boot error if we were going to actually
                     // install services. In ADMIN-ONLY mode we allow it to give the admin a chance to correct the problem
-                    ServerLogger.DEPLOYMENT_LOGGER.reportAdminOnlyMissingDeploymentContent(reference.getHexHash(), deploymentName);
+                    ServerLogger.ROOT_LOGGER.reportAdminOnlyMissingDeploymentContent(reference.getHexHash(), deploymentName);
 
                 } else {
                     throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContentAtBoot(reference.getHexHash(), deploymentName);

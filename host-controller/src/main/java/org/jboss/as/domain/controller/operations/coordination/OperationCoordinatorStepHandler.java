@@ -127,7 +127,7 @@ public class OperationCoordinatorStepHandler {
         // master may overly complicate the security infrastructure. Therefore,
         // the ability to do this is being disabled until it's clear that it's
         // not a problem
-        context.getFailureDescription().set(DomainControllerLogger.ROOT_LOGGER.masterDomainControllerOnlyOperation(operation.get(OP).asString(), PathAddress.pathAddress(operation.get(OP_ADDR))));
+        context.getFailureDescription().set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.masterDomainControllerOnlyOperation(operation.get(OP).asString(), PathAddress.pathAddress(operation.get(OP_ADDR))));
     }
 
     /**
@@ -194,7 +194,7 @@ public class OperationCoordinatorStepHandler {
                     if (proxy != null) {
                         remoteProxies.put(host, proxy);
                     } else if (!global) {
-                        throw DomainControllerLogger.ROOT_LOGGER.invalidOperationTargetHost(host);
+                        throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.invalidOperationTargetHost(host);
                     }
                 }
 

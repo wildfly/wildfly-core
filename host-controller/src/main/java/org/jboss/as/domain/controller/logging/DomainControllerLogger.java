@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
 import javax.xml.stream.Location;
 
 import org.jboss.as.controller.ModelVersion;
@@ -40,10 +41,10 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.BasicLogger;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.modules.ModuleLoadException;
@@ -56,27 +57,17 @@ import org.jboss.modules.ModuleLoadException;
 public interface DomainControllerLogger extends BasicLogger {
 
     /**
-     * A logger with the category of the package.
+     * A logger with the category of {@code org.jboss.as.domain.controller}.
+     * <strong>Usage:</strong> Use this in OSH code related to the resources persisted in domain.xml, or
+     * in code specific to the function of the master Host Controller, e.g. the registration/deregistration
+     * of slave Host Contollers.
      */
     DomainControllerLogger ROOT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.controller");
 
     /**
-     * A logger with the category of {@code org.jboss.as.controller}.
-     */
-    DomainControllerLogger CONTROLLER_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.controller");
-
-    /**
-     * A logger with the category of {@code org.jboss.as.deployment}.
-     */
-    DomainControllerLogger DEPLOYMENT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.deployment");
-
-    /**
-     * A logger with the category of {@code org.jboss.as.domain.deployment}.
-     */
-    DomainControllerLogger DOMAIN_DEPLOYMENT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.deployment");
-
-    /**
      * A logger with the category of {@code org.jboss.as.host.controller}.
+     * <strong>Usage:</strong> Use this in code related to Host Controller functionality, except
+     * for areas described in the documentation of {@link #ROOT_LOGGER}.
      */
     DomainControllerLogger HOST_CONTROLLER_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.host.controller");
 

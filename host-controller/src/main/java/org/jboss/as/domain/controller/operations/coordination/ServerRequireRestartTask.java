@@ -78,7 +78,7 @@ class ServerRequireRestartTask implements Callable<OperationResponse> {
 
                 @Override
                 public void operationFailed(ModelNode response) {
-                    DomainControllerLogger.ROOT_LOGGER.debugf("server restart required operation failed: %s", response);
+                    DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf("server restart required operation failed: %s", response);
                 }
 
                 @Override
@@ -94,10 +94,10 @@ class ServerRequireRestartTask implements Callable<OperationResponse> {
                 // Commit right away
                 tx.commit();
             } else {
-                DomainControllerLogger.ROOT_LOGGER.failedToSetServerInRestartRequireState(identity.getServerName());
+                DomainControllerLogger.HOST_CONTROLLER_LOGGER.failedToSetServerInRestartRequireState(identity.getServerName());
             }
         } catch (Exception e) {
-            DomainControllerLogger.ROOT_LOGGER.debugf(e, "failed to send the server restart required operation");
+            DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf(e, "failed to send the server restart required operation");
         }
         return originalResult;
     }

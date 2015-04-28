@@ -48,7 +48,7 @@ class RollingServerGroupUpdateTask extends AbstractServerGroupRolloutTask implem
         for(final ServerUpdateTask task : tasks) {
             final ServerIdentity identity = task.getServerIdentity();
             if(interrupted || ! updatePolicy.canUpdateServer(identity)) {
-                DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER.tracef("Skipping server update task for %s", identity);
+                DomainControllerLogger.HOST_CONTROLLER_LOGGER.tracef("Skipping server update task for %s", identity);
                 continue;
             }
             // Execute the task
@@ -58,7 +58,7 @@ class RollingServerGroupUpdateTask extends AbstractServerGroupRolloutTask implem
                     final TransactionalProtocolClient.PreparedOperation<ServerTaskExecutor.ServerOperation> prepared = listener.retrievePreparedOperation();
                     recordPreparedOperation(identity, prepared);
                 } catch (InterruptedException e) {
-                    DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER.interruptedAwaitingPreparedResponse(getClass().getSimpleName(), Collections.singleton(identity));
+                    DomainControllerLogger.HOST_CONTROLLER_LOGGER.interruptedAwaitingPreparedResponse(getClass().getSimpleName(), Collections.singleton(identity));
                     executor.cancelTask(identity);
                     interrupted = true;
                 }

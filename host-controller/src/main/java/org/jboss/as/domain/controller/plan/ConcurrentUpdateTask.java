@@ -21,9 +21,8 @@
  */
 package org.jboss.as.domain.controller.plan;
 
-import static org.jboss.as.domain.controller.logging.DomainControllerLogger.DOMAIN_DEPLOYMENT_LOGGER;
-
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -75,17 +74,17 @@ class ConcurrentUpdateTask implements Runnable {
                     future.get(0, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException e) {
-                DOMAIN_DEPLOYMENT_LOGGER.caughtExceptionWaitingForTask(ConcurrentUpdateTask.class.getSimpleName(),
+                HOST_CONTROLLER_LOGGER.caughtExceptionWaitingForTask(ConcurrentUpdateTask.class.getSimpleName(),
                         e.getClass().getSimpleName(), concurrentTasks.get(i).toString());
                 patient = false;
                 future.cancel(true);
             } catch (ExecutionException e) {
-                DOMAIN_DEPLOYMENT_LOGGER.caughtExceptionWaitingForTask(ConcurrentUpdateTask.class.getSimpleName(),
+                HOST_CONTROLLER_LOGGER.caughtExceptionWaitingForTask(ConcurrentUpdateTask.class.getSimpleName(),
                         e.getClass().getSimpleName(), concurrentTasks.get(i).toString());
                 future.cancel(true);
             } catch (TimeoutException e) {
                 // Task wasn't already done; cancel it
-                DOMAIN_DEPLOYMENT_LOGGER.caughtExceptionWaitingForTask(ConcurrentUpdateTask.class.getSimpleName(),
+                HOST_CONTROLLER_LOGGER.caughtExceptionWaitingForTask(ConcurrentUpdateTask.class.getSimpleName(),
                         e.getClass().getSimpleName(), concurrentTasks.get(i).toString());
                 patient = false; // it should already be false if we got here, but just in case someone changes something
                 future.cancel(true);
