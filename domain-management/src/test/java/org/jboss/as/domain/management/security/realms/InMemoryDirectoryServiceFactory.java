@@ -50,8 +50,7 @@ import org.apache.directory.server.core.factory.AvlPartitionFactory;
 import org.apache.directory.server.core.factory.DirectoryServiceFactory;
 import org.apache.directory.server.core.factory.PartitionFactory;
 import org.apache.directory.server.i18n.I18n;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /**
  * Factory for a fast (mostly in-memory-only) ApacheDS DirectoryService. Use only for tests!!
@@ -60,7 +59,7 @@ import org.slf4j.LoggerFactory;
  */
 public class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
 
-    private static Logger LOG = LoggerFactory.getLogger(InMemoryDirectoryServiceFactory.class);
+    private static Logger LOG = Logger.getLogger(InMemoryDirectoryServiceFactory.class);
 
     private final DirectoryService directoryService;
     private final PartitionFactory partitionFactory;

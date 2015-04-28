@@ -37,8 +37,7 @@ import org.apache.directory.api.ldap.schemaextractor.impl.DefaultSchemaLdifExtra
 import org.apache.directory.api.ldap.schemaextractor.impl.ResourceMap;
 import org.apache.directory.server.core.api.interceptor.context.AddOperationContext;
 import org.apache.directory.server.core.partition.ldif.AbstractLdifPartition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /**
  * In-memory schema-only partition which loads the data in the similar way as the
@@ -48,7 +47,7 @@ import org.slf4j.LoggerFactory;
  */
 public class InMemorySchemaPartition extends AbstractLdifPartition {
 
-    private static Logger LOG = LoggerFactory.getLogger(InMemorySchemaPartition.class);
+    private static Logger LOG = Logger.getLogger(InMemorySchemaPartition.class);
 
     /**
      * Filesystem path separator pattern, either forward slash or backslash. java.util.regex.Pattern is immutable so only one
@@ -69,7 +68,7 @@ public class InMemorySchemaPartition extends AbstractLdifPartition {
         if (initialized)
             return;
 
-        LOG.debug("Initializing schema partition " + getId());
+        LOG.debugf("Initializing schema partition %s", getId());
         suffixDn.apply(schemaManager);
         super.doInit();
 
