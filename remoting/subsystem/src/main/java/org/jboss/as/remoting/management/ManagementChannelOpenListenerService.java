@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.AbstractChannelOpenListenerService;
+import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Channel;
 import org.xnio.OptionMap;
@@ -53,7 +54,7 @@ class ManagementChannelOpenListenerService extends AbstractChannelOpenListenerSe
     @Override
     protected ManagementChannelInitialization.ManagementChannelShutdownHandle handleChannelOpened(final Channel channel) {
         final ManagementChannelInitialization initialization = operationHandlerFactoryValue.getValue();
-        log.tracef("Opened %s: %s with handler %s", channelName, channel, initialization);
+        RemotingLogger.ROOT_LOGGER.tracef("Opened %s: %s with handler %s", channelName, channel, initialization);
         return initialization.startReceiving(channel);
     }
 

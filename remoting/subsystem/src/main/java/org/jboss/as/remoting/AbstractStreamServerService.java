@@ -28,7 +28,6 @@ import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -49,8 +48,6 @@ import org.xnio.channels.ConnectedStreamChannel;
  * @version $Revision: 1.1 $
  */
 public abstract class AbstractStreamServerService implements Service<AcceptingChannel<? extends ConnectedStreamChannel>>{
-
-    private final Logger log = Logger.getLogger("org.jboss.as.remoting");
 
     @SuppressWarnings("rawtypes")
     private final InjectedValue<RemotingSecurityProvider> securityProviderValue = new InjectedValue<RemotingSecurityProvider>();
@@ -94,8 +91,8 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                 builder.addAll(connectorPropertiesOptionMap);
             }
             OptionMap resultingMap = builder.getMap();
-            if (log.isTraceEnabled()) {
-                log.tracef("Resulting OptionMap %s", resultingMap.toString());
+            if (RemotingLogger.ROOT_LOGGER.isTraceEnabled()) {
+                RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
             }
             streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, sap, rsp.getXnioSsl());
             SocketBindingManager sbm = socketBindingManagerValue.getOptionalValue();

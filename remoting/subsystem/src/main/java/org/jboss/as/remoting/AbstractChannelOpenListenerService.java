@@ -32,7 +32,6 @@ import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRequestTracker;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -72,8 +71,6 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
         CHANNEL_SHUTDOWN_TIMEOUT = timeout;
     }
 
-    protected final Logger log = Logger.getLogger("org.jboss.as.remoting");
-
     private final InjectedValue<Endpoint> endpointValue = new InjectedValue<Endpoint>();
     private final InjectedValue<ManagementChannelRegistryService> registry = new InjectedValue<ManagementChannelRegistryService>();
 
@@ -110,7 +107,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
     public synchronized void start(StartContext context) throws StartException {
         try {
             closed = false;
-            log.debugf("Registering channel listener for %s", channelName);
+            RemotingLogger.ROOT_LOGGER.debugf("Registering channel listener for %s", channelName);
             final ManagementChannelRegistryService registry = this.registry.getValue();
             final Registration registration = endpointValue.getValue().registerService(channelName, this, optionMap);
             // Add to global registry
@@ -171,7 +168,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
         // When the server/host is stopping we don't accept new connections
         // this should be using the graceful shutdown control
         if(closed) {
-            log.debugf("server shutting down, closing channel %s.", channel);
+            RemotingLogger.ROOT_LOGGER.debugf("server shutting down, closing channel %s.", channel);
             channel.closeAsync();
             return;
         }
@@ -183,7 +180,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
                 handles.remove(handle);
                 handle.shutdownNow();
                 trackerService.unregisterTracker(handle);
-                log.tracef("Handling close for %s", handle);
+                RemotingLogger.ROOT_LOGGER.tracef("Handling close for %s", handle);
             }
         });
     }
