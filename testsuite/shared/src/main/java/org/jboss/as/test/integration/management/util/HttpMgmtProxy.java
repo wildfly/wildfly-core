@@ -26,11 +26,12 @@ import java.net.URL;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -45,15 +46,17 @@ public class HttpMgmtProxy {
 
     private static final String APPLICATION_JSON = "application/json";
     private URL url;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
     private HttpContext httpContext = new BasicHttpContext();
 
     public HttpMgmtProxy(URL mgmtURL) {
         this.url = mgmtURL;
-        DefaultHttpClient httpClient = new DefaultHttpClient();
+        BasicCredentialsProvider provider = new BasicCredentialsProvider();
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD);
-        httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
-        this.httpClient = httpClient;
+        provider.setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
+        this.httpClient = HttpClients.custom()
+                        .setDefaultCredentialsProvider(provider)
+                        .build();
     }
 
     public ModelNode sendGetCommand(String cmd) throws Exception {

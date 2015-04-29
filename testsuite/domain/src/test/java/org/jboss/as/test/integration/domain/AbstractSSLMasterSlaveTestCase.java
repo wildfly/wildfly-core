@@ -157,14 +157,13 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static ModelNode executeOverHttp(URI mgmtURI, String operation) throws IOException {
-        CloseableHttpClient httpClient = createHttpClient(mgmtURI);
         HttpEntity operationEntity = new StringEntity(operation, ContentType.APPLICATION_JSON);
         HttpPost httpPost = new HttpPost(mgmtURI);
         httpPost.setEntity(operationEntity);
 
         HttpResponse response;
         ModelNode responseNode;
-        try {
+        try (CloseableHttpClient httpClient = createHttpClient(mgmtURI)) {
             response = httpClient.execute(httpPost);
 
             int statusCode = response.getStatusLine().getStatusCode();
@@ -178,8 +177,6 @@ public abstract class AbstractSSLMasterSlaveTestCase {
             }
             responseNode = ModelNode.fromJSONStream(response.getEntity().getContent());
             EntityUtils.consume(entity);
-        } finally {
-            httpClient.close();
         }
 
         return responseNode;
