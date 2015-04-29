@@ -134,7 +134,6 @@ public class ModelDescriptionConstants {
     public static final String DOMAIN_CONTROLLER = "domain-controller";
     public static final String DOMAIN_MODEL = "domain-model";
     public static final String DOMAIN_RESULTS = "domain-results";
-    public static final String DOMAIN_ROLLOUT = "domain-rollout";
     public static final String DOMAIN_UUID = "domain-uuid";
     public static final String DUMP_SERVICES = "dump-services";
     public static final String ENABLE = "enable";

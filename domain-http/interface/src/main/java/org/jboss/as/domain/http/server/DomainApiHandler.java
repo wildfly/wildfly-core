@@ -22,9 +22,7 @@
 package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -37,7 +35,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
@@ -207,13 +204,7 @@ class DomainApiHandler implements HttpHandler {
         } : ModelController.OperationTransactionControl.COMMIT;
 
         try {
-            ModelNode headers = dmr.get(OPERATION_HEADERS);
-            headers.get(ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
-            headers.get(CALLER_TYPE).set(USER);
-            // Don't allow a domain-uuid operation header from a user call
-            if (headers.hasDefined(DOMAIN_UUID)) {
-                headers.remove(DOMAIN_UUID);
-            }
+            dmr.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
             response = modelController.execute(new OperationBuilder(dmr).build(), OperationMessageHandler.logging, control);
             if (cachable && streamIndex > -1) {
                 // Use the MD5 of the model nodes toString() method as ETag

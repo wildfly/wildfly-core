@@ -28,8 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_THREAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ROLLOUT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCLUSIVE_RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTION_STATUS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -202,7 +200,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final Integer operationId;
     private final String operationName;
     private final ModelNode operationAddress;
-    private final AccessAuditContext accessAuditContext;
+    private final AccessMechanism accessMechanism;
     private final ActiveOperationResource activeOperationResource;
     private final BooleanHolder done = new BooleanHolder();
 
@@ -217,7 +215,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final ControlledProcessState processState, final AuditLogger auditLogger, final boolean booting,
                          final HostServerGroupTracker hostServerGroupTracker,
                          final ModelNode blockingTimeoutConfig,
-                         final AccessAuditContext accessAuditContext,
+                         final AccessMechanism accessMechanism,
                          final NotificationSupport notificationSupport,
                          final boolean skipModelValidation) {
         super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport, modelController, skipModelValidation);
@@ -235,7 +233,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.hostServerGroupTracker = hostServerGroupTracker;
         this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
-        this.accessAuditContext = accessAuditContext;
+        this.accessMechanism = accessMechanism;
     }
 
     public InputStream getAttachmentStream(final int index) {
@@ -2355,20 +2353,9 @@ final class OperationContextImpl extends AbstractOperationContext {
 
             model.get(CALLER_THREAD).set(initiatingThread.getName());
             ModelNode accessMechanismNode = model.get(ACCESS_MECHANISM);
-            ModelNode domainUUIDNode = model.get(DOMAIN_UUID);
-            boolean domainRollout = false;
-            if (accessAuditContext != null) {
-                AccessMechanism accessMechanism = accessAuditContext.getAccessMechanism();
-                if (accessMechanism != null) {
-                    accessMechanismNode.set(accessMechanism.toString());
-                }
-                String domainUUID = accessAuditContext.getDomainUuid();
-                if (domainUUID != null) {
-                    domainUUIDNode.set(domainUUID);
-                }
-                domainRollout = accessAuditContext.isDomainRollout();
+            if (accessMechanism != null) {
+                accessMechanismNode.set(accessMechanism.toString());
             }
-            model.get(DOMAIN_ROLLOUT).set(domainRollout);
             model.get(EXECUTION_STATUS).set(getExecutionStatus());
             model.get(RUNNING_TIME).set(System.nanoTime() - startTime);
             long exclusive = exclusiveStartTime;

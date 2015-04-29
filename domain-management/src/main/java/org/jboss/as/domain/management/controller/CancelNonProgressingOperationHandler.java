@@ -24,6 +24,7 @@ package org.jboss.as.domain.management.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCLUSIVE_RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -40,11 +41,13 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.domain.management._private.DomainManagementResolver;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
+import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -78,7 +81,15 @@ public class CancelNonProgressingOperationHandler implements OperationStepHandle
 
         DomainManagementLogger.ROOT_LOGGER.debugf("Cancel of operation not progressing after [%d] ns requested", timeout);
 
-        String blockingId = FindNonProgressingOperationHandler.findNonProgressingOp(context, timeout);
+        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        String blockingId = null;
+        for (Resource.ResourceEntry child : resource.getChildren(ModelDescriptionConstants.ACTIVE_OPERATION)) {
+            ModelNode model = child.getModel();
+            if (model.get(EXCLUSIVE_RUNNING_TIME).asLong() > timeout) {
+                blockingId = child.getName();
+                break;
+            }
+        }
 
         if (blockingId != null) {
 
@@ -97,7 +108,7 @@ public class CancelNonProgressingOperationHandler implements OperationStepHandle
                 }
             });
         } else {
-            throw DomainManagementLogger.ROOT_LOGGER.noNonProgressingOperationFound(TimeUnit.NANOSECONDS.toSeconds(timeout));
+            context.getFailureDescription().set(DomainManagementLogger.ROOT_LOGGER.noNonProgressingOperationFound(TimeUnit.NANOSECONDS.toSeconds(timeout)));
         }
     }
 }

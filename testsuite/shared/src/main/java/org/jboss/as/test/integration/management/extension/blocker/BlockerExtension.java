@@ -158,7 +158,6 @@ public class BlockerExtension implements Extension {
             if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
                 forMe = true;
             } else {
-                context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS); // To help with WFCORE-263 testing, get the exclusive lock on this process
                 Resource rootResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
                 if (targetServer.isDefined()) {
                     if (context.getProcessType().isServer()) {

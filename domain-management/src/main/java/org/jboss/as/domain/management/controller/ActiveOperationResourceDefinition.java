@@ -66,11 +66,6 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
                     .setAllowNull(true)
                     .setValidator(EnumValidator.create(AccessMechanism.class, true, false))
                     .build();
-    private static final AttributeDefinition DOMAIN_UUID =
-            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DOMAIN_UUID, ModelType.STRING, true).build();
-    private static final AttributeDefinition DOMAIN_ROLLOUT =
-            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DOMAIN_ROLLOUT, ModelType.BOOLEAN).build();
-
     private static final AttributeDefinition EXECUTION_STATUS =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.EXECUTION_STATUS, ModelType.STRING)
                     .setValidator(EnumValidator.create(OperationContext.ExecutionStatus.class, false, false))
@@ -104,8 +99,6 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
         resourceRegistration.registerReadOnlyAttribute(ADDRESS, SecureOperationReadHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(CALLER_THREAD, null);
         resourceRegistration.registerReadOnlyAttribute(ACCESS_MECHANISM, null);
-        resourceRegistration.registerReadOnlyAttribute(DOMAIN_UUID, null);
-        resourceRegistration.registerReadOnlyAttribute(DOMAIN_ROLLOUT, null);
         resourceRegistration.registerReadOnlyAttribute(EXECUTION_STATUS, null);
         resourceRegistration.registerReadOnlyAttribute(RUNNING_TIME, null);
         resourceRegistration.registerReadOnlyAttribute(EXCLUSIVE_RUNNING_TIME, null);
