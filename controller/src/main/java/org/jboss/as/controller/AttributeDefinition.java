@@ -423,8 +423,9 @@ public abstract class AttributeDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public final void validateAndSet(ModelNode operationObject, final ModelNode model) throws OperationFailedException {
-        if (operationObject.hasDefined(name) && isDeprecated()) {
-            ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName());
+        if (operationObject.hasDefined(name) && deprecationData != null && deprecationData.isNotificationUseful()) {
+            ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName(),
+                    PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
         }
         // AS7-6224 -- convert expression strings to ModelType.EXPRESSION *before* correcting
         ModelNode newValue = convertParameterExpressions(operationObject.get(name));
