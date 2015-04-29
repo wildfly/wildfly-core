@@ -417,8 +417,10 @@ public interface ControllerLogger extends BasicLogger {
     void interruptedWaitingStability();
 
     @LogMessage(level = Level.INFO)
-    @Message(id = 28, value = "Attribute %s is deprecated, and it might be removed in future version!")
-    void attributeDeprecated(String name);
+    @Message(id = 28, value = "Attribute '%s' in the resource at address '%s' is deprecated, and may be removed in " +
+            "future version. See the attribute description in the output of the read-resource-description operation " +
+            "to learn more about the deprecation.")
+    void attributeDeprecated(String name, String address);
 
     /**
      * Logs a warning message indicating a temp file could not be deleted.
@@ -3314,5 +3316,11 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 394, value = "Capability '%s' does not provide services of type '%s'")
     IllegalArgumentException invalidCapabilityServiceType(String capabilityName, Class<?> serviceType);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 395, value = "Operation %s against the resource at address %s is deprecated, and it might be removed in " +
+            "future version. See the the output of the read-operation-description operation" +
+            "to learn more about the deprecation.")
+    void operationDeprecated(String name, String address);
 
 }
