@@ -52,12 +52,16 @@ import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -210,8 +214,11 @@ public class CoreUtils {
      * @throws Exception
      */
     public static void makeCall(String URL, String user, String pass, int expectedStatusCode) throws Exception {
-        DefaultHttpClient httpclient = new DefaultHttpClient();
-        try {
+
+        CookieStore cookieStore = new BasicCookieStore();
+        try (CloseableHttpClient httpclient = HttpClients.custom()
+                .setDefaultCookieStore(cookieStore)
+                .build()) {
             HttpGet httpget = new HttpGet(URL);
 
             HttpResponse response = httpclient.execute(httpget);
@@ -221,18 +228,18 @@ public class CoreUtils {
 
             // We should get the Login Page
             StatusLine statusLine = response.getStatusLine();
-            System.out.println("Login form get: " + statusLine);
+            //System.out.println("Login form get: " + statusLine);
             assertEquals(200, statusLine.getStatusCode());
 
-            System.out.println("Initial set of cookies:");
-            List<Cookie> cookies = httpclient.getCookieStore().getCookies();
+            //System.out.println("Initial set of cookies:");
+            /*List<Cookie> cookies = cookieStore.getCookies();
             if (cookies.isEmpty()) {
                 System.out.println("None");
             } else {
                 for (int i = 0; i < cookies.size(); i++) {
                     System.out.println("- " + cookies.get(i).toString());
                 }
-            }
+            }*/
 
             // We should now login with the user name and password
             HttpPost httpost = new HttpPost(URL + "/j_security_check");
@@ -260,25 +267,24 @@ public class CoreUtils {
             entity = response.getEntity();
             if (entity != null) { EntityUtils.consume(entity); }
 
-            System.out.println("Post logon cookies:");
-            cookies = httpclient.getCookieStore().getCookies();
+            /*System.out.println("Post logon cookies:");
+            cookies = cookieStore.getCookies();
             if (cookies.isEmpty()) {
                 System.out.println("None");
             } else {
                 for (int i = 0; i < cookies.size(); i++) {
                     System.out.println("- " + cookies.get(i).toString());
                 }
-            }
+            }*/
 
             // Either the authentication passed or failed based on the expected status code
             statusLine = response.getStatusLine();
             assertEquals(expectedStatusCode, statusLine.getStatusCode());
-        } finally {
-            // When HttpClient instance is no longer needed,
-            // shut down the connection manager to ensure
-            // immediate deallocation of all system resources
-            httpclient.getConnectionManager().shutdown();
         }
+        // When HttpClient instance is no longer needed,
+        // shut down the connection manager to ensure
+        // immediate deallocation of all system resources
+
     }
 
     /**
@@ -296,8 +302,13 @@ public class CoreUtils {
      */
     public static String makeCallWithBasicAuthn(URL url, String user, String pass, int expectedStatusCode) throws IOException, URISyntaxException {
         LOGGER.info("Requesting URL " + url);
-        final DefaultHttpClient httpClient = new DefaultHttpClient();
-        try {
+
+        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+        credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort()),
+                new UsernamePasswordCredentials(user, pass));
+        try (CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultCredentialsProvider(credsProvider)
+        .build()) {
             final HttpGet httpGet = new HttpGet(url.toURI());
             HttpResponse response = httpClient.execute(httpGet);
             int statusCode = response.getStatusLine().getStatusCode();
@@ -312,19 +323,15 @@ public class CoreUtils {
             if (entity != null)
                 EntityUtils.consume(entity);
 
-            final UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, pass);
-            httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort()), credentials);
-
             response = httpClient.execute(httpGet);
             statusCode = response.getStatusLine().getStatusCode();
             assertEquals("Unexpected status code returned after the authentication.", expectedStatusCode, statusCode);
             return EntityUtils.toString(response.getEntity());
-        } finally {
-            // When HttpClient instance is no longer needed,
-            // shut down the connection manager to ensure
-            // immediate deallocation of all system resources
-            httpClient.getConnectionManager().shutdown();
         }
+        // When HttpClient instance is no longer needed,
+        // shut down the connection manager to ensure
+        // immediate deallocation of all system resources
+
     }
 
     /**
@@ -368,6 +375,7 @@ public class CoreUtils {
         String httpResponseBody = null;
         HttpGet httpGet = new HttpGet(url.toURI());
         HttpResponse response = httpClient.execute(httpGet);
+
         int statusCode = response.getStatusLine().getStatusCode();
         LOGGER.info("Request to: " + url + " responds: " + statusCode);
 
@@ -630,15 +638,12 @@ public class CoreUtils {
      * @throws Exception
      */
     public static String makeCall(URI uri, int expectedStatusCode) throws Exception {
-        final DefaultHttpClient httpclient = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             final HttpGet httpget = new HttpGet(uri);
             final HttpResponse response = httpclient.execute(httpget);
             int statusCode = response.getStatusLine().getStatusCode();
             assertEquals("Unexpected status code returned after the authentication.", expectedStatusCode, statusCode);
             return EntityUtils.toString(response.getEntity());
-        } finally {
-            httpclient.getConnectionManager().shutdown();
         }
     }
 

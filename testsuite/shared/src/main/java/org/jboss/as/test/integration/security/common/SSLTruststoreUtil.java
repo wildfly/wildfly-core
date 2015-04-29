@@ -32,15 +32,16 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.SSLContext;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.client.HttpClient;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContextBuilder;
-import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
@@ -60,24 +61,23 @@ public class SSLTruststoreUtil {
 
     private static final String HTTPS = "https";
 
-    public static HttpClient getHttpClientWithSSL(File trustStoreFile, String password) {
+    public static CloseableHttpClient getHttpClientWithSSL(File trustStoreFile, String password) {
         return getHttpClientWithSSL(null, null, trustStoreFile, password);
     }
 
-    public static HttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile,
+    public static CloseableHttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile,
                                                   String trustStorePassword) {
 
         try {
-            final KeyStore truststore = loadKeyStore(trustStoreFile, trustStorePassword.toCharArray());
             final KeyStore keystore = keyStoreFile != null ? loadKeyStore(keyStoreFile, keyStorePassword.toCharArray()) : null;
             SSLContextBuilder sslContextBuilder = SSLContexts.custom()
-                    .useTLS()
-                    .loadTrustMaterial(truststore);
+                    .useProtocol("TLS")
+                    .loadTrustMaterial(trustStoreFile, trustStorePassword.toCharArray());
             if (keyStoreFile!=null){
                 sslContextBuilder.loadKeyMaterial(keystore, keyStorePassword.toCharArray());
             }
             SSLContext sslContext = sslContextBuilder.build();
-            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext,new AllowAllHostnameVerifier());
+            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext,new NoopHostnameVerifier());
 
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())
@@ -86,9 +86,10 @@ public class SSLTruststoreUtil {
 
             return HttpClientBuilder.create()
                     .setSSLSocketFactory(socketFactory)
-                    .setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+                    //.setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
                     .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
                     .setSchemePortResolver(new DefaultSchemePortResolver())
+                    .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(3, 3000))
                     .build();
 
         } catch (Exception e) {
