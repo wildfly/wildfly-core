@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -342,17 +343,11 @@ public class DomainLifecycleUtil {
             if(! "success".equals(result.get("outcome").asString())) {
                 return result;
             }
-        } catch(Exception e) {
-            if(e instanceof IOException) {
-                final Throwable cause = e.getCause();
-                if(cause instanceof ExecutionException) {
-                    // ignore, this might happen if the channel gets closed before we got the response
-                } else {
-                    throw (IOException) e;
-                }
-            } else {
-                throw new RuntimeException(e);
-            }
+        } catch (IOException e) {
+            final Throwable cause = e.getCause();
+            if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException)) {
+                throw e;
+            } // else ignore, this might happen if the channel gets closed before we got the response
         }
         try {
             if(channel != null) {
