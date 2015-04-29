@@ -22,12 +22,11 @@
 
 package org.jboss.as.domain.management.logging;
 
-import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
+import static org.jboss.logging.Logger.Level.ERROR;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Collection;
 import java.util.Set;
 
 import javax.naming.NamingException;
@@ -983,7 +982,7 @@ public interface DomainManagementLogger extends BasicLogger {
     NamingException usernameNotLoaded(String name);
 
     @Message(id = 89, value = "No operation was found that has been holding the operation execution write lock for long than [%d] seconds")
-    OperationFailedException noNonProgressingOperationFound(long timeout);
+    String noNonProgressingOperationFound(long timeout);
 
     /**
      * Create an exception indicating an error parsing the Keytab location.
@@ -1126,11 +1125,6 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = 106, value = "File permissions problems found while attempting to update %s file.")
     String filePermissionsProblemsFound(String file);
-
-    @Message(id = 107, value = "Operation '%s' has been holding the operation execution write lock for longer than [%d] seconds, " +
-            "but it is part of the rollout of a domain-wide operation with domain-uuid '%s' that has other operations that are also" +
-            "not progressing. Their ids are: %s. Cancellation of the operation on the master host controller is recommended.")
-    OperationFailedException domainRolloutNotProgressing(String exclusiveLock, long timeout, String domainUUID, Collection relatedOps);
 
     /**
      * Information message saying the username and password must be different.
