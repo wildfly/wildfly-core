@@ -44,11 +44,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -90,7 +94,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
     private static final String APPLICATION_JSON = "application/json";
 
     private String logMessageContent;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -144,7 +148,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
             try {
                 // shut down the connection manager to ensure
                 // immediate deallocation of all system resources
-                httpClient.getConnectionManager().shutdown();
+                httpClient.close();
             } catch (Exception e) {
                 log.error(e);
             } finally {
@@ -422,10 +426,13 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
 
         shutdownHttpClient();
 
-        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD);
-        defaultHttpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
-        httpClient = defaultHttpClient;
+        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+                    credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"),
+                            new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD));
+
+        httpClient = HttpClientBuilder.create()
+                .setDefaultCredentialsProvider(credsProvider)
+                .build();
 
         return httpClient;
     }

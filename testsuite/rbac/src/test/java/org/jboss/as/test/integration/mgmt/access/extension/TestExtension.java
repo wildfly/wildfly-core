@@ -24,6 +24,7 @@ package org.jboss.as.test.integration.mgmt.access.extension;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -44,7 +45,7 @@ public class TestExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         System.out.println("Initializing TestExtension");
-        SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, 1, 0, 0);
+        SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         ManagementResourceRegistration rootRbacRegistration = registration.registerSubsystemModel(new RootResourceDefinition("rbac"));
         rootRbacRegistration.registerSubModel(new ConstrainedResource(PathElement.pathElement("rbac-constrained")));
         rootRbacRegistration.registerSubModel(new SensitiveResource(PathElement.pathElement("rbac-sensitive")));

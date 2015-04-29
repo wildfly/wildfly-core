@@ -24,10 +24,15 @@ package org.jboss.as.test.integration.domain;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTPS_PORT;
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTP_PORT;
@@ -47,7 +52,10 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -55,6 +63,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.integration.security.common.SSLTruststoreUtil;
@@ -69,14 +78,17 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * Tests of managing a host controller using HTTPS.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class HTTPSManagementInterfaceTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar + "https-mgmt-workdir");
@@ -92,6 +104,7 @@ public class HTTPSManagementInterfaceTestCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private boolean reloadRequired = false;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -135,6 +148,7 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get("http-upgrade-enabled").set(true);
         operation.get("secure-port").set(MANAGEMENT_HTTPS_PORT);
         CoreUtils.applyUpdate(operation, domainMasterLifecycleUtil.getDomainClient());
+        this.reloadRequired = true;
     }
 
     @After
@@ -184,10 +198,11 @@ public class HTTPSManagementInterfaceTestCase {
         }
         reload();
 
-        HttpClient httpClient = HttpClients.createDefault();
         URL mgmtURL = new URL("http", DomainTestSupport.masterAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX);
 
-        try {
+        try (CloseableHttpClient httpClient = HttpClients.custom()
+                .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(3, 3000))
+                .build()) {
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 401);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
             fail("Untrusted client should not be authenticated.");
@@ -197,9 +212,10 @@ public class HTTPSManagementInterfaceTestCase {
             // OK
         }
 
-        final HttpClient trustedHttpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
-        String responseBody = makeCallWithHttpClient(mgmtURL, trustedHttpClient, 200);
-        assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
+        try (CloseableHttpClient trustedHttpClient = getHttpClient(CLIENT_KEYSTORE_FILE)) {
+            String responseBody = makeCallWithHttpClient(mgmtURL, trustedHttpClient, 200);
+            assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
+        }
     }
 
     /**
@@ -241,12 +257,9 @@ public class HTTPSManagementInterfaceTestCase {
         }
         reload();
 
-        final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
-        final HttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
-
         String address = addSecureInterface ? DomainTestSupport.slaveAddress : DomainTestSupport.masterAddress;
         URL mgmtURL = new URL("https", address, MANAGEMENT_HTTPS_PORT, MGMT_CTX);
-        try {
+        try (CloseableHttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE)) {
             String responseBody = makeCallWithHttpClient(mgmtURL, httpClientUntrusted, 401);
             assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
         } catch (SSLHandshakeException | SSLPeerUnverifiedException | SocketException e) {
@@ -255,7 +268,10 @@ public class HTTPSManagementInterfaceTestCase {
             // OK
         }
 
-        String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
+        String responseBody;
+        try (CloseableHttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE)) {
+            responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
+        }
         assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
 
     }
@@ -299,11 +315,20 @@ public class HTTPSManagementInterfaceTestCase {
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
         operation.get(NAME).set("secure-interface");
         operation.get(VALUE).set("secure-management");
-        CoreUtils.applyUpdate(operation, domainMasterLifecycleUtil.getDomainClient());
-
+        ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(operation);
+        if (!SUCCESS.equals(result.get(OUTCOME).asString())) {
+            throw new MgmtOperationException("Could not add secure interface: " + result.get(FAILURE_DESCRIPTION), operation, result);
+        }
+        final ModelNode responseHeaders = result.get(RESPONSE_HEADERS);
+        if (ControlledProcessState.State.RELOAD_REQUIRED.toString().equals(responseHeaders.get(PROCESS_STATE).asString())) {
+            this.reloadRequired = true;
+        }
     }
 
     private void reload() throws IOException, TimeoutException, InterruptedException {
+        if (!reloadRequired){
+            return;
+        }
         ModelNode op = new ModelNode();
         op.get(OP_ADDR).add(HOST, "master");
         op.get(OP).set("reload");
@@ -313,7 +338,7 @@ public class HTTPSManagementInterfaceTestCase {
         // Try to reconnect to the hc
         domainMasterLifecycleUtil.connect();
         domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-
+        this.reloadRequired = false;
     }
 
     static class HttpManagementRealmSetup extends AbstractBaseSecurityRealmsServerSetupTask {
@@ -359,7 +384,7 @@ public class HTTPSManagementInterfaceTestCase {
         CoreUtils.createKeyMaterial(WORK_DIR);
     }
 
-    private static HttpClient getHttpClient(File keystoreFile) {
+    private static CloseableHttpClient getHttpClient(File keystoreFile) {
         return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, CLIENT_TRUSTSTORE_FILE,
                 SecurityTestConstants.KEYSTORE_PASSWORD);
     }
