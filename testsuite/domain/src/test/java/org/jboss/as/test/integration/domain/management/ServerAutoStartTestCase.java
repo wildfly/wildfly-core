@@ -23,15 +23,12 @@ package org.jboss.as.test.integration.domain.management;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_START;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.waitUntilState;
 
 import java.io.IOException;
@@ -258,23 +255,5 @@ public class ServerAutoStartTestCase {
             operation.get(OP_ADDR).add(SERVER_GROUP, groupName);
         }
         validateResponse(client.execute(operation));
-    }
-
-    private ModelNode validateResponse(ModelNode response) {
-        return validateResponse(response, true);
-    }
-
-    private ModelNode validateResponse(ModelNode response, boolean validateResult) {
-
-        if (!SUCCESS.equals(response.get(OUTCOME).asString())) {
-            System.out.println("Failed response:");
-            System.out.println(response);
-            Assert.fail(response.get(FAILURE_DESCRIPTION).toString());
-        }
-
-        if (validateResult) {
-            Assert.assertTrue("result exists", response.has(RESULT));
-        }
-        return response.get(RESULT);
     }
 }

@@ -177,8 +177,8 @@ public class ServerInventoryImpl implements ServerInventory {
         if (server != null && server.getState() == ServerStatus.FAILED) {
             //If the server failed stop it to
             //  refresh the parameters passed in to the new process
-            //  readd it in the process controller
-
+            //  read it in the process controller
+            HostControllerLogger.ROOT_LOGGER.failedToStartServer(null, serverName);
             //The gracefulTimeout value does not seem to be used in this case, but initialise it to 1s just in case it gets added.
             //In practise the server has already stopped so the time should be less than this
             stopServer(serverName, 1000, true);
@@ -713,5 +713,4 @@ public class ServerInventoryImpl implements ServerInventory {
             }
         }
     }
-
 }
