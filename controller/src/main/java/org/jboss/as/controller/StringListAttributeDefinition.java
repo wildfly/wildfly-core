@@ -35,8 +35,11 @@ import org.jboss.dmr.ModelType;
  */
 public final class StringListAttributeDefinition extends PrimitiveListAttributeDefinition {
 
+    private final CapabilityReferenceRecorder referenceRecorder;
+
     private StringListAttributeDefinition(Builder builder) {
         super(builder, ModelType.STRING);
+        referenceRecorder = builder.getReferenceRecorder();
     }
 
     public List<String> unwrap(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
@@ -57,8 +60,38 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         return result;
     }
 
+    @Override
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, attributeValue, false);
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, attributeValue, true);
+    }
+
+    private void handleCapabilityRequirements(OperationContext context, ModelNode attributeValue, boolean remove) {
+        if (referenceRecorder != null && attributeValue.isDefined()) {
+            List<ModelNode> valueList = attributeValue.asList();
+            String[] attributeValues = new String[valueList.size()];
+            int position = 0;
+            for (ModelNode current : valueList) {
+                if (current.isDefined() == false || current.getType().equals(ModelType.EXPRESSION)) {
+                    return;
+                }
+                attributeValues[position++] = current.asString();
+                if (remove) {
+                    referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValues);
+                } else {
+                    referenceRecorder.addCapabilityRequirements(context, getName(), attributeValues);
+                }
+            }
+        }
+    }
 
     public static class Builder extends ListAttributeDefinition.Builder<Builder, StringListAttributeDefinition> {
+
+        private CapabilityReferenceRecorder referenceRecorder;
 
         public Builder(final String name) {
             super(name);
@@ -77,5 +110,54 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         public StringListAttributeDefinition build() {
             return new StringListAttributeDefinition(this);
         }
+
+
+
+        /**
+         * Records that this attribute's values represents a reference to an instance of a
+         * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
+         * <p>
+         * This method is a convenience method equivalent to calling
+         * {@link #setCapabilityReference(SimpleAttributeDefinition.CapabilityReferenceRecorder)}
+         * passing in a {@link org.jboss.as.controller.SimpleAttributeDefinition.DefaultCapabilityReferenceRecorder}
+         * constructed using the parameters passed to this method.
+         *
+         * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
+         *                             represented by the attribute's values
+         * @param dependentCapability the name of the capability that depends on {@code referencedCapability}
+         * @param dynamicDependent {@code true} if {@code dependentCapability} is a dynamic capability, the dynamic
+         *                                     portion of which comes from the name of the resource with which
+         *                                     the attribute is associated
+         * @return the builder
+         *
+         * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
+         * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+         */
+        public Builder setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
+            referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
+            return this;
+        }
+
+        /**
+         * Records that this attribute's values represents a reference to an instance of a
+         * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability} and assigns the
+         * object that should be used to handle adding and removing capability requirements.
+         *
+         * @param referenceRecorder recorder to handle adding and removing capability requirements. May be {@code null}
+         * @return the builder
+         *
+         * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
+         * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+         */
+        public Builder setCapabilityReference(CapabilityReferenceRecorder referenceRecorder) {
+            this.referenceRecorder = referenceRecorder;
+            return this;
+        }
+
+        CapabilityReferenceRecorder getReferenceRecorder() {
+            return referenceRecorder;
+        }
+
     }
+
 }

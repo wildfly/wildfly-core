@@ -72,7 +72,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         return new SimpleAttributeDefinitionBuilder(attributeName, basis);
     }
 
-    private SimpleAttributeDefinition.CapabilityReferenceRecorder referenceRecorder;
+    private CapabilityReferenceRecorder referenceRecorder;
 
     public SimpleAttributeDefinitionBuilder(final String attributeName, final ModelType type) {
         this(attributeName, type, false);
@@ -112,7 +112,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
      * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
      */
     public SimpleAttributeDefinitionBuilder setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
-        referenceRecorder = new SimpleAttributeDefinition.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
+        referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
         return this;
     }
 
@@ -127,7 +127,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
      * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
      * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
      */
-    public SimpleAttributeDefinitionBuilder setCapabilityReference(SimpleAttributeDefinition.CapabilityReferenceRecorder referenceRecorder) {
+    public SimpleAttributeDefinitionBuilder setCapabilityReference(CapabilityReferenceRecorder referenceRecorder) {
         this.referenceRecorder = referenceRecorder;
         return this;
     }
@@ -136,7 +136,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         return new SimpleAttributeDefinition(this);
     }
 
-    SimpleAttributeDefinition.CapabilityReferenceRecorder getReferenceRecorder() {
+    CapabilityReferenceRecorder getReferenceRecorder() {
         return referenceRecorder;
     }
 }

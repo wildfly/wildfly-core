@@ -28,7 +28,6 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -287,83 +286,4 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
         return node;
     }
 
-    /**
-     * Records information about capability reference information encoded in an attribute's value.
-     */
-    public interface CapabilityReferenceRecorder {
-        /**
-         * Registers capability requirement information to the given context.
-         * @param context the context
-         * @param attributeName the name of the attribute
-         * @param attributeValue the value of the attribute
-         */
-        void addCapabilityRequirements(OperationContext context, String attributeName, String attributeValue);
-
-        /**
-         * Deregisters capability requirement information from the given context.
-         * @param context the context
-         * @param attributeName the name of the attribute
-         * @param attributeValue the value of the attribute
-         */
-        void removeCapabilityRequirements(OperationContext context, String attributeName, String attributeValue);
-    }
-
-    /**
-     * Default implementation of {@link org.jboss.as.controller.SimpleAttributeDefinition.CapabilityReferenceRecorder}.
-     * Derives the required capability name from the {@code baseRequirementName} provided to the constructor and from
-     * the attribute value. Derives the dependent capability name from the {@code baseDependentName} provided to the
-     * constructor, and, if the dependent name is dynamic, from the address of the resource currently being processed.
-     */
-    public static class DefaultCapabilityReferenceRecorder implements CapabilityReferenceRecorder {
-
-        private final String baseRequirementName;
-        private final String baseDependentName;
-        private final boolean dynamicDependent;
-
-        public DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName, boolean dynamicDependent) {
-            this.baseRequirementName = baseRequirementName;
-            this.baseDependentName = baseDependentName;
-            this.dynamicDependent = dynamicDependent;
-        }
-
-        @Override
-        public final void addCapabilityRequirements(OperationContext context, String attributeName, String attributeValue) {
-            processCapabilityRequirement(context, attributeName, attributeValue, false);
-        }
-
-        @Override
-        public final void removeCapabilityRequirements(OperationContext context, String attributeName, String attributeValue) {
-            processCapabilityRequirement(context, attributeName, attributeValue, true);
-        }
-
-        private void processCapabilityRequirement(OperationContext context, String attributeName, String attributeValue, boolean remove) {
-            String dependentName;
-            if (dynamicDependent) {
-                dependentName = RuntimeCapability.buildDynamicCapabilityName(baseDependentName, getDynamicDependentName(context.getCurrentAddress()));
-            } else {
-                dependentName = baseDependentName;
-            }
-            String requirementName = RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, attributeValue);
-            if (remove) {
-                context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
-            } else {
-                context.deregisterCapabilityRequirement(requirementName, dependentName);
-            }
-
-        }
-
-        /**
-         * Determines the dynamic portion of the dependent capability's name. Only invoked if {@code dynamicDependent}
-         * is set to {@code true} in the constructor.
-         * <p>
-         * This base implementation returns the value of the last element in {@code currentAddress}. Subclasses that
-         * wish to extract the relevant name from some other element in the address may override this.
-         * </p>
-         * @param currentAddress the address of the resource currently being processed. Will not be {@code null}
-         * @return the dynamic portion of the dependenty capability name. Cannot be {@code null}
-         */
-        protected String getDynamicDependentName(PathAddress currentAddress) {
-            return currentAddress.getLastElement().getValue();
-        }
-    }
 }
