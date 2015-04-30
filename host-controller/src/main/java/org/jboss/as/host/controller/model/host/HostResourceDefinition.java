@@ -64,7 +64,7 @@ import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
-import org.jboss.as.domain.controller.operations.deployment.HostProcessReloadHandler;
+import org.jboss.as.domain.controller.operations.HostProcessReloadHandler;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
 import org.jboss.as.host.controller.DirectoryGrouping;
