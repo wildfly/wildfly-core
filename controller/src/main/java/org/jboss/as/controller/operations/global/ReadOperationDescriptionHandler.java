@@ -120,18 +120,25 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
 
     private static DescribedOp getDescribedOp(OperationContext context, String operationName, ModelNode operation, boolean lenient) throws OperationFailedException {
         DescribedOp result = null;
+        OperationEntry operationEntry;
+        // First try to get the current resource registration to give authz a chance to reject this request
         ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         if (registry != null) {
-            OperationEntry operationEntry = registry.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
-            if (operationEntry != null) {
-                Locale locale = GlobalOperationHandlers.getLocale(context, operation);
-                result = new DescribedOp(operationEntry, locale);
-            }
+            operationEntry = registry.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
+        } else {
+            // We know the user is authorized to read this address.
+            // There's no MRR at that address, but see if the MRR tree can resolve an operation entry (e.g. an inherited one)
+            operationEntry = context.getRootResourceRegistration().getOperationEntry(context.getCurrentAddress(), operationName);
+        }
+
+        if (operationEntry != null) {
+            Locale locale = GlobalOperationHandlers.getLocale(context, operation);
+            result = new DescribedOp(operationEntry, locale);
         } else if (lenient) {
+            // For wildcard elements, check specific registrations where the same OSH is used
+            // for all such registrations
             PathAddress address = context.getCurrentAddress();
             if (address.size() > 0) {
-                // For wildcard elements, check specific registrations where the same OSH is used
-                // for all such registrations
                 PathElement pe = address.getLastElement();
                 if (pe.isWildcard()) {
                     ImmutableManagementResourceRegistration rootRegistration = context.getRootResourceRegistration();

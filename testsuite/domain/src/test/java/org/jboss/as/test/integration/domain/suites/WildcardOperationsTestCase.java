@@ -30,15 +30,21 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -269,6 +275,42 @@ public class WildcardOperationsTestCase {
         }
 
 
+    }
+
+    @Test
+    public void testReadOperationDescription() throws Exception {
+        // Domain level resource
+        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(PATH));
+        readOperationDescriptionTest(pa);
+
+        // Host level resource
+        pa = PathAddress.pathAddress(PathElement.pathElement(HOST));
+        readOperationDescriptionTest(pa);
+
+        // Host level child resource
+        pa = PathAddress.pathAddress(PathElement.pathElement(HOST), PathElement.pathElement(SERVER_CONFIG));
+        readOperationDescriptionTest(pa);
+
+        // Server level resource
+        pa = PathAddress.pathAddress(PathElement.pathElement(HOST), PathElement.pathElement(RUNNING_SERVER));
+        readOperationDescriptionTest(pa);
+
+        // Server level child resource
+        pa = PathAddress.pathAddress(PathElement.pathElement(HOST), PathElement.pathElement(RUNNING_SERVER), PathElement.pathElement(SYSTEM_PROPERTY));
+        readOperationDescriptionTest(pa);
+    }
+
+    private void readOperationDescriptionTest(PathAddress pa) throws IOException, MgmtOperationException {
+        readOperationDescriptionTest(READ_RESOURCE_OPERATION, pa);
+        readOperationDescriptionTest(READ_ATTRIBUTE_OPERATION, pa);
+        readOperationDescriptionTest(READ_ATTRIBUTE_GROUP_OPERATION, pa);
+        readOperationDescriptionTest(WRITE_ATTRIBUTE_OPERATION, pa);
+    }
+
+    private void readOperationDescriptionTest(String opName, PathAddress pa) throws IOException, MgmtOperationException {
+        ModelNode op = Util.createEmptyOperation(READ_OPERATION_DESCRIPTION_OPERATION, pa);
+        op.get(NAME).set(opName);
+        DomainTestUtils.executeForResult(op, domainMasterLifecycleUtil.getDomainClient());
     }
 
     static ModelNode executeReadResource(final ModelNode address, final ModelControllerClient client) throws IOException, MgmtOperationException {
