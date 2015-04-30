@@ -95,24 +95,9 @@ public interface ControllerLogger extends BasicLogger {
     ControllerLogger MGMT_OP_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.management-operation");
 
     /**
-     * A logger with the category {@code org.jboss.as.server}
-     */
-    ControllerLogger SERVER_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.server");
-
-    /**
-     * A logger with the category {@code org.jboss.server.management}
-     */
-    ControllerLogger SERVER_MANAGEMENT_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.server.management");
-
-    /**
      * A logger for logging deprecated resources usage
      */
     ControllerLogger DEPRECATED_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.management-deprecated");
-
-    /**
-     * A logger for logging problems in the transformers
-     */
-    ControllerLogger TRANSFORMER_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.transformer");
 
     /**
      * A logger for access control related messages.

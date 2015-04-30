@@ -255,7 +255,7 @@ public class ProxyStepHandler implements OperationStepHandler {
                             ResponseAttachmentInputStreamSupport.handleDomainOperationResponseStreams(context, responseNode, finalResponse.getInputStreams());
                         } else {
                             // This is an error condition
-                            ControllerLogger.SERVER_MANAGEMENT_LOGGER.noFinalProxyOutcomeReceived(operation.get(OP),
+                            ControllerLogger.MGMT_OP_LOGGER.noFinalProxyOutcomeReceived(operation.get(OP),
                                     operation.get(OP_ADDR), proxyController.getProxyNodeAddress().toModelNode());
                         }
                     } finally {
