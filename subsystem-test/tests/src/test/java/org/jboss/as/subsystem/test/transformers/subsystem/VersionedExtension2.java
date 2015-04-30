@@ -53,6 +53,8 @@ import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -71,46 +73,16 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
         // Initialize the subsystem
         final ManagementResourceRegistration registration = initializeSubsystem(subsystem);
 
-        // Register an update operation, which requires the transformer to create composite operation
-        OperationDefinition def = new SimpleOperationDefinitionBuilder("update", TEST_RESOURCE_DESCRIPTION_RESOLVER)
-                .build();
-
-        registration.registerOperationHandler(def, new OperationStepHandler() {
-            @Override
-            public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-                final ModelNode model = resource.getModel();
-                model.get("test-attribute").set("test");
-                context.getResult().set(model);
-            }
-        });
-
         // Add a new model, which does not exist in the old model
         registration.registerSubModel(new TestResourceDefinition(NEW_ELEMENT));
         // Add the renamed model
         registration.registerSubModel(new TestResourceDefinition(RENAMED));
 
         // Register the transformers
-        final TransformersSubRegistration transformers =  subsystem.registerModelTransformers(ModelVersion.create(1, 0, 0), new ResourceTransformer() {
-
-            @Override
-            public void transformResource(ResourceTransformationContext context, PathAddress address, Resource resource) throws OperationFailedException {
-                final ResourceTransformationContext childContext = context.addTransformedResource(PathAddress.EMPTY_ADDRESS, resource);
-                for(final Resource.ResourceEntry entry : resource.getChildren("renamed")) {
-                    childContext.processChild(PathElement.pathElement("element", "renamed"), entry);
-                }
-            }
-
-        });
-
-        transformers.registerOperationTransformer("update", new UpdateTransformer());
-
-        // Discard the add/remove operation to the new element
-        final TransformersSubRegistration newElement = transformers.registerSubResource(NEW_ELEMENT);
-        newElement.discardOperations(TransformersSubRegistration.COMMON_OPERATIONS);
-
-        // Register an alias operation transformer, transforming renamed>element to element>renamed
-        final TransformersSubRegistration renamed = transformers.registerSubResource(RENAMED, AliasOperationTransformer.replaceLastElement(PathElement.pathElement("element", "renamed")));
+        ResourceTransformationDescriptionBuilder builder = ResourceTransformationDescriptionBuilder.Factory.createSubsystemInstance();
+        builder.addChildRedirection(RENAMED, VersionedExtension1.ORIGINAL);
+        builder.discardChildResource(NEW_ELEMENT);
+        TransformationDescription.Tools.register(builder.build(), subsystem, ModelVersion.create(1, 0, 0));
     }
 
 
@@ -118,40 +90,5 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
     protected void addChildElements(List<ModelNode> list) {
         list.add(createAddOperation(PathAddress.pathAddress(SUBSYSTEM_PATH, RENAMED)));
         list.add(createAddOperation(PathAddress.pathAddress(SUBSYSTEM_PATH, PathElement.pathElement(NEW_ELEMENT.getKey(), "test"))));
-    }
-
-    static class UpdateTransformer implements OperationTransformer {
-
-        @Override
-        public TransformedOperation transformOperation(final TransformationContext context, final PathAddress address, final ModelNode operation) {
-
-            // TODO does the operation transformer have to deal w/ profile in the address ?
-            // final ModelNode addr = PathAddress.pathAddress(SUBSYSTEM_PATH).toModelNode();
-            final ModelNode addr = address.toModelNode();
-
-            final ModelNode write = new ModelNode();
-            write.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-            write.get(OP_ADDR).set(addr);
-            write.get(NAME).set(TEST_ATTRIBUTE.getName());
-            write.get(VALUE).set("test");
-
-            final ModelNode read = new ModelNode();
-            read.get(OP).set(READ_RESOURCE_OPERATION);
-            read.get(OP_ADDR).set(addr);
-
-            final ModelNode composite = new ModelNode();
-            composite.get(OP).set(COMPOSITE);
-            composite.get(OP_ADDR).setEmptyList();
-            composite.get(STEPS).add(write);
-            composite.get(STEPS).add(read);
-
-            return new TransformedOperation(composite, new OperationResultTransformer() {
-                @Override
-                public ModelNode transformResult(final ModelNode result) {
-                    return result.get(RESULT, "step-2");
-                }
-            });
-        }
-
     }
 }
