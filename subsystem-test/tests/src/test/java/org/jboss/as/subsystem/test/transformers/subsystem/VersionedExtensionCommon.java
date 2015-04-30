@@ -52,6 +52,8 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.staxmapper.XMLElementReader;
@@ -142,7 +144,14 @@ public abstract class VersionedExtensionCommon implements Extension {
             super(def);
         }
 
-
+        @Override
+        protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue, ModelNode oldValue, Resource model) throws OperationFailedException {
+            super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+            if (!context.isBooting()) {
+                TransformerOperationAttachment attachment = TransformerOperationAttachment.getOrCreate(context);
+                attachment.attachIfAbsent(TestAttachment.KEY, new TestAttachment(oldValue.asString()));
+            }
+        }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> voidHandbackHolder) throws OperationFailedException {
@@ -183,4 +192,14 @@ public abstract class VersionedExtensionCommon implements Extension {
     }
 
     static ResourceDescriptionResolver TEST_RESOURCE_DESCRIPTION_RESOLVER = new NonResolvingResourceDescriptionResolver();
+
+    public static class TestAttachment {
+        public static final OperationContext.AttachmentKey<TestAttachment> KEY = OperationContext.AttachmentKey.create(TestAttachment.class);
+
+        public volatile String s;
+
+        public TestAttachment(String s) {
+            this.s = s;
+        }
+    }
 }

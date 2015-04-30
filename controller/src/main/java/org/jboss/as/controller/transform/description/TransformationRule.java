@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -178,6 +179,26 @@ abstract class TransformationRule {
         @Override
         public boolean isSkipRuntimeIgnoreCheck() {
             return delegate.isSkipRuntimeIgnoreCheck();
+        }
+
+        @Override
+        public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
+            return delegate.getAttachment(key);
+        }
+
+        @Override
+        public <T> T attach(OperationContext.AttachmentKey<T> key, T value) {
+            return delegate.attach(key, value);
+        }
+
+        @Override
+        public <T> T attachIfAbsent(OperationContext.AttachmentKey<T> key, T value) {
+            return delegate.attachIfAbsent(key, value);
+        }
+
+        @Override
+        public <T> T detach(OperationContext.AttachmentKey<T> key) {
+            return delegate.detach(key);
         }
     }
 

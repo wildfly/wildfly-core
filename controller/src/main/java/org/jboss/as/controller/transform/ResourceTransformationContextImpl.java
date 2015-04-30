@@ -50,6 +50,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     private final OriginalModel originalModel;
     private final TransformersLogger logger;
     private final boolean skipRuntimeIgnoreCheck;
+    private final TransformerOperationAttachment transformerOperationAttachment;
 
     static ResourceTransformationContext create(final OperationContext context, final TransformationTarget target, final boolean skipRuntimeIgnoreCheck) {
         return create(context, target, PathAddress.EMPTY_ADDRESS, PathAddress.EMPTY_ADDRESS, skipRuntimeIgnoreCheck);
@@ -60,26 +61,36 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         final Resource original = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true);
         final ImmutableManagementResourceRegistration registration = context.getRootResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS);
         final OriginalModel originalModel = new OriginalModel(original, context.getRunningMode(), context.getProcessType(), target, registration);
-        return new ResourceTransformationContextImpl(root, current, read, originalModel, skipRuntimeIgnoreCheck);
+        final TransformerOperationAttachment attachment = context.getAttachment(TransformerOperationAttachment.KEY);
+        return new ResourceTransformationContextImpl(root, current, read, originalModel, skipRuntimeIgnoreCheck, attachment);
     }
 
-    static ResourceTransformationContext create(TransformationTarget target, Resource model, ImmutableManagementResourceRegistration registration, RunningMode runningMode, ProcessType type, boolean skipRuntimeIgnoreCheck) {
+    static ResourceTransformationContext create(TransformationTarget target, Resource model,
+                                                ImmutableManagementResourceRegistration registration,
+                                                RunningMode runningMode, ProcessType type,
+                                                boolean skipRuntimeIgnoreCheck, TransformerOperationAttachment attachment) {
         final Resource root = Resource.Factory.create();
         final OriginalModel originalModel = new OriginalModel(model, runningMode, type, target, registration);
-        return new ResourceTransformationContextImpl(root, PathAddress.EMPTY_ADDRESS, originalModel, skipRuntimeIgnoreCheck);
+        return new ResourceTransformationContextImpl(root, PathAddress.EMPTY_ADDRESS, originalModel, skipRuntimeIgnoreCheck, attachment);
     }
 
-    private ResourceTransformationContextImpl(Resource root, PathAddress address, final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck) {
-        this(root, address, address, originalModel, skipRuntimeIgnoreCheck);
+    private ResourceTransformationContextImpl(Resource root, PathAddress address,
+                                              final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck,
+                                              final TransformerOperationAttachment transformerOperationAttachment) {
+        this(root, address, address, originalModel, skipRuntimeIgnoreCheck, transformerOperationAttachment);
     }
 
-    private ResourceTransformationContextImpl(Resource root, PathAddress address, PathAddress read, final OriginalModel originalModel, final boolean skipRuntimeIgnoreCheck) {
+    private ResourceTransformationContextImpl(Resource root, PathAddress address,
+                                              PathAddress read, final OriginalModel originalModel,
+                                              final boolean skipRuntimeIgnoreCheck,
+                                              TransformerOperationAttachment transformerOperationAttachment) {
         this.root = root;
         this.current = address;
         this.read = read;
         this.originalModel = originalModel;
         this.logger = TransformersLogger.getLogger(originalModel.target);
         this.skipRuntimeIgnoreCheck = skipRuntimeIgnoreCheck;
+        this.transformerOperationAttachment = transformerOperationAttachment;
     }
 
     private ResourceTransformationContextImpl(ResourceTransformationContextImpl context, OriginalModel originalModel) {
@@ -89,6 +100,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         this.logger = context.getLogger();
         this.skipRuntimeIgnoreCheck = context.skipRuntimeIgnoreCheck;
         this.originalModel = originalModel;
+        this.transformerOperationAttachment = context.transformerOperationAttachment;
     }
 
     ResourceTransformationContextImpl copy(PlaceholderResolver placeholderResolver) {
@@ -203,7 +215,8 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
             //If this was the root address, replace the resource model
             model.writeModel(toAdd.getModel());
         }
-        return new ResourceTransformationContextImpl(root, absoluteAddress, read, originalModel, skipRuntimeIgnoreCheck);
+        return new ResourceTransformationContextImpl(root, absoluteAddress, read, originalModel,
+                skipRuntimeIgnoreCheck, transformerOperationAttachment);
     }
 
     @Override
@@ -272,7 +285,9 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
             }
         });
         final ResourceTransformer transformer = resolveTransformer(entry, childAddress);
-        final ResourceTransformationContext childContext = new ResourceTransformationContextImpl(root, currentAddress, childAddress, originalModel, skipRuntimeIgnoreCheck);
+        final ResourceTransformationContext childContext =
+                new ResourceTransformationContextImpl(root, currentAddress, childAddress, originalModel,
+                        skipRuntimeIgnoreCheck, transformerOperationAttachment);
         transformer.transformResource(childContext, currentAddress, child);
     }
 
@@ -322,7 +337,8 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     static ResourceTransformationContext createAliasContext(final PathAddress address, final ResourceTransformationContext context) {
         if (context instanceof ResourceTransformationContextImpl) {
             final ResourceTransformationContextImpl impl = (ResourceTransformationContextImpl) context;
-            return new ResourceTransformationContextImpl(impl.root, address, impl.read, impl.originalModel, context.isSkipRuntimeIgnoreCheck());
+            return new ResourceTransformationContextImpl(impl.root, address, impl.read, impl.originalModel,
+                    context.isSkipRuntimeIgnoreCheck(), impl.transformerOperationAttachment);
         } else {
             throw new IllegalArgumentException("wrong context type");
         }
@@ -332,7 +348,9 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     static TransformationContext wrapForOperation(TransformationContext context, ModelNode operation) {
         if(context instanceof ResourceTransformationContextImpl) {
             final ResourceTransformationContextImpl impl = (ResourceTransformationContextImpl) context;
-            return new ResourceTransformationContextImpl(impl.root, PathAddress.pathAddress(operation.get(OP_ADDR)), impl.originalModel, context.isSkipRuntimeIgnoreCheck());
+            return new ResourceTransformationContextImpl(impl.root,
+                    PathAddress.pathAddress(operation.get(OP_ADDR)), impl.originalModel,
+                    context.isSkipRuntimeIgnoreCheck(), impl.transformerOperationAttachment);
         } else {
             return context;
         }
@@ -347,6 +365,38 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     @Override
     public boolean isSkipRuntimeIgnoreCheck() {
         return skipRuntimeIgnoreCheck;
+    }
+
+    @Override
+    public <V> V getAttachment(final OperationContext.AttachmentKey<V> key) {
+        if (transformerOperationAttachment == null) {
+            return null;
+        }
+        return transformerOperationAttachment.getAttachment(key);
+    }
+
+    @Override
+    public <V> V attach(final OperationContext.AttachmentKey<V> key, final V value) {
+        if (transformerOperationAttachment == null) {
+            return null;
+        }
+        return transformerOperationAttachment.attach(key, value);
+    }
+
+    @Override
+    public <V> V attachIfAbsent(final OperationContext.AttachmentKey<V> key, final V value) {
+        if (transformerOperationAttachment == null) {
+            return null;
+        }
+        return transformerOperationAttachment.attachIfAbsent(key, value);
+    }
+
+    @Override
+    public <V> V detach(final OperationContext.AttachmentKey<V> key) {
+        if (transformerOperationAttachment == null) {
+            return null;
+        }
+        return transformerOperationAttachment.detach(key);
     }
 
     static class OriginalModel {

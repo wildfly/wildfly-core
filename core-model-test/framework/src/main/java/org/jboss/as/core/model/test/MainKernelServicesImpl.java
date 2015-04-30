@@ -48,6 +48,7 @@ import org.jboss.as.controller.transform.OperationTransformer.TransformedOperati
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.core.model.bridge.impl.LegacyControllerKernelServicesProxy;
@@ -77,6 +78,10 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
     }
 
     public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation) throws OperationFailedException {
+        return transformOperation(modelVersion, operation, null);
+    }
+
+    public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation, TransformerOperationAttachment attachment) throws OperationFailedException {
         checkIsMainController();
         PathAddress opAddr = PathAddress.pathAddress(operation.get(OP_ADDR));
         TransformerRegistry transformerRegistry = extensionRegistry.getTransformerRegistry();
@@ -87,7 +92,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
         TransformationTarget target = TransformationTargetImpl.create(extensionRegistry.getTransformerRegistry(), modelVersion,
                 subsystemVersions, MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.DOMAIN, null);
-        TransformationContext transformationContext = createTransformationContext(target);
+        TransformationContext transformationContext = createTransformationContext(target, attachment);
 
         OperationTransformer operationTransformer = registry.resolveOperationTransformer(address, operation.get(OP).asString(), null).getTransformer();
         if (operationTransformer != null) {

@@ -69,10 +69,13 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     private final RunningModeControl runningModeControl;
     private final ContentRepository contentRepository = new MockContentRepository();
     private final boolean registerTransformers;
+    private final boolean enableTransformerAttchmentGrabber;
 
     protected TestModelControllerService(final Extension mainExtension, final ControllerInitializer controllerInitializer,
-                                         final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl, final ExtensionRegistry extensionRegistry,
-                                         final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers) {
+                                         final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl,
+                                         final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
+                                         final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
+                                         final boolean enableTransformerAttchmentGrabber) {
         super(additionalInit.getProcessType(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
                 new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , new ControlledProcessState(true), Controller90x.INSTANCE);
         this.mainExtension = mainExtension;
@@ -81,12 +84,16 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         this.extensionRegistry = extensionRegistry;
         this.runningModeControl = runningModeControl;
         this.registerTransformers = registerTransformers;
+        this.enableTransformerAttchmentGrabber = enableTransformerAttchmentGrabber;
     }
 
     static TestModelControllerService create(final Extension mainExtension, final ControllerInitializer controllerInitializer,
                                              final AdditionalInitialization additionalInit, final ExtensionRegistry extensionRegistry,
-                                             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers) {
-        return new TestModelControllerService(mainExtension, controllerInitializer, additionalInit, new RunningModeControl(additionalInit.getRunningMode()), extensionRegistry, persister, validateOpsFilter, registerTransformers);
+                                             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                             final boolean registerTransformers, final boolean enableTransformerAttachmentGrabber) {
+        return new TestModelControllerService(mainExtension, controllerInitializer, additionalInit,
+                new RunningModeControl(additionalInit.getRunningMode()), extensionRegistry, persister, validateOpsFilter,
+                registerTransformers, enableTransformerAttachmentGrabber);
     }
 
     @Override
@@ -110,6 +117,9 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         initExtraModelInternal(rootResource, rootRegistration);
         additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration,
                 managementModel.getCapabilityRegistry());
+        if (enableTransformerAttchmentGrabber) {
+            rootRegistration.registerOperationHandler(TransformerAttachmentGrabber.DESC, new TransformerAttachmentGrabber());
+        }
     }
 
     /** @deprecated only for legacy version support */

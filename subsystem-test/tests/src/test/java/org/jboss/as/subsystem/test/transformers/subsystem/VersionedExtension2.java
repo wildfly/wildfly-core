@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
@@ -52,7 +53,9 @@ import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.dmr.ModelNode;
@@ -82,6 +85,33 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
         ResourceTransformationDescriptionBuilder builder = ResourceTransformationDescriptionBuilder.Factory.createSubsystemInstance();
         builder.addChildRedirection(RENAMED, VersionedExtension1.ORIGINAL);
         builder.discardChildResource(NEW_ELEMENT);
+        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker() {
+            @Override
+            public boolean rejectOperationParameter(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
+                TestAttachment testAttachment = context.getAttachment(TestAttachment.KEY);
+                if (testAttachment != null) {
+                    if (testAttachment.s.equals("do reject")) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public boolean rejectResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+                return false;
+            }
+
+            @Override
+            public String getRejectionLogMessageId() {
+                return "Rejected";
+            }
+
+            @Override
+            public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+                return "Rejected";
+            }
+        }, TEST_ATTRIBUTE);
         TransformationDescription.Tools.register(builder.build(), subsystem, ModelVersion.create(1, 0, 0));
     }
 
