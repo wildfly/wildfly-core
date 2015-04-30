@@ -491,20 +491,25 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     public DomainCommandBuilder addHostControllerJavaOption(final String arg) {
         if (arg != null && !arg.trim().isEmpty()) {
             final Argument argument = Arguments.parse(arg);
-            if (argument.getKey().equals(DOMAIN_BASE_DIR)) {
-                if (argument.getValue() != null) {
-                    setBaseDirectory(argument.getValue());
-                }
-            } else if (argument.getKey().equals(DOMAIN_CONFIG_DIR)) {
-                if (argument.getValue() != null) {
-                    setConfigurationDirectory(argument.getValue());
-                }
-            } else if (argument.getKey().equals(DOMAIN_LOG_DIR)) {
-                if (argument.getValue() != null) {
-                    setLogDirectory(argument.getValue());
-                }
-            } else {
-                hostControllerJavaOpts.add(argument);
+            switch (argument.getKey()) {
+                case DOMAIN_BASE_DIR:
+                    if (argument.getValue() != null) {
+                        setBaseDirectory(argument.getValue());
+                    }
+                    break;
+                case DOMAIN_CONFIG_DIR:
+                    if (argument.getValue() != null) {
+                        setConfigurationDirectory(argument.getValue());
+                    }
+                    break;
+                case DOMAIN_LOG_DIR:
+                    if (argument.getValue() != null) {
+                        setLogDirectory(argument.getValue());
+                    }
+                    break;
+                default:
+                    hostControllerJavaOpts.add(argument);
+                    break;
             }
         }
         return this;
@@ -732,7 +737,6 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         addSystemPropertyArg(cmd, HOME_DIR, getWildFlyHome());
 
         // PROCESS_CONTROLLER_JAVA_OPTS
-        cmd.add(getSystemPackages());
         cmd.addAll(processControllerJavaOpts.asList());
 
         cmd.add(getBootLogArgument("process-controller.log"));
@@ -758,7 +762,6 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         cmd.add(getLoggingPropertiesArgument("logging.properties"));
 
         // HOST_CONTROLLER_JAVA_OPTS
-        cmd.add(getSystemPackages());
         cmd.addAll(hostControllerJavaOpts.asList());
 
         cmd.add("--");
