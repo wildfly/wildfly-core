@@ -142,6 +142,8 @@ public abstract class VersionedExtensionCommon implements Extension {
             super(def);
         }
 
+
+
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> voidHandbackHolder) throws OperationFailedException {
             return false;
