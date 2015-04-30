@@ -16,6 +16,8 @@ do
           shift
           if [ -n "$1" ] && [ "${1#*-}" = "$1" ]; then
               DEBUG_PORT=$1
+          else
+              set -- foo "$@"
           fi
           ;;
       -Djava.security.manager*)
