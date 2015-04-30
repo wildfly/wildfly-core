@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -42,7 +41,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -52,7 +50,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.getServerConfigAddress;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.startServer;
@@ -128,7 +125,7 @@ public class ServerManagementTestCase {
         operation.get(OP_ADDR).set(mainOne);
         operation.get(NAME).set("status");
 
-        final ModelNode status = validateResponse(client.execute(operation));
+        final ModelNode status = DomainTestSupport.validateResponse(client.execute(operation));
         Assert.assertEquals("STARTED", status.asString());
 
         final ModelNode remove = new ModelNode();
@@ -158,7 +155,7 @@ public class ServerManagementTestCase {
 
         ModelNode result = client.execute(addServer);
 
-        validateResponse(result, false);
+        DomainTestSupport.validateResponse(result, false);
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
@@ -174,7 +171,7 @@ public class ServerManagementTestCase {
         stopServer.get(OP_ADDR).set(newServerConfigAddress);
         stopServer.get("blocking").set(true);
         result = client.execute(stopServer);
-        validateResponse(result);
+        DomainTestSupport.validateResponse(result);
         Assert.assertTrue(checkState(client, newServerConfigAddress, "DISABLED"));
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
@@ -185,7 +182,7 @@ public class ServerManagementTestCase {
         removeServer.get(OP_ADDR).set(newServerConfigAddress);
 
         result = client.execute(removeServer);
-        validateResponse(result);
+        DomainTestSupport.validateResponse(result);
 
         Assert.assertFalse(exists(client, newServerConfigAddress));
         Assert.assertFalse(exists(client, newRunningServerAddress));
@@ -218,13 +215,13 @@ public class ServerManagementTestCase {
         )));
 
         ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        validateResponse(client.execute(compositeOp));
+        DomainTestSupport.validateResponse(client.execute(compositeOp));
 
         final ModelNode read = new ModelNode();
         read.get(OP).set(READ_RESOURCE_OPERATION);
         read.get(OP_ADDR).set(PathAddress.pathAddress(PathElement.pathElement(PROFILE, "BZ1015098")).toModelNode());
 
-        validateResponse(client.execute(read));
+        DomainTestSupport.validateResponse(client.execute(read));
 
     }
 
@@ -318,30 +315,12 @@ public class ServerManagementTestCase {
         } else {
             operation.get(OP_ADDR).add(SERVER_GROUP, groupName);
         }
-        validateResponse(client.execute(operation));
+        DomainTestSupport.validateResponse(client.execute(operation));
     }
 
     private ModelNode executeForResult(final ModelControllerClient client, final ModelNode operation) throws IOException {
         final ModelNode result = client.execute(operation);
-        return validateResponse(result);
-    }
-
-    private ModelNode validateResponse(ModelNode response) {
-        return validateResponse(response, true);
-    }
-
-    private ModelNode validateResponse(ModelNode response, boolean validateResult) {
-
-        if(! SUCCESS.equals(response.get(OUTCOME).asString())) {
-            System.out.println("Failed response:");
-            System.out.println(response);
-            Assert.fail(response.get(FAILURE_DESCRIPTION).toString());
-        }
-
-        if (validateResult) {
-            Assert.assertTrue("result exists", response.has(RESULT));
-        }
-        return response.get(RESULT);
+        return DomainTestSupport.validateResponse(result);
     }
 
     private boolean exists(final ModelControllerClient client, final ModelNode address) throws IOException {

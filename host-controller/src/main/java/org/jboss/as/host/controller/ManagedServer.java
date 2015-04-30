@@ -478,7 +478,7 @@ class ManagedServer {
             return;
         }
         final InternalState next = nextState(current, required);
-        if(next != null) {
+        if (next != null) {
             final TransitionTask task = getTransitionTask(next);
             internalSetState(task, current, next);
         }
@@ -513,6 +513,27 @@ class ManagedServer {
         }
     }
 
+    private synchronized void transitionFailed(final InternalState state, Exception cause) {
+        if (state == this.internalState) {
+            switch (this.requiredState) {
+                case PROCESS_ADDED:
+                case PROCESS_ADDING:
+                case PROCESS_STARTED:
+                case PROCESS_STARTING:
+                case SERVER_STARTING:
+                case SERVER_STARTED:
+                    ROOT_LOGGER.failedToStartServer(cause, serverName);
+                    break;
+                case PROCESS_REMOVING:
+                case PROCESS_STOPPED:
+                case PROCESS_STOPPING:
+                case STOPPED:
+                    ROOT_LOGGER.failedToStopServer(cause, serverName);
+                    break;
+            }
+        }
+        transitionFailed(state);
+    }
     /**
      * Finish a state transition from a notification.
      *
@@ -539,7 +560,7 @@ class ManagedServer {
                 return true;
             } catch (final Exception e) {
                 ROOT_LOGGER.logf(DEBUG_LEVEL, e, "transition (%s > %s) failed for server \"%s\"", current, next, serverName);
-                transitionFailed(current);
+                transitionFailed(current, e);
             } finally {
                 notifyAll();
             }
@@ -723,7 +744,6 @@ class ManagedServer {
         PROCESS_STOPPED,
         PROCESS_REMOVING(true),
         SUSPENDING(true),
-
         FAILED,
         ;
 

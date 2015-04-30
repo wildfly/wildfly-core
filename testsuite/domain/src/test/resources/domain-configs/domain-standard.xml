@@ -277,6 +277,12 @@
             </jvm>
         </server-group>
 
+        <server-group name="failure-test-group" profile="default">
+            <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" java-home="/usr/java/wrongPath">
+                <heap size="64m" max-size="64m"/>
+            </jvm>
+        </server-group>
     </server-groups>
 
 
