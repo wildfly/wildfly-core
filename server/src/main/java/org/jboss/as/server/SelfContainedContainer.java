@@ -67,7 +67,6 @@ public final class SelfContainedContainer {
      * @param containerDefinition The container definition.
      */
     public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
-        Thread.currentThread().setContextClassLoader(Module.getCallerModule().getClassLoader());
         if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
             try {
                 Class.forName(org.jboss.logmanager.handlers.ConsoleHandler.class.getName(), true, org.jboss.logmanager.handlers.ConsoleHandler.class.getClassLoader());
