@@ -13,9 +13,9 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          shift
-          if [ -n "$1" ] && [ "${1#*-}" = "$1" ]; then
-              DEBUG_PORT=$1
+          if [ -n "$2" ] && [ "$2" = `echo "$2" | sed 's/-//'` ]; then
+              DEBUG_PORT=$2
+              shift
           fi
           ;;
       -Djava.security.manager*)
