@@ -65,12 +65,19 @@ public class ServiceActivatorProcessor implements DeploymentUnitProcessor {
             serviceRegistry = new SecuredServiceRegistry(serviceRegistry);
         }
         final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContextImpl(phaseContext.getServiceTarget(), serviceRegistry);
-        for(ServiceActivator serviceActivator : module.loadService(ServiceActivator.class)) {
-            try {
-                serviceActivator.activate(serviceActivatorContext);
-            } catch (ServiceRegistryException e) {
-                throw new DeploymentUnitProcessingException(e);
+
+        final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        try {
+            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(module.getClassLoader());
+            for (ServiceActivator serviceActivator : module.loadService(ServiceActivator.class)) {
+                try {
+                    serviceActivator.activate(serviceActivatorContext);
+                } catch (ServiceRegistryException e) {
+                    throw new DeploymentUnitProcessingException(e);
+                }
             }
+        } finally {
+            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
         }
     }
 
