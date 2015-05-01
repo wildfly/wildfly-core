@@ -1,6 +1,6 @@
-### -*- Power Shell file -*- ################################################
+#############################################################################
 #                                                                          ##
-#    JBoss CLI Script for interacting with the standalone server           ##
+#    WildFly CLI Script for interacting with the server                    ##
 #                                                                          ##
 #############################################################################
 
@@ -97,7 +97,7 @@ if($PRESERVE_JAVA_OPTS -ne 'true') {
 # Display our environment
 echo "========================================================================="
 echo ""
-echo "  JBoss Bootstrap Environment"
+echo "  WildFly Bootstrap Environment"
 echo ""
 echo "  JBOSS_HOME: $JBOSS_HOME"
 echo ""
@@ -112,7 +112,7 @@ echo ""
 echo "========================================================================="
 echo ""
 
-$PROG_ARGS = @('')
+$PROG_ARGS = @()
 $PROG_ARGS += $JAVA_OPTS
 $PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/boot.log"
 $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties"

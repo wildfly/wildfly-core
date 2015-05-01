@@ -1,13 +1,13 @@
 ### -*- Power Shell file -*- ################################################
 #                                                                          ##
-#  JBoss Bootstrap Script Configuration                                    ##
+#  WildFly bootstrap Script Configuration                                    ##
 #                                                                          ##
 #############################################################################
 
 #
-# This script file is executed by run.bat to initialize the environment
-# variables that run.bat uses. It is recommended to use this file to
-# configure these variables, rather than modifying run.bat itself.
+# This script file is executed by standalone.ps1 to initialize the environment
+# variables that standalone.ps1 uses. It is recommended to use this file to
+# configure these variables, rather than modifying standalone.ps1 itself.
 #
 
 
@@ -30,30 +30,23 @@ if( Test-Path env:JAVA_OPTS ) {
 }
 
 #
-# Specify the JBoss Profiler configuration file to load.
-#
-# Default is to not load a JBoss Profiler configuration file.
-#
-# Set-Env PROFILER $JBOSS_HOME\bin\jboss-profiler.properties
-
-#
 # Specify the location of the Java home directory (it is recommended that
 # this always be set). If set, then "%JAVA_HOME%\bin\java" will be used as
 # the Java VM executable; otherwise, "%JAVA%" will be used (see below).
 #
-# Set-Env JAVA_HOME C:\opt\jdk1.6.0_23
+# Set-Env JAVA_HOME C:\opt\jdk1.8.0
 
 #
 # Specify the exact Java VM executable to use - only used if JAVA_HOME is
 # not set. Default is "java".
 #
-# Set-Env JAVA C:\opt\jdk1.6.0_23\bin\java
+# Set-Env JAVA C:\opt\jdk1.8.0\bin\java
 
 #
 # Specify options to pass to the Java VM. Note, there are some additional
 # options that are always passed by run.bat.
 #
-$JAVA_OPTS = @('')
+$JAVA_OPTS = @()
 
 # JVM memory allocation pool parameters - modify as appropriate.
 $JAVA_OPTS += '-Xms64M'
@@ -73,7 +66,7 @@ $JAVA_OPTS += '-Dorg.jboss.resolver.warning=true'
 $JAVA_OPTS += '-Djboss.modules.system.pkgs=org.jboss.byteman'
 
 # Set the default configuration file to use if -c or --server-config are not used
-$JAVA_OPTS += '-Djboss.server.default.config=standalone.xml'
+#$JAVA_OPTS += '-Djboss.server.default.config=standalone.xml'
 
 # Sample JPDA settings for remote socket debugging
 # $JAVA_OPTS += '-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n'
