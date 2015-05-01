@@ -175,9 +175,13 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         return endpointInjector;
     }
 
-    public InjectedValue<ExecutorService> getExecutorInjector() { return executorInjector;}
+    public InjectedValue<ExecutorService> getExecutorInjector() {
+        return executorInjector;
+    }
 
-    public InjectedValue<ScheduledExecutorService> getScheduledExecutorInjector() { return scheduledExecutorInjector;}
+    public InjectedValue<ScheduledExecutorService> getScheduledExecutorInjector() {
+        return scheduledExecutorInjector;
+    }
 
     private static SSLContext getAcceptingSSLContext() throws IOException {
         /*
