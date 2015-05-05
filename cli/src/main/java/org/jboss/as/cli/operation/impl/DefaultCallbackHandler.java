@@ -157,6 +157,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         outputTarget = null;
         lastPropName = null;
         lastPropValue = null;
+        separator = SEPARATOR_NONE;
         lastSeparatorIndex = -1;
         lastChunkIndex = 0;
         format = null;
