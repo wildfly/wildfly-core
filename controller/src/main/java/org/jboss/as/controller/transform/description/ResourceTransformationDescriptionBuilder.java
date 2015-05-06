@@ -90,10 +90,33 @@ public interface ResourceTransformationDescriptionBuilder extends Transformation
      * {@linkplain org.jboss.as.controller.transform.TransformersSubRegistration} when registering the transformation
      * description created by this builder.
      *
+     * @param pathElement the path element
+     * @param dynamicDiscardPolicy a checker to decide whether the child should be added or not
+     * @return the builder for the child resource
+     */
+    ResourceTransformationDescriptionBuilder addChildResource(PathElement pathElement, DynamicDiscardPolicy dynamicDiscardPolicy);
+
+    /**
+     * Add a child resource to this builder. This is going to register the child automatically at the
+     * {@linkplain org.jboss.as.controller.transform.TransformersSubRegistration} when registering the transformation
+     * description created by this builder.
+     *
      * @param definition the resource definition
      * @return the builder for the child resource
      */
     ResourceTransformationDescriptionBuilder addChildResource(ResourceDefinition definition);
+
+    /**
+     * Add a child resource to this builder. This is going to register the child automatically at the
+     * {@linkplain org.jboss.as.controller.transform.TransformersSubRegistration} when registering the transformation
+     * description created by this builder.
+     *
+     * @param definition the resource definition
+     * @param dynamicDiscardPolicy a checker to decide whether the child should be added or not
+     * @return the builder for the child resource
+     */
+    ResourceTransformationDescriptionBuilder addChildResource(ResourceDefinition definition, DynamicDiscardPolicy dynamicDiscardPolicy);
+
 
     /**
      * Recursively discards all child resources and its operations.

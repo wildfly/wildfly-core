@@ -49,13 +49,17 @@ abstract class AbstractTransformationDescriptionBuilder implements Transformatio
 
     protected final Map<String, OperationTransformationEntry> operationTransformers = new HashMap<String, OperationTransformationEntry>();
     protected final List<TransformationDescriptionBuilder> children = new ArrayList<TransformationDescriptionBuilder>();
+    protected  final DynamicDiscardPolicy dynamicDiscardPolicy;
 
     protected AbstractTransformationDescriptionBuilder(PathElement pathElement, PathAddressTransformer pathAddressTransformer,
-                                             ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
+                                             ResourceTransformer resourceTransformer,
+                                             OperationTransformer operationTransformer,
+                                             DynamicDiscardPolicy dynamicDiscardPolicy) {
         this.pathElement = pathElement;
         this.pathAddressTransformer = pathAddressTransformer;
         this.resourceTransformer = resourceTransformer;
         this.operationTransformer = operationTransformer;
+        this.dynamicDiscardPolicy = dynamicDiscardPolicy;
     }
 
     public TransformationDescriptionBuilder setResourceTransformer(ResourceTransformer resourceTransformer) {
@@ -100,7 +104,8 @@ abstract class AbstractTransformationDescriptionBuilder implements Transformatio
         // Create the description
         Set<String> discarded = new HashSet<>();
         discarded.addAll(discardedOperations);
-        return new TransformingDescription(pathElement, pathAddressTransformer, discardPolicy, inherited, resourceTransformer, attributes, operations, children, discarded);
+        return new TransformingDescription(pathElement, pathAddressTransformer, discardPolicy, inherited,
+                resourceTransformer, attributes, operations, children, discarded, dynamicDiscardPolicy);
     }
 
     /**

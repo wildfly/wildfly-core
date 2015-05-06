@@ -42,6 +42,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationResultTransformer;
@@ -68,6 +69,7 @@ public class BasicResourceTestCase {
 
     private static PathElement PATH = PathElement.pathElement("toto", "testSubsystem");
     private static PathElement DISCARD = PathElement.pathElement("discard");
+    private static PathElement DYNAMIC = PathElement.pathElement("dynamic");
 
     private static PathElement CONFIGURATION_TEST = PathElement.pathElement("configuration", "test");
     private static PathElement TEST_CONFIGURATION = PathElement.pathElement("test", "configuration");
@@ -167,6 +169,15 @@ public class BasicResourceTestCase {
         // Discard all
         builder.discardChildResource(DISCARD);
 
+        builder.addChildResource(DYNAMIC, new TestDynamicDiscardPolicy())
+                .getAttributeBuilder()
+                .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
+                    @Override
+                    protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+                        attributeValue.set(attributeValue.asString().toUpperCase());
+                    }
+                }, "attribute");
+
         // configuration=test/setting=directory > test=configuration/directory=setting
         builder.addChildRedirection(CONFIGURATION_TEST, TEST_CONFIGURATION)
                 .getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "test-config").end()
@@ -190,6 +201,17 @@ public class BasicResourceTestCase {
         final Resource discard = Resource.Factory.create();
         discard.getModel().get("attribute").set("two");
         toto.registerChild(PathElement.pathElement("discard", "one"), discard);
+
+        //dynamic discard
+        final Resource dynamicKeep = Resource.Factory.create();
+        dynamicKeep.getModel().get("attribute").set("keep");
+        toto.registerChild(PathElement.pathElement("dynamic", "keep"), dynamicKeep);
+        final Resource dynamicReject = Resource.Factory.create();
+        dynamicReject.getModel().get("attribute").set("reject");
+        toto.registerChild(PathElement.pathElement("dynamic", "reject"), dynamicReject);
+        final Resource dynamicDiscard = Resource.Factory.create();
+        dynamicDiscard.getModel().get("attribute").set("discard");
+        toto.registerChild(PathElement.pathElement("dynamic", "discard"), dynamicDiscard);
 
         // configuration
         final Resource configuration = Resource.Factory.create();
@@ -234,10 +256,15 @@ public class BasicResourceTestCase {
         Assert.assertNotNull(resource);
         final Resource toto = resource.getChild(PATH);
         final ModelNode model = toto.getModel();
-        Assert.assertTrue(model.hasDefined("othertest"));
         Assert.assertNotNull(toto);
         Assert.assertFalse(toto.hasChild(PathElement.pathElement("discard", "one")));
         Assert.assertFalse(toto.hasChild(CONFIGURATION_TEST));
+
+        Assert.assertFalse(toto.hasChild(PathElement.pathElement("dynamic", "discard")));
+        Assert.assertFalse(toto.hasChild(PathElement.pathElement("dynamic", "reject")));
+        Resource dynamicKeep = toto.getChild(PathElement.pathElement("dynamic", "keep"));
+        Assert.assertEquals("KEEP", dynamicKeep.getModel().get("attribute").asString());
+
 
         final Resource attResource = toto.getChild(PathElement.pathElement("attribute-resource", "test"));
         Assert.assertNotNull(attResource);
@@ -382,8 +409,30 @@ public class BasicResourceTestCase {
         Assert.assertTrue(transformed.get("operation-test").asBoolean()); // explicit
         Assert.assertFalse(transformed.hasDefined("othertest")); // not inherited
         Assert.assertFalse(op.rejectOperation(success())); // inherited
-
     }
+
+    @Test
+    public void testDynamicDiscardOperations() throws Exception {
+        PathAddress subsystem = PathAddress.pathAddress("toto", "testSubsystem");
+
+        final ModelNode opKeep = Util.createAddOperation(subsystem.append("dynamic", "keep"));
+        opKeep.get("attribute").set("keep");
+        OperationTransformer.TransformedOperation txKeep = transformOperation(opKeep);
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+
+        final ModelNode opDiscard = Util.createAddOperation(subsystem.append("dynamic", "discard"));
+        OperationTransformer.TransformedOperation txDiscard = transformOperation(opDiscard);
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNull(txDiscard.getTransformedOperation());
+
+        final ModelNode opReject = Util.createAddOperation(subsystem.append("dynamic", "reject"));
+        OperationTransformer.TransformedOperation txReject = transformOperation(opReject);
+        Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+    }
+
 
     private Resource transformResource() throws OperationFailedException {
         final TransformationTarget target = create(registry, ModelVersion.create(1));
@@ -422,4 +471,19 @@ public class BasicResourceTestCase {
         return result;
     }
 
+    private static class TestDynamicDiscardPolicy implements DynamicDiscardPolicy {
+        @Override
+        public DiscardPolicy checkResource(TransformationContext context, PathAddress address) {
+            String action = address.getLastElement().getValue();
+            switch (action) {
+                case "keep":
+                    return DiscardPolicy.NEVER;
+                case "discard":
+                    return DiscardPolicy.DISCARD_AND_WARN;
+                case "reject":
+                    return DiscardPolicy.REJECT_AND_WARN;
+            }
+            throw new IllegalArgumentException("Unknown address");
+        }
+    }
 }

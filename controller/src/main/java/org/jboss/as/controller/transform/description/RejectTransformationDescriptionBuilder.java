@@ -33,7 +33,8 @@ import org.jboss.as.controller.transform.ResourceTransformer;
 public class RejectTransformationDescriptionBuilder extends AbstractTransformationDescriptionBuilder implements TransformationDescriptionBuilder {
 
     protected RejectTransformationDescriptionBuilder(PathElement pathElement) {
-        super(pathElement, PathAddressTransformer.DEFAULT, ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT);
+        super(pathElement, PathAddressTransformer.DEFAULT, ResourceTransformer.DEFAULT,
+                OperationTransformer.DEFAULT, null);
     }
 
     @Override

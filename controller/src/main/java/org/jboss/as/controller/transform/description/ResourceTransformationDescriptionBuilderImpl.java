@@ -47,19 +47,40 @@ class ResourceTransformationDescriptionBuilderImpl extends AbstractTransformatio
     }
 
     protected ResourceTransformationDescriptionBuilderImpl(final PathElement pathElement, final PathAddressTransformer pathAddressTransformer) {
-        super(pathElement, pathAddressTransformer, ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT);
+        this(pathElement, pathAddressTransformer, null);
+    }
+
+    public ResourceTransformationDescriptionBuilderImpl(PathElement pathElement, DynamicDiscardPolicy dynamicDiscardPolicy) {
+        this(pathElement, PathAddressTransformer.DEFAULT, dynamicDiscardPolicy);
+    }
+
+    private ResourceTransformationDescriptionBuilderImpl(final PathElement pathElement,
+            final PathAddressTransformer pathAddressTransformer, DynamicDiscardPolicy dynamicDiscardPolicy) {
+        super(pathElement, pathAddressTransformer, ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT,
+                dynamicDiscardPolicy);
     }
 
     @Override
     public ResourceTransformationDescriptionBuilder addChildResource(final PathElement pathElement) {
-        final ResourceTransformationDescriptionBuilderImpl builder = new ResourceTransformationDescriptionBuilderImpl(pathElement);
+        return addChildResource(pathElement, null);
+    }
+
+    @Override
+    public ResourceTransformationDescriptionBuilder addChildResource(PathElement pathElement, DynamicDiscardPolicy dynamicDiscardPolicy) {
+        final ResourceTransformationDescriptionBuilderImpl builder = new ResourceTransformationDescriptionBuilderImpl(
+                pathElement, dynamicDiscardPolicy);
         children.add(builder);
         return builder;
     }
 
     @Override
     public ResourceTransformationDescriptionBuilder addChildResource(final ResourceDefinition definition) {
-        return addChildResource(definition.getPathElement());
+        return addChildResource(definition.getPathElement(), null);
+    }
+
+    @Override
+    public ResourceTransformationDescriptionBuilder addChildResource(ResourceDefinition definition, DynamicDiscardPolicy dynamicDiscardPolicy) {
+        return addChildResource(definition.getPathElement(), dynamicDiscardPolicy);
     }
 
     @Override
