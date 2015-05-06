@@ -37,6 +37,7 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -69,7 +70,6 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.util.Base64;
 
 /**
  * Common utilities for JBoss AS security tests.
@@ -107,7 +107,7 @@ public class CoreUtils {
 
         switch (coding) {
             case BASE_64:
-                encodedHash = Base64.encodeBytes(byteHash);
+                encodedHash = Base64.getEncoder().encodeToString(byteHash);
                 break;
             case HEX:
                 encodedHash = toHex(byteHash);
