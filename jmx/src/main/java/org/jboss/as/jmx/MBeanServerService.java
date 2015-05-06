@@ -55,6 +55,8 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class MBeanServerService implements Service<PluggableMBeanServer> {
     public static final ServiceName SERVICE_NAME = JMXSubsystemRootResource.JMX_CAPABILITY.getCapabilityServiceName(MBeanServer.class);
+    // TODO Remove this once code in full WildFly is weaned off of hard coded service names
+    private static final ServiceName LEGACY_MBEAN_SERVER_NAME = ServiceName.JBOSS.append("mbean", "server");
 
     private static final ServiceName DOMAIN_CONTROLLER_NAME = ServiceName.JBOSS.append("host", "controller", "model", "controller");
 
@@ -99,7 +101,8 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
             .setInitialMode(ServiceController.Mode.ACTIVE)
             .addDependency(modelControllerName, ModelController.class, service.modelControllerValue)
             .addDependency(ManagementModelIntegration.SERVICE_NAME, ManagementModelIntegration.ManagementModelProvider.class, service.managementModelProviderValue)
-            .install();
+            .addAliases(LEGACY_MBEAN_SERVER_NAME)
+                .install();
     }
 
     /** {@inheritDoc} */
