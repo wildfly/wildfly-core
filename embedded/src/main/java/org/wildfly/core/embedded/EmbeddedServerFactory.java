@@ -22,27 +22,25 @@
 
 package org.wildfly.core.embedded;
 
-import org.wildfly.core.embedded.logging.EmbeddedLogger;
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.LogManager;
+
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.log.JDKModuleLogger;
-
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Properties;
-
+import org.wildfly.core.embedded.logging.EmbeddedLogger;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
-import java.util.logging.LogManager;
 
 /**
  * <p>
- * ServerFactory that sets up a standalone server using modular classloading.
+ * Factory that sets up an embedded standalone server using modular classloading.
  * </p>
  * <p>
  * To use this class the <code>jboss.home.dir</code> system property must be set to the
@@ -71,17 +69,40 @@ public class EmbeddedServerFactory {
     private static final String SYSPROP_KEY_LOGMANAGER = "java.util.logging.manager";
     private static final String SYSPROP_KEY_JBOSS_HOME_DIR = "jboss.home.dir";
     private static final String SYSPROP_KEY_JBOSS_MODULES_DIR = "jboss.modules.dir";
-    private static final String SYSPROP_KEY_JBOSS_BUNDLES_DIR = "jboss.bundles.dir";
     private static final String SYSPROP_VALUE_JBOSS_LOGMANAGER = "org.jboss.logmanager.LogManager";
 
     private EmbeddedServerFactory() {
     }
 
-    public static StandaloneServer create(String jbossHomePath, String modulePath, String bundlePath, String... systemPackages) {
-        return create(jbossHomePath, modulePath, bundlePath, systemPackages, null);
+    /**
+     * Create an embedded standalone server.
+     *
+     * @param jbossHomePath the location of the root of server installation. Cannot be {@code null} or empty.
+     * @param modulePath the location of the root of the module repository. May be {@code null} if the standard
+     *                   location under {@code jbossHomePath} should be used
+     * @param systemPackages names of any packages that must be treated as system packages, with the same classes
+     *                       visible to the caller's classloader visible to server-side classes loaded from
+     *                       the server's modular classlaoder
+     * @return the server. Will not be {@code null}
+     */
+    public static StandaloneServer create(String jbossHomePath, String modulePath, String... systemPackages) {
+        return create(jbossHomePath, modulePath, systemPackages, null);
     }
 
-    public static StandaloneServer create(String jbossHomePath, String modulePath, String bundlePath, String[] systemPackages, String[] cmdargs) {
+    /**
+     * Create an embedded standalone server.
+     *
+     * @param jbossHomePath the location of the root of server installation. Cannot be {@code null} or empty.
+     * @param modulePath the location of the root of the module repository. May be {@code null} if the standard
+     *                   location under {@code jbossHomePath} should be used
+     * @param systemPackages names of any packages that must be treated as system packages, with the same classes
+     *                       visible to the caller's classloader visible to server-side classes loaded from
+     *                       the server's modular classlaoder
+     * @param cmdargs any additional arguments to pass to the embedded server (e.g. -b=192.168.100.10)
+     *
+     * @return the server. Will not be {@code null}
+     */
+    public static StandaloneServer create(String jbossHomePath, String modulePath, String[] systemPackages, String[] cmdargs) {
         if (jbossHomePath == null || jbossHomePath.isEmpty()) {
             throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
         }
@@ -92,24 +113,31 @@ public class EmbeddedServerFactory {
 
         if (modulePath == null)
             modulePath = jbossHomeDir.getAbsolutePath() + File.separator + "modules";
-        if (bundlePath == null)
-            bundlePath = jbossHomeDir.getAbsolutePath() + File.separator + "bundles";
 
-        return create(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, bundlePath, cmdargs);
+        return create(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
 
+    /**
+     * Create an embedded standalone server with an already established module loader.
+     *
+     * @param moduleLoader the module loader. Cannot be {@code null}
+     * @param jbossHomeDir the location of the root of server installation. Cannot be {@code null} or empty.
+     * @return the server. Will not be {@code null}
+     */
     public static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir) {
         return create(moduleLoader, jbossHomeDir, new String[0]);
     }
 
-    public static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdArgs) {
-        String bundlePath = jbossHomeDir.getAbsolutePath() + File.separator + "bundles";
-        return create(moduleLoader, jbossHomeDir, bundlePath, cmdArgs);
-    }
+    /**
+     * Create an embedded standalone server with an already established module loader.
+     *
+     * @param moduleLoader the module loader. Cannot be {@code null}
+     * @param jbossHomeDir the location of the root of server installation. Cannot be {@code null} or empty.
+     * @param cmdargs any additional arguments to pass to the embedded server (e.g. -b=192.168.100.10)
+     * @return the server. Will not be {@code null}
+     */
+    public static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
 
-    private static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir, String bundlePath, String[] cmdargs) {
-
-        setupBundlePath(bundlePath);
         setupVfsModule(moduleLoader);
         setupLoggingSystem(moduleLoader);
 
@@ -174,26 +202,20 @@ public class EmbeddedServerFactory {
             WildFlySecurityManager.clearPropertyPrivileged(SYSPROP_KEY_CLASS_PATH);
             WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_MODULE_PATH, modulePath);
 
-            StringBuffer packages = new StringBuffer("org.jboss.modules,org.jboss.msc,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
+            StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.msc,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
             if (systemPackages != null) {
-                for (String packageName : systemPackages)
-                    packages.append("," + packageName);
+                for (String packageName : systemPackages) {
+                    packages.append(",");
+                    packages.append(packageName);
+                }
             }
             WildFlySecurityManager.setPropertyPrivileged("jboss.modules.system.pkgs", packages.toString());
 
             // Get the module loader
-            final ModuleLoader moduleLoader = Module.getBootModuleLoader();
-            return moduleLoader;
+            return Module.getBootModuleLoader();
         } finally {
             // Return to previous state for classpath prop
             WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, classPath);
-        }
-    }
-
-    private static void setupBundlePath(final String bundlePath) {
-        if (bundlePath != null && new File(bundlePath).isDirectory()) {
-            String absolutePath = new File(bundlePath).getAbsolutePath();
-            WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_BUNDLES_DIR, absolutePath);
         }
     }
 
