@@ -44,10 +44,8 @@ class GenericOutboundConnectionResourceDefinition extends AbstractOutboundConnec
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
-    static final GenericOutboundConnectionResourceDefinition INSTANCE = new GenericOutboundConnectionResourceDefinition();
 
-
-    private GenericOutboundConnectionResourceDefinition() {
+    GenericOutboundConnectionResourceDefinition() {
         super(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.OUTBOUND_CONNECTION),
                 GenericOutboundConnectionAdd.INSTANCE,
                 new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME,  GenericOutboundConnectionAdd.INSTANCE));
@@ -62,6 +60,11 @@ class GenericOutboundConnectionResourceDefinition extends AbstractOutboundConnec
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         resourceRegistration.registerReadWriteAttribute(URI, null, GenericOutboundConnectionWriteHandler.INSTANCE);
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
     }
 
     @Override

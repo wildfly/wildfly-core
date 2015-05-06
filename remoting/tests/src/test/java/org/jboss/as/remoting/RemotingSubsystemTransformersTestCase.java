@@ -21,6 +21,7 @@
 */
 package org.jboss.as.remoting;
 
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -43,14 +44,12 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.transform.OperationTransformer;
-import org.jboss.as.model.test.FailedOperationTransformationConfig.AttributesPathAddressConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -62,10 +61,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
     }
 
-
-
     @Test
-    @Ignore("WFCORE-674")
     public void testTransformersEAP620() throws Exception {
         testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_2_0);
     }
