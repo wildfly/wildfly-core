@@ -38,6 +38,7 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 import org.junit.Assert;
@@ -263,6 +264,11 @@ public abstract class ModelTestLegacyControllerKernelServicesProxy {
 
 
     public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation)
+            throws OperationFailedException {
+        throw new IllegalStateException("Can only be called for the main controller");
+    }
+
+    public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation, TransformerOperationAttachment attachment)
             throws OperationFailedException {
         throw new IllegalStateException("Can only be called for the main controller");
     }

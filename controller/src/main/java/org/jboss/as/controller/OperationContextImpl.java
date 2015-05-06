@@ -102,6 +102,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.ContextAttachments;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
@@ -150,10 +151,9 @@ final class OperationContextImpl extends AbstractOperationContext {
     /** Tracks the addresses associated with writes to the model.
      * We use a map with dummy values just to take advantage of ConcurrentHashMap  */
     private final Map<PathAddress, Object> affectsModel;
+    private final ContextAttachments contextAttachments = new ContextAttachments();
     /** Resources that have had their services restarted, used by ALLOW_RESOURCE_SERVICE_RESTART This should be confined to a thread, so no sync needed */
     private Map<PathAddress, Object> restartedResources = Collections.emptyMap();
-    /** A concurrent map for the attachments. **/
-    private final ConcurrentMap<AttachmentKey<?>, Object> valueAttachments = new ConcurrentHashMap<AttachmentKey<?>, Object>();
     private final Map<OperationId, AuthorizationResponseImpl> authorizations =
             new ConcurrentHashMap<OperationId, AuthorizationResponseImpl>();
     private final ModelNode blockingTimeoutConfig;
@@ -1042,12 +1042,8 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V> V getAttachment(final AttachmentKey<V> key) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
-        return key.cast(valueAttachments.get(key));
+        return contextAttachments.getAttachment(key);
     }
 
     @Override
@@ -1057,26 +1053,17 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public <V> V attach(final AttachmentKey<V> key, final V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
-        return key.cast(valueAttachments.put(key, value));
+        return contextAttachments.attach(key, value);
     }
 
     @Override
     public <V> V attachIfAbsent(final AttachmentKey<V> key, final V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
-        return key.cast(valueAttachments.putIfAbsent(key, value));
+        return contextAttachments.attachIfAbsent(key, value);
     }
 
     @Override
     public <V> V detach(final AttachmentKey<V> key) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
-        return key.cast(valueAttachments.remove(key));
+        return contextAttachments.detach(key);
     }
 
     @Override
