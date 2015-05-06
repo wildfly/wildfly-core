@@ -53,7 +53,7 @@ public class ArgumentValueState extends ExpressionBaseState {
         enterState('{', new DefaultStateWithEndCharacter("BRACES", '}', false, true, enterStateHandlers));
         setLeaveOnWhitespace(true);
         setDefaultHandler(new WordCharacterHandler(true, false));
-        enterState('"', new QuotesState(true, false));
+        enterState('"', QuotesState.QUOTES_INCLUDED_KEEP_ESCAPES);
         enterState('`', new BackQuotesState(true, false));
         setReturnHandler(new CharacterHandler() {
             @Override

@@ -253,6 +253,17 @@ public class CommandTestCase {
         assertEquals("\"a b\"", props.get(0));
     }
 
+    @Test
+    public void testQuotesInQuotes() throws Exception {
+
+        DefaultCallbackHandler cmd = parse("cmd --arg=\"a \\\"b\\\"\"");
+        assertEquals("cmd", cmd.getOperationName());
+        assertTrue(cmd.hasProperties());
+        assertEquals(1, cmd.getPropertyNames().size());
+        assertEquals(0, cmd.getOtherProperties().size());
+        assertEquals("\"a \\\"b\\\"\"", cmd.getPropertyValue("--arg"));
+    }
+
     protected DefaultCallbackHandler parse(String line) {
         DefaultCallbackHandler args = new DefaultCallbackHandler();
         try {
