@@ -131,7 +131,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
         boolean onDemand = context.isBooting();
         OptionMap options = createConnectorOptions(context, model);
-        ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
         RunningMode runningMode = context.getRunningMode();
         ServiceTarget serviceTarget = context.getServiceTarget();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
