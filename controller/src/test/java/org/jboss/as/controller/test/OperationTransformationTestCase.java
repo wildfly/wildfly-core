@@ -26,7 +26,6 @@ import java.util.Collections;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -241,8 +240,7 @@ public class OperationTransformationTestCase {
 
     protected Resource transform(final TransformationTarget target, final Resource root) throws OperationFailedException {
         final Transformers transformers = Transformers.Factory.create(target);
-        final ResourceTransformationContext ctx = Transformers.Factory.create(target, root, resourceRegistration,
-                resolver, RunningMode.NORMAL, ProcessType.HOST_CONTROLLER, null);
+        final ResourceTransformationContext ctx = Transformers.Factory.create(target, root, resourceRegistration, resolver, RunningMode.NORMAL, ProcessType.HOST_CONTROLLER);
         return transformers.transformResource(ctx, root);
     }
 
@@ -320,26 +318,6 @@ public class OperationTransformationTestCase {
         public boolean isSkipRuntimeIgnoreCheck() {
             return false;
         }
-
-        @Override
-        public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
-            return null;
-        }
-
-        @Override
-        public <T> T attach(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T attachIfAbsent(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T detach(OperationContext.AttachmentKey<T> key) {
-            return null;
-        }
     };
 
     private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
@@ -396,26 +374,6 @@ public class OperationTransformationTestCase {
         @Override
         public boolean isSkipRuntimeIgnoreCheck() {
             return false;
-        }
-
-        @Override
-        public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
-            return null;
-        }
-
-        @Override
-        public <T> T attach(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T attachIfAbsent(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T detach(OperationContext.AttachmentKey<T> key) {
-            return null;
         }
     }
 

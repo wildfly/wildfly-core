@@ -73,8 +73,6 @@ public interface KernelServicesBuilder {
      */
     KernelServicesBuilder setBootOperations(ModelNode ... bootOperations);
 
-    KernelServicesBuilder enableTransformerAttachmentGrabber();
-
     /**
      * Creates a new legacy kernel services initializer used to configure a new controller containing an older version of the subsystem being tested.
      * When {@link #build()} is called any legacy controllers will be created as well. Internally this calls
@@ -119,6 +117,4 @@ public interface KernelServicesBuilder {
      * @return the parsed operations
      */
     List<ModelNode> parseXmlResource(String xmlResource) throws Exception;
-
-
 }
