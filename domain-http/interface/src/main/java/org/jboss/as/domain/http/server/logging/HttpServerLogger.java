@@ -56,7 +56,7 @@ public interface HttpServerLogger extends BasicLogger {
     void consoleModuleNotFound(String slot);
 
     @LogMessage(level = ERROR)
-    @Message(id = 4, value = "Unable to load error contest for slot %s, disabling error context.")
+    @Message(id = 4, value = "Unable to load error context for slot %s, disabling error context.")
     void errorContextModuleNotFound(String slot);
 
     @Message(id = 5, value = "Invalid operation '%s'")
