@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.TreeSet;
 
@@ -150,7 +151,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         ServiceModuleLoader.addService(serviceTarget, configuration);
         ExternalModuleService.addService(serviceTarget);
         ModuleIndexService.addService(serviceTarget);
-        final AbstractVaultReader vaultReader = service(AbstractVaultReader.class);
+        final AbstractVaultReader vaultReader = loadVaultReaderService();
         ServerLogger.AS_ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
         ServerService.addService(serviceTarget, configuration, processState, bootstrapListener, runningModeControl, vaultReader, configuration.getAuditLogger(), configuration.getAuthorizer());
         final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContext() {
@@ -217,11 +218,24 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
       return result.toString();
    }
 
-    private static <S> S service(final Class<S> service) {
-        final ServiceLoader<S> serviceLoader = ServiceLoader.load(service);
-        final Iterator<S> it = serviceLoader.iterator();
-        if (it.hasNext())
-            return it.next();
+    private static AbstractVaultReader loadVaultReaderService() {
+        final ServiceLoader<AbstractVaultReader> serviceLoader = ServiceLoader.load(AbstractVaultReader.class,
+                ApplicationServerService.class.getClassLoader());
+        final Iterator<AbstractVaultReader> it = serviceLoader.iterator();
+        // TODO WFCORE-114 get rid of catching/suppressing errors once we have a complete impl in WFCORE
+        ServiceConfigurationError sce = null;
+        while (it.hasNext()) {
+            try {
+                return it.next();
+            } catch (ServiceConfigurationError e) {
+                if (sce == null) {
+                    sce = e;
+                }
+            }
+        }
+        if (sce != null) {
+            ServerLogger.AS_ROOT_LOGGER.debugf(sce, "Cannot instantiate provider of service %s", AbstractVaultReader.class);
+        }
         return null;
     }
 }
