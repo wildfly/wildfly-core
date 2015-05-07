@@ -813,8 +813,7 @@ public class AttributesTestCase {
     }
 
     private ResourceTransformationContext createContext(final TransformationTarget target) {
-        return Transformers.Factory.create(target, resourceRoot, resourceRegistration,
-                ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER, null);
+        return Transformers.Factory.create(target, resourceRoot, resourceRegistration, ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER);
     }
 
     private Transformers getTransfomers(final TransformationTarget target) {

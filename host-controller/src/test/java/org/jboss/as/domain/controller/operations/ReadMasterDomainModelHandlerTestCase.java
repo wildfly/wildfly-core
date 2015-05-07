@@ -132,8 +132,7 @@ public class ReadMasterDomainModelHandlerTestCase {
     }
 
     private ResourceTransformationContext createContext(TransformerRegistry registry, Resource resourceRoot, TransformationTarget target, ManagementResourceRegistration resourceRegistration) {
-        return Transformers.Factory.create(target, resourceRoot, resourceRegistration,
-                ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER, null);
+        return Transformers.Factory.create(target, resourceRoot, resourceRegistration, ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER);
     }
 
     private Transformers getTransfomers(final TransformationTarget target) {
