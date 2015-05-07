@@ -988,7 +988,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // Just log; this doesn't change the result of the op. And if we're not stable here
                     // it's almost certain we never stabilized during execution or we are rolling back and destabilized there.
                     // Either one means there is already a failure message associated with this op.
-                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout, activeStep.operationId.name, activeStep.operationId.address);
+                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
                 }
             }
 
@@ -1921,7 +1921,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
                     if (containsKey) {
                         // We timed out
-                        throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout, name);
+                        throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
                     }
 
                     // If a step removed this ServiceName before, it's no longer responsible
