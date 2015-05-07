@@ -38,7 +38,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class VersionedExtension1 extends VersionedExtensionCommon {
 
-    static final PathElement ORIGINAL = PathElement.pathElement("element", "renamed");
+    private static final PathElement ORIGINAL = PathElement.pathElement("element", "renamed");
 
     @Override
     public void initialize(final ExtensionContext context) {

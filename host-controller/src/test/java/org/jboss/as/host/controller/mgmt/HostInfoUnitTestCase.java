@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import java.util.Set;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
@@ -298,26 +297,6 @@ public class HostInfoUnitTestCase {
         @Override
         public boolean isSkipRuntimeIgnoreCheck() {
             return false;
-        }
-
-        @Override
-        public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
-            return null;
-        }
-
-        @Override
-        public <T> T attach(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T attachIfAbsent(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T detach(OperationContext.AttachmentKey<T> key) {
-            return null;
         }
     }
 }

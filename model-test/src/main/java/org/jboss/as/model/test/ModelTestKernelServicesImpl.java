@@ -58,7 +58,6 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
-import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
@@ -222,7 +221,6 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
             } finally {
                 executor.shutdownNow();
             }
-
         }
     }
 
@@ -240,6 +238,7 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         }
         return rsp.get(RESULT);
     }
+
 
     /**
      * Execute an operation in the model controller, expecting failure.
@@ -321,12 +320,10 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         return controllerService.internalExecute(operation, OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, null, handler);
     }
 
-    protected TransformationContext createTransformationContext(TransformationTarget target, TransformerOperationAttachment attachment) {
+    protected TransformationContext createTransformationContext(TransformationTarget target) {
         //It would be nice to get this from the controller, but probably not too important
         ExpressionResolver resolver = new ExpressionResolverImpl() {};
-        return Transformers.Factory.create(target, ModelTestModelControllerService.grabRootResource(this),
-                controllerService.getRootRegistration(), resolver, controllerService.getRunningMode(),
-                controllerService.getProcessType(), attachment);
+        return Transformers.Factory.create(target, ModelTestModelControllerService.grabRootResource(this), controllerService.getRootRegistration(), resolver, controllerService.getRunningMode(), controllerService.getProcessType());
     }
 
     protected TransformerRegistry getTransformersRegistry() {
