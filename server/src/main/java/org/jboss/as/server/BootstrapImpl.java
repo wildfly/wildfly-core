@@ -64,7 +64,17 @@ final class BootstrapImpl implements Bootstrap {
 
     @Override
     public AsyncFuture<ServiceContainer> bootstrap(final Configuration configuration, final List<ServiceActivator> extraServices) {
+        assert !shutdownHook.down;
+        try {
+            return internalBootstrap(configuration, extraServices);
+        } catch (RuntimeException | Error e) {
+            // Clean up our container
+            shutdownHook.run();
+            throw e;
+        }
+    }
 
+    private AsyncFuture<ServiceContainer> internalBootstrap(final Configuration configuration, final List<ServiceActivator> extraServices) {
         try {
             final Object value = ManagementFactory.getPlatformMBeanServer().getAttribute(new ObjectName("java.lang", "type", "OperatingSystem"), "MaxFileDescriptorCount");
             final long fdCount = Long.valueOf(value.toString()).longValue();
