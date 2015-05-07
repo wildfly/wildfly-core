@@ -50,14 +50,13 @@ public interface ChainedTransformationDescriptionBuilder {
      * Build the transformer chains for chain of versions.
      *
      * @param versions the versions in the transformer chain. This should not include the 'current' version mentioned in the class javadoc.
-     * @param intermediates the intermediate model versions to use in the chain.
      * @return a map of transformation descriptions for each model version
      *
      */
     Map<ModelVersion, TransformationDescription> build(ModelVersion...versions);
 
     /**
-     *Builds and registers the transformer chains for this builder against a subsystem
+     * Builds and registers the transformer chains for this builder against a subsystem
      *
      *@param registration the subsystem registrations
      *@param chains the version chains (not including the 'current' version as in {@link #build(ModelVersion...)})

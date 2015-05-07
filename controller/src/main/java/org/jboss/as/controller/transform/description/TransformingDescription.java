@@ -54,6 +54,7 @@ class TransformingDescription extends AbstractDescription implements Transformat
     private final Map<String, OperationTransformer> operationTransformers;
     private final Set<String> discardedOperations;
     private final ResourceTransformer resourceTransformer;
+    private final DynamicDiscardPolicy dynamicDiscardPolicy;
 
     protected TransformingDescription(final PathElement pathElement, final PathAddressTransformer pathAddressTransformer,
                                    final DiscardPolicy discardPolicy, final boolean inherited,
@@ -61,15 +62,16 @@ class TransformingDescription extends AbstractDescription implements Transformat
                                    final Map<String, AttributeTransformationDescription> attributeTransformations,
                                    final Map<String, OperationTransformer> operations,
                                    final List<TransformationDescription> children,
-                                   final Set<String> discardedOperations) {
+                                   final Set<String> discardedOperations,
+                                   final DynamicDiscardPolicy dynamicDiscardPolicy) {
         super(pathElement, pathAddressTransformer, inherited);
         this.children = children;
         this.discardPolicy = discardPolicy;
         this.resourceTransformer = resourceTransformer;
         this.attributeTransformations = attributeTransformations;
         this.discardedOperations = discardedOperations;
-
         this.operationTransformers = operations;
+        this.dynamicDiscardPolicy = dynamicDiscardPolicy;
     }
     @Override
     public OperationTransformer getOperationTransformer() {
@@ -94,6 +96,7 @@ class TransformingDescription extends AbstractDescription implements Transformat
     @Override
     public OperationTransformer.TransformedOperation transformOperation(final TransformationContext ctx, final PathAddress address, final ModelNode operation) throws OperationFailedException {
         // See whether the operation should be rejected or not
+        final DiscardPolicy discardPolicy = determineDiscardPolicy(ctx, address);
         switch (discardPolicy) {
             case REJECT_AND_WARN:
                 // Just execute the original operation to see that it failed
@@ -135,7 +138,8 @@ class TransformingDescription extends AbstractDescription implements Transformat
     @Override
     public void transformResource(final ResourceTransformationContext ctx, final PathAddress address, final Resource original) throws OperationFailedException {
         final ModelNode originalModel = TransformationRule.cloneAndProtect(original.getModel());
-        // See whether the model can be discarded
+        final DiscardPolicy discardPolicy = determineDiscardPolicy(ctx, address);
+
         switch (discardPolicy) {
             case DISCARD_AND_WARN:
             case REJECT_AND_WARN:
@@ -169,5 +173,17 @@ class TransformingDescription extends AbstractDescription implements Transformat
     @Override
     public boolean isPlaceHolder() {
         return false;
+    }
+
+    private DiscardPolicy determineDiscardPolicy(TransformationContext ctx, PathAddress address) {
+        //Check the discard policy
+        final DiscardPolicy discardPolicy;
+        if (dynamicDiscardPolicy == null) {
+            discardPolicy = this.discardPolicy;
+        } else {
+            //Use the provided resource checker
+            discardPolicy = dynamicDiscardPolicy.checkResource(ctx, address);
+        }
+        return discardPolicy;
     }
 }

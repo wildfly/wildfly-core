@@ -40,7 +40,7 @@ public interface TransformationDescriptionBuilder {
      */
     TransformationDescription build();
 
-    public static class Factory {
+    class Factory {
 
         /**
          * Create a resource builder instance.
@@ -54,6 +54,7 @@ public interface TransformationDescriptionBuilder {
         /**
          * Create a resource builder instance.
          *
+         * @param pathElement the path element of the child to be transformed
          * @return the transformation builder
          */
         public static ResourceTransformationDescriptionBuilder createInstance(final PathElement pathElement) {
@@ -61,8 +62,9 @@ public interface TransformationDescriptionBuilder {
         }
 
         /**
-         * Create a builder instance.
+         * Create a builder instance discarding a child.
          *
+         * @param pathElement the path element of the child to be transformed
          * @return the transformation builder
          */
         public static DiscardTransformationDescriptionBuilder createDiscardInstance(PathElement pathElement) {
@@ -70,9 +72,9 @@ public interface TransformationDescriptionBuilder {
         }
 
         /**
-         * Create a builder instance.
+         * Create a builder instance rejecting a child.
          *
-         * @param currentVersion the current version of the model
+         * @param pathElement the path element of the child to be transformed
          * @return the transformation builder
          */
         public static RejectTransformationDescriptionBuilder createRejectInstance(PathElement pathElement) {
