@@ -196,7 +196,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 // Modular environment
                 server = EmbeddedServerFactory.create(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                server = EmbeddedServerFactory.create(jbossHome.getAbsolutePath(), null, null, null, cmds);
+                server = EmbeddedServerFactory.create(jbossHome.getAbsolutePath(), null, null, cmds);
             }
             server.start();
             serverReference.set(new EmbeddedServerLaunch(server, restorer));
