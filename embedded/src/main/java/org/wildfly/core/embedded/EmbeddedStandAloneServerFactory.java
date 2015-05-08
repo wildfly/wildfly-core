@@ -43,7 +43,6 @@ import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
-import org.wildfly.core.embedded.logging.EmbeddedLogger;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
@@ -55,6 +54,7 @@ import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.value.Value;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
  * This is the counter-part of EmbeddedServerFactory which lives behind a module class loader.
@@ -100,13 +100,7 @@ public class EmbeddedStandAloneServerFactory {
 
         setupCleanDirectories(jbossHomeDir, systemProps);
 
-        StandaloneServer standaloneServer = new StandaloneServerImpl(cmdargs, systemProps, systemEnv, moduleLoader);
-        return standaloneServer;
-    }
-
-    static void setupCleanDirectories(Properties props) {
-        File jbossHomeDir = new File(props.getProperty(ServerEnvironment.HOME_DIR));
-        setupCleanDirectories(jbossHomeDir, props);
+        return new StandaloneServerImpl(cmdargs, systemProps, systemEnv, moduleLoader);
     }
 
     static void setupCleanDirectories(File jbossHomeDir, Properties props) {
