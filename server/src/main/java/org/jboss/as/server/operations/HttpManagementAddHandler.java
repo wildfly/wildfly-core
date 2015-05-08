@@ -225,7 +225,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         } else {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
-        boolean consoleEnabled = model.get(ModelDescriptionConstants.CONSOLE_ENABLED).asBoolean(true);
+        boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
         ConsoleMode consoleMode;
         if (consoleEnabled){
             consoleMode = context.getRunningMode() == RunningMode.ADMIN_ONLY ? ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE;
