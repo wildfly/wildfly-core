@@ -50,6 +50,7 @@ import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -64,6 +65,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
 
 
     @Test
+    @Ignore("WFCORE-674")
     public void testTransformersEAP620() throws Exception {
         testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_2_0);
     }
