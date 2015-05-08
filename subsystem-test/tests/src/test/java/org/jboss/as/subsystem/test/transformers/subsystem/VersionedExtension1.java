@@ -22,6 +22,7 @@
 
 package org.jboss.as.subsystem.test.transformers.subsystem;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import org.jboss.as.controller.ExtensionContext;
@@ -42,7 +43,19 @@ public class VersionedExtension1 extends VersionedExtensionCommon {
 
     @Override
     public void initialize(final ExtensionContext context) {
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
+        SubsystemRegistration subsystem;
+        try {
+            subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
+        } catch (NoSuchMethodError e) {
+            //Older controllers don't have this method, use reflection
+            Method m = null;
+            try {
+                m = context.getClass().getMethod("registerSubsystem", String.class, Integer.TYPE, Integer.TYPE);
+                subsystem = (SubsystemRegistration)m.invoke(context, SUBSYSTEM_NAME, 1, 0);
+            } catch (Exception e1) {
+                throw new RuntimeException(e1);
+            }
+        }
 
         final ManagementResourceRegistration registration = initializeSubsystem(subsystem);
         // Register an element which is going to get renamed

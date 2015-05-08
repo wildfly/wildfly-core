@@ -72,20 +72,30 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testTransformers() throws Exception {
-        testTransformers(false);
+    public void testTransformersAS() throws Exception {
+        testTransformers(ModelTestControllerVersion.MASTER);
     }
 
     @Test
-    public void testTransformersEAP() throws Exception {
-        testTransformers(true);
+    public void testTransformersEAP620() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_6_2_0);
     }
 
-    private void testTransformers(boolean eap) throws Exception {
+    @Test
+    public void testTransformersEAP630() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_6_3_0);
+    }
+
+    @Test
+    public void testTransformersEAP640() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_6_4_0);
+    }
+
+    private void testTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
         ModelVersion oldVersion = ModelVersion.create(1, 0, 0);
         KernelServicesBuilder builder = createKernelServicesBuilder(null)
                 .setSubsystemXml(getSubsystemXml());
-        builder.createLegacyKernelServicesBuilder(null, ModelTestControllerVersion.MASTER, oldVersion)
+        builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
                 .setExtensionClassName(VersionedExtension1.class.getName())
                 .addSimpleResourceURL("target/legacy-archive.jar")
                 .skipReverseControllerCheck();
