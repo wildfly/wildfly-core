@@ -105,7 +105,7 @@ public class RemotingExtension implements Extension {
         // local outbound connection
         subsystem.registerSubModel(LocalOutboundConnectionResourceDefinition.INSTANCE);
         // (generic) outbound connection
-        subsystem.registerSubModel(GenericOutboundConnectionResourceDefinition.INSTANCE);
+        subsystem.registerSubModel(new GenericOutboundConnectionResourceDefinition());
 
         if (context.isRegisterTransformers()) {
             registerTransformers(registration);
