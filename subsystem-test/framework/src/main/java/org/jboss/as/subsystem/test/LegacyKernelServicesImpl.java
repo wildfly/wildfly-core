@@ -27,6 +27,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.dmr.ModelNode;
@@ -56,6 +57,14 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl impleme
     }
 
     @Override
+    public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
+                                                   TransformerOperationAttachment attachment) throws OperationFailedException {
+        //Will throw an error since we are not the main controller
+        checkIsMainController();
+        return null;
+    }
+
+    @Override
     public ModelNode readTransformedModel(ModelVersion modelVersion, boolean includeDefaults) {
         //Will throw an error since we are not the main controller
         checkIsMainController();
@@ -65,6 +74,12 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl impleme
     @Override
     public ModelNode executeOperation(ModelVersion modelVersion, TransformedOperation op) {
         //Will throw an error since we are not the main controller
+        checkIsMainController();
+        return null;
+    }
+
+    @Override
+    public TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op) {
         checkIsMainController();
         return null;
     }

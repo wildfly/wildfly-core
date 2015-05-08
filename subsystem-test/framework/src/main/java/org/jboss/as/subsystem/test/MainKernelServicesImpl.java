@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_TRANSFORMED_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +44,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationResultTransformer;
@@ -51,6 +53,7 @@ import org.jboss.as.controller.transform.OperationTransformer.TransformedOperati
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestUtils;
@@ -68,15 +71,18 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
     private Class<?> testClass;
     private static final ModelVersion CURRENT_CORE_VERSION = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION,
             Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
+    private final boolean enableTransformerAttachmentGrabber;
 
     protected MainKernelServicesImpl(ServiceContainer container, ModelTestModelControllerService controllerService,
             StringConfigurationPersister persister, ManagementResourceRegistration rootRegistration,
             OperationValidator operationValidator, String mainSubsystemName, ExtensionRegistry extensionRegistry,
-            ModelVersion legacyModelVersion, boolean successfulBoot, Throwable bootError, boolean registerTransformers, Class<?> testClass) {
+            ModelVersion legacyModelVersion, boolean successfulBoot, Throwable bootError,
+            boolean registerTransformers, Class<?> testClass, boolean enableTransformerAttachmentGrabber) {
         // FIXME MainKernelServicesImpl constructor
         super(container, controllerService, persister, rootRegistration, operationValidator, mainSubsystemName, extensionRegistry,
                 legacyModelVersion, successfulBoot, bootError, registerTransformers);
         this.testClass = testClass;
+        this.enableTransformerAttachmentGrabber = enableTransformerAttachmentGrabber;
     }
 
     /**
@@ -89,6 +95,11 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
      * @throws IllegalStateException if this is not the test's main model controller
      */
     public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation) throws OperationFailedException {
+        return transformOperation(modelVersion, operation, null);
+    }
+
+    public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
+                                                   TransformerOperationAttachment attachment) throws OperationFailedException {
         checkIsMainController();
         PathElement pathElement = PathElement.pathElement(SUBSYSTEM, mainSubsystemName);
         PathAddress opAddr = PathAddress.pathAddress(operation.get(OP_ADDR));
@@ -100,7 +111,7 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
                     subsystem, MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.SERVER, null);
 
             final Transformers transformers = Transformers.Factory.create(transformationTarget);
-            final TransformationContext transformationContext = createTransformationContext(transformationTarget);
+            final TransformationContext transformationContext = createTransformationContext(transformationTarget, attachment);
             return transformers.transformOperation(transformationContext, operation);
         }
         return new OperationTransformer.TransformedOperation(operation, OperationResultTransformer.ORIGINAL_RESULT);
@@ -166,6 +177,19 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
     @Override
     public Class<?> getTestClass() {
         return testClass;
+    }
+
+    @Override
+    public TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op) {
+        if (!enableTransformerAttachmentGrabber) {
+            throw new IllegalStateException("enableTransformerAttachmentGrabber() was not called on the builder");
+        }
+
+        ModelNode wrapper = Util.createEmptyOperation(TransformerAttachmentGrabber.DESC.getName(), PathAddress.EMPTY_ADDRESS);
+        wrapper.get(VALUE).set(op);
+        ModelTestUtils.checkOutcome(executeOperation(wrapper));
+
+        return TransformerAttachmentGrabber.attachment;
     }
 
     private ModelVersion getCoreModelVersionByLegacyModelVersion(ModelVersion legacyModelVersion) {

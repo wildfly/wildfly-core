@@ -37,6 +37,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import jdk.nashorn.internal.ir.annotations.Ignore;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
@@ -62,11 +64,10 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
     }
 
     @Test
+    @Ignore
     public void testTransformersEAP620() throws Exception {
         testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_2_0);
     }
-
-
 
     private void testTransformers_1_3_0(ModelTestControllerVersion controllerVersion) throws Exception {
         KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
