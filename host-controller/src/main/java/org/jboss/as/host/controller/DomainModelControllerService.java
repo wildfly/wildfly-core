@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -110,6 +111,7 @@ import org.jboss.as.domain.controller.HostConnectionInfo.Event;
 import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
@@ -223,7 +225,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ConcurrentMap<String, ProxyController> hostProxies = new ConcurrentHashMap<String, ProxyController>();
         final Map<String, ProxyController> serverProxies = new ConcurrentHashMap<String, ProxyController>();
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
-        final AbstractVaultReader vaultReader = service(AbstractVaultReader.class);
+        final AbstractVaultReader vaultReader = loadVaultReaderService();
         ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
         final ContentRepository contentRepository = ContentRepository.Factory.create(environment.getDomainContentDir());
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
@@ -1080,11 +1082,24 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
     }
 
-    private static <S> S service(final Class<S> service) {
-        final ServiceLoader<S> serviceLoader = ServiceLoader.load(service);
-        final Iterator<S> it = serviceLoader.iterator();
-        if (it.hasNext())
-            return it.next();
+    private static AbstractVaultReader loadVaultReaderService() {
+        final ServiceLoader<AbstractVaultReader> serviceLoader = ServiceLoader.load(AbstractVaultReader.class,
+                DomainModelControllerService.class.getClassLoader());
+        final Iterator<AbstractVaultReader> it = serviceLoader.iterator();
+        // TODO WFCORE-114 get rid of catching/suppressing errors once we have a complete impl in WFCORE
+        ServiceConfigurationError sce = null;
+        while (it.hasNext()) {
+            try {
+                return it.next();
+            } catch (ServiceConfigurationError e) {
+                if (sce == null) {
+                    sce = e;
+                }
+            }
+        }
+        if (sce != null) {
+            DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf(sce, "Cannot instantiate provider of service %s", AbstractVaultReader.class);
+        }
         return null;
     }
 
