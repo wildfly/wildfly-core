@@ -22,20 +22,16 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.host.controller.operations.HttpManagementAddHandler.createConnectorOptions;
-
 import java.util.Collections;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelNode;
-import org.xnio.OptionMap;
 
 /**
  * Removes the HTTP management interface.
@@ -71,10 +67,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         HttpManagementAddHandler.populateHostControllerInfo(hostControllerInfo, context, model);
-        boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-
-        OptionMap options = createConnectorOptions(context, model);
-        HttpManagementAddHandler.installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, false, httpUpgrade, context.getServiceRegistry(false), options);
+        HttpManagementAddHandler.installHttpManagementServices(environment, hostControllerInfo, context, model);
     }
 
     static void clearHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo) {
