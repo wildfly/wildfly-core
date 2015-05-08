@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
+import static org.jboss.as.host.controller.operations.HttpManagementAddHandler.createConnectorOptions;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.addValidatingHandler;
 
 import java.util.Collection;
@@ -102,10 +103,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
         populateHostControllerInfo(hostControllerInfo, context, model);
         // DomainModelControllerService requires this service
-        final boolean onDemand = context.isBooting();
-        boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        OptionMap options = createConnectorOptions(context, model);
-        installHttpManagementServices(context.getRunningMode(), context.getServiceTarget(), hostControllerInfo, environment, onDemand, httpUpgrade, context.getServiceRegistry(false), options);
+        installHttpManagementServices(environment, hostControllerInfo, context, model);
     }
 
     @Override
@@ -127,10 +125,15 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         hostControllerInfo.setAllowedOrigins(HttpManagementResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model));
     }
 
-    public static void installHttpManagementServices(final RunningMode runningMode, final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo,
-                                                     final HostControllerEnvironment environment,
-                                                     boolean onDemand, boolean httpUpgrade, final ServiceRegistry serviceRegistry, final OptionMap options) {
+    static void installHttpManagementServices(final HostControllerEnvironment environment, final LocalHostControllerInfo hostControllerInfo, final OperationContext context,
+                                              final ModelNode model) throws OperationFailedException {
 
+        boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
+        boolean onDemand = context.isBooting();
+        OptionMap options = createConnectorOptions(context, model);
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+        RunningMode runningMode = context.getRunningMode();
+        ServiceTarget serviceTarget = context.getServiceTarget();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
         int port = hostControllerInfo.getHttpManagementPort();
         String secureInterfaceName = hostControllerInfo.getHttpManagementSecureInterface();
@@ -140,11 +143,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
         ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
 
-        ConsoleMode consoleMode = ConsoleMode.CONSOLE;
-        if (runningMode == RunningMode.ADMIN_ONLY) {
-            consoleMode = ConsoleMode.ADMIN_ONLY;
-        } else if (!hostControllerInfo.isMasterDomainController()) {
-            consoleMode = ConsoleMode.SLAVE_HC;
+        boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
+        ConsoleMode consoleMode;
+        if (consoleEnabled){
+            consoleMode = context.getRunningMode() == RunningMode.ADMIN_ONLY ? ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE;
+        } else {
+            consoleMode = ConsoleMode.NO_CONSOLE;
         }
 
         // Track active requests
