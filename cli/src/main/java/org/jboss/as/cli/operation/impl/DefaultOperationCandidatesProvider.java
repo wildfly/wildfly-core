@@ -33,6 +33,7 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
+import org.jboss.as.cli.impl.AttributeNamePathCompleter;
 import org.jboss.as.cli.impl.ValueTypeCompleter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
 import org.jboss.as.cli.operation.OperationFormatException;
@@ -371,14 +372,14 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         final CommandLineCompleterFactory attrNameCompleter = new CommandLineCompleterFactory(){
             @Override
             public CommandLineCompleter createCompleter(OperationRequestAddress address) {
-                return new PropertyNameCompleter(address, false);
+                return new AttributeNamePathCompleter(address);
             }};
         addGlobalOpPropCompleter(Util.UNDEFINE_ATTRIBUTE, Util.NAME, attrNameCompleter);
         addGlobalOpPropCompleter(Util.READ_ATTRIBUTE, Util.NAME, attrNameCompleter);
         addGlobalOpPropCompleter(Util.WRITE_ATTRIBUTE, Util.NAME, new CommandLineCompleterFactory(){
             @Override
             public CommandLineCompleter createCompleter(OperationRequestAddress address) {
-                return new PropertyNameCompleter(address, true);
+                return new AttributeNamePathCompleter(address, true);
             }});
         addGlobalOpPropCompleter(Util.WRITE_ATTRIBUTE, Util.VALUE, new CommandLineCompleterFactory(){
             @Override
@@ -398,6 +399,16 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             }};
         addGlobalOpPropCompleter(Util.READ_CHILDREN_NAMES, Util.CHILD_TYPE, childTypeCompleter);
         addGlobalOpPropCompleter(Util.READ_CHILDREN_RESOURCES, Util.CHILD_TYPE, childTypeCompleter);
+
+        addGlobalOpPropCompleter("map-put", Util.NAME, attrNameCompleter);
+        addGlobalOpPropCompleter("map-remove", Util.NAME, attrNameCompleter);
+        addGlobalOpPropCompleter("map-get", Util.NAME, attrNameCompleter);
+        addGlobalOpPropCompleter("map-clear", Util.NAME, attrNameCompleter);
+
+        addGlobalOpPropCompleter("list-add", Util.NAME, attrNameCompleter);
+        addGlobalOpPropCompleter("list-remove", Util.NAME, attrNameCompleter);
+        addGlobalOpPropCompleter("list-get", Util.NAME, attrNameCompleter);
+        addGlobalOpPropCompleter("list-clear", Util.NAME, attrNameCompleter);
     }
     interface CommandLineCompleterFactory {
         CommandLineCompleter createCompleter(OperationRequestAddress address);
