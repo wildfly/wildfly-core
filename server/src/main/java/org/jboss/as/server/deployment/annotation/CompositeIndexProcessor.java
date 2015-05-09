@@ -50,6 +50,7 @@ import org.jboss.jandex.Indexer;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.Resource;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
@@ -66,6 +67,7 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
 
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
+        final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
 
         final Boolean computeCompositeIndex = deploymentUnit.getAttachment(Attachments.COMPUTE_COMPOSITE_ANNOTATION_INDEX);
         if (computeCompositeIndex != null && !computeCompositeIndex) {
@@ -76,7 +78,7 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         final List<Index> indexes = new ArrayList<Index>();
         for (final ModuleIdentifier moduleIdentifier : additionalModuleIndexes) {
             try {
-                Module module = Module.getBootModuleLoader().loadModule(moduleIdentifier);
+                Module module = moduleLoader.loadModule(moduleIdentifier);
                 final CompositeIndex additionalIndex = ModuleIndexBuilder.buildCompositeIndex(module);
                 if (additionalIndex != null) {
                     indexes.addAll(additionalIndex.indexes);
