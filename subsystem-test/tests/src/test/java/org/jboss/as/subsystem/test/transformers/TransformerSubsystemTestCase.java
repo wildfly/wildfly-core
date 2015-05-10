@@ -21,13 +21,20 @@
 */
 package org.jboss.as.subsystem.test.transformers;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -72,20 +79,31 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testTransformers() throws Exception {
-        testTransformers(false);
+    public void testTransformersAS() throws Exception {
+        testTransformers(ModelTestControllerVersion.MASTER);
     }
 
     @Test
-    public void testTransformersEAP() throws Exception {
-        testTransformers(true);
+    public void testTransformersEAP620() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_6_2_0);
     }
 
-    private void testTransformers(boolean eap) throws Exception {
+    @Test
+    public void testTransformersEAP630() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_6_3_0);
+    }
+
+    @Test
+    public void testTransformersEAP640() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_6_4_0);
+    }
+
+    private void testTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
         ModelVersion oldVersion = ModelVersion.create(1, 0, 0);
         KernelServicesBuilder builder = createKernelServicesBuilder(null)
+                .enableTransformerAttachmentGrabber()
                 .setSubsystemXml(getSubsystemXml());
-        builder.createLegacyKernelServicesBuilder(null, ModelTestControllerVersion.MASTER, oldVersion)
+        builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
                 .setExtensionClassName(VersionedExtension1.class.getName())
                 .addSimpleResourceURL("target/legacy-archive.jar")
                 .skipReverseControllerCheck();
@@ -112,5 +130,27 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
 
         generateLegacySubsystemResourceRegistrationDmr(mainServices, oldVersion);
         checkSubsystemModelTransformation(mainServices, oldVersion);
+
+        PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM, "test-subsystem");
+        ModelNode writeAttribute = Util.getWriteAttributeOperation(subsystemAddress, "test-attribute", "do reject");
+        TransformerOperationAttachment attachment = mainServices.executeAndGrabTransformerAttachment(writeAttribute);
+        Assert.assertNotNull(attachment);
+        OperationTransformer.TransformedOperation op = mainServices.transformOperation(oldVersion, writeAttribute, attachment);
+        Assert.assertFalse(op.rejectOperation(success()));
+
+        //The model now has the 'magic' old value which gets put into the transformer attachment, which the reject transformer
+        //will reject
+        writeAttribute = Util.getWriteAttributeOperation(subsystemAddress, "test-attribute", "something else");
+        attachment = mainServices.executeAndGrabTransformerAttachment(writeAttribute);
+        Assert.assertNotNull(attachment);
+        op = mainServices.transformOperation(oldVersion, writeAttribute, attachment);
+        Assert.assertTrue(op.rejectOperation(success()));
+    }
+
+    private static final ModelNode success() {
+        final ModelNode result = new ModelNode();
+        result.get(OUTCOME).set(SUCCESS);
+        result.get(RESULT);
+        return result;
     }
 }

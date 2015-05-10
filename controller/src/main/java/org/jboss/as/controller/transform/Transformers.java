@@ -100,6 +100,10 @@ public interface Transformers {
      */
     Resource transformResource(final OperationContext operationContext, PathAddress original, Resource resource, boolean skipRuntimeIgnoreCheck) throws OperationFailedException;
 
+
+    /**
+     * Convenience factory for unit tests
+     */
     public static class Factory {
         private Factory() {
         }
@@ -108,8 +112,26 @@ public interface Transformers {
             return new TransformersImpl(target);
         }
 
-        public static ResourceTransformationContext create(TransformationTarget target, Resource model, ImmutableManagementResourceRegistration registration, ExpressionResolver resolver, RunningMode runningMode, ProcessType type) {
-            return ResourceTransformationContextImpl.create(target, model, registration, runningMode, type, false);
+        /**
+         * Creates a ResourceTransformationContext
+         *
+         * @param target the transformation target
+         * @param model the model
+         * @param registration the resource registration
+         * @param resolver the expression resolver
+         * @param runningMode the server running mode
+         * @param type the process type
+         * @param attachment attachments propagated from the operation context to the created transformer context.
+         *                   This may be {@code null}. In a non-test scenario, this will be added by operation handlers
+         *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
+         *                   ensure themselves that the relevant attachments get set.
+         *
+         * @return the created context
+         */
+        public static ResourceTransformationContext create(TransformationTarget target, Resource model,
+                                                           ImmutableManagementResourceRegistration registration, ExpressionResolver resolver,
+                                                           RunningMode runningMode, ProcessType type, TransformerOperationAttachment attachment) {
+            return ResourceTransformationContextImpl.create(target, model, registration, runningMode, type, false, attachment);
         }
     }
 

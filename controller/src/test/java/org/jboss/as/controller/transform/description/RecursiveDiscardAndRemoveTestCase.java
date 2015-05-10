@@ -227,7 +227,8 @@ public class RecursiveDiscardAndRemoveTestCase {
     }
 
     private ResourceTransformationContext createContext(final TransformationTarget target) {
-        return Transformers.Factory.create(target, resourceRoot, resourceRegistration, ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER);
+        return Transformers.Factory.create(target, resourceRoot, resourceRegistration,
+                ExpressionResolver.TEST_RESOLVER, RunningMode.NORMAL, ProcessType.STANDALONE_SERVER, null);
     }
 
     private Transformers getTransfomers(final TransformationTarget target) {

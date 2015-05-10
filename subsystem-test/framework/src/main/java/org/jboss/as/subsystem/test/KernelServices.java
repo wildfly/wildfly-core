@@ -3,6 +3,7 @@ package org.jboss.as.subsystem.test;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.model.test.ModelTestKernelServices;
 import org.jboss.dmr.ModelNode;
 
@@ -22,10 +23,14 @@ public interface KernelServices extends ModelTestKernelServices<KernelServices> 
      *
      * @param modelVersion the subsystem model version of the legacy subsystem model controller
      * @param operation the operation to transform
-     * @return the transformed operation
+     * @param attachment attachments propagated from the operation context to the created transformer context.
+     *                   This may be {@code null}. In a non-test scenario, this will be added by operation handlers
+     *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
+     *                   ensure themselves that the relevant attachments get set.     * @return the transformed operation
      * @throws IllegalStateException if this is not the test's main model controller
      */
-    TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation) throws OperationFailedException;
+    TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
+                                            TransformerOperationAttachment attachment) throws OperationFailedException;
 
     /**
      * Transforms the model to the legacy subsystem model version
@@ -55,4 +60,12 @@ public interface KernelServices extends ModelTestKernelServices<KernelServices> 
      */
     ModelNode executeOperation(final ModelVersion modelVersion, final TransformedOperation op);
 
+
+    /**
+     * Execute an operation in controller, and get hold of the {@link TransformerOperationAttachment}.
+     *
+     * @param op the operation to execute
+     * @return the attachment or {@code null} if there is none.
+     */
+    TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op);
 }

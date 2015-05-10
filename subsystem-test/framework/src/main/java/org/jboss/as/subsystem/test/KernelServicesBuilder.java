@@ -117,4 +117,6 @@ public interface KernelServicesBuilder {
      * @return the parsed operations
      */
     List<ModelNode> parseXmlResource(String xmlResource) throws Exception;
+
+    KernelServicesBuilder enableTransformerAttachmentGrabber();
 }

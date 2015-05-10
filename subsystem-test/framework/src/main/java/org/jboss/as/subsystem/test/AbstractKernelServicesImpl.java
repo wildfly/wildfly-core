@@ -39,12 +39,14 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
     protected final ExtensionRegistry extensionRegistry;
     protected final boolean registerTransformers;
 
-
     private static final AtomicInteger counter = new AtomicInteger();
 
 
-    protected AbstractKernelServicesImpl(ServiceContainer container, ModelTestModelControllerService controllerService, StringConfigurationPersister persister, ManagementResourceRegistration rootRegistration,
-            OperationValidator operationValidator, String mainSubsystemName, ExtensionRegistry extensionRegistry, ModelVersion legacyModelVersion, boolean successfulBoot, Throwable bootError, boolean registerTransformers) {
+    protected AbstractKernelServicesImpl(ServiceContainer container, ModelTestModelControllerService controllerService,
+                    StringConfigurationPersister persister, ManagementResourceRegistration rootRegistration,
+                    OperationValidator operationValidator, String mainSubsystemName,
+                    ExtensionRegistry extensionRegistry, ModelVersion legacyModelVersion, boolean successfulBoot,
+                    Throwable bootError, boolean registerTransformers) {
         super(container, controllerService, persister, rootRegistration, operationValidator, legacyModelVersion, successfulBoot, bootError);
 
         this.mainSubsystemName = mainSubsystemName;
@@ -54,7 +56,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
     public static AbstractKernelServicesImpl create(Class<?> testClass, String mainSubsystemName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
             ExtensionRegistry controllerExtensionRegistry, List<ModelNode> bootOperations, ModelTestParser testParser, Extension mainExtension, ModelVersion legacyModelVersion,
-            boolean registerTransformers, boolean persistXml) throws Exception {
+            boolean registerTransformers, boolean persistXml, boolean enableTransformerAttachmentGrabber) throws Exception {
         ControllerInitializer controllerInitializer = additionalInit.createControllerInitializer();
 
         PathManagerService pathManager = new PathManagerService() {
@@ -78,7 +80,17 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         controllerExtensionRegistry.setPathManager(pathManager);
 
         //Use the default implementation of test controller for the main controller, and for tests that don't have another one set up on the classpath
-        TestModelControllerFactory testModelControllerFactory = StandardTestModelControllerServiceFactory.INSTANCE;
+        TestModelControllerFactory testModelControllerFactory = new TestModelControllerFactory() {
+            @Override
+            public ModelTestModelControllerService create (Extension mainExtension, ControllerInitializer
+                    controllerInitializer,
+                                                           AdditionalInitialization additionalInit, ExtensionRegistry extensionRegistry,
+                                                           StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
+                                                           boolean registerTransformers){
+                return TestModelControllerService.create(mainExtension, controllerInitializer, additionalInit, extensionRegistry,
+                        persister, validateOpsFilter, registerTransformers, enableTransformerAttachmentGrabber);
+            }
+        };
         if (legacyModelVersion != null) {
             ServiceLoader<TestModelControllerFactory> factoryLoader = ServiceLoader.load(TestModelControllerFactory.class, AbstractKernelServicesImpl.class.getClassLoader());
             for (TestModelControllerFactory factory : factoryLoader) {
@@ -101,8 +113,14 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
         AbstractKernelServicesImpl kernelServices = legacyModelVersion == null ?
                     new MainKernelServicesImpl(container, svc, persister, svc.getRootRegistration(),
-                            new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers, testClass) :
-                                new LegacyKernelServicesImpl(container, svc, persister, svc.getRootRegistration(), new OperationValidator(svc.getRootRegistration()), mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(), svc.getBootError(), registerTransformers);
+                            new OperationValidator(svc.getRootRegistration()),
+                            mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(),
+                            svc.getBootError(), registerTransformers, testClass, enableTransformerAttachmentGrabber)
+                    :
+                    new LegacyKernelServicesImpl(container, svc, persister, svc.getRootRegistration()
+                            , new OperationValidator(svc.getRootRegistration()),
+                            mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(),
+                            svc.getBootError(), registerTransformers);
 
         return kernelServices;
     }
@@ -139,18 +157,5 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
     protected void addLegacyKernelService(ModelVersion modelVersion, KernelServices legacyServices) {
         super.addLegacyKernelService(modelVersion, legacyServices);
-    }
-
-    private static class StandardTestModelControllerServiceFactory implements TestModelControllerFactory {
-        static final TestModelControllerFactory INSTANCE = new StandardTestModelControllerServiceFactory();
-
-        @Override
-        public ModelTestModelControllerService create(Extension mainExtension, ControllerInitializer controllerInitializer,
-                AdditionalInitialization additionalInit, ExtensionRegistry extensionRegistry,
-                StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
-                boolean registerTransformers) {
-            return TestModelControllerService.create(mainExtension, controllerInitializer, additionalInit, extensionRegistry, persister, validateOpsFilter, registerTransformers);
-        }
-
     }
 }
