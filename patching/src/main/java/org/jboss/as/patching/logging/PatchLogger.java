@@ -208,4 +208,7 @@ public interface PatchLogger extends BasicLogger {
 
     @Message(id = 37, value = "Cannot process restore by renaming file %s")
     IllegalStateException cannotRenameFileDuringRestore(String name);
+
+    @Message(id = 38, value = "Duplicate element patch-id (%s)")
+    IllegalStateException duplicateElementPatchId(String id);
 }

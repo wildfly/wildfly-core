@@ -24,21 +24,22 @@ package org.jboss.as.patching.metadata;
 
 import static org.jboss.as.patching.IoUtils.safeClose;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -132,17 +133,31 @@ public class PatchXml {
     }
 
     public static PatchMetadataResolver parse(final InputStream stream, InstalledIdentity originalIdentity) throws XMLStreamException {
+        return parse(getXMLInputFactory().createXMLStreamReader(stream), originalIdentity);
+    }
+
+    public static PatchMetadataResolver parse(final Reader stream) throws XMLStreamException {
+        return parse(stream, null);
+    }
+
+    public static PatchMetadataResolver parse(final Reader reader, InstalledIdentity originalIdentity) throws XMLStreamException {
+        return parse(getXMLInputFactory().createXMLStreamReader(reader), originalIdentity);
+    }
+
+    private static XMLInputFactory getXMLInputFactory() throws XMLStreamException {
+        final XMLInputFactory inputFactory = INPUT_FACTORY;
+        setIfSupported(inputFactory, XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
+        setIfSupported(inputFactory, XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        return inputFactory;
+    }
+
+    protected static PatchMetadataResolver parse(final XMLStreamReader reader, InstalledIdentity originalIdentity) throws XMLStreamException {
         try {
-            final XMLInputFactory inputFactory = INPUT_FACTORY;
-            setIfSupported(inputFactory, XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
-            setIfSupported(inputFactory, XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-            final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(stream);
-            //
             final Result<PatchMetadataResolver> result = new Result<PatchMetadataResolver>(originalIdentity);
-            MAPPER.parseDocument(result, streamReader);
+            MAPPER.parseDocument(result, reader);
             return result.getResult();
         } finally {
-            safeClose(stream);
+            reader.close();
         }
     }
 
