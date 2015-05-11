@@ -31,14 +31,15 @@ import static org.jboss.as.patching.HashUtils.hexStringToByteArray;
 import static org.jboss.as.patching.IoUtils.NO_CONTENT;
 import static org.jboss.as.patching.metadata.ModuleItem.MAIN_SLOT;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.metadata.impl.PatchElementImpl;
@@ -401,7 +402,11 @@ class PatchXmlUtils implements XMLStreamConstants {
         }
 
         final PatchElementImpl patchElement = new PatchElementImpl(id);
-        builder.addElement(patchElement);
+        try {
+            builder.addElement(patchElement);
+        } catch(IllegalStateException e) {
+            throw new XMLStreamException(e);
+        }
         final List<ContentModification> modifications = patchElement.getModifications();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             final Element element = Element.forName(reader.getLocalName());
