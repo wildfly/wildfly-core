@@ -64,12 +64,14 @@ public enum Namespace {
 
     DOMAIN_2_2(2, "urn:jboss:domain:2.2"),
 
-    DOMAIN_3_0(3, "urn:jboss:domain:3.0");
+    DOMAIN_3_0(3, "urn:jboss:domain:3.0"),
+
+    DOMAIN_4_0(4, "urn:jboss:domain:4.0");
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = DOMAIN_3_0;
+    public static final Namespace CURRENT = DOMAIN_4_0;
 
     public static final Namespace[] ALL_NAMESPACES = domainValues();
 

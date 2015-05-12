@@ -34,7 +34,7 @@ import java.util.jar.Manifest;
 public class Version {
     public static final String AS_VERSION;
     public static final String AS_RELEASE_CODENAME;
-    public static final int MANAGEMENT_MAJOR_VERSION = 3;
+    public static final int MANAGEMENT_MAJOR_VERSION = 4;
     public static final int MANAGEMENT_MINOR_VERSION = 0;
     public static final int MANAGEMENT_MICRO_VERSION = 0;
 
