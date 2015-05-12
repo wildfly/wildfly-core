@@ -25,9 +25,9 @@ package org.jboss.as.patching.installation;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
-import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.runner.PatchingAssert.assertDefinedModule;
 import static org.jboss.as.patching.runner.PatchingAssert.assertDirDoesNotExist;
 import static org.jboss.as.patching.runner.PatchingAssert.assertDirExists;
@@ -38,7 +38,7 @@ import static org.jboss.as.patching.runner.PatchingAssert.assertPatchHasBeenRoll
 import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
 import static org.jboss.as.patching.runner.TestUtils.createZippedPatchFile;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
-import static org.jboss.as.patching.runner.TestUtils.tree;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -54,8 +54,8 @@ import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.patching.runner.AbstractTaskTestCase;
 import org.jboss.as.patching.runner.ContentModificationUtils;
 import org.jboss.as.patching.runner.PatchingAssert;
-import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.as.patching.runner.TestUtils;
+import org.jboss.as.patching.tool.PatchingResult;
 import org.junit.Test;
 
 /**
@@ -202,6 +202,42 @@ public class LayerTestCase extends AbstractTaskTestCase {
         PatchingAssert.assertFileDoesNotExist(env.getInstalledImage().getJbossHome(), "bin", fileAdded.getItem().getName());
         if (File.separatorChar != '\\') {
             assertDirDoesNotExist(rolledBackInstalledIdentity.getLayers().get(0).loadTargetInfo().getDirectoryStructure().getModulePatchDirectory(layerPatchId));
+        }
+    }
+
+    @Test
+    public void duplicateElementId() throws Exception {
+        // add a layer
+        String layerName = "layer1";
+        String layer2Name = "layer2";
+        installLayer(env.getModuleRoot(), env.getInstalledImage().getLayersConf(), layerName, layer2Name);
+
+        InstalledIdentity installedIdentity = loadInstalledIdentity();
+
+        PatchableTarget.TargetInfo identityInfo = installedIdentity.getIdentity().loadTargetInfo();
+        assertEquals(BASE, identityInfo.getCumulativePatchID());
+        assertTrue(identityInfo.getPatchIDs().isEmpty());
+
+        // build a one-off patch for the layer with 1 added module
+        // and 1 added file
+        String patchID = randomString();
+        File patchDir = mkdir(tempDir, patchID);
+        String layerPatchId = "mylayerPatchID";
+        String moduleName = "module1";
+        ContentModification moduleAdded = ContentModificationUtils.addModule(patchDir, layerPatchId, moduleName);
+
+        final PatchBuilder patchBuilder = PatchBuilder.create()
+                .setPatchId(patchID)
+                .oneOffPatchIdentity(installedIdentity.getIdentity().getName(), installedIdentity.getIdentity().getVersion())
+                .getParent()
+                .oneOffPatchElement(layerPatchId, layerName, false)
+                    .addContentModification(moduleAdded)
+                    .getParent();
+        try {
+            patchBuilder.oneOffPatchElement(layerPatchId, layer2Name, false);
+            fail("duplicate element patch-id error expected");
+        } catch(IllegalStateException e) {
+            // expected
         }
     }
 
