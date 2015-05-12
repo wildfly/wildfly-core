@@ -685,7 +685,7 @@ public abstract class AbstractOperationTestCase {
         }
     }
 
-    Resource createRootResource() {
+    static Resource createRootResource() {
         final Resource rootResource = Resource.Factory.create();
 
         CoreManagementResourceDefinition.registerDomainResource(rootResource, null);
@@ -753,7 +753,7 @@ public abstract class AbstractOperationTestCase {
         return rootResource;
     }
 
-    void hack(final Resource rootResource, final String type) {
+    static void hack(final Resource rootResource, final String type) {
         rootResource.registerChild(PathElement.pathElement(type, "hack"), Resource.Factory.create());
         for (Resource.ResourceEntry entry : rootResource.getChildren(type)) {
             rootResource.removeChild(entry.getPathElement());

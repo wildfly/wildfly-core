@@ -27,29 +27,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
-import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
@@ -74,36 +64,20 @@ import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
-import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
-import org.jboss.as.controller.services.path.PathManagerService;
-import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
-import org.jboss.as.controller.transform.ResourceTransformationContext;
-import org.jboss.as.controller.transform.TransformationContext;
-import org.jboss.as.controller.transform.TransformationTarget;
-import org.jboss.as.controller.transform.Transformers;
-import org.jboss.as.domain.controller.DomainController;
-import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.SocketBindingResourceDefinition;
-import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
-import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.util.AbstractControllerTestBase;
-import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.repository.ContentReference;
-import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
 import org.jboss.as.server.services.net.RemoteDestinationOutboundSocketBindingResourceDefinition;
-import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
@@ -147,7 +121,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
         registration.registerOperationHandler(TRIGGER_SYNC, new TriggerSyncHandler());
         registration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, GenericModelDescribeOperationHandler.INSTANCE, true);
 
-        registration.registerSubModel(new ServerGroupResourceDefinition(false, HOST_INFO, new HostFileRepository() {
+        registration.registerSubModel(new ServerGroupResourceDefinition(false, hostControllerInfo, new HostFileRepository() {
 
             @Override
             public File getDeploymentRoot(ContentReference reference) {
@@ -190,7 +164,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
         registerCommonChildren(managementModel.getRootResource(), localIndexedAdd);
 
-        ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(HOST_INFO);
+        ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
     }
 
     void executeTriggerSyncOperation(Resource rootResource) throws Exception {
@@ -288,12 +262,6 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     Resource findSubsystemResource(Resource rootResource) {
         Resource subsystem = rootResource.requireChild(PROFILE_ELEMENT);
         return subsystem.requireChild(SUBSYSTEM_ELEMENT);
-    }
-
-    ModelNode readResourceRecursive() throws Exception {
-        ModelNode op = Util.createOperation(READ_RESOURCE_OPERATION, PathAddress.EMPTY_ADDRESS);
-        op.get(RECURSIVE).set(true);
-        return executeForResult(op);
     }
 
     ModelNode findSubsystemResource(ModelNode modelNode) {
@@ -421,7 +389,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
             final HostControllerRegistrationHandler.OperationExecutor internalExecutor = getControllerService().getInternalExecutor();
             SyncModelParameters parameters =
                     new SyncModelParameters(new MockDomainController(), ignoredDomainResourceRegistry,
-                            createHostControllerEnvironment(), extensionRegistry, internalExecutor, true,
+                            hostControllerEnvironment, extensionRegistry, internalExecutor, true,
                             Collections.<String, ProxyController>emptyMap());
             final SyncServerGroupOperationHandler handler =
                     new SyncServerGroupOperationHandler("slave", original, parameters);
@@ -429,250 +397,4 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
         }
     }
 
-    static final LocalHostControllerInfo HOST_INFO = new LocalHostControllerInfo() {
-        public String getLocalHostName() {
-            return "slave";
-        }
-
-        public boolean isMasterDomainController() {
-            return false;
-        }
-
-        public String getNativeManagementInterface() {
-            return null;
-        }
-
-        public int getNativeManagementPort() {
-            return 0;
-        }
-
-        public String getNativeManagementSecurityRealm() {
-            return null;
-        }
-
-        public String getHttpManagementInterface() {
-            return null;
-        }
-
-        public int getHttpManagementPort() {
-            return 0;
-        }
-
-        public String getHttpManagementSecureInterface() {
-            return null;
-        }
-
-        public int getHttpManagementSecurePort() {
-            return 0;
-        }
-
-        public String getHttpManagementSecurityRealm() {
-            return null;
-        }
-
-        public String getRemoteDomainControllerUsername() {
-            return null;
-        }
-
-        public List<DiscoveryOption> getRemoteDomainControllerDiscoveryOptions() {
-            return null;
-        }
-
-        public ControlledProcessState.State getProcessState() {
-            return null;
-        }
-
-        @Override
-        public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
-            return false;
-        }
-
-        @Override
-        public Collection<String> getAllowedOrigins() {
-            return Collections.EMPTY_LIST;
-        }
-    };
-
-
-    static class NoopTransformers implements Transformers {
-
-        @Override
-        public TransformationTarget getTarget() {
-            return null;
-        }
-
-        @Override
-        public TransformedOperation transformOperation(TransformationContext context, ModelNode operation)
-                throws OperationFailedException {
-            return new TransformedOperation(operation, TransformedOperation.ORIGINAL_RESULT);
-        }
-
-        @Override
-        public TransformedOperation transformOperation(OperationContext operationContext, ModelNode operation)
-                throws OperationFailedException {
-            return new TransformedOperation(operation, TransformedOperation.ORIGINAL_RESULT);
-        }
-
-        @Override
-        public Resource transformResource(ResourceTransformationContext context, Resource resource)
-                throws OperationFailedException {
-            return resource;
-        }
-
-        @Override
-        public Resource transformRootResource(OperationContext operationContext, Resource resource)
-                throws OperationFailedException {
-            return resource;
-        }
-
-        @Override
-        public Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
-            return resource;
-        }
-    }
-
-    private static HostControllerEnvironment createHostControllerEnvironment() {
-        //Copied from core-model-test
-        try {
-            Map<String, String> props = new HashMap<String, String>();
-            File home = new File("target/jbossas");
-            delete(home);
-            home.mkdir();
-            props.put(HostControllerEnvironment.HOME_DIR, home.getAbsolutePath());
-
-            File domain = new File(home, "domain");
-            domain.mkdir();
-            props.put(HostControllerEnvironment.DOMAIN_BASE_DIR, domain.getAbsolutePath());
-
-            File configuration = new File(domain, "configuration");
-            configuration.mkdir();
-            props.put(HostControllerEnvironment.DOMAIN_CONFIG_DIR, configuration.getAbsolutePath());
-
-
-            boolean isRestart = false;
-            String modulePath = "";
-            InetAddress processControllerAddress = InetAddress.getLocalHost();
-            Integer processControllerPort = 9999;
-            InetAddress hostControllerAddress = InetAddress.getLocalHost();
-            Integer hostControllerPort = 1234;
-            String defaultJVM = null;
-            String domainConfig = null;
-            String initialDomainConfig = null;
-            String hostConfig = null;
-            String initialHostConfig = null;
-            RunningMode initialRunningMode = RunningMode.NORMAL;
-            boolean backupDomainFiles = false;
-            boolean useCachedDc = false;
-            ProductConfig productConfig = new ProductConfig(null, "", props);
-            return new HostControllerEnvironment(props, isRestart, modulePath, processControllerAddress, processControllerPort,
-                    hostControllerAddress, hostControllerPort, defaultJVM, domainConfig, initialDomainConfig, hostConfig, initialHostConfig,
-                    initialRunningMode, backupDomainFiles, useCachedDc, productConfig);
-        } catch (UnknownHostException e) {
-            // AutoGenerated
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static class MockDomainController implements DomainController {
-
-        @Override
-        public RunningMode getCurrentRunningMode() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public LocalHostControllerInfo getLocalHostInfo() {
-            return HOST_INFO;
-        }
-
-        @Override
-        public void registerRemoteHost(String hostName, ManagementChannelHandler handler, Transformers transformers,
-                                       Long remoteConnectionId, boolean registerProxyController) throws SlaveRegistrationException {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public boolean isHostRegistered(String id) {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void unregisterRemoteHost(String id, Long remoteConnectionId, boolean cleanShutdown) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void pingRemoteHost(String hostName) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void registerRunningServer(ProxyController serverControllerClient) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void unregisterRunningServer(String serverName) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public ModelNode getProfileOperations(String profileName) {
-            return new ModelNode().setEmptyList();  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public HostFileRepository getLocalFileRepository() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public HostFileRepository getRemoteFileRepository() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void stopLocalHost() {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void stopLocalHost(int exitCode) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public ExtensionRegistry getExtensionRegistry() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public ExpressionResolver getExpressionResolver() {
-            return new ExpressionResolver() {
-                @Override
-                public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-                    return node.resolve();
-                }
-            };
-        }
-
-        @Override
-        public void initializeMasterDomainRegistry(ManagementResourceRegistration root, ExtensibleConfigurationPersister configurationPersister, ContentRepository contentRepository, HostFileRepository fileRepository, ExtensionRegistry extensionRegistry, PathManagerService pathManager) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void initializeSlaveDomainRegistry(ManagementResourceRegistration root, ExtensibleConfigurationPersister configurationPersister, ContentRepository contentRepository, HostFileRepository fileRepository, LocalHostControllerInfo hostControllerInfo, ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry, PathManagerService pathManager) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-    }
-
-    private static void delete(File file) {
-        if (file.isDirectory()) {
-            for (File child : file.listFiles()) {
-                delete(child);
-            }
-        }
-        file.delete();
-    }
 }

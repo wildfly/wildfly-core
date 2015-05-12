@@ -34,20 +34,15 @@ import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
-import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
-import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
-import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.dmr.ModelNode;
@@ -65,29 +60,16 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     final AtomicBoolean state = new AtomicBoolean(true);
     private final CountDownLatch latch = new CountDownLatch(2);
     private final HostControllerRegistrationHandler.OperationExecutor internalExecutor;
-
-    protected TestModelControllerService() {
-        this(new NullConfigurationPersister(), new ControlledProcessState(true));
-    }
-
-    protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
-        this(ProcessType.EMBEDDED_SERVER, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
-                AuditLogger.NO_OP_LOGGER);
-    }
-
-    protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState, ManagedAuditLogger auditLogger) {
-        this(ProcessType.EMBEDDED_SERVER, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
-                auditLogger);
-    }
+    private final AbstractControllerTestBase.DelegatingResourceDefinitionInitializer initializer;
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                         final ResourceDefinition rootResourceDefinition, final ManagedAuditLogger auditLogger) {
+                                         final ResourceDefinition rootResourceDefinition, final ManagedAuditLogger auditLogger,
+                                         final AbstractControllerTestBase.DelegatingResourceDefinitionInitializer initializer) {
         super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition,
                 null, ExpressionResolver.TEST_RESOLVER, auditLogger, new DelegatingConfigurableAuthorizer());
         this.processState = processState;
         internalExecutor = new InternalExecutor();
+        this.initializer = initializer;
     }
 
     public AtomicBoolean getSharedState() {
@@ -106,6 +88,9 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     @Override
     public void start(StartContext context) throws StartException {
+        if (initializer != null) {
+            initializer.setDelegate();
+        }
         super.start(context);
         latch.countDown();
     }
