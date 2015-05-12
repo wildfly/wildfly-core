@@ -28,7 +28,7 @@ package org.jboss.as.controller.transform.description;
  *
  * @author Emanuel Muckenhuber
  */
-enum DiscardPolicy {
+public enum DiscardPolicy {
         /**
          * Don't discard the resource or operation.
          */
