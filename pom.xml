@@ -109,7 +109,7 @@
         <version.org.jboss.modules.jboss-modules>1.4.3.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.4.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>4.0.9.Final</version.org.jboss.remoting>
-        <version.org.jboss.remotingjmx.remoting-jmx>2.0.1.CR2</version.org.jboss.remotingjmx.remoting-jmx>
+        <version.org.jboss.remotingjmx.remoting-jmx>2.0.1.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.sasl>1.0.5.Final</version.org.jboss.sasl>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.1.2</version.org.jboss.shrinkwrap.shrinkwrap>
         <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
