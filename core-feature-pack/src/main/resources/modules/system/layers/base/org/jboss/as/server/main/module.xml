@@ -36,6 +36,8 @@
 
     <dependencies>
         <module name="javax.api"/>
+        <!--this needs to remain here until common-beans is fixed to use passed classloader -->
+        <module name="org.jboss.common-beans" services="export" optional="true"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.dmr"/>
         <module name="org.jboss.invocation"/>
