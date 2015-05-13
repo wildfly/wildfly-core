@@ -25,10 +25,14 @@ package org.jboss.as.patching.metadata;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import org.jboss.as.patching.logging.PatchLogger;
+import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.PatchingException;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.Patch.PatchType;
 import org.jboss.as.patching.metadata.impl.IdentityImpl;
 import org.jboss.as.patching.metadata.impl.PatchElementProviderImpl;
@@ -44,7 +48,8 @@ public class PatchBuilder extends ModificationBuilderTarget<PatchBuilder> implem
     private Identity identity;
     private PatchType patchType;
     private final List<ContentModification> modifications = new ArrayList<ContentModification>();
-    private final List<PatchElementHolder> elements = new ArrayList<PatchElementHolder>();
+    private List<PatchElementHolder> elements = Collections.emptyList();
+    private Set<String> elementIds = Collections.emptySet();
 
     public static PatchBuilder create() {
         return new PatchBuilder();
@@ -100,7 +105,7 @@ public class PatchBuilder extends ModificationBuilderTarget<PatchBuilder> implem
         }
         final PatchElementBuilder builder = new PatchElementBuilder(patchId, layerName, addOn, this);
         builder.upgrade();
-        elements.add(builder);
+        addElement(patchId, builder);
         return builder;
     }
 
@@ -110,7 +115,7 @@ public class PatchBuilder extends ModificationBuilderTarget<PatchBuilder> implem
         }
         final PatchElementBuilder builder = new PatchElementBuilder(patchId, layerName, addOn, this);
         builder.oneOffPatch();
-        elements.add(builder);
+        addElement(patchId, builder);
         return builder;
     }
 
@@ -120,12 +125,12 @@ public class PatchBuilder extends ModificationBuilderTarget<PatchBuilder> implem
         }
         final PatchElementBuilder builder = new PatchElementBuilder(patchId, layerName, addOn, this);
         //builder.cumulativePatch();
-        elements.add(builder);
+        addElement(patchId, builder);
         return builder;
     }
 
     public PatchBuilder addElement(final PatchElement element) {
-        this.elements.add(new PatchElementHolder() {
+        addElement(element.getId(), new PatchElementHolder() {
             @Override
             public PatchElement createElement(PatchType patchType) {
                 final PatchType type = element.getProvider().getPatchType();
@@ -142,6 +147,23 @@ public class PatchBuilder extends ModificationBuilderTarget<PatchBuilder> implem
             }
         });
         return this;
+    }
+
+    protected void addElement(String id, PatchElementHolder element) {
+        switch(elements.size()) {
+            case 0:
+                elements = Collections.singletonList(element);
+                elementIds = Collections.singleton(id);
+                break;
+            case 1:
+                elements = new ArrayList<PatchElementHolder>(elements);
+                elementIds = new HashSet<String>(elementIds);
+            default:
+                elements.add(element);
+                if(!id.equals(Constants.BASE) && !elementIds.add(id)) {
+                    throw PatchLogger.ROOT_LOGGER.duplicateElementPatchId(id);
+                }
+        }
     }
 
     public List<ContentModification> getModifications() {

@@ -24,15 +24,22 @@ package org.jboss.as.patching.metadata;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.Scanner;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.junit.Test;
+import org.xnio.IoUtils;
 
 /**
  * @author Emanuel Muckenhuber
@@ -67,6 +74,43 @@ public class PatchXmlUnitTestCase {
         final Identity identity = patch.getIdentity();
         assertNotNull(identity);
         assertNotNull(patch.getIdentity().getVersion());
+    }
+
+    @Test
+    public void testParseDuplicateElementPatchId() throws Exception {
+
+        final InputStream is = getResource("patch-02-ONE-OFF.xml");
+        final StringBuilder buf = new StringBuilder();
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(is));
+            String line = reader.readLine();
+            final String newLine = System.getProperty("line.separator");
+            while(line != null) {
+                buf.append(line).append(newLine);
+                line = reader.readLine();
+            }
+        } finally {
+            IoUtils.safeClose(reader);
+        }
+
+        // duplicate an element
+        int elementStart = buf.indexOf("<element ");
+        if(elementStart < 0) {
+            fail("failed to locate <element> tag in " + buf.toString());
+        }
+        int elementEnd = buf.indexOf("</element>", elementStart);
+        if(elementEnd < 0) {
+            fail("failed to locate </element> tag starting from position " + elementStart + " in " + buf.toString());
+        }
+        buf.insert(elementEnd + "</element>".length(), buf.substring(elementStart, elementEnd + "</element>".length()));
+
+        try {
+            PatchXml.parse(new StringReader(buf.toString())).resolvePatch(null, null);
+            fail("duplicate element patch-id error expected");
+        } catch(XMLStreamException e) {
+            assertTrue(e.getMessage().contains("WFLYPAT0038"));
+        }
     }
 
     @Test
