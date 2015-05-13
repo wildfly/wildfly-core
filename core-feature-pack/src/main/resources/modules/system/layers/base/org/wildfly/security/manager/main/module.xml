@@ -27,18 +27,14 @@
         <property name="jboss.api" value="private"/>
     </properties>
 
-    <exports>
-        <exclude path="org/wildfly/security/manager/_private"/>
-    </exports>
-
-    <resources>
-        <artifact name="${org.wildfly.security:wildfly-security-manager}"/>
-    </resources>
-
     <dependencies>
-        <module name="org.jboss.logging"/>
-        <module name="org.jboss.modules"/>
-        <module name="javax.api"/>
-        <module name="sun.jdk"/>
+        <module name="org.wildfly.security.elytron" export="true">
+            <exports>
+                <include-set>
+                    <path name="org/wildfly/security/manager"/>
+                    <path name="org/wildfly/security/manager/action"/>
+                </include-set>
+            </exports>
+        </module>
     </dependencies>
 </module>
