@@ -30,12 +30,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.CR4</version>
+        <version>1.0.0.CR5-SNAPSHOT</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-dist</artifactId>
-    <version>1.0.0.CR4</version>
+    <version>1.0.0.CR5-SNAPSHOT</version>
     <name>WildFly Core: Distribution</name>
     <packaging>jar</packaging>
     <dependencies>
