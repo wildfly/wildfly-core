@@ -683,12 +683,16 @@ public class GlobalOperationHandlers {
                     }
                 }
             } else {
-                //PathAddress target = aliasEntry.getTargetAddress();
                 PathAddress target = aliasEntry.convertToTargetAddress(addr.append(element));
                 PathAddress targetParent = target.subAddress(0, target.size() - 1);
                 Resource parentResource = context.readResourceFromRoot(targetParent, false);
-                if (parentResource != null && parentResource.hasChildren(target.getLastElement().getKey())) {
-                    set.add(element.getValue());
+                if (parentResource != null) {
+                    PathElement targetElement = target.getLastElement();
+                    if (targetElement.isWildcard()) {
+                        set.addAll(parentResource.getChildrenNames(targetElement.getKey()));
+                    } else if (parentResource.hasChild(targetElement)) {
+                        set.add(element.getValue());
+                    }
                 }
             }
             if (!element.isWildcard()) {
