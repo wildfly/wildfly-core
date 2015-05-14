@@ -43,9 +43,11 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.WRITE_ATTRI
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Iterator;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -102,6 +104,45 @@ public class Operations {
             return result.get(FAILURE_DESCRIPTION);
         }
         return new ModelNode();
+    }
+
+    /**
+     * Creates an {@linkplain ModelNode address} that can be used as the address for an operation. The address is
+     * simply a {@link ModelNode} of type {@link ModelType#LIST}.
+     * <p>
+     * The string is split into key/value pairs. If the final key does not have a value an {@code *} is used to
+     * indicate a  wildcard for the address.
+     * </p>
+     *
+     * @param pairs the key/value pairs to use
+     *
+     * @return an address for the key/value pairs
+     */
+    public static ModelNode createAddress(final String... pairs) {
+        return createAddress(Arrays.asList(pairs));
+    }
+
+    /**
+     * Creates an {@linkplain ModelNode address} that can be used as the address for an operation. The address is
+     * simply a {@link ModelNode} of type {@link ModelType#LIST}.
+     * <p>
+     * The string is split into key/value pairs. If the final key does not have a value an {@code *} is used to
+     * indicate a  wildcard for the address.
+     * </p>
+     *
+     * @param pairs the key/value pairs to use
+     *
+     * @return an address for the key/value pairs
+     */
+    public static ModelNode createAddress(final Iterable<String> pairs) {
+        final ModelNode address = new ModelNode();
+        final Iterator<String> iterator = pairs.iterator();
+        while (iterator.hasNext()) {
+            final String key = iterator.next();
+            final String value = (iterator.hasNext() ? iterator.next() : "*");
+            address.add(key, value);
+        }
+        return address;
     }
 
     /**
