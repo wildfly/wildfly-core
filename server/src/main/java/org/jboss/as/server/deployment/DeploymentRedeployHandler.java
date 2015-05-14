@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 
@@ -53,8 +52,8 @@ public class DeploymentRedeployHandler implements OperationStepHandler {
      */
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-        final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
+        // Get the model for the resource to retrieve the runtime-name for
+        final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
         final String name = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
         final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(CONTENT_ALL.resolveModelAttribute(context, model));
