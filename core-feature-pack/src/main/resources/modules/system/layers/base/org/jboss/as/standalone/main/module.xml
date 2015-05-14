@@ -46,6 +46,6 @@
         <module name="org.jboss.as.jmx" services="import"/>
         <module name="org.jboss.as.server" export="true"/>
         <module name="org.jboss.vfs" services="import"/>
-        <module name="org.wildfly.security.manager" services="import"/>
+        <module name="org.wildfly.security.elytron" services="import"/>
     </dependencies>
 </module>
