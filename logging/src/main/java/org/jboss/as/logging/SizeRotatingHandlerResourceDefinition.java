@@ -90,6 +90,7 @@ class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDefinitio
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
+            case VERSION_1_4_0:
             case VERSION_2_0_0: {
                 resourceBuilder
                         .getAttributeBuilder()

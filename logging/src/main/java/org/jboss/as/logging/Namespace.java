@@ -45,6 +45,8 @@ public enum Namespace {
 
     LOGGING_1_4("urn:jboss:domain:logging:1.4"),
 
+    LOGGING_1_5("urn:jboss:domain:logging:1.5"),
+
     LOGGING_2_0("urn:jboss:domain:logging:2.0"),
 
     LOGGING_3_0("urn:jboss:domain:logging:3.0"),

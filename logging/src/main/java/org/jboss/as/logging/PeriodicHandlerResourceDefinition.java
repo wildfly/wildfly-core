@@ -29,7 +29,6 @@ import static org.jboss.as.logging.CommonAttributes.FILE;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.validators.SuffixValidator;
 import org.jboss.dmr.ModelType;
 import org.jboss.logmanager.handlers.PeriodicRotatingFileHandler;
@@ -54,10 +53,5 @@ class PeriodicHandlerResourceDefinition extends AbstractFileHandlerDefinition {
     public PeriodicHandlerResourceDefinition(final ResolvePathHandler resolvePathHandler, final boolean includeLegacyAttributes) {
         super(PERIODIC_HANDLER_PATH, PeriodicRotatingFileHandler.class, resolvePathHandler,
                 (includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
-    }
-
-    @Override
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        //
     }
 }

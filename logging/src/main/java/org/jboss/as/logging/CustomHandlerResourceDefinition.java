@@ -28,7 +28,6 @@ import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -43,10 +42,5 @@ class CustomHandlerResourceDefinition extends AbstractHandlerDefinition {
     public CustomHandlerResourceDefinition(final boolean includeLegacyAttributes) {
         super(CUSTOM_HANDLE_PATH, null,
                 (includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
-    }
-
-    @Override
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        //do nothing
     }
 }

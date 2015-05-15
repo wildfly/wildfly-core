@@ -29,7 +29,6 @@ import static org.jboss.as.logging.CommonAttributes.FILE;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.logmanager.handlers.FileHandler;
 
 /**
@@ -46,10 +45,5 @@ class FileHandlerResourceDefinition extends AbstractFileHandlerDefinition {
     public FileHandlerResourceDefinition(final ResolvePathHandler resolvePathHandler, final boolean includeLegacyAttributes) {
         super(FILE_HANDLER_PATH, FileHandler.class, resolvePathHandler, (
                 includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
-    }
-
-    @Override
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        //
     }
 }

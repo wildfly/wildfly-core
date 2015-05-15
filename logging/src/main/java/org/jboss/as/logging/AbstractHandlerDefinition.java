@@ -47,7 +47,6 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -216,7 +215,7 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                     .setParameters(CommonAttributes.LEVEL)
                     .build(), HandlerOperations.CHANGE_LEVEL);
 
-            final SimpleOperationDefinition updateProperties = new SimpleOperationDefinitionBuilder(UPDATE_OPERATION_NAME,  resourceDescriptionResolver)
+            final SimpleOperationDefinition updateProperties = new SimpleOperationDefinitionBuilder(UPDATE_OPERATION_NAME, resourceDescriptionResolver)
                     .setDeprecated(ModelVersion.create(1, 2, 0))
                     .setParameters(writableAttributes)
                     .build();
@@ -232,7 +231,7 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
         if (modelVersion.hasTransformers()) {
             final PathElement pathElement = getPathElement();
             final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
-            ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = null;
+            final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
             switch (modelVersion) {
                 case VERSION_1_3_0: {
                     resourceBuilder
@@ -240,23 +239,10 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                             .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
                             .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
                             .end();
-                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
                     loggingProfileResourceBuilder
                             .getAttributeBuilder()
                             .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
                             .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
-                            .end();
-                    break;
-                }
-                case VERSION_2_0_0: {
-                    final AttributeConverter attributeConverter = AttributeConverter.Factory
-                            .createHardCoded(FORMATTER.getDefaultValue(), true);
-                    resourceBuilder.getAttributeBuilder()
-                            .setValueConverter(attributeConverter, FORMATTER)
-                            .end();
-                    loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-                    loggingProfileResourceBuilder.getAttributeBuilder()
-                            .setValueConverter(attributeConverter, FORMATTER)
                             .end();
                     break;
                 }
@@ -272,7 +258,9 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
      * @param resourceBuilder       the builder for the resource
      * @param loggingProfileBuilder the builder for the logging profile
      */
-    protected abstract void registerResourceTransformers(KnownModelVersion modelVersion,
-                                                         ResourceTransformationDescriptionBuilder resourceBuilder,
-                                                         ResourceTransformationDescriptionBuilder loggingProfileBuilder);
+    protected void registerResourceTransformers(final KnownModelVersion modelVersion,
+                                                         final ResourceTransformationDescriptionBuilder resourceBuilder,
+                                                         final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+        // do nothing by default
+    }
 }

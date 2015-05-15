@@ -144,6 +144,7 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                 case LOGGING_1_2:
                 case LOGGING_1_3:
                 case LOGGING_1_4:
+                case LOGGING_1_5:
                 case LOGGING_2_0:
                 case LOGGING_3_0:{
                     final Element element = Element.forName(reader.getLocalName());
@@ -159,7 +160,7 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                         case USE_DEPLOYMENT_LOGGING_CONFIG:{
                             if (namespace == Namespace.LOGGING_1_0 || namespace == Namespace.LOGGING_1_1 ||
                                     namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3 ||
-                                    namespace == Namespace.LOGGING_1_4)
+                                    namespace == Namespace.LOGGING_1_4 || namespace == Namespace.LOGGING_1_5)
                                 throw unexpectedElement(reader);
                             final String value = ParseUtils.readStringAttributeElement(reader, Attribute.VALUE.getLocalName());
                             LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG.parseAndSetParameter(value, subsystemAddOp, reader);

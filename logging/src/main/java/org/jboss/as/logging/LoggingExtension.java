@@ -274,13 +274,18 @@ public class LoggingExtension implements Extension {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
         registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_2_0_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_2_0_0, KnownModelVersion.VERSION_1_4_0, defs);
+        // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
+        // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_5_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_5_0, KnownModelVersion.VERSION_1_4_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_4_0, KnownModelVersion.VERSION_1_3_0, defs);
 
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
+                KnownModelVersion.VERSION_2_0_0.getModelVersion(),
+        }, new ModelVersion[] {
                 KnownModelVersion.VERSION_1_3_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_4_0.getModelVersion(),
-                KnownModelVersion.VERSION_2_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_1_5_0.getModelVersion(),
         });
     }
 
