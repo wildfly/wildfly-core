@@ -96,6 +96,7 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
     private static final String CORE = "core";
     private static final String ALIASED = "aliased";
     static final String MODEL = "model";
+    static final String OTHER = "other";
     private static final String CHILD = "child";
     private static final String KID_MODEL = "kid";
     private static final String KID_ALIASED = "kid-aliased";
@@ -244,9 +245,24 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
     public void testReadChildresNamesNoModel() throws Exception {
         ModelNode op = createOperation(READ_CHILDREN_NAMES_OPERATION);
         op.get(CHILD_TYPE).set(CORE);
+        op.get(INCLUDE_ALIASES).set(true);
         ModelNode result = executeForResult(op);
         List<ModelNode> list = result.asList();
         Assert.assertEquals(0, list.size());
+
+        op.get(CHILD_TYPE).set(ALIASED);
+        result = executeForResult(op);
+        list = result.asList();
+        Assert.assertEquals(0, list.size());
+
+        addCore(CORE, OTHER);
+        // Validate WFCORE-692
+        // This should result in 1 child of type "core", but 0 children of type "alias", since "core" =>"other" has no aliases
+        op.get(CHILD_TYPE).set(CORE);
+        result = executeForResult(op);
+        list = result.asList();
+        Assert.assertEquals(1, list.size());
+        Assert.assertTrue(list.contains(new ModelNode(OTHER)));
 
         op.get(CHILD_TYPE).set(ALIASED);
         result = executeForResult(op);
@@ -435,7 +451,11 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
     }
 
     private void addCore(String main) throws Exception {
-        ModelNode op = createOperation(ADD, main, MODEL);
+        this.addCore(main, MODEL);
+    }
+
+    private void addCore(String key, String value) throws Exception {
+        ModelNode op = createOperation(ADD, key, value);
         op.get("rw").set("R/W");
         op.get("ro").set("R/O");
         executeForResult(op);
@@ -639,7 +659,6 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void initModel(ManagementModel managementModel) {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
@@ -648,29 +667,13 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        ManagementResourceRegistration coreResourceRegistration = registration.registerSubModel(new CoreResourceDefinition());
-        registration.registerAlias(getAliasedModelElement(),
-                new TestAliasEntry(coreResourceRegistration));
+        ManagementResourceRegistration coreResourceRegistration = registration.registerSubModel(new CoreResourceDefinition(MODEL));
+        registration.registerAlias(PathElement.pathElement(ALIASED, MODEL), new TestAliasEntry(coreResourceRegistration));
 
         ManagementResourceRegistration childReg = coreResourceRegistration.registerSubModel(new ChildResourceDefinition());
-        coreResourceRegistration.registerAlias(getAliasedChildModelElement(),
-                new TestAliasEntry(childReg));
-    }
+        coreResourceRegistration.registerAlias(PathElement.pathElement(CHILD, KID_ALIASED), new TestAliasEntry(childReg));
 
-    private PathElement getCoreModelElement() {
-        return PathElement.pathElement(CORE, MODEL);
-    }
-
-    private PathElement getAliasedModelElement() {
-        return PathElement.pathElement(ALIASED, MODEL);
-    }
-
-    private PathElement getChildModelElement() {
-        return PathElement.pathElement(CHILD, KID_MODEL);
-    }
-
-    private PathElement getAliasedChildModelElement() {
-        return PathElement.pathElement(CHILD, KID_ALIASED);
+        registration.registerSubModel(new CoreResourceDefinition(OTHER));
     }
 
     private static SimpleAttributeDefinition READ_WRITE = new SimpleAttributeDefinition("rw", ModelType.STRING, true);
@@ -685,8 +688,8 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
 
     private class CoreResourceDefinition extends SimpleResourceDefinition {
 
-        public CoreResourceDefinition() {
-            super(getCoreModelElement(), createResourceDescriptionResolver(), new CoreAddHandler(), new CoreRemoveHandler());
+        public CoreResourceDefinition(String value) {
+            super(PathElement.pathElement(CORE, value), createResourceDescriptionResolver(), new CoreAddHandler(), new CoreRemoveHandler());
         }
 
         @Override
@@ -708,7 +711,7 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
 
     private class ChildResourceDefinition extends SimpleResourceDefinition {
         public ChildResourceDefinition() {
-            super(getChildModelElement(), createResourceDescriptionResolver(), new ChildAddHandler(), new ChildRemoveHandler());
+            super(PathElement.pathElement(CHILD, KID_MODEL), createResourceDescriptionResolver(), new ChildAddHandler(), new ChildRemoveHandler());
         }
 
         @Override
