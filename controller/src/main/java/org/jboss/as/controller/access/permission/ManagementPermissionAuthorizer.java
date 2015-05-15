@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Set;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.Action;
@@ -81,6 +82,7 @@ public class ManagementPermissionAuthorizer implements Authorizer {
 
     @Override
     public AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetAttribute target) {
+        assert assertSameAddress(action, target.getTargetResource());
         // TODO a direct "booting" flag might be better
         if (callEnvironment.getProcessState() == ControlledProcessState.State.STARTING) {
             return AuthorizationResult.PERMITTED;
@@ -92,6 +94,7 @@ public class ManagementPermissionAuthorizer implements Authorizer {
 
     @Override
     public AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetResource target) {
+        assert assertSameAddress(action, target);
         // TODO a direct "booting" flag might be better
         if (callEnvironment.getProcessState() == ControlledProcessState.State.STARTING) {
             return AuthorizationResult.PERMITTED;
@@ -102,6 +105,10 @@ public class ManagementPermissionAuthorizer implements Authorizer {
         }
         PermissionCollection requiredPerms = permissionFactory.getRequiredPermissions(action, target);
         return authorize(userPerms, requiredPerms);
+    }
+
+    private static boolean assertSameAddress(Action action, TargetResource target) {
+        return target.getResourceAddress().equals(PathAddress.pathAddress(action.getOperation().get(ModelDescriptionConstants.OP_ADDR)));
     }
 
     private AuthorizationResult authorize(PermissionCollection userPermissions, PermissionCollection requiredPermissions) {

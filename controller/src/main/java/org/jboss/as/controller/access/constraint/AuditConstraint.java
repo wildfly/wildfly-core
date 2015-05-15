@@ -22,9 +22,6 @@
 
 package org.jboss.as.controller.access.constraint;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
 import org.jboss.as.controller.access.TargetAttribute;
@@ -71,11 +68,7 @@ public class AuditConstraint extends AllowAllowNotConstraint {
 
         @Override
         public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, Action action, TargetResource target) {
-            return (isAuditOperation(action) || isAuditResource(target)) ? AUDIT : NOT_AUDIT;
-        }
-
-        private boolean isAuditOperation(Action action) {
-            return AuditLogAddressUtil.isAuditLogAddress(PathAddress.pathAddress(action.getOperation().get(OP_ADDR)));
+            return isAuditResource(target) ? AUDIT : NOT_AUDIT;
         }
 
         private boolean isAuditResource(TargetResource target) {
