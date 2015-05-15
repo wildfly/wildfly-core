@@ -22,8 +22,6 @@
 
 package org.jboss.as.controller;
 
-import java.util.regex.Pattern;
-
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -41,12 +39,6 @@ public class PathElement {
     private final String value;
     private final boolean multiTarget;
     private final int hashCode;
-
-    /**
-     * A valid key contains alphanumerics and underscores, cannot start with a
-     * number, and cannot start or end with {@code -}.
-     */
-    private static final Pattern VALID_KEY_PATTERN = Pattern.compile("\\*|[_a-zA-Z](?:[-_a-zA-Z0-9]*[_a-zA-Z0-9])?");
 
     /**
      * Construct a new instance with a wildcard value.
@@ -81,7 +73,7 @@ public class PathElement {
      * @param value the path value or wildcard to match
      */
     PathElement(final String key, final String value) {
-        if (key == null || !VALID_KEY_PATTERN.matcher(key).matches()) {
+        if (!isValidKey(key)) {
             final String element = key + "=" + value;
             throw new OperationClientIllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidPathElementKey(element, key));
         }
@@ -108,6 +100,56 @@ public class PathElement {
         this.multiTarget = multiTarget;
         hashCode = key.hashCode() * 19 + value.hashCode();
     }
+
+    /**
+     * A valid key contains alphanumerics and underscores, cannot start with a
+     * number, and cannot start or end with {@code -}.
+     */
+    private static boolean isValidKey(final String s) {
+        // Equivalent to this regex \*|[_a-zA-Z](?:[-_a-zA-Z0-9]*[_a-zA-Z0-9]) but faster
+        if (s == null) {
+            return false;
+        }
+        if (s.equals(WILDCARD_VALUE)) {
+            return true;
+        }
+        int lastIndex = s.length() - 1;
+        if (lastIndex == -1) {
+            return false;
+        }
+        if (!isValidKeyStartCharacter(s.charAt(0))) {
+          return false;
+        }
+        for (int i = 1; i < lastIndex; i++) {
+          if (!isValidKeyCharacter(s.charAt(i))) {
+            return false;
+          }
+        }
+        if (lastIndex > 0 && !isValidKeyEndCharacter(s.charAt(lastIndex))) {
+          return false;
+        }
+        return true;
+      }
+
+      private static boolean isValidKeyStartCharacter(final char c) {
+        return c == '_'
+            || c >= 'a' && c <= 'z'
+            || c >= 'A' && c <= 'Z';
+      }
+
+      private static boolean isValidKeyEndCharacter(final char c) {
+        return c == '_'
+            || c >= '0' && c <= '9'
+            || c >= 'a' && c <= 'z'
+            || c >= 'A' && c <= 'Z';
+      }
+
+      private static boolean isValidKeyCharacter(char c) {
+        return c == '_' || c == '-'
+            || c >= '0' && c <= '9'
+            || c >= 'a' && c <= 'z'
+            || c >= 'A' && c <= 'Z';
+      }
 
     /**
      * Get the path key.
