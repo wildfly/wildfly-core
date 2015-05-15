@@ -22,27 +22,14 @@
 
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,15 +129,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
             }
         }, OperationContext.Stage.MODEL, true);
 
-        final Set<String> children;
-        if (address.size() == 0) {
-            // TODO where to get the proper ordering !?
-            List<String> s = Arrays.asList(SERVER_GROUP, PROFILE, SYSTEM_PROPERTY, PATH, INTERFACE, SOCKET_BINDING_GROUP, DEPLOYMENT, DEPLOYMENT_OVERLAY, MANAGEMENT_CLIENT_CONTENT, CORE_SERVICE, EXTENSION);
-            children = new LinkedHashSet<>(s);
-        } else {
-            children = resource.getChildTypes();
-        }
-
+        final Set<String> children = resource.getChildTypes();
         for (final String childType : children) {
             for (final Resource.ResourceEntry entry : resource.getChildren(childType)) {
 

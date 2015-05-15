@@ -24,25 +24,44 @@ package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -54,6 +73,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -110,7 +130,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
         readOp.get(OP_ADDR).setEmptyList();
 
         // Describe the operations based on the remote model
-        final OrderedChildTypesAttachment orderedChildTypesAttachment = new OrderedChildTypesAttachment();
         final ReadMasterDomainOperationsHandler readOperationsHandler = new ReadMasterDomainOperationsHandler();
         final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
         final ModelNode result = operationExecutor.executeReadOnly(readOp, remoteModel, readOperationsHandler, ModelController.OperationTransactionControl.COMMIT);
@@ -130,15 +149,15 @@ class SyncModelOperationHandler implements OperationStepHandler {
         process(remoteRoot, remoteOperations, readOperationsHandler.getOrderedChildTypes());
 
         // Compare the nodes and create the operations to sync the model
-        final List<ModelNode> operations = new ArrayList<>();
+        //final List<ModelNode> operations = new ArrayList<>();
+        OrderedOperationsCollection operations = new OrderedOperationsCollection();
         processAttributes(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
         processChildren(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
 
         // Reverse, since we are adding the steps on top of the queue
-        final List<ModelNode> ops = new ArrayList<>();
-        ops.addAll(operations);
-        Collections.reverse(ops);
+        final List<ModelNode> ops = operations.getReverseList();
 
+        System.out.println("====> ops \n" + ops);
         for (final ModelNode op : ops) {
 
             final String operationName = op.require(OP).asString();
@@ -166,17 +185,17 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
         }
 
-        if (operations.size() > 0 && parameters.isFullModelTransfer() && !context.isBooting()) {
+        if (operations.getAllOps().size() > 0 && parameters.isFullModelTransfer() && !context.isBooting()) {
             //Only do this is if it is a full model transfer as a result of a _reconnect_ to the DC.
             //When fetching missing configuration while connected, the servers will get put into reload-required as a
             // result of changing the server-group, profile or the socket-binding-group
-            context.addStep(new SyncServerStateOperationHandler(parameters, operations),
+            context.addStep(new SyncServerStateOperationHandler(parameters, operations.getAllOps()),
                     OperationContext.Stage.MODEL,
                     true);
         }
     }
 
-    private void processAttributes(final Node current, final Node remote, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
+    private void processAttributes(final Node current, final Node remote, final OrderedOperationsCollection operations, final ImmutableManagementResourceRegistration registration) {
 
         for (final String attribute : remote.attributes.keySet()) {
             // Remove from current model
@@ -198,7 +217,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
-    private void processChildren(final Node current, final Node remote, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
+    private void processChildren(final Node current, final Node remote, final OrderedOperationsCollection operations, final ImmutableManagementResourceRegistration registration) {
         ChildContext childContext = ChildContext.create(current, remote);
 
         for (String type : childContext.orderedInsertCapableTypes) {
@@ -212,7 +231,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
-    private void processOrderedChildrenOfType(final ChildContext childContext, final String type, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration, boolean attemptInsert) {
+    private void processOrderedChildrenOfType(final ChildContext childContext, final String type, final OrderedOperationsCollection operations, final ImmutableManagementResourceRegistration registration, boolean attemptInsert) {
         final Map<PathElement, Node> remoteChildren = childContext.getRemoteChildrenOfType(type);
         final Map<PathElement, Node> currentChildren = childContext.getCurrentChildrenOfType(type);
 
@@ -256,7 +275,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
     private void processOrderedChildModels(final Map<PathElement, Node> currentChildren,
             final Map<PathElement, Node> remoteChildren, Map<Integer, PathElement> addedIndexes,
             boolean attemptInsert, boolean differentOrder,
-            boolean allAddsAtEnd, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
+            boolean allAddsAtEnd, final OrderedOperationsCollection operations, final ImmutableManagementResourceRegistration registration) {
         if (!differentOrder && (addedIndexes.size() == 0 || allAddsAtEnd)) {
             //Just 'compare' everything
             for (Node current : currentChildren.values()) {
@@ -305,7 +324,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 //Remove and re-add everything
                 //We could do this more fine-grained, but for now let's just drop everything that has been added and readd
                 for (Node current : currentChildren.values()) {
-                    removeChildRecursive(current, operations, registration.getSubModel(PathAddress.pathAddress(current.element)));
+                    removeChildRecursive(current, operations, registration.getSubModel(PathAddress.pathAddress(current.element)), true);
                 }
                 for (Node remote : remoteChildren.values()) {
                     addChildRecursive(remote, operations, registration.getSubModel(PathAddress.pathAddress(remote.element)));
@@ -314,7 +333,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
-    private void processNonOrderedChildrenOfType(final ChildContext childContext, final String type, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
+    private void processNonOrderedChildrenOfType(final ChildContext childContext, final String type, final OrderedOperationsCollection operations, final ImmutableManagementResourceRegistration registration) {
         final Map<PathElement, Node> remoteChildren = childContext.getRemoteChildrenOfType(type);
         final Map<PathElement, Node> currentChildren = childContext.getCurrentChildrenOfType(type);
         for (final Node remoteChild : remoteChildren.values()) {
@@ -324,17 +343,17 @@ class SyncModelOperationHandler implements OperationStepHandler {
             } else if (currentChild == null && remoteChild != null) {
                 addChildRecursive(remoteChild, operations, registration.getSubModel(PathAddress.pathAddress(remoteChild.element)));
             } else if (currentChild != null && remoteChild == null) {
-                removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)));
+                removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)), false);
             } else {
                 throw new IllegalStateException();
             }
         }
         for (final Node currentChild : currentChildren.values()) {
-            removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)));
+            removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)), false);
         }
     }
 
-    private void addChildRecursive(Node remote, List<ModelNode> operations, ImmutableManagementResourceRegistration registration) {
+    private void addChildRecursive(Node remote, OrderedOperationsCollection operations, ImmutableManagementResourceRegistration registration) {
         assert remote != null : "remote cannot be null";
         // Just add all the remote operations
         if (remote.add != null) {
@@ -354,7 +373,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
-    private void removeCurrentOnlyChildren(Map<PathElement, Node> currentChildren, Map<PathElement, Node> remoteChildren, final List<ModelNode> operations, final ImmutableManagementResourceRegistration registration) {
+    private void removeCurrentOnlyChildren(Map<PathElement, Node> currentChildren, Map<PathElement, Node> remoteChildren, final OrderedOperationsCollection operations, final ImmutableManagementResourceRegistration registration) {
         //Remove everything which exists in current and not in the remote
         List<PathElement> removedElements = new ArrayList<PathElement>();
         for (Node node : currentChildren.values()) {
@@ -364,50 +383,61 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
         for (PathElement removedElement : removedElements) {
             Node removedCurrent = currentChildren.remove(removedElement);
-            removeChildRecursive(removedCurrent, operations, registration.getSubModel(PathAddress.pathAddress(removedElement)));
+            removeChildRecursive(removedCurrent, operations, registration.getSubModel(PathAddress.pathAddress(removedElement)), false);
         }
     }
 
-    private void compareExistsInBothModels(Node current, Node remote, List<ModelNode> operations, ImmutableManagementResourceRegistration registration) {
+    private void compareExistsInBothModels(Node current, Node remote, OrderedOperationsCollection operations, ImmutableManagementResourceRegistration registration) {
         assert current != null : "current cannot be null";
         assert remote != null : "remote cannot be null";
 
         // If the current:add() and remote:add() don't match
         if (current.add != null && remote.add != null) {
             if (!current.add.equals(remote.add)) {
+                Map<String, ModelNode> remoteAttributes = new  HashMap<>(remote.attributes);
+                boolean dropAndReadd = false;
                 // Iterate through all local attribute names
                 for (String attribute : registration.getAttributeNames(PathAddress.EMPTY_ADDRESS)) {
                     final AttributeAccess access = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute);
-                    // If they are configuration and write attributes (what about others?)
-                    if (access.getStorageType() == AttributeAccess.Storage.CONFIGURATION &&
-                            access.getAccessType() == AttributeAccess.AccessType.READ_WRITE) {
-                        // Compare each attribute
+                    if (access.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
                         boolean hasCurrent = current.add.hasDefined(attribute);
                         boolean hasRemote = remote.add.hasDefined(attribute);
-                        if (hasCurrent && hasRemote) {
-                            // If they are not equals add the remote one
-                            if (!remote.add.get(attribute).equals(current.add.get(attribute))) {
-                                final ModelNode op = Operations.createWriteAttributeOperation(current.address.toModelNode(), attribute, remote.add.get(attribute));
-                                if (remote.attributes.containsKey(attribute)) {
+                        if (access.getAccessType() == AttributeAccess.AccessType.READ_WRITE) {
+                            // Compare each attribute
+                            if (hasRemote) {
+                                // If they are not equals add the remote one
+                                if (!hasCurrent || !remote.add.get(attribute).equals(current.add.get(attribute))) {
+                                    final ModelNode op = Operations.createWriteAttributeOperation(current.address.toModelNode(), attribute, remote.add.get(attribute));
+                                    if (remoteAttributes.containsKey(attribute)) {
+                                        throw new IllegalStateException();
+                                    }
+                                    remoteAttributes.put(attribute, op);
+                                }
+                            } else if (hasCurrent) {
+                                // If there is no remote equivalent undefine the operation
+                                final ModelNode op = Operations.createUndefineAttributeOperation(current.address.toModelNode(), attribute);
+                                if (remoteAttributes.containsKey(attribute)) {
                                     throw new IllegalStateException();
                                 }
-                                remote.attributes.put(attribute, op);
+                                remoteAttributes.put(attribute, op);
                             }
-                        } else if (hasRemote) {
-                            final ModelNode op = Operations.createWriteAttributeOperation(current.address.toModelNode(), attribute, remote.add.get(attribute));
-                            if (remote.attributes.containsKey(attribute)) {
-                                throw new IllegalStateException();
+                        } else if (access.getAccessType() == AttributeAccess.AccessType.READ_ONLY) {
+                            ModelNode currentValue = hasCurrent ? current.add.get(attribute) : new ModelNode();
+                            ModelNode removeValue = hasRemote ? remote.add.get(attribute) : new ModelNode();
+                            if (!currentValue.equals(removeValue)) {
+                                //The adds differ in a read-only attribute's value. Since we cannot write to it,
+                                //we need to drop it and add it again
+                                dropAndReadd = true;
+                                break;
                             }
-                            remote.attributes.put(attribute, op);
-                        } else if (hasCurrent) {
-                            // If there is no remote equivalent undefine the operation
-                            final ModelNode op = Operations.createUndefineAttributeOperation(current.address.toModelNode(), attribute);
-                            if (remote.attributes.containsKey(attribute)) {
-                                throw new IllegalStateException();
-                            }
-                            remote.attributes.put(attribute, op);
                         }
                     }
+                }
+                if (dropAndReadd) {
+                    removeChildRecursive(current, operations, registration.getSubModel(PathAddress.EMPTY_ADDRESS), true);
+                    addChildRecursive(remote, operations, registration.getSubModel(PathAddress.EMPTY_ADDRESS));
+                } else {
+                    remote.attributes.putAll(remoteAttributes);
                 }
             }
             // Process the attributes
@@ -418,19 +448,22 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
-    private void removeChildRecursive(Node current, List<ModelNode> operations, ImmutableManagementResourceRegistration registration) {
-        // Remove the children first
-        for (final Map.Entry<String, Map<PathElement, Node>> childrenByType : current.childrenByType.entrySet()) {
-            for (final Node child : childrenByType.getValue().values()) {
-                removeChildRecursive(child, operations, registration.getSubModel(PathAddress.pathAddress(child.element)));
-            }
-        }
-        // Add the remove operation
+    private void removeChildRecursive(Node current, OrderedOperationsCollection operations,
+                                      ImmutableManagementResourceRegistration registration, boolean dropForReadd) {
+        //The remove operations get processed in reverse order by the operations collection, so add the parent
+        //remove before the child remove
         if (registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, REMOVE) != null) {
             final ModelNode op = Operations.createRemoveOperation(current.address.toModelNode());
+            if (dropForReadd) {
+                op.get(OPERATION_HEADERS, SYNC_REMOVED_FOR_READD).set(true);
+            }
             operations.add(op);
         }
-
+        for (final Map.Entry<String, Map<PathElement, Node>> childrenByType : current.childrenByType.entrySet()) {
+            for (final Node child : childrenByType.getValue().values()) {
+                removeChildRecursive(child, operations, registration.getSubModel(PathAddress.pathAddress(child.element)), dropForReadd);
+            }
+        }
     }
 
     private void process(Node rootNode, final List<ModelNode> operations,
@@ -464,12 +497,16 @@ class SyncModelOperationHandler implements OperationStepHandler {
         private Map<String, ModelNode> attributes = new HashMap<>();
         private final List<ModelNode> operations = new ArrayList<>();
         private final Set<String> orderedChildTypes = new HashSet<>();
-        private final Map<String, Map<PathElement, Node>> childrenByType = new LinkedHashMap<>();
+        private final Map<String, Map<PathElement, Node>> childrenByType;
 
         private Node(PathElement element, PathAddress address) {
             this.element = element;
             this.address = address;
+            this.childrenByType = element == null ?
+                    new TreeMap<>(ROOT_NODE_COMPARATOR) : // The root node uses a pre-defined order
+                    new LinkedHashMap<>();
         }
+
 
         Node getOrCreate(final PathElement element, final Iterator<PathElement> i, PathAddress current,
                          OrderedChildTypesAttachment orderedChildTypesAttachment) {
@@ -524,6 +561,14 @@ class SyncModelOperationHandler implements OperationStepHandler {
             }
             builder.append("}\n");
         }
+
+        Set<String> createNewChildSet() {
+            if (element == null) {
+                return new TreeSet<>(ROOT_NODE_COMPARATOR);
+            } else {
+                return new HashSet<>();
+            }
+        }
     }
 
     private static class ChildContext {
@@ -552,8 +597,9 @@ class SyncModelOperationHandler implements OperationStepHandler {
         static ChildContext create(Node current, Node remote) {
             final Set<String> orderedInsertCapableTypes = getOrderedInsertCapable(current);
             final Set<String> orderedNotInsertCapableTypes = getOrderedNotInsertCapable(current, remote);
-            final Set<String> nonOrderedTypes = new HashSet<String>();
+            Set<String> nonOrderedTypes = null;
             if (current != null) {
+                nonOrderedTypes = current.createNewChildSet();
                 for (String type : current.childrenByType.keySet()) {
                     if (!orderedInsertCapableTypes.contains(type) && !orderedNotInsertCapableTypes.contains(type)) {
                         nonOrderedTypes.add(type);
@@ -561,6 +607,9 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 }
             }
             if (remote != null) {
+                if (nonOrderedTypes == null) {
+                    nonOrderedTypes = remote.createNewChildSet();
+                }
                 for (String type : remote.childrenByType.keySet()) {
                     if (!orderedInsertCapableTypes.contains(type) && !orderedNotInsertCapableTypes.contains(type)) {
                         nonOrderedTypes.add(type);
@@ -613,4 +662,108 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
     }
 
+    private static final class OrderedOperationsCollection {
+        private final List<ModelNode> extensionAdds = new ArrayList<>();
+        private final List<ModelNode> nonExtensionAdds = new ArrayList<>();
+
+        private final List<ModelNode> extensionRemoves = new ArrayList<>();
+        private final List<ModelNode> nonExtensionRemoves = new ArrayList<>();
+
+        private final List<ModelNode> allOps = new ArrayList<>();
+
+        OrderedOperationsCollection() {
+        }
+
+        void add(ModelNode op) {
+            final String name = op.require(OP).asString();
+            final PathAddress addr = PathAddress.pathAddress(op.require(OP_ADDR));
+            final String type = addr.getElement(0).getKey();
+
+            if (name.equals(ADD) || name.equals(WRITE_ATTRIBUTE_OPERATION)) {
+                if (type.equals(EXTENSION)) {
+                    extensionAdds.add(op);
+                } else {
+                    nonExtensionAdds.add(op);
+                }
+            } else if (name.equals(REMOVE)) {
+                if (type.equals(EXTENSION)) {
+                    extensionRemoves.add(op);
+                } else {
+                    nonExtensionRemoves.add(op);
+                }
+            } else {
+                assert false : "Unknown operation " + name;
+            }
+            allOps.add(op);
+        }
+
+        List<ModelNode> getReverseList() {
+            //This is the opposite order. Due to how the steps get added, once run we will do them in the following order:
+            //  extension removes, extension adds, non-extension composite
+            //  The non-extension composite in turn will do removes first, and then adds
+            final List<ModelNode> result = new ArrayList<>();
+            final ModelNode nonExtensionComposite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+            final ModelNode nonExtensionSteps = nonExtensionComposite.get(STEPS).setEmptyList();
+            final ListIterator<ModelNode> it = nonExtensionRemoves.listIterator(nonExtensionRemoves.size());
+            while (it.hasPrevious()) {
+                nonExtensionSteps.add(it.previous());
+            }
+            for (ModelNode op : nonExtensionAdds) {
+                nonExtensionSteps.add(op);
+            }
+            if (nonExtensionSteps.asList().size() > 0) {
+                result.add(nonExtensionComposite);
+            }
+            result.addAll(extensionAdds);
+            result.addAll(extensionRemoves);
+            return result;
+        }
+
+        List<ModelNode> getAllOps() {
+            return allOps;
+        }
+    }
+
+    private static final Comparator<String> ROOT_NODE_COMPARATOR =  new Comparator<String>() {
+        private final Map<String, Integer> orderedChildTypes;
+        {
+            //The order here is important for the direct children of the root resource
+            String[] orderedTypes = new String[]
+                    {EXTENSION,                         //Extensions need to be done before everything else (and separately WFCORE-323)
+                        SYSTEM_PROPERTY,                //Everything might use system properties
+                        PATH,                           //A lot of later stuff might need paths
+                        CORE_SERVICE,
+                        PROFILE,                        //Used by server-group
+                        INTERFACE,                      //Used by socket-binding-group
+                        SOCKET_BINDING_GROUP,           //Used by server-group; needs interface
+                        DEPLOYMENT,                     //Used by server-group
+                        DEPLOYMENT_OVERLAY,             //Used by server-group
+                        MANAGEMENT_CLIENT_CONTENT,      //Used by server-group
+                        SERVER_GROUP};                  //Uses profile, socket-binding-group, deployment, deployment-overlay and management-client-content
+            Map<String, Integer> map = new HashMap<>();
+            for (int i = 0 ; i < orderedTypes.length ; i++) {
+                map.put(orderedTypes[i], i);
+            }
+            orderedChildTypes = Collections.unmodifiableMap(map);
+        }
+
+        @Override
+        public int compare(String type1, String type2) {
+            if (type1.equals(type2)) {
+                return 0;
+            }
+            if (getIndex(type1) < getIndex(type2)) {
+                return -1;
+            }
+            return 1;
+        }
+
+        private int getIndex(String type) {
+            Integer i = orderedChildTypes.get(type);
+            if (i != null) {
+                return i;
+            }
+            return -1;
+        }
+    };
 }

@@ -1,16 +1,26 @@
 package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BOOT_TIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
@@ -18,13 +28,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -63,12 +78,14 @@ import org.jboss.as.host.controller.RestartMode;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
+import org.jboss.as.host.controller.mgmt.HostInfo;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.util.AbstractControllerTestBase;
-import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
@@ -76,6 +93,9 @@ import org.junit.Test;
 
 /**
  * Port of ApplyRemoteMasterDomainModelHandler to work with syncing using the operations.
+ * SlaveReconnectTestCase contains other tests relevant to this. If maintaining all the mocks
+ * for this test becomes too cumbersome, they should be ported to SlaveReconnectTestCase in the
+ * domain testsuite.
  *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -92,6 +112,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     private volatile TestInitializer initializer;
     private volatile Resource rootResource;
     private final Map<String, MockServerProxy> serverProxies;
+    private volatile TestSyncRepository repository = new TestSyncRepository();
 
 
     public SyncModelServerStateTestCase() {
@@ -170,6 +191,176 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         Assert.assertEquals("running", serverProxies.get("server-three").state);
     }
 
+    @Test
+    public void testAddDeploymentNoInitialGroups() throws Exception {
+        Resource root = rootResource.clone();
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeployment(root, "test.jar", bytes);
+
+        executeTriggerSyncOperation(root);
+        //No servers should be affected
+        for (MockServerProxy proxy : serverProxies.values()) {
+            Assert.assertEquals("running", proxy.state);
+        }
+        Assert.assertTrue(repository.isEmpty());
+
+        //Check deployment exists in model, and that nothing exists in the server group
+        ModelNode model = readResourceRecursive();
+        checkDeploymentBytes(model, "test.jar", bytes);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT));
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT));
+
+        //Add a reference and sync again
+        registerServerGroupDeployment(root, "group-two", "test.jar");
+        executeTriggerSyncOperation(root);
+        Assert.assertEquals("running", serverProxies.get("server-one").state);
+        Assert.assertEquals("running", serverProxies.get("server-two").state);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-three").state);
+        repository.checkAddedReferences(bytes,
+                PathAddress.pathAddress(DEPLOYMENT, "test.jar"),
+                PathAddress.pathAddress(SERVER_GROUP, "group-two").append(DEPLOYMENT, "test.jar"));
+
+        model = readResourceRecursive();
+        checkDeploymentBytes(model, "test.jar", bytes);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT));
+        Assert.assertEquals("test.jar", model.get(SERVER_GROUP, "group-two", DEPLOYMENT, "test.jar", RUNTIME_NAME).asString());
+    }
+
+    @Test
+    public void testAddDeploymentWithGroups() throws Exception {
+        final Resource root = rootResource.clone();
+        final byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeployment(root, "test.jar", bytes);
+        registerServerGroupDeployment(root, "group-one", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        Assert.assertEquals("running", serverProxies.get("server-three").state);
+        repository.checkAddedReferences(bytes,
+                PathAddress.pathAddress(DEPLOYMENT, "test.jar"),
+                PathAddress.pathAddress(SERVER_GROUP, "group-one").append(DEPLOYMENT, "test.jar"));
+        repository.checkRemovedReferences(null);
+
+        ModelNode model = readResourceRecursive();
+        checkDeploymentBytes(model, "test.jar", bytes);
+        Assert.assertEquals("test.jar", model.get(SERVER_GROUP, "group-one", DEPLOYMENT, "test.jar", RUNTIME_NAME).asString());
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT));
+    }
+
+    @Test
+    public void testUpdateDeployment() throws Exception {
+        final Resource root = rootResource.clone();
+        byte[] oldBytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeployment(root, "test.jar", oldBytes);
+        registerServerGroupDeployment(root, "group-one", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        //Don't bother checking here since it is the same as testAddDeploymentWithGroups()
+
+        //Reset the server proxies, simulating a reload
+        for (MockServerProxy proxy : serverProxies.values()) {
+            proxy.state = "running";
+        }
+
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+        replaceRootDeployment(root, "test.jar", bytes);
+        repository.clear(oldBytes);
+        executeTriggerSyncOperation(root);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        Assert.assertEquals("running", serverProxies.get("server-three").state);
+        repository.checkAddedReferences(bytes, PathAddress.pathAddress(DEPLOYMENT, "test.jar"));
+        repository.checkRemovedReferences(oldBytes, PathAddress.pathAddress(DEPLOYMENT, "test.jar"));
+
+        ModelNode model = readResourceRecursive();
+        checkDeploymentBytes(model, "test.jar", bytes);
+        Assert.assertEquals("test.jar", model.get(SERVER_GROUP, "group-one", DEPLOYMENT, "test.jar", RUNTIME_NAME).asString());
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT));
+    }
+
+    @Test
+    public void testRemoveDeployment() throws Exception {
+        final Resource root = rootResource.clone();
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeployment(root, "test.jar", bytes);
+        registerServerGroupDeployment(root, "group-one", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        //Don't bother checking here since it is the same as testAddDeploymentWithGroups()
+
+        //Reset the server proxies, simulating a reload
+        for (MockServerProxy proxy : serverProxies.values()) {
+            proxy.state = "running";
+        }
+
+        root.removeChild(PathElement.pathElement(DEPLOYMENT, "test.jar"));
+        root.getChild(
+                PathElement.pathElement(SERVER_GROUP, "group-one")).removeChild(PathElement.pathElement(DEPLOYMENT, "test.jar"));
+        repository.clear(bytes);
+        executeTriggerSyncOperation(root);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        Assert.assertEquals("running", serverProxies.get("server-three").state);
+
+        Assert.assertEquals(2, repository.removedReferences.size());
+        repository.checkRemovedReferences(bytes,
+                PathAddress.pathAddress(DEPLOYMENT, "test.jar"),
+                PathAddress.pathAddress(SERVER_GROUP, "group-one").append(DEPLOYMENT, "test.jar"));
+        repository.checkAddedReferences(null);
+
+        //Reset the server proxies, simulating a reload
+        for (MockServerProxy proxy : serverProxies.values()) {
+            proxy.state = "running";
+        }
+        repository.clear();
+
+        ModelNode model = readResourceRecursive();
+        Assert.assertFalse(model.hasDefined(DEPLOYMENT, "test.jar"));
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT, "test.jar"));
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT));
+
+        root.removeChild(PathElement.pathElement(DEPLOYMENT, "test.jar"));
+    }
+
+
+    
+    private void registerRootDeployment(Resource root, String deploymentName, byte[] bytes) {
+        Resource deployment = Resource.Factory.create();
+        deployment.getModel().get(NAME).set(deploymentName);
+        deployment.getModel().get(RUNTIME_NAME).set(deploymentName);
+        setDeploymentBytes(deployment, bytes);
+        root.registerChild(PathElement.pathElement(DEPLOYMENT, deploymentName), deployment);
+    }
+
+    private void replaceRootDeployment(Resource root, String deploymentName, byte[] bytes) {
+        Resource deployment = root.getChild(PathElement.pathElement(DEPLOYMENT, deploymentName));
+        deployment.getModel().remove(CONTENT);
+        setDeploymentBytes(deployment, bytes);
+    }
+
+    private void setDeploymentBytes(Resource deployment, byte[] bytes) {
+        ModelNode content = deployment.getModel().get(CONTENT);
+        ModelNode hash = new ModelNode();
+        hash.get(HASH).set(bytes);
+        content.add(hash);
+    }
+
+    private void registerServerGroupDeployment(Resource root, String groupName, String deploymentName) {
+        Resource group = root.requireChild(PathElement.pathElement(SERVER_GROUP, groupName));
+        Resource deployment = Resource.Factory.create();
+        deployment.getModel().get(ENABLED).set(true);
+        deployment.getModel().get(RUNTIME_NAME).set(deploymentName);
+        group.registerChild(PathElement.pathElement(DEPLOYMENT, deploymentName), deployment);
+    }
+
+    private void checkDeploymentBytes(ModelNode model, String name, byte[] bytes) {
+        Assert.assertEquals(1, model.get(DEPLOYMENT).keys().size());
+        ModelNode content = model.get(DEPLOYMENT, name, CONTENT);
+        Assert.assertEquals(1, content.asList().size());
+        Assert.assertArrayEquals(bytes, content.asList().get(0).get(HASH).asBytes());
+    }
+
     private class TestInitializer implements DelegatingResourceDefinitionInitializer {
         private volatile HostResourceDefinition hostResourceDefinition;
         private volatile ManagementModel managementModel;
@@ -177,10 +368,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
 
         @Override
         public void setDelegate() {
-            final ContentRepository contentRepo = createContentRepository();
-
             final ExtensibleConfigurationPersister configurationPersister = new EmptyConfigurationPersister();
-            final HostFileRepository fileRepository = createHostFileRepository();
             final boolean isMaster = false;
             final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
             final PathManagerService pathManager = new HostPathManagerService();
@@ -193,7 +381,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
                 }
             };
             DomainRootDefinition domain = new DomainRootDefinition(domainController, hostControllerEnvironment, configurationPersister,
-                    contentRepo, fileRepository, isMaster, hostControllerInfo, extensionRegistry, ignoredDomainResourceRegistry,
+                    repository, repository, isMaster, hostControllerInfo, extensionRegistry, ignoredDomainResourceRegistry,
                     pathManager, authorizer, hostRegistrations, rootResourceRegistrationProvider);
             getDelegatingResourceDefiniton().setDelegate(domain);
 
@@ -203,25 +391,27 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
                             hostControllerInfo, Executors.newCachedThreadPool(), extensionRegistry, extensionRegistry);
             final HostRunningModeControl runningModeControl = new HostRunningModeControl(RunningMode.NORMAL, RestartMode.SERVERS);
             final ServerInventory serverInventory = null;
-            final HostFileRepository remoteFileRepository = createHostFileRepository();
+            final HostFileRepository remoteFileRepository = repository;
             final AbstractVaultReader vaultReader = null;
             final ControlledProcessState processState = null;
             final ManagedAuditLogger auditLogger = null;
             final BootErrorCollector bootErrorCollector = null;
             //Save this for later since setDelegate() gets called before initModel....
             hostResourceDefinition = new HostResourceDefinition(hostName, hostControllerConfigurationPersister,
-                    hostControllerEnvironment, runningModeControl, fileRepository, hostControllerInfo, serverInventory, remoteFileRepository,
-                    contentRepo, domainController, extensionRegistry, vaultReader, ignoredDomainResourceRegistry, processState,
+                    hostControllerEnvironment, runningModeControl, repository, hostControllerInfo, serverInventory, remoteFileRepository,
+                    repository, domainController, extensionRegistry, vaultReader, ignoredDomainResourceRegistry, processState,
                     pathManager, authorizer, auditLogger, bootErrorCollector);
         }
 
         protected Resource initModel(final ManagementModel managementModel) {
             this.managementModel = managementModel;
+            ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
             //Use the saved hostResourceDefinition
-            hostRegistration = managementModel.getRootResourceRegistration().registerSubModel(hostResourceDefinition);
+            hostRegistration = rootRegistration.registerSubModel(hostResourceDefinition);
 
-            managementModel.getRootResourceRegistration().registerOperationHandler(TRIGGER_SYNC, new TriggerSyncHandler());
-            GlobalOperationHandlers.registerGlobalOperations(managementModel.getRootResourceRegistration(), processType);
+            rootRegistration.registerOperationHandler(TRIGGER_SYNC, new TriggerSyncHandler());
+            GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
+            rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
 
 
             Resource rootResource = managementModel.getRootResource();
@@ -310,9 +500,18 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             SyncModelParameters parameters =
                     new SyncModelParameters(new MockDomainController(), ignoredDomainResourceRegistry,
                             hostControllerEnvironment, extensionRegistry, internalExecutor, true,
-                            serverProxies);
-            final SyncServerGroupOperationHandler handler =
-                    new SyncServerGroupOperationHandler("slave", original, parameters);
+                            serverProxies, repository, repository);
+            final Resource hostResource =
+                    context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS).getChildren(HOST).iterator().next();
+            final ProductConfig cfg = new ProductConfig("product", "version", "main");
+            final HostInfo hostInfo =
+                    HostInfo.fromModelNode(
+                            HostInfo.createLocalHostHostInfo(hostControllerInfo,
+                                    cfg,
+                                    ignoredDomainResourceRegistry,
+                                    hostResource));
+            final SyncDomainModelOperationHandler handler =
+                    new SyncDomainModelOperationHandler(hostInfo, parameters);
             context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
         }
     }
@@ -346,6 +545,73 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
                 state = RELOAD_REQUIRED;
             } else {
                 throw new IllegalStateException("Unknown state for my intents and purposes");
+            }
+        }
+    }
+
+    private static class TestSyncRepository extends TestRepository {
+        //hasContent() gets called as a check on remove so add deployments here to make sure they get removed
+        //from the repository
+        private final Set<String> expectedContent = new HashSet<>();
+
+        private final Map<String, ContentReference> addedContentReferences = new HashMap<>();
+        private final Map<String, ContentReference> fetchedFiles = new HashMap<>();
+        private final Map<String, ContentReference> removedReferences = new HashMap<>();
+        @Override
+        public void addContentReference(ContentReference reference) {
+            addedContentReferences.put(reference.getContentIdentifier(),reference);
+        }
+
+        @Override
+        public File[] getDeploymentFiles(ContentReference reference) {
+            fetchedFiles.put(reference.getContentIdentifier(), reference);
+            return null;
+        }
+
+        @Override
+        public void removeContent(ContentReference reference) {
+            removedReferences.put(reference.getContentIdentifier(), reference);
+        }
+
+        @Override
+        public boolean hasContent(byte[] hash) {
+            return expectedContent.contains(HashUtil.bytesToHexString(hash));
+        }
+
+        boolean isEmpty() {
+            return addedContentReferences.isEmpty() && fetchedFiles.isEmpty();
+        }
+
+        void checkAddedReferences(byte[] bytes, PathAddress... addresses) {
+            Assert.assertEquals(addresses.length, addedContentReferences.size());
+            Assert.assertEquals(addresses.length, fetchedFiles.size());
+            for (PathAddress address : addresses) {
+                ContentReference ref = addedContentReferences.get(address.toCLIStyleString());
+                Assert.assertNotNull(ref);
+                Assert.assertEquals(HashUtil.bytesToHexString(bytes), ref.getHexHash());
+
+                ref = fetchedFiles.get(address.toCLIStyleString());
+                Assert.assertNotNull(ref);
+                Assert.assertEquals(HashUtil.bytesToHexString(bytes), ref.getHexHash());
+            }
+        }
+
+        void checkRemovedReferences(byte[] bytes, PathAddress...addresses) {
+            Assert.assertEquals(addresses.length, removedReferences.size());
+            for (PathAddress address : addresses) {
+                ContentReference ref = removedReferences.get(address.toCLIStyleString());
+                Assert.assertNotNull(ref);
+                Assert.assertEquals(HashUtil.bytesToHexString(bytes), ref.getHexHash());
+            }
+        }
+
+        void clear(byte[]...currentContent) {
+            expectedContent.clear();
+            addedContentReferences.clear();
+            fetchedFiles.clear();
+            removedReferences.clear();
+            for (byte[] content : currentContent) {
+                expectedContent.add(HashUtil.bytesToHexString(content));
             }
         }
     }

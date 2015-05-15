@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
@@ -166,6 +167,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
             final ModelNode headers = operation.get(OPERATION_HEADERS);
             //Add a header to show that this operation comes from a user. If this is a host controller and the operation needs propagating to the
             //servers it will be removed by the domain ops responsible for propagation to the servers.
+            //If more headers are removed here, they must also be removed from the http interface (DomainApiHandler)
             headers.get(CALLER_TYPE).set(USER);
             headers.get(ACCESS_MECHANISM).set(AccessMechanism.NATIVE.toString());
             // Don't allow a domain-uuid operation header from a user call
@@ -175,6 +177,10 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
             // Don't allow a execute-for-coordinator operation header from a user call
             if (headers.hasDefined(EXECUTE_FOR_COORDINATOR)) {
                 headers.remove(EXECUTE_FOR_COORDINATOR);
+            }
+            // Only used internally on a slave when syncing the model
+            if (headers.hasDefined(SYNC_REMOVED_FOR_READD)) {
+                headers.remove(SYNC_REMOVED_FOR_READD);
             }
 
             final ManagementRequestHeader header = ManagementRequestHeader.class.cast(context.getRequestHeader());

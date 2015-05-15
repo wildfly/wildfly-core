@@ -104,6 +104,7 @@ import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.repository.ContentReference;
+import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.repository.RemoteFileRequestAndHandler.CannotCreateLocalDirectoryException;
 import org.jboss.as.repository.RemoteFileRequestAndHandler.DidNotReadEntireFileException;
@@ -167,6 +168,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private final ProductConfig productConfig;
     private final LocalHostControllerInfo localHostInfo;
     private final RemoteFileRepository remoteFileRepository;
+    private final ContentRepository contentRepository;
     private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
     private final DomainController domainController;
@@ -193,6 +195,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private RemoteDomainConnectionService(final ModelController controller, final ExtensionRegistry extensionRegistry,
                                           final LocalHostControllerInfo localHostControllerInfo, final ProductConfig productConfig,
                                           final RemoteFileRepository remoteFileRepository,
+                                          final ContentRepository contentRepository,
                                           final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                                           final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
                                           final DomainController domainController,
@@ -205,6 +208,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         this.productConfig = productConfig;
         this.localHostInfo = localHostControllerInfo;
         this.remoteFileRepository = remoteFileRepository;
+        this.contentRepository = contentRepository;
         remoteFileRepository.setRemoteFileRepositoryExecutor(remoteFileRepositoryExecutor);
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
         this.operationExecutor = operationExecutor;
@@ -219,6 +223,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     public static Future<MasterDomainControllerClient> install(final ServiceTarget serviceTarget, final ModelController controller, final ExtensionRegistry extensionRegistry,
                                                                final LocalHostControllerInfo localHostControllerInfo, final ProductConfig productConfig,
                                                                final String securityRealm, final RemoteFileRepository remoteFileRepository,
+                                                               final ContentRepository contentRepository,
                                                                final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                                                                final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
                                                                final DomainController domainController,
@@ -227,7 +232,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                                                final RunningMode currentRunningMode,
                                                                final Map<String, ProxyController> serverProxies) {
         RemoteDomainConnectionService service = new RemoteDomainConnectionService(controller, extensionRegistry, localHostControllerInfo,
-                productConfig, remoteFileRepository, ignoredDomainResourceRegistry, operationExecutor, domainController,
+                productConfig, remoteFileRepository, contentRepository,
+                ignoredDomainResourceRegistry, operationExecutor, domainController,
                 hostControllerEnvironment, executor, currentRunningMode, serverProxies);
         ServiceBuilder<MasterDomainControllerClient> builder = serviceTarget.addService(MasterDomainControllerClient.SERVICE_NAME, service)
                 .addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpointInjector)
@@ -429,7 +435,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 // Execute the handler to synchronize the model
                 SyncModelParameters parameters =
                         new SyncModelParameters(domainController, ignoredDomainResourceRegistry,
-                                hostControllerEnvironment, extensionRegistry, operationExecutor, false, serverProxies);
+                                hostControllerEnvironment, extensionRegistry, operationExecutor, false, serverProxies,
+                                remoteFileRepository, contentRepository);
                 final SyncServerGroupOperationHandler handler =
                         new SyncServerGroupOperationHandler(localHostInfo.getLocalHostName(), original, parameters);
                 context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
@@ -553,7 +560,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         try {
             SyncModelParameters parameters =
                     new SyncModelParameters(domainController, ignoredDomainResourceRegistry,
-                            hostControllerEnvironment, extensionRegistry, operationExecutor, true, serverProxies);
+                            hostControllerEnvironment, extensionRegistry, operationExecutor, true, serverProxies, remoteFileRepository, contentRepository);
             final SyncDomainModelOperationHandler handler =
                     new SyncDomainModelOperationHandler(hostInfo, parameters);
             final ModelNode operation = APPLY_DOMAIN_MODEL.clone();

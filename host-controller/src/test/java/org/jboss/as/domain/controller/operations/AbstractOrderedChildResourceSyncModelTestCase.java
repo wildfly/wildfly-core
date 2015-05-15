@@ -386,11 +386,12 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
             Resource original = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
 
+            final TestRepository repo = new TestRepository();
             final HostControllerRegistrationHandler.OperationExecutor internalExecutor = getControllerService().getInternalExecutor();
             SyncModelParameters parameters =
                     new SyncModelParameters(new MockDomainController(), ignoredDomainResourceRegistry,
                             hostControllerEnvironment, extensionRegistry, internalExecutor, true,
-                            Collections.<String, ProxyController>emptyMap());
+                            Collections.<String, ProxyController>emptyMap(), repo, repo);
             final SyncServerGroupOperationHandler handler =
                     new SyncServerGroupOperationHandler("slave", original, parameters);
             context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);

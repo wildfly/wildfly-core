@@ -448,6 +448,11 @@ public class ModelDescriptionConstants {
     public static final String SYSLOG_HANDLER = "syslog-handler";
     public static final String SYSTEM_PROPERTY = "system-property";
     public static final String SYSTEM_PROPERTIES = "system-properties";
+    /**
+     * Operation header set by the SyncModelOperationHandler to indicate that a resource is being removed with the
+     * intention of re-adding it
+     */
+    public static final String SYNC_REMOVED_FOR_READD = "sync-dropped-for-readd";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
     public static final String TCP = "tcp";
     public static final String TIMEOUT = "timeout";

@@ -760,6 +760,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 environment.getProductConfig(),
                 hostControllerInfo.getRemoteDomainControllerSecurityRealm(),
                 remoteFileRepository,
+                contentRepository,
                 ignoredRegistry,
                 new DomainModelControllerService.InternalExecutor(),
                 this,

@@ -8,6 +8,8 @@ import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
+import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.HostFileRepository;
 
 /**
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
@@ -21,6 +23,9 @@ public class SyncModelParameters {
     private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
     private final boolean fullModelTransfer;
     private final Map<String, ProxyController> serverProxies;
+    private final HostFileRepository fileRepository;
+    private final ContentRepository contentRepository;
+
 
     public SyncModelParameters(DomainController domainController,
                                IgnoredDomainResourceRegistry ignoredResourceRegistry,
@@ -28,7 +33,7 @@ public class SyncModelParameters {
                                ExtensionRegistry extensionRegistry,
                                HostControllerRegistrationHandler.OperationExecutor operationExecutor,
                                boolean fullModelTransfer,
-                               Map<String, ProxyController> serverProxies) {
+                               Map<String, ProxyController> serverProxies, HostFileRepository fileRepository, ContentRepository contentRepository) {
         this.domainController = domainController;
         this.ignoredResourceRegistry = ignoredResourceRegistry;
         this.hostControllerEnvironment = hostControllerEnvironment;
@@ -36,6 +41,8 @@ public class SyncModelParameters {
         this.operationExecutor = operationExecutor;
         this.fullModelTransfer = fullModelTransfer;
         this.serverProxies = serverProxies;
+        this.fileRepository = fileRepository;
+        this.contentRepository = contentRepository;
     }
 
     public IgnoredDomainResourceRegistry getIgnoredResourceRegistry() {
@@ -64,5 +71,13 @@ public class SyncModelParameters {
 
     public Map<String, ProxyController> getServerProxies() {
         return serverProxies;
+    }
+
+    public HostFileRepository getFileRepository() {
+        return fileRepository;
+    }
+
+    public ContentRepository getContentRepository() {
+        return contentRepository;
     }
 }

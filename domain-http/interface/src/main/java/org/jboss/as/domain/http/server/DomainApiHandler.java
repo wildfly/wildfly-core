@@ -23,6 +23,8 @@ package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -35,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
@@ -50,15 +53,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.ETag;
-import io.undertow.util.ETagUtils;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HexConverter;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -70,6 +64,16 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
 import org.xnio.streams.ChannelInputStream;
+
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.ETag;
+import io.undertow.util.ETagUtils;
+import io.undertow.util.HeaderMap;
+import io.undertow.util.Headers;
+import io.undertow.util.HexConverter;
+import io.undertow.util.HttpString;
+import io.undertow.util.Methods;
 
 /**
  *
@@ -283,14 +287,20 @@ class DomainApiHandler implements HttpHandler {
         for (Entry<String, Deque<String>> entry : queryParameters.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue().getFirst();
-            ModelNode valueNode;
+             ModelNode valueNode = null;
             if (key.startsWith("operation-header-")) {
                 String header = key.substring("operation-header-".length());
-                valueNode = dmr.get(OPERATION_HEADERS, header);
+                //Remove the same headers as the native interface (ModelControllerClientOperationHandler)
+                if (!header.equals(SYNC_REMOVED_FOR_READD) &&
+                        !header.equals(EXECUTE_FOR_COORDINATOR) && !header.equals(DOMAIN_UUID)) {
+                    valueNode = dmr.get(OPERATION_HEADERS, header);
+                }
             } else {
                 valueNode = dmr.get(key);
             }
-            valueNode.set(!value.equals("") ? value : "true");
+            if (valueNode != null) {
+                valueNode.set(!value.equals("") ? value : "true");
+            }
         }
         dmr.get(OP).set(operation.realOperation);
 

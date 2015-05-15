@@ -549,74 +549,6 @@ public abstract class AbstractControllerTestBase {
         }
     }
 
-    public static HostFileRepository createHostFileRepository() {
-        return new HostFileRepository() {
-
-            @Override
-            public File getDeploymentRoot(ContentReference reference) {
-                return null;
-            }
-
-            @Override
-            public File[] getDeploymentFiles(ContentReference reference) {
-                return null;
-            }
-
-            @Override
-            public void deleteDeployment(ContentReference reference) {
-            }
-
-            @Override
-            public File getFile(String relativePath) {
-                return null;
-            }
-
-            @Override
-            public File getConfigurationFile(String relativePath) {
-                return null;
-            }
-        };
-    }
-
-    public static ContentRepository createContentRepository() {
-        return new ContentRepository() {
-            @Override
-            public byte[] addContent(InputStream stream) throws IOException {
-                return new byte[0];
-            }
-
-            @Override
-            public void addContentReference(ContentReference reference) {
-
-            }
-
-            @Override
-            public VirtualFile getContent(byte[] hash) {
-                return null;
-            }
-
-            @Override
-            public boolean hasContent(byte[] hash) {
-                return false;
-            }
-
-            @Override
-            public boolean syncContent(ContentReference reference) {
-                return false;
-            }
-
-            @Override
-            public void removeContent(ContentReference reference) {
-
-            }
-
-            @Override
-            public Map<String, Set<String>> cleanObsoleteContent() {
-                return null;
-            }
-        };
-    }
-
     private static void delete(File file) {
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
@@ -635,6 +567,68 @@ public abstract class AbstractControllerTestBase {
         @Override
         public void setDelegate(ResourceDefinition delegate) {
             super.setDelegate(delegate);
+        }
+    }
+
+    public static class TestRepository implements ContentRepository, HostFileRepository {
+        @Override
+        public byte[] addContent(InputStream stream) throws IOException {
+            return new byte[0];
+        }
+
+        @Override
+        public void addContentReference(ContentReference reference) {
+
+        }
+
+        @Override
+        public VirtualFile getContent(byte[] hash) {
+            return null;
+        }
+
+        @Override
+        public boolean hasContent(byte[] hash) {
+            return false;
+        }
+
+        @Override
+        public boolean syncContent(ContentReference reference) {
+            return false;
+        }
+
+        @Override
+        public void removeContent(ContentReference reference) {
+
+        }
+
+        @Override
+        public Map<String, Set<String>> cleanObsoleteContent() {
+            return null;
+        }
+
+        @Override
+        public File getFile(String relativePath) {
+            return null;
+        }
+
+        @Override
+        public File getConfigurationFile(String relativePath) {
+            return null;
+        }
+
+        @Override
+        public File[] getDeploymentFiles(ContentReference reference) {
+            return new File[0];
+        }
+
+        @Override
+        public File getDeploymentRoot(ContentReference reference) {
+            return null;
+        }
+
+        @Override
+        public void deleteDeployment(ContentReference reference) {
+
         }
     }
 }
