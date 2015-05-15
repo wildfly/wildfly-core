@@ -34,12 +34,15 @@
         <level name="INFO"/>
         <filter-spec value="levelRange(TRACE,WARN)" />
         <formatter>
-            <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
     </console-handler>
 
     <file-handler name="anotherFile" enabled="false">
         <filter-spec value="levelRange(TRACE,WARN]" />
+        <formatter>
+            <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
+        </formatter>
         <file relative-to="jboss.server.log.dir" path="another.log"/>
         <append value="true"/>
     </file-handler>
@@ -47,6 +50,9 @@
     <file-handler name="simpleFile">
         <level name="INFO"/>
         <filter-spec value="deny"/>
+        <formatter>
+            <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
+        </formatter>
         <file relative-to="jboss.server.log.dir" path="fileHandler.log"/>
         <append value="true"/>
     </file-handler>
@@ -72,7 +78,7 @@
         <encoding value="UTF-8"/>
         <filter-spec value="any(levels(INFO),not(levels(TRACE)))"/>
         <formatter>
-            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="server.log"/>
         <suffix value=".yyyy-MM-dd"/>
@@ -83,7 +89,7 @@
         <encoding value="UTF-8"/>
         <filter-spec value="all(levelChange(DEBUG),match(&quot;JBAS+\\d&quot;))"/>
         <formatter>
-            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+            <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
         </formatter>
         <file relative-to="jboss.server.log.dir" path="sizeLogger.log"/>
         <rotate-size value="64m"/>
@@ -132,7 +138,7 @@
                 <level name="ALL"/>
                 <filter-spec value="levelRange(TRACE,WARN)"/>
                 <formatter>
-                    <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+                    <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
                 </formatter>
             </console-handler>
 

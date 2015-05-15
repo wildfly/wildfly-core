@@ -52,18 +52,20 @@ class PeriodicSizeRotatingHandlerResourceDefinition extends AbstractFileHandlerD
         super(PERIODIC_SIZE_ROTATING_HANDLER_PATH, false, PeriodicSizeRotatingFileHandler.class, resolvePathHandler, ATTRIBUTES);
     }
 
+
+
     @Override
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+    public void registerTransformers(final KnownModelVersion modelVersion,
+                                     final ResourceTransformationDescriptionBuilder rootResourceBuilder,
+                                     final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
+            case VERSION_1_4_0:
             case VERSION_2_0_0: {
-                resourceBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
-                if (loggingProfileBuilder != null) {
-                    loggingProfileBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
-                }
+                rootResourceBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
+                loggingProfileBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
                 break;
             }
         }
-
     }
 
 }
