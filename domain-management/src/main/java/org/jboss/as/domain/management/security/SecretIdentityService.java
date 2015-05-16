@@ -32,8 +32,8 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.util.Base64;
 
+import java.util.Base64;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -65,7 +65,7 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
     public void start(StartContext startContext) throws StartException {
         final char[] thePassword;
         if (base64) {
-            byte[] value = Base64.decode(password);
+            byte[] value = Base64.getDecoder().decode(password);
             String tempPassword = new String(value);
             String trimmedPassword = tempPassword.trim();
             if (tempPassword.equals(trimmedPassword) == false) {

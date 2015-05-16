@@ -22,8 +22,7 @@
 package org.jboss.as.test.integration.security.common.config.realm;
 
 import java.nio.charset.StandardCharsets;
-
-import org.jboss.util.Base64;
+import java.util.Base64;
 
 /**
  * A helper class to provide settings for SecurityRealm's server-identity.
@@ -91,7 +90,7 @@ public class ServerIdentity {
             }
 
             byte[] secretBytes = plainSecret.getBytes(StandardCharsets.UTF_8);
-            this.secret = Base64.encodeBytes(secretBytes, Base64.DONT_BREAK_LINES);
+            this.secret = Base64.getEncoder().encodeToString(secretBytes);
             return this;
         }
 

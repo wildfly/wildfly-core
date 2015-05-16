@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Base64;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -36,7 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.jboss.util.Base64;
+
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
@@ -127,7 +128,7 @@ public class HttpRequest {
                 final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 if (username != null) {
                     final String userpassword = username + ":" + password;
-                    final String basicAuthorization = Base64.encodeBytes(userpassword.getBytes());
+                    final String basicAuthorization = Base64.getEncoder().encodeToString(userpassword.getBytes());
                     conn.setRequestProperty("Authorization", "Basic " + basicAuthorization);
                 }
                 conn.setDoInput(true);

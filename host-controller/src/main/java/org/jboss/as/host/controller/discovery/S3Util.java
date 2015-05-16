@@ -42,6 +42,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,7 +56,6 @@ import java.util.TreeMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.util.Base64;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -1547,7 +1547,7 @@ public class S3Util {
             }
 
             // Compute the HMAC on the digest, and set it.
-            String b64 = Base64.encodeBytes(mac.doFinal(canonicalString.getBytes()));
+            String b64 = Base64.getEncoder().encodeToString(mac.doFinal(canonicalString.getBytes()));
 
             if (urlencode) {
                 return urlencode(b64);
