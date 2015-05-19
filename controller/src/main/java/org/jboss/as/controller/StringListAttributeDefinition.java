@@ -80,11 +80,11 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
                     return;
                 }
                 attributeValues[position++] = current.asString();
-                if (remove) {
-                    referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValues);
-                } else {
-                    referenceRecorder.addCapabilityRequirements(context, getName(), attributeValues);
-                }
+            }
+            if (remove) {
+                referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValues);
+            } else {
+                referenceRecorder.addCapabilityRequirements(context, getName(), attributeValues);
             }
         }
     }
