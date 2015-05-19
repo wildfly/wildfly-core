@@ -34,6 +34,7 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * AttributeDefinition suitable for managing LISTs of OBJECTs, which takes into account
@@ -115,6 +116,36 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             }
             writer.writeEndElement();
         }
+    }
+
+    /**
+     * Overrides the superclass implementation to allow the value type's AttributeDefinition to in turn
+     * resolve each element.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public ModelNode resolveValue(ExpressionResolver resolver, ModelNode value) throws OperationFailedException {
+
+        // Pass non-LIST values through the superclass so it can reject weird values and, in the odd chance
+        // that's how this object is set up, turn undefined into a default list value.
+        ModelNode superResult = value.getType() == ModelType.LIST ? value : super.resolveValue(resolver, value);
+
+        // If it's not a LIST (almost certainly UNDEFINED), then nothing more we can do
+        if (superResult.getType() != ModelType.LIST) {
+            return superResult;
+        }
+
+        // Resolve each element.
+        // Don't mess with the original value
+        ModelNode clone = superResult == value ? value.clone() : superResult;
+        ModelNode result = new ModelNode();
+        for (ModelNode element : clone.asList()) {
+            result.add(valueType.resolveValue(resolver, element));
+        }
+        // Validate the entire list
+        getValidator().validateResolvedParameter(getName(), result);
+        return result;
     }
 
     /**
