@@ -1,12 +1,6 @@
 SYNOPSIS
 
-    patch
-      <action> <action_arguments>*
-      [--override-all]
-      [--override-modules]
-      [--override=path(,path)*]
-      [--preserve=path(,path)*]
-      [--host=<host>]
+    patch <action> <action_arguments>*
 
 	where <action> can be
 
@@ -29,6 +23,9 @@ ACTION: apply
       [--override=path(,path)*]
       [--preserve=path(,path)*]
       [--host=<host>]
+      [--distribution=<target-distribution>]
+      [--module-path=<modules-dir>]
+      [--bundle-path=<bundles-dir>]
 
     <file_path>          - the path to the patch to apply.
                            The path can be either absolute or relative to the
@@ -46,6 +43,9 @@ ACTION: rollback
       [--override=path(,path)*]
       [--preserve=path(,path)*]
       [--host=<host>]
+      [--distribution=<target-distribution>]
+      [--module-path=<modules-dir>]
+      [--bundle-path=<bundles-dir>]
 
     --patch-id=<id>      - the ID of the patch to rollback; for backward
                            compatibility.
@@ -72,6 +72,9 @@ ACTION: info
     patch info
       [--host=<host>]
       [--patch-id=<id> [--verbose]]
+      [--distribution=<target-distribution>]
+      [--module-path=<modules-dir>]
+      [--bundle-path=<bundles-dir>]
       
       --patch-id         - Optional argument, if present the information about
                            this specific patch will be displayed.
@@ -89,6 +92,9 @@ ACTION: history
 
     patch history
       [--host=<host>]
+      [--distribution=<target-distribution>]
+      [--module-path=<modules-dir>]
+      [--bundle-path=<bundles-dir>]
 
 ACTION: inspect
 
@@ -142,7 +148,28 @@ ARGUMENTS:
                        It signifies to bypass any content verification on the
                        miscellaneous items changed by the patch.
 
- --override-modules -  The argument does not expect any value and is
+ --override-modules  - The argument does not expect any value and is
                        optional. The default is 'false'.
                        It signifies to bypass any content verification on the
                        modules and OSGi bundles affected by the patch.
+
+ --distribution      - is allowed only when not connected to the controller
+                       (disconnected mode), specifies the target path to
+                       the target server distribution. Alternatively,
+                       the target distribution can be specified using
+                       JBOSS_HOME environment variable or jboss.home.dir
+                       system property.
+
+ --module-path       - is allowed only when not connected to the controller
+                       (disconnected mode), specifies the path to the modules
+                       directory of the target distribution. If the argument is
+                       not present, the target modules directory is assumed
+                       to be 'modules' directory under the target distribution
+                       root directory.
+
+ --bundle-path       - is allowed only when not connected to the controller
+                       (disconnected mode), specifies the path to the bundles
+                       directory of the target distribution. If the argument is
+                       not present, the target bundles directory is assumed
+                       to be 'bundles' directory under the target distribution
+                       root directory.
