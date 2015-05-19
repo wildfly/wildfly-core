@@ -224,9 +224,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
         distribution = new FileSystemPathArgument(this, pathCompleter, "--distribution") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                // TODO this is hidden from the tab-completion for now (and also not documented),
-                // although if the argument name is typed in and followed with the '=',
-                // the tab-completion for its value will work
+                if (ctx.getModelControllerClient() == null && canOnlyAppearAfterActions(ctx, APPLY, ROLLBACK, HISTORY, INFO)) {
+                    return super.canAppearNext(ctx);
+                }
                 return false;
             }
         };
@@ -234,9 +234,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
         modulePath = new FileSystemPathArgument(this, pathCompleter, "--module-path") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                // TODO this is hidden from the tab-completion for now (and also not documented),
-                // although if the argument name is typed in and followed with the '=',
-                // the tab-completion for its value will work
+                if (ctx.getModelControllerClient() == null && canOnlyAppearAfterActions(ctx, APPLY, ROLLBACK, HISTORY, INFO)) {
+                    return super.canAppearNext(ctx);
+                }
                 return false;
             }
         };
@@ -244,9 +244,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
         bundlePath = new FileSystemPathArgument(this, pathCompleter, "--bundle-path") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                // TODO this is hidden from the tab-completion for now (and also not documented),
-                // although if the argument name is typed in and followed with the '=',
-                // the tab-completion for its value will work
+                if (ctx.getModelControllerClient() == null && canOnlyAppearAfterActions(ctx, APPLY, ROLLBACK, HISTORY, INFO)) {
+                    return super.canAppearNext(ctx);
+                }
                 return false;
             }
         };
@@ -622,15 +622,24 @@ public class PatchHandler extends CommandHandlerWithHelp {
 
     private PatchOperationTarget createPatchOperationTarget(CommandContext ctx) throws CommandLineException {
         final PatchOperationTarget target;
+        final ParsedCommandLine args = ctx.getParsedCommandLine();
         if (ctx.getModelControllerClient() != null) {
+            if(distribution.isPresent(args)) {
+                throw new CommandFormatException(distribution.getFullName() + " is not allowed when connected to the controller.");
+            }
+            if(modulePath.isPresent(args)) {
+                throw new CommandFormatException(modulePath.getFullName() + " is not allowed when connected to the controller.");
+            }
+            if(bundlePath.isPresent(args)) {
+                throw new CommandFormatException(bundlePath.getFullName() + " is not allowed when connected to the controller.");
+            }
             if (ctx.isDomainMode()) {
-                String hostName = host.getValue(ctx.getParsedCommandLine(), true);
+                String hostName = host.getValue(args, true);
                 target = PatchOperationTarget.createHost(hostName, ctx.getModelControllerClient());
             } else {
                 target = PatchOperationTarget.createStandalone(ctx.getModelControllerClient());
             }
         } else {
-            final ParsedCommandLine args = ctx.getParsedCommandLine();
             final String jbossHome = getJBossHome(args);
             final File root = new File(jbossHome);
             final List<File> modules = getFSArgument(modulePath, args, root, "modules");

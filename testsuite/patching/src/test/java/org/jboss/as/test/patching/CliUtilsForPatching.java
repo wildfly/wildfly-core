@@ -289,17 +289,17 @@ public class CliUtilsForPatching {
      */
     public static boolean rollbackCumulativePatch(boolean resetConfiguration) throws Exception {
         CLIWrapper cli = null;
-        final String infoCommand = "patch info --distribution=%s --json-output";
-        final String rollbackCommand = "patch rollback --patch-id=%s --distribution=%s --reset-configuration=%s";
+        final String infoCommand = "patch info --json-output";
+        final String rollbackCommand = "patch rollback --patch-id=%s --reset-configuration=%s";
         try {
             cli = new CLIWrapper(true);
-            String command = String.format(infoCommand, PatchingTestUtil.AS_DISTRIBUTION);
+            String command = infoCommand;
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
             String response = cli.readOutput();
             ModelNode responseNode = ModelNode.fromJSONString(response);
             String cumulativePatchId = responseNode.get("result").get("cumulative-patch-id").asString();
-            command = String.format(rollbackCommand, cumulativePatchId, PatchingTestUtil.AS_DISTRIBUTION, resetConfiguration);
+            command = String.format(rollbackCommand, cumulativePatchId, resetConfiguration);
             logger.info("----- sending command to CLI: " + command + " -----");
             return cli.sendLine(command, true);
         } finally {
