@@ -69,8 +69,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * Parser for the threads subsystem or for other subsystems that use pieces of the basic threads subsystem
  * xsd and resource structure.
  */
-public final class ThreadsParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>,
-        XMLElementWriter<SubsystemMarshallingContext> {
+public final class ThreadsParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>,XMLElementWriter<SubsystemMarshallingContext> {
 
     static final ThreadsParser INSTANCE = new ThreadsParser();
 
@@ -514,7 +513,6 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
                 }
                 case KEEPALIVE_TIME: {
                     PoolAttributeDefinitions.KEEPALIVE_TIME.parseAndSetParameter(op, reader);
-                    //op.get(KEEPALIVE_TIME).set(parseTimeSpec(reader));
                     break;
                 }
                 case THREAD_FACTORY: {
@@ -1111,4 +1109,8 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
             throws XMLStreamException {
         writer.writeAttribute(attr.getLocalName(), value.asString().toLowerCase(Locale.ENGLISH));
     }
+
+
+
+
 }

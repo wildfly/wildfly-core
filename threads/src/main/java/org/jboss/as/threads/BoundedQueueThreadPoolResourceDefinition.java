@@ -22,13 +22,15 @@
 
 package org.jboss.as.threads;
 
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -36,72 +38,82 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class BoundedQueueThreadPoolResourceDefinition extends SimpleResourceDefinition {
+public class BoundedQueueThreadPoolResourceDefinition extends PersistentResourceDefinition {
+    public static final BoundedQueueThreadPoolResourceDefinition BLOCKING = create(true);
+    public static final BoundedQueueThreadPoolResourceDefinition NON_BLOCKING = create(false);
+    private final BoundedQueueThreadPoolMetricsHandler metricsHandler;
+    private final BoundedQueueThreadPoolWriteAttributeHandler writeHandler;
+    private final boolean blocking;
 
+    @Deprecated
     public static BoundedQueueThreadPoolResourceDefinition create(boolean blocking, boolean registerRuntimeOnly) {
+        return create(blocking);
+    }
+
+    @Deprecated
+    public static BoundedQueueThreadPoolResourceDefinition create(boolean blocking, String type, boolean registerRuntimeOnly) {
+        return create(blocking, type);
+    }
+
+    @Deprecated
+    public static BoundedQueueThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
+                                                                  HandoffExecutorResolver handoffExecutorResolver,
+                                                                  ServiceName poolNameBase, boolean registerRuntimeOnly) {
+        return create(type, threadFactoryResolver, handoffExecutorResolver, poolNameBase);
+    }
+
+    public static BoundedQueueThreadPoolResourceDefinition create(boolean blocking) {
         if (blocking) {
             return create(CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
-                    null, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+                    null, ThreadsServices.EXECUTOR);
         } else {
             return create(CommonAttributes.BOUNDED_QUEUE_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
-                    ThreadsServices.STANDARD_HANDOFF_EXECUTOR_RESOLVER, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+                    ThreadsServices.STANDARD_HANDOFF_EXECUTOR_RESOLVER, ThreadsServices.EXECUTOR);
         }
     }
 
-    public static BoundedQueueThreadPoolResourceDefinition create(boolean blocking, String type, boolean registerRuntimeOnly) {
+    public static BoundedQueueThreadPoolResourceDefinition create(boolean blocking, String type) {
         if (blocking) {
-            return create(type, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, null, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+            return create(type, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, null, ThreadsServices.EXECUTOR);
         } else {
             return create(type, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, ThreadsServices.STANDARD_HANDOFF_EXECUTOR_RESOLVER,
-                    ThreadsServices.EXECUTOR, registerRuntimeOnly);
+                    ThreadsServices.EXECUTOR);
         }
     }
 
     public static BoundedQueueThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
                                                                   HandoffExecutorResolver handoffExecutorResolver,
-                                                                  ServiceName poolNameBase, boolean registerRuntimeOnly) {
+                                                                  ServiceName poolNameBase) {
         final boolean blocking = handoffExecutorResolver == null;
         final String resolverPrefix = blocking ? CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL : CommonAttributes.BOUNDED_QUEUE_THREAD_POOL;
         final BoundedQueueThreadPoolAdd addHandler = new BoundedQueueThreadPoolAdd(blocking, threadFactoryResolver, handoffExecutorResolver, poolNameBase);
         final OperationStepHandler removeHandler = new BoundedQueueThreadPoolRemove(addHandler);
-        return new BoundedQueueThreadPoolResourceDefinition(blocking, registerRuntimeOnly, type, poolNameBase, resolverPrefix, addHandler, removeHandler);
+        return new BoundedQueueThreadPoolResourceDefinition(blocking, type, poolNameBase, resolverPrefix, addHandler, removeHandler);
     }
 
-    private final boolean registerRuntimeOnly;
-    private final boolean blocking;
-    private final ServiceName serviceNameBase;
-
-    private BoundedQueueThreadPoolResourceDefinition(boolean blocking, boolean registerRuntimeOnly,
-                                                     String type, ServiceName serviceNameBase, String resolverPrefix, OperationStepHandler addHandler,
+    private BoundedQueueThreadPoolResourceDefinition(boolean blocking, String type, ServiceName serviceNameBase, String resolverPrefix, OperationStepHandler addHandler,
                                                      OperationStepHandler removeHandler) {
         super(PathElement.pathElement(type),
                 new ThreadPoolResourceDescriptionResolver(resolverPrefix, ThreadsExtension.RESOURCE_NAME, ThreadsExtension.class.getClassLoader()),
                 addHandler, removeHandler);
-        this.registerRuntimeOnly = registerRuntimeOnly;
+        metricsHandler = new BoundedQueueThreadPoolMetricsHandler(serviceNameBase);
+        writeHandler = new BoundedQueueThreadPoolWriteAttributeHandler(blocking, serviceNameBase);
         this.blocking = blocking;
-        this.serviceNameBase = serviceNameBase;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(PoolAttributeDefinitions.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        BoundedQueueThreadPoolWriteAttributeHandler writeHandler = new BoundedQueueThreadPoolWriteAttributeHandler(blocking, serviceNameBase);
         writeHandler.registerAttributes(resourceRegistration);
-        if (registerRuntimeOnly) {
-            new BoundedQueueThreadPoolMetricsHandler(serviceNameBase).registerAttributes(resourceRegistration);
-        }
+        metricsHandler.registerAttributes(resourceRegistration);
     }
 
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent) {
-        registerTransformers1_0(parent, CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL);
-        registerTransformers1_0(parent, CommonAttributes.BOUNDED_QUEUE_THREAD_POOL);
+    @Override
+    public Collection<AttributeDefinition> getAttributes() {
+        return Arrays.asList(writeHandler.attributes);
     }
 
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent, String type) {
-        parent.addChildResource(PathElement.pathElement(type))
-            .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, PoolAttributeDefinitions.ALLOW_CORE_TIMEOUT)
-                .addRejectCheck(KeepAliveTimeAttributeDefinition.TRANSFORMATION_CHECKER, PoolAttributeDefinitions.KEEPALIVE_TIME);
+    public boolean isBlocking() {
+        return blocking;
     }
-
 }
