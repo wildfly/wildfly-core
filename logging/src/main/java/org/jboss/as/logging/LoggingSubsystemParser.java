@@ -1376,6 +1376,14 @@ public class LoggingSubsystemParser implements XMLStreamConstants, XMLElementRea
                     parsePeriodicRotatingFileHandlerElement(reader, profileAddress, handlerOperations, handlerNames);
                     break;
                 }
+                case PERIODIC_SIZE_ROTATING_FILE_HANDLER: {
+                    if (namespace == Namespace.LOGGING_1_0 || namespace == Namespace.LOGGING_1_1 ||
+                            namespace == Namespace.LOGGING_1_2 || namespace == Namespace.LOGGING_1_3 ||
+                            namespace == Namespace.LOGGING_1_4 || namespace == Namespace.LOGGING_2_0)
+                        throw unexpectedElement(reader);
+                    parsePeriodicSizeRotatingHandlerElement(reader, profileAddress, handlerOperations, handlerNames);
+                    break;
+                }
                 case SIZE_ROTATING_FILE_HANDLER: {
                     parseSizeRotatingHandlerElement(reader, profileAddress, handlerOperations, handlerNames);
                     break;

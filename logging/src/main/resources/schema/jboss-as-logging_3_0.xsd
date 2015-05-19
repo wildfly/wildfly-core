@@ -97,6 +97,7 @@
             <xs:element name="console-handler" type="consoleHandlerType"/>
             <xs:element name="file-handler" type="fileHandlerType"/>
             <xs:element name="periodic-rotating-file-handler" type="periodicFileHandlerType"/>
+            <xs:element name="periodic-size-rotating-file-handler" type="periodicSizeFileHandlerType"/>
             <xs:element name="size-rotating-file-handler" type="sizeFileHandlerType"/>
             <xs:element name="async-handler" type="asyncHandlerType"/>
             <xs:element name="custom-handler" type="customHandlerType"/>
