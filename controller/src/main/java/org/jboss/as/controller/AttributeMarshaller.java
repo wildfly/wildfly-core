@@ -132,12 +132,17 @@ public abstract class AttributeMarshaller {
                         if(marshallSimpleTypeAsElement) {
                             valueType.marshallAsElement(handler, marshallDefault, writer);
                         } else {
-                            marshallAsAttribute(valueType, handler, marshallDefault, writer);
+                            valueType.getAttributeMarshaller().marshallAsAttribute(valueType, handler, marshallDefault, writer);
                         }
                     }
                 }
                 writer.writeEndElement();
             }
+        }
+
+        @Override
+        public boolean isMarshallableAsElement() {
+            return !marshallSimpleTypeAsElement;
         }
     }
 

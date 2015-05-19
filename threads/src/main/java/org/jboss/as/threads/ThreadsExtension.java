@@ -64,11 +64,12 @@ public class ThreadsExtension extends AbstractLegacyExtension {
 
         final boolean registerRuntimeOnly = context.isRuntimeOnlyRegistrationValid();
 
-        // Register the remoting subsystem
+        // Register the threads subsystem
         final SubsystemRegistration registration = context.registerSubsystem(THREADS, CURRENT_VERSION);
-        registration.registerXMLElementWriter(ThreadsParser.INSTANCE);
+        registration.registerXMLElementWriter(ThreadsParser2_0.INSTANCE);
 
-        // Remoting subsystem description and operation handlers
+        // Remoting threads description and operation handlers
+        @SuppressWarnings("deprecation")
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new ThreadSubsystemResourceDefinition(registerRuntimeOnly));
 
         return Collections.singleton(subsystem);
@@ -76,7 +77,8 @@ public class ThreadsExtension extends AbstractLegacyExtension {
 
     @Override
     protected void initializeLegacyParsers(ExtensionParsingContext context) {
-    context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser2_0.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_1.getUriString(), ThreadsParser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser.INSTANCE);
     }
 }
