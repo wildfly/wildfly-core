@@ -46,7 +46,7 @@ public class OperationRequestState extends DefaultParsingState {
             final HeaderListState headerList, final OutputTargetState outRedirect) {
         super(ID);
         //setDefaultHandler(new EnterStateCharacterHandler(nodeState));
-        setDefaultHandler(new LineBreakHandler(false, false){
+        setDefaultHandler(new LineBreakHandler(false){
             @Override
             public void doHandle(ParsingContext ctx) throws CommandFormatException {
                 final CharacterHandler handler = enterStateHandlers.getHandler(ctx.getCharacter());
