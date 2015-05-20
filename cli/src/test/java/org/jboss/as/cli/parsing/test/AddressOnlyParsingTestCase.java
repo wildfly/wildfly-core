@@ -689,4 +689,37 @@ public class AddressOnlyParsingTestCase {
             // expected
         }
     }
+
+    @Test
+    public void testSlashNodeName() throws Exception {
+
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+
+        parser.parse("/subsystem=undertow/server=default-server/host=default-host/location=\\/", handler);
+
+        OperationRequestAddress address = handler.getAddress();
+        assertNotNull(address);
+        Iterator<Node> nodes = address.iterator();
+        assertTrue(nodes.hasNext());
+        Node node = nodes.next();
+        assertEquals("subsystem", node.getType());
+        assertEquals("undertow", node.getName());
+
+        assertTrue(nodes.hasNext());
+        node = nodes.next();
+        assertEquals("server", node.getType());
+        assertEquals("default-server", node.getName());
+
+        assertTrue(nodes.hasNext());
+        node = nodes.next();
+        assertEquals("host", node.getType());
+        assertEquals("default-host", node.getName());
+
+        assertTrue(nodes.hasNext());
+        node = nodes.next();
+        assertEquals("location", node.getType());
+        assertEquals("/", node.getName());
+
+        assertFalse(nodes.hasNext());
+    }
 }
