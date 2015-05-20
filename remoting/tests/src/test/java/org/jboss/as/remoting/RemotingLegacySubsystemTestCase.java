@@ -74,6 +74,7 @@ import org.xnio.XnioWorker;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
  */
 public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
@@ -117,6 +118,25 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
         assertFalse(result.get(FAILURE_DESCRIPTION).toString(), result.hasDefined(FAILURE_DESCRIPTION));
 
         assertEquals(after, services.readWholeModel().get(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME, attrName).asInt());
+    }
+
+    @Test
+    public void testSubsystem12WithConnector() throws Exception {
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+                .setSubsystemXmlResource("remoting12-with-connector.xml").build();
+
+        ServiceName connectorServiceName = RemotingServices.serverServiceName("test-connector");
+        ServiceController<?> connectorService = services.getContainer().getRequiredService(connectorServiceName);
+        assertNotNull(connectorService);
+
+        ModelNode model = services.readWholeModel();
+        ModelNode subsystem = model.require(SUBSYSTEM).require(RemotingExtension.SUBSYSTEM_NAME);
+
+        ModelNode connector = subsystem.require(CommonAttributes.CONNECTOR).require("test-connector");
+        assertEquals(1, connector.require(CommonAttributes.PROPERTY).require("org.xnio.Options.WORKER_ACCEPT_THREADS").require(CommonAttributes.VALUE).asInt());
+        // the following 2 attributes are new in remoting 1.2 NS
+        assertEquals("myProto", connector.require(CommonAttributes.SASL_PROTOCOL).asString());
+        assertEquals("myServer", connector.require(CommonAttributes.SERVER_NAME).asString());
     }
 
     @Test
