@@ -40,16 +40,59 @@ import org.jboss.as.controller.PathAddress;
 public class RuntimeRequirementRegistration extends RequirementRegistration {
 
     private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
+    private final boolean runtimeOnly;
 
+    /**
+     * Creates a new requirement registration.
+     *
+     * @param requiredName the name of the required capability
+     * @param dependentName the name of the capability that requires {@code requiredName}
+     * @param dependentContext context in which the dependent capability exists
+     * @param registrationPoint point in the configuration model that triggered the requirement
+     */
     public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
                                           RegistrationPoint registrationPoint) {
-        super(requiredName, dependentName, dependentContext);
-        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
+        this(requiredName, dependentName, dependentContext, registrationPoint, false);
     }
 
+    /**
+     * Creates a new requirement registration.
+     *
+     * @param requiredName the name of the required capability
+     * @param dependentName the name of the capability that requires {@code requiredName}
+     * @param dependentContext context in which the dependent capability exists
+     * @param registrationPoint point in the configuration model that triggered the requirement
+     * @param runtimeOnly {@code true} if and only if the requirement is optional and runtime-only
+     *                              (i.e. not mandated by the persistent configuration), and
+     *                              therefore should not result in a configuration validation failure
+     *                              if it is not satisfied
+     */
+    public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
+                                          RegistrationPoint registrationPoint, boolean runtimeOnly) {
+        super(requiredName, dependentName, dependentContext);
+        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
+        this.runtimeOnly = runtimeOnly;
+    }
+
+    /**
+     * Copy constructor.
+     *
+     * @param toCopy the registration to copy.
+     */
     public RuntimeRequirementRegistration(RuntimeRequirementRegistration toCopy) {
         super(toCopy.getRequiredName(), toCopy.getDependentId());
         this.registrationPoints.putAll(toCopy.registrationPoints);
+        this.runtimeOnly = toCopy.runtimeOnly;
+    }
+
+    /**
+     * Gets whether the requirement is optional and runtime-only (i.e. not mandated by the persistent configuration),
+     * and therefore should not result in a configuration validation failure if it is not satisfied.
+     *
+     * @return {@code true} if the requirement is optional and runtime-only
+     */
+    public boolean isRuntimeOnly() {
+        return runtimeOnly;
     }
 
     /**

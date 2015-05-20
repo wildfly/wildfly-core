@@ -81,6 +81,7 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
         super(JMXExtension.SUBSYSTEM_NAME, new JMXExtension());
     }
 
+
     @Test
     public void testParseEmptySubsystem() throws Exception {
         //Parse the subsystem xml into operations
@@ -550,7 +551,8 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
                 "   <expose-expression-model domain-name=\"jboss.EXPRESSION\"/>" +
                 "   <remoting-connector />" +
                 "</subsystem>";
-        KernelServices servicesA = createKernelServicesBuilder(null).setSubsystemXml(subsystemXml).build();
+        AdditionalInitialization additionalInit = new BaseAdditionalInitialization();
+        KernelServices servicesA = createKernelServicesBuilder(additionalInit).setSubsystemXml(subsystemXml).build();
         //Get the model and the describe operations from the first controller
         ModelNode modelA = servicesA.readWholeModel();
         ModelNode describeOp = new ModelNode();
@@ -565,7 +567,7 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
 
         //Install the describe options from the first controller into a second controller
-        KernelServices servicesB = createKernelServicesBuilder(null).setBootOperations(operations).build();
+        KernelServices servicesB = createKernelServicesBuilder(additionalInit).setBootOperations(operations).build();
         ModelNode modelB = servicesB.readWholeModel();
 
         //Make sure the models from the two controllers are identical
@@ -635,7 +637,8 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
-                                        ManagementResourceRegistration rootRegistration) {
+                                        ManagementResourceRegistration rootRegistration,
+                                        RuntimeCapabilityRegistry capabilityRegistry) {
             rootRegistration.registerReadOnlyAttribute(ServerEnvironmentResourceDescription.LAUNCH_TYPE, new OperationStepHandler() {
 
                 @Override
@@ -643,6 +646,8 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
                     context.getResult().set(TYPE_STANDALONE);
                 }
             });
+
+            AdditionalInitialization.registerCapabilities(capabilityRegistry, RemotingConnectorResource.REMOTING_CAPABILITY);
         }
 
         @Override
@@ -676,6 +681,7 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
             Resource testFileHandler = Resource.Factory.create();
             testFileHandler.getModel().setEmptyObject();
             auditLog.registerChild(PathElement.pathElement(FILE_HANDLER, "test"), testFileHandler);
+
         }
     }
 }

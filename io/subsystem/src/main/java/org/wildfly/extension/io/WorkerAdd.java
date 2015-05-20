@@ -38,6 +38,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -47,6 +48,7 @@ import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.OptionMap;
 import org.xnio.Options;
+import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -55,7 +57,7 @@ class WorkerAdd extends AbstractAddStepHandler {
     static final WorkerAdd INSTANCE = new WorkerAdd();
 
     private WorkerAdd() {
-        super(ATTRIBUTES);
+        super(WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY, ATTRIBUTES);
     }
 
     private static int getMaxDescriptorCount() {
@@ -146,7 +148,7 @@ class WorkerAdd extends AbstractAddStepHandler {
         Resource resource = context.readResourceFromRoot(address.subAddress(0, address.size() - 1));
         ModelNode workers = Resource.Tools.readModel(resource).get(IOExtension.WORKER_PATH.getKey());
         int allWorkerCount = workers.asList().size();
-        final String name = address.getLastElement().getValue();
+        final String name = context.getCurrentAddressValue();
         final OptionMap.Builder builder = OptionMap.builder();
 
         for (OptionAttributeDefinition attr : WorkerResourceDefinition.ATTRIBUTES) {
@@ -187,7 +189,9 @@ class WorkerAdd extends AbstractAddStepHandler {
         }
 
         final WorkerService workerService = new WorkerService(builder.getMap());
-        context.getServiceTarget().addService(IOServices.WORKER.append(name), workerService)
+
+        RuntimeCapability<Void> dynamicCapability = RuntimeCapability.fromBaseCapability(WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY, name);
+        context.getServiceTarget().addService(dynamicCapability.getCapabilityServiceName(XnioWorker.class), workerService)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
     }

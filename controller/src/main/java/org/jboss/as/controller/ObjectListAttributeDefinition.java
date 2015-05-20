@@ -72,6 +72,24 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         return result;
     }
 
+    @Override
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (attributeValue.isDefined()) {
+            for (ModelNode element : attributeValue.asList()) {
+                valueType.addCapabilityRequirements(context, element);
+            }
+        }
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (attributeValue.isDefined()) {
+            for (ModelNode element : attributeValue.asList()) {
+                valueType.removeCapabilityRequirements(context, element);
+            }
+        }
+    }
+
 
     @Override
     protected void addValueTypeDescription(final ModelNode node, final ResourceBundle bundle) {
@@ -80,12 +98,12 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
 
     @Override
     protected void addAttributeValueTypeDescription(final ModelNode node, final ResourceDescriptionResolver resolver, final Locale locale, final ResourceBundle bundle) {
-        addValueTypeDescription(node, getName(), bundle, false,resolver,locale);
+        addValueTypeDescription(node, getName(), bundle, false, resolver, locale);
     }
 
     @Override
     protected void addOperationParameterValueTypeDescription(final ModelNode node, final String operationName, final ResourceDescriptionResolver resolver, final Locale locale, final ResourceBundle bundle) {
-        addValueTypeDescription(node, getName(), bundle, true,resolver,locale);
+        addValueTypeDescription(node, getName(), bundle, true, resolver, locale);
     }
 
     @Override

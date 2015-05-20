@@ -641,6 +641,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+            return false;
+        }
+
+        @Override
         public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
             // no-op;
         }
@@ -657,6 +662,11 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+            return null;
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
             return null;
         }
 

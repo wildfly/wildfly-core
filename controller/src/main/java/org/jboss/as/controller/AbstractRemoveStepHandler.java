@@ -33,6 +33,8 @@ import java.util.Set;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -111,13 +113,28 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
      *
      * @param context the context. Will not be {@code null}
      * @param operation the operation that is executing Will not be {@code null}
-     * @param resource the resource that has been added. Will <strong>not</strong> reflect any updates made by
+     * @param resource the resource that will be removed. Will <strong>not</strong> reflect any updates made by
      * {@link #performRemove(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)} as this method
      *                 is invoked before that method is. Will not be {@code null}
      */
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         for (RuntimeCapability capability : capabilities) {
-            context.deregisterCapability(capability.getName());
+            if (capability.isDynamicallyNamed()) {
+                context.deregisterCapability(capability.getDynamicName(context.getCurrentAddressValue()));
+            } else {
+                context.deregisterCapability(capability.getName());
+            }
+        }
+        ModelNode model = resource.getModel();
+        ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
+        for (String attr : mrr.getAttributeNames(PathAddress.EMPTY_ADDRESS)) {
+            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
+            if (aa != null) {
+                AttributeDefinition ad = aa.getAttributeDefinition();
+                if (ad != null && model.hasDefined(ad.getName())) {
+                    ad.removeCapabilityRequirements(context, model.get(ad.getName()));
+                }
+            }
         }
     }
 

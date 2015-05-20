@@ -113,6 +113,28 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (attributeValue.isDefined()) {
+            for (AttributeDefinition fieldType : valueTypes) {
+                if (attributeValue.hasDefined(fieldType.getName())) {
+                    fieldType.addCapabilityRequirements(context, attributeValue.get(fieldType.getName()));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (attributeValue.isDefined()) {
+            for (AttributeDefinition fieldType : valueTypes) {
+                if (attributeValue.hasDefined(fieldType.getName())) {
+                    fieldType.removeCapabilityRequirements(context, attributeValue.get(fieldType.getName()));
+                }
+            }
+        }
+    }
+
 
     @Override
     public ModelNode addResourceAttributeDescription(ResourceBundle bundle, String prefix, ModelNode resourceDescription) {

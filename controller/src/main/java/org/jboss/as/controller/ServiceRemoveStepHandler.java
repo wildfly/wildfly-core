@@ -1,5 +1,6 @@
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -16,9 +17,19 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
     private final ServiceName baseServiceName;
     private final AbstractAddStepHandler addOperation;
 
+    public ServiceRemoveStepHandler(final ServiceName baseServiceName, final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
+        super(unavailableCapabilities);
+        this.baseServiceName = baseServiceName;
+        this.addOperation = addOperation;
+    }
+
     public ServiceRemoveStepHandler(final ServiceName baseServiceName, final AbstractAddStepHandler addOperation) {
         this.baseServiceName = baseServiceName;
         this.addOperation = addOperation;
+    }
+
+    protected ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
+        this(null, addOperation, unavailableCapabilities);
     }
 
     protected ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation) {

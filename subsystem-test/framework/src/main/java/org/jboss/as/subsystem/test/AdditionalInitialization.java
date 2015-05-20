@@ -115,7 +115,7 @@ public class AdditionalInitialization extends AdditionalParsers {
      */
     public static void registerCapabilities(RuntimeCapabilityRegistry capabilityRegistry, String... capabilities) {
         for (final String capabilityName : capabilities) {
-            RuntimeCapability<Void> capability = new RuntimeCapability<Void>(capabilityName, null);
+            RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(capabilityName).build();
             capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
                     new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
@@ -141,8 +141,43 @@ public class AdditionalInitialization extends AdditionalParsers {
         }
     }
 
+    /**
+     * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability} with the
+     * specified service type for each of the given capability names. They will be registered against
+     * {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * and with the root resource and no specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
+     *
+     * @param capabilityRegistry registry to use
+     * @param capabilities map of names of capabilities to the type exposed by the MSC service the capability installs
+     */
+    public static void registerServiceCapabilities(RuntimeCapabilityRegistry capabilityRegistry, final Map<String, Class> capabilities) {
+        for (Map.Entry<String, Class> entry : capabilities.entrySet()) {
+            final String capabilityName = entry.getKey();
+            RuntimeCapability<?> capability = RuntimeCapability.Builder.of(capabilityName, entry.getValue()).build();
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+                    new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+        }
+    }
+
+    /**
+     * Simple utility method to register a single {@link org.jboss.as.controller.capability.RuntimeCapability} with the
+     * specified service type for the given capability name. It will be registered against
+     * {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * and with the root resource and no specific attribute as its {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
+     *
+     * @param capabilityRegistry registry to use
+     * @param name the names of they capability
+     * @param serviceType the type exposed by the MSC service the capability installs
+     */
+    public static void registerServiceCapability(RuntimeCapabilityRegistry capabilityRegistry, String name, Class serviceType) {
+        RuntimeCapability<?> capability = RuntimeCapability.Builder.of(name, serviceType).build();
+        capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+                new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+    }
+
     private static <T> RuntimeCapability<T> createCapability(final String capabilityName, final T api) {
-        return new RuntimeCapability<T>(capabilityName, api);
+        return RuntimeCapability.Builder.of(capabilityName, api).build();
     }
 
     /**

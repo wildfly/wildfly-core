@@ -27,17 +27,21 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.remoting3.Endpoint;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -63,11 +67,17 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
             WORKER_WRITE_THREADS
     };
 
+    static final String IO_WORKER_CAPABILITY = "org.wildfly.extension.io.worker";
+    static final RuntimeCapability<Void> REMOTING_ENDPOINT_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.extension.remoting.endpoint", Endpoint.class).build();
+
     public RemotingSubsystemRootResource() {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME),
                 RemotingSubsystemAdd.INSTANCE,
-                RemotingSubsystemRemove.INSTANCE);
+                new ReloadRequiredRemoveStepHandler(REMOTING_ENDPOINT_CAPABILITY),
+                OperationEntry.Flag.RESTART_NONE,
+                OperationEntry.Flag.RESTART_ALL_SERVICES);
     }
 
     @Override

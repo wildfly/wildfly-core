@@ -101,6 +101,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
@@ -1224,6 +1225,7 @@ class ModelControllerImpl implements ModelController {
 
         private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
         private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
+        private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
         private final boolean forServer;
         private final Map<CapabilityContext, Set<CapabilityContext>> satisfiedByMap;
 
@@ -1286,10 +1288,13 @@ class ModelControllerImpl implements ModelController {
                 throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
                         dependentId.getContext().getName());
             }
-            Map<String, RuntimeRequirementRegistration> dependents = requirements.get(dependentId);
+            Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap =
+                    requirement.isRuntimeOnly() ? runtimeOnlyRequirements : requirements;
+
+            Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(dependentId);
             if (dependents == null) {
                 dependents = new HashMap<>();
-                requirements.put(dependentId, dependents);
+                requirementMap.put(dependentId, dependents);
             }
             RuntimeRequirementRegistration existing = dependents.get(requirement.getRequiredName());
             if (existing == null) {
@@ -1301,7 +1306,10 @@ class ModelControllerImpl implements ModelController {
 
         @Override
         public synchronized void removeCapabilityRequirement(RuntimeRequirementRegistration requirementRegistration) {
-            removeRequirement(requirementRegistration);
+            // We don't know if this got registered as an runtime-only requirement or a hard one
+            // so clean it from both maps
+            removeRequirement(requirementRegistration, false);
+            removeRequirement(requirementRegistration, true);
         }
 
         @Override
@@ -1313,11 +1321,19 @@ class ModelControllerImpl implements ModelController {
             if (candidate != null) {
                 RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
                 if (candidate.removeRegistrationPoint(rp)) {
-                    for (String req : candidate.getCapability().getRequirements()) {
-                        removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp));
+                    Map<String, RuntimeRequirementRegistration> candidateRequirements = requirements.get(capabilityId);
+                    if (candidateRequirements != null) {
+                        // Iterate over array to avoid ConcurrentModificationException
+                        for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
+                            removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), false);
+                        }
                     }
-                    for (String req : candidate.getCapability().getOptionalRequirements()) {
-                        removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp));
+                    candidateRequirements = runtimeOnlyRequirements.get(capabilityId);
+                    if (candidateRequirements != null) {
+                        // Iterate over array to avoid ConcurrentModificationException
+                        for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
+                            removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), true);
+                        }
                     }
                     if (candidate.getRegistrationPointCount() == 0) {
                         removed = capabilities.remove(capabilityId);
@@ -1327,8 +1343,9 @@ class ModelControllerImpl implements ModelController {
             return removed;
         }
 
-        private synchronized void removeRequirement(RuntimeRequirementRegistration requirementRegistration) {
-            Map<String, RuntimeRequirementRegistration> dependents = requirements.get(requirementRegistration.getDependentId());
+        private synchronized void removeRequirement(RuntimeRequirementRegistration requirementRegistration, boolean optional) {
+            Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap = optional ? runtimeOnlyRequirements : requirements;
+            Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(requirementRegistration.getDependentId());
             if (dependents != null) {
                 RuntimeRequirementRegistration rrr = dependents.get(requirementRegistration.getRequiredName());
                 if (rrr != null) {
@@ -1337,7 +1354,7 @@ class ModelControllerImpl implements ModelController {
                         dependents.remove(requirementRegistration.getRequiredName());
                     }
                     if (dependents.size() == 0) {
-                        requirements.remove(requirementRegistration.getDependentId());
+                        requirementMap.remove(requirementRegistration.getDependentId());
                     }
                 }
             }
@@ -1350,6 +1367,21 @@ class ModelControllerImpl implements ModelController {
 
         @Override
         public synchronized  <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext capabilityContext, Class<T> apiType) {
+            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, capabilityContext);
+            Object api = reg.getCapability().getRuntimeAPI();
+            if (api == null) {
+                throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
+            }
+            return apiType.cast(api);
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class serviceType) {
+            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
+            return reg.getCapability().getCapabilityServiceName(serviceType);
+        }
+
+        private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
             CapabilityId capabilityId = findSatisfactoryCapability(capabilityName, capabilityContext);
             if (capabilityId == null) {
                 if (forServer) {
@@ -1358,28 +1390,30 @@ class ModelControllerImpl implements ModelController {
                     throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
                 }
             }
-            RuntimeCapabilityRegistration reg = capabilities.get(capabilityId);
-            Object api = reg.getCapability().getRuntimeAPI();
-            if (api == null) {
-                throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
-            }
-            return apiType.cast(api);
+            return capabilities.get(capabilityId);
         }
 
         synchronized CapabilityRegistryImpl copy() {
             CapabilityRegistryImpl result = new CapabilityRegistryImpl(forServer);
             result.capabilities.putAll(this.capabilities);
-            for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : this.requirements.entrySet()) {
-                Map<String, RuntimeRequirementRegistration> mapCopy = new HashMap<>();
-                for (Map.Entry<String, RuntimeRequirementRegistration> innerEntry : entry.getValue().entrySet()) {
-                    mapCopy.put(innerEntry.getKey(), new RuntimeRequirementRegistration(innerEntry.getValue()));
-                }
-                result.requirements.put(entry.getKey(), mapCopy);
-            }
+            copyRequirements(requirements, result.requirements);
+            copyRequirements(runtimeOnlyRequirements, result.runtimeOnlyRequirements);
             if (!forServer) {
                 result.satisfiedByMap.putAll(this.satisfiedByMap);
             }
             return result;
+        }
+
+        private static void copyRequirements(Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> source,
+                                             Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> dest) {
+            for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : source.entrySet()) {
+                Map<String, RuntimeRequirementRegistration> mapCopy = new HashMap<>();
+                for (Map.Entry<String, RuntimeRequirementRegistration> innerEntry : entry.getValue().entrySet()) {
+                    mapCopy.put(innerEntry.getKey(), new RuntimeRequirementRegistration(innerEntry.getValue()));
+                }
+                dest.put(entry.getKey(), mapCopy);
+            }
+
         }
 
         synchronized Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {

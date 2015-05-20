@@ -32,13 +32,18 @@ import java.util.Map;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.xnio.Options;
+import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
+
+    static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.extension.io.worker", true, XnioWorker.class).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
             .setDefaultValue(new ModelNode(2))
@@ -83,7 +88,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         super(IOExtension.WORKER_PATH,
                 IOExtension.getResolver(Constants.WORKER),
                 WorkerAdd.INSTANCE,
-                ReloadRequiredRemoveStepHandler.INSTANCE
+                new ReloadRequiredRemoveStepHandler(IO_WORKER_RUNTIME_CAPABILITY)
         );
     }
 

@@ -45,6 +45,8 @@ import org.jboss.dmr.ModelType;
  */
 public class SimpleAttributeDefinition extends AttributeDefinition {
 
+    private final CapabilityReferenceRecorder requirementRecorder;
+
     // NOTE: Standards for creating a constructor variant are:
     // 1) Expected to be a common use case; no one-offs.
     // 2) Max 4 parameters, or 5 only if the fifth is "AttributeAccess.Flag... flags"
@@ -65,6 +67,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                 (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
                 (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
                 (Boolean) null, (AttributeParser) null);
+        this.requirementRecorder = null;
     }
 
     /**
@@ -80,6 +83,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                 (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
                 (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
                 (Boolean) null, (AttributeParser) null, flags);
+        this.requirementRecorder = null;
     }
 
     /**
@@ -95,6 +99,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                 (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
                 (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
                 (Boolean) null, (AttributeParser) null);
+        this.requirementRecorder = null;
     }
 
     /**
@@ -112,6 +117,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                 (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
                 (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
                 (Boolean) null, (AttributeParser) null, flags);
+        this.requirementRecorder = null;
     }
 
     /**
@@ -127,6 +133,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                 (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
                 (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
                 (Boolean) null, (AttributeParser) null);
+        this.requirementRecorder = null;
     }
 
     /**
@@ -144,10 +151,16 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
                 (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
                 (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
                 (Boolean) null, (AttributeParser) null, flags);
+        this.requirementRecorder = null;
     }
 
     protected SimpleAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends SimpleAttributeDefinition> builder) {
         super(builder);
+        if (builder instanceof SimpleAttributeDefinitionBuilder) {
+            this.requirementRecorder = ((SimpleAttributeDefinitionBuilder) builder).getReferenceRecorder();
+        } else {
+            this.requirementRecorder = null;
+        }
     }
 
     /**
@@ -224,7 +237,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @throws javax.xml.stream.XMLStreamException if {@code writer} throws an exception
      */
     public void marshallAsAttribute(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsAttribute(this,resourceModel,marshallDefault,writer);
+        attributeMarshaller.marshallAsAttribute(this, resourceModel, marshallDefault, writer);
     }
 
     /**
@@ -236,7 +249,35 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     @Override
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsElement(this,resourceModel,marshallDefault,writer);
+        attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+    }
+
+    @Override
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (requirementRecorder != null) {
+            if (!attributeValue.isDefined()) {
+                attributeValue = getDefaultValue();
+            }
+            // We can't process expressions, and there's no point processing undefined
+            if (attributeValue != null && attributeValue.isDefined()
+                    && attributeValue.getType() != ModelType.EXPRESSION) {
+                requirementRecorder.addCapabilityRequirements(context, getName(), attributeValue.asString());
+            }
+        }
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        if (requirementRecorder != null) {
+            if (!attributeValue.isDefined()) {
+                attributeValue = getDefaultValue();
+            }
+            // We can't process expressions, and there's no point processing undefined
+            if (attributeValue != null && attributeValue.isDefined()
+                    && attributeValue.getType() != ModelType.EXPRESSION) {
+                requirementRecorder.removeCapabilityRequirements(context, getName(), attributeValue.asString());
+            }
+        }
     }
 
     static ModelNode parse(AttributeDefinition attribute, ParameterValidator validator, final String value) throws OperationFailedException  {
@@ -244,4 +285,5 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
         validator.validateParameter(attribute.getXmlName(), node);
         return node;
     }
+
 }

@@ -350,6 +350,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+        throw readOnlyContext();
+    }
+
+    @Override
     public void requireOptionalCapability(String required, String dependent, String attribute) {
         throw readOnlyContext();
     }
@@ -366,6 +371,11 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityName, Class<?> type) {
         throw readOnlyContext();
     }
 }

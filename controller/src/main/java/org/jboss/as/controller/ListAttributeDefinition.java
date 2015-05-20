@@ -53,7 +53,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     @Deprecated
     @SuppressWarnings("deprecation")
     public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
-        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null,false, null,
+        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null,
                 null, null, null, true, (AttributeAccess.Flag[]) null);
     }
 
@@ -61,7 +61,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     @SuppressWarnings("deprecation")
     public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator,
                                    final AttributeAccess.Flag... flags) {
-        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null,false, null, null, null, null, true, flags);
+        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null, null, null, null, true, flags);
     }
 
     private ListAttributeDefinition(final String name, final String xmlName, final boolean allowNull, final boolean allowExpressions,

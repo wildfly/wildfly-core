@@ -324,7 +324,13 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     @Override
     public boolean requestOptionalCapability(String required, String dependent, String attribute) {
         // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
-        return primaryContext.requestOptionalCapability(required, dependent, activeStep, attribute);
+        return primaryContext.requestOptionalCapability(required, dependent, false, activeStep, attribute);
+    }
+
+    @Override
+    public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
+        return primaryContext.requestOptionalCapability(required, dependent, true, activeStep, attribute);
     }
 
     @Override
@@ -348,6 +354,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     @Override
     public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
         return primaryContext.getCapabilityRuntimeAPI(capabilityName, apiType, activeStep);
+    }
+
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityName, Class<?> type) {
+        return primaryContext.getCapabilityServiceName(capabilityName, type, activeStep);
     }
 
     @Override

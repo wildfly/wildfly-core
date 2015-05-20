@@ -844,6 +844,36 @@ public abstract class AttributeDefinition {
     }
 
     /**
+     * Based on the given attribute value, add capability requirements. If this definition
+     * is for an attribute whose value is or contains a reference to the name of some capability,
+     * this method should record the addition of a requirement for the capability.
+     * <p>
+     * This is a no-op in this base class. Subclasses that support attribute types that can represent
+     * capability references should override this method.
+     *
+     * @param context the operation context
+     * @param attributeValue the value of the attribute described by this object
+     */
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        // no-op;
+    }
+
+    /**
+     * Based on the given attribute value, remove capability requirements. If this definition
+     * is for an attribute whose value is or contains a reference to the name of some capability,
+     * this method should record the removal of a requirement for the capability.
+     * <p>
+     * This is a no-op in this base class. Subclasses that support attribute types that can represent
+     * capability references should override this method.
+     *
+     * @param context the operation context
+     * @param attributeValue the value of the attribute described by this object
+     */
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        // no-op
+    }
+
+    /**
      * Adds the allowed values. Override for attributes who should not use the allowed values.
      *
      * @param result the node to add the allowed values to

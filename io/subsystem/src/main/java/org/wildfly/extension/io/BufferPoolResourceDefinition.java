@@ -38,14 +38,20 @@ import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
+import org.xnio.Pool;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
 class BufferPoolResourceDefinition extends PersistentResourceDefinition {
+
+    static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.extension.io.buffer-pool", true, Pool.class).build();
+
     private static final int defaultBufferSize;
     private static final int defaultBuffersPerRegion;
     private static final boolean defaultDirectBuffers;
@@ -99,7 +105,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
         super(IOExtension.BUFFER_POOL_PATH,
                 IOExtension.getResolver(Constants.BUFFER_POOL),
                 new BufferPoolAdd(),
-                ReloadRequiredRemoveStepHandler.INSTANCE
+                new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY)
         );
     }
 
@@ -111,7 +117,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
     private static class BufferPoolAdd extends AbstractAddStepHandler {
 
         private BufferPoolAdd() {
-            super(BufferPoolResourceDefinition.ATTRIBUTES);
+            super(BufferPoolResourceDefinition.IO_POOL_RUNTIME_CAPABILITY, BufferPoolResourceDefinition.ATTRIBUTES);
         }
 
         @Override
