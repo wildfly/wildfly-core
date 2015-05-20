@@ -133,7 +133,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         CommandContext ctx = CLITestUtil.getCommandContext();
         try {
             ctx.connectController();
-            ctx.handle("patch apply " + zippedPatch.getAbsolutePath() + " --distribution=" + PatchingTestUtil.AS_DISTRIBUTION);
+            ctx.handle("patch apply " + zippedPatch.getAbsolutePath());
         } catch (Exception e) {
             ctx.terminateSession();
             throw e;
@@ -180,7 +180,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
         controller.start();
         try {
-            ctx.handle("patch apply " + zippedPatch2.getAbsolutePath() + " --distribution=" + PatchingTestUtil.AS_DISTRIBUTION);
+            ctx.handle("patch apply " + zippedPatch2.getAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
             ctx.terminateSession();
@@ -199,7 +199,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
         controller.start();
         try {
-            ctx.handle("patch rollback --reset-configuration=false --distribution=" + PatchingTestUtil.AS_DISTRIBUTION);
+            ctx.handle("patch rollback --reset-configuration=false");
         } catch (Exception e) {
             ctx.terminateSession();
             throw e;
@@ -218,7 +218,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
             assertPatchElements(baseModuleDir, new String[]{patchElementId}, false);
             assertPatchElements(baseBundleDir, new String[]{patchElementId}, false);
 
-            ctx.handle("patch rollback --reset-configuration=false --distribution=" + PatchingTestUtil.AS_DISTRIBUTION);
+            ctx.handle("patch rollback --reset-configuration=false");
         } catch (Exception e) {
             ctx.terminateSession();
             throw e;
