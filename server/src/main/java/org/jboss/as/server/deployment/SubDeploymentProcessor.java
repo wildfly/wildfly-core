@@ -47,8 +47,10 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ResourceRoot deploymentResourceRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
 
-        if(deploymentResourceRoot.getRoot().isDirectory()) {
-            ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
+        if(deploymentUnit.getParent() != null && ExplodedDeploymentMarker.isExplodedDeployment(deploymentUnit.getParent())) {
+            if (deploymentResourceRoot.getRoot().isDirectory()) {
+                ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
+            }
         }
 
         final ServiceTarget serviceTarget = phaseContext.getServiceTarget();
