@@ -46,6 +46,8 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 
 /**
+ * Tests ordered child resources on reconnect
+ *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class OrderedChildResourceScenario extends ReconnectTestScenario {
@@ -66,6 +68,7 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
 
     //Just to know how much was initialised in the setup method, so we know what to tear down
     private int initialised = 0;
+
 
     @Override
     void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {

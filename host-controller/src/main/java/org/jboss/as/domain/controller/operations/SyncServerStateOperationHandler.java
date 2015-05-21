@@ -131,10 +131,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         final Map<String, Boolean> serverStateChanges = new HashMap<>();
         for (ModelNode operation : operations) {
             PathAddress addr = PathAddress.pathAddress(operation.get(OP_ADDR));
-            operation = contentDownloader.checkContent(operation, addr);
-            if (!operation.isDefined()) {
-                continue;
-            }
+            contentDownloader.checkContent(operation, addr);
 
             Map<Set<ServerIdentity>, ModelNode> serverMap = resolver.getServerOperations(context, operation, addr);
             for (Map.Entry<Set<ServerIdentity>, ModelNode> entry : serverMap.entrySet()) {
@@ -163,9 +160,9 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         private final ModelNode endRoot;
         private final Map<String, Set<String>> serversByGroup;
         private final Set<String> affectedGroups = new HashSet<>();
-        private final Map<String, Set<ContentReference>> deploymentHashes = new HashMap<String, Set<ContentReference>>();
+        private final Map<String, Set<ContentReference>> deploymentHashes = new HashMap<>();
         private final Set<String> relevantDeployments = new HashSet<String>();
-        private final Set<ContentReference> requiredContent = new HashSet<ContentReference>();
+        private final Set<ContentReference> requiredContent = new HashSet<>();
 
         private boolean updateRolloutPlans;
         private byte[] rolloutPlansHash;
@@ -178,14 +175,14 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             serversByGroup =  getOurServerGroups(hostModel);
         }
 
-        ModelNode checkContent(ModelNode operation, PathAddress operationAddress) {
+        void checkContent(ModelNode operation, PathAddress operationAddress) {
             if (!operation.get(OP).asString().equals(ADD) || operationAddress.size() == 0) {
-                return operation;
+                return;
             }
             final PathElement firstElement = operationAddress.getElement(0);
             final String contentType = firstElement.getKey();
             if (contentType == null) {
-                return operation;
+                return;
             }
             if (operationAddress.size() == 1) {
                 switch (contentType) {
@@ -202,10 +199,9 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                                 }
                             }
                         }
-                        makeExistingDeploymentUpdatedAffected(firstElement,operation);
+                        makeExistingDeploymentUpdatedAffected(firstElement, operation);
                         break;
                     case DEPLOYMENT_OVERLAY:
-                        //TODO
                         break;
                     case MANAGEMENT_CLIENT_CONTENT:
                         if (firstElement.getValue().equals(ROLLOUT_PLANS)) {
@@ -218,17 +214,21 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                         }
                         break;
                     default:
-                        return operation;
+                        return;
                 }
-            } else if (operationAddress.size() == 2 && firstElement.getKey().equals(SERVER_GROUP) &&
+            } else if (operationAddress.size() == 2) {
+                if( firstElement.getKey().equals(SERVER_GROUP) &&
                     serversByGroup.containsKey(firstElement.getValue())) {
-                PathElement secondElement = operationAddress.getElement(1);
-                if (secondElement.getKey().equals(DEPLOYMENT)) {
-                    relevantDeployments.add(secondElement.getValue());
-                    affectedGroups.add(firstElement.getValue());
+                    PathElement secondElement = operationAddress.getElement(1);
+                    if (secondElement.getKey().equals(DEPLOYMENT)) {
+                        relevantDeployments.add(secondElement.getValue());
+                        affectedGroups.add(firstElement.getValue());
+                    }
+                } else if (firstElement.getKey().equals(DEPLOYMENT_OVERLAY)) {
+                    requiredContent.add(ModelContentReference.fromModelAddress(operationAddress, operation.get(CONTENT).asBytes()));
                 }
             }
-            return operation;
+            return;
         }
 
         private void makeExistingDeploymentUpdatedAffected(PathElement deploymentElement, ModelNode operation) {

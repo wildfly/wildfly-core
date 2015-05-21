@@ -593,7 +593,7 @@ public abstract class AbstractControllerTestBase {
 
         @Override
         public boolean syncContent(ContentReference reference) {
-            return false;
+            return true;
         }
 
         @Override

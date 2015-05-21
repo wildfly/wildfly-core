@@ -3,6 +3,7 @@ package org.jboss.as.domain.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BOOT_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
@@ -28,14 +29,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -100,7 +98,6 @@ import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 import org.junit.Assert;
 import org.junit.Test;
-import org.xnio.IoUtils;
 
 /**
  * Port of ApplyRemoteMasterDomainModelHandler to work with syncing using the operations.
@@ -123,8 +120,6 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     private volatile Resource rootResource;
     private final Map<String, MockServerProxy> serverProxies;
     private volatile TestSyncRepository repository = new TestSyncRepository();
-
-    private volatile Resource updatedResource;
 
     public SyncModelServerStateTestCase() {
         super("slave", ProcessType.HOST_CONTROLLER, true);
@@ -269,10 +264,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         executeTriggerSyncOperation(root);
         //Don't bother checking here since it is the same as testAddDeploymentWithGroups()
 
-        //Reset the server proxies, simulating a reload
-        for (MockServerProxy proxy : serverProxies.values()) {
-            proxy.state = "running";
-        }
+        reloadServers();
 
         byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
         replaceRootDeployment(root, "test.jar", bytes);
@@ -408,7 +400,178 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         Assert.assertFalse(rolloutPlans.hasDefined(HASH));
         Assert.assertFalse(rolloutPlans.hasDefined(CONTENT));
     }
-    
+
+    @Test
+    public void testDeploymentOverlayNoGroups() throws Exception {
+        Resource root = rootResource.clone();
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeploymentOverlay(root, "test", "/some/path", bytes);
+        //No servers should be affected
+        for (MockServerProxy proxy : serverProxies.values()) {
+            Assert.assertEquals("running", proxy.state);
+        }
+
+        executeTriggerSyncOperation(root);
+
+        for (MockServerProxy proxy : serverProxies.values()) {
+            //All servers will be affected https://issues.jboss.org/browse/WFCORE-710
+            //Assert.assertEquals("running", proxy.state);
+            Assert.assertEquals("reload-required", proxy.state);
+        }
+        repository.checkAddedReferences(bytes, PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test").append(CONTENT, "/some/path"));
+
+        //Check deployment-overlay exists in model, and that nothing exists in the server group
+        ModelNode model = readResourceRecursive();
+        checkDeploymentOverlayBytes(model, "test", "/some/path", bytes);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT_OVERLAY));
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT_OVERLAY));
+
+        //Add a reference and sync again
+        registerServerGroupDeploymentOverlay(root, "group-two", "test", "test.jar");
+        repository.clear();
+        reloadServers();
+        executeTriggerSyncOperation(root);
+
+        Assert.assertEquals("running", serverProxies.get("server-one").state);
+        Assert.assertEquals("running", serverProxies.get("server-two").state);
+        Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-three").state);
+
+        Assert.assertTrue(repository.isEmpty());
+
+        model = readResourceRecursive();
+        checkDeploymentOverlayBytes(model, "test", "/some/path", bytes);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT_OVERLAY));
+        Assert.assertTrue(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT_OVERLAY, "test", DEPLOYMENT, "test.jar"));
+    }
+
+    @Test
+    public void testAddDeploymentOverlayWithGroups() throws Exception {
+        final Resource root = rootResource.clone();
+        final byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeploymentOverlay(root, "test", "/some/path", bytes);
+        registerServerGroupDeploymentOverlay(root, "group-two", "test", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        //All servers will be affected https://issues.jboss.org/browse/WFCORE-710
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        //Assert.assertEquals("running", serverProxies.get("server-three").state);
+        for (MockServerProxy proxy : serverProxies.values()) {
+            //Temp check instead of the above https://issues.jboss.org/browse/WFCORE-710
+            Assert.assertEquals("reload-required", proxy.state);
+        }
+
+        repository.checkAddedReferences(bytes, PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test").append(CONTENT, "/some/path"));
+        repository.checkRemovedReferences(null);
+
+        ModelNode model = readResourceRecursive();
+        checkDeploymentOverlayBytes(model, "test", "/some/path", bytes);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT_OVERLAY));
+        Assert.assertTrue(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT_OVERLAY, "test", DEPLOYMENT, "test.jar"));
+    }
+
+    @Test
+    public void testUpdateDeploymentOverlay() throws Exception {
+        final Resource root = rootResource.clone();
+        byte[] oldBytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeploymentOverlay(root, "test", "/some/path", oldBytes);
+        registerServerGroupDeploymentOverlay(root, "group-two", "test", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        //Don't bother checking here since it is the same as testAddDeploymentOverlayWithGroups()
+
+        reloadServers();
+
+        //Do a change replacing the bytes in a content item
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+        Resource overlay = root.getChild(PathElement.pathElement(DEPLOYMENT_OVERLAY, "test"));
+        Resource content = overlay.getChild(PathElement.pathElement(CONTENT, "/some/path"));
+        content.getModel().get(CONTENT).set(bytes);
+
+        repository.clear();
+        executeTriggerSyncOperation(root);
+        //All servers will be affected https://issues.jboss.org/browse/WFCORE-710
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        //Assert.assertEquals("running", serverProxies.get("server-three").state);
+        for (MockServerProxy proxy : serverProxies.values()) {
+            //Temp check instead of the above https://issues.jboss.org/browse/WFCORE-710
+            Assert.assertEquals("reload-required", proxy.state);
+        }
+        repository.checkAddedReferences(bytes, PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test").append(CONTENT, "/some/path"));
+        repository.checkRemovedReferences(oldBytes, PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test").append(CONTENT, "/some/path"));
+
+        ModelNode model = readResourceRecursive();
+        checkDeploymentOverlayBytes(model, "test", "/some/path", bytes);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT_OVERLAY));
+        Assert.assertTrue(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT_OVERLAY, "test", DEPLOYMENT, "test.jar"));
+
+        //Do a change adding another content item
+        Resource newContent = Resource.Factory.create();
+        newContent.getModel().get(CONTENT).set(oldBytes);
+        overlay.registerChild(PathElement.pathElement(CONTENT, "/other/path"), newContent);
+        repository.clear();
+        executeTriggerSyncOperation(root);
+        //All servers will be affected https://issues.jboss.org/browse/WFCORE-710
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        //Assert.assertEquals("running", serverProxies.get("server-three").state);
+        for (MockServerProxy proxy : serverProxies.values()) {
+            //Temp check instead of the above https://issues.jboss.org/browse/WFCORE-710
+            Assert.assertEquals("reload-required", proxy.state);
+        }
+        repository.checkAddedReferences(oldBytes, PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test").append(CONTENT, "/other/path"));
+        model = readResourceRecursive();
+        Map<String, byte[]> contents = new HashMap<>();
+        contents.put("/some/path", bytes);
+        contents.put("/other/path", oldBytes);
+        checkDeploymentOverlayBytes(model, "test", contents);
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT_OVERLAY));
+        Assert.assertTrue(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT_OVERLAY, "test", DEPLOYMENT, "test.jar"));
+    }
+
+    @Test
+    public void testRemoveDeploymentOverlay() throws Exception {
+        final Resource root = rootResource.clone();
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeploymentOverlay(root, "test", "/some/path", bytes);
+        registerServerGroupDeploymentOverlay(root, "group-two", "test", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        //Don't bother checking here since it is the same as testAddDeploymentOverlayWithGroups()
+
+        reloadServers();
+        repository.clear();
+
+        //Remove the resources
+        root.removeChild(PathElement.pathElement(DEPLOYMENT_OVERLAY, "test"));
+        root.getChild(PathElement.pathElement(SERVER_GROUP, "group-two"))
+                .removeChild(PathElement.pathElement(DEPLOYMENT_OVERLAY, "test"));
+        executeTriggerSyncOperation(root);
+        //All servers will be affected https://issues.jboss.org/browse/WFCORE-710
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-one").state);
+        //Assert.assertEquals(RELOAD_REQUIRED, serverProxies.get("server-two").state);
+        //Assert.assertEquals("running", serverProxies.get("server-three").state);
+        for (MockServerProxy proxy : serverProxies.values()) {
+            //Temp check instead of the above https://issues.jboss.org/browse/WFCORE-710
+            Assert.assertEquals("reload-required", proxy.state);
+        }
+        repository.checkAddedReferences(null);
+        repository.checkRemovedReferences(bytes, PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test").append(CONTENT, "/some/path"));
+        ModelNode model = readResourceRecursive();
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT_OVERLAY));
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT_OVERLAY));
+        Assert.assertFalse(model.hasDefined(DEPLOYMENT_OVERLAY));
+    }
+
+    private void registerRootDeploymentOverlay(Resource root, String name, String path, byte[] bytes) {
+        Resource overlay = Resource.Factory.create();
+        root.registerChild(PathElement.pathElement(DEPLOYMENT_OVERLAY, name), overlay);
+        Resource content = Resource.Factory.create();
+        content.getModel().get(CONTENT).set(bytes);
+        overlay.registerChild(PathElement.pathElement(CONTENT, path), content);
+    }
+
     private void registerRootDeployment(Resource root, String deploymentName, byte[] bytes) {
         Resource deployment = Resource.Factory.create();
         deployment.getModel().get(NAME).set(deploymentName);
@@ -430,6 +593,15 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         content.add(hash);
     }
 
+    private void registerServerGroupDeploymentOverlay(Resource root, String groupName, String overlayName, String deploymentName) {
+        Resource group = root.requireChild(PathElement.pathElement(SERVER_GROUP, groupName));
+        Resource overlay = Resource.Factory.create();
+        group.registerChild(PathElement.pathElement(DEPLOYMENT_OVERLAY, overlayName), overlay);
+        Resource deployment = Resource.Factory.create();
+        deployment.getModel().setEmptyObject();
+        overlay.registerChild(PathElement.pathElement(DEPLOYMENT, deploymentName), deployment);
+    }
+
     private void registerServerGroupDeployment(Resource root, String groupName, String deploymentName) {
         Resource group = root.requireChild(PathElement.pathElement(SERVER_GROUP, groupName));
         Resource deployment = Resource.Factory.create();
@@ -443,6 +615,27 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         ModelNode content = model.get(DEPLOYMENT, name, CONTENT);
         Assert.assertEquals(1, content.asList().size());
         Assert.assertArrayEquals(bytes, content.asList().get(0).get(HASH).asBytes());
+    }
+
+    private void checkDeploymentOverlayBytes(ModelNode model, String name, String path, byte[] bytes) {
+        checkDeploymentOverlayBytes(model, name, Collections.singletonMap(path, bytes));
+    }
+
+    private void checkDeploymentOverlayBytes(ModelNode model, String name, Map<String, byte[]> contents) {
+        Assert.assertEquals(1, model.get(DEPLOYMENT_OVERLAY).keys().size());
+        ModelNode overlay = model.get(DEPLOYMENT_OVERLAY, name);
+        Assert.assertEquals(contents.size(), overlay.get(CONTENT).keys().size());
+        for (Map.Entry<String, byte[]> entry : contents.entrySet()) {
+            ModelNode content = overlay.get(CONTENT, entry.getKey());
+            Assert.assertArrayEquals(entry.getValue(), content.get(CONTENT).asBytes());
+        }
+    }
+
+    private void reloadServers() {
+        //Reset the server proxies, simulating a reload
+        for (MockServerProxy proxy : serverProxies.values()) {
+            proxy.state = "running";
+        }
     }
 
     private class TestInitializer implements DelegatingResourceDefinitionInitializer {
@@ -597,12 +790,6 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             final SyncDomainModelOperationHandler handler =
                     new SyncDomainModelOperationHandler(hostInfo, parameters);
             context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
-            context.completeStep(new OperationContext.ResultHandler() {
-                @Override
-                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                    updatedResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
-                }
-            });
         }
     }
 
@@ -645,7 +832,6 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         private final Set<String> expectedContent = new HashSet<>();
 
         //Rollout plans need actual content
-        private final Map<String, VirtualFile> rolloutPlans = new HashMap<>();
         private volatile VirtualFile vf;
 
         private final Map<String, ContentReference> addedContentReferences = new HashMap<>();

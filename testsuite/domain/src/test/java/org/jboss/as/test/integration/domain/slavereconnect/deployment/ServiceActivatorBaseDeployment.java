@@ -22,6 +22,11 @@
 
 package org.jboss.as.test.integration.domain.slavereconnect.deployment;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
@@ -38,11 +43,13 @@ public class ServiceActivatorBaseDeployment implements ServiceActivator, Service
 
     private final ServiceName serviceName;
     private final String propertyName;
+    private final String overridePropertyName;
     private final String qualifier;
 
     protected ServiceActivatorBaseDeployment(String qualifier) {
         serviceName = ServiceName.of("test", "deployment", qualifier);
         propertyName = "test.deployment.prop." + qualifier;
+        overridePropertyName = "test.overlay.prop." + qualifier;
         this.qualifier = qualifier;
     }
 
@@ -55,11 +62,29 @@ public class ServiceActivatorBaseDeployment implements ServiceActivator, Service
     public synchronized void start(StartContext context) throws StartException {
         System.setProperty(propertyName, qualifier);
         System.out.println("===> " + this.getClass() + " setting property " + propertyName + "=" + qualifier);
+        InputStream in = getClass().getResourceAsStream("overlay");
+        if (in != null) {
+            try {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))){
+                    String s = reader.readLine();
+                    System.setProperty(overridePropertyName, s);
+                    System.out.println("===> " + this.getClass() + " setting property " + overridePropertyName + "=" + s);
+                } catch (IOException e) {
+                    throw new StartException(e);
+                }
+            } finally {
+                try {
+                    in.close();
+                } catch (IOException ignore){
+                }
+            }
+        }
     }
 
     @Override
     public void stop(StopContext context) {
         System.clearProperty(propertyName);
+        System.clearProperty(overridePropertyName);
         System.out.println("===> " + this.getClass() + " clearing property " + propertyName);
     }
 
