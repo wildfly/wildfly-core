@@ -137,8 +137,33 @@ public class SimpleOperationDefinitionBuilder {
         return this;
     }
 
+    /**
+     * Marks the operation as deprecated since the given API version. This is equivalent to calling
+     * {@link #setDeprecated(ModelVersion, boolean)} with the {@code notificationUseful} parameter
+     * set to {@code true}.
+     * @param since the API version, with the API being the one (core or a subsystem) in which the attribute is used
+     * @return a builder that can be used to continue building the attribute definition
+     */
     public SimpleOperationDefinitionBuilder setDeprecated(ModelVersion since) {
-        this.deprecationData = new DeprecationData(since);
+        return setDeprecated(since, true);
+    }
+
+    /**
+     * Marks the attribute as deprecated since the given API version, with the ability to configure that
+     * notifications to the user (e.g. via a log message) about deprecation of the operation should not be emitted.
+     * Notifying the user should only be done if the user can take some action in response. Advising that
+     * something will be removed in a later release is not useful if there is no alternative in the
+     * current release. If the {@code notificationUseful} param is {@code true} the text
+     * description of the operation deprecation available from the {@code read-operation-description}
+     * management operation should provide useful information about how the user can avoid using
+     * the operation.
+     *
+     * @param since the API version, with the API being the one (core or a subsystem) in which the attribute is used
+     * @param notificationUseful whether actively advising the user about the deprecation is useful
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public SimpleOperationDefinitionBuilder setDeprecated(ModelVersion since, boolean notificationUseful) {
+        this.deprecationData = new DeprecationData(since, notificationUseful);
         return this;
     }
 

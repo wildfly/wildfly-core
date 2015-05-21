@@ -138,8 +138,9 @@ public abstract class OperationDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public void validateOperation(final ModelNode operation) throws OperationFailedException {
-        if (operation.hasDefined(ModelDescriptionConstants.OPERATION_NAME) && isDeprecated()) {
-            ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName());
+        if (operation.hasDefined(ModelDescriptionConstants.OPERATION_NAME) && deprecationData != null && deprecationData.isNotificationUseful()) {
+            ControllerLogger.DEPRECATED_LOGGER.operationDeprecated(getName(),
+                    PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
         }
         for (AttributeDefinition ad : this.parameters) {
             ad.validateOperation(operation);
