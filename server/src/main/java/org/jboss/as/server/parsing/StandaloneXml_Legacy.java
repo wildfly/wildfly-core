@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.parsing.Namespace.DOMAIN_1_0;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
@@ -828,14 +829,10 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET:
-                    if (namespace.getMajorVersion() < 3) {// we only support socket-binding in 3+
-                        if (http) {
-                            parseHttpManagementSocket(reader, addOp);
-                        } else {
-                            parseNativeManagementSocket(reader, addOp);
-                        }
+                    if (http) {
+                        parseHttpManagementSocket(reader, addOp);
                     } else {
-                        throw unexpectedElement(reader);
+                        parseNativeManagementSocket(reader, addOp);
                     }
                     break;
                 case SOCKET_BINDING:
@@ -854,20 +851,11 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseNativeManagementSocket(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            throw unexpectedAttribute(reader, i);
-        }
-        requireNoContent(reader);
+        throw ControllerLogger.ROOT_LOGGER.unsupportedElement(reader.getName(),reader.getLocation(), SOCKET_BINDING);
     }
 
     private void parseHttpManagementSocket(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
-        // Handle attributes
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            throw unexpectedAttribute(reader, i);
-        }
-        requireNoContent(reader);
+        throw ControllerLogger.ROOT_LOGGER.unsupportedElement(reader.getName(),reader.getLocation(), SOCKET_BINDING);
     }
 
     private void parseHttpManagementSocketBinding(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
