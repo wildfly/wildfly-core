@@ -414,13 +414,12 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
-                if (!context.hasFailureDescription()) {
+                if (!context.hasFailureDescription() && result.isDefined()) {
                     String op = operation.require(OP).asString();
                     Map<PathAddress, ModelNode> failures = new HashMap<PathAddress, ModelNode>();
                     for (ModelNode resultItem : result.asList()) {
                         if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
-                            // TODO WFCORE-441 why use this operation's address? Seems like a bug
-                            final PathAddress failedAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+                            final PathAddress failedAddress = PathAddress.pathAddress(resultItem.get(ADDRESS));
                             ModelNode failedDesc = resultItem.get(FAILURE_DESCRIPTION);
                             failures.put(failedAddress, failedDesc);
                         }
