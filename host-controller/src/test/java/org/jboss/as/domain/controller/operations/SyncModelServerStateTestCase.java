@@ -28,9 +28,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -88,8 +96,11 @@ import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.vfs.VFS;
+import org.jboss.vfs.VirtualFile;
 import org.junit.Assert;
 import org.junit.Test;
+import org.xnio.IoUtils;
 
 /**
  * Port of ApplyRemoteMasterDomainModelHandler to work with syncing using the operations.
@@ -102,7 +113,6 @@ import org.junit.Test;
 public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
 
     static final AttributeDefinition ATTR = new SimpleAttributeDefinitionBuilder("attr", ModelType.STRING, true).build();
-    static final AttributeDefinition[] REQUEST_ATTRIBUTES = new AttributeDefinition[]{ATTR};
     static final OperationDefinition TRIGGER_SYNC = new SimpleOperationDefinitionBuilder("trigger-sync", new NonResolvingResourceDescriptionResolver())
             .addParameter(ATTR)
             .build();
@@ -114,6 +124,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     private final Map<String, MockServerProxy> serverProxies;
     private volatile TestSyncRepository repository = new TestSyncRepository();
 
+    private volatile Resource updatedResource;
 
     public SyncModelServerStateTestCase() {
         super("slave", ProcessType.HOST_CONTROLLER, true);
@@ -323,7 +334,80 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         root.removeChild(PathElement.pathElement(DEPLOYMENT, "test.jar"));
     }
 
+    @Test
+    public void testRolloutPlans() throws Exception {
+        final Resource root = rootResource.clone();
+        byte[] originalHash = new byte[]{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        Resource plans = Resource.Factory.create();
+        plans.getModel().get(HASH).set(originalHash);
+        root.registerChild(PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS), plans);
 
+        //Add the first plan
+        ModelNode group1 = new ModelNode();
+        group1.get(SERVER_GROUP, "group-one");
+        ModelNode plan = new ModelNode();
+        plan.get("test", ROLLOUT_PLAN, IN_SERIES).add(group1);
+        repository.addRolloutPlan(plan);
+        try {
+            executeTriggerSyncOperation(root);
+            for (MockServerProxy proxy : serverProxies.values()) {
+                Assert.assertEquals("running", proxy.state);
+            }
+
+            ModelNode rolloutPlans = readResourceRecursive().get(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
+            Assert.assertArrayEquals(originalHash, rolloutPlans.get(HASH).asBytes());
+            List<ModelNode> list = rolloutPlans.get(ROLLOUT_PLAN, "test", CONTENT, ROLLOUT_PLAN, IN_SERIES).asList();
+            Assert.assertEquals(1, list.size());
+            ModelNode entry = list.get(0);
+            Assert.assertTrue(entry.has(SERVER_GROUP, "group-one"));
+
+            repository.checkAddedReferences(originalHash, PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS));
+            repository.checkRemovedReferences(null);
+        } finally {
+            repository.deleteVirtualFileAndParent();
+        }
+        repository.clear();
+
+        //Add another plan
+        byte[] newHash = new byte[]{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        plans.getModel().get(HASH).set(newHash);
+        ModelNode group2 = new ModelNode();
+        group2.get(SERVER_GROUP, "group-two");
+        plan.get("test2", ROLLOUT_PLAN, IN_SERIES).add(group2);
+        repository.addRolloutPlan(plan);
+        try {
+            executeTriggerSyncOperation(root);
+            for (MockServerProxy proxy : serverProxies.values()) {
+                Assert.assertEquals("running", proxy.state);
+            }
+
+            ModelNode rolloutPlans = readResourceRecursive().get(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
+            Assert.assertArrayEquals(newHash, rolloutPlans.get(HASH).asBytes());
+            List<ModelNode> list = rolloutPlans.get(ROLLOUT_PLAN, "test", CONTENT, ROLLOUT_PLAN, IN_SERIES).asList();
+            Assert.assertEquals(1, list.size());
+            ModelNode entry = list.get(0);
+            Assert.assertTrue(entry.has(SERVER_GROUP, "group-one"));
+            list = rolloutPlans.get(ROLLOUT_PLAN, "test2", CONTENT, ROLLOUT_PLAN, IN_SERIES).asList();
+            Assert.assertEquals(1, list.size());
+            entry = list.get(0);
+            Assert.assertTrue(entry.has(SERVER_GROUP, "group-two"));
+            repository.checkAddedReferences(newHash, PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS));
+            repository.checkRemovedReferences(originalHash, PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS));
+        } finally {
+            repository.deleteVirtualFileAndParent();
+        }
+        repository.clear();
+
+        //Remove all plans
+        plans.getModel().get(HASH).set(new ModelNode());
+        executeTriggerSyncOperation(root);
+        for (MockServerProxy proxy : serverProxies.values()) {
+            Assert.assertEquals("running", proxy.state);
+        }
+        ModelNode rolloutPlans = readResourceRecursive().get(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
+        Assert.assertFalse(rolloutPlans.hasDefined(HASH));
+        Assert.assertFalse(rolloutPlans.hasDefined(CONTENT));
+    }
     
     private void registerRootDeployment(Resource root, String deploymentName, byte[] bytes) {
         Resource deployment = Resource.Factory.create();
@@ -513,6 +597,12 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             final SyncDomainModelOperationHandler handler =
                     new SyncDomainModelOperationHandler(hostInfo, parameters);
             context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
+            context.completeStep(new OperationContext.ResultHandler() {
+                @Override
+                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                    updatedResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+                }
+            });
         }
     }
 
@@ -554,6 +644,10 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         //from the repository
         private final Set<String> expectedContent = new HashSet<>();
 
+        //Rollout plans need actual content
+        private final Map<String, VirtualFile> rolloutPlans = new HashMap<>();
+        private volatile VirtualFile vf;
+
         private final Map<String, ContentReference> addedContentReferences = new HashMap<>();
         private final Map<String, ContentReference> fetchedFiles = new HashMap<>();
         private final Map<String, ContentReference> removedReferences = new HashMap<>();
@@ -576,6 +670,15 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         @Override
         public boolean hasContent(byte[] hash) {
             return expectedContent.contains(HashUtil.bytesToHexString(hash));
+        }
+
+        @Override
+        public VirtualFile getContent(byte[] hash) {
+            if (hash[0] == 1) {
+                return vf;
+
+            }
+            return null;
         }
 
         boolean isEmpty() {
@@ -612,6 +715,25 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             removedReferences.clear();
             for (byte[] content : currentContent) {
                 expectedContent.add(HashUtil.bytesToHexString(content));
+            }
+        }
+
+        void addRolloutPlan(ModelNode dmr) throws Exception {
+            File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File tempDir = new File(systemTmpDir, "test" + System.currentTimeMillis());
+            tempDir.mkdir();
+            File file = new File(tempDir, "content");
+            this.vf = VFS.getChild(file.toURI());
+
+            try (final PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file)));){
+                dmr.writeString(out, true);
+            }
+        }
+
+        void deleteVirtualFileAndParent() {
+            if (vf != null) {
+                vf.delete();
+                vf.getParent().delete();
             }
         }
     }

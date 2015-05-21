@@ -10,10 +10,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +35,7 @@ import org.jboss.as.domain.controller.operations.coordination.ServerOperationRes
 import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.host.controller.ManagedServerBootCmdFactory;
 import org.jboss.as.host.controller.ManagedServerBootConfiguration;
+import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
@@ -74,8 +78,9 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                 final ModelNode endHostModel = endRoot.require(HOST).asPropertyList().iterator().next().getValue();
 
                 //Get the affected servers for each op.
+                ContentDownloader contentDownloader = new ContentDownloader(startRoot, endRoot, endHostModel);
                 final Map<String, Boolean> servers =
-                        determineServerStateChanges(context, resolver, startRoot, endRoot, endHostModel);
+                        determineServerStateChanges(context, domainRootResource, resolver, contentDownloader);
 
                 for (String serverName : endHostModel.get(SERVER_CONFIG).keys()) {
                     // Compare boot cmd (requires restart)
@@ -106,17 +111,30 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                     final ModelNode op = Util.createEmptyOperation(opName, serverAddress);
                     context.addStep(op, handler, OperationContext.Stage.MODEL);
                 }
+
+                context.completeStep(new OperationContext.ResultHandler() {
+                    @Override
+                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        if (resultAction == OperationContext.ResultAction.KEEP) {
+                            for (ContentReference ref : contentDownloader.removedContent) {
+                                parameters.getContentRepository().removeContent(ref);
+                            }
+                        }
+                    }
+                });
             }
         }, OperationContext.Stage.MODEL);
     }
 
-    private Map<String, Boolean> determineServerStateChanges(OperationContext context, ServerOperationResolver resolver,
-                                                             ModelNode startRoot, ModelNode endRoot, ModelNode hostModel) {
-        ContentDownloader contentDownloader = new ContentDownloader(startRoot, endRoot, hostModel);
+    private Map<String, Boolean> determineServerStateChanges(OperationContext context, Resource domainRootResource, ServerOperationResolver resolver,
+                                                             ContentDownloader contentDownloader) {
         final Map<String, Boolean> serverStateChanges = new HashMap<>();
         for (ModelNode operation : operations) {
             PathAddress addr = PathAddress.pathAddress(operation.get(OP_ADDR));
-            contentDownloader.checkContent(operation, addr);
+            operation = contentDownloader.checkContent(operation, addr);
+            if (!operation.isDefined()) {
+                continue;
+            }
 
             Map<Set<ServerIdentity>, ModelNode> serverMap = resolver.getServerOperations(context, operation, addr);
             for (Map.Entry<Set<ServerIdentity>, ModelNode> entry : serverMap.entrySet()) {
@@ -131,7 +149,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                 }
             }
         }
-        Set<String> affectedServers = contentDownloader.pullDownContent();
+        Set<String> affectedServers = contentDownloader.pullDownContent(domainRootResource);
         for (String server : affectedServers) {
             if (!serverStateChanges.containsKey(server)) {
                 serverStateChanges.put(server, false);
@@ -149,20 +167,25 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         private final Set<String> relevantDeployments = new HashSet<String>();
         private final Set<ContentReference> requiredContent = new HashSet<ContentReference>();
 
+        private boolean updateRolloutPlans;
+        private byte[] rolloutPlansHash;
+
+        private List<ContentReference> removedContent = new ArrayList<>();
+
         ContentDownloader(ModelNode startRoot, ModelNode endRoot, ModelNode hostModel) {
             this.startRoot = startRoot;
             this.endRoot = endRoot;
             serversByGroup =  getOurServerGroups(hostModel);
         }
 
-        void checkContent(ModelNode operation, PathAddress operationAddress) {
+        ModelNode checkContent(ModelNode operation, PathAddress operationAddress) {
             if (!operation.get(OP).asString().equals(ADD) || operationAddress.size() == 0) {
-                return;
+                return operation;
             }
             final PathElement firstElement = operationAddress.getElement(0);
             final String contentType = firstElement.getKey();
             if (contentType == null) {
-                return;
+                return operation;
             }
             if (operationAddress.size() == 1) {
                 switch (contentType) {
@@ -182,11 +205,20 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                         makeExistingDeploymentUpdatedAffected(firstElement,operation);
                         break;
                     case DEPLOYMENT_OVERLAY:
+                        //TODO
                         break;
                     case MANAGEMENT_CLIENT_CONTENT:
+                        if (firstElement.getValue().equals(ROLLOUT_PLANS)) {
+                            updateRolloutPlans = true;
+                            //This needs special handling. Drop the existing resource and add a new one
+                            if (operation.hasDefined(HASH)) {
+                                rolloutPlansHash = operation.get(HASH).asBytes();
+                                requiredContent.add(ModelContentReference.fromModelAddress(operationAddress, rolloutPlansHash));
+                            }
+                        }
                         break;
                     default:
-                        return;
+                        return operation;
                 }
             } else if (operationAddress.size() == 2 && firstElement.getKey().equals(SERVER_GROUP) &&
                     serversByGroup.containsKey(firstElement.getValue())) {
@@ -196,6 +228,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                     affectedGroups.add(firstElement.getValue());
                 }
             }
+            return operation;
         }
 
         private void makeExistingDeploymentUpdatedAffected(PathElement deploymentElement, ModelNode operation) {
@@ -234,7 +267,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             }
         }
 
-        Set<String> pullDownContent() {
+        Set<String> pullDownContent(Resource domainRootResource) {
             // Make sure we have all needed deployment and management client content
             for (String id : relevantDeployments) {
                 Set<ContentReference> hashes = deploymentHashes.remove(id);
@@ -245,6 +278,22 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             for (ContentReference reference : requiredContent) {
                 parameters.getFileRepository().getDeploymentFiles(reference);
                 parameters.getContentRepository().addContentReference(reference);
+            }
+
+            if (updateRolloutPlans) {
+                PathElement rolloutPlansElement = PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
+                Resource existing = domainRootResource.removeChild(rolloutPlansElement);
+                if (existing != null) {
+                    ModelNode hashNode = existing.getModel().get(HASH);
+                    if (hashNode.isDefined()) {
+                        removedContent.add(
+                                new ContentReference(PathAddress.pathAddress(rolloutPlansElement).toCLIStyleString(), hashNode.asBytes()));
+                    }
+                }
+                ManagedDMRContentTypeResource rolloutPlansResource =
+                        new ManagedDMRContentTypeResource(PathAddress.pathAddress(rolloutPlansElement), ROLLOUT_PLAN,
+                                rolloutPlansHash, parameters.getContentRepository());
+                domainRootResource.registerChild(rolloutPlansElement, rolloutPlansResource);
             }
 
             Set<String> servers = new HashSet<>();

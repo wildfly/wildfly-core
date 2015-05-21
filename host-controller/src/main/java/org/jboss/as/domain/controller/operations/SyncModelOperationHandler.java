@@ -150,7 +150,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
         // Compare the nodes and create the operations to sync the model
         //final List<ModelNode> operations = new ArrayList<>();
-        OrderedOperationsCollection operations = new OrderedOperationsCollection();
+        OrderedOperationsCollection operations = new OrderedOperationsCollection(context);
         processAttributes(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
         processChildren(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
 
@@ -671,7 +671,10 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
         private final List<ModelNode> allOps = new ArrayList<>();
 
-        OrderedOperationsCollection() {
+        private final boolean booting;
+
+        OrderedOperationsCollection(OperationContext context) {
+            this.booting = context.isBooting();
         }
 
         void add(ModelNode op) {
@@ -682,6 +685,13 @@ class SyncModelOperationHandler implements OperationStepHandler {
             if (name.equals(ADD) || name.equals(WRITE_ATTRIBUTE_OPERATION)) {
                 if (type.equals(EXTENSION)) {
                     extensionAdds.add(op);
+                } else if (type.equals(MANAGEMENT_CLIENT_CONTENT)) {
+                    //Only add this on boot, since it is a 'hard-coded' one
+                    //Otherwise, it will be added to the allOps further below which is used by SyncServerStateOperationHandler
+                    //which will drop/re-add the custom resource as needed if necessary
+                    if (booting) {
+                        nonExtensionAdds.add(op);
+                    }
                 } else {
                     nonExtensionAdds.add(op);
                 }

@@ -29,10 +29,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PLATFORM_MBEAN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -73,6 +80,8 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 
 /**
+ * Tests modified deployments and other content on reconnect
+ *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class DeploymentScenario extends ReconnectTestScenario {
@@ -85,6 +94,7 @@ public class DeploymentScenario extends ReconnectTestScenario {
     //Just to know how much was initialised in the setup method, so we know what to tear down
     private int initialized = 0;
     private Set<String> deployed = new HashSet<>();
+    private boolean rolloutPlan;
     @Override
     void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
         //Add minimal server
@@ -108,6 +118,12 @@ public class DeploymentScenario extends ReconnectTestScenario {
 
     @Override
     void tearDownDomain(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+        if (rolloutPlan) {
+            DomainTestUtils.executeForResult(
+                    Util.createRemoveOperation(
+                            PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS).append(ROLLOUT_PLAN, "test")),
+                    masterClient);
+        }
         for (String qualifier : new HashSet<>(deployed)) {
             undeploy(masterClient, qualifier);
         }
@@ -143,9 +159,9 @@ public class DeploymentScenario extends ReconnectTestScenario {
 
     @Override
     void testOnInitialStartup(DomainClient masterClient, DomainClient slaveClient) throws Exception {
-        //TODO add similar tests for deployment overlays and managed client content
+        //TODO add similar tests for deployment overlays
 
-
+        //Deployments
         Assert.assertNull(getDeploymentProperty(slaveClient, "one"));
         Assert.assertNull(getDeploymentProperty(slaveClient, "two"));
         Assert.assertNull(getDeploymentProperty(slaveClient, "three"));
@@ -159,20 +175,36 @@ public class DeploymentScenario extends ReconnectTestScenario {
         Assert.assertNull(getDeploymentProperty(slaveClient, "three"));
         Assert.assertNull(getDeploymentProperty(slaveClient, "four"));
 
+        //Rollout plans
+        ModelNode masterPlans = getRolloutPlans(masterClient);
+        ModelNode slavePlans = getRolloutPlans(slaveClient);
+        Assert.assertEquals(masterPlans, slavePlans);
+        Assert.assertFalse(masterPlans.get(HASH).isDefined());
+        Assert.assertFalse(masterPlans.get(CONTENT).isDefined());
     }
 
     @Override
     void testWhileMasterInAdminOnly(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+        //Deployments
         //Undeploy deployment1, and deploy 3 with same name
         undeploy(masterClient, "one");
         deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentThree.class, "one");
         //Remove deployment2 and add 4
         undeploy(masterClient, "two");
         deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentFour.class, "four");
+
+        //Rollout plans
+        ModelNode op = Util.createAddOperation(
+                PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS).append(ROLLOUT_PLAN, "test"));
+        ModelNode serverGroup = new ModelNode();
+        serverGroup.get(SERVER_GROUP, "deployment-group-unaffected");
+        op.get(CONTENT).get(ROLLOUT_PLAN).get(IN_SERIES).add(serverGroup);
+        DomainTestUtils.executeForResult(op, masterClient);
     }
 
     @Override
     void testAfterReconnect(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+        //Deployments
         //The deployment values should still be the same until we restart the slave server
         Assert.assertEquals("one", getDeploymentProperty(slaveClient, "one"));
         Assert.assertEquals("two", getDeploymentProperty(slaveClient, "two"));
@@ -195,6 +227,12 @@ public class DeploymentScenario extends ReconnectTestScenario {
         Assert.assertNull(getDeploymentProperty(slaveClient, "two"));
         Assert.assertNull(getDeploymentProperty(slaveClient, "one"));
 
+        //RolloutPlans
+        ModelNode masterPlans = getRolloutPlans(masterClient);
+        ModelNode slavePlans = getRolloutPlans(slaveClient);
+        Assert.assertEquals(masterPlans, slavePlans);
+        Assert.assertTrue(masterPlans.get(HASH).isDefined());
+        Assert.assertTrue(masterPlans.get(ROLLOUT_PLAN, "test", CONTENT).isDefined());
     }
 
     private void cloneProfile(DomainClient masterClient, String source, String target) throws Exception {
@@ -302,9 +340,10 @@ public class DeploymentScenario extends ReconnectTestScenario {
         return String.format(DEPLOYMENT_NAME_PATTERN, qualifier);
     }
 
-    private void checkServerState(DomainClient slaveClient, String serverName, String expectedState) throws Exception {
-        ModelNode state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, serverName), "server-state"), slaveClient);
-        Assert.assertEquals(expectedState, state.asString());
+    private ModelNode getRolloutPlans(DomainClient client) throws Exception {
+        ModelNode readResource = Util.createEmptyOperation(READ_RESOURCE_OPERATION,
+                PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS));
+        readResource.get(RECURSIVE).set(true);
+        return DomainTestUtils.executeForResult(readResource, client);
     }
 }
