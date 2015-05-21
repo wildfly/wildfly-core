@@ -18,7 +18,7 @@
 
 <module xmlns="urn:jboss:module:1.3" name="org.picketbox">
     <resources>
-        <artifact name="org.picketbox:picketbox:4.9.0.Beta1"/>
+        <artifact name="org.picketbox:picketbox:${version.org.picketbox}"/>
     </resources>
 
     <dependencies>
