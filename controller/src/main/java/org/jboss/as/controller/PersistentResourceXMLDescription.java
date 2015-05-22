@@ -52,6 +52,7 @@ public class PersistentResourceXMLDescription {
     private final boolean useElementsForGroups;
     private final String namespaceURI;
     private final Set<String> attributeGroups;
+    private final String forcedName;
 
     /**
      * @deprecated use a {@link org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder}
@@ -74,6 +75,7 @@ public class PersistentResourceXMLDescription {
         this.namespaceURI = null;
         this.attributeGroups = null;
         this.attributeMarshallers = null;
+        this.forcedName = null;
     }
 
     private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
@@ -125,6 +127,7 @@ public class PersistentResourceXMLDescription {
         this.additionalOperationsGenerator = builder.additionalOperationsGenerator;
         this.attributeParsers = builder.attributeParsers;
         this.attributeMarshallers = builder.attributeMarshallers;
+        this.forcedName = builder.forcedName;
     }
 
     private void addProperty(final PropertiesAttributeDefinition ad) {
@@ -144,7 +147,11 @@ public class PersistentResourceXMLDescription {
         boolean wildcard = resourceDefinition.getPathElement().isWildcard();
         String name = parseAttributeGroups(reader, op, wildcard);
         if (wildcard && name == null) {
-            throw ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(new StringBuilder(NAME), reader.getLocation());
+            if (forcedName != null) {
+                name = forcedName;
+            } else {
+                throw ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(new StringBuilder(NAME), reader.getLocation());
+            }
         }
         PathElement path = wildcard ? PathElement.pathElement(resourceDefinition.getPathElement().getKey(), name) : resourceDefinition.getPathElement();
         PathAddress address = parentAddress.append(path);
@@ -409,6 +416,7 @@ public class PersistentResourceXMLDescription {
         protected final LinkedHashMap<String, AttributeParser> attributeParsers = new LinkedHashMap<>();
         protected final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
         protected boolean useElementsForGroups = true;
+        protected String forcedName;
 
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
             this.resourceDefinition = resourceDefinition;
@@ -478,6 +486,20 @@ public class PersistentResourceXMLDescription {
 
         public PersistentResourceXMLBuilder setAdditionalOperationsGenerator(final AdditionalOperationsGenerator additionalOperationsGenerator) {
             this.additionalOperationsGenerator = additionalOperationsGenerator;
+            return this;
+        }
+
+        /**
+         * This method permit to set a forced name for resource created by parser.
+         * This is useful when xml tag haven't an attribute defining the name for the resource,
+         * but the tag name itself is sufficient to decide the name for the resource
+         * For example when you have 2 different tag of the same xsd type representing same resource with different name
+         *
+         * @param forcedName the name to be forced as resourceName
+         * @return the PersistentResourceXMLBuilder itself
+         */
+        public PersistentResourceXMLBuilder setForcedName(String forcedName) {
+            this.forcedName = forcedName;
             return this;
         }
 
