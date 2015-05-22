@@ -23,11 +23,11 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="urn:jboss:domain:logging:3.0"
-           xmlns="urn:jboss:domain:logging:3.0"
+           targetNamespace="urn:jboss:domain:logging:1.5"
+           xmlns="urn:jboss:domain:logging:1.5"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified"
-           version="3.0">
+           version="1.5">
 
     <!-- The logging subsystem root element -->
     <xs:element name="subsystem" type="subsystem"/>
@@ -61,15 +61,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="use-deployment-logging-config" type="booleanTrueValueType">
-                <xs:annotation>
-                    <xs:documentation>
-                            Determines whether or not deployments should be scanned for configuration files. If set to
-                            true and a configuration file is found the log manager will be configured based on the
-                            configuration file.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="logging-profiles" type="logging-profilesType" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
     </xs:complexType>
@@ -97,7 +88,6 @@
             <xs:element name="console-handler" type="consoleHandlerType"/>
             <xs:element name="file-handler" type="fileHandlerType"/>
             <xs:element name="periodic-rotating-file-handler" type="periodicFileHandlerType"/>
-            <xs:element name="periodic-size-rotating-file-handler" type="periodicSizeFileHandlerType"/>
             <xs:element name="size-rotating-file-handler" type="sizeFileHandlerType"/>
             <xs:element name="async-handler" type="asyncHandlerType"/>
             <xs:element name="custom-handler" type="customHandlerType"/>
@@ -180,6 +170,7 @@
             <xs:element name="level" type="refType" minOccurs="0"/>
             <xs:element name="encoding" type="valueType" minOccurs="0"/>
             <xs:element name="filter-spec" type="valueType" minOccurs="0"/>
+            <xs:element name="filter" type="valueType" minOccurs="0"/>
             <xs:element name="formatter" type="handlerFormatterType" minOccurs="0"/>
             <xs:element name="target" minOccurs="0">
                 <xs:complexType>
@@ -188,7 +179,6 @@
                             <xs:restriction base="xs:token">
                                 <xs:enumeration value="System.out"/>
                                 <xs:enumeration value="System.err"/>
-                                <xs:enumeration value="console"/>
                             </xs:restriction>
                         </xs:simpleType>
                     </xs:attribute>
@@ -268,7 +258,7 @@
     <xs:complexType name="sizeFileHandlerType">
         <xs:annotation>
             <xs:documentation>
-                Defines a handler which writes to a file, rotating the log after the size of the file grows beyond a
+                Defines a handler which writes to a file, rotating the log after a the size of the file grows beyond a
                 certain point and keeping a fixed number of backups.
             </xs:documentation>
         </xs:annotation>
@@ -493,8 +483,7 @@
     <xs:complexType name="handlerPatternFormatterType">
         <xs:annotation>
             <xs:documentation>
-                Defines a pattern formatter. See the documentation for
-                org.jboss.logmanager.formatters.FormatStringParser
+                Defines a pattern formatter.  See the documentation for org.jboss.logmanager.formatters.FormatStringParser
                 for more information about the format string.
             </xs:documentation>
         </xs:annotation>
@@ -504,8 +493,7 @@
     <xs:complexType name="patternFormatterType">
         <xs:annotation>
             <xs:documentation>
-                Defines a pattern formatter. See the documentation for
-                org.jboss.logmanager.formatters.FormatStringParser
+                Defines a pattern formatter.  See the documentation for org.jboss.logmanager.formatters.FormatStringParser
                 for more information about the format string.
 
                 The color-map attribute allows for a comma delimited list of colors to be used for different levels. The
@@ -513,8 +501,7 @@
 
                 Valid Levels; severe, fatal, error, warn, warning, info, debug, trace, config, fine, finer, finest
 
-                Valid Colors; black, green, red, yellow, blue, magenta, cyan, white, brightblack, brightred,
-                brightgreen,
+                Valid Colors; black, green, red, yellow, blue, magenta, cyan, white, brightblack, brightred, brightgreen,
                 brightblue, brightyellow, brightmagenta, brightcyan, brightwhite
             </xs:documentation>
         </xs:annotation>
@@ -528,14 +515,12 @@
         <xs:attribute name="color-map" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    The color-map attribute allows for a comma delimited list of colors to be used for different levels.
-                    The
+                    The color-map attribute allows for a comma delimited list of colors to be used for different levels. The
                     format is level-name:color-name.
 
                     Valid Levels; severe, fatal, error, warn, warning, info, debug, trace, config, fine, finer, finest
 
-                    Valid Colors; black, green, red, yellow, blue, magenta, cyan, white, brightblack, brightred,
-                    brightgreen,
+                    Valid Colors; black, green, red, yellow, blue, magenta, cyan, white, brightblack, brightred, brightgreen,
                     brightblue, brightyellow, brightmagenta, brightcyan, brightwhite
                 </xs:documentation>
             </xs:annotation>
@@ -546,10 +531,10 @@
         <xs:annotation>
             <xs:documentation>
                 <![CDATA[
-                Defines a formatter to be used to format log messages.
+                 Defines a formatter to be used to format log messages.
 
-                Note that most log records are formatted in the printf format. Formatters may require invocation of org.jboss.logmanager.ExtLogRecord#getFormattedMessage() for the message to be properly formatted.
-                ]]>
+                 Note that most log records are formatted in the printf format. Formatters may require invocation of org.jboss.logmanager.ExtLogRecord#getFormattedMessage() for the message to be properly formatted.
+                 ]]>
             </xs:documentation>
         </xs:annotation>
         <xs:all>

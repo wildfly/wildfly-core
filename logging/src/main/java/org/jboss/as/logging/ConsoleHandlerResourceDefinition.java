@@ -62,8 +62,14 @@ class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition {
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
+            case VERSION_1_5_0:
             case VERSION_2_0_0: {
                 resourceBuilder
+                        .getAttributeBuilder()
+                        .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, TARGET)
+                        .addRejectCheck(new SimpleRejectAttributeChecker(new ModelNode(Target.CONSOLE.toString())), TARGET)
+                        .end();
+                loggingProfileBuilder
                         .getAttributeBuilder()
                         .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, TARGET)
                         .addRejectCheck(new SimpleRejectAttributeChecker(new ModelNode(Target.CONSOLE.toString())), TARGET)
