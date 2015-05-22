@@ -162,6 +162,7 @@ public class ModelDescriptionConstants {
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
     public static final String FILTER = "filter";
+    //public final static String FILTER_CONJUNCT = "conjunct";
     public static final String FILTERED_ATTRIBUTES = "filtered-attributes";
     public static final String FILTERED_CHILDREN_TYPES = "filtered-children-types";
     public static final String FILTERED_OPERATIONS = "filtered-operations";
@@ -277,6 +278,7 @@ public class ModelDescriptionConstants {
     public static final String OPERATION_NAME = "operation-name";
     public static final String OPERATIONS = "operations";
     public static final String OPTIONS = "options";
+    public static final String OPERATOR = "operator";
     public static final String OUTBOUND_CONNECTION = "outbound-connection";
     /** Use this standard operation address field in the operation *description* ModelNode */
     public static final String OUTCOME = "outcome";
@@ -308,6 +310,7 @@ public class ModelDescriptionConstants {
     public static final String PROTOCOL = "protocol";
     public static final String PROVIDER = "provider";
     public static final String PROXIES = "proxies";
+    public static final String QUERY = "query";
     public static final String READ = "read";
     public static final String READ_ATTRIBUTE_OPERATION = "read-attribute";
     public static final String READ_ATTRIBUTE_GROUP_OPERATION = "read-attribute-group";
@@ -408,6 +411,7 @@ public class ModelDescriptionConstants {
     public static final String RESUME_SERVERS = "resume-servers";
     public static final String RESUME = "resume";
     public static final String SASL_PROTOCOL = "sasl-protocol";
+    public static final String SELECT = "select";
     public static final String SERVER_LOGGER = "server-logger";
     public static final String SERVER_NAME = "server-name";
     public static final String SHUTDOWN = "shutdown";
@@ -484,6 +488,7 @@ public class ModelDescriptionConstants {
     public static final String VAULT_EXPRESSION = "vault-expression";
     public static final String VAULT_OPTION = "vault-option";
     public static final String VAULT_OPTIONS = "vault-options";
+    public static final String WHERE = "where";
     public static final String WILDCARD = "wildcard";
     public static final String WRITE = "write";
     public static final String WRITE_ATTRIBUTE_OPERATION = "write-attribute";

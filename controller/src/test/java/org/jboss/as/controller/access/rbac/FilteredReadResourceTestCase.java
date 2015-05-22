@@ -146,7 +146,7 @@ public class FilteredReadResourceTestCase extends AbstractRbacTestBase {
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertEquals(ModelType.LIST, result.get(RESULT).getType());
         assertEquals(result.toString(), 0, result.get(RESULT).asInt());
-        assertTrue(result.hasDefined(RESPONSE_HEADERS));
+        assertTrue(result.toString(), result.hasDefined(RESPONSE_HEADERS));
         assertTrue(result.get(RESPONSE_HEADERS).hasDefined(ACCESS_CONTROL));
         assertEquals(1, result.get(RESPONSE_HEADERS, ACCESS_CONTROL).asInt());
         ModelNode accessControl = result.get(RESPONSE_HEADERS, ACCESS_CONTROL).get(0);

@@ -21,9 +21,6 @@
 */
 package org.jboss.as.server.controller.resources;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
@@ -118,6 +115,9 @@ import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelType;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -259,6 +259,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         // Other root resource operations
         resourceRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE, false);
+
         XmlMarshallingHandler xmh = new XmlMarshallingHandler(extensibleConfigurationPersister);
         resourceRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, xmh);
         resourceRegistration.registerOperationHandler(NamespaceAddHandler.DEFINITION, NamespaceAddHandler.INSTANCE);

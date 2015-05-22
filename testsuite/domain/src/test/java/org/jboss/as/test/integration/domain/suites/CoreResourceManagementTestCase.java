@@ -71,6 +71,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SELECT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WHERE;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
@@ -909,6 +912,34 @@ public class CoreResourceManagementTestCase {
 
     }
 
+
+    @Test
+    public void testQueryOperations() throws Exception {
+
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(QUERY);
+        operation.get(OP_ADDR).add("host", "*");
+
+        operation.get(SELECT).add("name");
+        operation.get(SELECT).add("running-mode");
+        operation.get(WHERE).add("master", "false");
+
+        ModelNode response = masterClient.execute(operation);
+
+        validateResponse(response);
+
+        List<ModelNode> results = response.get(RESULT).asList();
+        Assert.assertEquals(1, results.size());
+
+        ModelNode result = results.get(0).get(RESULT);
+        Assert.assertEquals(2, result.asPropertyList().size());
+        Assert.assertTrue(result.hasDefined("name"));
+        Assert.assertTrue(result.hasDefined("running-mode"));
+        Assert.assertEquals(result.get("name").asString(), "slave");
+        Assert.assertEquals(result.get("running-mode").asString(), "NORMAL");
+    }
 
     private void testCannotInvokeManagedServerOperationsComposite(ModelNode stepAddress) throws Exception {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
