@@ -30,6 +30,8 @@ import java.util.Set;
 import org.jboss.as.controller.access.HostEffect;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.ServerGroupEffect;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
@@ -264,6 +266,11 @@ public class ServerGroupEffectConstraint extends AbstractConstraint implements C
 
         @Override
         public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, Action action, TargetResource target) {
+            return getRequiredConstraint(target.getServerGroupEffect(), target.getHostEffect());
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, JmxAction action, JmxTarget target) {
             return getRequiredConstraint(target.getServerGroupEffect(), target.getHostEffect());
         }
 

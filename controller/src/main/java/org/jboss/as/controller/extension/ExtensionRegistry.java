@@ -60,6 +60,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -1046,7 +1047,7 @@ public class ExtensionRegistry {
         }
 
         @Override
-        public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action) {
+        public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
             return AuthorizationResult.PERMITTED;
         }
 
@@ -1057,6 +1058,11 @@ public class ExtensionRegistry {
 
         @Override
         public void setNonFacadeMBeansSensitive(boolean sensitive) {
+        }
+
+        @Override
+        public boolean isNonFacadeMBeansSensitive() {
+            return false;
         }
     };
 }

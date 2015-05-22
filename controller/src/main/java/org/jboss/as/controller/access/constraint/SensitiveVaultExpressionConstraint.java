@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -138,6 +140,25 @@ public class SensitiveVaultExpressionConstraint extends AllowAllowNotConstraint 
         protected int internalCompare(AbstractConstraintFactory other) {
             // We have no preference
             return 0;
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, JmxAction action, JmxTarget target) {
+            //TODO We could do something like this if the action provided the new value and the target
+            // provided the current value. But right now that data isn't provided.
+//            if (VaultExpressionSensitivityConfig.INSTANCE.isSensitive(actionEffect)) {
+//                if (actionEffect == Action.ActionEffect.WRITE_RUNTIME || actionEffect == Action.ActionEffect.WRITE_CONFIG) {
+//                    if (action.getNewValue() instanceof String && isSensitiveValue(new ModelNode(action.getNewValue().toString()))) {
+//                        return SENSITIVE;
+//                    }
+//                }
+//                if (actionEffect != Action.ActionEffect.ADDRESS) {
+//                    if (target.getCurrentValue() instanceof String && isSensitiveValue(new ModelNode(target.getCurrentValue().toString()))) {
+//                        return SENSITIVE;
+//                    }
+//                }
+//            }
+            return NOT_SENSITIVE;
         }
     }
 }

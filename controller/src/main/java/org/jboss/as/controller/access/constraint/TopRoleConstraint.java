@@ -31,6 +31,8 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -81,7 +83,10 @@ public class TopRoleConstraint extends AllowAllowNotConstraint {
         }
 
         private boolean isTopRole(TargetResource target) {
-            PathAddress address = target.getResourceAddress();
+            return isTopRole(target.getResourceAddress());
+        }
+
+        private boolean isTopRole(PathAddress address) {
             if (address.size() >= 3) {
                 PathElement roleMapping;
                 if (MGMT_ELEMENT.equals(address.getElement(0)) && AUTHZ_ELEMENT.equals(address.getElement(1))
@@ -98,6 +103,11 @@ public class TopRoleConstraint extends AllowAllowNotConstraint {
         @Override
         protected int internalCompare(AbstractConstraintFactory other) {
             return 0;
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(ActionEffect actionEffect, JmxAction action, JmxTarget target) {
+            return NOT_TOP_ROLE;
         }
     }
 

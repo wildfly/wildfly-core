@@ -31,6 +31,7 @@ import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.CustomAuthorizer;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.rbac.StandardRBACAuthorizer;
@@ -98,8 +99,9 @@ public final class DelegatingConfigurableAuthorizer implements JmxAuthorizer {
         return delegate.authorize(caller, callEnvironment, action, target);
     }
 
-    public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action) {
-        return delegate.authorizeJmxOperation(caller, callEnvironment, action);
+    @Override
+    public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        return delegate.authorizeJmxOperation(caller, callEnvironment, action, target);
     }
 
     @Override
@@ -113,6 +115,11 @@ public final class DelegatingConfigurableAuthorizer implements JmxAuthorizer {
         } else if (delegate instanceof StandardRBACAuthorizer) {
             ((StandardRBACAuthorizer) delegate).shutdown();
         }
+    }
+
+    @Override
+    public boolean isNonFacadeMBeansSensitive() {
+        return writableAuthorizerConfiguration.isNonFacadeMBeansSensitive();
     }
 
 }

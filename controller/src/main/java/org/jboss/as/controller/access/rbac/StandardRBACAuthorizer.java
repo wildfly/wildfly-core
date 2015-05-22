@@ -88,7 +88,7 @@ public final class StandardRBACAuthorizer extends ManagementPermissionAuthorizer
 
     private StandardRBACAuthorizer(final AuthorizerConfiguration configuration,
                                    final DefaultPermissionFactory permissionFactory, final RoleMapper roleMapper) {
-        super(permissionFactory, permissionFactory);
+        super(permissionFactory);
         this.configuration = configuration;
         this.permissionFactory = permissionFactory;
         configuration.registerScopedRoleListener(permissionFactory);

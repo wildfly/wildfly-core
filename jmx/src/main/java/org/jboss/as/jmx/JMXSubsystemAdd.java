@@ -22,6 +22,9 @@
 
 package org.jboss.as.jmx;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -72,8 +75,21 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
         } else {
             isMasterHc = false;
         }
+        JmxEffect jmxEffect = null;
+        if (context.getProcessType() == ProcessType.DOMAIN_SERVER) {
+            ModelNode rootModel = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).getModel();
+            String hostName = null;
+            if(rootModel.hasDefined(HOST)) {
+                hostName = rootModel.get(HOST).asString();
+            }
+            String serverGroup = null;
+            if(rootModel.hasDefined(SERVER_GROUP)) {
+                serverGroup = rootModel.get(SERVER_GROUP).asString();
+            }
+            jmxEffect = new JmxEffect(hostName, serverGroup);
+        }
         MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
-                            coreMBeanSensitivity, auditLoggerInfo, authorizer, context.getProcessType(), isMasterHc);
+                            coreMBeanSensitivity, auditLoggerInfo, authorizer, jmxEffect, context.getProcessType(), isMasterHc);
     }
 
     /**

@@ -25,6 +25,8 @@ package org.jboss.as.controller.access.rbac;
 import java.util.Collections;
 import java.util.Set;
 
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
@@ -54,6 +56,11 @@ public class SuperUserRoleMapper implements RoleMapper {
 
     @Override
     public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetResource resource) {
+        return SUPERUSER;
+    }
+
+    @Override
+    public Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
         return SUPERUSER;
     }
 

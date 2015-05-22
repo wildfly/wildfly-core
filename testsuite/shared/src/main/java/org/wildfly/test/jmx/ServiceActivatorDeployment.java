@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.test.integration.mgmt.access.jmx;
+package org.wildfly.test.jmx;
 
 
 import java.io.IOException;
@@ -34,9 +34,7 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import org.jboss.as.jmx.MBeanServerService;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
-
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
@@ -56,6 +54,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class ServiceActivatorDeployment implements ServiceActivator, Service<Void> {
 
+    public static final ServiceName MBEAN_SERVER_SERVICE_NAME = ServiceName.JBOSS.append("mbean", "server");
     public static final ServiceName SERVICE_NAME = ServiceName.of("test", "deployment", "jmx");
     public static final String PROPERTIES_RESOURCE = "service-activator-deployment.properties";
     public static final String MBEAN_CLASS_NAME = "mbean.class.name";
@@ -68,7 +67,7 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
         serviceActivatorContext.getServiceTarget().addService(SERVICE_NAME, this)
-                .addDependency(MBeanServerService.SERVICE_NAME, PluggableMBeanServer.class, mbeanServerValue).install();
+                .addDependency(MBEAN_SERVER_SERVICE_NAME, PluggableMBeanServer.class, mbeanServerValue).install();
     }
 
     @Override

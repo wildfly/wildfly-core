@@ -32,7 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE_DEPTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USER;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 
 import java.io.IOException;
@@ -69,7 +68,7 @@ public abstract class AbstractHostScopedRolesTestCase extends AbstractRbacTestCa
             RbacUtil.DEPLOYER_USER, RbacUtil.ADMINISTRATOR_USER, RbacUtil.AUDITOR_USER,
             RbacUtil.SUPERUSER_USER };
 
-    private static final String SCOPED_ROLE = "core-service=management/access=authorization/host-scoped-role=";
+    protected static final String SCOPED_ROLE = "core-service=management/access=authorization/host-scoped-role=";
 
     protected static void setupRoles(DomainClient domainClient) throws IOException {
         for (int i = 0; i < USERS.length; i++) {

@@ -24,6 +24,8 @@ package org.jboss.as.controller.access.constraint;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -79,6 +81,11 @@ public class AuditConstraint extends AllowAllowNotConstraint {
         protected int internalCompare(AbstractConstraintFactory other) {
             // We prefer going ahead of anything except a ScopingConstraint
             return other instanceof ScopingConstraintFactory ? 1 : -1;
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(ActionEffect actionEffect, JmxAction action, JmxTarget target) {
+            return NOT_AUDIT;
         }
     }
 }

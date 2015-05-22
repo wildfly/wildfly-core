@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
  */
-package org.jboss.as.test.integration.mgmt.access.jmx;
+package org.wildfly.test.jmx;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BYTES;
@@ -60,6 +60,20 @@ public class JMXServiceDeploymentSetupTask implements ServerSetupTask {
         deploy(managementClient.getControllerClient(), file);
     }
 
+    public void setup(ModelControllerClient client, String serverGroupName) throws IOException {
+        final File dir = new File("target/archives");
+        if(dir.exists()) {
+            cleanFile(dir);
+        }
+        dir.mkdirs();
+        file = new File(dir, "test-jmx-deployment.jar");
+        ServiceActivatorDeploymentUtil.createServiceActivatorDeployment(file, OBJECT_NAME, Dynamic.class);
+        deploy(client, file);
+        ModelNode op = createOpNode("server-group=" + serverGroupName + "/deployment=" + file.getName(), ADD);
+        op.get(ENABLED).set(true);
+        RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
+    }
+
     protected void deploy(ModelControllerClient client, File file) throws IOException {
         ModelNode op = createOpNode("deployment=" + file.getName(), ADD);
         op.get(ENABLED).set(true);
@@ -95,6 +109,11 @@ public class JMXServiceDeploymentSetupTask implements ServerSetupTask {
         toClean.delete();
     }
 
+    public void tearDown(ModelControllerClient client, String serverGroupName) throws Exception {
+        ModelNode op = createOpNode("server-group=" + serverGroupName + "/deployment=" + file.getName(), REMOVE);
+        RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
+        removeDeployment(client, file);
+    }
 
     @Override
     public void tearDown(ManagementClient managementClient) throws Exception {

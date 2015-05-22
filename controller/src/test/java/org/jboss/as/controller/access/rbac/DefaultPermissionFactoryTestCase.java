@@ -43,6 +43,8 @@ import org.jboss.as.controller.access.AuthorizerConfiguration;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.CombinationPolicy;
 import org.jboss.as.controller.access.Environment;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.constraint.Constraint;
@@ -278,6 +280,11 @@ public class DefaultPermissionFactoryTestCase {
         }
 
         @Override
+        public Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+            return roles;
+        }
+
+        @Override
         public Set<String> mapRoles(Caller caller, Environment callEnvironment, Set<String> operationHeaderRoles) {
             return roles;
         }
@@ -328,6 +335,11 @@ public class DefaultPermissionFactoryTestCase {
         @Override
         public int compareTo(ConstraintFactory o) {
             return this.equals(o) ? 0 : -1;
+        }
+
+        @Override
+        public Constraint getRequiredConstraint(Action.ActionEffect actionEffect, JmxAction action, JmxTarget target) {
+            return new TestConstraint(true);
         }
     }
 

@@ -29,7 +29,6 @@ import java.security.PermissionCollection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
@@ -39,6 +38,8 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -71,7 +72,7 @@ public class ManagementPermissionAuthorizerTestCase {
         processState.setRunning();
         environment = new Environment(processState, ProcessType.EMBEDDED_SERVER);
         TestPermissionFactory testPermissionFactory = new TestPermissionFactory();
-        authorizer = new ManagementPermissionAuthorizer(testPermissionFactory, testPermissionFactory);
+        authorizer = new ManagementPermissionAuthorizer(testPermissionFactory);
     }
 
     @Test
@@ -118,7 +119,7 @@ public class ManagementPermissionAuthorizerTestCase {
 
     // ---
 
-    private static final class TestPermissionFactory implements PermissionFactory, JmxPermissionFactory {
+    private static final class TestPermissionFactory implements PermissionFactory {
         private PermissionCollection getUserPermissions() {
             ManagementPermissionCollection mpc = new ManagementPermissionCollection("test", TestManagementPermission.class);
             mpc.add(new TestManagementPermission(Action.ActionEffect.ADDRESS));
@@ -156,12 +157,12 @@ public class ManagementPermissionAuthorizerTestCase {
         }
 
         @Override
-        public boolean isNonFacadeMBeansSensitive() {
-            return false;
+        public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+            return null;
         }
 
         @Override
-        public Set<String> getUserRoles(Caller caller, Environment callEnvironment, Action action, TargetResource target) {
+        public PermissionCollection getRequiredPermissions(JmxAction action, JmxTarget target) {
             return null;
         }
     }

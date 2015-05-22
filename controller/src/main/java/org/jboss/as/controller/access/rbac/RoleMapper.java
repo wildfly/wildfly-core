@@ -27,6 +27,8 @@ import java.util.Set;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
+import org.jboss.as.controller.access.JmxAction;
+import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 
@@ -58,6 +60,17 @@ public interface RoleMapper {
      * @return the roles. Will not be {@code null}, but may be an empty set
      */
     Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetResource resource);
+
+    /**
+     * Determine the roles available for the caller for a JMX invocation unrelated to the management facade MBeans.
+     *
+     * @param caller the caller. Cannot be {@code null}
+     * @param callEnvironment the call environment. Cannot be {@code null}
+     * @param action the action being authorized. Cannot be {@code null}
+     * @param target the target of the action. Cannot be {@code null}
+     * @return the roles. Will not be {@code null}, but may be an empty set
+     */
+    Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target);
 
     /**
      * Determine the roles available for the caller without reference to a particular action or target. Note

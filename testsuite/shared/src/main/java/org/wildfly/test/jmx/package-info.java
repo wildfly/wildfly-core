@@ -28,4 +28,4 @@
  * The intent is the deployment can be used in tests of core deployment behavior without
  * introducing the need for the relevant testsuite to install an extension/subsystem.
  */
-package org.jboss.as.test.integration.mgmt.access.jmx;
+package org.wildfly.test.jmx;

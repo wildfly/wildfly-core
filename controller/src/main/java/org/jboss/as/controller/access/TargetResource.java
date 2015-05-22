@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.access;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
@@ -60,7 +61,11 @@ public final class TargetResource {
         this.resource = resource;
         this.serverGroupEffect = serverGroupEffect;
         this.hostEffect = hostEffect;
-        this.accessConstraintDefinitions = resourceRegistration.getAccessConstraints();
+        if(resourceRegistration == null) {
+            this.accessConstraintDefinitions = Collections.emptyList();
+        } else {
+            this.accessConstraintDefinitions = resourceRegistration.getAccessConstraints();
+        }
     }
 
     public PathAddress getResourceAddress() {
