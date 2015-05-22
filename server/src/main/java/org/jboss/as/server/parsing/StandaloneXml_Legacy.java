@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.parsing.Namespace.DOMAIN_1_0;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
@@ -52,7 +53,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -515,19 +515,6 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final String value = reader.getAttributeValue(i);
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
-                    case INTERFACE: {
-                        HttpManagementResourceDefinition.INTERFACE.parseAndSetParameter(value, mgmtSocket, reader);
-                        hasInterfaceName = true;
-                        break;
-                    }
-                    case PORT: {
-                        HttpManagementResourceDefinition.HTTP_PORT.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
-                    }
-                    case SECURE_PORT: {
-                        HttpManagementResourceDefinition.HTTPS_PORT.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
-                    }
                     case MAX_THREADS: {
                         // ignore xsd mistake
                         break;
@@ -571,15 +558,6 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final String value = reader.getAttributeValue(i);
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
-                    case INTERFACE: {
-                        NativeManagementResourceDefinition.INTERFACE.parseAndSetParameter(value, mgmtSocket, reader);
-                        hasInterface = true;
-                        break;
-                    }
-                    case PORT: {
-                        NativeManagementResourceDefinition.NATIVE_PORT.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
-                    }
                     case SECURE_PORT:
                         // ignore -- this was a bug in the xsd
                         break;
@@ -873,75 +851,11 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseNativeManagementSocket(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
-        // Handle attributes
-        boolean hasInterface = false;
-
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case INTERFACE: {
-                        NativeManagementResourceDefinition.INTERFACE.parseAndSetParameter(value, addOp, reader);
-                        hasInterface = true;
-                        break;
-                    }
-                    case PORT: {
-                        NativeManagementResourceDefinition.NATIVE_PORT.parseAndSetParameter(value, addOp, reader);
-                        break;
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-
-        requireNoContent(reader);
-
-        if (!hasInterface) {
-            throw missingRequired(reader, Collections.singleton(Attribute.INTERFACE.getLocalName()));
-        }
+        throw ControllerLogger.ROOT_LOGGER.unsupportedElement(reader.getName(),reader.getLocation(), SOCKET_BINDING);
     }
 
     private void parseHttpManagementSocket(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
-        // Handle attributes
-        boolean hasInterface = false;
-
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case INTERFACE: {
-                        HttpManagementResourceDefinition.INTERFACE.parseAndSetParameter(value, addOp, reader);
-                        hasInterface = true;
-                        break;
-                    }
-                    case PORT: {
-                        HttpManagementResourceDefinition.HTTP_PORT.parseAndSetParameter(value, addOp, reader);
-                        break;
-                    }
-                    case SECURE_PORT: {
-                        HttpManagementResourceDefinition.HTTPS_PORT.parseAndSetParameter(value, addOp, reader);
-                        break;
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-
-        requireNoContent(reader);
-
-        if (!hasInterface) {
-            throw missingRequired(reader, Collections.singleton(Attribute.INTERFACE.getLocalName()));
-        }
+        throw ControllerLogger.ROOT_LOGGER.unsupportedElement(reader.getName(),reader.getLocation(), SOCKET_BINDING);
     }
 
     private void parseHttpManagementSocketBinding(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {

@@ -100,6 +100,7 @@ public class RemotingServices {
                 .install();
     }
 
+    @Deprecated
     public static void installConnectorServicesForNetworkInterfaceBinding(ServiceTarget serviceTarget,
                                                                           final ServiceName endpointName,
                                                                           final String connectorName,

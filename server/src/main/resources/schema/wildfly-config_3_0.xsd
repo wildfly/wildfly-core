@@ -2132,13 +2132,6 @@
                     </xs:documentation>
                 </xs:annotation>
                 <xs:choice>
-                    <xs:element name="socket" type="native-management-socketType">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Deprecated. Use 'socket-binding'
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:element>
                     <xs:element name="socket-binding" type="native-management-socket-binding-refType"/>
                 </xs:choice>
             </xs:extension>
@@ -2179,13 +2172,6 @@
                     </xs:documentation>
                 </xs:annotation>
                 <xs:choice>
-                    <xs:element name="socket" type="http-management-socketType">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Deprecated. Use 'socket-binding'
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:element>
                     <xs:element name="socket-binding" type="http-management-socket-binding-refType"/>
                 </xs:choice>
                 <xs:attribute name="console-enabled" type="xs:boolean" use="optional" default="true"/>
