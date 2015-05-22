@@ -29,12 +29,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>1.0.0.CR5</version>
+        <version>1.0.0.CR6-SNAPSHOT</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-platform-mbean</artifactId>
-    <version>1.0.0.CR5</version>
+    <version>1.0.0.CR6-SNAPSHOT</version>
 
     <name>WildFly: Platform MBean integration</name>
 
