@@ -31,7 +31,7 @@ import org.jboss.as.test.module.util.TestModule;
 public class PicketBoxModuleUtil {
 
     public static TestModule createTestModule() throws Exception {
-        try (InputStream is = PicketBoxModuleUtil.class.getClassLoader().getResourceAsStream("picketlink-module.xml")) {
+        try (InputStream is = PicketBoxModuleUtil.class.getClassLoader().getResourceAsStream("picketbox-module.xml")) {
             Path moduleXml = Files.createTempFile("pl-module", ".xml");
             Files.copy(is, moduleXml, StandardCopyOption.REPLACE_EXISTING);
             TestModule picketLinkModule = new TestModule("org.picketbox", moduleXml.toFile());
