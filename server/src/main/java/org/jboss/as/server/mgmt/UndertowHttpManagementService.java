@@ -53,6 +53,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.login.SecurityDomain;
 
 /**
  *
@@ -79,6 +80,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<SocketBindingManager> injectedSocketBindingManager = new InjectedValue<SocketBindingManager>();
     private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
+    private final InjectedValue<SecurityDomain> securityDomainValue = new InjectedValue<SecurityDomain>();
     private final InjectedValue<SecurityRealm> securityRealmServiceValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
@@ -367,6 +369,10 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      */
     public Injector<ModelController> getModelControllerInjector() {
         return modelControllerValue;
+    }
+
+    public InjectedValue<SecurityDomain> getSecurityDomainInjector() {
+        return securityDomainValue;
     }
 
     /**

@@ -283,6 +283,10 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
                         HttpManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
+                    case SECURITY_DOMAIN: {
+                        HttpManagementResourceDefinition.SECURITY_DOMAIN.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
                     case SECURITY_REALM: {
                         HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
                         break;
@@ -323,6 +327,10 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
                 switch (attribute) {
                     case SASL_PROTOCOL: {
                         NativeManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SECURITY_DOMAIN: {
+                        NativeManagementResourceDefinition.SECURITY_DOMAIN.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
                     case SECURITY_REALM: {
@@ -818,6 +826,7 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
+        NativeManagementResourceDefinition.SECURITY_DOMAIN.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
@@ -836,6 +845,7 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
+        HttpManagementResourceDefinition.SECURITY_DOMAIN.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);

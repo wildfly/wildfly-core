@@ -1956,9 +1956,23 @@
     </xs:complexType>
 
     <xs:complexType name="management-interfaceType">
+        <xs:attribute name="security-domain" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the security domain that has the security settings to secure
+                    this management interface.
+
+                    Only one of security-realm and security-domain should be specified at the same time.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="security-realm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
+                    Deprecated - security domains are how this is achieved now.
+
+                    Only one of security-realm and security-domain should be specified at the same time.
+
                     The security realm to use for this management interface, the capabilities
                     of the security realm will be queried to identify the authentication mechanism(s) to
                     offer.

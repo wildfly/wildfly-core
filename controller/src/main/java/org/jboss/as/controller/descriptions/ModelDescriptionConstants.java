@@ -389,6 +389,7 @@ public class ModelDescriptionConstants {
     public static final String SECURE_INTERFACE = "secure-interface";
     public static final String SECURE_PORT = "secure-port";
     public static final String SECURE_SOCKET_BINDING = "secure-socket-binding";
+    public static final String SECURITY_DOMAIN = "security-domain";
     public static final String SECURITY_REALM = "security-realm";
     public static final String SECURITY_REALMS = "security-realms";
     public static final String SENSITIVE = "sensitive";

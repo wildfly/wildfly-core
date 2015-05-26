@@ -168,6 +168,18 @@ public abstract class AbstractOperationTestCase {
         public Collection<String> getAllowedOrigins() {
             return Collections.EMPTY_LIST;
         }
+
+        @Override
+        public String getNativeManagementSecurityDomain() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getHttpManagementSecurityDomain() {
+            // TODO Auto-generated method stub
+            return null;
+        }
     };
 
     MockOperationContext getOperationContext() {

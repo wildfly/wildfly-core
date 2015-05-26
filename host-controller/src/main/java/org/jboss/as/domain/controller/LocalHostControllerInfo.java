@@ -66,12 +66,23 @@ public interface LocalHostControllerInfo {
      */
     int getNativeManagementPort();
 
+
+    /**
+     * Gets the name of the security domain to use for the native management requests.
+     *
+     * @return the security domain name.
+     */
+    String getNativeManagementSecurityDomain();
+
     /**
      * Gets the name of the security realm to use for for native management requests.
      *
-     * @return the logical interface name
+     * @return the security realm name
+     * @deprecated {@see #getNativeManagementSecurityDomain()}
      */
-    String getNativeManagementSecurityRealm();
+    default String getNativeManagementSecurityRealm() {
+        return null;
+    }
 
     /**
      * Gets the name of the interface on which the host listens for HTTP management requests.
@@ -100,11 +111,21 @@ public interface LocalHostControllerInfo {
     int getHttpManagementSecurePort();
 
     /**
+     * Gets the name of the security domain to use for HTTP management requests.
+     *
+     * @return the security domain name.
+     */
+    String getHttpManagementSecurityDomain();
+
+    /**
      * Gets the name of the security realm to use for for HTTP management requests.
      *
      * @return the logical interface name
+     * @deprecated {@see #getHttpManagementSecurityDomain()}
      */
-    String getHttpManagementSecurityRealm();
+    default String getHttpManagementSecurityRealm() {
+        return null;
+    }
 
     /**
      * Gets the username to use when authenticating against the

@@ -25,6 +25,7 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.SECURITY_DOMAIN_CAPABILITY_NAME;
 import io.undertow.server.ListenerRegistry;
 
 import java.util.Collection;
@@ -36,6 +37,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
@@ -62,6 +64,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
+import org.wildfly.security.auth.login.SecurityDomain;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 
@@ -111,6 +114,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         hostControllerInfo.setHttpManagementSecureInterface(secureAddress.isDefined() ? secureAddress.asString() : null);
         final ModelNode securePortNode = HttpManagementResourceDefinition.HTTPS_PORT.resolveModelAttribute(context, model);
         hostControllerInfo.setHttpManagementSecurePort(securePortNode.isDefined() ? securePortNode.asInt() : -1);
+        final ModelNode domainNode = HttpManagementResourceDefinition.SECURITY_DOMAIN.resolveModelAttribute(context, model);
+        hostControllerInfo.setHttpManagementSecurityDomain(domainNode.isDefined() ? domainNode.asString() : null);
         final ModelNode realmNode = HttpManagementResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, model);
         hostControllerInfo.setHttpManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
         hostControllerInfo.setAllowedOrigins(HttpManagementResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model));
@@ -129,6 +134,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         int port = hostControllerInfo.getHttpManagementPort();
         String secureInterfaceName = hostControllerInfo.getHttpManagementSecureInterface();
         int securePort = hostControllerInfo.getHttpManagementSecurePort();
+        String securityDomain = hostControllerInfo.getHttpManagementSecurityDomain();
         String securityRealm = hostControllerInfo.getHttpManagementSecurityRealm();
         Collection<String> allowedOrigins = hostControllerInfo.getAllowedOrigins();
 
@@ -162,7 +168,13 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), allowedOrigins);
 
-        if (securityRealm != null) {
+        ServiceName domainServiceName = null;
+        if (securityDomain != null) {
+            String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY_NAME, securityDomain);
+            domainServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityDomain.class);
+
+            builder.addDependency(domainServiceName, SecurityDomain.class, service.getSecurityDomainInjector());
+        } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
             ROOT_LOGGER.noSecurityRealmDefined();
@@ -185,7 +197,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         if (httpUpgrade) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-            ManagementRemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
+            ManagementRemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, domainServiceName, securityRealm, serverCallbackService, tmpDirPath);
 
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), serviceRegistry,onDemand);
             final String httpConnectorName;

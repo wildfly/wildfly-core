@@ -23,8 +23,10 @@
 package org.jboss.as.server.operations;
 
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.ALLOWED_ORIGINS;
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_DOMAIN_CAPABILITY_NAME;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_DOMAIN;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import io.undertow.server.ListenerRegistry;
@@ -39,6 +41,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
@@ -66,6 +69,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
+import org.wildfly.security.auth.login.SecurityDomain;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
@@ -135,9 +139,13 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSecureSocket(secureSocketBindingServiceName.getSimpleName());
         }
 
+        String securityDomain = null;
         String securityRealm = null;
+        final ModelNode domainNode = SECURITY_DOMAIN.resolveModelAttribute(context, model);
         final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
-        if (realmNode.isDefined()) {
+        if (domainNode.isDefined()) {
+            securityDomain = domainNode.asString();
+        } else if (realmNode.isDefined()) {
             securityRealm = realmNode.asString();
         } else {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
@@ -171,7 +179,13 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 undertowBuilder.addDependency(secureSocketBindingServiceName, SocketBinding.class, undertowService.getSecureSocketBindingInjector());
             }
 
-        if (securityRealm != null) {
+        ServiceName domainServiceName = null;
+        if (securityDomain != null) {
+            String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY_NAME, securityDomain);
+            domainServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityDomain.class);
+
+            undertowBuilder.addDependency(domainServiceName, SecurityDomain.class, undertowService.getSecurityDomainInjector());
+        } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
         }
 
@@ -192,7 +206,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-            RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, null, tmpDirPath);
+            RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, domainServiceName, securityRealm, null, tmpDirPath);
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
             if (socketBindingServiceName != null || (secureSocketBindingServiceName == null)) {

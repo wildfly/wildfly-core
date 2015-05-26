@@ -24,6 +24,8 @@ package org.jboss.as.server.operations;
 
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_DOMAIN;
+import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_DOMAIN_CAPABILITY_NAME;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 
@@ -32,6 +34,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.RemotingServices;
@@ -43,6 +46,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
+import org.wildfly.security.auth.login.SecurityDomain;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
@@ -78,22 +82,26 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         installNativeManagementConnector(context, model, endpointName, serviceTarget);
     }
 
-
     static void installNativeManagementConnector(final OperationContext context, final ModelNode model, final ServiceName endpointName, final ServiceTarget serviceTarget) throws OperationFailedException {
 
         final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
         ServiceName socketBindingServiceName = SocketBinding.JBOSS_BINDING_NAME.append(bindingName);
 
+        ServiceName securityDomain = null;
         String securityRealm = null;
+        final ModelNode domainNode = SECURITY_DOMAIN.resolveModelAttribute(context, model);
         final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
-        if (realmNode.isDefined()) {
+        if (domainNode.isDefined()) {
+            String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY_NAME, domainNode.asString());
+            securityDomain = context.getCapabilityServiceName(runtimeCapability, SecurityDomain.class);
+        } else if (realmNode.isDefined()) {
             securityRealm = realmNode.asString();
         } else {
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-        RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath);
+        RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityDomain, securityRealm, null, tmpDirPath);
 //        final OptionMap options = OptionMap.builder().set(RemotingOptions.HEARTBEAT_INTERVAL, 30000).set(Options.READ_TIMEOUT, 65000).getMap();
         final OptionMap options = createConnectorOptions(context, model);
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,

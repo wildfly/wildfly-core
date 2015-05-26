@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.resources;
 
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
@@ -57,16 +58,25 @@ import org.jboss.dmr.ModelType;
 public class NativeManagementResourceDefinition extends SimpleResourceDefinition {
 
     private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.native-interface";
+
+    public static final String SECURITY_DOMAIN_CAPABILITY_NAME = "org.wildfly.security.security-domain";
+
     public static final RuntimeCapability<Void> NATIVE_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
 
     private static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
+
+    public static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
+            .setNullSignificant(true)
+            .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
+            .build();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .setNullSignificant(true)
+            .setDeprecated(ModelVersion.create(4))
             .build();
 
     public static final SimpleAttributeDefinition INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INTERFACE, ModelType.STRING, false)
@@ -94,7 +104,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, NATIVE_PORT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL };
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, NATIVE_PORT, SECURITY_DOMAIN, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL };
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

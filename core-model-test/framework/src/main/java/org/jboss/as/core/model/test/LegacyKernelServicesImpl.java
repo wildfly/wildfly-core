@@ -281,6 +281,18 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
                 return Collections.EMPTY_LIST;
             }
 
+            @Override
+            public String getNativeManagementSecurityDomain() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public String getHttpManagementSecurityDomain() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
         });
 
         for (IgnoreDomainResourceTypeResource resource : ignoredResources) {

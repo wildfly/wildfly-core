@@ -509,6 +509,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
             stepCompleted();
         }
 
+        @Override
         public void completeStep(ResultHandler resultHandler) {
             if (nextStep != null) {
                 stepCompleted();
@@ -517,6 +518,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
             }
         }
 
+        @Override
         public void stepCompleted() {
             if (nextStep != null) {
                 try {
@@ -529,18 +531,22 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
             }
         }
 
+        @Override
         public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
             nextStep = step;
         }
 
+        @Override
         public void reloadRequired() {
             reloadRequired = true;
         }
 
+        @Override
         public boolean isReloadRequired() {
             return reloadRequired;
         }
 
+        @Override
         public void revertReloadRequired() {
             reloadRequired = false;
         }

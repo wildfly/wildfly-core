@@ -22,6 +22,7 @@
 package org.jboss.as.remoting;
 
 import java.io.File;
+
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.domain.management.SecurityRealm;
@@ -32,6 +33,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.login.SecurityDomain;
 
 /**
  * The service to make the RealmAuthenticationProvider available.
@@ -40,6 +42,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class RealmSecurityProviderService implements Service<RemotingSecurityProvider> {
 
+    private final InjectedValue<SecurityDomain> securityDomainInjectedValue = new InjectedValue<SecurityDomain>();
     private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<CallbackHandler> serverCallbackValue = new InjectedValue<CallbackHandler>();
     private final InjectedValue<String> tmpDirValue = new InjectedValue<String>();
@@ -85,6 +88,10 @@ public class RealmSecurityProviderService implements Service<RemotingSecurityPro
 
     public RemotingSecurityProvider getValue() throws IllegalStateException, IllegalArgumentException {
         return securityProvider;
+    }
+
+    public InjectedValue<SecurityDomain> getSecurityDomainInjectedValue() {
+        return securityDomainInjectedValue;
     }
 
     public InjectedValue<SecurityRealm> getSecurityRealmInjectedValue() {

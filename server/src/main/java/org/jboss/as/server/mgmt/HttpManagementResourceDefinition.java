@@ -61,15 +61,24 @@ import org.jboss.dmr.ModelType;
 public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
+
+    public static final String SECURITY_DOMAIN_CAPABILITY_NAME = "org.wildfly.security.security-domain";
+
     public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
 
     private static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
 
+    public static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
+            .setNullSignificant(true)
+            .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
+            .build();
+
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
                 .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
                 .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SECURITY_REALM_REF))
                 .setNullSignificant(true)
+                .setDeprecated(ModelVersion.create(4))
                 .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
@@ -117,7 +126,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {
-            SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
+            SECURITY_DOMAIN, SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
     };
 
     public static final HttpManagementResourceDefinition INSTANCE = new HttpManagementResourceDefinition();
