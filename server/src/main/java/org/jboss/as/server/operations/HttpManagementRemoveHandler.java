@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -44,6 +46,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     public static final HttpManagementRemoveHandler INSTANCE = new HttpManagementRemoveHandler();
 
     private HttpManagementRemoveHandler() {
+        super(HTTP_MANAGEMENT_CAPABILITY);
     }
 
     @Override

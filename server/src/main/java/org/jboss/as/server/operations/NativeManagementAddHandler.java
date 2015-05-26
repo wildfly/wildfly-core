@@ -23,6 +23,7 @@
 package org.jboss.as.server.operations;
 
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 
@@ -58,9 +59,8 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
     public NativeManagementAddHandler() {
-        super(ATTRIBUTE_DEFINITIONS);
+        super(NATIVE_MANAGEMENT_CAPABILITY, ATTRIBUTE_DEFINITIONS);
     }
-
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
