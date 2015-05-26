@@ -22,6 +22,8 @@
 package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -211,9 +213,36 @@ public class GlobalOperationHandlers {
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                        if (resultAction == OperationContext.ResultAction.KEEP && localFilteredData.hasFilteredData()) {
-                            // Report on filtering
+
+                        // Report on filtering
+                        if (localFilteredData.hasFilteredData()) {
                             context.getResponseHeaders().get(ACCESS_CONTROL).set(localFilteredData.toModelNode());
+                        }
+
+                        // Extract any failure info from the individual results and use them
+                        // to construct an overall failure description if necessary
+                        if (resultAction == OperationContext.ResultAction.ROLLBACK
+                                && !context.hasFailureDescription() && result.isDefined()) {
+                            String op = operation.require(OP).asString();
+                            Map<PathAddress, ModelNode> failures = new HashMap<PathAddress, ModelNode>();
+                            for (ModelNode resultItem : result.asList()) {
+                                if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
+                                    final PathAddress failedAddress = PathAddress.pathAddress(resultItem.get(ADDRESS));
+                                    ModelNode failedDesc = resultItem.get(FAILURE_DESCRIPTION);
+                                    failures.put(failedAddress, failedDesc);
+                                }
+                            }
+
+                            if (failures.size() == 1) {
+                                Map.Entry<PathAddress, ModelNode> entry = failures.entrySet().iterator().next();
+                                if (entry.getValue().getType() == ModelType.STRING) {
+                                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddress(op, entry.getKey(), entry.getValue().asString()));
+                                } else {
+                                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddressWithComplexFailure(op, entry.getKey()));
+                                }
+                            } else if (failures.size() > 1) {
+                                context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtMultipleAddresses(op, failures.keySet()));
+                            }
                         }
                     }
                 });
