@@ -189,7 +189,7 @@ public interface CommonAttributes {
             .setAllowExpression(false)
             .build();
 
-    SimpleAttributeDefinition MATCH = SimpleAttributeDefinitionBuilder.create("match", ModelType.STRING)
+    SimpleAttributeDefinition MATCH = SimpleAttributeDefinitionBuilder.create("match", ModelType.STRING, true)
             .setAllowExpression(false)
             .build();
 

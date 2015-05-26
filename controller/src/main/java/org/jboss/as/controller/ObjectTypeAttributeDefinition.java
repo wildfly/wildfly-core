@@ -166,6 +166,50 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
+    /**
+     * Overrides the superclass implementation to allow the AttributeDefinition for each field in the
+     * object to in turn resolve that field.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public ModelNode resolveValue(ExpressionResolver resolver, ModelNode value) throws OperationFailedException {
+
+        // Pass non-OBJECT values through the superclass so it can reject weird values and, in the odd chance
+        // that's how this object is set up, turn undefined into a default list value.
+        ModelNode superResult = value.getType() == ModelType.OBJECT ? value : super.resolveValue(resolver, value);
+
+        // If it's not an OBJECT (almost certainly UNDEFINED), then nothing more we can do
+        if (superResult.getType() != ModelType.OBJECT) {
+            return superResult;
+        }
+
+        // Resolve each field.
+        // Don't mess with the original value
+        ModelNode clone = superResult == value ? value.clone() : superResult;
+        ModelNode result = new ModelNode();
+        for (AttributeDefinition field : valueTypes) {
+            String fieldName = field.getName();
+            if (clone.has(fieldName)) {
+                result.get(fieldName).set(field.resolveValue(resolver, clone.get(fieldName)));
+            } else {
+                // Input doesn't have a child for this field.
+                // Don't create one in the output unless the AD produces a default value.
+                // TBH this doesn't make a ton of sense, since any object should have
+                // all of its fields, just some may be undefined. But doing it this
+                // way may avoid breaking some code that is incorrectly checking node.has("xxx")
+                // instead of node.hasDefined("xxx")
+                ModelNode val = field.resolveValue(resolver, new ModelNode());
+                if (val.isDefined()) {
+                    result.get(fieldName).set(val);
+                }
+            }
+        }
+        // Validate the entire object
+        getValidator().validateResolvedParameter(getName(), result);
+        return result;
+    }
+
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
                                            final ResourceDescriptionResolver resolver,
                                            final Locale locale) {
