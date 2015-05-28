@@ -33,14 +33,19 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.launcher.CliCommandBuilder;
+import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -225,36 +230,37 @@ public class FileWithPropertiesTestCase {
         if(jbossDist == null) {
             fail("jboss.dist system property is not set");
         }
+
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist);
+
         String modulePath = TestSuiteEnvironment.getSystemProperty("module.path");
-        if(modulePath == null) {
-            modulePath = jbossDist + File.separator + "modules";
-            //fail("module.path system property is not set");
+        if (modulePath != null) {
+            commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
         }
 
-        final ProcessBuilder builder = new ProcessBuilder();
-        builder.redirectErrorStream(true);
-        final List<String> command = new ArrayList<String>();
-        command.add(TestSuiteEnvironment.getJavaPath());
-        TestSuiteEnvironment.getIpv6Args(command);
-        if(resolveProps) {
-            command.add("-Djboss.cli.config=" + TMP_JBOSS_CLI_FILE.getAbsolutePath());
-        } else {
-            command.add("-Djboss.cli.config=" + jbossDist + File.separator + "bin" + File.separator + "jboss-cli.xml");
+        final List<String> ipv6Args = new ArrayList<>();
+        TestSuiteEnvironment.getIpv6Args(ipv6Args);
+        if (!ipv6Args.isEmpty()) {
+            commandBuilder.addJavaOptions(ipv6Args);
         }
-        command.add("-jar");
-        command.add(jbossDist + File.separatorChar + "jboss-modules.jar");
-        command.add("-mp");
-        command.add(modulePath);
-        command.add("org.jboss.as.cli");
-        //command.add("-c");
-        //command.add("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + TestSuiteEnvironment.getServerPort());
-        command.add("--file=" + SCRIPT_FILE.getAbsolutePath());
-        command.add("--properties=" + PROPS_FILE.getAbsolutePath());
-        builder.command(command);
+
+        // Set the CLI configuration path
+        final Path path;
+        if (resolveProps) {
+            path = TMP_JBOSS_CLI_FILE.toPath().toAbsolutePath();
+        } else {
+            path = Paths.get(jbossDist, "bin", "jboss-cli.xml");
+        }
+        commandBuilder.addJavaOptions("-Djboss.cli.config=" + path);
+        // commandBuilder.setConnection(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());
+        commandBuilder.setScriptFile(SCRIPT_FILE.toPath());
+        commandBuilder.addCliArgument("--properties=" + PROPS_FILE.getAbsolutePath());
 
         Process cliProc = null;
         try {
-            cliProc = builder.start();
+            cliProc = Launcher.of(commandBuilder)
+                    .setRedirectErrorStream(true)
+                    .launch();
         } catch (IOException e) {
             fail("Failed to start CLI process: " + e.getLocalizedMessage());
         }

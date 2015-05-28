@@ -108,7 +108,7 @@ public class JBossclircTestCase extends CliScriptTestBase {
     public void testScript() throws Exception {
         assertEquals(0, execute(false, "echo $" + VAR_NAME, false,
                 Collections.singletonMap(JBOSS_CLI_RC_PROP, TMP_JBOSS_CLI_RC.getAbsolutePath())));
-        assertTrue(getLastCommandOutput().endsWith(Util.LINE_SEPARATOR + VAR_VALUE + Util.LINE_SEPARATOR));
+        assertTrue(getLastCommandOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
     }
     
     protected static void ensureRemoved(File f) {

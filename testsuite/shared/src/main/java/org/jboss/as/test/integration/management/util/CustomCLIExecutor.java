@@ -31,12 +31,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.logging.Logger;
+import org.wildfly.core.launcher.CliCommandBuilder;
+import org.wildfly.core.launcher.Launcher;
 
 /**
  * CLI executor with custom configuration file jboss-cli.xml used for testing
@@ -106,31 +111,35 @@ public class CustomCLIExecutor {
             fail("module.path system property is not set");
         }
 
-        final ProcessBuilder builder = new ProcessBuilder();
-        builder.redirectErrorStream(true);
-        final List<String> command = new ArrayList<String>();
-        command.add(TestSuiteEnvironment.getJavaPath());
-        TestSuiteEnvironment.getIpv6Args(command);
+
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+                .setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
+
+        final List<String> ipv6Args = new ArrayList<>();
+        TestSuiteEnvironment.getIpv6Args(ipv6Args);
+        if (!ipv6Args.isEmpty()) {
+            commandBuilder.addJavaOptions(ipv6Args);
+        }
+
+        final Path cliConfigPath;
         if (cliConfigFile != null) {
-            command.add("-Djboss.cli.config=" + cliConfigFile.getAbsolutePath());
+            cliConfigPath = cliConfigFile.toPath().toAbsolutePath();
+            commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigFile.getAbsolutePath());
         } else {
-            command.add("-Djboss.cli.config=" + jbossDist + File.separator + "bin" + File.separator + "jboss-cli.xml");
+            cliConfigPath = Paths.get(jbossDist, "bin", "jboss-cli.xml");
         }
+        commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
+
+        // Note that this only allows for a single system property
         if (System.getProperty("cli.args") != null) {
-            command.add(System.getProperty("cli.args"));
+            commandBuilder.addJavaOption(System.getProperty("cli.args"));
         }
-        command.add("-jar");
-        command.add(jbossDist + File.separatorChar + "jboss-modules.jar");
-        command.add("-mp");
-        command.add(modulePath);
-        command.add("org.jboss.as.cli");
-        command.add("-c");
-        command.add("--controller=" + controller);
-        command.add(operation);
-        builder.command(command);
+        // Set the connection command
+        commandBuilder.setConnection(controller);
+        commandBuilder.addCliArgument(operation);
         Process cliProc = null;
         try {
-            cliProc = builder.start();
+            cliProc = Launcher.of(commandBuilder).launch();
         } catch (IOException e) {
             fail("Failed to start CLI process: " + e.getLocalizedMessage());
         }
