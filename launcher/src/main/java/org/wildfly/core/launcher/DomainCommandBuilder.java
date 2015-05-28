@@ -46,7 +46,6 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     private static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
     private static final String DOMAIN_LOG_DIR = "jboss.domain.log.dir";
 
-    private final Path javaHome;
     private Path hostControllerJavaHome;
     private Path serverJavaHome;
     private Path baseDir;
@@ -63,8 +62,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @param javaHome    the default Java home directory
      */
     private DomainCommandBuilder(final Path wildflyHome, final Path javaHome) {
-        super(wildflyHome);
-        this.javaHome = javaHome;
+        super(wildflyHome, javaHome);
         hostControllerJavaOpts = new Arguments();
         hostControllerJavaOpts.addAll(DEFAULT_VM_ARGUMENTS);
         processControllerJavaOpts = new Arguments();
@@ -81,7 +79,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final Path wildflyHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), validateJavaHome(System.getProperty("java.home")));
+        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), Environment.getDefaultJavaHome());
     }
 
     /**
@@ -94,7 +92,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final String wildflyHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), validateJavaHome(System.getProperty("java.home")));
+        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), Environment.getDefaultJavaHome());
     }
 
     /**
@@ -785,7 +783,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
     @Override
     public Path getJavaHome() {
-        return javaHome;
+        return environment.getJavaHome();
     }
 
     @Override
