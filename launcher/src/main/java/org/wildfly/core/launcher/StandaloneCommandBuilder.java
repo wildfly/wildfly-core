@@ -48,7 +48,6 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     private static final String SERVER_LOG_DIR = "jboss.server.log.dir";
 
     private Path baseDir;
-    private Path javaHome;
     private final Arguments javaOpts;
     private String debugArg;
     private String modulesLocklessArg;
@@ -270,11 +269,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setJavaHome(final String javaHome) {
-        if (javaHome == null) {
-            this.javaHome = null;
-        } else {
-            this.javaHome = validateJavaHome(javaHome);
-        }
+        environment.setJavaHome(javaHome);
         return this;
     }
 
@@ -286,11 +281,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setJavaHome(final Path javaHome) {
-        if (javaHome == null) {
-            this.javaHome = null;
-        } else {
-            this.javaHome = validateJavaHome(javaHome);
-        }
+        environment.setJavaHome(javaHome);
         return this;
     }
 
@@ -465,13 +456,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
 
     @Override
     public Path getJavaHome() {
-        final Path path;
-        if (javaHome == null) {
-            path = validateJavaHome(System.getProperty("java.home"));
-        } else {
-            path = javaHome;
-        }
-        return path;
+        return environment.getJavaHome();
     }
 
     @Override

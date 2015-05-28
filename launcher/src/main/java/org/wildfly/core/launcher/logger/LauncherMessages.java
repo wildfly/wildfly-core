@@ -56,4 +56,7 @@ public interface LauncherMessages {
 
     @Message(id = 5, value = "The parameter %s cannot be null.")
     IllegalArgumentException nullParam(String name);
+
+    @Message(id = 6, value = "Invalid hostname: %s")
+    IllegalArgumentException invalidHostname(CharSequence hostname);
 }
