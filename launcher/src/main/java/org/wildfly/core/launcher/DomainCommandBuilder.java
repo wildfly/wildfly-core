@@ -40,7 +40,7 @@ import org.wildfly.core.launcher.Arguments.Argument;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings("unused")
-public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBuilder> implements CommandBuilder {
+public class DomainCommandBuilder extends AbstractServerCommandBuilder<DomainCommandBuilder> implements CommandBuilder {
 
     private static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
@@ -81,7 +81,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final Path wildflyHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), validateJavaHome(System.getProperty("java.home")));
+        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), getDefaultJavaHome());
     }
 
     /**
@@ -94,7 +94,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final String wildflyHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), validateJavaHome(System.getProperty("java.home")));
+        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), getDefaultJavaHome());
     }
 
     /**

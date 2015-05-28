@@ -38,7 +38,7 @@ import org.wildfly.core.launcher.Arguments.Argument;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings("unused")
-public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneCommandBuilder> implements CommandBuilder {
+public class StandaloneCommandBuilder extends AbstractServerCommandBuilder<StandaloneCommandBuilder> implements CommandBuilder {
 
     // JPDA remote socket debugging
     static final String DEBUG_FORMAT = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=%s,address=%d";
@@ -467,7 +467,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     public Path getJavaHome() {
         final Path path;
         if (javaHome == null) {
-            path = validateJavaHome(System.getProperty("java.home"));
+            path = getDefaultJavaHome();
         } else {
             path = javaHome;
         }

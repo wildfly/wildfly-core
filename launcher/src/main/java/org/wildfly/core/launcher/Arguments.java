@@ -120,6 +120,17 @@ class Arguments {
     }
 
     /**
+     * Removes the argument from the collection of arguments.
+     *
+     * @param key they key of the argument to remove
+     *
+     * @return the argument or {@code null} if the argument was not found
+     */
+    public Argument remove(final String key) {
+        return map.remove(key);
+    }
+
+    /**
      * Returns the arguments as a list in their command line form.
      *
      * @return the arguments for the command line
