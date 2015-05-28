@@ -77,7 +77,6 @@
                 <path name="javax/sound/midi/spi"/>
                 <path name="javax/sound/sampled"/>
                 <path name="javax/sound/sampled/spi"/>
-                <path name="javax/sql"/>
                 <path name="javax/sql/rowset"/>
                 <path name="javax/sql/rowset/serial"/>
                 <path name="javax/sql/rowset/spi"/>
