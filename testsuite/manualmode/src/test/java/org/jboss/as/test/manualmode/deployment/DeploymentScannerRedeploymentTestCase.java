@@ -64,7 +64,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 public class DeploymentScannerRedeploymentTestCase {
-
+    private static final int DELAY = 100;
+    private static final int TIMEOUT = 30000;
     private static final PathAddress DEPLOYMENT_TEST = PathAddress.pathAddress(DEPLOYMENT, "deployment-test.jar");
 
     private static final String DEFAULT_SERVER = "standalone";
@@ -103,9 +104,9 @@ public class DeploymentScannerRedeploymentTestCase {
                 addDeploymentScanner();
                 try {
                     // Wait until deployed ...
-                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (!exists(DEPLOYMENT_TEST) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(100);
+                        Thread.sleep(DELAY);
                     }
                     Assert.assertTrue("deployemt archive is expected.", exists(DEPLOYMENT_TEST));
                     Assert.assertEquals("FAILED", deploymentState(DEPLOYMENT_TEST));
@@ -121,12 +122,12 @@ public class DeploymentScannerRedeploymentTestCase {
                     container.start();
 
                     // Wait until started ...
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (!isRunning() && System.currentTimeMillis() < timeout) {
                         Thread.sleep(200);
                     }
 
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (exists(DEPLOYMENT_TEST) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(200);
                     }

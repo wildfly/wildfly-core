@@ -385,6 +385,13 @@ class FileSystemDeploymentService implements DeploymentScanner {
         }
     }
 
+    /** Perform a one-off scan to establish deployment tasks */
+    void singleScan() {
+        assert deploymentOperationsFactory != null : "deploymentOperationsFactory is null";
+        ManualScanCallable manualScan = new ManualScanCallable();
+        scheduledExecutor.submit(manualScan);
+    }
+
     /** Perform a normal scan */
     void scan() {
         if (acquireScanLock()) {
@@ -415,7 +422,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
         if (acquireScanLock()) {
             try {
-                ROOT_LOGGER.tracef("Performing a post-boot forced undeploy scan for scan directory %s", deploymentDir.getAbsolutePath());
+                ROOT_LOGGER.tracef("Performing a post-boot forced undeploy scan for scan directory %oManu", deploymentDir.getAbsolutePath());
                 ScanContext scanContext = new ScanContext(deploymentOperations);
 
                 // Add remove actions to the plan for anything we count as
@@ -523,6 +530,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
                     scannerTasks.add(new UndeployTask(missing.getKey(), missing.getValue().parentFolder, scanContext.scanStartTime, false));
                 }
                 try {
+                    scanResult.tasks = scannerTasks;
                     executeScannerTasks(scannerTasks, deploymentOperations, oneOffScan, scanResult);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -616,6 +624,26 @@ class FileSystemDeploymentService implements DeploymentScanner {
                     for (ScannerTask current : scannerTasks) {
                         current.handleFailureResult(results);
                     }
+                }
+            }
+        }
+    }
+
+    private class ManualScanCallable implements Runnable {
+        @Override
+        public void run() {
+            DeploymentOperations operations = deploymentOperations;
+            if (operations == null) {
+                operations = deploymentOperationsFactory.create();
+            }
+            if (acquireScanLock()) {
+                try {
+                    DeploymentScannerLogger.ROOT_LOGGER.debug("Manual scan launched");
+                    scan(true, operations);
+                } catch (Exception e) {
+                    ROOT_LOGGER.scanException(e, deploymentDir.getAbsolutePath());
+                } finally {
+                    releaseScanLock();
                 }
             }
         }
@@ -1309,10 +1337,8 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
         @Override
         protected void handleFailureResult(final ModelNode result) {
-
             // Remove the in-progress marker
             removeInProgressMarker();
-
             writeFailedMarker(deploymentFile, result.get(FAILURE_DESCRIPTION).toString(), doDeployTimestamp);
         }
     }
@@ -1521,6 +1547,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private static class ScanResult {
         private boolean scheduleRescan;
         private boolean requireUndeploy;
+        private List<ScannerTask> tasks;
     }
 
     /**
