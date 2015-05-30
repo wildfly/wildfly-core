@@ -157,12 +157,28 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         fi
     fi
 
-    if [ $CLIENT_VM = false ]; then
-        NO_COMPRESSED_OOPS=`echo $JAVA_OPTS | $GREP "\-XX:\-UseCompressedOops"`
-        if [ "x$NO_COMPRESSED_OOPS" = "x" ]; then
-            "$JAVA" $JVM_OPTVERSION -server -XX:+UseCompressedOops -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -XX:+UseCompressedOops"
-        fi
-    fi
+    # Enabled by default in Java SE 6u23 and later.
+    # In Java SE 7, use of compressed oops is the default for 64-bit JVM processes when -Xmx isn't specified and for values of -Xmx less than 32 gigabytes.
+    #if [ $CLIENT_VM = false ]; then
+    #    NO_COMPRESSED_OOPS=`echo $JAVA_OPTS | $GREP "\-XX:\-UseCompressedOops"`
+    #    if [ "x$NO_COMPRESSED_OOPS" = "x" ]; then
+    #        "$JAVA" $JVM_OPTVERSION -server -XX:+UseCompressedOops -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -XX:+UseCompressedOops"
+    #    fi
+    #fi
+
+    # EAP6-121 feature disabled
+    # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
+    #NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-verbose:gc"`
+    #if [ "x$NO_GC_LOG_ROTATE" = "x" ]; then
+        # backup prior gc logs
+        #mv "$JBOSS_LOG_DIR/gc.log.0" "$JBOSS_LOG_DIR/backupgc.log.0" >/dev/null 2>&1
+        #mv "$JBOSS_LOG_DIR/gc.log.1" "$JBOSS_LOG_DIR/backupgc.log.1" >/dev/null 2>&1
+        #mv "$JBOSS_LOG_DIR/gc.log.2" "$JBOSS_LOG_DIR/backupgc.log.2" >/dev/null 2>&1
+        #mv "$JBOSS_LOG_DIR/gc.log.3" "$JBOSS_LOG_DIR/backupgc.log.3" >/dev/null 2>&1
+        #mv "$JBOSS_LOG_DIR/gc.log.4" "$JBOSS_LOG_DIR/backupgc.log.4" >/dev/null 2>&1
+        #mv "$JBOSS_LOG_DIR/gc.log.*.current" "$JBOSS_LOG_DIR/backupgc.log.current" >/dev/null 2>&1
+        #"$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+    #fi
 
     JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"
 fi
@@ -259,54 +275,6 @@ if $cygwin; then
     JBOSS_BASE_DIR=`cygpath --path --windows "$JBOSS_BASE_DIR"`
     JBOSS_LOG_DIR=`cygpath --path --windows "$JBOSS_LOG_DIR"`
     JBOSS_CONFIG_DIR=`cygpath --path --windows "$JBOSS_CONFIG_DIR"`
-fi
-
-if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
-    # Check for -d32/-d64 in JAVA_OPTS
-    JVM_D64_OPTION=`echo $JAVA_OPTS | $GREP "\-d64"`
-    JVM_D32_OPTION=`echo $JAVA_OPTS | $GREP "\-d32"`
-
-    # Check If server or client is specified
-    SERVER_SET=`echo $JAVA_OPTS | $GREP "\-server"`
-    CLIENT_SET=`echo $JAVA_OPTS | $GREP "\-client"`
-
-    if [ "x$JVM_D32_OPTION" != "x" ]; then
-        JVM_OPTVERSION="-d32"
-    elif [ "x$JVM_D64_OPTION" != "x" ]; then
-        JVM_OPTVERSION="-d64"
-    elif $darwin && [ "x$SERVER_SET" = "x" ]; then
-        # Use 32-bit on Mac, unless server has been specified or the user opts are incompatible
-        "$JAVA" -d32 $JAVA_OPTS -version > /dev/null 2>&1 && PREPEND_JAVA_OPTS="-d32" && JVM_OPTVERSION="-d32"
-    fi
-
-    CLIENT_VM=false
-    if [ "x$CLIENT_SET" != "x" ]; then
-        CLIENT_VM=true
-    elif [ "x$SERVER_SET" = "x" ]; then
-        if $darwin && [ "$JVM_OPTVERSION" = "-d32" ]; then
-            # Prefer client for Macs, since they are primarily used for development
-            CLIENT_VM=true
-            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -client"
-        else
-            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -server"
-        fi
-    fi
-
-    # EAP6-121 feature disabled
-    # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
-    #NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-verbose:gc"`
-    #if [ "x$NO_GC_LOG_ROTATE" = "x" ]; then
-        # backup prior gc logs
-        #mv "$JBOSS_LOG_DIR/gc.log.0" "$JBOSS_LOG_DIR/backupgc.log.0" >/dev/null 2>&1
-        #mv "$JBOSS_LOG_DIR/gc.log.1" "$JBOSS_LOG_DIR/backupgc.log.1" >/dev/null 2>&1
-        #mv "$JBOSS_LOG_DIR/gc.log.2" "$JBOSS_LOG_DIR/backupgc.log.2" >/dev/null 2>&1
-        #mv "$JBOSS_LOG_DIR/gc.log.3" "$JBOSS_LOG_DIR/backupgc.log.3" >/dev/null 2>&1
-        #mv "$JBOSS_LOG_DIR/gc.log.4" "$JBOSS_LOG_DIR/backupgc.log.4" >/dev/null 2>&1
-        #mv "$JBOSS_LOG_DIR/gc.log.*.current" "$JBOSS_LOG_DIR/backupgc.log.current" >/dev/null 2>&1
-        #"$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
-    #fi
-
-    JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"
 fi
 
 if [ "x$JBOSS_MODULEPATH" = "x" ]; then
