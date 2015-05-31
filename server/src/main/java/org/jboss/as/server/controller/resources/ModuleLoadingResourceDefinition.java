@@ -33,6 +33,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -213,7 +214,8 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
         Field resourceLoaderField = null;
         pathsField.setAccessible(true);
         try {
-            Object paths = pathsField.get(mcl);
+            Object pathsReference = pathsField.get(mcl);
+            Object paths =  ((AtomicReference) pathsReference).get();
             sourceListField = paths.getClass().getDeclaredField("sourceList");
             sourceListField.setAccessible(true);
             Object[] resourceLoaderSpecs = (Object[]) sourceListField.get(paths);
