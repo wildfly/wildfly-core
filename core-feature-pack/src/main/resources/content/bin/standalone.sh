@@ -157,15 +157,6 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         fi
     fi
 
-    # Enabled by default in Java SE 6u23 and later.
-    # In Java SE 7, use of compressed oops is the default for 64-bit JVM processes when -Xmx isn't specified and for values of -Xmx less than 32 gigabytes.
-    #if [ $CLIENT_VM = false ]; then
-    #    NO_COMPRESSED_OOPS=`echo $JAVA_OPTS | $GREP "\-XX:\-UseCompressedOops"`
-    #    if [ "x$NO_COMPRESSED_OOPS" = "x" ]; then
-    #        "$JAVA" $JVM_OPTVERSION -server -XX:+UseCompressedOops -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -XX:+UseCompressedOops"
-    #    fi
-    #fi
-
     # EAP6-121 feature disabled
     # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
     #NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-verbose:gc"`
