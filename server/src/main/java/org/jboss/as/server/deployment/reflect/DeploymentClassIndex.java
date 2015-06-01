@@ -34,6 +34,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Stuart Douglas
  */
+@Deprecated
 public class DeploymentClassIndex {
 
     private final Map<String, ClassIndex> index = new HashMap<String, ClassIndex>();
