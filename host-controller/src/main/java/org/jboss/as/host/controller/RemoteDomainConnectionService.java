@@ -69,6 +69,7 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
@@ -80,7 +81,6 @@ import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
-import org.jboss.as.domain.controller.operations.ApplyRemoteMasterDomainModelHandler;
 import org.jboss.as.domain.controller.operations.FetchMissingConfigurationHandler;
 import org.jboss.as.domain.controller.operations.SyncDomainModelOperationHandler;
 import org.jboss.as.domain.controller.operations.SyncServerGroupOperationHandler;
@@ -150,7 +150,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         APPLY_EXTENSIONS.get(OP_ADDR).setEmptyList();
         APPLY_EXTENSIONS.protect();
 
-        APPLY_DOMAIN_MODEL.get(OP).set(ApplyRemoteMasterDomainModelHandler.OPERATION_NAME);
+        APPLY_DOMAIN_MODEL.get(OP).set(ModelDescriptionConstants.APPLY_REMOTE_DOMAIN_MODEL);
         //FIXME this makes the op work after boot (i.e. slave connects to restarted master), but does not make the slave resync the servers
         APPLY_DOMAIN_MODEL.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
         APPLY_DOMAIN_MODEL.get(OP_ADDR).setEmptyList();

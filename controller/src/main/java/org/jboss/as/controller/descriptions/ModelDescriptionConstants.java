@@ -59,6 +59,7 @@ public class ModelDescriptionConstants {
     public static final String APPLICATION = "application";
     public static final String APPLICATION_CLASSIFICATION = "application-classification";
     public static final String APPLIES_TO = "applies-to";
+    public static final String APPLY_REMOTE_DOMAIN_MODEL = "apply-remote-domain-model";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTE = "attribute";

@@ -121,45 +121,11 @@ public interface TransformationTarget {
      */
     boolean isIgnoredResourceListAvailableAtRegistration();
 
-    public enum TransformationTargetType {
+    enum TransformationTargetType {
 
         DOMAIN,
         HOST,
         SERVER,
         ;
     }
-
-    /**
-     * Provides information to a {@link TransformationTarget} indicating that a resource
-     * with the given address does not need
-     * {@link TransformationTarget#resolveTransformer(ResourceTransformationContext, PathAddress) resource transformation}
-     * or {@link TransformationTarget#resolveTransformer(TransformationContext, PathAddress, String) operation transformation}
-     * because the resource is ignored on the target.
-     *
-     * @author Brian Stansberry (c) 2012 Red Hat Inc.
-     */
-    @Deprecated
-    public interface IgnoredTransformationRegistry {
-
-        /**
-         * Gets whether a resource with the given {@code address} should be excluded from
-         * {@link TransformationTarget#resolveTransformer(ResourceTransformationContext, PathAddress) resource transformation}.
-         *
-         * @param address the resource address. Cannot be {@code null}
-         * @return {@code true} if the resource should be excluded from resource transformation
-         */
-        boolean isResourceTransformationIgnored(final PathAddress address);
-
-        /**
-         * Gets whether a resource with the given {@code address} should be excluded from
-         * {@link TransformationTarget#resolveTransformer(TransformationContext, PathAddress, String) operation transformation}.
-         *
-         * @param address the resource address. Cannot be {@code null}
-         * @return {@code true} if the resource should be excluded from operation transformation
-         */
-        boolean isOperationTransformationIgnored(final PathAddress address);
-
-        String getHostName();
-    }
-
 }

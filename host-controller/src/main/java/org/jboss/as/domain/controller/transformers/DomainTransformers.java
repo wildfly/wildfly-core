@@ -76,7 +76,6 @@ public class DomainTransformers {
         ModelVersion currentVersion = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
         //The chains for transforming will be as follows
-        //For WildFly: 3.0.0 -> 2.1.0 -> 2.0.0
         //For JBoss EAP: 3.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerChainedManagementTransformers(registry, currentVersion);
@@ -93,8 +92,6 @@ public class DomainTransformers {
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7);
-
-        registerChainedTransformer(registry, builder, VERSION_2_0, VERSION_2_1);
     }
 
     private static void registerProfileTransformers(TransformerRegistry registry, ModelVersion currentVersion) {

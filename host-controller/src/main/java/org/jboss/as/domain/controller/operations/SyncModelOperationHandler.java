@@ -157,7 +157,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
         // Reverse, since we are adding the steps on top of the queue
         final List<ModelNode> ops = operations.getReverseList();
 
-        System.out.println("====> ops \n" + ops);
         for (final ModelNode op : ops) {
 
             final String operationName = op.require(OP).asString();
