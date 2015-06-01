@@ -149,6 +149,8 @@ class ModelControllerImpl implements ModelController {
     /** Tracks the relationship between domain resources and hosts and server groups */
     private final HostServerGroupTracker hostServerGroupTracker;
     private final Resource.ResourceEntry modelControllerResource;
+    private final OperationStepHandler extraValidationStepHandler;
+
 
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
@@ -156,7 +158,8 @@ class ModelControllerImpl implements ModelController {
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer,
-                        final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport, final BootErrorCollector bootErrorCollector) {
+                        final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
+                        final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler) {
         assert serviceRegistry != null;
         this.serviceRegistry = serviceRegistry;
         assert serviceTarget != null;
@@ -190,6 +193,7 @@ class ModelControllerImpl implements ModelController {
         this.bootErrorCollector = bootErrorCollector;
         this.hostServerGroupTracker = processType.isManagedDomain() ? new HostServerGroupTracker() : null;
         this.modelControllerResource = new ModelControllerResource();
+        this.extraValidationStepHandler = extraValidationStepHandler;
         auditLogger.startBoot();
     }
 
@@ -368,7 +372,8 @@ class ModelControllerImpl implements ModelController {
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport, false);
+                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport,
+                    false, extraValidationStepHandler);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
@@ -438,7 +443,7 @@ class ModelControllerImpl implements ModelController {
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport, true);
+                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -457,7 +462,8 @@ class ModelControllerImpl implements ModelController {
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true);
+                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true,
+                            extraValidationStepHandler);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -486,7 +492,8 @@ class ModelControllerImpl implements ModelController {
                 final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                                bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false);
+                                bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false,
+                                extraValidationStepHandler);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
             }
@@ -540,7 +547,7 @@ class ModelControllerImpl implements ModelController {
                 parallelBootRootResourceRegistrationProvider : getMutableRootResourceRegistrationProvider();
         ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, parallellBRRRProvider);
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
-                ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit) : null;
+                ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit, extraValidationStepHandler) : null;
         boolean registeredParallelSubsystemHandler = false;
         int subsystemIndex = 0;
         for (ModelNode bootOp : bootList) {

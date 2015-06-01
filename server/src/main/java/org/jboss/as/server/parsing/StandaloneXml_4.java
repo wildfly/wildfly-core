@@ -81,7 +81,7 @@ import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
@@ -92,6 +92,7 @@ import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -115,7 +116,7 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
     private final Namespace namespace;
 
     StandaloneXml_4(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
-        super();
+        super(new SocketBindingsXml.ServerSocketBindingsXml());
         accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
@@ -469,7 +470,7 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
                 case DEFAULT_INTERFACE: {
                     SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(value, op, reader);
                     required.remove(attribute);
-                    if (op.get(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
+                    if (op.get(AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
                             && !interfaces.contains(value)) {
                         throw ControllerLogger.ROOT_LOGGER.unknownInterface(value, Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());
                     }

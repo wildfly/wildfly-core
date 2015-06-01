@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.xml.stream.Location;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
@@ -731,10 +732,12 @@ public interface DomainControllerLogger extends BasicLogger {
     @Message(id = 74, value = "Operation failed or was rolled back on all servers. Server failures:")
     String operationFailedOrRolledBackWithCause();
 
-
     @Message(id = 75, value = "Cannot synchronize the model due to missing extensions: %s")
     OperationFailedException missingExtensions(Set<String> missingExtensions);
 
-    @Message(id = 76, value = "Model references of type '%s' are missing: %s")
-    OperationFailedException missingReferences(String type, Set<String> missing);
+    @Message(id = 76, value = "Duplicate included profile '%s'")
+    XMLStreamException duplicateProfileInclude(String name);
+
+    @Message(id = 77, value = "Duplicate included socket binding group '%s'")
+    XMLStreamException duplicateSocketBindingGroupInclude(String s);
 }

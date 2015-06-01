@@ -2825,6 +2825,13 @@
                 <xs:documentation>Name of the profile</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="includes" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A profile may include another profile. Overriding of included profiles is not supported.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="standalone-profileType">
@@ -2885,6 +2892,13 @@
                 <xs:documentation>
                     Name of an interface that should be used as the interface for
                     any sockets that do not explicitly declare one.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="includes" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A profile may include another profile. Overriding of included profiles is not supported.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright ${year}, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -19,43 +19,36 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.domain.controller.operations;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
+import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.dmr.ModelNode;
 
 /**
- * @author Emanuel Muckenhuber
+ * Write attribute handler to trigger validation when something in the domain model involving references has changed
+ *
+ * @author Kabir Khan
  */
-public class ServerGroupAddHandler implements OperationStepHandler {
+public class DomainReferenceValidationWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    public static OperationStepHandler INSTANCE = new ServerGroupAddHandler();
-
-    ServerGroupAddHandler() {
-        //
+    public DomainReferenceValidationWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
+        super(attributeDefinitions);
     }
 
-    @Deprecated
-    public ServerGroupAddHandler(boolean master) {
-        //
-    }
-
-    /** {@inheritDoc */
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-
-        final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
-        final ModelNode model = resource.getModel();
-
-        for (AttributeDefinition attr : ServerGroupResourceDefinition.ADD_ATTRIBUTES) {
-            attr.validateAndSet(operation, model);
+    @Override
+    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                                    ModelNode oldValue, Resource model) throws OperationFailedException {
+        super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+        if (newValue.equals(oldValue)) {
+            //Set an attachment to avoid propagation to the servers, we don't want them to go into restart-required if nothing changed
+            ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
         }
+
         DomainModelReferenceValidator.addValidationStep(context, operation);
     }
 

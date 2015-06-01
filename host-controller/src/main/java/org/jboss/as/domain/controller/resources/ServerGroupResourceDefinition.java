@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -37,11 +38,10 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.operations.DomainReferenceValidationWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.ServerGroupAddHandler;
-import org.jboss.as.domain.controller.operations.ServerGroupProfileWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.ServerGroupRemoveHandler;
-import org.jboss.as.domain.controller.operations.ServerGroupSocketBindingGroupWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentReplaceHandler;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
 import org.jboss.as.repository.ContentRepository;
@@ -110,13 +110,12 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        OperationStepHandler referenceValidationHandler = createReferenceValidationHandler();
         for (AttributeDefinition attr : ServerGroupResourceDefinition.ADD_ATTRIBUTES) {
             if (attr.getName().equals(MANAGEMENT_SUBSYSTEM_ENDPOINT.getName())) {
                 resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_SUBSYSTEM_ENDPOINT, null);
-            } else if (attr.getName().equals(PROFILE.getName())) {
-                resourceRegistration.registerReadWriteAttribute(PROFILE, null, ServerGroupProfileWriteAttributeHandler.INSTANCE);
-            } else if (attr.getName().equals(SOCKET_BINDING_GROUP.getName())) {
-                resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerGroupSocketBindingGroupWriteAttributeHandler.INSTANCE);
+            } else if (attr.getName().equals(PROFILE.getName()) || attr.getName().equals(SOCKET_BINDING_GROUP.getName())) {
+                resourceRegistration.registerReadWriteAttribute(attr, null, referenceValidationHandler);
             } else {
                 resourceRegistration.registerReadWriteAttribute(attr, null, new ModelOnlyWriteAttributeHandler(attr));
             }
@@ -136,5 +135,9 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(DomainDeploymentResourceDefinition.createForServerGroup(fileRepository, contentRepository));
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_GROUP));
         resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, null, null));
+    }
+
+    public static OperationStepHandler createReferenceValidationHandler() {
+        return new DomainReferenceValidationWriteAttributeHandler(PROFILE, SOCKET_BINDING_GROUP);
     }
 }

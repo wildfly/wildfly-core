@@ -73,48 +73,45 @@ public class DomainSocketBindingGroupRemoveHandler extends AbstractRemoveStepHan
     @Override
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         //Check that the socket binding group can be removed. This is not possible if there are running servers
-        if (!context.getProcessType().isServer()) {
-            //We are the host controller
+        context.addStep(new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                String socketBindingGroupName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
 
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    String socketBindingGroupName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
-
-                    //Find all the server groups using the socket binding group
-                    Set<String> serverGroups = new HashSet<String>();
-                    for (ResourceEntry entry : context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS).getChildren(SERVER_GROUP)) {
-                        if (entry.getModel().get(SOCKET_BINDING_GROUP).asString().equals(socketBindingGroupName)) {
-                            serverGroups.add(entry.getName());
-                        }
-                    }
-
-                    //Find all the server configs using the socket binding group
-                    Set<String> runningServers = new HashSet<String>();
-                    for (ResourceEntry entry : context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS).getChildren(HOST).iterator().next().getChildren(SERVER_CONFIG)) {
-                        ModelNode configModel = entry.getModel();
-                        if (configModel.hasDefined(SOCKET_BINDING_GROUP)) {
-                            if (configModel.get(SOCKET_BINDING_GROUP).asString().equals(socketBindingGroupName)) {
-                                if (isRunningServer(entry.getName())) {
-                                    runningServers.add(entry.getName());
-                                }
-                            }
-                        } else {
-                            if (serverGroups.contains(configModel.get(GROUP).asString())) {
-                                if (isRunningServer(entry.getName())) {
-                                    runningServers.add(entry.getName());
-                                }
-                            }
-                        }
-                    }
-
-                    if (!runningServers.isEmpty()) {
-                        throw new OperationFailedException("Could not remove socket-binding-group since the following servers are running: " + runningServers);
+                //Find all the server groups using the socket binding group
+                Set<String> serverGroups = new HashSet<String>();
+                for (ResourceEntry entry : context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS).getChildren(SERVER_GROUP)) {
+                    if (entry.getModel().get(SOCKET_BINDING_GROUP).asString().equals(socketBindingGroupName)) {
+                        serverGroups.add(entry.getName());
                     }
                 }
-            }, Stage.MODEL);
-        }
 
+                //Find all the server configs using the socket binding group
+                Set<String> runningServers = new HashSet<String>();
+                for (ResourceEntry entry : context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS).getChildren(HOST).iterator().next().getChildren(SERVER_CONFIG)) {
+                    ModelNode configModel = entry.getModel();
+                    if (configModel.hasDefined(SOCKET_BINDING_GROUP)) {
+                        if (configModel.get(SOCKET_BINDING_GROUP).asString().equals(socketBindingGroupName)) {
+                            if (isRunningServer(entry.getName())) {
+                                runningServers.add(entry.getName());
+                            }
+                        }
+                    } else {
+                        if (serverGroups.contains(configModel.get(GROUP).asString())) {
+                            if (isRunningServer(entry.getName())) {
+                                runningServers.add(entry.getName());
+                            }
+                        }
+                    }
+                }
+
+                if (!runningServers.isEmpty()) {
+                    throw new OperationFailedException("Could not remove socket-binding-group since the following servers are running: " + runningServers);
+                }
+            }
+        }, Stage.MODEL);
+
+        DomainModelReferenceValidator.addValidationStep(context, operation);
         super.performRemove(context, operation, model);
     }
 

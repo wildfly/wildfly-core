@@ -103,7 +103,7 @@ public class ServerAddHandler extends AbstractAddStepHandler {
             }
         }, OperationContext.Stage.MODEL, true);
 
-        context.addStep(DomainModelReferenceValidator.INSTANCE, OperationContext.Stage.MODEL);
+        DomainModelReferenceValidator.addValidationStep(context, operation);
     }
 
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {

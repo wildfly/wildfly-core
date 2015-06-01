@@ -149,6 +149,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private boolean auditLogged;
     private final AuditLogger auditLogger;
     private final ModelControllerImpl controller;
+    private final OperationStepHandler extraValidationStepHandler;
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
@@ -171,7 +172,8 @@ abstract class AbstractOperationContext implements OperationContext {
                              final AuditLogger auditLogger,
                              final NotificationSupport notificationSupport,
                              final ModelControllerImpl controller,
-                             final boolean skipModelValidation) {
+                             final boolean skipModelValidation,
+                             final OperationStepHandler extraValidationStepHandler) {
         this.processType = processType;
         this.runningMode = runningMode;
         this.transactionControl = transactionControl;
@@ -194,6 +196,7 @@ abstract class AbstractOperationContext implements OperationContext {
         initiatingThread = Thread.currentThread();
         this.callEnvironment = new Environment(processState, processType);
         modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
+        this.extraValidationStepHandler = extraValidationStepHandler;
     }
 
     /**
@@ -1185,7 +1188,7 @@ abstract class AbstractOperationContext implements OperationContext {
             }
             for (PathAddress address : modifiedResourcesForModelValidation) {
                 ModelNode op = Util.createOperation(INTERNAL_MODEL_VALIDATION_NAME, address);
-                addStep(op, ValidateModelStepHandler.INSTANCE, Stage.MODEL);
+                addStep(op, ValidateModelStepHandler.getInstance(extraValidationStepHandler), Stage.MODEL);
             }
             modifiedResourcesForModelValidation.clear();
         }

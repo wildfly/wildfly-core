@@ -87,6 +87,7 @@ public class ModelDescriptionConstants {
     public static final String CLASSIFICATION = "classification";
     public static final String CLIENT_CERT_STORE = "client-certificate-store";
     public static final String CLIENT_MAPPINGS = "client-mappings";
+    public static final String CLONE = "clone";
     public static final String CODE = "code";
     public static final String COMPACT = "compact";
     public static final String COMPOSITE = "composite";
@@ -457,6 +458,7 @@ public class ModelDescriptionConstants {
     public static final String TCP = "tcp";
     public static final String TIMEOUT = "timeout";
     public static final String TLS = "tls";
+    public static final String TO_PROFILE = "to-profile";
     public static final String TO_REPLACE = "to-replace";
     public static final String TRUNCATE = "truncate";
     public static final String TRUSTSTORE = "truststore";

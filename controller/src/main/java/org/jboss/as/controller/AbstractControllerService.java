@@ -257,7 +257,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
-                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport, bootErrorCollector);
+                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport,
+                bootErrorCollector, createExtraValidationStepHandler());
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -469,6 +470,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected BootErrorCollector getBootErrorCollector() {
         return bootErrorCollector;
+    }
+
+    protected OperationStepHandler createExtraValidationStepHandler() {
+        return null;
     }
 
     /**

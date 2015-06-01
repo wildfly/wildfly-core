@@ -59,7 +59,7 @@ public class ServerRestartRequiredServerConfigWriteAttributeHandler extends Mode
         }
 
         // Validate the model references
-        context.addStep(DomainModelReferenceValidator.INSTANCE, OperationContext.Stage.MODEL);
+        DomainModelReferenceValidator.addValidationStep(context, operation);
     }
 
 }

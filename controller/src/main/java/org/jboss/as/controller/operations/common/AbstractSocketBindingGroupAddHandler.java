@@ -26,7 +26,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -50,6 +50,6 @@ public abstract class AbstractSocketBindingGroupAddHandler extends AbstractAddSt
         ModelNode model = resource.getModel();
         model.get(NAME).set(context.getCurrentAddressValue());
 
-        SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.validateAndSet(operation, model);
+        AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.validateAndSet(operation, model);
     }
 }

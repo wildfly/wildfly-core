@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
@@ -527,6 +528,23 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     }
 
+    @Override
+    protected OperationStepHandler createExtraValidationStepHandler() {
+        return new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                if (!context.isBooting()) {
+                    PathAddress addr = context.getCurrentAddress();
+                    if (addr.size() > 0 && addr.getLastElement().getKey().equals(SUBSYSTEM)) {
+                        //For subsystem adds in domain mode we need to check that the new subsystem does not break the rule
+                        //that when profile includes are used, we don't allow overriding subsystems.
+                        DomainModelReferenceValidator.addValidationStep(context, operation);
+                    }
+                }
+            }
+        };
+    }
+
     // See superclass start. This method is invoked from a separate non-MSC thread after start. So we can do a fair
     // bit of stuff
     @Override
@@ -664,7 +682,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 final ModelNode result = internalExecute(OperationBuilder.create(validate).build(), OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        DomainModelReferenceValidator.validate(context);
+                        DomainModelReferenceValidator.validateAtBoot(context, operation);
                     }
                 }).getResponseNode();
 

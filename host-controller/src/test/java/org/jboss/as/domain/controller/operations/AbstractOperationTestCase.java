@@ -196,7 +196,7 @@ public abstract class AbstractOperationTestCase {
     class MockOperationContext implements OperationContext {
         Resource root;
         private final boolean booting;
-        private final PathAddress operationAddress;
+        final PathAddress operationAddress;
         private Set<PathAddress> expectedSteps = new HashSet<PathAddress>();
         private final Map<AttachmentKey<?>, Object> valueAttachments = new HashMap<AttachmentKey<?>, Object>();
         private final ModelNode result = new ModelNode();
@@ -349,7 +349,7 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public ProcessType getProcessType() {
-            return null;
+            return ProcessType.HOST_CONTROLLER;
         }
 
         @Override

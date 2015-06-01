@@ -73,7 +73,6 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.InterfaceDefinition;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.controller.transform.SubsystemDescriptionDump;
@@ -83,12 +82,11 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
-import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
 import org.jboss.as.domain.controller.operations.LocalHostNameOperationHandler;
 import org.jboss.as.domain.controller.operations.ProcessTypeHandler;
 import org.jboss.as.domain.controller.operations.ResolveExpressionOnDomainHandler;
-import org.jboss.as.domain.controller.operations.SocketBindingGroupAddHandler;
+import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentFullReplaceHandler;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentUploadBytesHandler;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentUploadStreamAttachmentHandler;
@@ -109,8 +107,6 @@ import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayDefinition;
 import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
-import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
-import org.jboss.as.server.services.net.RemoteDestinationOutboundSocketBindingResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -318,13 +314,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         }
 
         //TODO socket-binding-group currently lives in controller and the child RDs live in domain so they currently need passing in from here
-        resourceRegistration.registerSubModel(new SocketBindingGroupResourceDefinition(
-                                                    SocketBindingGroupAddHandler.INSTANCE,
-                                                    DomainSocketBindingGroupRemoveHandler.INSTANCE,
-                                                    true,
-                                                    SocketBindingResourceDefinition.INSTANCE,
-                                                    RemoteDestinationOutboundSocketBindingResourceDefinition.INSTANCE,
-                                                    LocalDestinationOutboundSocketBindingResourceDefinition.INSTANCE));
+        resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
         //TODO perhaps all these desriptions and the validator log messages should be moved into management-client-content?
         resourceRegistration.registerSubModel(

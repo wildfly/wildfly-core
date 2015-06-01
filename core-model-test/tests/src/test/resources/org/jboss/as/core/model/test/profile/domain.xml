@@ -5,5 +5,7 @@
         </profile>
         <profile name="testB">
         </profile>
+        <profile name="testD" includes="testA testB">
+        </profile>
     </profiles>
 </domain>        

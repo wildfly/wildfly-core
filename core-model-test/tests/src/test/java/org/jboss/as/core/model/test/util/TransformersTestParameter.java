@@ -67,7 +67,7 @@ public class TransformersTestParameter extends ClassloaderParameter {
             data.add(new TransformersTestParameter(ModelVersion.create(1, 3, 0), ModelTestControllerVersion.V7_1_3_FINAL));
             data.add(new TransformersTestParameter(ModelVersion.create(1, 4, 0), ModelTestControllerVersion.V7_2_0_FINAL));
         }*/
-        data.add(new TransformersTestParameter(ModelVersion.create(2, 0, 0), ModelTestControllerVersion.MASTER));
+        data.add(new TransformersTestParameter(ModelVersion.create(4, 0, 0), ModelTestControllerVersion.MASTER));
 
         //EAP releases - these will only get tested if the EAPRepositoryReachableUtil.TEST_TRANSFORMERS_EAP system property is set AND the EAP repostitory is available
         if (EAPRepositoryReachableUtil.isReachable()) {

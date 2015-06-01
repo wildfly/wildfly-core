@@ -50,6 +50,7 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
+import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.operations.ServerRestartRequiredServerConfigWriteAttributeHandler;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
@@ -83,7 +84,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("profile-two");
 
         try {
-            operationContext.executeStep(ServerGroupProfileWriteAttributeHandler.INSTANCE, operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -117,7 +118,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("profile-one");
 
         try {
-            operationContext.executeStep(ServerGroupProfileWriteAttributeHandler.INSTANCE, operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -156,7 +157,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("does-not-exist");
 
         try {
-            operationContext.executeStep(ServerGroupProfileWriteAttributeHandler.INSTANCE, operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {

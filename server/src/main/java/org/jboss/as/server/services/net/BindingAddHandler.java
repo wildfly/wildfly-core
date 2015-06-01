@@ -31,7 +31,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.operations.common.SocketBindingAddHandler;
 import org.jboss.as.controller.operations.validation.MaskedAddressValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;

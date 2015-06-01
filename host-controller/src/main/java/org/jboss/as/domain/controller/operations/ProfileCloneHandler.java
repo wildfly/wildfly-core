@@ -22,10 +22,12 @@
 
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,9 +52,9 @@ import org.jboss.dmr.ModelType;
 public class ProfileCloneHandler implements OperationStepHandler {
 
     public static final ProfileCloneHandler INSTANCE = new ProfileCloneHandler();
-    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("clone", DomainResolver.getResolver(PROFILE, false))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(CLONE, DomainResolver.getResolver(PROFILE, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
-            .addParameter(SimpleAttributeDefinitionBuilder.create("to-profile", ModelType.STRING).build())
+            .addParameter(SimpleAttributeDefinitionBuilder.create(TO_PROFILE, ModelType.STRING).build())
             // .setPrivateEntry()
             .build();
 
@@ -61,7 +63,7 @@ public class ProfileCloneHandler implements OperationStepHandler {
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
         final String profileName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-        final String newProfile = operation.require("to-profile").asString();
+        final String newProfile = operation.require(TO_PROFILE).asString();
         final String operationName = GenericModelDescribeOperationHandler.DEFINITION.getName();
         final PathAddress address = PathAddress.pathAddress(PathElement.pathElement(PROFILE, profileName));
 
@@ -91,6 +93,4 @@ public class ProfileCloneHandler implements OperationStepHandler {
 
         context.addStep(result, describeOp, handler, OperationContext.Stage.MODEL, true);
     }
-
-
 }

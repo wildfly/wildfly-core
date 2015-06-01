@@ -216,8 +216,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final ModelNode blockingTimeoutConfig,
                          final AccessMechanism accessMechanism,
                          final NotificationSupport notificationSupport,
-                         final boolean skipModelValidation) {
-        super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport, modelController, skipModelValidation);
+                         final boolean skipModelValidation,
+                         final OperationStepHandler extraValidationStepHandler) {
+        super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
+                modelController, skipModelValidation, extraValidationStepHandler);
         this.operationId = operationId;
         this.operationName = operationName;
         this.operationAddress = operationAddress.isDefined()

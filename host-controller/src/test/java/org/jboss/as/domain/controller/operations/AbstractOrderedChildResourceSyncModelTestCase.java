@@ -66,7 +66,7 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
@@ -76,8 +76,8 @@ import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.util.AbstractControllerTestBase;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.HostFileRepository;
-import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
-import org.jboss.as.server.services.net.RemoteDestinationOutboundSocketBindingResourceDefinition;
+import org.jboss.as.server.services.net.*;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
@@ -148,13 +148,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
             }
         }));
 
-        registration.registerSubModel(new SocketBindingGroupResourceDefinition(
-                SocketBindingGroupAddHandler.INSTANCE,
-                DomainSocketBindingGroupRemoveHandler.INSTANCE,
-                true,
-                SocketBindingResourceDefinition.INSTANCE,
-                RemoteDestinationOutboundSocketBindingResourceDefinition.INSTANCE,
-                LocalDestinationOutboundSocketBindingResourceDefinition.INSTANCE));
+        registration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
         ManagementResourceRegistration profileReg = registration.registerSubModel(new ProfileResourceDefinition(extensionRegistry));
 

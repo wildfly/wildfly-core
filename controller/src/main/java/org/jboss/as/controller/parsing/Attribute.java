@@ -96,6 +96,7 @@ public enum Attribute {
     HTTP("http"),
     HTTP_UPGRADE_ENABLED("http-upgrade-enabled"),
     HTTPS("https"),
+    INCLUDES("includes"),
     IGNORE_UNUSED_CONFIG("ignore-unused-configuration"),
     INCLUDE_ALL("include-all"),
     INCLUDE_DATE("include-date"),

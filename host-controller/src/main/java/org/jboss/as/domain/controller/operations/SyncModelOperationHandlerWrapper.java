@@ -32,7 +32,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.CompositeOperationHandler;
@@ -82,11 +84,11 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
         if (size == 0 && COMPOSITE.equals(operationName)) {
             return new WrappedCompositeOperationHandler(localHostName);
         } else if (size == 1) {
-            // Wrap all configuration operations targeting the server-group directly
             final PathElement element = address.getElement(0);
             if (SERVER_GROUP.equals(element.getKey())) {
+                // Wrap all configuration operations targeting the server-group directly
                 return new SyncModelOperationHandlerWrapper(localHostName, entry.getOperationHandler());
-            } else if (PROFILE.equals(element.getKey())) {
+            } else if (PROFILE.equals(element.getKey()) || SOCKET_BINDING_GROUP.equals(element.getKey())) {
                 // This might just need to wrap the write-attribute(name=includes) operation
                 if (WRITE_ATTRIBUTE_OPERATION.equals(operationName)) {
                     return new SyncModelOperationHandlerWrapper(localHostName, entry.getOperationHandler());
@@ -145,6 +147,7 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
         final Set<String> profiles = new HashSet<>();
         final Set<String> serverGroups = new HashSet<>();
         final Set<String> socketBindings = new HashSet<>();
+        final Map<String, Set<String>> serversByGroup = new HashMap<>();
 
         for (final Resource.ResourceEntry serverConfig : host.getChildren(SERVER_CONFIG)) {
             final ModelNode model = serverConfig.getModel();
@@ -152,7 +155,10 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
             if (!serverGroups.contains(group)) {
                 serverGroups.add(group);
             }
-            processSocketBindingGroup(model, socketBindings);
+            if (model.hasDefined(SOCKET_BINDING_GROUP)) {
+                processSocketBindingGroup(domain, model.require(SOCKET_BINDING_GROUP).asString(), socketBindings);
+            }
+
         }
 
         // process referenced server-groups
@@ -167,7 +173,7 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
             // Process the profile
             processProfile(domain, profile, profiles);
             // Process the socket-binding-group
-            processSocketBindingGroup(model, socketBindings);
+            processSocketBindingGroup(domain, model.require(SOCKET_BINDING_GROUP).asString(), socketBindings);
         }
         // If we are missing a server group
         if (!serverGroups.isEmpty()) {
@@ -215,11 +221,18 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
         }
     }
 
-    static void processSocketBindingGroup(final ModelNode model, final Set<String> socketBindings) {
-        if (model.hasDefined(SOCKET_BINDING_GROUP)) {
-            final String socketBinding = model.require(SOCKET_BINDING_GROUP).asString();
-            if (!socketBindings.contains(socketBinding)) {
-                socketBindings.add(socketBinding);
+    static void processSocketBindingGroup(final Resource domain, final String name, final Set<String> socketBindings) {
+        if (!socketBindings.contains(name)) {
+            socketBindings.add(name);
+            final PathElement pathElement = PathElement.pathElement(SOCKET_BINDING_GROUP, name);
+            if (domain.hasChild(pathElement)) {
+                final Resource resource = domain.getChild(pathElement);
+                final ModelNode model = resource.getModel();
+                if (model.hasDefined(INCLUDES)) {
+                    for (final ModelNode include : model.get(INCLUDES).asList()) {
+                        processSocketBindingGroup(domain, include.asString(), socketBindings);
+                    }
+                }
             }
         }
     }

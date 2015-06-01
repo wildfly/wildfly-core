@@ -24,7 +24,7 @@ package org.jboss.as.domain.controller.resources;
 
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.operations.common.SocketBindingAddHandler;
+import org.jboss.as.server.services.net.SocketBindingAddHandler;
 import org.jboss.as.controller.operations.common.SocketBindingRemoveHandler;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 

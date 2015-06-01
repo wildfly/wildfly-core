@@ -23,8 +23,16 @@ package org.jboss.as.domain.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.DefaultAttributeMarshaller;
+import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -35,18 +43,22 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.domain.controller.operations.DomainReferenceValidationWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
 import org.jboss.as.domain.controller.operations.ProfileAddHandler;
 import org.jboss.as.domain.controller.operations.ProfileCloneHandler;
 import org.jboss.as.domain.controller.operations.ProfileDescribeHandler;
 import org.jboss.as.domain.controller.operations.ProfileModelDescribeHandler;
 import org.jboss.as.domain.controller.operations.ProfileRemoveHandler;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class ProfileResourceDefinition extends SimpleResourceDefinition {
+
+    public static final PathElement PATH = PathElement.pathElement(PROFILE);
 
     private static OperationDefinition DESCRIBE = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.DESCRIBE, DomainResolver.getResolver(PROFILE, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
@@ -57,16 +69,44 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     //This attribute exists in 7.1.2 and 7.1.3 but was always nillable
-    private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
+    public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
             .setValidator(new StringLengthValidator(1, true))
             .setAllowNull(true)
             .setResourceOnly()
             .build();
 
+    public static final ListAttributeDefinition INCLUDES = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.INCLUDES, ModelType.STRING)
+            .setAllowNull(true)
+            .setElementValidator(new StringLengthValidator(1, true))
+            .setAttributeMarshaller(new DefaultAttributeMarshaller() {
+
+                @Override
+                public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault,
+                                                XMLStreamWriter writer) throws XMLStreamException {
+                    if (!isMarshallable(attribute, resourceModel, marshallDefault)) {
+                        return;
+                    }
+                    boolean first = true;
+                    StringBuilder sb = new StringBuilder();
+                    for (ModelNode include : resourceModel.get(ModelDescriptionConstants.INCLUDES).asList()) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(" ");
+                        }
+                        sb.append(include.asString());
+                    }
+                    writer.writeAttribute(attribute.getXmlName(), sb.toString());
+                }
+            })
+            .build();
+
+    public static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {INCLUDES};
+
     private final ExtensionRegistry extensionRegistry;
 
     public ProfileResourceDefinition(ExtensionRegistry extensionRegistry) {
-        super(PathElement.pathElement(PROFILE), DomainResolver.getResolver(PROFILE, false), ProfileAddHandler.INSTANCE, ProfileRemoveHandler.INSTANCE);
+        super(PATH, DomainResolver.getResolver(PROFILE, false), ProfileAddHandler.INSTANCE, ProfileRemoveHandler.INSTANCE);
         this.extensionRegistry = extensionRegistry;
     }
 
@@ -76,14 +116,16 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(DESCRIBE, ProfileDescribeHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(ProfileCloneHandler.DEFINITION, ProfileCloneHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, ProfileModelDescribeHandler.INSTANCE);
-        resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        super.registerAttributes(resourceRegistration);
+        resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(INCLUDES, null, createReferenceValidationHandler());
     }
 
 
+    public static OperationStepHandler createReferenceValidationHandler() {
+        return new DomainReferenceValidationWriteAttributeHandler(INCLUDES);
+    }
 }

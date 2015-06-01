@@ -25,7 +25,7 @@ package org.jboss.as.host.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INITIAL_SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
@@ -78,7 +78,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
      *
      * @param ignoreUnaffectedServerGroups whether the slave host is set up to ignore config for server groups it does not have servers for
      * @param hostModel the resource containing the host model
-     * @param the dmr sent across to theDC
+     * @param model the dmr sent across to theDC
      * @return the modified dmr
      */
     public static ModelNode addCurrentServerGroupsToHostInfoModel(boolean ignoreUnaffectedServerGroups, Resource hostModel, ModelNode model) {
@@ -175,10 +175,10 @@ public class IgnoredNonAffectedServerGroupsUtil {
             if (domain.hasChild(pathElement)) {
                 final Resource resource = domain.getChild(pathElement);
                 final ModelNode model = resource.getModel();
-
-                if (model.hasDefined(INCLUDE)) {
-                    final String include = model.get(INCLUDE).asString();
-                    processProfiles(domain, include, profiles);
+                if (model.hasDefined(INCLUDES)) {
+                    for (final ModelNode include : model.get(INCLUDES).asList()) {
+                        processProfiles(domain, include.asString(), profiles);
+                    }
                 }
             }
         }
@@ -209,19 +209,45 @@ public class IgnoredNonAffectedServerGroupsUtil {
     }
 
     private boolean ignoreSocketBindingGroups(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {
+        Set<String> seenGroups = new HashSet<>();
+        Set<String> socketBindingGroups = new HashSet<>();
         for (ServerConfigInfo serverConfig : serverConfigs) {
+            final String socketBindingGroup;
             if (serverConfig.getSocketBindingGroup() != null) {
                 if (serverConfig.getSocketBindingGroup().equals(name)) {
                     return false;
                 }
+                socketBindingGroup = serverConfig.getSocketBindingGroup();
             } else {
+                if (seenGroups.contains(serverConfig.getServerGroup())) {
+                    continue;
+                }
+                seenGroups.add(serverConfig.getServerGroup());
                 Resource serverGroupResource = domainResource.getChild(PathElement.pathElement(SERVER_GROUP, serverConfig.getServerGroup()));
-                if (name.equals(serverGroupResource.getModel().get(SOCKET_BINDING_GROUP).asString())) {
+                socketBindingGroup = serverGroupResource.getModel().get(SOCKET_BINDING_GROUP).asString();
+                if (socketBindingGroup.equals(name)) {
                     return false;
                 }
             }
+            processSocketBindingGroups(domainResource, socketBindingGroup, socketBindingGroups);
         }
-        return true;
+        return !socketBindingGroups.contains(name);
+    }
+
+    private void processSocketBindingGroups(final Resource domainResource, final String name, final Set<String> socketBindingGroups) {
+        if (!socketBindingGroups.contains(name)) {
+            socketBindingGroups.add(name);
+            final PathElement pathElement = PathElement.pathElement(SOCKET_BINDING_GROUP, name);
+            if (domainResource.hasChild(pathElement)) {
+                final Resource resource = domainResource.getChild(pathElement);
+                final ModelNode model = resource.getModel();
+                if (model.hasDefined(INCLUDES)) {
+                    for (final ModelNode include : model.get(INCLUDES).asList()) {
+                        processSocketBindingGroups(domainResource, include.asString(), socketBindingGroups);
+                    }
+                }
+            }
+        }
     }
 
 

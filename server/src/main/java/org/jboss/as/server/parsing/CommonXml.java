@@ -69,11 +69,12 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
     private final DeploymentsXml deploymentsXml = new DeploymentsXml();
     private final InterfacesXml interfacesXml = new InterfacesXml();
     private final PathsXml pathsXml = new PathsXml();
-    private final SocketBindingsXml socketBindingsXml = new SocketBindingsXml();
+    private final SocketBindingsXml socketBindingsXml;
     private final SystemPropertiesXml systemPropertiesXml = new SystemPropertiesXml();
     private final VaultXml vaultXml = new VaultXml();
 
-    protected CommonXml() {
+    protected CommonXml(SocketBindingsXml socketBindingsXml) {
+        this.socketBindingsXml = socketBindingsXml;
     }
 
     protected void parseNamespaces(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> nodes) {
@@ -227,7 +228,7 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
 
     protected void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup, boolean fromServer)
             throws XMLStreamException {
-        socketBindingsXml.writeSocketBindingGroup(writer, bindingGroup, fromServer);
+        socketBindingsXml.writeSocketBindingGroup(writer, bindingGroup);
     }
 
     protected void writeProperties(final XMLExtendedStreamWriter writer, final ModelNode modelNode, Element element,

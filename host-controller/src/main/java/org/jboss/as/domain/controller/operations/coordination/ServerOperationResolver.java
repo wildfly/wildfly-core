@@ -293,7 +293,8 @@ public class ServerOperationResolver {
             return Collections.emptyMap();
         }
         String profileName = address.getElement(0).getValue();
-        Set<String> relatedProfiles = getRelatedElements(PROFILE, profileName, domain);
+        PathElement subsystem = address.getElement(1);
+        Set<String> relatedProfiles = getRelatedElements(PROFILE, profileName, subsystem.getKey(), subsystem.getValue(), domain);
         Set<ServerIdentity> allServers = new HashSet<ServerIdentity>();
         for (String profile : relatedProfiles) {
             allServers.addAll(getServersForType(PROFILE, profile, domain, host, localHostName, serverProxies));
@@ -426,21 +427,54 @@ public class ServerOperationResolver {
 
     private Map<Set<ServerIdentity>, ModelNode> getServerSocketBindingGroupOperations(ModelNode operation,
                                                                                       PathAddress address, ModelNode domain, ModelNode host) {
-        String bindingGroupName = address.getElement(0).getValue();
-        Set<String> relatedBindingGroups = getRelatedElements(SOCKET_BINDING_GROUP, bindingGroupName, domain);
-        Set<ServerIdentity> result = new HashSet<ServerIdentity>();
+        final String bindingGroupName = address.getElement(0).getValue();
+        final Set<String> relatedBindingGroups;
+        if (address.size() > 1) {
+            PathElement element = address.getElement(1);
+            relatedBindingGroups = getRelatedElements(SOCKET_BINDING_GROUP, bindingGroupName, element.getKey(), element.getValue(), domain);
+        } else {
+            relatedBindingGroups = Collections.emptySet();
+        }
+        final Set<ServerIdentity> result = new HashSet<ServerIdentity>();
         for (String bindingGroup : relatedBindingGroups) {
             result.addAll(getServersForType(SOCKET_BINDING_GROUP, bindingGroup, domain, host, localHostName, serverProxies));
         }
+        //If /socket-binding-group=child includes /socket-binding-group=root, and a server/server-group is set up
+        //to use /socket-binding-group=child, /socket-binding-group=child becomes the name of the group in the server model.
+        //So if a change was made to /socket-binding-group=root, we need to translate that to use /socket-binding-group=child
+        //before pushing the op to the server
+        final Map<String, Set<ServerIdentity>> serversBySocketBindingGroup = new HashMap<>();
         for (Iterator<ServerIdentity> iter = result.iterator(); iter.hasNext(); ) {
-            ServerIdentity gs = iter.next();
-            ModelNode server = host.get(SERVER_CONFIG, gs.getServerName());
-            if (server.hasDefined(SOCKET_BINDING_GROUP) && !bindingGroupName.equals(server.get(SOCKET_BINDING_GROUP).asString())) {
-                iter.remove();
+            final ServerIdentity id = iter.next();
+            final ModelNode server = host.get(SERVER_CONFIG, id.getServerName());
+            final String socketBindingGroupName;
+            if (server.hasDefined(SOCKET_BINDING_GROUP)) {
+                socketBindingGroupName = server.get(SOCKET_BINDING_GROUP).asString();
+            } else {
+                socketBindingGroupName = domain.get(SERVER_GROUP, id.getServerGroupName(), SOCKET_BINDING_GROUP).asString();
             }
+            Set<ServerIdentity> servers = serversBySocketBindingGroup.get(socketBindingGroupName);
+            if (servers == null) {
+                servers = new HashSet<>();
+                serversBySocketBindingGroup.put(socketBindingGroupName, servers);
+            }
+            servers.add(id);
         }
-        ModelNode serverOp = operation.clone();
-        return Collections.singletonMap(result, serverOp);
+        final Map<Set<ServerIdentity>, ModelNode> ret = new HashMap<>();
+        for (Map.Entry<String, Set<ServerIdentity>> entry : serversBySocketBindingGroup.entrySet()) {
+            final ModelNode serverOp = operation.clone();
+            PathAddress changed = PathAddress.EMPTY_ADDRESS;
+            for (PathElement element : address) {
+                if (!element.getKey().equals(SOCKET_BINDING_GROUP)) {
+                    changed = changed.append(element);
+                } else {
+                    changed = changed.append(PathElement.pathElement(SOCKET_BINDING_GROUP, entry.getKey()));
+                }
+            }
+            serverOp.get(OP_ADDR).set(changed.toModelNode());
+            ret.put(entry.getValue(), serverOp);
+        }
+        return ret;
     }
 
     private Map<Set<ServerIdentity>, ModelNode> getServerGroupOperations(ModelNode operation, PathAddress address,

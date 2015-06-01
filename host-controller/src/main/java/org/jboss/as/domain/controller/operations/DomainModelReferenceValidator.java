@@ -26,22 +26,36 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -50,31 +64,53 @@ import org.jboss.dmr.ModelNode;
  * This should probably be replaced with model reference validation at the end of the Stage.MODEL.
  *
  * @author Emanuel Muckenhuber
+ * @author Kabir Khan
  */
 public class DomainModelReferenceValidator implements OperationStepHandler {
 
-    public static OperationStepHandler INSTANCE = new DomainModelReferenceValidator();
+    private static DomainModelReferenceValidator INSTANCE = new DomainModelReferenceValidator();
+    private static final AttachmentKey<DomainModelReferenceValidator> KEY = AttachmentKey.create(DomainModelReferenceValidator.class);
+
+    private DomainModelReferenceValidator() {
+    }
+
+    public static void addValidationStep(OperationContext context, ModelNode operation) {
+        assert context.getProcessType() == ProcessType.HOST_CONTROLLER : "Not a host controller";
+        if (!context.isBooting()) {
+            // This does not need to get executed on boot the domain controller service does that once booted
+            // by calling validateAtBoot(). Otherwise we get issues with the testsuite, which only partially sets up the model
+            if (context.attachIfAbsent(KEY, DomainModelReferenceValidator.INSTANCE) == null) {
+                context.addStep(DomainModelReferenceValidator.INSTANCE, OperationContext.Stage.MODEL);
+            }
+        }
+    }
+
+    public static void validateAtBoot(OperationContext context, ModelNode operation) {
+        assert context.getProcessType() == ProcessType.HOST_CONTROLLER : "Not a host controller";
+        assert context.isBooting() : "Should only be called at boot";
+        assert operation.require(OP).asString().equals("validate"); //Should only be called by the domain controller service
+        //Only validate once
+        if (context.attachIfAbsent(KEY, DomainModelReferenceValidator.INSTANCE) == null) {
+            context.addStep(DomainModelReferenceValidator.INSTANCE, OperationContext.Stage.MODEL);
+        }
+    }
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-
-        if (context.isBooting()) {
-            // This does not need to get executed for each operation on boot
-            // It also causes issues with the testsuite, which only partially sets up the model
-            return;
-        }
         // Validate
         validate(context);
     }
 
-    public static void validate(final OperationContext context) throws OperationFailedException {
+    public void validate(final OperationContext context) throws OperationFailedException {
 
-        final Set<String> profiles = new HashSet<>();
         final Set<String> serverGroups = new HashSet<>();
-        final Set<String> socketBindings = new HashSet<>();
         final Set<String> interfaces = new HashSet<String>();
 
         final Resource domain = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+        final Set<String> missingProfiles = new HashSet<>();
+        final Set<String> missingSocketBindingGroups = new HashSet<>();
+        final Set<String> allProfiles = checkProfileIncludes(domain, missingProfiles);
+        final Set<String> allSocketBindingGroups = checkSocketBindingGroupIncludes(domain, missingSocketBindingGroups);
         final String hostName = determineHostName(domain);
         if (hostName != null) {
             // The testsuite does not always setup the model properly
@@ -91,7 +127,7 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
                         interfaces.add(defaultInterface);
                     }
                 }
-                processSocketBindingGroup(model, socketBindings);
+                processSocketBindingGroup(model, allSocketBindingGroups, missingSocketBindingGroups);
             }
         }
 
@@ -99,10 +135,11 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         for (final Resource.ResourceEntry serverGroup : domain.getChildren(SERVER_GROUP)) {
             final ModelNode model = serverGroup.getModel();
             final String profile = model.require(PROFILE).asString();
-            // Process the profile
-            processProfile(domain, profile, profiles);
+            if (!allProfiles.contains(profile)) {
+                missingProfiles.add(profile);
+            }
             // Process the socket-binding-group
-            processSocketBindingGroup(model, socketBindings);
+            processSocketBindingGroup(model, allSocketBindingGroups, missingSocketBindingGroups);
 
             serverGroups.remove(serverGroup.getName()); // The server-group is present
         }
@@ -111,60 +148,35 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         for (final Resource.ResourceEntry iface : domain.getChildren(INTERFACE)) {
             interfaces.remove(iface.getName());
         }
-
         // If we are missing a server group
         if (!serverGroups.isEmpty()) {
-            throw DomainControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
-        }
-        // Process profiles
-        for (final Resource.ResourceEntry profile : domain.getChildren(PROFILE)) {
-            profiles.remove(profile.getName());
+            throw ControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
         }
         // We are missing a profile
-        if (!profiles.isEmpty()) {
-            throw DomainControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, profiles);
+        if (!missingProfiles.isEmpty()) {
+            throw ControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
         }
         // Process socket-binding groups
-        for (final Resource.ResourceEntry socketBindingGroup : domain.getChildren(SOCKET_BINDING_GROUP)) {
-            socketBindings.remove(socketBindingGroup.getName());
-        }
-        // We are missing a socket-binding group
-        if (!socketBindings.isEmpty()) {
-            throw DomainControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, socketBindings);
+        if (!missingSocketBindingGroups.isEmpty()) {
+            throw ControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
         }
         //We are missing an interface
         if (!interfaces.isEmpty()) {
-            throw DomainControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
+            throw ControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
         }
 
     }
 
-    static void processProfile(final Resource domain, String profile, Set<String> profiles) {
-        if (!profiles.contains(profile)) {
-            profiles.add(profile);
-            final PathElement pathElement = PathElement.pathElement(PROFILE, profile);
-            if (domain.hasChild(pathElement)) {
-                final Resource resource = domain.getChild(pathElement);
-                final ModelNode model = resource.getModel();
-                if (model.hasDefined(INCLUDES)) {
-                    for (final ModelNode include : model.get(INCLUDES).asList()) {
-                        processProfile(domain, include.asString(), profiles);
-                    }
-                }
-            }
-        }
-    }
-
-    static void processSocketBindingGroup(final ModelNode model, final Set<String> socketBindings) {
+    private void processSocketBindingGroup(final ModelNode model, final Set<String> socketBindings, final Set<String> missingSocketBindings) {
         if (model.hasDefined(SOCKET_BINDING_GROUP)) {
             final String socketBinding = model.require(SOCKET_BINDING_GROUP).asString();
             if (!socketBindings.contains(socketBinding)) {
-                socketBindings.add(socketBinding);
+                missingSocketBindings.add(socketBinding);
             }
         }
     }
 
-    static String determineHostName(final Resource domain) {
+    private String determineHostName(final Resource domain) {
         // This could use a better way to determine the local host name
         for (final Resource.ResourceEntry entry : domain.getChildren(HOST)) {
             if (entry.isProxy() || entry.isRuntime()) {
@@ -175,4 +187,188 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         return null;
     }
 
+    private Set<String> checkProfileIncludes(Resource domain, Set<String> missingProfiles) throws OperationFailedException {
+        ProfileIncludeValidator validator = new ProfileIncludeValidator();
+        for (ResourceEntry entry : domain.getChildren(PROFILE)) {
+            validator.processResource(entry);
+        }
+
+        validator.validate(missingProfiles);
+        return validator.resourceIncludes.keySet();
+    }
+
+    private Set<String> checkSocketBindingGroupIncludes(Resource domain, Set<String> missingSocketBindingGroups) throws OperationFailedException {
+        SocketBindingGroupIncludeValidator validator = new SocketBindingGroupIncludeValidator();
+        for (ResourceEntry entry : domain.getChildren(SOCKET_BINDING_GROUP)) {
+            validator.processResource(entry);
+        }
+
+        validator.validate(missingSocketBindingGroups);
+        return new HashSet<>(validator.resourceIncludes.keySet());
+    }
+
+    private abstract static class AbstractIncludeValidator {
+        protected final Set<String> seen = new HashSet<>();
+        protected final Set<String> onStack = new HashSet<>();
+        protected final Map<String, String> linkTo = new HashMap<>();
+        protected final Map<String, Set<String>> resourceIncludes = new HashMap<>();
+        protected final Map<String, Set<String>> resourceChildren = new HashMap<>();
+        protected final List<String> post = new ArrayList<>();
+
+        void processResource(ResourceEntry resourceEntry) throws OperationFailedException{
+            ModelNode model = resourceEntry.getModel();
+            final Set<String> includes;
+            if (model.hasDefined(INCLUDES)) {
+                includes = new HashSet<>();
+                for (ModelNode include : model.get(INCLUDES).asList()) {
+                    includes.add(include.asString());
+                }
+            } else {
+                includes = Collections.emptySet();
+            }
+            resourceIncludes.put(resourceEntry.getName(), includes);
+        }
+
+        void validate(Set<String> missingEntries) throws OperationFailedException {
+            //Look for cycles
+            for (String profileName : resourceIncludes.keySet()) {
+                if (!seen.contains(profileName)) {
+                    dfsForMissingOrCyclicIncludes(profileName, missingEntries);
+                }
+            }
+
+            if (missingEntries.size() > 0) {
+                //We are missing some profiles, don't continue with the validation since it has failed
+                return;
+            }
+
+            //Check that subsystems are not overridden, by traversing them in the order child->parent
+            //using the reverse post-order of the dfs
+            seen.clear();
+            for (ListIterator<String> it = post.listIterator(post.size()) ; it.hasPrevious() ; ) {
+                String profile = it.previous();
+                if (seen.contains(profile)) {
+                    continue;
+                }
+                Map<String, String> subsystems = new HashMap<>();
+                validateChildrenNotOverridden(profile, subsystems);
+            }
+        }
+
+        void validateChildrenNotOverridden(String resourceName, Map<String, String> children) throws OperationFailedException {
+            seen.add(resourceName);
+            Set<String> includes = resourceIncludes.get(resourceName);
+            if (includes.size() == 0 && children.size() == 0) {
+                return;
+            }
+            for (String child : resourceChildren.get(resourceName)) {
+                String existingSubsystemProfile = children.get(child);
+                if (existingSubsystemProfile != null) {
+                    throw profileAttemptingToOverrideSubsystem(existingSubsystemProfile, child, resourceName);
+                }
+                children.put(child, resourceName);
+            }
+            for (String include : includes) {
+                validateChildrenNotOverridden(include, children);
+            }
+        }
+
+        void dfsForMissingOrCyclicIncludes(String resourceName, Set<String> missingEntries) throws OperationFailedException {
+            onStack.add(resourceName);
+            try {
+                seen.add(resourceName);
+                Set<String> includes = resourceIncludes.get(resourceName);
+                if (includes == null) {
+                    missingEntries.add(resourceName);
+                    return;
+                }
+                for (String include : includes) {
+                    if (!seen.contains(include)) {
+                        linkTo.put(include, resourceName);
+                        dfsForMissingOrCyclicIncludes(include, missingEntries);
+                    } else if (onStack.contains(include)) {
+                        throw profileInvolvedInACycle(include);
+                    }
+                }
+            } finally {
+                onStack.remove(resourceName);
+            }
+            post.add(resourceName);
+        }
+
+        abstract OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName);
+        abstract OperationFailedException profileInvolvedInACycle(String profile);
+    }
+
+
+    private static class ProfileIncludeValidator extends AbstractIncludeValidator {
+
+        void processResource(ResourceEntry profileEntry) throws OperationFailedException {
+            super.processResource(profileEntry);
+
+            final Set<String> subsystems;
+            if (profileEntry.hasChildren(SUBSYSTEM)) {
+                subsystems = new HashSet<>();
+                subsystems.addAll(profileEntry.getChildrenNames(SUBSYSTEM));
+            } else {
+                subsystems = Collections.emptySet();
+            }
+            resourceChildren.put(profileEntry.getName(), subsystems);
+        }
+
+        @Override
+        OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName) {
+            return ControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(existingSubsystemProfile, child, resourceName);
+        }
+
+        @Override
+        OperationFailedException profileInvolvedInACycle(String include) {
+            return ControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
+        }
+    }
+
+    private static class SocketBindingGroupIncludeValidator extends AbstractIncludeValidator {
+
+        void processResource(ResourceEntry groupEntry) throws OperationFailedException{
+            //Remote and local outbound socket binding names must be unique or we get a DuplicateServiceException
+            //Tighten this up to also make the 'normal' ones unique, to make the validation a bit easier.
+
+            super.processResource(groupEntry);
+
+            final Set<String> bindings;
+            if (groupEntry.hasChildren(SOCKET_BINDING)
+                    || groupEntry.hasChildren(LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING)
+                    || groupEntry.hasChildren(REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING)) {
+                bindings = new HashSet<>();
+                addBindings(groupEntry, bindings, SOCKET_BINDING);
+                addBindings(groupEntry, bindings, LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING);
+                addBindings(groupEntry, bindings, REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING);
+                bindings.addAll(groupEntry.getChildrenNames(SUBSYSTEM));
+            } else {
+                bindings = Collections.emptySet();
+            }
+            resourceChildren.put(groupEntry.getName(), bindings);
+        }
+
+        private void addBindings(ResourceEntry groupEntry, Set<String> bindings, String bindingType) throws OperationFailedException{
+            if (groupEntry.hasChildren(bindingType)) {
+                for (String name : groupEntry.getChildrenNames(bindingType)) {
+                    if (!bindings.add(name)) {
+                        throw ControllerLogger.ROOT_LOGGER.bindingNameNotUnique(name, groupEntry.getName());
+                    }
+                }
+            }
+        }
+
+        @Override
+        OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName) {
+            return ControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(existingSubsystemProfile, child, resourceName);
+        }
+
+        @Override
+        OperationFailedException profileInvolvedInACycle(String include) {
+            return ControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
+        }
+
+    }
 }

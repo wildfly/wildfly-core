@@ -21,10 +21,29 @@
 */
 package org.jboss.as.core.model.test.socketbindinggroups;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.AGENT_LIB;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.AGENT_PATH;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.ENVIRONMENT_VARIABLES;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.ENV_CLASSPATH_IGNORED;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.HEAP_SIZE;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.JAVA_AGENT;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.JAVA_HOME;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.LAUNCH_COMMAND;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MAX_HEAP_SIZE;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MAX_PERMGEN_SIZE;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.OPTIONS;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.PERMGEN_SIZE;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.STACK_SIZE;
+
 import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
+import org.jboss.as.core.model.test.CoreModelTestDelegate;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
 import org.jboss.as.core.model.test.LegacyKernelServicesInitializer;
@@ -33,7 +52,11 @@ import org.jboss.as.core.model.test.TransformersTestParameterized;
 import org.jboss.as.core.model.test.TransformersTestParameterized.TransformersParameter;
 import org.jboss.as.core.model.test.util.ExcludeCommonOperations;
 import org.jboss.as.core.model.test.util.TransformersTestParameter;
+import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
+import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.network.SocketBinding;
+import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,17 +83,10 @@ public class SocketBindingGroupTransformersTestCase extends AbstractCoreModelTes
 
     @Test
     public void testSocketBindingGroupsTransformer() throws Exception {
-
-        boolean below14 = ModelVersion.compare(ModelVersion.create(1, 4, 0), modelVersion) < 0;
-
         KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
-                .setXmlResource(below14 ? "domain-transformers-1.3.xml" : "domain.xml");
+                .setXmlResource("domain-transform.xml");
 
-        LegacyKernelServicesInitializer legacyInit = builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion);
-        if (below14) {
-            //The 7.1.2/3 operation validator does not like expressions very much
-            ExcludeCommonOperations.excludeBadOps_7_1_x(legacyInit);
-        }
+        builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion);
 
         KernelServices mainServices = builder.build();
         Assert.assertTrue(mainServices.isSuccessfulBoot());
@@ -79,5 +95,29 @@ public class SocketBindingGroupTransformersTestCase extends AbstractCoreModelTes
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
         checkCoreModelTransformation(mainServices, modelVersion);
+    }
+
+    @Test
+    public void testRejectIncludes() throws Exception {
+        if (modelVersion.getMajor() >= 4) {
+            return;
+        }
+        KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN);
+        builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion);
+
+        KernelServices mainServices = builder.build();
+        Assert.assertTrue(mainServices.isSuccessfulBoot());
+
+        KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
+        Assert.assertTrue(legacyServices.isSuccessfulBoot());
+
+        //Get the boot operations from the xml file
+        List<ModelNode> operations = builder.parseXmlResource("domain.xml");
+
+        //Run the standard tests trying to execute the parsed operations.
+        PathAddress addr = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "test-with-includes");
+        FailedOperationTransformationConfig config = new FailedOperationTransformationConfig();
+        config.addFailedAttribute(addr, new FailedOperationTransformationConfig.NewAttributesConfig(INCLUDES));
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, operations, config);
     }
 }

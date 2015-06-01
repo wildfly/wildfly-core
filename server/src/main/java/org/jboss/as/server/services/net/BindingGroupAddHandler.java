@@ -34,7 +34,7 @@ import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHa
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.server.logging.ServerLogger;
@@ -91,7 +91,7 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
                     }
                 }
 
-                SocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
+                AbstractSocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
             }
         }, OperationContext.Stage.MODEL);
     }

@@ -252,10 +252,8 @@ public class ReadMasterDomainModelUtil {
 
             // Include the socket binding groups
             if (groupModel.hasDefined(SOCKET_BINDING_GROUP)) {
-                final String socketBinding = groupModel.get(SOCKET_BINDING_GROUP).asString();
-                if (!socketBindings.contains(socketBinding)) {
-                    socketBindings.add(socketBinding);
-                }
+                final String socketBindingGroup = groupModel.get(SOCKET_BINDING_GROUP).asString();
+                processSocketBindingGroup(root, socketBindingGroup, requiredConfigurationHolder);
             }
 
             final String profileName = groupModel.get(PROFILE).asString();
@@ -266,7 +264,6 @@ public class ReadMasterDomainModelUtil {
     static void processHostModel(final RequiredConfigurationHolder holder, final Resource domain, final Resource hostModel, ExtensionRegistry extensionRegistry) {
 
         final Set<String> serverGroups = holder.serverGroups;
-        final Set<String> socketBindings = holder.socketBindings;
 
         for (final Resource.ResourceEntry entry : hostModel.getChildren(SERVER_CONFIG)) {
             final ModelNode model = entry.getModel();
@@ -277,9 +274,7 @@ public class ReadMasterDomainModelUtil {
             }
             if (model.hasDefined(SOCKET_BINDING_GROUP)) {
                 final String socketBindingGroup = model.get(SOCKET_BINDING_GROUP).asString();
-                if (!socketBindings.contains(socketBindingGroup)) {
-                    socketBindings.add(socketBindingGroup);
-                }
+                processSocketBindingGroup(domain, socketBindingGroup, holder);
             }
             // Always process the server group, since it may be different between the current vs. original model
             processServerGroup(holder, serverGroup, domain, extensionRegistry);
@@ -292,16 +287,12 @@ public class ReadMasterDomainModelUtil {
         if (!domain.hasChild(groupElement)) {
             return;
         }
-        final Set<String> socketBindings = holder.socketBindings;
-
         final Resource serverGroup = domain.getChild(groupElement);
         final ModelNode model = serverGroup.getModel();
 
         if (model.hasDefined(SOCKET_BINDING_GROUP)) {
             final String socketBindingGroup = model.get(SOCKET_BINDING_GROUP).asString();
-            if (!socketBindings.contains(socketBindingGroup)) {
-                socketBindings.add(socketBindingGroup);
-            }
+            processSocketBindingGroup(domain, socketBindingGroup, holder);
         }
 
         final String profile = model.get(PROFILE).asString();
@@ -343,7 +334,25 @@ public class ReadMasterDomainModelUtil {
                 }
             }
         }
+    }
 
+    private static void processSocketBindingGroup(final Resource domain, final String socketBindingGroup, final RequiredConfigurationHolder holder) {
+        final Set<String> socketBindingGroups = holder.socketBindings;
+
+        if (socketBindingGroups.contains(socketBindingGroup)) {
+            return;
+        }
+        socketBindingGroups.add(socketBindingGroup);
+        final PathElement socketBindingGroupElement = PathElement.pathElement(SOCKET_BINDING_GROUP, socketBindingGroup);
+        if (domain.hasChild(socketBindingGroupElement)) {
+            final Resource resource = domain.getChild(socketBindingGroupElement);
+
+            if (resource.getModel().hasDefined(INCLUDES)) {
+                for (final ModelNode include : resource.getModel().get(INCLUDES).asList()) {
+                    processSocketBindingGroup(domain, include.asString(), holder);
+                }
+            }
+        }
     }
 
     /**

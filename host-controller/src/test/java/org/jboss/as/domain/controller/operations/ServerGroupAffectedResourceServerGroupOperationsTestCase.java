@@ -38,9 +38,9 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -236,7 +236,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(VALUE).set(profileName);
 
         try {
-            operationContext.executeStep(ServerGroupProfileWriteAttributeHandler.INSTANCE, operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -312,7 +312,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(VALUE).set(socketBindingGroupName);
 
         try {
-            operationContext.executeStep(ServerGroupSocketBindingGroupWriteAttributeHandler.INSTANCE, operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {

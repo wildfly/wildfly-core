@@ -104,7 +104,8 @@ public class DomainServerUtils {
         return groups;
     }
 
-    public static Set<String> getRelatedElements(String containerType, String parent, ModelNode domainModel) {
+    public static Set<String> getRelatedElements(String containerType, String parent,
+                                                 String childType, String child, ModelNode domainModel) {
         Set<String> result = new HashSet<String>();
         result.add(parent);
         Set<String> checked = new HashSet<String>();
@@ -131,7 +132,11 @@ public class DomainServerUtils {
                         for (ModelNode include : container.get(INCLUDES).asList()) {
                             String includeName = include.asString();
                             if (result.contains(includeName)) {
-                                result.add(includeName);
+                                if (container.hasDefined(childType) && container.get(childType).hasDefined(child)) {
+                                    //The child is overridden in the including container, so don't push the change to the included occurrance to the servers
+                                } else {
+                                    result.add(name);
+                                }
                                 break;
                             } else if (!checked.contains(includeName)) {
                                 allKnown = false;

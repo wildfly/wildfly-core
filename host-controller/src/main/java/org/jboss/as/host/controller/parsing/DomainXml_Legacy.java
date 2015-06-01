@@ -70,7 +70,7 @@ import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
@@ -98,7 +98,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     private final Namespace namespace;
 
     DomainXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
-        super();
+        super(new DomainSocketBindingsXml());
         accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
@@ -536,8 +536,8 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         bindingGroupUpdate.get(OP_ADDR).set(groupAddress);
         bindingGroupUpdate.get(OP).set(ADD);
 
-        SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(defaultInterface, bindingGroupUpdate, reader);
-        if (bindingGroupUpdate.get(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
+        AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(defaultInterface, bindingGroupUpdate, reader);
+        if (bindingGroupUpdate.get(AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
                 && !interfaces.contains(defaultInterface)) {
             throw ControllerLogger.ROOT_LOGGER.unknownInterface(defaultInterface, Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());
         }
@@ -559,7 +559,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                      if (!includedGroups.add(includedGroup)) {
                      throw MESSAGES.alreadyDeclared(Attribute.SOCKET_BINDING_GROUP.getLocalName(), includedGroup, reader.getLocation());
                      }
-                     SocketBindingGroupResourceDefinition.INCLUDES.parseAndAddParameterElement(includedGroup, bindingGroupUpdate, reader.getLocation());
+                     AbstractSocketBindingGroupResourceDefinition.INCLUDES.parseAndAddParameterElement(includedGroup, bindingGroupUpdate, reader.getLocation());
                      */
                     break;
                 }
@@ -593,8 +593,8 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         bindingGroupUpdate.get(OP_ADDR).set(groupAddress);
         bindingGroupUpdate.get(OP).set(ADD);
 
-        SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(defaultInterface, bindingGroupUpdate, reader);
-        if (bindingGroupUpdate.get(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
+        AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(defaultInterface, bindingGroupUpdate, reader);
+        if (bindingGroupUpdate.get(AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
                 && !interfaces.contains(defaultInterface)) {
             throw ControllerLogger.ROOT_LOGGER.unknownInterface(defaultInterface, Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());
         }
@@ -616,7 +616,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                  if (!includedGroups.add(includedGroup)) {
                  throw MESSAGES.alreadyDeclared(Attribute.SOCKET_BINDING_GROUP.getLocalName(), includedGroup, reader.getLocation());
                  }
-                 SocketBindingGroupResourceDefinition.INCLUDES.parseAndAddParameterElement(includedGroup, bindingGroupUpdate, reader.getLocation());
+                 AbstractSocketBindingGroupResourceDefinition.INCLUDES.parseAndAddParameterElement(includedGroup, bindingGroupUpdate, reader.getLocation());
                  break;
                  }
                  */
@@ -816,7 +816,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                          throw MESSAGES.profileNotFound(reader.getLocation());
                          }
                          if (! includes.add(includedName)) {
-                         throw MESSAGES.duplicateProfile(reader.getLocation());
+                         throw MESSAGES.duplicateProfileInclude(reader.getLocation());
                          }
                          profileIncludes.add(includedName);
                          break;
