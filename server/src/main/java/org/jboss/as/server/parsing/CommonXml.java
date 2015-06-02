@@ -41,6 +41,7 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
@@ -75,6 +76,19 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
 
     protected CommonXml(SocketBindingsXml socketBindingsXml) {
         this.socketBindingsXml = socketBindingsXml;
+    }
+
+    /**
+     * @deprecated @deprecated WFCORE-726 Only here for AppClientXml in Full while waiting for a core release
+     */
+    @Deprecated
+    protected CommonXml() {
+        socketBindingsXml = new SocketBindingsXml() {
+            @Override
+            protected void writeExtraAttributes(XMLExtendedStreamWriter writer, ModelNode bindingGroup) throws XMLStreamException {
+                SocketBindingGroupResourceDefinition.PORT_OFFSET.marshallAsAttribute(bindingGroup, writer);
+            }
+        };
     }
 
     protected void parseNamespaces(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> nodes) {
