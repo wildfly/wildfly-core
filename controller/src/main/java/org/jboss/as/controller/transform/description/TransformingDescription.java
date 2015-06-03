@@ -137,14 +137,15 @@ class TransformingDescription extends AbstractDescription implements Transformat
 
     @Override
     public void transformResource(final ResourceTransformationContext ctx, final PathAddress address, final Resource original) throws OperationFailedException {
-        final ModelNode originalModel = TransformationRule.cloneAndProtect(original.getModel());
         final DiscardPolicy discardPolicy = determineDiscardPolicy(ctx, address);
 
         switch (discardPolicy) {
-            case DISCARD_AND_WARN:
             case REJECT_AND_WARN:
                 ctx.getLogger().logRejectedResourceWarning(address, null);
                 return;
+            case DISCARD_AND_WARN:
+                // don't return yet, just log a warning first and then discard
+                ctx.getLogger().logDiscardedResourceWarning(address, ctx.getTarget().getHostName());
             case SILENT:
                 ResourceTransformer.DISCARD.transformResource(ctx, address, original);
                 return;

@@ -3323,4 +3323,7 @@ public interface ControllerLogger extends BasicLogger {
             "to learn more about the deprecation.")
     void operationDeprecated(String name, String address);
 
+    @Message(id = 396, value = "Resource %s is discarded on the target host %s")
+    String discardedResourceTransformation(PathAddress address, String host);
+
 }

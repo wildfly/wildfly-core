@@ -225,6 +225,15 @@ public class TransformersLogger {
         messageQueue.add(new RejectResourceLogEntry(address, null));
     }
 
+    public void logDiscardedResourceWarning(PathAddress address, String host) {
+        messageQueue.add(new LogEntry() {
+            @Override
+            public String getMessage() {
+                return ControllerLogger.ROOT_LOGGER.discardedResourceTransformation(address, host);
+            }
+        });
+    }
+
     /**
      * Log a free-form warning
      * @param message the warning message. Cannot be {@code null}
