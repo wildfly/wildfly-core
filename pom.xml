@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>17</version>
+      <version>18</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -67,11 +67,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
 
-        <!-- sticking with 3.1 as 3.2 has problems with partial recompile -->
-        <version.compiler.plugin>3.1</version.compiler.plugin>
-        <version.checkstyle.plugin>2.15</version.checkstyle.plugin>
+        <!-- sticking with 6.3 until https://github.com/wildfly/wildfly-checkstyle-config/pull/6 is merged and released -->
         <version.checkstyle>6.3</version.checkstyle>
-        <version.enforcer.plugin>1.4</version.enforcer.plugin>
         <version.surefire.plugin>2.17</version.surefire.plugin>
         <!--
             Dependency versions. Please keep alphabetical.
@@ -286,13 +283,6 @@
                           <argLine>-Duser.region=US -Duser.language=en</argLine>
                     </configuration>
 
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <additionalparam>-Xdoclint:none</additionalparam>
-                    </configuration>
                 </plugin>
                 <!-- Checkstyle -->
                 <plugin>
