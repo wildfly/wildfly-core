@@ -35,14 +35,13 @@ import org.jboss.as.controller.logging.ControllerLogger;
  */
 public class ContextAttachments {
     /**
-     * A concurrent map for the attachments. *
+     * A concurrent map for the attachments.
      */
-    public final ConcurrentMap<OperationContext.AttachmentKey<?>, Object> valueAttachments = new ConcurrentHashMap<OperationContext.AttachmentKey<?>, Object>();
+    private final ConcurrentMap<OperationContext.AttachmentKey<?>, Object> valueAttachments = new ConcurrentHashMap<>();
 
     public ContextAttachments() {
     }
 
-    @SuppressWarnings("unchecked")
     public <V> V getAttachment(final OperationContext.AttachmentKey<V> key) {
         if (key == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("key");

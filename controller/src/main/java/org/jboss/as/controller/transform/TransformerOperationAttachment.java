@@ -40,8 +40,7 @@ public class TransformerOperationAttachment {
     public static TransformerOperationAttachment getOrCreate(OperationContext context) {
         assert !context.isBooting() : "Only usable once booted";
         TransformerOperationAttachment attachment = new TransformerOperationAttachment();
-        TransformerOperationAttachment original =
-                context.attachIfAbsent(KEY, attachment);
+        TransformerOperationAttachment original = context.attachIfAbsent(KEY, attachment);
         return original == null ? attachment : original;
     }
 
@@ -55,7 +54,7 @@ public class TransformerOperationAttachment {
     }
 
     public <V> V detach(final OperationContext.AttachmentKey<V> key) {
-        return detach(key);
+        return contextAttachments.detach(key);
     }
 
     public <V> V getAttachment(final OperationContext.AttachmentKey<V> key) {
