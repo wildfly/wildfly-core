@@ -337,7 +337,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setServerConfiguration(final String configFile) {
-        addServerArg("-c", configFile);
+        setSingleServerArg("-c", configFile);
         return this;
     }
 
@@ -361,7 +361,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setServerReadOnlyConfiguration(final String configFile) {
-        addServerArg("--read-only-server-config", configFile);
+        setSingleServerArg("--read-only-server-config", configFile);
         return this;
     }
 

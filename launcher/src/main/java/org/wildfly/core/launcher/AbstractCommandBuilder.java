@@ -391,7 +391,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @return the builder
      */
     public T setBindAddressHint(final String address) {
-        addServerArg("-b", address);
+        setSingleServerArg("-b", address);
         return getThis();
     }
 
@@ -415,7 +415,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         if (interfaceName == null) {
             throw LauncherMessages.MESSAGES.nullParam("interfaceName");
         }
-        addServerArg("-b" + interfaceName, address);
+        setSingleServerArg("-b" + interfaceName, address);
         return getThis();
     }
 
@@ -432,14 +432,53 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @return the builder
      */
     public T setMulticastAddressHint(final String address) {
-        addServerArg("-u", address);
+        setSingleServerArg("-u", address);
         return getThis();
     }
 
     /**
-     * Sets the properties file to use for the server or {@code null} to remove the file. The file must exist.
-     * <p/>
-     * This will override any previous value set via {@link #addServerArgument(String)}..
+     * Adds a properties file to be passed to the server. Note that the file must exist.
+     *
+     * @param file the file to add
+     *
+     * @return the builder
+     *
+     * @throws java.lang.IllegalArgumentException if the file does not exist or is not a regular file
+     */
+    public T addPropertiesFile(final String file) {
+        if (file != null) {
+            addPropertiesFile(Paths.get(file));
+        }
+        return getThis();
+    }
+
+    /**
+     * Adds a properties file to be passed to the server. Note that the file must exist.
+     *
+     * @param file the file to add
+     *
+     * @return the builder
+     *
+     * @throws java.lang.IllegalArgumentException if the file does not exist or is not a regular file
+     */
+    public T addPropertiesFile(final Path file) {
+        if (file != null) {
+            if (Files.notExists(file)) {
+                throw LauncherMessages.MESSAGES.pathDoesNotExist(file);
+            }
+            if (!Files.isRegularFile(file)) {
+                throw LauncherMessages.MESSAGES.pathNotAFile(file);
+            }
+            addServerArg("-P", file.toAbsolutePath().normalize().toString());
+        }
+        return getThis();
+    }
+
+    /**
+     * Sets the properties file to use for the server or {@code null} to remove the file. Note that the file must exist.
+     * <p>
+     * This will override any previous values set.
+     * </p>
      *
      * @param file the properties file to use or {@code null}
      *
@@ -458,9 +497,10 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     }
 
     /**
-     * Sets the properties file to use for the server or {@code null} to remove the file. The file must exist.
-     * <p/>
-     * This will override any previous value set via {@link #addServerArgument(String)}..
+     * Sets the properties file to use for the server or {@code null} to remove the file. Note that the file must exist.
+     * <p>
+     * This will override any previous values set.
+     * </p>
      *
      * @param file the properties file to use or {@code null}
      *
@@ -469,18 +509,8 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @throws java.lang.IllegalArgumentException if the file does not exist or is not a regular file
      */
     public T setPropertiesFile(final Path file) {
-        if (file == null) {
-            addServerArg("-P", null);
-        } else {
-            if (Files.notExists(file)) {
-                throw LauncherMessages.MESSAGES.pathDoesNotExist(file);
-            }
-            if (!Files.isRegularFile(file)) {
-                throw LauncherMessages.MESSAGES.pathNotAFile(file);
-            }
-            addServerArg("-P", file.toAbsolutePath().normalize().toString());
-        }
-        return getThis();
+        serverArgs.remove("-P");
+        return addPropertiesFile(file);
     }
 
     /**
@@ -611,10 +641,21 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      */
     protected abstract T getThis();
 
+    protected void setSingleServerArg(final String key, final String value) {
+        serverArgs.set(key, value);
+    }
+
     protected void addServerArg(final String key, final String value) {
         serverArgs.add(key, value);
     }
 
+    /**
+     * Returns the first argument from the server arguments.
+     *
+     * @param key the key to the argument
+     *
+     * @return the first argument or {@code null}
+     */
     protected String getServerArg(final String key) {
         return serverArgs.get(key);
     }
