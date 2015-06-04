@@ -464,6 +464,8 @@ public class OperationTransformerRegistry {
     /**
      * An extra resolver to be used for {@link OperationTransformerRegistry} entries where {@code placeholder==true}. These placeholder entries transformers should create
      * a new {@link org.jboss.as.controller.transform.TransformationTarget} containing the {@code PlaceholderResolver} and resolve the children themselves.
+     * Note that if a place holder resolver is used at a given resource address, this takes precedence over the normal transformer registry, so all children
+     * must use the placeholders.
      */
     public interface PlaceholderResolver {
         /**
