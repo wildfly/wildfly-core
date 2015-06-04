@@ -26,10 +26,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.core.launcher.Arguments.Argument;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -120,6 +122,39 @@ public class CommandBuilderTest {
         commandBuilder.setBindAddressHint(null);
         commands = commandBuilder.buildArguments();
         Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
+
+    @Test
+    public void testArguments() {
+        final Arguments arguments = new Arguments();
+        arguments.add("-Dkey=value");
+        arguments.add("-X");
+        arguments.add("-X");
+        arguments.set("single-key", "single-value");
+        arguments.set("single-key", "single-value");
+        arguments.addAll("-Dprop1=value1", "-Dprop2=value2", "-Dprop3=value3");
+
+        // Validate the arguments
+        Iterator<Argument> iter = arguments.getArguments("key").iterator();
+        Assert.assertTrue("Missing 'key' entry", iter.hasNext());
+        Assert.assertEquals("value", arguments.get("key"));
+        Assert.assertEquals("-Dkey=value", iter.next().asCommandLineArgument());
+
+        // -X should have been added twice
+        Assert.assertEquals(2, arguments.getArguments("-X").size());
+
+        // Using set should only add the value once
+        Assert.assertEquals("Should not be more than one 'single-key' argument", 1, arguments.getArguments("single-key").size());
+
+        // Convert the arguments to a list and ensure each entry has been added in the format expected
+        final List<String> stringArgs = arguments.asList();
+        Assert.assertEquals(7, stringArgs.size());
+        Assert.assertTrue("Missing -Dkey=value", stringArgs.contains("-Dkey=value"));
+        Assert.assertTrue("Missing -X", stringArgs.contains("-X"));
+        Assert.assertTrue("Missing single-key=single-value", stringArgs.contains("single-key=single-value"));
+        Assert.assertTrue("Missing -Dprop1=value1", stringArgs.contains("-Dprop1=value1"));
+        Assert.assertTrue("Missing -Dprop2=value2", stringArgs.contains("-Dprop2=value2"));
+        Assert.assertTrue("Missing -Dprop3=value3", stringArgs.contains("-Dprop3=value3"));
     }
 
 }
