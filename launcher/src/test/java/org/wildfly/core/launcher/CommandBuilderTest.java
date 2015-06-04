@@ -26,14 +26,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-abstract class CommandBuilderTest {
+public class CommandBuilderTest {
 
-    static final Path WILDFLY_HOME;
-    static final Path JAVA_HOME;
+    private static final Path WILDFLY_HOME;
+    private static final Path JAVA_HOME;
 
     static {
         WILDFLY_HOME = Paths.get(System.getProperty("wildfly.launcher.home")).toAbsolutePath().normalize();
@@ -53,5 +57,69 @@ abstract class CommandBuilderTest {
         JAVA_HOME = Paths.get(javaHome).toAbsolutePath().normalize();
     }
 
+    @Test
+    public void testStandaloneBuilder() {
+        // Set up a standalone command builder
+        final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(WILDFLY_HOME)
+                .setAdminOnly()
+                .setBindAddressHint("0.0.0.0")
+                .setDebug(true, 5005)
+                .setServerConfiguration("standalone-full.xml")
+                .addJavaOption("-Djava.security.manager")
+                .setBindAddressHint("management", "0.0.0.0");
+
+        // Get all the commands
+        List<String> commands = commandBuilder.buildArguments();
+
+        Assert.assertTrue("--admin-only is missing", commands.contains("--admin-only"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-b=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
+
+        Assert.assertTrue("Missing debug argument", commands.contains(String.format(StandaloneCommandBuilder.DEBUG_FORMAT, "y", 5005)));
+
+        Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
+
+        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        // Rename the binding address
+        commandBuilder.setBindAddressHint(null);
+        commands = commandBuilder.buildArguments();
+        Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
+
+    @Test
+    public void testDomainBuilder() {
+        // Set up a standalone command builder
+        final DomainCommandBuilder commandBuilder = DomainCommandBuilder.of(WILDFLY_HOME)
+                .setAdminOnly()
+                .setBindAddressHint("0.0.0.0")
+                .setMasterAddressHint("0.0.0.0")
+                .setDomainConfiguration("domain.xml")
+                .setHostConfiguration("host.xml")
+                .addProcessControllerJavaOption("-Djava.security.manager")
+                .setBindAddressHint("management", "0.0.0.0");
+
+        // Get all the commands
+        List<String> commands = commandBuilder.buildArguments();
+
+        Assert.assertTrue("--admin-only is missing", commands.contains("--admin-only"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-b=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("--master-address=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
+
+        Assert.assertTrue("Missing server configuration file override", commands.contains("-c=domain.xml"));
+
+        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        // Rename the binding address
+        commandBuilder.setBindAddressHint(null);
+        commands = commandBuilder.buildArguments();
+        Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
 
 }
