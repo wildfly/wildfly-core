@@ -69,6 +69,7 @@
 
         <!-- sticking with 6.3 until https://github.com/wildfly/wildfly-checkstyle-config/pull/6 is merged and released -->
         <version.checkstyle>6.3</version.checkstyle>
+        <version.assembly.plugin>2.5.3</version.assembly.plugin>
         <version.surefire.plugin>2.17</version.surefire.plugin>
         <!--
             Dependency versions. Please keep alphabetical.
