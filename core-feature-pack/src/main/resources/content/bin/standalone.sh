@@ -144,13 +144,10 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         "$JAVA" -d32 $JAVA_OPTS -version > /dev/null 2>&1 && PREPEND_JAVA_OPTS="-d32" && JVM_OPTVERSION="-d32"
     fi
 
-    CLIENT_VM=false
-    if [ "x$CLIENT_SET" != "x" ]; then
-        CLIENT_VM=true
-    elif [ "x$SERVER_SET" = "x" ]; then
+    if [ "x$CLIENT_SET" = "x" -a "x$SERVER_SET" = "x" ]; then
+        # neither -client nor -server is specified
         if $darwin && [ "$JVM_OPTVERSION" = "-d32" ]; then
             # Prefer client for Macs, since they are primarily used for development
-            CLIENT_VM=true
             PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -client"
         else
             PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -server"
