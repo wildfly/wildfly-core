@@ -23,6 +23,8 @@
 package org.wildfly.core.launcher;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,7 @@ import java.util.Map;
  */
 class Arguments {
 
-    private final Map<String, Argument> map;
+    private final Map<String, Collection<Argument>> map;
 
     Arguments() {
         this.map = new LinkedHashMap<>();
@@ -56,7 +58,7 @@ class Arguments {
     public void add(final String arg) {
         if (arg != null) {
             final Argument argument = parse(arg);
-            map.put(argument.getKey(), argument);
+            add(argument);
         }
     }
 
@@ -85,7 +87,33 @@ class Arguments {
                     argument = create(key, value);
                 }
             }
-            map.put(key, argument);
+            add(argument);
+        }
+    }
+
+    /**
+     * Sets a key/value pair to the collection of arguments. This guarantees only one value will be assigned to the
+     * argument key. A {@code null} value indicates the key should be removed.
+     * <p/>
+     * If the key starts with {@code -D} it's assumed it's a system property argument and the prefix will be stripped
+     * from the key when checking for uniqueness.
+     *
+     * @param key   the key for the argument
+     * @param value the value of the argument which may be {@code null}
+     */
+    public void set(final String key, final String value) {
+        if (key != null) {
+            if (value == null) {
+                map.remove(key);
+            } else {
+                final Argument argument;
+                if (key.startsWith("-D")) {
+                    argument = createSystemProperty(key, value);
+                } else {
+                    argument = create(key, value);
+                }
+                map.put(argument.getKey(), Collections.singleton(argument));
+            }
         }
     }
 
@@ -105,18 +133,44 @@ class Arguments {
     }
 
     /**
-     * Gets the value for the key.
+     * Gets the first value for the key.
      *
      * @param key the key to check for the value
      *
      * @return the value or {@code null} if the key is not found or the value was {@code null}
      */
     public String get(final String key) {
-        final Argument arg = map.get(key);
-        if (arg != null) {
-            return arg.getValue();
+        final Collection<Argument> args = map.get(key);
+        if (args != null) {
+            return args.iterator().hasNext() ? args.iterator().next().getValue() : null;
         }
         return null;
+    }
+
+    /**
+     * Gets the value for the key.
+     *
+     * @param key the key to check for the value
+     *
+     * @return the value or an empty collection if no values were set
+     */
+    public Collection<Argument> getArguments(final String key) {
+        final Collection<Argument> args = map.get(key);
+        if (args != null) {
+            return new ArrayList<>(args);
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Removes the argument from the collection of arguments.
+     *
+     * @param key they key of the argument to remove
+     *
+     * @return the arguments or {@code null} if the argument was not found
+     */
+    public Collection<Argument> remove(final String key) {
+        return map.remove(key);
     }
 
     /**
@@ -126,8 +180,10 @@ class Arguments {
      */
     public List<String> asList() {
         final List<String> result = new ArrayList<>();
-        for (Argument arg : map.values()) {
-            result.add(arg.asCommandLineArgument());
+        for (Collection<Argument> args : map.values()) {
+            for (Argument arg : args) {
+                result.add(arg.asCommandLineArgument());
+            }
         }
         return result;
     }
@@ -139,7 +195,12 @@ class Arguments {
      */
     void add(final Argument argument) {
         if (argument != null) {
-            map.put(argument.getKey(), argument);
+            Collection<Argument> arguments = map.get(argument.getKey());
+            if (arguments == null) {
+                arguments = new ArrayList<>();
+                map.put(argument.getKey(), arguments);
+            }
+            arguments.add(argument);
         }
     }
 
@@ -243,6 +304,11 @@ class Arguments {
          * @return the command line argument
          */
         public abstract String asCommandLineArgument();
+
+        @Override
+        public String toString() {
+            return asCommandLineArgument();
+        }
     }
 
 

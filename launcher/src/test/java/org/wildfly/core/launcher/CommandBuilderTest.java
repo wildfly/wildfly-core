@@ -26,14 +26,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.wildfly.core.launcher.Arguments.Argument;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-abstract class CommandBuilderTest {
+public class CommandBuilderTest {
 
-    static final Path WILDFLY_HOME;
-    static final Path JAVA_HOME;
+    private static final Path WILDFLY_HOME;
+    private static final Path JAVA_HOME;
 
     static {
         WILDFLY_HOME = Paths.get(System.getProperty("wildfly.launcher.home")).toAbsolutePath().normalize();
@@ -53,5 +59,102 @@ abstract class CommandBuilderTest {
         JAVA_HOME = Paths.get(javaHome).toAbsolutePath().normalize();
     }
 
+    @Test
+    public void testStandaloneBuilder() {
+        // Set up a standalone command builder
+        final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(WILDFLY_HOME)
+                .setAdminOnly()
+                .setBindAddressHint("0.0.0.0")
+                .setDebug(true, 5005)
+                .setServerConfiguration("standalone-full.xml")
+                .addJavaOption("-Djava.security.manager")
+                .setBindAddressHint("management", "0.0.0.0");
+
+        // Get all the commands
+        List<String> commands = commandBuilder.buildArguments();
+
+        Assert.assertTrue("--admin-only is missing", commands.contains("--admin-only"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-b=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
+
+        Assert.assertTrue("Missing debug argument", commands.contains(String.format(StandaloneCommandBuilder.DEBUG_FORMAT, "y", 5005)));
+
+        Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
+
+        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        // Rename the binding address
+        commandBuilder.setBindAddressHint(null);
+        commands = commandBuilder.buildArguments();
+        Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
+
+    @Test
+    public void testDomainBuilder() {
+        // Set up a standalone command builder
+        final DomainCommandBuilder commandBuilder = DomainCommandBuilder.of(WILDFLY_HOME)
+                .setAdminOnly()
+                .setBindAddressHint("0.0.0.0")
+                .setMasterAddressHint("0.0.0.0")
+                .setDomainConfiguration("domain.xml")
+                .setHostConfiguration("host.xml")
+                .addProcessControllerJavaOption("-Djava.security.manager")
+                .setBindAddressHint("management", "0.0.0.0");
+
+        // Get all the commands
+        List<String> commands = commandBuilder.buildArguments();
+
+        Assert.assertTrue("--admin-only is missing", commands.contains("--admin-only"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-b=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("--master-address=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
+
+        Assert.assertTrue("Missing server configuration file override", commands.contains("-c=domain.xml"));
+
+        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        // Rename the binding address
+        commandBuilder.setBindAddressHint(null);
+        commands = commandBuilder.buildArguments();
+        Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
+
+    @Test
+    public void testArguments() {
+        final Arguments arguments = new Arguments();
+        arguments.add("-Dkey=value");
+        arguments.add("-X");
+        arguments.add("-X");
+        arguments.set("single-key", "single-value");
+        arguments.set("single-key", "single-value");
+        arguments.addAll("-Dprop1=value1", "-Dprop2=value2", "-Dprop3=value3");
+
+        // Validate the arguments
+        Iterator<Argument> iter = arguments.getArguments("key").iterator();
+        Assert.assertTrue("Missing 'key' entry", iter.hasNext());
+        Assert.assertEquals("value", arguments.get("key"));
+        Assert.assertEquals("-Dkey=value", iter.next().asCommandLineArgument());
+
+        // -X should have been added twice
+        Assert.assertEquals(2, arguments.getArguments("-X").size());
+
+        // Using set should only add the value once
+        Assert.assertEquals("Should not be more than one 'single-key' argument", 1, arguments.getArguments("single-key").size());
+
+        // Convert the arguments to a list and ensure each entry has been added in the format expected
+        final List<String> stringArgs = arguments.asList();
+        Assert.assertEquals(7, stringArgs.size());
+        Assert.assertTrue("Missing -Dkey=value", stringArgs.contains("-Dkey=value"));
+        Assert.assertTrue("Missing -X", stringArgs.contains("-X"));
+        Assert.assertTrue("Missing single-key=single-value", stringArgs.contains("single-key=single-value"));
+        Assert.assertTrue("Missing -Dprop1=value1", stringArgs.contains("-Dprop1=value1"));
+        Assert.assertTrue("Missing -Dprop2=value2", stringArgs.contains("-Dprop2=value2"));
+        Assert.assertTrue("Missing -Dprop3=value3", stringArgs.contains("-Dprop3=value3"));
+    }
 
 }

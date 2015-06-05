@@ -154,7 +154,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setInterProcessHostControllerAddress(final String address) {
         if (address != null) {
-            addServerArg("--interprocess-hc-address", address);
+            setSingleServerArg("--interprocess-hc-address", address);
         }
         return this;
     }
@@ -179,7 +179,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
     /**
      * Sets the port on which the host controller should listen for communication from the process controller ({@code
-     * interprocess-hc-address}). Ignores {@code null} values less than 0.
+     * interprocess-hc-address}). Ignores values less than 0.
      *
      * @param port the port
      *
@@ -187,7 +187,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setInterProcessHostControllerPort(final int port) {
         if (port > -1) {
-            addServerArg("--interprocess-hc-port", Integer.toString(port));
+            setSingleServerArg("--interprocess-hc-port", Integer.toString(port));
         }
         return this;
     }
@@ -205,7 +205,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setMasterAddressHint(final String address) {
         if (address != null) {
-            addServerArg("--master-address", address);
+            setSingleServerArg("--master-address", address);
         }
         return this;
     }
@@ -232,7 +232,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
     /**
      * Sets the system property {@code jboss.domain.master.port}. In a default slave host configuration this is used
-     * to configure the port of the master host controller. Ignores {@code null} values less than 0.
+     * to configure the port of the master host controller. Ignores values less than 0.
      * <p/>
      * <b>Note:</b> This option only works if the standard system property has not been removed from the remote host.
      * If the system property was removed the port provided has no effect.
@@ -243,7 +243,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setMasterPortHint(final int port) {
         if (port > -1) {
-            addServerArg("--master-port", Integer.toString(port));
+            setSingleServerArg("--master-port", Integer.toString(port));
         }
         return this;
     }
@@ -258,7 +258,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setProcessControllerAddress(final String address) {
         if (address != null) {
-            addServerArg("--pc-address", address);
+            setSingleServerArg("--pc-address", address);
         }
         return this;
     }
@@ -282,7 +282,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
     /**
      * Sets the port on which the process controller listens for communication from processes it controls. Ignores
-     * {@code null} values less than 0.
+     * values less than 0.
      *
      * @param port the port
      *
@@ -290,7 +290,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setProcessControllerPort(final int port) {
         if (port > -1) {
-            addServerArg("--pc-port", Integer.toString(port));
+            setSingleServerArg("--pc-port", Integer.toString(port));
         }
         return this;
     }
@@ -387,7 +387,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setHostConfiguration(final String configFile) {
         if (configFile != null) {
-            addServerArg("--host-config", configFile);
+            setSingleServerArg("--host-config", configFile);
         }
         return this;
     }
@@ -413,7 +413,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setReadOnlyHostConfiguration(final String configFile) {
         if (configFile != null) {
-            addServerArg("--read-only-host-config", configFile);
+            setSingleServerArg("--read-only-host-config", configFile);
         }
         return this;
     }
@@ -440,7 +440,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return the builder
      */
     public DomainCommandBuilder setDomainConfiguration(final String configFile) {
-        addServerArg("-c", configFile);
+        setSingleServerArg("-c", configFile);
         return this;
     }
 
@@ -465,7 +465,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setReadOnlyDomainConfiguration(final String configFile) {
         if (configFile != null) {
-            addServerArg("--read-only-domain-config", configFile);
+            setSingleServerArg("--read-only-domain-config", configFile);
         }
         return this;
     }
