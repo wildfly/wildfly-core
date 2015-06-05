@@ -65,6 +65,6 @@ public class TransformerAttachmentGrabber implements OperationStepHandler {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 attachment = context.getAttachment(TransformerOperationAttachment.KEY);
             }
-        }, OperationContext.Stage.RUNTIME);
+        }, OperationContext.Stage.RUNTIME);//Use RUNTIME here to make sure that this comes at the end (the collection ops add another step)
     }
 }
