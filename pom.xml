@@ -70,7 +70,7 @@
         <!-- sticking with 3.1 as 3.2 has problems with partial recompile -->
         <version.compiler.plugin>3.1</version.compiler.plugin>
         <version.checkstyle.plugin>2.15</version.checkstyle.plugin>
-        <version.checkstyle>6.3</version.checkstyle>
+        <version.checkstyle>6.7</version.checkstyle>
         <version.enforcer.plugin>1.4</version.enforcer.plugin>
         <version.surefire.plugin>2.17</version.surefire.plugin>
         <!--
@@ -137,7 +137,7 @@
         <version.org.wildfly.build-tools>1.0.0.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.legacy.test>1.0.0.Alpha9</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.elytron>1.0.0.Alpha1</version.org.wildfly.security.elytron>
-        <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
         <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
