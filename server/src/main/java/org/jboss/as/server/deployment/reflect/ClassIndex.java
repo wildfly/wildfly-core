@@ -37,6 +37,7 @@ import org.jboss.invocation.proxy.MethodIdentifier;
  *
  * @author Stuart Douglas
  */
+@Deprecated
 public class ClassIndex {
 
     private final Class<?> moduleClass;

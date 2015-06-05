@@ -32,7 +32,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
+
+import static java.lang.reflect.Modifier.ABSTRACT;
+import static java.lang.reflect.Modifier.PUBLIC;
+import static java.lang.reflect.Modifier.STATIC;
 
 /**
  * A short-lived index of all the declared fields and methods of a class.
@@ -43,6 +50,7 @@ import java.util.Map;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class ClassReflectionIndex<T> {
+    private final DeploymentReflectionIndex deploymentReflectionIndex;
     private final Class<T> indexedClass;
     private final Map<String, Field> fields;
     private final Map<ParamList, Constructor<T>> constructors;
@@ -50,8 +58,15 @@ public final class ClassReflectionIndex<T> {
     private final Map<String, Map<ParamList, Map<Class<?>, Method>>> methods;
     private final Map<String, Map<ParamNameList, Map<String, Method>>> methodsByTypeName;
 
+    /**
+     * Identity map of all methods defined by this class and its superclasses (including default methods)
+     *
+     */
+    private volatile Set<Method> classMethods;
+
     @SuppressWarnings({"unchecked"})
     ClassReflectionIndex(final Class<T> indexedClass, final DeploymentReflectionIndex deploymentReflectionIndex) {
+        this.deploymentReflectionIndex = deploymentReflectionIndex;
         this.indexedClass = indexedClass;
         // -- fields --
         final Field[] declaredFields = indexedClass.getDeclaredFields();
@@ -365,6 +380,59 @@ public final class ClassReflectionIndex<T> {
     public Constructor<T> getConstructor(String... paramTypeNames) {
         return constructorsByTypeName.get(createParamNameList(paramTypeNames));
     }
+
+    public Set<Method> getClassMethods() {
+        if (classMethods == null) {
+            synchronized (this) {
+                if (classMethods == null) {
+                    final Set<Method> methods = methodSet();
+                    Class<?> clazz = this.indexedClass;
+                    while (clazz != null) {
+                        methods.addAll(deploymentReflectionIndex.getClassIndex(clazz).getMethods());
+                        clazz = clazz.getSuperclass();
+                    }
+                    final Map<Class<?>, Set<Method>> defaultMethodsByInterface = new IdentityHashMap<Class<?>, Set<Method>>();
+                    clazz = this.indexedClass;
+                    final Set<MethodIdentifier> foundMethods = new HashSet<MethodIdentifier>();
+                    while (clazz != null) {
+                        addDefaultMethods(this.indexedClass, foundMethods, defaultMethodsByInterface, clazz.getInterfaces());
+                        clazz = clazz.getSuperclass();
+                    }
+                    for (Set<Method> methodSet : defaultMethodsByInterface.values()) {
+                        methods.addAll(methodSet);
+                    }
+                    this.classMethods = methods;
+                }
+            }
+        }
+        return classMethods;
+    }
+
+    private boolean classContains(final Class<?> clazz, final MethodIdentifier methodIdentifier) {
+        return clazz != null && (deploymentReflectionIndex.getClassIndex(clazz).getMethod(methodIdentifier) != null || classContains(clazz.getSuperclass(), methodIdentifier));
+    }
+
+    private void addDefaultMethods(final Class<?> componentClass, Set<MethodIdentifier> foundMethods, Map<Class<?>, Set<Method>> defaultMethodsByInterface, Class<?>[] interfaces) {
+        for (Class<?> i : interfaces) {
+            if (! defaultMethodsByInterface.containsKey(i)) {
+                Set<Method> set = methodSet();
+                defaultMethodsByInterface.put(i, set);
+                final ClassReflectionIndex<?> interfaceIndex = deploymentReflectionIndex.getClassIndex(i);
+                for (Method method : interfaceIndex.getMethods()) {
+                    final MethodIdentifier identifier = MethodIdentifier.getIdentifierForMethod(method);
+                    if ((method.getModifiers() & (STATIC | PUBLIC | ABSTRACT)) == PUBLIC && ! classContains(componentClass, identifier) && foundMethods.add(identifier)) {
+                        set.add(method);
+                    }
+                }
+            }
+            addDefaultMethods(componentClass, foundMethods, defaultMethodsByInterface, i.getInterfaces());
+        }
+    }
+
+    private static Set<Method> methodSet() {
+        return Collections.newSetFromMap(new IdentityHashMap<Method, Boolean>());
+    }
+
 
     private static final class ParamList {
         private final Class<?>[] types;
