@@ -63,6 +63,14 @@ if [ -z "$JBOSS_HOME" ]; then
 fi
 export JBOSS_HOME
 
+if [ -z "$JBOSS_MANAGEMENT_NATIVE_HOST" ]; then
+  JBOSS_MANAGEMENT_NATIVE_HOST=127.0.0.1
+fi
+
+if [ -z "$JBOSS_MANAGEMENT_NATIVE_PORT" ]; then
+  JBOSS_MANAGEMENT_NATIVE_PORT=9999
+fi
+
 # Check if wildfly is installed
 if [ ! -f "$JBOSS_HOME/jboss-modules.jar" ]; then
 	log_failure_msg "$NAME is not installed in \"$JBOSS_HOME\""
@@ -178,8 +186,8 @@ case "$1" in
 		launched=0
 		until [ $count -gt $STARTUP_WAIT ]
 		do
-			grep 'WFLYSRV0025:' "$JBOSS_CONSOLE_LOG" > /dev/null
-			if [ $? -eq 0 ] ; then
+			state=$(sh $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_MANAGEMENT_NATIVE_HOST:$JBOSS_MANAGEMENT_NATIVE_PORT --command="read-attribute server-state")
+			if [ "$state" = "running" ] ; then
 				launched=1
 				break
 			fi
