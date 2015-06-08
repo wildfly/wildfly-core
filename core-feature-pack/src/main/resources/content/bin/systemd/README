@@ -1,0 +1,26 @@
+= How to configure WildFly as a systemd service
+
+== Create a wildfly user
+
+    # groupadd -r wildfly
+    # useradd -r -g wildfly -d /usr/share/wildfly -s /sbin/nologin wildfly
+
+== Install WildFly
+
+    # mkdir /usr/share/wildfly/
+    # tar xvzf wildfly-9.0.0.Final.tar.gz -C /var/tmp/
+    # cp -pr /var/tmp/wildfly-9.0.0.Final/* /usr/share/wildfly/
+    # chown -R wildfly:wildfly /usr/share/wildfly/
+
+== Configure systemd
+
+    # mkdir /etc/wildfly/
+    # cp wildfly.conf /etc/wildfly/
+    # cp wildfly.service /etc/systemd/system/
+    # cp launch.sh /usr/share/wildfly/bin/
+    # chmod +x /usr/share/wildfly/bin/launch.sh
+
+== Start and enable
+
+    # systemd start wildfly.service
+    # systemd enable wildfly.service
