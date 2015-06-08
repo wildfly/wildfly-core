@@ -184,6 +184,9 @@ public final class ServerService extends AbstractControllerService {
                 return ProcessType.EMBEDDED_SERVER;
             case APPCLIENT:
                 return ProcessType.APPLICATION_CLIENT;
+            case SELF_CONTAINED:
+                return ProcessType.SELF_CONTAINED;
+
             }
         }
 
