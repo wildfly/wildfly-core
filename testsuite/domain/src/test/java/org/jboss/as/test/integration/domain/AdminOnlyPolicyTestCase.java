@@ -118,6 +118,32 @@ public class AdminOnlyPolicyTestCase {
         executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
+
+//        ModelNode remove = Util.createRemoveOperation(pa);
+//        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
+//
+//        // This should have pulled down the 'other' profile
+//        validateProfiles("default");
+    }
+
+    @Test
+    public void testChangeProfile() throws URISyntaxException, IOException {
+        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_MASTER, true, false);
+        validateProfiles("default");
+
+        // Now we validate that we can pull down further data if needed
+        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, hostName), PathElement.pathElement(SERVER_CONFIG, "other1"));
+        ModelNode op = Util.createAddOperation(pa);
+        op.get(GROUP).set("other-server-group");
+        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
+        // This should have pulled down the 'other' profile
+        validateProfiles("default", "other");
+
+//        ModelNode remove = Util.createRemoveOperation(pa);
+//        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
+//
+//        // This should have pulled down the 'other' profile
+//        validateProfiles("default");
     }
 
     @Test

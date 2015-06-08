@@ -39,20 +39,20 @@ import org.jboss.as.controller.registry.OperationTransformerRegistry.Placeholder
  */
 public class TransformationTargetImpl implements TransformationTarget {
 
+    private final String hostName;
     private final ModelVersion version;
     private final TransformerRegistry transformerRegistry;
     private final Map<String, ModelVersion> subsystemVersions = Collections.synchronizedMap(new HashMap<String, ModelVersion>());
     private final OperationTransformerRegistry registry;
     private final TransformationTargetType type;
-    private final IgnoredTransformationRegistry transformationExclusion;
-    private final RuntimeIgnoreTransformation runtimeIgnoreTransformation;
     private final PlaceholderResolver placeholderResolver;
 
-    private TransformationTargetImpl(final TransformerRegistry transformerRegistry, final ModelVersion version,
+    private TransformationTargetImpl(final String hostName, final TransformerRegistry transformerRegistry, final ModelVersion version,
                                      final Map<PathAddress, ModelVersion> subsystemVersions, final OperationTransformerRegistry transformers,
-                                     final IgnoredTransformationRegistry transformationExclusion, final TransformationTargetType type,
-                                     final RuntimeIgnoreTransformation runtimeIgnoreTransformation, final PlaceholderResolver placeholderResolver) {
+                                     final TransformationTargetType type,
+                                     final PlaceholderResolver placeholderResolver) {
         this.version = version;
+        this.hostName = hostName;
         this.transformerRegistry = transformerRegistry;
         for (Map.Entry<PathAddress, ModelVersion> p : subsystemVersions.entrySet()) {
             final String name = p.getKey().getLastElement().getValue();
@@ -60,26 +60,28 @@ public class TransformationTargetImpl implements TransformationTarget {
         }
         this.registry = transformers;
         this.type = type;
-        this.transformationExclusion = transformationExclusion == null ? null : transformationExclusion;
-        this.runtimeIgnoreTransformation = runtimeIgnoreTransformation;
         this.placeholderResolver = placeholderResolver;
     }
 
     private TransformationTargetImpl(final TransformationTargetImpl target, final PlaceholderResolver placeholderResolver) {
         this.version = target.version;
+        this.hostName = target.hostName;
         this.transformerRegistry = target.transformerRegistry;
         this.subsystemVersions.putAll(target.subsystemVersions);
         this.registry = target.registry;
         this.type = target.type;
-        this.transformationExclusion = target.transformationExclusion;
-        this.runtimeIgnoreTransformation = target.runtimeIgnoreTransformation;
         this.placeholderResolver = placeholderResolver;
     }
 
-    public static TransformationTargetImpl create(final TransformerRegistry transformerRegistry, final ModelVersion version,
-                                                  final Map<PathAddress, ModelVersion> subsystems,
-                                                  final IgnoredTransformationRegistry transformationExclusion, final TransformationTargetType type,
-                                                  final RuntimeIgnoreTransformation runtimeIgnoreTransformation) {
+    public static TransformationTarget createLocal() {
+        TransformerRegistry registry = new TransformerRegistry();
+        OperationTransformerRegistry r2 = registry.resolveHost(ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>());
+        return new TransformationTargetImpl(null, registry, ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>(), r2, TransformationTargetType.SERVER, null);
+
+    }
+
+    public static TransformationTargetImpl create(final String hostName, final TransformerRegistry transformerRegistry, final ModelVersion version,
+                                                  final Map<PathAddress, ModelVersion> subsystems, final TransformationTargetType type) {
         final OperationTransformerRegistry registry;
         switch (type) {
             case SERVER:
@@ -88,7 +90,7 @@ public class TransformationTargetImpl implements TransformationTarget {
             default:
                 registry = transformerRegistry.resolveHost(version, subsystems);
         }
-        return new TransformationTargetImpl(transformerRegistry, version, subsystems, registry, transformationExclusion, type, runtimeIgnoreTransformation, null);
+        return new TransformationTargetImpl(hostName, transformerRegistry, version, subsystems, registry, type, null);
     }
 
     TransformationTargetImpl copyWithplaceholderResolver(final PlaceholderResolver placeholderResolver) {
@@ -119,7 +121,7 @@ public class TransformationTargetImpl implements TransformationTarget {
 
     @Override
     public TransformerEntry getTransformerEntry(TransformationContext context, final PathAddress address) {
-        if (ignoreResourceTransformation(context, address)) {
+        if (ignoreResourceTransformation((ResourceTransformationContext) context, address)) {
             return TransformerEntry.DISCARD;
         }
         return registry.getTransformerEntry(address, placeholderResolver);
@@ -132,9 +134,6 @@ public class TransformationTargetImpl implements TransformationTarget {
 
     @Override
     public OperationTransformer resolveTransformer(TransformationContext context, final PathAddress address, final String operationName) {
-        if (ignoreResourceTransformation(context, address)) {
-            return OperationTransformer.DEFAULT;
-        }
         if(address.size() == 0) {
             // TODO use registry registry to register this operations.
             if(ModelDescriptionConstants.COMPOSITE.equals(operationName)) {
@@ -163,10 +162,7 @@ public class TransformationTargetImpl implements TransformationTarget {
 
     @Override
     public String getHostName() {
-        if (transformationExclusion == null) {
-            return null;
-        }
-        return transformationExclusion.getHostName();
+        return hostName;
     }
 
     @Override
@@ -174,11 +170,8 @@ public class TransformationTargetImpl implements TransformationTarget {
         return version.getMajor() >= 1 && version.getMinor() >= 4;
     }
 
-    private boolean ignoreResourceTransformation(TransformationContext context, PathAddress address) {
-        if (transformationExclusion != null && transformationExclusion.isResourceTransformationIgnored(address)) {
-            return true;
-        }
-        if (!context.isSkipRuntimeIgnoreCheck() && runtimeIgnoreTransformation != null && runtimeIgnoreTransformation.ignoreResource(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), address)) {
+    private boolean ignoreResourceTransformation(ResourceTransformationContext context, PathAddress address) {
+        if (context.isResourceTransformationIgnored(address)) {
             return true;
         }
         return false;

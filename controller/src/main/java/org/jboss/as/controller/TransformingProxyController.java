@@ -107,9 +107,8 @@ public interface TransformingProxyController extends ProxyController {
                 }
 
                 @Override
-                public Resource transformResource(OperationContext operationContext, PathAddress original, Resource resource, boolean skipRuntimeIgnoreCheck)
-                        throws OperationFailedException {
-                    return transformers.transformResource(operationContext, original, resource, skipRuntimeIgnoreCheck);
+                public Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
+                    return transformers.transformRootResource(operationContext, resource, ignoredTransformationRegistry);
                 }
             };
             return create(proxy, delegating);

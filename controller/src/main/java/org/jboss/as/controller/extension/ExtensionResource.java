@@ -167,6 +167,12 @@ public class ExtensionResource implements Resource.ResourceEntry {
         throw new UnsupportedOperationException();
     }
 
+
+    @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public Resource removeChild(PathElement address) {
         throw new UnsupportedOperationException();
@@ -236,5 +242,10 @@ public class ExtensionResource implements Resource.ResourceEntry {
         public PlaceholderResourceEntry clone() {
             return new SubsystemResource(getName(), subsystemInformation);
         }
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return Collections.emptySet();
     }
 }

@@ -49,7 +49,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public final class CompositeOperationHandler implements OperationStepHandler {
+public class CompositeOperationHandler implements OperationStepHandler {
 
     @Deprecated
     public static final OperationContext.AttachmentKey<Boolean> DOMAIN_EXECUTION_KEY = OperationContext.AttachmentKey.create(Boolean.class);
@@ -71,10 +71,10 @@ public final class CompositeOperationHandler implements OperationStepHandler {
         .setPrivateEntry()
         .build();
 
-    private CompositeOperationHandler() {
+    protected CompositeOperationHandler() {
     }
 
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    public final void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         STEPS.validateOperation(operation);
 
         ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
@@ -90,8 +90,8 @@ public final class CompositeOperationHandler implements OperationStepHandler {
             final ModelNode subOperation = list.get(i);
             PathAddress stepAddress = PathAddress.pathAddress(subOperation.get(OP_ADDR));
             String stepOpName = subOperation.require(OP).asString();
-            OperationStepHandler stepHandler = registry.getOperationHandler(stepAddress, stepOpName);
-            if (stepHandler == null) {
+            OperationEntry operationEntry = registry.getOperationEntry(stepAddress, stepOpName);
+            if (operationEntry == null) {
                 ImmutableManagementResourceRegistration child = registry.getSubModel(stepAddress);
                 if (child == null) {
                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(stepAddress));
@@ -101,6 +101,7 @@ public final class CompositeOperationHandler implements OperationStepHandler {
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 return;
             }
+            final OperationStepHandler stepHandler = getOperationStepHandler(stepOpName, stepAddress, subOperation, operationEntry);
             stepHandlerMap.put(stepName, stepHandler);
         }
 
@@ -134,6 +135,10 @@ public final class CompositeOperationHandler implements OperationStepHandler {
                 context.getFailureDescription().set(failureMsg);
             }
         });
+    }
+
+    protected OperationStepHandler getOperationStepHandler(final String operationName, final PathAddress address, final ModelNode operation, final OperationEntry operationEntry) {
+        return operationEntry.getOperationHandler();
     }
 
     private static class WFLY1316HackOperationDefinitionBuilder extends SimpleOperationDefinitionBuilder {

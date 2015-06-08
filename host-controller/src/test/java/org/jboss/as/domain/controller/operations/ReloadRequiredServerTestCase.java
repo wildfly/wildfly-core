@@ -35,25 +35,22 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertEquals;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.controller.ControlledProcessState.State;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
-import org.jboss.as.host.controller.discovery.DiscoveryOption;
+import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.operations.ServerRestartRequiredServerConfigWriteAttributeHandler;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
@@ -86,7 +83,16 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set("profile-two");
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        try {
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+        } catch (RuntimeException e) {
+            final Throwable t = e.getCause();
+            if (t instanceof OperationFailedException) {
+                throw (OperationFailedException) t;
+            }
+            throw e;
+        }
+
         Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
         checkServerOperationResolver(operationContext, operation, pa, true);
     }
@@ -111,7 +117,16 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set("profile-one");
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        try {
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+        } catch (RuntimeException e) {
+            final Throwable t = e.getCause();
+            if (t instanceof OperationFailedException) {
+                throw (OperationFailedException) t;
+            }
+            throw e;
+        }
+
         Assert.assertTrue(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT).contains(operation));
         checkServerOperationResolver(operationContext, operation, pa, false);
     }
@@ -121,9 +136,14 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         testChangeServerGroupInvalidProfile(true);
     }
 
-    @Test
+    @Test(expected=OperationFailedException.class)
     public void testChangeServerGroupInvalidProfileSlave() throws Exception {
         testChangeServerGroupInvalidProfile(false);
+    }
+
+    @Override
+    AbstractOperationTestCase.MockOperationContext getOperationContext() {
+        return super.getOperationContext();
     }
 
     private void testChangeServerGroupInvalidProfile(boolean master) throws Exception {
@@ -136,13 +156,20 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(PROFILE);
         operation.get(VALUE).set("does-not-exist");
 
-        new ServerGroupProfileWriteAttributeHandler(master, null).execute(operationContext, operation);
+        try {
+            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+        } catch (RuntimeException e) {
+            final Throwable t = e.getCause();
+            if (t instanceof OperationFailedException) {
+                throw (OperationFailedException) t;
+            }
+            throw e;
+        }
 
         operationContext.verify();
 
         if (!master) {
             Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
-            Assert.assertTrue(operationContext.isReloadRequired());
         } else {
             Assert.fail();
         }
@@ -169,7 +196,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(GROUP);
         operation.get(VALUE).set("group-two");
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.createGroupInstance(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
         checkServerOperationResolver(operationContext, operation, pa, true);
     }
@@ -195,7 +222,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(GROUP);
         operation.get(VALUE).set("group-one");
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.createGroupInstance(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertTrue(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT).contains(operation));
         checkServerOperationResolver(operationContext, operation, pa, false);
     }
@@ -205,7 +232,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         testChangeServerConfigGroupBadGroup(true);
     }
 
-    @Test
+    @Test(expected=OperationFailedException.class)
     public void testChangeServerConfigGroupBadGroupSlave() throws Exception {
         testChangeServerConfigGroupBadGroup(false);
     }
@@ -220,7 +247,15 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(GROUP);
         operation.get(VALUE).set("bad-group");
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.createGroupInstance(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        try {
+            operationContext.executeStep(ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE, operation);
+        } catch (RuntimeException e) {
+            final Throwable t = e.getCause();
+            if (t instanceof OperationFailedException) {
+                throw (OperationFailedException) t;
+            }
+            throw e;
+        }
 
         operationContext.verify();
 
@@ -251,7 +286,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_GROUP);
         operation.get(VALUE).set("binding-two");
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.createSocketBindingGroupInstance(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
         checkServerOperationResolver(operationContext, operation, pa, true);
     }
@@ -277,7 +312,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_GROUP);
         operation.get(VALUE).set("binding-one");
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.createSocketBindingGroupInstance(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertTrue(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT).contains(operation));
         checkServerOperationResolver(operationContext, operation, pa, false);
 
@@ -288,7 +323,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         testChangeServerConfigSocketBindingGroupBadGroup(true);
     }
 
-    @Test
+    @Test(expected=OperationFailedException.class)
     public void testChangeServerConfigSocketBindingGroupBadGroupSlave() throws Exception {
         testChangeServerConfigSocketBindingGroupBadGroup(false);
     }
@@ -303,7 +338,15 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_GROUP);
         operation.get(VALUE).set("bad-group");
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.createSocketBindingGroupInstance(new MockHostControllerInfo(master)).execute(operationContext, operation);
+        try {
+            operationContext.executeStep(ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE, operation);
+        } catch (RuntimeException e) {
+            final Throwable t = e.getCause();
+            if (t instanceof OperationFailedException) {
+                throw (OperationFailedException) t;
+            }
+            throw e;
+        }
 
         operationContext.verify();
 
@@ -325,7 +368,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_PORT_OFFSET);
         operation.get(VALUE).set(65535);
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE.execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
         checkServerOperationResolver(operationContext, operation, pa, true);
     }
@@ -344,7 +387,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_PORT_OFFSET);
         operation.get(VALUE).set(10);
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE.execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertTrue(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT).contains(operation));
         checkServerOperationResolver(operationContext, operation, pa, false);
     }
@@ -363,7 +406,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_PORT_OFFSET);
         operation.get(VALUE).set(-65535);
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE.execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
         Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
         checkServerOperationResolver(operationContext, operation, pa, true);
     }
@@ -381,7 +424,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(NAME).set(SOCKET_BINDING_PORT_OFFSET);
         operation.get(VALUE).set(65536);
 
-        ServerRestartRequiredServerConfigWriteAttributeHandler.SOCKET_BINDING_PORT_OFFSET_INSTANCE.execute(operationContext, operation);
+        ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
     }
 
     MockOperationContext getOperationContext(boolean serversOnly, final PathAddress operationAddress) {
@@ -454,92 +497,40 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     }
 
-    private static class MockHostControllerInfo implements LocalHostControllerInfo {
-        private final boolean master;
-        public MockHostControllerInfo(boolean master) {
-            this.master = master;
-        }
-
-        @Override
-        public String getLocalHostName() {
-            return null;
-        }
-
-        @Override
-        public boolean isMasterDomainController() {
-            return master;
-        }
-
-        @Override
-        public String getNativeManagementInterface() {
-            return null;
-        }
-
-        @Override
-        public int getNativeManagementPort() {
-            return 0;
-        }
-
-        @Override
-        public String getNativeManagementSecurityRealm() {
-            return null;
-        }
-
-        @Override
-        public String getHttpManagementInterface() {
-            return null;
-        }
-
-        @Override
-        public int getHttpManagementPort() {
-            return 0;
-        }
-
-        @Override
-        public String getHttpManagementSecureInterface() {
-            return null;
-        }
-
-        @Override
-        public int getHttpManagementSecurePort() {
-            return 0;
-        }
-
-        @Override
-        public String getHttpManagementSecurityRealm() {
-            return null;
-        }
-
-        @Override
-        public String getRemoteDomainControllerUsername() {
-            return null;
-        }
-
-        @Override
-        public List<DiscoveryOption> getRemoteDomainControllerDiscoveryOptions() {
-            return null;
-        }
-
-        @Override
-        public State getProcessState() {
-            return null;
-        }
-
-        @Override
-        public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
-            return true;
-        }
-
-        @Override
-        public Collection<String> getAllowedOrigins() {
-            return Collections.EMPTY_LIST;
-        }
-    }
-
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {
         private boolean reloadRequired;
+        private OperationStepHandler nextStep;
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress) {
             super(root, booting, operationAddress);
+        }
+
+        void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {
+            handler.execute(this, operation);
+            stepCompleted();
+        }
+
+        public void completeStep(ResultHandler resultHandler) {
+            if (nextStep != null) {
+                stepCompleted();
+            } else {
+                resultHandler.handleResult(ResultAction.KEEP, this, null);
+            }
+        }
+
+        public void stepCompleted() {
+            if (nextStep != null) {
+                try {
+                    OperationStepHandler step = nextStep;
+                    nextStep = null;
+                    step.execute(this, null);
+                } catch (OperationFailedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
+            nextStep = step;
         }
 
         public void reloadRequired() {

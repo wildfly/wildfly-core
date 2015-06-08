@@ -149,6 +149,8 @@ class ModelControllerImpl implements ModelController {
     /** Tracks the relationship between domain resources and hosts and server groups */
     private final HostServerGroupTracker hostServerGroupTracker;
     private final Resource.ResourceEntry modelControllerResource;
+    private final OperationStepHandler extraValidationStepHandler;
+
 
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
@@ -156,7 +158,8 @@ class ModelControllerImpl implements ModelController {
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer,
-                        final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport, final BootErrorCollector bootErrorCollector) {
+                        final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
+                        final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler) {
         assert serviceRegistry != null;
         this.serviceRegistry = serviceRegistry;
         assert serviceTarget != null;
@@ -190,6 +193,7 @@ class ModelControllerImpl implements ModelController {
         this.bootErrorCollector = bootErrorCollector;
         this.hostServerGroupTracker = processType.isManagedDomain() ? new HostServerGroupTracker() : null;
         this.modelControllerResource = new ModelControllerResource();
+        this.extraValidationStepHandler = extraValidationStepHandler;
         auditLogger.startBoot();
     }
 
@@ -219,6 +223,20 @@ class ModelControllerImpl implements ModelController {
         return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false);
     }
 
+    private AbstractOperationContext getDelegateContext(final int operationId) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelController.ACCESS_PERMISSION);
+        }
+        // Get the primary context to delegate the reads to
+        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
+        if(delegateContext == null) {
+            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
+            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
+        }
+        return delegateContext;
+    }
+
     /**
      * Executes an operation on the controller latching onto an existing transaction
      *
@@ -230,33 +248,43 @@ class ModelControllerImpl implements ModelController {
      * @return the result of the operation
      */
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationStepHandler prepareStep, final int operationId) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ModelController.ACCESS_PERMISSION);
+        final AbstractOperationContext delegateContext = getDelegateContext(operationId);
+        CurrentOperationIdHolder.setCurrentOperationID(operationId);
+        try {
+            return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
+        } finally {
+            CurrentOperationIdHolder.setCurrentOperationID(null);
         }
+    }
 
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
+        final AbstractOperationContext delegateContext = getDelegateContext(CurrentOperationIdHolder.getCurrentOperationID());
+        return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
+    }
+
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final Resource resource, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
         // Get the primary context to delegate the reads to
-        final AbstractOperationContext delegateContext = activeOperations.get(operationId);
-        if(delegateContext == null) {
-            // TODO we might just allow this case too, but for now it's just wrong (internal) usage
-            throw ControllerLogger.ROOT_LOGGER.noContextToDelegateTo(operationId);
-        }
+        final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
+        final AbstractOperationContext delegateContext = getDelegateContext(operationId);
+        final ManagementModelImpl current = delegateContext.getManagementModel();
+        final ManagementModelImpl mgmtModel = new ManagementModelImpl(current.getRootResourceRegistration(), resource, current.capabilityRegistry);
+        return executeReadOnlyOperation(operation, mgmtModel, control, prepareStep, delegateContext);
+    }
+
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final ManagementModelImpl model, final OperationTransactionControl control, final OperationStepHandler prepareStep, AbstractOperationContext delegateContext) {
         final ModelNode response = new ModelNode();
-        final OperationTransactionControl originalResultTxControl = control == null ? null : new OperationTransactionControl() {
+        final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
+        final OperationTransactionControl txControl = control == null ? null : new OperationTransactionControl() {
             @Override
             public void operationPrepared(OperationTransaction transaction, ModelNode result) {
                 control.operationPrepared(transaction, response);
             }
         };
+
         // Use a read-only context
-        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), originalResultTxControl, processState, false, delegateContext, this, operationId);
+        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId);
         context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
-        CurrentOperationIdHolder.setCurrentOperationID(operationId);
-        try {
-            context.executeOperation();
-        } finally {
-            CurrentOperationIdHolder.setCurrentOperationID(null);
-        }
+        context.executeOperation();
 
         if (!response.hasDefined(RESPONSE_HEADERS) || !response.get(RESPONSE_HEADERS).hasDefined(PROCESS_STATE)) {
             ControlledProcessState.State state = processState.getState();
@@ -344,7 +372,8 @@ class ModelControllerImpl implements ModelController {
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport, false);
+                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport,
+                    false, extraValidationStepHandler);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
@@ -414,7 +443,7 @@ class ModelControllerImpl implements ModelController {
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport, true);
+                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -433,7 +462,8 @@ class ModelControllerImpl implements ModelController {
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true);
+                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true,
+                            extraValidationStepHandler);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -462,7 +492,8 @@ class ModelControllerImpl implements ModelController {
                 final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                                bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false);
+                                bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false,
+                                extraValidationStepHandler);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
             }
@@ -516,7 +547,7 @@ class ModelControllerImpl implements ModelController {
                 parallelBootRootResourceRegistrationProvider : getMutableRootResourceRegistrationProvider();
         ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, parallellBRRRProvider);
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
-                ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit) : null;
+                ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit, extraValidationStepHandler) : null;
         boolean registeredParallelSubsystemHandler = false;
         int subsystemIndex = 0;
         for (ModelNode bootOp : bootList) {

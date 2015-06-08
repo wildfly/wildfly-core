@@ -196,7 +196,7 @@ public abstract class AbstractOperationTestCase {
     class MockOperationContext implements OperationContext {
         Resource root;
         private final boolean booting;
-        private final PathAddress operationAddress;
+        final PathAddress operationAddress;
         private Set<PathAddress> expectedSteps = new HashSet<PathAddress>();
         private final Map<AttachmentKey<?>, Object> valueAttachments = new HashMap<AttachmentKey<?>, Object>();
         private final ModelNode result = new ModelNode();
@@ -324,15 +324,15 @@ public abstract class AbstractOperationTestCase {
         }
 
         public void completeStep(OperationContext.RollbackHandler rollbackHandler) {
-
+            stepCompleted();
         }
 
         public void completeStep(ResultHandler resultHandler) {
-
+            stepCompleted();
         }
 
         public void stepCompleted() {
-            completeStep(ResultHandler.NOOP_RESULT_HANDLER);
+
         }
 
         public ModelNode getFailureDescription() {
@@ -349,7 +349,7 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public ProcessType getProcessType() {
-            return null;
+            return ProcessType.HOST_CONTROLLER;
         }
 
         @Override
@@ -442,7 +442,7 @@ public abstract class AbstractOperationTestCase {
 
         public void addResource(PathAddress relativeAddress, Resource toAdd) {
             Resource model = root;
-            final Iterator<PathElement> i = relativeAddress.iterator();
+            final Iterator<PathElement> i = operationAddress.append(relativeAddress).iterator();
             while (i.hasNext()) {
                 final PathElement element = i.next();
                 if (element.isMultiTarget()) {
@@ -469,6 +469,10 @@ public abstract class AbstractOperationTestCase {
                     }
                 }
             }
+        }
+
+        public void addResource(PathAddress address, int index, Resource toAdd) {
+            throw new UnsupportedOperationException();
         }
 
         public Resource readResource(PathAddress address) {
@@ -681,7 +685,7 @@ public abstract class AbstractOperationTestCase {
         }
     }
 
-    Resource createRootResource() {
+    static Resource createRootResource() {
         final Resource rootResource = Resource.Factory.create();
 
         CoreManagementResourceDefinition.registerDomainResource(rootResource, null);
@@ -714,7 +718,7 @@ public abstract class AbstractOperationTestCase {
         rootResource.registerChild(PathElement.pathElement(SERVER_GROUP, "group-one"), serverGroup1);
 
         final Resource serverGroup2 = Resource.Factory.create();
-        serverGroup2.getModel().get(PROFILE).set("profile-2");
+        serverGroup2.getModel().get(PROFILE).set("profile-two");
         serverGroup2.getModel().get(SOCKET_BINDING_GROUP).set("binding-two");
         rootResource.registerChild(PathElement.pathElement(SERVER_GROUP, "group-two"), serverGroup2);
 
@@ -749,7 +753,7 @@ public abstract class AbstractOperationTestCase {
         return rootResource;
     }
 
-    void hack(final Resource rootResource, final String type) {
+    static void hack(final Resource rootResource, final String type) {
         rootResource.registerChild(PathElement.pathElement(type, "hack"), Resource.Factory.create());
         for (Resource.ResourceEntry entry : rootResource.getChildren(type)) {
             rootResource.removeChild(entry.getPathElement());

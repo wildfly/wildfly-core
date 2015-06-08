@@ -49,6 +49,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.IOException;
 import java.io.InputStream;
+import javax.security.auth.Subject;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.util.ArrayDeque;
@@ -69,8 +70,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
@@ -150,6 +149,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private boolean auditLogged;
     private final AuditLogger auditLogger;
     private final ModelControllerImpl controller;
+    private final OperationStepHandler extraValidationStepHandler;
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
@@ -172,7 +172,8 @@ abstract class AbstractOperationContext implements OperationContext {
                              final AuditLogger auditLogger,
                              final NotificationSupport notificationSupport,
                              final ModelControllerImpl controller,
-                             final boolean skipModelValidation) {
+                             final boolean skipModelValidation,
+                             final OperationStepHandler extraValidationStepHandler) {
         this.processType = processType;
         this.runningMode = runningMode;
         this.transactionControl = transactionControl;
@@ -195,7 +196,25 @@ abstract class AbstractOperationContext implements OperationContext {
         initiatingThread = Thread.currentThread();
         this.callEnvironment = new Environment(processState, processType);
         modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
+        this.extraValidationStepHandler = extraValidationStepHandler;
     }
+
+    /**
+     * Internal access to the management model implementation.
+     *
+     * @return the management model
+     */
+    abstract ModelControllerImpl.ManagementModelImpl getManagementModel();
+
+    /**
+     * Internal helper to read a resource from a given management model.
+     *
+     * @param model        the management model to read from
+     * @param address      the absolute path address
+     * @param recursive    whether to read the model recursive or not
+     * @return the resource
+     */
+    abstract Resource readResourceFromRoot(final ManagementModel model, final PathAddress address, final boolean recursive);
 
     @Override
     public boolean isBooting() {
@@ -1169,7 +1188,7 @@ abstract class AbstractOperationContext implements OperationContext {
             }
             for (PathAddress address : modifiedResourcesForModelValidation) {
                 ModelNode op = Util.createOperation(INTERNAL_MODEL_VALIDATION_NAME, address);
-                addStep(op, ValidateModelStepHandler.INSTANCE, Stage.MODEL);
+                addStep(op, ValidateModelStepHandler.getInstance(extraValidationStepHandler), Stage.MODEL);
             }
             modifiedResourcesForModelValidation.clear();
         }

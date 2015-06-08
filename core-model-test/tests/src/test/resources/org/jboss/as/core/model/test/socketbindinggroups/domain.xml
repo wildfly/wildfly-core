@@ -22,5 +22,12 @@
                 <remote-destination host="${smtp.mail.server.host:127.0.0.1}" port="${smtp.mail.server.port:25}"/>
             </outbound-socket-binding>
         </socket-binding-group>
+        <socket-binding-group name="test" default-interface="${testing.default.interface:public}">
+            <socket-binding name="test" port="88"/>
+        </socket-binding-group>
+        <socket-binding-group name="test-with-includes" default-interface="${testing.default.interface:public}" includes="test standard-sockets">
+            <socket-binding name="test2" port="89"/>
+        </socket-binding-group>
     </socket-binding-groups>
+
 </domain>

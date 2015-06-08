@@ -126,10 +126,12 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
         }
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
         final ModelNode result = context.getResult();
-        describe(resource, address, result, context.getResourceRegistration());
+        describe(context.getAttachment(OrderedChildTypesAttachment.KEY), resource,
+                address, result, context.getResourceRegistration());
     }
 
-    protected void describe(final Resource resource, final ModelNode address, ModelNode result, final ImmutableManagementResourceRegistration registration) {
+    protected void describe(final OrderedChildTypesAttachment orderedChildTypesAttachment, final Resource resource,
+                            final ModelNode address, ModelNode result, final ImmutableManagementResourceRegistration registration) {
         if(resource == null || registration.isRemote() || registration.isRuntimeOnly() || resource.isProxy() || resource.isRuntime() || registration.isAlias()) {
             return;
         }
@@ -140,7 +142,7 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
             children = new TreeSet<PathElement>(comparator);
             children.addAll(registration.getChildAddresses(PathAddress.EMPTY_ADDRESS));
         }
-        result.add(createAddOperation(address, resource.getModel(), children));
+        result.add(createAddOperation(orderedChildTypesAttachment, address, resource, children));
         for(final PathElement element : children) {
             if(element.isMultiTarget()) {
                 final String childType = element.getKey();
@@ -148,16 +150,25 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
                     final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childType, entry.getName())));
                     final ModelNode childAddress = address.clone();
                     childAddress.add(childType, entry.getName());
-                    describe(entry, childAddress, result, childRegistration);
+                    describe(orderedChildTypesAttachment, entry, childAddress, result, childRegistration);
                 }
             } else {
                 final Resource child = resource.getChild(element);
                 final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(element));
                 final ModelNode childAddress = address.clone();
                 childAddress.add(element.getKey(), element.getValue());
-                describe(child, childAddress, result, childRegistration);
+                describe(orderedChildTypesAttachment, child, childAddress, result, childRegistration);
             }
         }
+    }
+
+    protected ModelNode createAddOperation(final OrderedChildTypesAttachment orderedChildTypesAttachment,
+                                           final ModelNode address, final Resource resource, final Set<PathElement> children) {
+        ModelNode addOp = createAddOperation(address, resource.getModel(), children);
+        if (orderedChildTypesAttachment != null) {
+            orderedChildTypesAttachment.addOrderedChildResourceTypes(PathAddress.pathAddress(address), resource);
+        }
+        return addOp;
     }
 
     protected ModelNode createAddOperation(final ModelNode address, final ModelNode subModel, final Set<PathElement> children) {

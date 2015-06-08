@@ -43,7 +43,7 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
-import org.jboss.as.domain.controller.operations.PullDownDataForServerConfigOnSlaveHandler;
+import org.jboss.as.domain.controller.operations.FetchMissingConfigurationHandler;
 import org.jboss.as.domain.controller.operations.coordination.DomainControllerLockIdUtils;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
@@ -70,17 +70,15 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
     private final HostControllerRegistrationHandler.OperationExecutor operationExecutor;
     private final TransactionalOperationExecutor txOperationExecutor;
     private final ManagementPongRequestHandler pongRequestHandler = new ManagementPongRequestHandler();
-    private final DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry;
     private final File tempDir;
     private final HostRegistrations slaveHostRegistrations;
 
     public MasterDomainControllerOperationHandlerService(final DomainController domainController, final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
-                                                         TransactionalOperationExecutor txOperationExecutor, DomainControllerRuntimeIgnoreTransformationRegistry runtimeIgnoreTransformationRegistry,
+                                                         TransactionalOperationExecutor txOperationExecutor,
                                                          final File tempDir, final HostRegistrations slaveHostRegistrations) {
         this.domainController = domainController;
         this.operationExecutor = operationExecutor;
         this.txOperationExecutor = txOperationExecutor;
-        this.runtimeIgnoreTransformationRegistry = runtimeIgnoreTransformationRegistry;
         this.tempDir = tempDir;
         this.slaveHostRegistrations = slaveHostRegistrations;
     }
@@ -97,7 +95,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
         handler.getAttachments().attach(ManagementChannelHandler.TEMP_DIR, tempDir);
         // Assemble the request handlers for the domain channel
         handler.addHandlerFactory(new HostControllerRegistrationHandler(handler, domainController, operationExecutor,
-                getExecutor(), runtimeIgnoreTransformationRegistry, slaveHostRegistrations));
+                getExecutor(), slaveHostRegistrations));
         handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport(), getClientRequestExecutor()));
         handler.addHandlerFactory(new MasterDomainControllerOperationHandlerImpl(domainController, getExecutor()));
         handler.addHandlerFactory(pongRequestHandler);
@@ -122,12 +120,11 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 
             final ModelNode operationNode = operation.getOperation();
             final OperationStepHandler handler;
-            final String operationName = operationNode.require(OP).asString();
-            if (operationName.equals(PullDownDataForServerConfigOnSlaveHandler.OPERATION_NAME)) {
-                handler = new PullDownDataForServerConfigOnSlaveHandler(
-                        SlaveChannelAttachments.getHostName(context.getChannel()),
+            final String operationName = operation.getOperation().require(OP).asString();
+            if (operationName.equals(FetchMissingConfigurationHandler.OPERATION_NAME)) {
+                handler = new FetchMissingConfigurationHandler(SlaveChannelAttachments.getHostName(context.getChannel()),
                         SlaveChannelAttachments.getTransformers(context.getChannel()),
-                        runtimeIgnoreTransformationRegistry);
+                        domainController.getExtensionRegistry());
             } else {
                 throw HostControllerLogger.ROOT_LOGGER.cannotExecuteTransactionalOperationFromSlave(operationName);
             }

@@ -21,6 +21,7 @@
 */
 package org.jboss.as.core.model.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.APPLY_REMOTE_DOMAIN_MODEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -52,7 +53,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.operations.ApplyRemoteMasterDomainModelHandler;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.ignored.IgnoreDomainResourceTypeResource;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
@@ -125,7 +125,7 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
 
     public void applyMasterDomainModel(ModelNode resources, List<IgnoreDomainResourceTypeResource> ignoredResources) {
         ModelNode applyDomainModel = new ModelNode();
-        applyDomainModel.get(OP).set(ApplyRemoteMasterDomainModelHandler.OPERATION_NAME);
+        applyDomainModel.get(OP).set(APPLY_REMOTE_DOMAIN_MODEL);
         //FIXME this makes the op work after boot (i.e. slave connects to restarted master), but does not make the slave resync the servers
         applyDomainModel.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
         applyDomainModel.get(OP_ADDR).setEmptyList();

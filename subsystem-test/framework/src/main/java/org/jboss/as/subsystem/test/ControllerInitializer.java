@@ -45,20 +45,15 @@ import java.util.Map;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.common.SocketBindingGroupRemoveHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.InterfaceDefinition;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
-import org.jboss.as.server.services.net.BindingGroupAddHandler;
-import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
-import org.jboss.as.server.services.net.RemoteDestinationOutboundSocketBindingResourceDefinition;
-import org.jboss.as.server.services.net.SocketBindingResourceDefinition;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.dmr.ModelNode;
@@ -255,12 +250,7 @@ public class ControllerInitializer {
         interfaces.registerOperationHandler(SpecifiedInterfaceRemoveHandler.OPERATION_NAME, SpecifiedInterfaceRemoveHandler.INSTANCE, new DefaultResourceRemoveDescriptionProvider(CommonDescriptions.getResourceDescriptionResolver()), false);*/
 
         //TODO socket-binding-group currently lives in controller and the child RDs live in server so they currently need passing in from here
-        rootRegistration.registerSubModel(new SocketBindingGroupResourceDefinition(BindingGroupAddHandler.INSTANCE,
-                                                    SocketBindingGroupRemoveHandler.INSTANCE,
-                                                    false,
-                                                    SocketBindingResourceDefinition.INSTANCE,
-                                                    RemoteDestinationOutboundSocketBindingResourceDefinition.INSTANCE,
-                                                    LocalDestinationOutboundSocketBindingResourceDefinition.INSTANCE));
+        rootRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
     }
 
 

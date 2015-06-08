@@ -216,8 +216,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final ModelNode blockingTimeoutConfig,
                          final AccessMechanism accessMechanism,
                          final NotificationSupport notificationSupport,
-                         final boolean skipModelValidation) {
-        super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport, modelController, skipModelValidation);
+                         final boolean skipModelValidation,
+                         final OperationStepHandler extraValidationStepHandler) {
+        super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
+                modelController, skipModelValidation, extraValidationStepHandler);
         this.operationId = operationId;
         this.operationName = operationName;
         this.operationAddress = operationAddress.isDefined()
@@ -249,6 +251,10 @@ final class OperationContextImpl extends AbstractOperationContext {
     @Override
     boolean stageCompleted(Stage stage) {
         return (stage != Stage.MODEL || validateCapabilities());
+    }
+
+    ModelControllerImpl.ManagementModelImpl getManagementModel() {
+        return managementModel;
     }
 
     private boolean validateCapabilities() {
@@ -719,7 +725,15 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
             throw ControllerLogger.ROOT_LOGGER.unauthorized(activeStep.operationId.name, activeStep.address, authResult.getExplanation());
         }
-        Resource model = this.managementModel.getRootResource();
+        return readResourceFromRoot(managementModel, address, recursive);
+    }
+
+    @Override
+    Resource readResourceFromRoot(ManagementModel managementModel, PathAddress address, boolean recursive) {
+        //
+        // TODO double check authorization checks for this!
+        //
+        Resource model = managementModel.getRootResource();
         final Iterator<PathElement> iterator = address.iterator();
         while(iterator.hasNext()) {
             final PathElement element = iterator.next();
@@ -814,16 +828,29 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public Resource createResource(PathAddress relativeAddress) {
+        return createResourceInternal(relativeAddress, -1);
+    }
+
+    private Resource createResourceInternal(PathAddress relativeAddress, int index) throws UnsupportedOperationException {
         ImmutableManagementResourceRegistration current = getResourceRegistration();
         ImmutableManagementResourceRegistration mrr = relativeAddress == PathAddress.EMPTY_ADDRESS ? current : current.getSubModel(relativeAddress);
         final Resource toAdd = Resource.Factory.create(mrr.isRuntimeOnly());
-        addResource(relativeAddress, toAdd);
+        addResourceInternal(relativeAddress, index, toAdd);
         return toAdd;
     }
 
     @Override
     public void addResource(PathAddress relativeAddress, Resource toAdd) {
+        addResourceInternal(relativeAddress, -1, toAdd);
+    }
 
+    @Override
+    public void addResource(PathAddress relativeAddress, int index, Resource toAdd) {
+        assert index >= 0 : "index must be 0 or greater";
+        addResourceInternal(relativeAddress, index, toAdd);
+    }
+
+    private void addResourceInternal(PathAddress relativeAddress, int index, Resource toAdd) {
         readOnly = false;
 
         assert isControllingThread();
@@ -861,7 +888,11 @@ final class OperationContextImpl extends AbstractOperationContext {
                     if(!childrenNames.contains(key)) {
                         throw ControllerLogger.ROOT_LOGGER.noChildType(key);
                     }
-                    model.registerChild(element, toAdd);
+                    if (index < 0) {
+                        model.registerChild(element, toAdd);
+                    } else {
+                        model.registerChild(element, index, toAdd);
+                    }
                     model = toAdd;
                 }
             } else {
@@ -1688,10 +1719,6 @@ final class OperationContextImpl extends AbstractOperationContext {
             context = new ProfileCapabilityContext(pe.getValue());
         }
         return context;
-    }
-
-    ManagementModel getManagementModel() {
-        return managementModel;
     }
 
     class ContextServiceTarget implements ServiceTarget {

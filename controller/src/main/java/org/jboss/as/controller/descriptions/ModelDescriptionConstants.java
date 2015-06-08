@@ -40,6 +40,7 @@ public class ModelDescriptionConstants {
     public static final String ACTIVE_OPERATION = "active-operation";
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
+    public static final String ADD_INDEX = "add-index";
     public static final String ADMIN_ONLY = "admin-only";
     public static final String ADMIN_ONLY_POLICY = "admin-only-policy";
     public static final String ADVANCED_FILTER = "advanced-filter";
@@ -58,6 +59,7 @@ public class ModelDescriptionConstants {
     public static final String APPLICATION = "application";
     public static final String APPLICATION_CLASSIFICATION = "application-classification";
     public static final String APPLIES_TO = "applies-to";
+    public static final String APPLY_REMOTE_DOMAIN_MODEL = "apply-remote-domain-model";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTE = "attribute";
@@ -86,6 +88,7 @@ public class ModelDescriptionConstants {
     public static final String CLASSIFICATION = "classification";
     public static final String CLIENT_CERT_STORE = "client-certificate-store";
     public static final String CLIENT_MAPPINGS = "client-mappings";
+    public static final String CLONE = "clone";
     public static final String CODE = "code";
     public static final String COMPACT = "compact";
     public static final String COMPOSITE = "composite";
@@ -447,10 +450,16 @@ public class ModelDescriptionConstants {
     public static final String SYSLOG_HANDLER = "syslog-handler";
     public static final String SYSTEM_PROPERTY = "system-property";
     public static final String SYSTEM_PROPERTIES = "system-properties";
+    /**
+     * Operation header set by the SyncModelOperationHandler to indicate that a resource is being removed with the
+     * intention of re-adding it
+     */
+    public static final String SYNC_REMOVED_FOR_READD = "sync-dropped-for-readd";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
     public static final String TCP = "tcp";
     public static final String TIMEOUT = "timeout";
     public static final String TLS = "tls";
+    public static final String TO_PROFILE = "to-profile";
     public static final String TO_REPLACE = "to-replace";
     public static final String TRUNCATE = "truncate";
     public static final String TRUSTSTORE = "truststore";

@@ -23,9 +23,10 @@
  */
 package org.jboss.as.host.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INITIAL_SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -33,7 +34,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +48,7 @@ import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 
 /**
  * Utility to inspect what resources should be ignored on a slave according to its server-configs
@@ -74,7 +78,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
      *
      * @param ignoreUnaffectedServerGroups whether the slave host is set up to ignore config for server groups it does not have servers for
      * @param hostModel the resource containing the host model
-     * @param the dmr sent across to theDC
+     * @param model the dmr sent across to theDC
      * @return the modified dmr
      */
     public static ModelNode addCurrentServerGroupsToHostInfoModel(boolean ignoreUnaffectedServerGroups, Resource hostModel, ModelNode model) {
@@ -82,6 +86,11 @@ public class IgnoredNonAffectedServerGroupsUtil {
             return model;
         }
         model.get(IGNORE_UNUSED_CONFIG).set(ignoreUnaffectedServerGroups);
+        addServerGroupsToModel(hostModel, model);
+        return model;
+    }
+
+    public static void addServerGroupsToModel(Resource hostModel, ModelNode model) {
         ModelNode initialServerGroups = new ModelNode();
         initialServerGroups.setEmptyObject();
         for (ResourceEntry entry : hostModel.getChildren(SERVER_CONFIG)) {
@@ -93,22 +102,20 @@ public class IgnoredNonAffectedServerGroupsUtil {
             initialServerGroups.get(entry.getName()).set(serverNode);
         }
         model.get(ModelDescriptionConstants.INITIAL_SERVER_GROUPS).set(initialServerGroups);
-        return model;
     }
 
-    /**
-     * For the DC to check whether a resource address should be ignored on the slave, if the slave is set up to ignore config not relevant to it
-     *
-     * @param domainResource the domain root resource
-     * @param serverConfigs the server configs the slave is known to have
-     * @param pathAddress the address of the resource to check if should be ignored or not
-     */
-    public boolean ignoreResource(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final PathAddress pathAddress) {
-        if (pathAddress.size() != 1) {
-            return false;
+    public static Map<String, ServerConfigInfo> createConfigsFromModel(final ModelNode model) {
+        final Map<String, ServerConfigInfo> serverConfigs = new HashMap<>();
+        ModelNode initialServerGroups = model.get(INITIAL_SERVER_GROUPS);
+        for (Property prop : initialServerGroups.asPropertyList()) {
+            final List<ModelNode> servers = prop.getValue().asList();
+            for (ModelNode server : servers) {
+                final String socketBindingGroupOverride = server.hasDefined(SOCKET_BINDING_GROUP) ? server.get(SOCKET_BINDING_GROUP).asString() : null;
+                final ServerConfigInfo serverConfigInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(prop.getName(), prop.getValue().get(GROUP).asString(), socketBindingGroupOverride);
+                serverConfigs.put(serverConfigInfo.getName(), serverConfigInfo);
+            }
         }
-        boolean ignore = ignoreResourceInternal(domainResource, serverConfigs, pathAddress);
-        return ignore;
+        return serverConfigs;
     }
 
     /**
@@ -126,30 +133,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
         return ignore;
     }
 
-    /**
-     * Gets all the extensions used by a profile's subsystems on the DC
-     *
-     * @param domainResource the root domain resource
-     * @param profileElement the address of the profile element
-     */
-    public Set<PathElement> getAllExtensionsForProfile(Resource domainResource, PathElement profileElement) {
-        Set<String> extensionModuleNames = extensionRegistry.getExtensionModuleNames();
-        Set<String> subsystemNamesForProfile = new HashSet<>();
-        for (ResourceEntry entry : domainResource.getChild(profileElement).getChildren(SUBSYSTEM)) {
-            subsystemNamesForProfile.add(entry.getName());
-        }
-        Set<PathElement> extensionsForProfile = new HashSet<>();
-        for (String extensionModule : extensionModuleNames) {
-            Map<String, SubsystemInformation> infos = extensionRegistry.getAvailableSubsystems(extensionModule);
-            for (String subsystemName : infos.keySet()) {
-                if (subsystemNamesForProfile.contains(subsystemName)) {
-                    extensionsForProfile.add(PathElement.pathElement(EXTENSION, extensionModule));
-                }
-            }
-        }
-        return extensionsForProfile;
-    }
-
     private boolean ignoreResourceInternal(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final PathAddress pathAddress) {
         String type = pathAddress.getElement(0).getKey();
         switch (type) {
@@ -157,8 +140,9 @@ public class IgnoredNonAffectedServerGroupsUtil {
             return ignoreProfile(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         case SERVER_GROUP:
             return ignoreServerGroup(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
-        case EXTENSION:
-            return ignoreExtension(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
+        // We don't automatically ignore extensions for now
+//        case EXTENSION:
+//            return ignoreExtension(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         case SOCKET_BINDING_GROUP:
             return ignoreSocketBindingGroups(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         default:
@@ -168,17 +152,36 @@ public class IgnoredNonAffectedServerGroupsUtil {
 
     private boolean ignoreProfile(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {
         Set<String> seenGroups = new HashSet<>();
+        Set<String> profiles = new HashSet<>();
         for (ServerConfigInfo serverConfig : serverConfigs) {
             if (seenGroups.contains(serverConfig.getServerGroup())) {
                 continue;
             }
             seenGroups.add(serverConfig.getServerGroup());
             Resource serverGroupResource = domainResource.getChild(PathElement.pathElement(SERVER_GROUP, serverConfig.getServerGroup()));
-            if (serverGroupResource.getModel().get(PROFILE).asString().equals(name)) {
+            String profile = serverGroupResource.getModel().get(PROFILE).asString();
+            if (profile.equals(name)) {
                 return false;
             }
+            processProfiles(domainResource, profile, profiles);
         }
-        return true;
+        return !profiles.contains(name);
+    }
+
+    private void processProfiles(final Resource domain, final String profile, final Set<String> profiles) {
+        if (!profiles.contains(profile)) {
+            profiles.add(profile);
+            final PathElement pathElement = PathElement.pathElement(PROFILE, profile);
+            if (domain.hasChild(pathElement)) {
+                final Resource resource = domain.getChild(pathElement);
+                final ModelNode model = resource.getModel();
+                if (model.hasDefined(INCLUDES)) {
+                    for (final ModelNode include : model.get(INCLUDES).asList()) {
+                        processProfiles(domain, include.asString(), profiles);
+                    }
+                }
+            }
+        }
     }
 
     private boolean ignoreServerGroup(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {
@@ -206,19 +209,45 @@ public class IgnoredNonAffectedServerGroupsUtil {
     }
 
     private boolean ignoreSocketBindingGroups(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {
+        Set<String> seenGroups = new HashSet<>();
+        Set<String> socketBindingGroups = new HashSet<>();
         for (ServerConfigInfo serverConfig : serverConfigs) {
+            final String socketBindingGroup;
             if (serverConfig.getSocketBindingGroup() != null) {
                 if (serverConfig.getSocketBindingGroup().equals(name)) {
                     return false;
                 }
+                socketBindingGroup = serverConfig.getSocketBindingGroup();
             } else {
+                if (seenGroups.contains(serverConfig.getServerGroup())) {
+                    continue;
+                }
+                seenGroups.add(serverConfig.getServerGroup());
                 Resource serverGroupResource = domainResource.getChild(PathElement.pathElement(SERVER_GROUP, serverConfig.getServerGroup()));
-                if (name.equals(serverGroupResource.getModel().get(SOCKET_BINDING_GROUP).asString())) {
+                socketBindingGroup = serverGroupResource.getModel().get(SOCKET_BINDING_GROUP).asString();
+                if (socketBindingGroup.equals(name)) {
                     return false;
                 }
             }
+            processSocketBindingGroups(domainResource, socketBindingGroup, socketBindingGroups);
         }
-        return true;
+        return !socketBindingGroups.contains(name);
+    }
+
+    private void processSocketBindingGroups(final Resource domainResource, final String name, final Set<String> socketBindingGroups) {
+        if (!socketBindingGroups.contains(name)) {
+            socketBindingGroups.add(name);
+            final PathElement pathElement = PathElement.pathElement(SOCKET_BINDING_GROUP, name);
+            if (domainResource.hasChild(pathElement)) {
+                final Resource resource = domainResource.getChild(pathElement);
+                final ModelNode model = resource.getModel();
+                if (model.hasDefined(INCLUDES)) {
+                    for (final ModelNode include : model.get(INCLUDES).asList()) {
+                        processSocketBindingGroups(domainResource, include.asString(), socketBindingGroups);
+                    }
+                }
+            }
+        }
     }
 
 
@@ -247,18 +276,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
      */
     public static ServerConfigInfo createServerConfigInfo(String name, String serverGroup, String socketBindingGroup) {
         return new ServerConfigInfoImpl(name, serverGroup, socketBindingGroup);
-    }
-
-    /**
-     * Creates a server config info from it's model representation as created by {@link ServerConfigInfo#toModelNode()}
-     *
-     * @param model the model
-     * @return the server config info
-     *
-     */
-    public static ServerConfigInfo createServerConfigInfo(ModelNode model) {
-        String name = model.keys().iterator().next();
-        return new ServerConfigInfoImpl(name, model.get(name));
     }
 
     /**

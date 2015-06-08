@@ -21,6 +21,7 @@
  */
 package org.jboss.as.domain.management.access;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
@@ -90,6 +91,12 @@ abstract class AbstractClassificationResource implements Resource.ResourceEntry 
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        //TODO i18n
+        throw new UnsupportedOperationException("Not writable");
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         //TODO i18n
         throw new IllegalStateException("Not writable");
@@ -103,6 +110,11 @@ abstract class AbstractClassificationResource implements Resource.ResourceEntry 
     @Override
     public boolean isProxy() {
         return false;
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return Collections.emptySet();
     }
 
     @Override

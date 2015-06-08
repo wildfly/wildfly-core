@@ -22,9 +22,12 @@
 
 package org.jboss.as.controller.registry;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,13 +48,36 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
     /** The children. */
     private final Map<String, ResourceProvider> children = new LinkedHashMap<String, ResourceProvider>();
     private final boolean runtimeOnly;
+    private final Set<String> orderedChildTypes;
 
     protected AbstractModelResource() {
         this(false);
     }
 
     protected AbstractModelResource(boolean runtimeOnly) {
+        this(runtimeOnly, (Set<String>)null);
+    }
+
+    protected AbstractModelResource(boolean runtimeOnly, String...orderedChildTypes) {
+        this(runtimeOnly, arrayToSet(orderedChildTypes));
+    }
+
+    protected AbstractModelResource(boolean runtimeOnly, Set<String> orderedChildTypes) {
         this.runtimeOnly = runtimeOnly;
+        this.orderedChildTypes = orderedChildTypes == null || orderedChildTypes.size() == 0 ? Collections.<String>emptySet() : orderedChildTypes;
+    }
+
+    private static Set<String> arrayToSet(String[] array) {
+        Set<String> set;
+        if (array.length == 0) {
+            set = Collections.emptySet();
+        } else {
+            set = new HashSet<String>();
+            for (String type : array) {
+                set.add(type);
+            }
+        }
+        return set;
     }
 
     @Override
@@ -144,6 +170,17 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
     }
 
     @Override
+    public void registerChild(final PathElement address, final int index, final Resource resource) {
+        if(address.isMultiTarget()) {
+            throw new IllegalArgumentException();
+        }
+        if (index >= 0 && !orderedChildTypes.contains(address.getKey())) {
+            throw ControllerLogger.ROOT_LOGGER.indexedChildResourceRegistrationNotAvailable(address);
+        }
+        getOrCreateProvider(address.getKey()).register(address.getValue(), index, resource);
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         synchronized (children) {
             final ResourceProvider provider = getProvider(address.getKey());
@@ -167,6 +204,11 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
     @Override
     public boolean isRuntime() {
         return runtimeOnly;
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return orderedChildTypes.size() == 0 ? orderedChildTypes : Collections.unmodifiableSet(orderedChildTypes);
     }
 
     protected void registerResourceProvider(final String type, final ResourceProvider provider) {
@@ -208,7 +250,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         }
     }
 
-    static class DefaultResourceProvider implements ResourceProvider {
+    private class DefaultResourceProvider implements ResourceProvider {
 
         private final Map<String, Resource> children = new LinkedHashMap<String, Resource>();
 
@@ -248,6 +290,37 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
                     throw ControllerLogger.ROOT_LOGGER.duplicateResource(name);
                 }
                 children.put(name, resource);
+            }
+        }
+
+        @Override
+        public void register(String name, int index, Resource resource) {
+            synchronized (children) {
+                if (children.containsKey(name)) {
+                    throw ControllerLogger.ROOT_LOGGER.duplicateResource(name);
+                }
+
+                if (index < 0 || index >= children.size()) {
+                    children.put(name, resource);
+                } else {
+                    List<Map.Entry<String, Resource>> list = new ArrayList<Map.Entry<String,Resource>>(children.entrySet());
+                    children.clear();
+                    boolean done = false;
+                    int i = 0;
+                    for (Map.Entry<String, Resource> entry : list) {
+                        if (!done) {
+                            if (i++ < index) {
+                                children.put(entry.getKey(), entry.getValue());
+                            } else {
+                                children.put(name, resource);
+                                children.put(entry.getKey(), entry.getValue());
+                                done = true;
+                            }
+                        } else {
+                            children.put(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
             }
         }
 
@@ -330,6 +403,11 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         }
 
         @Override
+        public void registerChild(PathElement address, int index, Resource resource) {
+            delegate.registerChild(address, index, resource);
+        }
+
+        @Override
         public Resource removeChild(PathElement address) {
             return delegate.removeChild(address);
         }
@@ -352,6 +430,10 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         @Override
         public boolean isProxy() {
             return delegate.isProxy();
+        }
+
+        public Set<String> getOrderedChildTypes() {
+            return delegate.getOrderedChildTypes();
         }
 
         @SuppressWarnings({"CloneDoesntCallSuperClone"})

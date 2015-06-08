@@ -53,10 +53,10 @@ import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
 import org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition;
 import org.jboss.as.server.services.net.RemoteDestinationOutboundSocketBindingResourceDefinition;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -73,8 +73,11 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class SocketBindingsXml {
+public abstract class SocketBindingsXml {
 
+    protected SocketBindingsXml() {
+
+    }
     void parseSocketBindingGroupRef(final XMLExtendedStreamReader reader, final ModelNode addOperation,
             final SimpleAttributeDefinition socketBindingGroup, final SimpleAttributeDefinition portOffset,
             final SimpleAttributeDefinition defaultInterface) throws XMLStreamException {
@@ -407,7 +410,7 @@ class SocketBindingsXml {
         requireNoContent(reader);
     }
 
-    void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup, boolean fromServer)
+    void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup)
             throws XMLStreamException {
 
         writer.writeStartElement(Element.SOCKET_BINDING_GROUP.getLocalName());
@@ -415,12 +418,7 @@ class SocketBindingsXml {
         SocketBindingGroupResourceDefinition.NAME.marshallAsAttribute(bindingGroup, writer);
         SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.marshallAsAttribute(bindingGroup, writer);
 
-        if (fromServer) {
-            SocketBindingGroupResourceDefinition.PORT_OFFSET.marshallAsAttribute(bindingGroup, writer);
-        }
-        if (!fromServer) {
-            SocketBindingGroupResourceDefinition.INCLUDES.marshallAsElement(bindingGroup, writer);
-        }
+        writeExtraAttributes(writer, bindingGroup);
 
         if (bindingGroup.hasDefined(SOCKET_BINDING)) {
             ModelNode bindings = bindingGroup.get(SOCKET_BINDING);
@@ -501,4 +499,12 @@ class SocketBindingsXml {
         writer.writeEndElement();
     }
 
+    protected abstract void writeExtraAttributes(XMLExtendedStreamWriter writer, ModelNode bindingGroup) throws XMLStreamException;
+
+    static class ServerSocketBindingsXml extends SocketBindingsXml {
+        @Override
+        protected void writeExtraAttributes(XMLExtendedStreamWriter writer, ModelNode bindingGroup) throws XMLStreamException {
+            SocketBindingGroupResourceDefinition.PORT_OFFSET.marshallAsAttribute(bindingGroup, writer);
+        }
+    }
 }

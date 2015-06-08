@@ -85,7 +85,7 @@ public class TransformersImpl implements Transformers {
         // Update the operation using the new path address
         operation.get(OP_ADDR).set(transformed.toModelNode()); // TODO should this happen by default?
 
-        final TransformationContext context = ResourceTransformationContextImpl.create(operationContext, target, transformed, original, false);
+        final TransformationContext context = ResourceTransformationContextImpl.create(operationContext, target, transformed, original, Transformers.DEFAULT);
         final OperationTransformer transformer = target.resolveTransformer(context, original, operationName);
         if (transformer == null) {
             ControllerLogger.ROOT_LOGGER.tracef("operation %s does not need transformation", operation);
@@ -98,13 +98,15 @@ public class TransformersImpl implements Transformers {
 
     @Override
     public Resource transformRootResource(OperationContext operationContext, Resource resource) throws OperationFailedException {
-        return transformResource(operationContext, PathAddress.EMPTY_ADDRESS, resource, false);
+        return transformRootResource(operationContext, resource, Transformers.DEFAULT);
     }
 
-    public Resource transformResource(final OperationContext operationContext, PathAddress original, Resource resource, boolean skipRuntimeIgnoreCheck) throws OperationFailedException {
+    @Override
+    public Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
         // Transform the path address
+        final PathAddress original = PathAddress.EMPTY_ADDRESS;
         final PathAddress transformed = transformAddress(original, target);
-        final ResourceTransformationContext context = ResourceTransformationContextImpl.create(operationContext, target, transformed, original, skipRuntimeIgnoreCheck);
+        final ResourceTransformationContext context = ResourceTransformationContextImpl.create(operationContext, target, transformed, original, ignoredTransformationRegistry);
         final ResourceTransformer transformer = target.resolveTransformer(context, original);
         if(transformer == null) {
             ControllerLogger.ROOT_LOGGER.tracef("resource %s does not need transformation", resource);

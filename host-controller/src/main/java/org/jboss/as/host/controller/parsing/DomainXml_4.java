@@ -31,7 +31,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
@@ -55,10 +54,8 @@ import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
-import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
-import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
@@ -88,8 +85,11 @@ import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
+import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
@@ -119,7 +119,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
     private final ExtensionRegistry extensionRegistry;
 
     DomainXml_4(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
-        super();
+        super(new DomainSocketBindingsXml());
         accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
@@ -325,12 +325,13 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
 
     void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address,
             final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
+        HashSet<String> uniqueGroupNames = new HashSet<>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET_BINDING_GROUP: {
-                    parseSocketBindingGroup(reader, interfaces, address, list);
+                    parseSocketBindingGroup(reader, interfaces, address, list, uniqueGroupNames);
                     break;
                 }
                 default: {
@@ -341,49 +342,75 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
     }
 
 
-    void parseSocketBindingGroup(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address, final List<ModelNode> updates) throws XMLStreamException {
+    void parseSocketBindingGroup(final XMLExtendedStreamReader reader, final Set<String> interfaces,
+                                 final ModelNode address, final List<ModelNode> updates, HashSet<String> uniqueGroupNames) throws XMLStreamException {
         // both outbound-socket-bindings and socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
-        // Handle attributes
-        final String[] attrValues = requireAttributes(reader, Attribute.NAME.getLocalName(), Attribute.DEFAULT_INTERFACE.getLocalName());
-        final String socketBindingGroupName = attrValues[0];
-        final String defaultInterface = attrValues[1];
-
-        final ModelNode groupAddress = new ModelNode().set(address);
-        groupAddress.add(SOCKET_BINDING_GROUP, socketBindingGroupName);
-
-        final ModelNode bindingGroupUpdate = new ModelNode();
-        bindingGroupUpdate.get(OP_ADDR).set(groupAddress);
-        bindingGroupUpdate.get(OP).set(ADD);
-
-        SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(defaultInterface, bindingGroupUpdate, reader);
-        if (bindingGroupUpdate.get(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
-                && !interfaces.contains(defaultInterface)) {
-            throw ControllerLogger.ROOT_LOGGER.unknownInterface(defaultInterface, Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());
+        String socketBindingGroupName = null;
+        String defaultInterface = null;
+        final int count = reader.getAttributeCount();
+        final ModelNode add = Util.createAddOperation();
+        for (int i = 0 ; i < count ; i++) {
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            switch (attribute) {
+                case NAME: {
+                    socketBindingGroupName = reader.getAttributeValue(i);
+                    if (!uniqueGroupNames.add(socketBindingGroupName)) {
+                        throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration(SOCKET_BINDING_GROUP, socketBindingGroupName, reader.getLocation());
+                    }
+                    add.get(OP_ADDR).set(address.clone().add(SOCKET_BINDING_GROUP, socketBindingGroupName));
+                    break;
+                }
+                case DEFAULT_INTERFACE: {
+                    defaultInterface = reader.getAttributeValue(i);
+                    SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(defaultInterface, add, reader);
+                    break;
+                }
+                case INCLUDES: {
+                    for (String val : reader.getListAttributeValue(i)) {
+                        SocketBindingGroupResourceDefinition.INCLUDES.parseAndAddParameterElement(val, add, reader);
+                    }
+                    HashSet<String> includes = new HashSet<>();
+                    for (ModelNode include : add.get(INCLUDES).asList()) {
+                        if (!includes.add(include.asString())) {
+                            throw DomainControllerLogger.ROOT_LOGGER.duplicateSocketBindingGroupInclude(include.asString());
+                        }
+                    }
+                    break;
+                }
+                default:
+                    throw unexpectedAttribute(reader, i);
+            }
+        }
+        if (socketBindingGroupName == null || defaultInterface == null) {
+            HashSet<String> missing = new HashSet<>();
+            if (socketBindingGroupName == null) {
+                missing.add(socketBindingGroupName);
+            }
+            if (defaultInterface == null) {
+                missing.add(defaultInterface);
+            }
+            throw missingRequired(reader, missing);
         }
 
-        /*This will be reintroduced for 7.2.0, leave commented out
-         final ModelNode includes = bindingGroupUpdate.get(INCLUDES);
-         includes.setEmptyList();
-         */
-        updates.add(bindingGroupUpdate);
+        if (add.get(AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
+                && !interfaces.contains(defaultInterface)) {
+            throw ControllerLogger.ROOT_LOGGER.unknownInterface(defaultInterface,
+                    Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());
+        }
+
+        updates.add(add);
+        final ModelNode groupAddress = add.get(OP_ADDR);
 
         // Handle elements
         while (reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
-                /* This will be reintroduced for 7.2.0, leave commented out
-                 case INCLUDE: {
-                 final String includedGroup = readStringAttributeElement(reader, Attribute.SOCKET_BINDING_GROUP.getLocalName());
-                 if (!includedGroups.add(includedGroup)) {
-                 throw MESSAGES.alreadyDeclared(Attribute.SOCKET_BINDING_GROUP.getLocalName(), includedGroup, reader.getLocation());
-                 }
-                 SocketBindingGroupResourceDefinition.INCLUDES.parseAndAddParameterElement(includedGroup, bindingGroupUpdate, reader.getLocation());
-                 break;
-                 }
-                 */
                 case SOCKET_BINDING: {
                     final String bindingName = parseSocketBinding(reader, interfaces, groupAddress, updates);
                     if (!uniqueBindingNames.add(bindingName)) {
@@ -521,12 +548,46 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
                 throw unexpectedElement(reader);
             }
 
-            // Attributes
-            requireSingleAttribute(reader, Attribute.NAME.getLocalName());
-            final String name = reader.getAttributeValue(0);
-            if (!names.add(name)) {
-                throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("profile", name, reader.getLocation());
+            //Attributes
+            String name = null;
+            final int count = reader.getAttributeCount();
+            final ModelNode profile = Util.createAddOperation();
+            for (int i = 0 ; i < count ; i++) {
+                if (!isNoNamespaceAttribute(reader, i)) {
+                    throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case NAME: {
+                        name = reader.getAttributeValue(i);
+                        if (!names.add(name)) {
+                            throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("profile", name, reader.getLocation());
+                        }
+                        profile.get(OP_ADDR).set(address.clone().add(PROFILE, name));
+                        break;
+                    }
+                    case INCLUDES: {
+                        for (String val : reader.getListAttributeValue(i)) {
+                            ProfileResourceDefinition.INCLUDES.parseAndAddParameterElement(val, profile, reader);
+                        }
+                        HashSet<String> includes = new HashSet<>();
+                        for (ModelNode include : profile.get(INCLUDES).asList()) {
+                            if (!includes.add(include.asString())) {
+                                throw DomainControllerLogger.ROOT_LOGGER.duplicateProfileInclude(include.asString());
+                            }
+                        }
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
             }
+
+            if (name == null) {
+                throw ParseUtils.missingRequired(reader, Collections.singleton(NAME));
+            }
+            list.add(profile);
+
 
             final Map<String, List<ModelNode>> profileOps = new LinkedHashMap<String, List<ModelNode>>();
             while (reader.nextTag() != END_ELEMENT) {
@@ -559,14 +620,6 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
             for (ProfileParsingCompletionHandler completionHandler : completionHandlers) {
                 completionHandler.handleProfileParsingCompletion(profileOps, list);
             }
-
-            final ModelNode profile = new ModelNode();
-            profile.get(OP).set(ADD);
-            profile.get(OP_ADDR).set(address).add(ModelDescriptionConstants.PROFILE, name);
-            /* This will be reintroduced for 7.2.0, leave commented out
-             profile.get(INCLUDES).set(profileIncludes);
-             */
-            list.add(profile);
 
             // Process subsystems
             for (List<ModelNode> subsystems : profileOps.values()) {
@@ -633,13 +686,8 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
 
         writer.writeStartElement(Element.PROFILE.getLocalName());
         writer.writeAttribute(Attribute.NAME.getLocalName(), profileName);
+        ProfileResourceDefinition.INCLUDES.getAttributeMarshaller().marshallAsAttribute(ProfileResourceDefinition.INCLUDES, profileNode, false, writer);
 
-        if (profileNode.hasDefined(INCLUDES)) {
-            for (final ModelNode include : profileNode.get(INCLUDES).asList()) {
-                writer.writeEmptyElement(INCLUDE);
-                writer.writeAttribute(PROFILE, include.asString());
-            }
-        }
         if (profileNode.hasDefined(SUBSYSTEM)) {
             final Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
             if (subsystemNames.size() > 0) {

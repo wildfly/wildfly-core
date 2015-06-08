@@ -18,30 +18,24 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -51,7 +45,7 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @version $Revision: 1.1 $
  */
-public class ProfileDescribeHandler implements OperationStepHandler {
+public class ProfileDescribeHandler extends GenericModelDescribeOperationHandler {
 
     public static final ProfileDescribeHandler INSTANCE = new ProfileDescribeHandler();
 
@@ -59,106 +53,23 @@ public class ProfileDescribeHandler implements OperationStepHandler {
             Collections.unmodifiableSet(EnumSet.of(Action.ActionEffect.ADDRESS, Action.ActionEffect.READ_CONFIG));
 
     private ProfileDescribeHandler() {
+        super(DESCRIBE, true);
     }
-
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-        final String opName = operation.require(OP).asString();
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-
-        AuthorizationResult authResult = context.authorize(operation, DESCRIBE_EFFECTS);
+        final AuthorizationResult authResult = context.authorize(operation, DESCRIBE_EFFECTS);
         if (authResult.getDecision() != AuthorizationResult.Decision.PERMIT) {
-            throw ControllerLogger.ROOT_LOGGER.unauthorized(opName, address, authResult.getExplanation());
+            final String operationName = operation.get(ModelDescriptionConstants.OP).asString();
+            final PathAddress address = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
+            throw ControllerLogger.ACCESS_LOGGER.unauthorized(operationName, address, authResult.getExplanation());
         }
+        super.execute(context, operation);
+    }
 
-        final ModelNode result = new ModelNode();
-        final ModelNode profile =  Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        result.setEmptyList();
-
-        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
-        final AtomicReference<ModelNode> failureRef = new AtomicReference<ModelNode>();
-
-        final ModelNode subsystemResults = new ModelNode().setEmptyList();
-        final Map<String, ModelNode> includeResults = new HashMap<String, ModelNode>();
-
-        // Add a step at end to assemble all the data
-        // Add steps in the reverse of expected order, as Stage.IMMEDIATE adds to the top of the list
-        context.addStep(new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                boolean failed = false;
-                if (failureRef.get() != null) {
-                    // One of our subsystems failed
-                    context.getFailureDescription().set(failureRef.get());
-                    failed = true;
-                } else {
-                    for (ModelNode includeRsp : includeResults.values()) {
-                        if (includeRsp.hasDefined(FAILURE_DESCRIPTION)) {
-                            context.getFailureDescription().set(includeRsp.get(FAILURE_DESCRIPTION));
-                            failed = true;
-                            break;
-                        }
-                        ModelNode includeResult = includeRsp.get(RESULT);
-                        if (includeResult.isDefined()) {
-                            for (ModelNode op : includeResult.asList()) {
-                                result.add(op);
-                            }
-                        }
-                    }
-                }
-                if (!failed) {
-                    for (ModelNode subsysRsp : subsystemResults.asList()) {
-                        result.add(subsysRsp);
-                    }
-                    context.getResult().set(result);
-                }
-            }
-        }, OperationContext.Stage.MODEL, true);
-
-        if (profile.hasDefined(SUBSYSTEM)) {
-            for (final String subsystemName : profile.get(SUBSYSTEM).keys()) {
-                final ModelNode subsystemRsp = new ModelNode();
-                PathElement pe = PathElement.pathElement(SUBSYSTEM, subsystemName);
-                PathAddress fullAddress = address.append(pe);
-                final ModelNode subsystemAddress = fullAddress.toModelNode();
-                final ModelNode newOp = operation.clone();
-                newOp.get(OP_ADDR).set(subsystemAddress);
-                PathAddress relativeAddress = PathAddress.pathAddress(pe);
-                OperationStepHandler subsysHandler = registry.getOperationHandler(relativeAddress, opName);
-                if (subsysHandler == null) {
-                    String errMsg;
-                    ImmutableManagementResourceRegistration child = registry.getSubModel(relativeAddress);
-                    if (child == null) {
-                       errMsg = ControllerLogger.ROOT_LOGGER.noSuchResourceType(fullAddress);
-                    } else {
-                        errMsg = ControllerLogger.ROOT_LOGGER.noHandlerForOperation(opName, fullAddress);
-                    }
-                    throw new OperationFailedException(errMsg);
-                }
-
-                // Step to store subsystem ops in overall list
-                context.addStep(new OperationStepHandler() {
-                    @Override
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        if (failureRef.get() == null) {
-                            if (subsystemRsp.hasDefined(FAILURE_DESCRIPTION)) {
-                                failureRef.set(subsystemRsp.get(FAILURE_DESCRIPTION));
-                            } else if (subsystemRsp.hasDefined(RESULT)) {
-                                for (ModelNode op : subsystemRsp.require(RESULT).asList()) {
-                                    subsystemResults.add(op);
-                                }
-                            }
-                        }
-                    }
-                }, OperationContext.Stage.MODEL, true);
-
-                // Step to determine subsystem ops
-                context.addStep(subsystemRsp, newOp, subsysHandler, OperationContext.Stage.MODEL, true);
-            }
-        }
-
+    @Override
+    protected void processMore(OperationContext context, ModelNode operation, Resource resource, PathAddress address, Map<String, ModelNode> includeResults) throws OperationFailedException {
+        final ModelNode profile = resource.getModel();
         if (profile.hasDefined(INCLUDES)) {
             // Call this op for each included profile
             for (ModelNode include : profile.get(INCLUDES).asList()) {
@@ -175,4 +86,5 @@ public class ProfileDescribeHandler implements OperationStepHandler {
             }
         }
     }
+
 }

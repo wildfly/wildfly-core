@@ -123,6 +123,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     HostXml_Legacy(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
             final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final Namespace namespace) {
+        super(null);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;

@@ -21,6 +21,9 @@
 */
 package org.jboss.as.server.controller.resources;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
@@ -52,7 +55,6 @@ import org.jboss.as.controller.operations.common.SchemaLocationRemoveHandler;
 import org.jboss.as.controller.operations.common.SnapshotDeleteHandler;
 import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
-import org.jboss.as.controller.operations.common.SocketBindingGroupRemoveHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
@@ -65,7 +67,6 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.InterfaceDefinition;
-import org.jboss.as.controller.resource.SocketBindingGroupResourceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -104,20 +105,14 @@ import org.jboss.as.server.operations.ServerSuspendHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.SetServerGroupHostHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
-import org.jboss.as.server.services.net.BindingGroupAddHandler;
-import org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition;
 import org.jboss.as.server.services.net.NetworkInterfaceRuntimeHandler;
-import org.jboss.as.server.services.net.RemoteDestinationOutboundSocketBindingResourceDefinition;
-import org.jboss.as.server.services.net.SocketBindingResourceDefinition;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelType;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -447,12 +442,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         interfaces.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
 
         //TODO socket-binding-group currently lives in controller and the child RDs live in server so they currently need passing in from here
-        resourceRegistration.registerSubModel(new SocketBindingGroupResourceDefinition(BindingGroupAddHandler.INSTANCE,
-                                        SocketBindingGroupRemoveHandler.INSTANCE,
-                                        false,
-                                        SocketBindingResourceDefinition.INSTANCE,
-                                        RemoteDestinationOutboundSocketBindingResourceDefinition.INSTANCE,
-                                        LocalDestinationOutboundSocketBindingResourceDefinition.INSTANCE));
+        resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
         // Deployments
         ManagementResourceRegistration deployments = resourceRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, vaultReader));

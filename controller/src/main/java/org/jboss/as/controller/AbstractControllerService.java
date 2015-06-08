@@ -257,7 +257,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
-                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport, bootErrorCollector);
+                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport,
+                bootErrorCollector, createExtraValidationStepHandler());
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -369,6 +370,16 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return controller.executeReadOnlyOperation(operation, handler, control, prepareStep, lockPermit);
     }
 
+    @Deprecated
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
+        return controller.executeReadOnlyOperation(operation, control, prepareStep);
+    }
+
+    @Deprecated
+    protected ModelNode executeReadOnlyOperation(final ModelNode operation, Resource model, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
+        return controller.executeReadOnlyOperation(operation, model, control, prepareStep);
+    }
+
     protected void finishBoot() throws ConfigurationPersistenceException {
         controller.finishBoot();
         configurationPersister.successfulBoot();
@@ -459,6 +470,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected BootErrorCollector getBootErrorCollector() {
         return bootErrorCollector;
+    }
+
+    protected OperationStepHandler createExtraValidationStepHandler() {
+        return null;
     }
 
     /**

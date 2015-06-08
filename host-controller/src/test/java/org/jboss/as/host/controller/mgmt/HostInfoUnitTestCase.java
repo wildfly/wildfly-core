@@ -31,25 +31,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
-import java.util.Set;
-
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.transform.RuntimeIgnoreTransformation;
-import org.jboss.as.controller.transform.TransformationContext;
-import org.jboss.as.controller.transform.TransformationTarget;
-import org.jboss.as.controller.transform.TransformersLogger;
-import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.RemoteDomainConnectionService;
 import org.jboss.as.host.controller.ignored.IgnoreDomainResourceTypeResource;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
@@ -132,60 +118,6 @@ public class HostInfoUnitTestCase {
         Assert.assertEquals("socket-binding-group1", model.get(INITIAL_SERVER_GROUPS, "server-1", SOCKET_BINDING_GROUP).asString());
         Assert.assertEquals("server-group1", model.get(INITIAL_SERVER_GROUPS, "server-2", GROUP).asString());
         Assert.assertFalse(model.get(INITIAL_SERVER_GROUPS, "server-2", SOCKET_BINDING_GROUP).isDefined());
-
-
-        final ExtensionRegistry extensionRegistry =
-                new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
-        //Test the master proxy side
-
-        HostInfo testee = HostInfo.fromModelNode(model);
-        RuntimeIgnoreTransformation masterIgnorer = DomainControllerRuntimeIgnoreTransformationEntry.create(testee, extensionRegistry);
-        Assert.assertFalse(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group1"))));
-        Assert.assertTrue(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group2"))));
-        Assert.assertFalse(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1"))));
-        Assert.assertFalse(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1a"))));
-        Assert.assertTrue(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group2"))));
-        Assert.assertFalse(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile1"))));
-        Assert.assertTrue(masterIgnorer.ignoreResource(domainResource, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile2"))));
-
-        //Test the slave side
-        IgnoredNonAffectedServerGroupsUtil slaveUtil = IgnoredNonAffectedServerGroupsUtil.create(extensionRegistry);
-        Set<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> slaveServerConfigs = slaveUtil.getServerConfigsOnSlave(hostResource);
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group1"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group2"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1a"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group2"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile1"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile2"))));
-
-        //Change affected resources and do more tests
-        server1.getModel().remove(SOCKET_BINDING_GROUP);
-        slaveServerConfigs = slaveUtil.getServerConfigsOnSlave(hostResource);
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1a"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group2"))));
-
-        server1.getModel().get(GROUP).set("server-group2");
-        server2.getModel().get(GROUP).set("server-group2");
-        serverGroup2.getModel().get(SOCKET_BINDING_GROUP).set("socket-binding-group1");
-        slaveServerConfigs = slaveUtil.getServerConfigsOnSlave(hostResource);
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group1"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group2"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1a"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group2"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile1"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile2"))));
-
-        serverGroup2.getModel().get(PROFILE).set("profile2");
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group1"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "server-group2"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group1a"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "socket-binding-group2"))));
-        Assert.assertTrue(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile1"))));
-        Assert.assertFalse(slaveUtil.ignoreResource(domainResource, slaveServerConfigs, PathAddress.pathAddress(PathElement.pathElement(PROFILE, "profile2"))));
     }
 
     @Test
@@ -228,15 +160,6 @@ public class HostInfoUnitTestCase {
         Assert.assertFalse(testee.isResourceTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("empty", "used"))));
         Assert.assertFalse(testee.isResourceTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("random", "ignored"))));
 
-        // No operation transformation is ignored
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("wildcard", "ignored"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("list", "ignored"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("list", "used"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("nullWildcard", "ignored"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("nullWildcard", "used"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("empty", "ignored"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("empty", "used"))));
-        Assert.assertFalse(testee.isOperationTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("random", "ignored"))));
     }
 
     private static class MockLocalHostControllerInfo extends LocalHostControllerInfoImpl {
@@ -253,71 +176,6 @@ public class HostInfoUnitTestCase {
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return true;
-        }
-    }
-
-    private static class MockTransformationContext implements TransformationContext {
-        private final Resource rootResource;
-        public MockTransformationContext(final Resource rootResource) {
-            this.rootResource = rootResource;
-        }
-        @Override
-        public TransformationTarget getTarget() {
-            return null;
-        }
-        @Override
-        public ProcessType getProcessType() {
-            return null;
-        }
-        @Override
-        public RunningMode getRunningMode() {
-            return null;
-        }
-        @Override
-        public ImmutableManagementResourceRegistration getResourceRegistration(PathAddress address) {
-            return null;
-        }
-        @Override
-        public ImmutableManagementResourceRegistration getResourceRegistrationFromRoot(PathAddress address) {
-            return null;
-        }
-        @Override
-        public Resource readResource(PathAddress address) {
-            return null;
-        }
-        @Override
-        public Resource readResourceFromRoot(PathAddress address) {
-            return rootResource;
-        }
-
-        @Override
-        public TransformersLogger getLogger() {
-            return null;
-        }
-
-        @Override
-        public boolean isSkipRuntimeIgnoreCheck() {
-            return false;
-        }
-
-        @Override
-        public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
-            return null;
-        }
-
-        @Override
-        public <T> T attach(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T attachIfAbsent(OperationContext.AttachmentKey<T> key, T value) {
-            return null;
-        }
-
-        @Override
-        public <T> T detach(OperationContext.AttachmentKey<T> key) {
-            return null;
         }
     }
 }

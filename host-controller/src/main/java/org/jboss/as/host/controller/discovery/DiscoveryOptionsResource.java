@@ -116,6 +116,10 @@ public class DiscoveryOptionsResource implements Resource {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         return removeOption(address.getKey(), address.getValue());
     }
@@ -368,7 +372,10 @@ public class DiscoveryOptionsResource implements Resource {
 
             @Override
             public void registerChild(PathElement address, Resource resource) {
-                resource.registerChild(address, resource);
+            }
+
+            @Override
+            public void registerChild(PathElement address, int index, Resource resource) {
             }
 
             @Override
@@ -400,6 +407,16 @@ public class DiscoveryOptionsResource implements Resource {
             public PathElement getPathElement() {
                 return pathElement;
             }
+
+            @Override
+            public Set<String> getOrderedChildTypes() {
+                return resource.getOrderedChildTypes();
+            }
         };
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return Collections.emptySet();
     }
 }

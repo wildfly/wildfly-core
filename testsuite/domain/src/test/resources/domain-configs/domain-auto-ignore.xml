@@ -30,29 +30,16 @@
 
       The profiles contain the following subsystems
 
-      ***profile1***
-      -logging
-
-      ***profile2***
-      -logging
-      -mail
-      -pojo
-
-      ***profile3***
-      -logging
-      -jmx
-      -sar
      -->
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
-        <extension module="org.jboss.as.mail"/>
-        <extension module="org.jboss.as.naming"/>
-        <extension module="org.jboss.as.pojo"/>
-        <extension module="org.jboss.as.sar"/>
+        <extension module="org.jboss.as.remoting"/>
+        <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.request-controller"/>
     </extensions>
     <profiles>
-        <profile name="profile1">
+        <profile name="root-profile1">
             <subsystem xmlns="urn:jboss:domain:logging:1.2">
                 <console-handler name="CONSOLE">
                     <level name="INFO"/>
@@ -95,7 +82,7 @@
                 </root-logger>
             </subsystem>
         </profile>
-        <profile name="profile2">
+        <profile name="root-profile2">
             <subsystem xmlns="urn:jboss:domain:logging:1.2">
                 <console-handler name="CONSOLE">
                     <level name="INFO"/>
@@ -137,13 +124,17 @@
                     </handlers>
                 </root-logger>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:mail:1.1">
-                <mail-session jndi-name="java:jboss/mail/Default">
-                    <smtp-server outbound-socket-binding-ref="mail-smtp"/>
-                </mail-session>
+        </profile>
+        <profile name="profile1" includes="root-profile1">
+            <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+                <expose-resolved-model/>
+                <expose-expression-model/>
+                <!--<remoting-connector use-management-endpoint="false"/>-->
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:naming:2.0"/>
-            <subsystem xmlns="urn:jboss:domain:pojo:1.0"/>
+        </profile>
+        <profile name="profile2" includes="root-profile2">
+            <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
+            </subsystem>
         </profile>
         <profile name="profile3">
             <subsystem xmlns="urn:jboss:domain:logging:1.2">
@@ -192,7 +183,6 @@
                 <expose-expression-model/>
                 <!--<remoting-connector use-management-endpoint="false"/>-->
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:sar:1.0"/>
         </profile>
 
     </profiles>
@@ -201,12 +191,18 @@
         <interface name="public"/>
     </interfaces>
     <socket-binding-groups>
-        <socket-binding-group name="sockets1" default-interface="public">
+        <socket-binding-group name="root-sockets1" default-interface="public">
+            <socket-binding name="testing" port="6677"/>
+        </socket-binding-group>
+        <socket-binding-group name="root-sockets2" default-interface="public">
+            <socket-binding name="testing" port="6677"/>
+        </socket-binding-group>
+        <socket-binding-group name="sockets1" default-interface="public" includes="root-sockets1">
             <outbound-socket-binding name="mail-smtp">
                 <remote-destination host="localhost" port="1111"/>
             </outbound-socket-binding>
         </socket-binding-group>
-        <socket-binding-group name="sockets2" default-interface="public">
+        <socket-binding-group name="sockets2" default-interface="public" includes="root-sockets2">
             <outbound-socket-binding name="mail-smtp">
                 <remote-destination host="localhost" port="2222"/>
             </outbound-socket-binding>

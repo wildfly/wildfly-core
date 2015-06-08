@@ -57,6 +57,7 @@ public class HostXml extends CommonXml {
 
     public HostXml(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC, final ModuleLoader loader,
             final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
+        super(null);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;

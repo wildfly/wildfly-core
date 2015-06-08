@@ -24,6 +24,8 @@ package org.jboss.as.domain.controller.operations;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author Emanuel Muckenhuber
@@ -31,6 +33,12 @@ import org.jboss.as.controller.OperationContext;
 public class ProfileRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final ProfileRemoveHandler INSTANCE = new ProfileRemoveHandler();
+
+    @Override
+    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        super.performRemove(context, operation, model);
+        DomainModelReferenceValidator.addValidationStep(context, operation);
+    }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {

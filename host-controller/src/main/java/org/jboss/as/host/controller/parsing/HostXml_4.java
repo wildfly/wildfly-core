@@ -139,6 +139,7 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
 
     HostXml_4(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
             final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final Namespace namespace) {
+        super(null);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;

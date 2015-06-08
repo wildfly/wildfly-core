@@ -49,15 +49,6 @@ class ServerGroupTransformers {
                 .end();
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
-        //////////////////////////////////
-        //The WildFly chains
-        builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_2_1)
-                .getAttributeBuilder()
-                .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
-                .addRejectCheck(RejectAttributeChecker.DEFINED,  ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
-                .end();
-        JvmTransformers.registerTransformers2_1_AndBelow(builder);
-
         return chainedBuilder;
     }
 }

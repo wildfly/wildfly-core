@@ -32,7 +32,7 @@ import org.jboss.as.controller.registry.Resource;
  *
 * @author Emanuel Muckenhuber
 */
-public interface ResourceTransformationContext extends TransformationContext {
+public interface ResourceTransformationContext extends TransformationContext, Transformers.ResourceIgnoredTransformationRegistry {
 
     /**
      * Add a resource.

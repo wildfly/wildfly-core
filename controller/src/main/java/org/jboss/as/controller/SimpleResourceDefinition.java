@@ -56,6 +56,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final OperationEntry.Flag removeRestartLevel;
     private final boolean runtime;
     private volatile DeprecationData deprecationData;
+    private final boolean orderedChildResource;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -79,6 +80,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.removeRestartLevel = null;
         this.deprecationData = null;
         this.runtime = false;
+        this.orderedChildResource = isOrderedChildResource();
     }
 
     /**
@@ -237,6 +239,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 : validateRestartLevel("removeRestartLevel", removeRestartLevel);
         this.deprecationData = deprecationData;
         this.runtime = runtime;
+        this.orderedChildResource = isOrderedChildResource();
     }
 
     @Override
@@ -305,7 +308,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         if (handler instanceof DescriptionProvider) {
             registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, (DescriptionProvider) handler, getFlagsSet(flags));
         } else {
-            registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, new DefaultResourceAddDescriptionProvider(registration, descriptionResolver), getFlagsSet(flags));
+            registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler,
+                    new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChildResource), getFlagsSet(flags));
         }
     }
 
@@ -376,5 +380,15 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     @Override
     public boolean isRuntime() {
         return runtime;
+    }
+
+    /**
+     * Override this method and return {@code true} if this is for a child resource which supports indexed adds.
+     * It will get the {@code add-index} parameter added to the generated {@code add} operation
+     *
+     * @return whether this is an ordered child resource
+     */
+    protected boolean isOrderedChildResource() {
+        return false;
     }
 }

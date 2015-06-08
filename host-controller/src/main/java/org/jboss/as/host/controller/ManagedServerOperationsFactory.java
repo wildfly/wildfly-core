@@ -112,7 +112,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
-import org.jboss.as.controller.operations.common.SocketBindingAddHandler;
+import org.jboss.as.server.services.net.SocketBindingAddHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.resource.InterfaceDefinition;

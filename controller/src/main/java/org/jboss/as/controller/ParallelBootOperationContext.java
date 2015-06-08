@@ -64,9 +64,9 @@ class ParallelBootOperationContext extends AbstractOperationContext {
                                  final ControlledProcessState processState, final OperationContextImpl primaryContext,
                                  final List<ParsedBootOp> runtimeOps, final Thread controllingThread,
                                  final ModelControllerImpl controller, final int operationId, final AuditLogger auditLogger,
-                                 final Resource model) {
+                                 final Resource model, final OperationStepHandler extraValidationStepHandler) {
         super(primaryContext.getProcessType(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger,
-                controller.getNotificationSupport(), controller, true);
+                controller.getNotificationSupport(), controller, true, extraValidationStepHandler);
         this.primaryContext = primaryContext;
         this.runtimeOps = runtimeOps;
         AbstractOperationContext.controllingThread.set(controllingThread);
@@ -125,6 +125,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     // Methods unimplemented by superclass
+
+    @Override
+    ModelControllerImpl.ManagementModelImpl getManagementModel() {
+        throw new IllegalStateException(); // Wrong usage, we cannot guarantee thread safety
+    }
 
     @Override
     public InputStream getAttachmentStream(int index) {
@@ -219,6 +224,14 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    public void addResource(PathAddress address, int index, Resource toAdd) {
+        acquireControllerLock();
+        PathAddress fullAddress = activeStep.address.append(address);
+        primaryContext.addResource(fullAddress, index, toAdd);
+    }
+
+
+    @Override
     public Resource readResource(PathAddress address) {
         return readResource(address, true);
     }
@@ -237,6 +250,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     @Override
     public Resource readResourceFromRoot(PathAddress address, boolean recursive) {
         return primaryContext.readResourceFromRoot(address, recursive);
+    }
+
+    @Override
+    protected Resource readResourceFromRoot(ManagementModel model, PathAddress address, boolean recursive) {
+        return primaryContext.readResourceFromRoot(model, address, recursive);
     }
 
     @Override

@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HAS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
-import static org.jboss.as.controller.operations.validation.ChainedParameterValidator.chain;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -48,12 +47,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.CompositeOperationAwareTransformer;
 import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
-import org.jboss.as.controller.operations.validation.AbstractParameterValidator;
-import org.jboss.as.controller.operations.validation.ListValidator;
-import org.jboss.as.controller.operations.validation.ModelTypeValidator;
-import org.jboss.as.controller.operations.validation.ParametersOfValidator;
-import org.jboss.as.controller.operations.validation.ParametersValidator;
-import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentReference;
@@ -62,7 +55,6 @@ import org.jboss.as.repository.DeploymentFileRepository;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * @author Stuart Douglas
@@ -72,27 +64,10 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
     protected final ContentRepository contentRepository;
     private final DeploymentFileRepository remoteRepository;
 
-    protected final ParametersValidator validator = new ParametersValidator();
-    protected final ParametersValidator managedContentValidator = new ParametersValidator();
 
     public DeploymentOverlayContentAdd(final ContentRepository contentRepository, final DeploymentFileRepository remoteRepository) {
         this.contentRepository = contentRepository;
         this.remoteRepository = remoteRepository;
-        final ParametersValidator contentValidator = new ParametersValidator();
-        // existing managed content
-        contentValidator.registerValidator(HASH, new ModelTypeValidator(ModelType.BYTES, true));
-        // content additions
-        contentValidator.registerValidator(INPUT_STREAM_INDEX, new ModelTypeValidator(ModelType.INT, true));
-        contentValidator.registerValidator(BYTES, new ModelTypeValidator(ModelType.BYTES, true));
-        contentValidator.registerValidator(URL, new StringLengthValidator(1, true));
-        this.validator.registerValidator(CONTENT, chain(new ListValidator(new ParametersOfValidator(contentValidator)),
-                new AbstractParameterValidator() {
-                    @Override
-                    public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-                        validateOnePieceOfContent(value);
-                    }
-                }));
-        this.managedContentValidator.registerValidator(HASH, new ModelTypeValidator(ModelType.BYTES));
     }
 
     @Override
@@ -100,10 +75,10 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String path = address.getLastElement().getValue();
         final String name = address.getElement(address.size() - 2).getValue();
-        final ModelNode content = operation.get(CONTENT);
+        final ModelNode content = DeploymentOverlayContentDefinition.CONTENT_PARAMETER.validateOperation(operation);
+        validateOnePieceOfContent(content);
         final byte[] hash;
         if (content.hasDefined(HASH)) {
-            managedContentValidator.validate(content);
             hash = content.require(HASH).asBytes();
             addFromHash(hash, name, path, address, context);
         } else {

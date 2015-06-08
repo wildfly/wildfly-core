@@ -354,7 +354,16 @@ public class DomainTestSupport {
     public void start() {
         domainMasterLifecycleUtil.start();
         if (domainSlaveLifecycleUtil != null) {
-            domainSlaveLifecycleUtil.start();
+            try {
+                domainSlaveLifecycleUtil.start();
+            } catch (RuntimeException e) {
+                try {
+                    //Clean up after ourselves if slave failed to start
+                    domainMasterLifecycleUtil.stop();
+                } catch (RuntimeException ignore) {
+                }
+                throw e;
+            }
         }
     }
 

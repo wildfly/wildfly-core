@@ -40,11 +40,11 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.operations.ApplyMissingDomainModelResourcesHandler;
+import org.jboss.as.domain.controller.operations.SyncModelOperationHandlerWrapper;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.mgmt.DomainControllerRuntimeIgnoreTransformationRegistry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -58,7 +58,6 @@ class OperationSlaveStepHandler {
     private final Map<String, ProxyController> serverProxies;
     private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private final ExtensionRegistry extensionRegistry;
-    private volatile ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler;
 
     OperationSlaveStepHandler(final LocalHostControllerInfo localHostControllerInfo, Map<String, ProxyController> serverProxies,
                               final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
@@ -69,15 +68,10 @@ class OperationSlaveStepHandler {
         this.extensionRegistry = extensionRegistry;
     }
 
-    void intialize(ApplyMissingDomainModelResourcesHandler applyMissingDomainModelResourcesHandler) {
-        this.applyMissingDomainModelResourcesHandler = applyMissingDomainModelResourcesHandler;
-    }
-
     void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         ModelNode headers = operation.get(OPERATION_HEADERS);
         headers.remove(EXECUTE_FOR_COORDINATOR);
-        final ModelNode missingResources = operation.get(OPERATION_HEADERS).remove(DomainControllerRuntimeIgnoreTransformationRegistry.MISSING_DOMAIN_RESOURCES);
 
         if (headers.hasDefined(DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID)) {
             int id = headers.remove(DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).asInt();
@@ -86,12 +80,6 @@ class OperationSlaveStepHandler {
 
         final MultiPhaseLocalContext localContext = new MultiPhaseLocalContext(false);
         final HostControllerExecutionSupport hostControllerExecutionSupport = addSteps(context, operation, localContext);
-
-        //Add the missing resources step first
-        if (missingResources != null) {
-            ModelNode applyMissingResourcesOp = ApplyMissingDomainModelResourcesHandler.createPiggyBackedMissingDataOperation(missingResources);
-            context.addStep(applyMissingResourcesOp, applyMissingDomainModelResourcesHandler, OperationContext.Stage.MODEL, true);
-        }
 
         context.completeStep(new OperationContext.ResultHandler() {
             @Override
@@ -159,9 +147,22 @@ class OperationSlaveStepHandler {
     private void addBasicStep(OperationContext context, ModelNode operation, ModelNode localReponse) throws OperationFailedException {
         final String operationName = operation.require(OP).asString();
 
-        final OperationStepHandler stepHandler = context.getResourceRegistration().getOperationHandler(PathAddress.EMPTY_ADDRESS, operationName);
-        if(stepHandler != null) {
-            context.addStep(localReponse, operation, stepHandler, OperationContext.Stage.MODEL);
+        final OperationEntry entry = context.getResourceRegistration().getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
+        if(entry != null) {
+            if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
+                context.addStep(localReponse, operation, entry.getOperationHandler(), OperationContext.Stage.MODEL);
+            } else {
+                final OperationStepHandler wrapper;
+                // For slave host controllers wrap the operation handler to synchronize missing configuration
+                // TODO better configuration of ignore unaffected configuration
+                if (localHostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
+                    final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+                    wrapper = SyncModelOperationHandlerWrapper.wrapHandler(localHostControllerInfo.getLocalHostName(), operationName, address, entry);
+                } else {
+                    wrapper = entry.getOperationHandler();
+                }
+                context.addStep(localReponse, operation, wrapper, OperationContext.Stage.MODEL);
+            }
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR))));
         }

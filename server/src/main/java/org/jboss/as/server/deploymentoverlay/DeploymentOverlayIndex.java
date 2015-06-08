@@ -99,7 +99,7 @@ public class DeploymentOverlayIndex {
             Resource cr = context.readResourceFromRoot(PathAddress.pathAddress(pathElement(DEPLOYMENT_OVERLAY, overlay), pathElement(CONTENT, contentItem)));
             ModelNode sha;
             try {
-                sha = DeploymentOverlayContentDefinition.CONTENT.resolveModelAttribute(context, cr.getModel());
+                sha = DeploymentOverlayContentDefinition.CONTENT_ATTRIBUTE.resolveModelAttribute(context, cr.getModel());
             } catch (OperationFailedException e) {
                 throw new RuntimeException(e);
             }

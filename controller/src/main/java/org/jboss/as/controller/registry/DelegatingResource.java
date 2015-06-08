@@ -132,6 +132,11 @@ public class DelegatingResource extends ResourceProvider.ResourceProviderRegistr
         getDelegate().registerChild(address, resource);
     }
 
+    @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        getDelegate().registerChild(address, index, resource);
+    }
+
     public Resource removeChild(PathElement address) {
         return getDelegate().removeChild(address);
     }
@@ -151,5 +156,10 @@ public class DelegatingResource extends ResourceProvider.ResourceProviderRegistr
     @Override
     protected void registerResourceProvider(String type, ResourceProvider provider) {
         ResourceProvider.Tool.addResourceProvider(type, provider, getDelegate());
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return getDelegate().getOrderedChildTypes();
     }
 }

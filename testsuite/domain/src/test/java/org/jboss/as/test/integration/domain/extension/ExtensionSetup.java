@@ -75,6 +75,7 @@ public class ExtensionSetup {
         }
     }
 
+
     private static void addExtensionAndSubsystem(final DomainClient masterClient, String profileName) throws IOException, MgmtOperationException {
 
         PathAddress profileAddress = PathAddress.pathAddress("profile", profileName);
@@ -124,6 +125,21 @@ public class ExtensionSetup {
         StreamExporter exporter = createResourceRoot(LogStreamExtension.class, EmptySubsystemParser.class.getPackage());
         Map<String, StreamExporter> content = Collections.singletonMap("log-stream-extension.jar", exporter);
         support.addTestModule(LogStreamExtension.MODULE_NAME, moduleXml, content);
+    }
+
+    public static void initializeOrderedChildResourceExtension(final DomainTestSupport support) throws IOException {
+        // Get module.xml, create modules.jar and add to test config
+        final InputStream moduleXml = getModuleXml("ordered-child-resource-module.xml");
+        StreamExporter exporter = createResourceRoot(OrderedChildResourceExtension.class);
+        Map<String, StreamExporter> content = Collections.singletonMap("ordered-child-resource-extension.jar", exporter);
+        support.addTestModule(OrderedChildResourceExtension.MODULE_NAME, moduleXml, content);
+    }
+
+    public static void initialiseProfileIncludesExtension(final DomainTestSupport support) throws IOException {
+        final InputStream moduleXml = getModuleXml("profile-includes-module.xml");
+        StreamExporter exporter = createResourceRoot(ProfileIncludesExtension.class, EmptySubsystemParser.class.getPackage());
+        Map<String, StreamExporter> content = Collections.singletonMap("profile-includes-extension.jar", exporter);
+        support.addTestModule(ProfileIncludesExtension.MODULE_NAME, moduleXml, content);
     }
 
     static StreamExporter createResourceRoot(Class<? extends Extension> extension, Package... additionalPackages) throws IOException {

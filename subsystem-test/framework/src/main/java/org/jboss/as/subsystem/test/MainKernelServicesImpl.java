@@ -107,8 +107,8 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         if ((opAddr.size() > 0 && opAddr.getElement(0).equals(pathElement)) || operation.get(OP).asString().equals(COMPOSITE)) {
 
             final Map<PathAddress, ModelVersion> subsystem = Collections.singletonMap(PathAddress.EMPTY_ADDRESS.append(pathElement), modelVersion);
-            final TransformationTarget transformationTarget = TransformationTargetImpl.create(extensionRegistry.getTransformerRegistry(), getCoreModelVersionByLegacyModelVersion(modelVersion),
-                    subsystem, MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY, TransformationTarget.TransformationTargetType.SERVER, null);
+            final TransformationTarget transformationTarget = TransformationTargetImpl.create(null, extensionRegistry.getTransformerRegistry(), getCoreModelVersionByLegacyModelVersion(modelVersion),
+                    subsystem, TransformationTarget.TransformationTargetType.SERVER);
 
             final Transformers transformers = Transformers.Factory.create(transformationTarget);
             final TransformationContext transformationContext = createTransformationContext(transformationTarget, attachment);
@@ -245,23 +245,5 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         }
         return coreModelVersion;
     }
-
-    private static TransformationTarget.IgnoredTransformationRegistry MOCK_IGNORED_DOMAIN_RESOURCE_REGISTRY = new  TransformationTarget.IgnoredTransformationRegistry() {
-
-        @Override
-        public boolean isResourceTransformationIgnored(PathAddress address) {
-            return false;
-        }
-
-        @Override
-        public boolean isOperationTransformationIgnored(PathAddress address) {
-            return false;
-        }
-
-        @Override
-        public String getHostName() {
-            return null;
-        }
-    };
 
 }

@@ -36,7 +36,11 @@ import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
+import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.version.Version;
 
 /**
@@ -76,11 +80,12 @@ public class DomainTransformers {
         ModelVersion currentVersion = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
         //The chains for transforming will be as follows
-        //For WildFly: 3.0.0 -> 2.1.0 -> 2.0.0
         //For JBoss EAP: 3.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerChainedManagementTransformers(registry, currentVersion);
         registerChainedServerGroupTransformers(registry, currentVersion);
+        registerProfileTransformers(registry, currentVersion);
+        registerSocketBindingGroupTransformers(registry, currentVersion);
     }
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
@@ -91,8 +96,27 @@ public class DomainTransformers {
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain(currentVersion);
         registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7);
+    }
 
-        registerChainedTransformer(registry, builder, VERSION_2_0, VERSION_2_1);
+    private static void registerProfileTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
+        //Do NOT use chained transformers for the profile. The placeholder registry takes precedence over the actual
+        //transformer registry, which means we would not get subsystem transformation
+        ModelVersion[] versions = new ModelVersion[]{VERSION_1_7, VERSION_1_6, VERSION_1_5};
+        for (ModelVersion version : versions) {
+            ResourceTransformationDescriptionBuilder builder =
+                    ResourceTransformationDescriptionBuilder.Factory.createInstance(ProfileResourceDefinition.PATH);
+            builder.getAttributeBuilder()
+                    .addRejectCheck(RejectAttributeChecker.DEFINED, ProfileResourceDefinition.INCLUDES)
+                    .setDiscard(DiscardAttributeChecker.UNDEFINED, ProfileResourceDefinition.INCLUDES)
+                    .end();
+            TransformersSubRegistration domain = registry.getDomainRegistration(version);
+            TransformationDescription.Tools.register(builder.build(), domain);
+        }
+    }
+
+    private static void registerSocketBindingGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
+        ChainedTransformationDescriptionBuilder builder = SocketBindingGroupTransformers.buildTransformerChain(currentVersion);
+        registerChainedTransformer(registry, builder, VERSION_1_7, VERSION_1_6, VERSION_1_5);
     }
 
     private static void registerChainedTransformer(TransformerRegistry registry, ChainedTransformationDescriptionBuilder builder , ModelVersion...versions) {

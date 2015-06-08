@@ -49,7 +49,7 @@ public class DomainXml extends CommonXml {
     private final ExtensionRegistry extensionRegistry;
 
     public DomainXml(final ModuleLoader loader, ExecutorService executorService, ExtensionRegistry extensionRegistry) {
-        super();
+        super(new DomainSocketBindingsXml());
         extensionXml = new ExtensionXml(loader, executorService, extensionRegistry);
         this.extensionRegistry = extensionRegistry;
     }

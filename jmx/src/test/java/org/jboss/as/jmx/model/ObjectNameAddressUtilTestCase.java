@@ -23,6 +23,7 @@ package org.jboss.as.jmx.model;
 
 import static org.jboss.as.controller.PathElement.pathElement;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -138,6 +139,10 @@ public class ObjectNameAddressUtilTestCase {
             resources.put(address.getValue(), resource);
         }
 
+        @Override
+        public void registerChild(PathElement address, int index, Resource resource) {
+            throw new UnsupportedOperationException();
+        }
 
         //THe rest of these don't currently get called
         @Override
@@ -167,6 +172,11 @@ public class ObjectNameAddressUtilTestCase {
         @Override
         public boolean isProxy() {
             return false;
+        }
+
+        @Override
+        public Set<String> getOrderedChildTypes() {
+            return Collections.emptySet();
         }
 
         @Override

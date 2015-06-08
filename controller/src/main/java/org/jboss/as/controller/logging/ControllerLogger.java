@@ -3326,4 +3326,27 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 396, value = "Resource %s is discarded on the target host %s")
     String discardedResourceTransformation(PathAddress address, String host);
 
+    @Message(id = 397, value = "Indexed child resources can only be registered if the parent resource supports ordered children. The parent of '%s' is not indexed")
+    IllegalStateException indexedChildResourceRegistrationNotAvailable(PathElement element);
+
+    @Message(id = 398, value = "An attempt was made to rename the resource found at %s to %s. However, '%s' is one of the resource types defined to be ordered on the parent resource %s")
+    OperationFailedRuntimeException orderedChildTypeRenamed(PathAddress read, PathAddress transformed, String type, Set<String> parentOrderedChildren);
+
+    @Message(id = 399, value = "Model references of type '%s' are missing: %s")
+    OperationFailedException missingReferences(String type, Set<String> missing);
+
+    @Message(id = 400, value = "Profile '%s' is involved in a cycle")
+    OperationFailedException profileInvolvedInACycle(String profile);
+
+    @Message(id = 401, value = "Profile '%s' defines subsystem '%s' which is also defined in its ancestor profile '%s'. Overriding subsystems is not supported")
+    OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String subsystem, String profileName);
+
+    @Message(id = 402, value = "Socket binding group '%s' is involved in a cycle")
+    OperationFailedException socketBindingGroupInvolvedInACycle(String include);
+
+    @Message(id = 403, value = "Socket binding group %s defines socket binding %s which is also defined in its ancestor socket binding group %s. Overriding socket bindings is not supported")
+    OperationFailedException socketBindingGroupAttemptingToOverrideSocketBinding(String existingSubsystemProfile, String child, String resourceName);
+
+    @Message(id = 404, value = "The binding name '%s' in socket binding group '%s' is not unique. Names must be unique across socket-binding, local-destination-outbound-socket-binding and remote-destination-outbound-socket-binding")
+    OperationFailedException bindingNameNotUnique(String name, String groupName);
 }

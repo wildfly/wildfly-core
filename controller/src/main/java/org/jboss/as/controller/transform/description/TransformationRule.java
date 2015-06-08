@@ -177,11 +177,6 @@ abstract class TransformationRule {
         }
 
         @Override
-        public boolean isSkipRuntimeIgnoreCheck() {
-            return delegate.isSkipRuntimeIgnoreCheck();
-        }
-
-        @Override
         public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
             return delegate.getAttachment(key);
         }
@@ -200,6 +195,7 @@ abstract class TransformationRule {
         public <T> T detach(OperationContext.AttachmentKey<T> key) {
             return delegate.detach(key);
         }
+
     }
 
     private static class ChainedTransformedOperation extends OperationTransformer.TransformedOperation {
@@ -353,6 +349,11 @@ abstract class TransformationRule {
        }
 
        @Override
+       public void registerChild(PathElement address, int index, Resource resource) {
+           throw ControllerLogger.ROOT_LOGGER.immutableResource();
+       }
+
+       @Override
        public Resource removeChild(PathElement address) {
            throw ControllerLogger.ROOT_LOGGER.immutableResource();
        }
@@ -365,6 +366,11 @@ abstract class TransformationRule {
        @Override
        public boolean isProxy() {
            return delegate.isProxy();
+       }
+
+       @Override
+       public Set<String> getOrderedChildTypes() {
+           return delegate.getOrderedChildTypes();
        }
 
        public Resource clone() {

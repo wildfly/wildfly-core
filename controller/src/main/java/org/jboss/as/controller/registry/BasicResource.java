@@ -23,6 +23,7 @@
 package org.jboss.as.controller.registry;
 
 import java.util.ConcurrentModificationException;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 
@@ -47,6 +48,14 @@ class BasicResource extends AbstractModelResource implements Resource {
         super(runtimeOnly);
     }
 
+    protected BasicResource(boolean runtimeOnly, String...orderedChildTypes) {
+        super(runtimeOnly, orderedChildTypes);
+    }
+
+    protected BasicResource(boolean runtimeOnly, Set<String> orderedChildTypes) {
+        super(runtimeOnly, orderedChildTypes);
+    }
+
     @Override
     public ModelNode getModel() {
         return model;
@@ -64,7 +73,7 @@ class BasicResource extends AbstractModelResource implements Resource {
     @SuppressWarnings({"CloneDoesntCallSuperClone"})
     @Override
     public Resource clone() {
-        final BasicResource clone = new BasicResource(isRuntime());
+        final BasicResource clone = new BasicResource(isRuntime(), getOrderedChildTypes());
         for (;;) {
             try {
                 clone.writeModel(model);

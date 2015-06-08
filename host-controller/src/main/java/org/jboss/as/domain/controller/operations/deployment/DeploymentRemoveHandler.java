@@ -19,9 +19,11 @@
 package org.jboss.as.domain.controller.operations.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
@@ -69,7 +71,10 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        checkCanRemove(context, operation);
+        if (!isRemovedForReadd(operation)) {
+            //Only check this if this was not removed with the intent of re-addition by the SyncModelOperationHandler
+            checkCanRemove(context, operation);
+        }
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
         final List<byte[]> deploymentHashes = DeploymentUtils.getDeploymentHash(resource);
@@ -170,5 +175,10 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
                 }
             }
         }
+    }
+
+    private boolean isRemovedForReadd(ModelNode operation) {
+        return operation.hasDefined(OPERATION_HEADERS, SYNC_REMOVED_FOR_READD) &&
+                operation.get(OPERATION_HEADERS, SYNC_REMOVED_FOR_READD).asBoolean();
     }
 }

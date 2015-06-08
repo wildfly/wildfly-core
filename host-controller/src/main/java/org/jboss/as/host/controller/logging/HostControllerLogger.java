@@ -914,7 +914,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 91, value = "Resources of type %s cannot be ignored")
     OperationFailedException cannotIgnoreTypeHost(String type);
 
-    @Message(id = 92, value = "An '%s' element whose '%s' attribute is has already been found")
+    @Message(id = 92, value = "An '%s' element whose 'type' attribute is '%s' has already been found")
     XMLStreamException duplicateIgnoredResourceType(String element, String value, @Param Location location);
 
     @Message(id = 93, value = "The JVM input arguments cannot be accessed so system properties passed directly to this Host Controller JVM will not be passed through to server processes. Cause of the problem: %s")

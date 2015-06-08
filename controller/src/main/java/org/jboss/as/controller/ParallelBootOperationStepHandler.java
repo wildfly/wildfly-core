@@ -50,6 +50,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
     private final Executor executor;
     private final ImmutableManagementResourceRegistration rootRegistration;
     private final ControlledProcessState processState;
+    private final OperationStepHandler extraValidationStepHandler;
 
     private final ModelControllerImpl controller;
     private final int operationId;
@@ -58,13 +59,15 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
     private ParsedBootOp ourOp;
 
     ParallelBootOperationStepHandler(final ExecutorService executorService, final ImmutableManagementResourceRegistration rootRegistration,
-                                     final ControlledProcessState processState, final ModelControllerImpl controller, final int operationId) {
+                                     final ControlledProcessState processState, final ModelControllerImpl controller,
+                                     final int operationId, final OperationStepHandler extraValidationStepHandler) {
         this.executor = executorService;
         this.rootRegistration = rootRegistration;
         this.processState = processState;
 
         this.controller = controller;
         this.operationId = operationId;
+        this.extraValidationStepHandler = extraValidationStepHandler;
     }
 
     boolean addSubsystemOperation(final ParsedBootOp parsedOp) {
@@ -347,7 +350,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             try {
                 operationContext = new ParallelBootOperationContext(transactionControl, processState,
                         primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(),
-                        controller.getManagementModel().getRootResource());
+                        controller.getManagementModel().getRootResource(), extraValidationStepHandler);
                 for (ParsedBootOp op : bootOperations) {
                     final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
                     operationContext.addStep(op.response, op.operation, osh, executionStage);

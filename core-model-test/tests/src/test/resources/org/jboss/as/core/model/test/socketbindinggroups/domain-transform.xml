@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright ${year}, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<domain xmlns="urn:jboss:domain:4.0">
+    <interfaces>
+        <interface name="public"/>
+        <interface name="management"/>
+    </interfaces>
+    <socket-binding-groups>
+        <socket-binding-group name="standard-sockets" default-interface="${testing.default.interface:public}">
+            <socket-binding name="specified-interface" interface="${testing.default.interface:management}" port="${testing.specified.interface.port:1111}"/>
+            <socket-binding name="multicast" port="1922" fixed-port="${testing.multicast.fixed-port:true}" multicast-address="${testing.multicast.multicast-address:127.0.0.1}" multicast-port="${testing.multicast.multicast-address:1234}"/>
+            <socket-binding name="default-interface" port="8009"/>
+            <socket-binding name="client-mapping" port="2222">
+                <client-mapping destination-address="${testing.client.mapping.interface.0.address:localhost}"/>
+                <client-mapping source-network="${testing.client.mapping.interface.1.network:127.0.0.0/24}"
+                                destination-address="${testing.client.mapping.interface.1.address:localhost}"
+                                destination-port="${testing.client.mapping.interface.1.port:3333}"/>
+            </socket-binding>
+            <outbound-socket-binding name="out-local">
+                <local-destination socket-binding-ref="${testing.local.destination.ref:standard-sockets}"/>
+            </outbound-socket-binding>
+            <outbound-socket-binding name="mail-smtp">
+                <remote-destination host="${smtp.mail.server.host:127.0.0.1}" port="${smtp.mail.server.port:25}"/>
+            </outbound-socket-binding>
+        </socket-binding-group>
+    </socket-binding-groups>
+</domain>

@@ -34,10 +34,23 @@ import org.jboss.dmr.ModelNode;
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
  */
 class ValidateModelStepHandler implements OperationStepHandler {
-    static final ValidateModelStepHandler INSTANCE = new ValidateModelStepHandler();
+    private static volatile ValidateModelStepHandler INSTANCE;
 
-    private ValidateModelStepHandler() {
+    private final OperationStepHandler extraValidationStepHandler;
 
+    private ValidateModelStepHandler(OperationStepHandler extraValidationStepHandler) {
+        this.extraValidationStepHandler = extraValidationStepHandler;
+    }
+
+    static ValidateModelStepHandler getInstance(OperationStepHandler extraValidationStepHandler) {
+        if (INSTANCE == null) {
+            synchronized (ValidateModelStepHandler.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new ValidateModelStepHandler(extraValidationStepHandler);
+                }
+            }
+        }
+        return INSTANCE;
     }
 
     @Override
@@ -45,6 +58,10 @@ class ValidateModelStepHandler implements OperationStepHandler {
         final Resource resource = loadResource(context);
         if (resource == null) {
             return;
+        }
+
+        if (extraValidationStepHandler != null) {
+            context.addStep(operation, extraValidationStepHandler, Stage.MODEL);
         }
 
         final ModelNode model = resource.getModel();

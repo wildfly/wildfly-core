@@ -51,7 +51,7 @@ public class StandaloneXml extends CommonXml {
 
     public StandaloneXml(final ModuleLoader loader, final ExecutorService executorService,
             final ExtensionRegistry extensionRegistry) {
-        super();
+        super(new SocketBindingsXml.ServerSocketBindingsXml());
         extensionXml = new ExtensionXml(loader, executorService, extensionRegistry);
         this.extensionRegistry = extensionRegistry;
     }

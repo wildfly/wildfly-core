@@ -26,23 +26,32 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_START;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START;
@@ -50,21 +59,27 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.getServerConfigAddress;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.startServer;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.waitUntilState;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -106,14 +121,53 @@ public class ServerManagementTestCase {
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        ExtensionSetup.initialiseProfileIncludesExtension(testSupport);
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        DomainTestUtils.executeForResult(Util.createAddOperation(
+                PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.profile-includes-test")), masterClient);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
+        if (domainMasterLifecycleUtil != null) {
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(
+                    PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.profile-includes-test")), domainMasterLifecycleUtil.getDomainClient());
+        }
+
         testSupport.stop();
         testSupport = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
+    }
+
+    @Test
+    public void testCloneProfile() throws Exception {
+        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        try {
+            final ModelNode composite = new ModelNode();
+            composite.get(OP).set(COMPOSITE);
+            composite.get(OP_ADDR).setEmptyList();
+
+            final ModelNode steps = composite.get(STEPS);
+
+            final ModelNode op = steps.add();
+            op.get(OP).set(CLONE);
+            op.get(OP_ADDR).add(PROFILE, "default");
+            op.get(TO_PROFILE).set("test");
+
+            final ModelNode rr = steps.add();
+            rr.get(OP).set(READ_RESOURCE_OPERATION);
+            rr.get(OP_ADDR).add("profile", "test");
+            rr.get(RECURSIVE).set(true);
+
+            executeForResult(client, composite);
+
+            final ModelNode master = executeForResult(domainMasterLifecycleUtil.getDomainClient(), rr);
+            final ModelNode slave = executeForResult(domainSlaveLifecycleUtil.getDomainClient(), rr);
+            Assert.assertEquals(master, slave);
+        } finally {
+            removeProfileAndSubsystems(client, "test");
+        }
     }
 
     @Test
@@ -303,6 +357,246 @@ public class ServerManagementTestCase {
         }
     }
 
+
+    @Test
+    public void testIncludes() throws Exception {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+
+        //The 'one' and 'two' subsystems used in this test come from the profile-includes-test extension added by the
+        //setup
+        PathAddress rootProfileAddr = PathAddress.pathAddress(PROFILE, "root");
+        DomainTestUtils.executeForResult(
+                Util.createAddOperation(rootProfileAddr), masterClient);
+        try {
+            PathAddress child1ProfileAddr = PathAddress.pathAddress(PROFILE, "child1");
+            ModelNode child1Add = Util.createAddOperation(child1ProfileAddr);
+            child1Add.get(INCLUDES).add("root");
+            DomainTestUtils.executeForResult(child1Add, masterClient);
+            try {
+                //A clone _with_ includes (unlike testCloneProfile())
+                ModelNode clone = Util.createEmptyOperation(CLONE, child1ProfileAddr);
+                clone.get(TO_PROFILE).set("child2");
+                DomainTestUtils.executeForResult(clone, masterClient);
+                try {
+                    ModelNode includes = DomainTestUtils.executeForResult(
+                            Util.createOperation(READ_RESOURCE_OPERATION, child1ProfileAddr), masterClient)
+                            .get(INCLUDES);
+                    Assert.assertTrue(includes.isDefined());
+                    Assert.assertEquals(ModelType.LIST, includes.getType());
+                    Assert.assertEquals(1, includes.asList().size());
+                    Assert.assertEquals("root", includes.get(0).asString());
+                } finally {
+                    removeProfileAndSubsystems(masterClient, "child2");
+                }
+
+                //Now let's try to add some subsystems to check that overriding does not work
+                //We only do adds here, changing the includes attribute is handled by ProfileIncludesHandlerTestCase
+                DomainTestUtils.executeForResult(
+                        Util.createAddOperation(child1ProfileAddr.append(SUBSYSTEM, "one")),
+                        masterClient);
+                DomainTestUtils.executeForFailure(
+                        Util.createAddOperation(rootProfileAddr.append(SUBSYSTEM, "one")),
+                        masterClient);
+                DomainTestUtils.executeForResult(
+                        Util.createAddOperation(rootProfileAddr.append(SUBSYSTEM, "two")),
+                        masterClient);
+                DomainTestUtils.executeForFailure(
+                        Util.createAddOperation(child1ProfileAddr.append(SUBSYSTEM, "two")),
+                        masterClient);
+
+                //Check that both the master and slave have the same profiles
+                ModelNode masterProfiles =
+                        getProfiles(readResource(masterClient, PathAddress.EMPTY_ADDRESS), "root", "child1");
+                ModelNode slaveProfiles = getProfiles(
+                        readResource(domainSlaveLifecycleUtil.getDomainClient(), PathAddress.EMPTY_ADDRESS), "root", "child1");
+                Assert.assertEquals(masterProfiles, slaveProfiles);
+                Assert.assertTrue(masterProfiles.get("root", SUBSYSTEM).isDefined());
+                Set<String> masterSubsystems = masterProfiles.get("root", SUBSYSTEM).keys();
+                Assert.assertEquals(1, masterSubsystems.size());
+                Assert.assertEquals("two", masterSubsystems.iterator().next());
+                Assert.assertTrue(masterProfiles.get("child1", SUBSYSTEM).isDefined());
+                Set<String> slaveSubsystems = slaveProfiles.get("child1", SUBSYSTEM).keys();
+                Assert.assertEquals(1, slaveSubsystems.size());
+                Assert.assertEquals("one", slaveSubsystems.iterator().next());
+
+                //Now add a server group
+                final PathAddress groupAddr = PathAddress.pathAddress(SERVER_GROUP, "test-group");
+                ModelNode group = Util.createAddOperation(groupAddr);
+                group.get(PROFILE).set("child1");
+                group.get(SOCKET_BINDING_GROUP).set("standard-sockets");
+                DomainTestUtils.executeForResult(group, masterClient);
+                try {
+                    //Add a server and make sure it has all the subsystems
+                    PathAddress serverConfAddr =
+                            PathAddress.pathAddress(HOST, "slave").append(SERVER_CONFIG, "includes-server");
+                    ModelNode add = Util.createAddOperation(serverConfAddr);
+                    add.get(GROUP).set("test-group");
+                    add.get(PORT_OFFSET).set("550");
+                    DomainTestUtils.executeForResult(add, masterClient);
+
+                    try {
+                        ModelNode start = Util.createEmptyOperation(START, serverConfAddr);
+                        start.get(BLOCKING).set(true);
+                        DomainTestUtils.executeForResult(start, masterClient);
+                        try {
+                            PathAddress serverAddr =
+                                    PathAddress.pathAddress(HOST, "slave").append(SERVER, "includes-server");
+                            //Check we have the same subsystems
+                            ModelNode model = readResource(masterClient, serverAddr);
+                            Set<String> subsystems = model.get(SUBSYSTEM).keys();
+                            Assert.assertEquals(2, subsystems.size());
+                            Assert.assertTrue(subsystems.contains("one"));
+                            Assert.assertTrue(subsystems.contains("two"));
+
+                            //Add a subsystem to the root (included) profile and make sure it gets propagated to the server
+                            DomainTestUtils.executeForResult(
+                                    Util.createAddOperation(rootProfileAddr.append(SUBSYSTEM, "three")),
+                                    masterClient);
+                            model = readResource(masterClient, serverAddr);
+                            subsystems = model.get(SUBSYSTEM).keys();
+                            Assert.assertEquals(3, subsystems.size());
+                            Assert.assertTrue(subsystems.contains("one"));
+                            Assert.assertTrue(subsystems.contains("two"));
+                            Assert.assertTrue(subsystems.contains("three"));
+
+                            //Remove a subsystem from the root (included) profile and make sure it gets propagated to the server
+                            DomainTestUtils.executeForResult(
+                                    Util.createRemoveOperation(rootProfileAddr.append(SUBSYSTEM, "two")),
+                                    masterClient);
+                            model = readResource(masterClient, serverAddr);
+                            subsystems = model.get(SUBSYSTEM).keys();
+                            Assert.assertEquals(2, subsystems.size());
+                            Assert.assertTrue(subsystems.contains("one"));
+                            Assert.assertTrue(subsystems.contains("three"));
+                        } finally {
+                            ModelNode stop = Util.createEmptyOperation(STOP, serverConfAddr);
+                            stop.get(BLOCKING).set(true);
+                            DomainTestUtils.executeForResult(stop, masterClient);
+                        }
+                    } finally {
+                        DomainTestUtils.executeForResult(Util.createRemoveOperation(serverConfAddr), masterClient);
+                    }
+                } finally {
+                    DomainTestUtils.executeForResult(Util.createRemoveOperation(groupAddr), masterClient);
+                }
+            } finally {
+                removeProfileAndSubsystems(masterClient, "child1");
+            }
+        } finally {
+            removeProfileAndSubsystems(masterClient, "root");
+        }
+    }
+
+    @Test
+    public void testSocketBindingGroupIncludes() throws Exception {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final PathAddress root1 = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "root1");
+        DomainTestUtils.executeForResult(createSocketBindingGroupAddOperation(root1), masterClient);
+        try {
+            final PathAddress root2 = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "root2");
+            DomainTestUtils.executeForResult(createSocketBindingGroupAddOperation(root2), masterClient);
+            try {
+                final PathAddress child = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "child");
+                ModelNode childAdd = createSocketBindingGroupAddOperation(child, "root1");
+                DomainTestUtils.executeForResult(childAdd, masterClient);
+                try {
+                    DomainTestUtils.executeForResult(createSocketBindingAddOperation(root1, "rootA", 123), masterClient);
+                    DomainTestUtils.executeForResult(createSocketBindingAddOperation(root2, "rootB", 234), masterClient);
+                    DomainTestUtils.executeForResult(createSocketBindingAddOperation(child, "child", 456), masterClient);
+
+                    final PathAddress groupAddr = PathAddress.pathAddress(SERVER_GROUP, "test-group");
+                    ModelNode group = Util.createAddOperation(groupAddr);
+                    group.get(PROFILE).set("default");
+                    group.get(SOCKET_BINDING_GROUP).set("child");
+                    DomainTestUtils.executeForResult(group, masterClient);
+                    try {
+                        final PathAddress serverConfAddr =
+                                PathAddress.pathAddress(HOST, "slave").append(SERVER_CONFIG, "includes-server");
+                        ModelNode add = Util.createAddOperation(serverConfAddr);
+                        add.get(GROUP).set("test-group");
+                        add.get(PORT_OFFSET).set("550");
+                        DomainTestUtils.executeForResult(add, masterClient);
+                        try {
+                            final ModelNode start = Util.createEmptyOperation(START, serverConfAddr);
+                            start.get(BLOCKING).set(true);
+                            DomainTestUtils.executeForResult(start, masterClient);
+                            try {
+                                final PathAddress serverAddr =
+                                        PathAddress.pathAddress(HOST, "slave").append(SERVER, "includes-server");
+
+                                ModelNode model = readResource(masterClient, serverAddr.append(SOCKET_BINDING_GROUP, "child"));
+                                Assert.assertEquals(2, model.get(SOCKET_BINDING).keys().size());
+                                Assert.assertEquals(123, model.get(SOCKET_BINDING, "rootA", PORT).asInt());
+                                Assert.assertEquals(456, model.get(SOCKET_BINDING, "child", PORT).asInt());
+
+                                DomainTestUtils.executeForResult(createSocketBindingAddOperation(root1, "rootA1", 567), masterClient);
+                                model = readResource(masterClient, serverAddr.append(SOCKET_BINDING_GROUP, "child"));
+                                Assert.assertEquals(3, model.get(SOCKET_BINDING).keys().size());
+                                Assert.assertEquals(123, model.get(SOCKET_BINDING, "rootA", PORT).asInt());
+                                Assert.assertEquals(456, model.get(SOCKET_BINDING, "child", PORT).asInt());
+                                Assert.assertEquals(567, model.get(SOCKET_BINDING, "rootA1", PORT).asInt());
+
+                                DomainTestUtils.executeForResult(createSocketBindingAddOperation(child, "child1", 678), masterClient);
+                                model = readResource(masterClient, serverAddr.append(SOCKET_BINDING_GROUP, "child"));
+                                Assert.assertEquals(4, model.get(SOCKET_BINDING).keys().size());
+                                Assert.assertEquals(123, model.get(SOCKET_BINDING, "rootA", PORT).asInt());
+                                Assert.assertEquals(456, model.get(SOCKET_BINDING, "child", PORT).asInt());
+                                Assert.assertEquals(567, model.get(SOCKET_BINDING, "rootA1", PORT).asInt());
+                                Assert.assertEquals(678, model.get(SOCKET_BINDING, "child1", PORT).asInt());
+
+                                DomainTestUtils.executeForResult(
+                                        Util.getWriteAttributeOperation(child.append(SOCKET_BINDING, "child1"), PORT, 6789)
+                                        , masterClient);
+                                model = readResource(masterClient, serverAddr.append(SOCKET_BINDING_GROUP, "child"));
+                                Assert.assertEquals(4, model.get(SOCKET_BINDING).keys().size());
+                                Assert.assertEquals(123, model.get(SOCKET_BINDING, "rootA", PORT).asInt());
+                                Assert.assertEquals(456, model.get(SOCKET_BINDING, "child", PORT).asInt());
+                                Assert.assertEquals(567, model.get(SOCKET_BINDING, "rootA1", PORT).asInt());
+                                Assert.assertEquals(6789, model.get(SOCKET_BINDING, "child1", PORT).asInt());
+
+                                DomainTestUtils.executeForResult(
+                                        Util.createRemoveOperation(child.append(SOCKET_BINDING, "child1")) , masterClient);
+                                model = readResource(masterClient, serverAddr.append(SOCKET_BINDING_GROUP, "child"));
+                                Assert.assertEquals(3, model.get(SOCKET_BINDING).keys().size());
+                                Assert.assertEquals(123, model.get(SOCKET_BINDING, "rootA", PORT).asInt());
+                                Assert.assertEquals(456, model.get(SOCKET_BINDING, "child", PORT).asInt());
+                                Assert.assertEquals(567, model.get(SOCKET_BINDING, "rootA1", PORT).asInt());
+                            } finally {
+                                final ModelNode stop = Util.createEmptyOperation(STOP, serverConfAddr);
+                                stop.get(BLOCKING).set(true);
+                                DomainTestUtils.executeForResult(stop, masterClient);
+                            }
+                        } finally {
+                            DomainTestUtils.executeForResult(Util.createRemoveOperation(serverConfAddr), masterClient);
+                        }
+
+                    } finally {
+                        DomainTestUtils.executeForResult(Util.createRemoveOperation(groupAddr), masterClient);
+                    }
+                } finally {
+                    DomainTestUtils.executeForResult(Util.createRemoveOperation(child), masterClient);
+                }
+            } finally {
+                DomainTestUtils.executeForResult(Util.createRemoveOperation(root2), masterClient);
+            }
+        } finally {
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(root1), masterClient);
+        }
+    }
+
+    private void removeProfileAndSubsystems(final DomainClient client, String profileName) throws Exception {
+        PathAddress profileAddr = PathAddress.pathAddress(PROFILE, profileName);
+        ModelNode op = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION,
+                profileAddr);
+        op.get(CHILD_TYPE).set(SUBSYSTEM);
+        ModelNode subsystems = DomainTestUtils.executeForResult(op, client);
+        for (ModelNode subsystem : subsystems.asList()) {
+            executeForResult(client, Util.createRemoveOperation(
+                    profileAddr.append(SUBSYSTEM, subsystem.asString())));
+        }
+        executeForResult(client, Util.createRemoveOperation(profileAddr));
+    }
+
     private void executeLifecycleOperation(final ModelControllerClient client, String opName) throws IOException {
         executeLifecycleOperation(client, null, opName);
     }
@@ -356,4 +650,36 @@ public class ServerManagementTestCase {
             client.execute(operation);
         }
     }
+
+    private ModelNode readResource(DomainClient client, PathAddress addr) throws Exception {
+        ModelNode op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, addr);
+        op.get(RECURSIVE).set(true);
+        return DomainTestUtils.executeForResult(op, client);
+    }
+
+    private ModelNode getProfiles(ModelNode model, String...profiles) {
+        ModelNode result = new ModelNode();
+        for (String name : profiles) {
+            Assert.assertTrue(model.hasDefined(PROFILE, name));
+            ModelNode profile = model.get(PROFILE, name);
+            result.get(name).set(profile);
+        }
+        return result;
+    }
+
+    private ModelNode createSocketBindingGroupAddOperation(PathAddress groupAddr, String...includes) {
+        ModelNode add = Util.createAddOperation(groupAddr);
+        add.get(DEFAULT_INTERFACE).set("public");
+        for (String include : includes) {
+            add.get(INCLUDES).add(include);
+        }
+        return add;
+    }
+
+    private ModelNode createSocketBindingAddOperation(PathAddress groupAddr, String name, int port) {
+        ModelNode add = Util.createAddOperation(groupAddr.append(SOCKET_BINDING, name));
+        add.get(PORT).set(port);
+        return add;
+    }
+
 }

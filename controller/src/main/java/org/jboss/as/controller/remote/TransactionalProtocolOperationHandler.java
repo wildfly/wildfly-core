@@ -29,13 +29,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
+import javax.security.auth.Subject;
 import java.io.DataInput;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.CountDownLatch;
-
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;

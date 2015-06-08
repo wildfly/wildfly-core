@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +42,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootErrorCollector;
@@ -415,7 +414,7 @@ public class ModelParserUtils {
         final ModelController controller = createController(serviceContainer, ProcessType.HOST_CONTROLLER, model, new Setup() {
             public void setup(ModelControllerService modelControllerService, Resource resource, ManagementResourceRegistration rootRegistration, DelegatingConfigurableAuthorizer authorizer) {
                 DomainRootDefinition def = new DomainRootDefinition(null, null, persister, new MockContentRepository(), new MockFileRepository(), true, null, extensionRegistry, null,
-                        MOCK_PATH_MANAGER, null, authorizer, null, modelControllerService.getRootResourceRegProvider());
+                        MOCK_PATH_MANAGER, authorizer, null, modelControllerService.getRootResourceRegProvider());
                 def.initialize(rootRegistration);
             }
         });

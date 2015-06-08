@@ -37,5 +37,4 @@ public class DomainSocketBindingGroupTest extends AbstractSocketBindingGroupTest
     protected String getXmlResource() {
         return "domain.xml";
     }
-
 }
