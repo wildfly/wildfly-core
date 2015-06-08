@@ -86,6 +86,16 @@ public class AttributeNamePathCompletionTestCase {
             "              }" +
             "          }" +
             "      }" +
+            "}," +
+            "\"module-options\" => {" +
+            "      \"type\" => OBJECT," +
+            "      \"description\" => \"List of module options containing a name/value pair.\"," +
+            "      \"expressions-allowed\" => true," +
+            "      \"nillable\" => true," +
+            "      \"value-type\" => STRING," +
+            "      \"access-type\" => \"read-write\"," +
+            "      \"storage\" => \"configuration\"," +
+            "      \"restart-required\" => \"no-services\"" +
             "}" +
         "}";
 
@@ -99,7 +109,7 @@ public class AttributeNamePathCompletionTestCase {
 
         int i;
         i = completer.complete(null, "", 0, candidates);
-        assertEquals(Arrays.asList("step1", "str", "str2"), candidates);
+        assertEquals(Arrays.asList("module-options", "step1", "str", "str2"), candidates);
         assertEquals(0, i);
 
         candidates.clear();
@@ -166,5 +176,20 @@ public class AttributeNamePathCompletionTestCase {
         i = completer.complete(null, "step1.step2[12].", 0, candidates);
         assertEquals(Arrays.asList("str"), candidates);
         assertEquals(16, i);
+
+        candidates.clear();
+        i = completer.complete(null, "m", 0, candidates);
+        assertEquals(Arrays.asList("module-options"), candidates);
+        assertEquals(0, i);
+
+        candidates.clear();
+        i = completer.complete(null, "module-options", 0, candidates);
+        assertEquals(Arrays.asList("."), candidates);
+        assertEquals(14, i);
+
+        candidates.clear();
+        i = completer.complete(null, "module-options.", 0, candidates);
+        assertEquals(Collections.emptyList(), candidates);
+        assertEquals(-1, i);
     }
 }

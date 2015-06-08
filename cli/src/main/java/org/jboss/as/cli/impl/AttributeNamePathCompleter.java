@@ -160,6 +160,10 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
                     return Collections.emptyList();
                 }
                 typeDescr = descr.get(Util.VALUE_TYPE);
+                if(typeDescr.getType() != ModelType.OBJECT &&
+                        typeDescr.getType() != ModelType.PROPERTY) {
+                    return Collections.emptyList();
+                }
             }
 
             Collection<String> attrNames = typeDescr.keys();
