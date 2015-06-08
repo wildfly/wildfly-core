@@ -30,6 +30,14 @@ if [ -z "$JBOSS_HOME" ]; then
 fi
 export JBOSS_HOME
 
+if [ -z "$JBOSS_MANAGEMENT_NATIVE_HOST" ]; then
+  JBOSS_MANAGEMENT_NATIVE_HOST=127.0.0.1
+fi
+
+if [ -z "$JBOSS_MANAGEMENT_NATIVE_PORT" ]; then
+  JBOSS_MANAGEMENT_NATIVE_PORT=9999
+fi
+
 if [ -z "$JBOSS_PIDFILE" ]; then
 	JBOSS_PIDFILE=/var/run/wildfly/wildfly.pid
 fi
@@ -114,8 +122,8 @@ start() {
 
 	until [ $count -gt $STARTUP_WAIT ]
 	do
-		grep 'WFLYSRV0025:' $JBOSS_CONSOLE_LOG > /dev/null
-		if [ $? -eq 0 ] ; then
+		state=$(sh $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_MANAGEMENT_NATIVE_HOST:$JBOSS_MANAGEMENT_NATIVE_PORT --command="read-attribute server-state")
+		if [ "$state" = "running" ] ; then
 			launched=true
 			break
 		fi
