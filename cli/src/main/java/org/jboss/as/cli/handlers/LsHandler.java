@@ -66,6 +66,9 @@ public class LsHandler extends CommandHandlerWithHelp {
         resolve = new ArgumentWithoutValue(this, "--resolve-expressions") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if(!super.canAppearNext(ctx)) {
+                    return false;
+                }
                 ModelNode op = new ModelNode();
                 op.get("operation").set("read-operation-description");
                 op.get("name").set("read-attribute");

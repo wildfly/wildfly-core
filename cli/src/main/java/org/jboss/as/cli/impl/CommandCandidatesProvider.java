@@ -79,7 +79,7 @@ public class CommandCandidatesProvider implements OperationCandidatesProvider {
         if(handler == null) {
             return Collections.emptyList();
         }
-        return handler.getArguments(ctx);
+        return handler.isAvailable(ctx) ? handler.getArguments(ctx) : Collections.emptyList();
     }
 
     @Override
