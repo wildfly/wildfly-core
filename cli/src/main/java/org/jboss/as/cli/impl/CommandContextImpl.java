@@ -137,8 +137,6 @@ import org.jboss.as.cli.handlers.ifelse.IfHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverInfoHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverNameProvider;
 import org.jboss.as.cli.handlers.jca.XADataSourceAddCompositeHandler;
-import org.jboss.as.cli.handlers.jms.CreateJmsResourceHandler;
-import org.jboss.as.cli.handlers.jms.DeleteJmsResourceHandler;
 import org.jboss.as.cli.handlers.module.ASModuleHandler;
 import org.jboss.as.cli.handlers.trycatch.CatchHandler;
 import org.jboss.as.cli.handlers.trycatch.EndTryHandler;
@@ -462,14 +460,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         xaDsHandler.addHandler("add", xaDsAddHandler);
         cmdRegistry.registerHandler(xaDsHandler, "xa-data-source");
         cmdRegistry.registerHandler(new JDBCDriverInfoHandler(this), "jdbc-driver-info");
-
-        // JMS
-        cmdRegistry.registerHandler(new GenericTypeOperationHandler(this, "/subsystem=messaging/hornetq-server=default/jms-queue", "queue-address"), "jms-queue");
-        cmdRegistry.registerHandler(new GenericTypeOperationHandler(this, "/subsystem=messaging/hornetq-server=default/jms-topic", "topic-address"), "jms-topic");
-        cmdRegistry.registerHandler(new GenericTypeOperationHandler(this, "/subsystem=messaging/hornetq-server=default/connection-factory", null), "connection-factory");
-        // these are used for the cts setup
-        cmdRegistry.registerHandler(new CreateJmsResourceHandler(this), false, "create-jms-resource");
-        cmdRegistry.registerHandler(new DeleteJmsResourceHandler(this), false, "delete-jms-resource");
 
         // rollout plan
         final GenericTypeOperationHandler rolloutPlan = new GenericTypeOperationHandler(this, "/management-client-content=rollout-plans/rollout-plan", null);

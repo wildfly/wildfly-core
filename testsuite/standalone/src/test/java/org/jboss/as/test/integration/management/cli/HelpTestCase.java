@@ -74,21 +74,6 @@ public class HelpTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testJmsQueueHelp() throws Exception {
-        testCmdHelp("jms-queue");
-    }
-
-    @Test
-    public void testJmsTopicHelp() throws Exception {
-        testCmdHelp("jms-topic");
-    }
-
-    @Test
-    public void testJmsConnectionFactoryHelp() throws Exception {
-        testCmdHelp("connection-factory");
-    }
-
-    @Test
     public void testDataSourceHelp() throws Exception {
         testCmdHelp("data-source");
     }
