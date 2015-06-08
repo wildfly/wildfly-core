@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "x$WILDFLY_HOME" = "x" ]; then
-    WILDFLY_HOME="/usr/share/wildfly"
+    WILDFLY_HOME="/opt/wildfly"
 fi
 
 if [[ "$1" == "domain" ]]; then
