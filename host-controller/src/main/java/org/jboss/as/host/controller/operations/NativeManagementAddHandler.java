@@ -22,6 +22,9 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -50,7 +53,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
 
 
     public NativeManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo) {
-        super(NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+        super(NATIVE_MANAGEMENT_CAPABILITY, ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
     }
 

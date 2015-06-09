@@ -23,11 +23,13 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
+import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+import io.undertow.server.ListenerRegistry;
 
 import java.util.Collection;
 import java.util.concurrent.Executor;
 
-import io.undertow.server.ListenerRegistry;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -77,7 +79,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     private final HostControllerEnvironment environment;
 
     public HttpManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
-        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+        super(HTTP_MANAGEMENT_CAPABILITY, ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
         this.environment = environment;
     }

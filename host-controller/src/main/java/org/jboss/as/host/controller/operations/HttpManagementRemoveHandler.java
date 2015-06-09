@@ -22,7 +22,10 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+
 import java.util.Collections;
+
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -44,6 +47,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     private final HostControllerEnvironment environment;
 
     public HttpManagementRemoveHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
+        super(HTTP_MANAGEMENT_CAPABILITY);
         this.hostControllerInfo = hostControllerInfo;
         this.environment = environment;
     }

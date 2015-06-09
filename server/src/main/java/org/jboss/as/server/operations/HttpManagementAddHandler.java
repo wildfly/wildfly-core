@@ -23,11 +23,12 @@
 package org.jboss.as.server.operations;
 
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.ALLOWED_ORIGINS;
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
-
 import io.undertow.server.ListenerRegistry;
+
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -81,7 +82,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
     public HttpManagementAddHandler() {
-        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+        super(HTTP_MANAGEMENT_CAPABILITY, HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
 
     @Override
