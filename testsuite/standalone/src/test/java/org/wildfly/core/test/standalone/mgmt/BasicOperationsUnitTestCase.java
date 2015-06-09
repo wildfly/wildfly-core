@@ -279,6 +279,7 @@ public class BasicOperationsUnitTestCase {
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         assertEquals(result.get(FAILURE_DESCRIPTION).isDefined() ? result.get(FAILURE_DESCRIPTION).asString() : "", SUCCESS, result.get(OUTCOME).asString());
         assertTrue(result.hasDefined(RESULT));
+        assertTrue(result.get(RESULT).hasDefined(ModelDescriptionConstants.UUID));
     }
 
     @Test

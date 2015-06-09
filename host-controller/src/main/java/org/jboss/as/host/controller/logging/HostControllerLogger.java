@@ -1223,4 +1223,7 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id=159, value="Invalid discovery type %s")
     String invalidDiscoveryType(String type);
+
+    @Message(id = 160, value = "Could not read or create the domain UUID in file: %s")
+    IllegalStateException couldNotObtainDomainUuid(@Cause Throwable cause, Path file);
 }

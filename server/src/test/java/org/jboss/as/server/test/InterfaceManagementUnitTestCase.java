@@ -295,7 +295,7 @@ public class InterfaceManagementUnitTestCase {
             this.rootResourceDefinition = rootResourceDefinition;
 
             Properties properties = new Properties();
-            properties.put("jboss.home.dir", ".");
+            properties.put("jboss.home.dir", System.getProperty("basedir", ".") + File.separatorChar + "target");
 
             final String hostControllerName = "hostControllerName"; // Host Controller name may not be null when in a managed domain
             environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null, ServerEnvironment.LaunchType.DOMAIN, null, new ProductConfig(Module.getBootModuleLoader(), ".", properties));

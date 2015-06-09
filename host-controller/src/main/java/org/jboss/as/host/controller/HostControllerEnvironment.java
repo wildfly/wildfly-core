@@ -26,10 +26,13 @@
 package org.jboss.as.host.controller;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
@@ -237,6 +240,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private volatile String hostControllerName;
     private final HostRunningModeControl runningModeControl;
     private final boolean securityManagerEnabled;
+    private final UUID domainUUID;
 
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
                                      InetAddress processControllerAddress, Integer processControllerPort, InetAddress hostControllerAddress,
@@ -461,7 +465,14 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         } else {
             this.defaultJVM = null;
         }
-
+        final Path filePath = this.domainDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
+        UUID uuid = null;
+        try {
+            uuid = obtainProcessUUID(filePath);
+        } catch(IOException ex) {
+            throw HostControllerLogger.ROOT_LOGGER.couldNotObtainDomainUuid(ex, filePath);
+        }
+        this.domainUUID = uuid;
         this.backupDomainFiles = backupDomainFiles;
         this.useCachedDc = useCachedDc;
         this.productConfig = productConfig;
@@ -802,5 +813,10 @@ public class HostControllerEnvironment extends ProcessEnvironment {
             }
         }
         return result;
+    }
+
+    @Override
+    public UUID getInstanceUuid() {
+        return this.domainUUID;
     }
 }

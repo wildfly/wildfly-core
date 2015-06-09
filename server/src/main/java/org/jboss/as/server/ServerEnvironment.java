@@ -25,11 +25,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -310,6 +312,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final RunningMode initialRunningMode;
     private final ProductConfig productConfig;
     private final RunningModeControl runningModeControl;
+    private final UUID serverUUID;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType, final RunningMode initialRunningMode, ProductConfig productConfig) {
@@ -536,7 +539,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
         }
         allowModelControllerExecutor = allowExecutor;
-
+        final Path filePath = this.serverDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
+        UUID uuid = null;
+        try {
+            uuid = obtainProcessUUID(filePath);
+        } catch(IOException ex) {
+            throw ServerLogger.ROOT_LOGGER.couldNotObtainServerUuidFile(ex, filePath);
+        }
+        this.serverUUID = uuid;
         this.productConfig = productConfig;
 
         // Keep a copy of the original properties
@@ -990,6 +1000,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     public ProductConfig getProductConfig() {
         return productConfig;
+    }
+
+    @Override
+    public UUID getInstanceUuid() {
+        return this.serverUUID;
     }
 
     /**
