@@ -47,6 +47,10 @@ public class ConnectorAdd extends AbstractAddStepHandler {
 
     static final ConnectorAdd INSTANCE = new ConnectorAdd();
 
+    private ConnectorAdd() {
+        super(ConnectorResource.CONNECTOR_CAPABILITY); // TODO pass in the ADs and remove populateModel
+    }
+
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
         ConnectorResource.SOCKET_BINDING.validateAndSet(operation, model);
         ConnectorResource.AUTHENTICATION_PROVIDER.validateAndSet(operation, model);
@@ -71,7 +75,8 @@ public class ConnectorAdd extends AbstractAddStepHandler {
 
         final ServiceTarget target = context.getServiceTarget();
 
-        final ServiceName socketBindingName = SocketBinding.JBOSS_BINDING_NAME.append(ConnectorResource.SOCKET_BINDING.resolveModelAttribute(context, fullModel).asString());
+        final String socketName = ConnectorResource.SOCKET_BINDING.resolveModelAttribute(context, fullModel).asString();
+        final ServiceName socketBindingName = context.getCapabilityServiceName(ConnectorResource.SOCKET_CAPABILITY_NAME, socketName, SocketBinding.class);
         RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName, socketBindingName, optionMap);
 
     }
