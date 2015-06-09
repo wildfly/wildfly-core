@@ -313,9 +313,21 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final ProductConfig productConfig;
     private final RunningModeControl runningModeControl;
     private final UUID serverUUID;
+    private final long startTime;
+
+    /**
+     * Only for use by internal test fixtures.
+     */
+    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
+                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
+                             final RunningMode initialRunningMode, ProductConfig productConfig) {
+        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
+                System.currentTimeMillis());
+    }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
-                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType, final RunningMode initialRunningMode, ProductConfig productConfig) {
+                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
+                                 final RunningMode initialRunningMode, ProductConfig productConfig, long startTime) {
         assert props != null;
 
         this.launchType = launchType;
@@ -323,6 +335,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
         this.initialRunningMode = initialRunningMode == null ? RunningMode.NORMAL : initialRunningMode;
         this.runningModeControl = new RunningModeControl(this.initialRunningMode);
+        this.startTime = startTime;
 
         this.hostControllerName = hostControllerName;
         if (standalone && hostControllerName != null) {
@@ -1005,6 +1018,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     @Override
     public UUID getInstanceUuid() {
         return this.serverUUID;
+    }
+
+    /**
+     * Gets the time when this process was started. Note that a process reload does not change this value.
+     * @return the time, in ms since the epoch
+     */
+    public long getStartTime() {
+        return startTime;
     }
 
     /**

@@ -251,6 +251,7 @@ public class EmbeddedStandAloneServerFactory {
         public void start() throws ServerStartException {
 
             try {
+                final long startTime = System.currentTimeMillis();
 
                 // Take control of server use of System.exit
                 SystemExiter.initialize(new SystemExiter.Exiter() {
@@ -269,7 +270,7 @@ public class EmbeddedStandAloneServerFactory {
                 }
 
                 // Determine the ServerEnvironment
-                ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED);
+                ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime);
 
                 Bootstrap bootstrap = Bootstrap.Factory.newInstance();
 

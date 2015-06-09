@@ -91,7 +91,9 @@ public final class Main {
             }
 
             Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
-            ServerEnvironment serverEnvironment = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.STANDALONE);
+            ServerEnvironment serverEnvironment = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(),
+                    WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.STANDALONE,
+                    Module.getStartTime());
             if (serverEnvironment == null) {
                 abort(null);
             } else {
@@ -116,7 +118,24 @@ public final class Main {
         }
     }
 
-    public static ServerEnvironment determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType) {
+    /** @deprecated use {@link #determineEnvironment(String[], Properties, Map, ServerEnvironment.LaunchType, long)}  */
+    @Deprecated
+    public static ServerEnvironment determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
+                                                         ServerEnvironment.LaunchType launchType) {
+        return determineEnvironment(args, systemProperties, systemEnvironment, launchType, Module.getStartTime());
+    }
+
+    /**
+     * Establish the {@link ServerEnvironment} object for this server.
+     * @param args any command line arguments passed to the process main method
+     * @param systemProperties system properties
+     * @param systemEnvironment environment variables
+     * @param launchType how the process was launched
+     * @param startTime time in ms since the epoch when the process was considered to be started
+     * @return the ServerEnvironment object
+     */
+    public static ServerEnvironment determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
+                                                         ServerEnvironment.LaunchType launchType, long startTime) {
         final int argsLength = args.length;
         String serverConfig = null;
         RunningMode runningMode = RunningMode.NORMAL;
@@ -276,7 +295,7 @@ public final class Main {
         String hostControllerName = null; // No host controller unless in domain mode.
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
         return new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment, serverConfig,
-                configInteractionPolicy, launchType, runningMode, productConfig);
+                configInteractionPolicy, launchType, runningMode, productConfig, startTime);
     }
 
     private static void assertSingleConfig(String serverConfig) {

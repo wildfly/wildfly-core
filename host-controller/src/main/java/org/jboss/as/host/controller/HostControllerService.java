@@ -46,10 +46,9 @@ import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.BootstrapListener;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.ContentCleanerService;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
-import org.jboss.modules.Module;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -91,7 +90,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         this.runningModeControl = runningModeControl;
         this.authCode = authCode;
         this.processState = processState;
-        this.startTime = Module.getStartTime();
+        this.startTime = environment.getStartTime();
     }
 
     @Override

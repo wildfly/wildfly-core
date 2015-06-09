@@ -67,6 +67,8 @@ public final class SelfContainedContainer {
      * @param containerDefinition The container definition.
      */
     public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
+
+        final long startTime = System.currentTimeMillis();
         if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
             try {
                 Class.forName(org.jboss.logmanager.handlers.ConsoleHandler.class.getName(), true, org.jboss.logmanager.handlers.ConsoleHandler.class.getClassLoader());
@@ -85,7 +87,7 @@ public final class SelfContainedContainer {
         }
 
         Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
-        ServerEnvironment serverEnvironment = determineEnvironment(WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED);
+        ServerEnvironment serverEnvironment = determineEnvironment(WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED, startTime);
         final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
         final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
         configuration.setConfigurationPersisterFactory(
@@ -102,9 +104,9 @@ public final class SelfContainedContainer {
         return bootstrap.startup(configuration, Collections.<ServiceActivator>singletonList(new ContentProviderServiceActivator(contentProvider))).get();
     }
 
-    public static ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType) {
+    public static ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType, long startTime) {
         ProductConfig productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
-        return new ServerEnvironment(null, systemProperties, systemEnvironment, null, null, launchType, RunningMode.NORMAL, productConfig);
+        return new ServerEnvironment(null, systemProperties, systemEnvironment, null, null, launchType, RunningMode.NORMAL, productConfig, startTime);
     }
 
 }

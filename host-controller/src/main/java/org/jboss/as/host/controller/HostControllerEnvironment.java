@@ -37,8 +37,8 @@ import java.util.UUID;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
-import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.process.DefaultJvmUtils;
 import org.jboss.as.version.ProductConfig;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -241,19 +241,23 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final HostRunningModeControl runningModeControl;
     private final boolean securityManagerEnabled;
     private final UUID domainUUID;
+    private final long startTime;
 
+    /** Only for test cases */
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
                                      InetAddress processControllerAddress, Integer processControllerPort, InetAddress hostControllerAddress,
                                      Integer hostControllerPort, String defaultJVM, String domainConfig, String initialDomainConfig, String hostConfig,
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc, ProductConfig productConfig) {
         this(hostSystemProperties, isRestart, modulePath, processControllerAddress, processControllerPort, hostControllerAddress, hostControllerPort, defaultJVM,
-                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false);
+                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false,
+                System.currentTimeMillis());
     }
 
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
                                      InetAddress processControllerAddress, Integer processControllerPort, InetAddress hostControllerAddress,
                                      Integer hostControllerPort, String defaultJVM, String domainConfig, String initialDomainConfig, String hostConfig,
-                                     String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc, ProductConfig productConfig, boolean securityManagerEnabled) {
+                                     String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc,
+                                     ProductConfig productConfig, boolean securityManagerEnabled, long startTime) {
 
         if (hostSystemProperties == null) {
             throw HostControllerLogger.ROOT_LOGGER.nullVar("hostSystemProperties");
@@ -280,6 +284,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.hostControllerPort = hostControllerPort;
         this.isRestart = isRestart;
         this.modulePath = modulePath;
+        this.startTime = startTime;
         this.initialRunningMode = initialRunningMode;
         this.runningModeControl = new HostRunningModeControl(initialRunningMode, RestartMode.SERVERS);
 
@@ -735,6 +740,14 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public String getHostControllerName() {
         return hostControllerName;
+    }
+
+    /**
+     * Gets the time when this process was started. Note that a process reload does not change this value.
+     * @return the time, in ms since the epoch
+     */
+    public long getStartTime() {
+        return startTime;
     }
 
     @Override
