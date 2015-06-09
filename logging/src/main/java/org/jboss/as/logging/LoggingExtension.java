@@ -53,10 +53,12 @@ import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
+import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.stdio.StdioContext;
 
 /**
@@ -199,9 +201,14 @@ public class LoggingExtension implements Extension {
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        for (Namespace namespace : Namespace.readable()) {
-            context.setSubsystemXmlMapping(SUBSYSTEM_NAME, namespace.getUriString(), LoggingSubsystemParser.INSTANCE);
-        }
+        setParser(context, Namespace.LOGGING_1_0, new LoggingSubsystemParser_1_0());
+        setParser(context, Namespace.LOGGING_1_1, new LoggingSubsystemParser_1_1());
+        setParser(context, Namespace.LOGGING_1_2, new LoggingSubsystemParser_1_2());
+        setParser(context, Namespace.LOGGING_1_3, new LoggingSubsystemParser_1_3());
+        setParser(context, Namespace.LOGGING_1_4, new LoggingSubsystemParser_1_4());
+        setParser(context, Namespace.LOGGING_1_5, new LoggingSubsystemParser_1_5());
+        setParser(context, Namespace.LOGGING_2_0, new LoggingSubsystemParser_2_0());
+        setParser(context, Namespace.LOGGING_3_0, new LoggingSubsystemParser_3_0());
     }
 
     private void registerLoggingProfileSubModels(final ManagementResourceRegistration registration, final PathManager pathManager) {
@@ -300,6 +307,10 @@ public class LoggingExtension implements Extension {
         for (TransformerResourceDefinition def : defs) {
             def.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
         }
+    }
+
+    private static void setParser(final ExtensionParsingContext context, final Namespace namespace, final XMLElementReader<List<ModelNode>> parser) {
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, namespace.getUriString(), parser);
     }
 
     public static class LoggingChildResourceComparator implements Comparator<PathElement> {
