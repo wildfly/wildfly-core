@@ -92,8 +92,10 @@ public class DeploymentOverlayIndex {
     }
 
     private static void handleContent(OperationContext context, Map<String, Map<String, byte[]>> wildcards, String overlay, String deployment) {
-        Map<String, byte[]> contentMap = new HashMap<String, byte[]>();
-        wildcards.put(deployment, contentMap);
+        Map<String, byte[]> contentMap = wildcards.get(deployment);
+        if(contentMap == null) {
+            wildcards.put(deployment, contentMap = new HashMap<String, byte[]>());
+        }
         Set<String> content = context.readResourceFromRoot(PathAddress.pathAddress(pathElement(DEPLOYMENT_OVERLAY, overlay))).getChildrenNames(CONTENT);
         for(String contentItem : content) {
             Resource cr = context.readResourceFromRoot(PathAddress.pathAddress(pathElement(DEPLOYMENT_OVERLAY, overlay), pathElement(CONTENT, contentItem)));
