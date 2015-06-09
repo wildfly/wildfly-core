@@ -86,9 +86,9 @@ public interface CapabilityReferenceRecorder {
             for (String attributeValue : attributeValues) {
                 String requirementName = RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, attributeValue);
                 if (remove) {
-                    context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
-                } else {
                     context.deregisterCapabilityRequirement(requirementName, dependentName);
+                } else {
+                    context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
                 }
             }
         }
