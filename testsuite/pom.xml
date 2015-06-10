@@ -461,6 +461,14 @@
             </modules>
         </profile>
 
+        <profile>
+            <!-- Current Client, old server -->
+            <id>client-old-server.profile</id>
+            <activation><property><name>jboss.test.client.old.server.dir</name></property></activation>
+            <modules>
+                <module>client-old-server</module>
+            </modules>
+        </profile>
 
 
     </profiles>
