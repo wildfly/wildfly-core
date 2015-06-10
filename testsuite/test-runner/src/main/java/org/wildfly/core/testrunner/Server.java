@@ -24,18 +24,20 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  */
 public class Server {
 
-    static final String JBOSS_HOME = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
-    static final String MODULE_PATH = System.getProperty("module.path");
-    static final String JVM_ARGS = System.getProperty("jvm.args", "-Xmx512m");
-    static final String JBOSS_ARGS = System.getProperty("jboss.args");
-    static final String JAVA_HOME = System.getProperty("java.home", System.getenv("JAVA_HOME"));
-    static final String SERVER_CONFIG = System.getProperty("server.config", "standalone.xml");
-    static final int MANAGEMENT_PORT = Integer.getInteger("management.port", 9990);
-    static final String MANAGEMENT_ADDRESS = System.getProperty("management.address", "localhost");
-    static final String MANAGEMENT_PROTOCOL = System.getProperty("management.protocol", "http-remoting");
+    private final String jbossHome = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
+    private final String modulePath = System.getProperty("module.path");
+    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m");
+    private final String jbossArgs = System.getProperty("jboss.args");
+    private final String javaHome = System.getProperty("java.home", System.getenv("JAVA_HOME"));
+    //Use this when specifying an older java to be used for running the server
+    private final String legacyJavaHome = System.getProperty("legacy.java.home");
+    private final String serverConfig = System.getProperty("server.config", "standalone.xml");
+    private final int managementPort = Integer.getInteger("management.port", 9990);
+    private final String managementAddress = System.getProperty("management.address", "localhost");
+    private final String managementProtocol = System.getProperty("management.protocol", "http-remoting");
 
-    static final String SERVER_DEBUG = "wildfly.debug";
-    static final int SERVER_DEBUG_PORT = Integer.getInteger("wildfly.debug.port", 8787);
+    private final String serverDebug = "wildfly.debug";
+    private final int serverDebugPort = Integer.getInteger("wildfly.debug.port", 8787);
 
     private final Logger log = Logger.getLogger(Server.class.getName());
     private Thread shutdownThread;
@@ -56,32 +58,32 @@ public class Server {
 
     protected void start() {
         try {
-            final Path jbossHomeDir = Paths.get(JBOSS_HOME);
+            final Path jbossHomeDir = Paths.get(jbossHome);
             if (Files.notExists(jbossHomeDir) && !Files.isDirectory(jbossHomeDir)) {
                 throw new IllegalStateException("Cannot find: " + jbossHomeDir);
             }
 
             final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(jbossHomeDir);
 
-            if (MODULE_PATH != null && !MODULE_PATH.isEmpty()) {
-                commandBuilder.setModuleDirs(MODULE_PATH.split(Pattern.quote(File.pathSeparator)));
+            if (modulePath != null && !modulePath.isEmpty()) {
+                commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
             }
 
-            commandBuilder.setJavaHome(JAVA_HOME);
-            if (JVM_ARGS != null) {
-                commandBuilder.setJavaOptions(JVM_ARGS.split("\\s+"));
+            commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
+            if (jvmArgs != null) {
+                commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
             }
-            if(Boolean.getBoolean(SERVER_DEBUG)) {
-                commandBuilder.setDebug(true, SERVER_DEBUG_PORT);
+            if(Boolean.getBoolean(serverDebug)) {
+                commandBuilder.setDebug(true, serverDebugPort);
             }
 
             //we are testing, of course we want assertions and set-up some other defaults
             commandBuilder.addJavaOption("-ea")
-                    .setServerConfiguration(SERVER_CONFIG)
-                    .setBindAddressHint("management", MANAGEMENT_ADDRESS);
+                    .setServerConfiguration(serverConfig)
+                    .setBindAddressHint("management", managementAddress);
 
-            if (JBOSS_ARGS != null) {
-                commandBuilder.addServerArguments(JBOSS_ARGS.split("\\s+"));
+            if (jbossArgs != null) {
+                commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
             }
             StringBuilder builder = new StringBuilder("Starting container with: ");
             for(String arg : commandBuilder.build()) {
@@ -100,14 +102,14 @@ public class Server {
             ModelControllerClient modelControllerClient = null;
             try {
                 modelControllerClient = ModelControllerClient.Factory.create(
-                        MANAGEMENT_PROTOCOL,
-                        MANAGEMENT_ADDRESS,
-                        MANAGEMENT_PORT,
+                        managementProtocol,
+                        managementAddress,
+                        managementPort,
                         Authentication.getCallbackHandler());
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
-            client = new ManagementClient(modelControllerClient, MANAGEMENT_ADDRESS, MANAGEMENT_PORT, MANAGEMENT_PROTOCOL);
+            client = new ManagementClient(modelControllerClient, managementAddress, managementPort, managementProtocol);
 
             long startupTimeout = 30;
             long timeout = startupTimeout * 1000;
