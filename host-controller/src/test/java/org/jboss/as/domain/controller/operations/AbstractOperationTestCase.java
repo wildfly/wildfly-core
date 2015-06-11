@@ -670,7 +670,17 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) {
+            return null;
+        }
+
+        @Override
         public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
+            return null;
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilitBaseyName, String dynamicPart, Class<?> serviceType) {
             return null;
         }
 
