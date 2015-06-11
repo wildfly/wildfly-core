@@ -1406,6 +1406,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         return getCapabilityRuntimeAPI(capabilityName, apiType, activeStep);
     }
 
+    @Override
+    public <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) {
+        return getCapabilityRuntimeAPI(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart), apiType, activeStep);
+    }
+
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType, Step step) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
@@ -1416,6 +1421,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     @Override
     public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
         return getCapabilityServiceName(capabilityName, serviceType, activeStep);
+    }
+
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
+        return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart), serviceType, activeStep);
     }
 
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, Step step) {

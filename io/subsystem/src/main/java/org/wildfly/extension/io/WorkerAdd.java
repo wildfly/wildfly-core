@@ -26,6 +26,7 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.wildfly.extension.io.WorkerResourceDefinition.ATTRIBUTES;
+import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY_NAME;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
 
@@ -38,12 +39,12 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.OptionMap;
@@ -190,8 +191,8 @@ class WorkerAdd extends AbstractAddStepHandler {
 
         final WorkerService workerService = new WorkerService(builder.getMap());
 
-        RuntimeCapability<Void> dynamicCapability = RuntimeCapability.fromBaseCapability(WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY, name);
-        context.getServiceTarget().addService(dynamicCapability.getCapabilityServiceName(XnioWorker.class), workerService)
+        ServiceName serviceName = context.getCapabilityServiceName(IO_WORKER_RUNTIME_CAPABILITY_NAME, name, XnioWorker.class);
+        context.getServiceTarget().addService(serviceName, workerService)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
     }
