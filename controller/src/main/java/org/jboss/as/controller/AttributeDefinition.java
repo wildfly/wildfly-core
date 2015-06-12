@@ -606,7 +606,7 @@ public abstract class AttributeDefinition {
     }
 
     /**
-     * Marshalls the value from the given {@code resourceModel} as an xml attribute, if it
+     * Marshalls the value from the given {@code resourceModel} as an xml element, if it
      * {@link #isMarshallable(org.jboss.dmr.ModelNode, boolean) is marshallable}.
      *
      * @param resourceModel the model, a non-null node of {@link org.jboss.dmr.ModelType#OBJECT}.
@@ -622,9 +622,9 @@ public abstract class AttributeDefinition {
      * {@link #isMarshallable(org.jboss.dmr.ModelNode, boolean) is marshallable}.
      *
      * @param resourceModel the model, a non-null node of {@link org.jboss.dmr.ModelType#OBJECT}.
+     * @param marshallDefault {@code true} if the value should be marshalled even if it matches the default value
      * @param writer        stream writer to use for writing the attribute
-     * @throws javax.xml.stream.XMLStreamException
-     *          if thrown by {@code writer}
+     * @throws javax.xml.stream.XMLStreamException if thrown by {@code writer}
      */
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException{
         if (this.attributeMarshaller.isMarshallableAsElement()) {
