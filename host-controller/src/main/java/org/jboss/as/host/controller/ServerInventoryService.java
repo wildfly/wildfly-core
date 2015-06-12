@@ -101,7 +101,7 @@ class ServerInventoryService implements Service<ServerInventory> {
         ROOT_LOGGER.debug("Starting Host Controller Server Inventory");
         try {
             final ProcessControllerConnectionService processControllerConnectionService = client.getValue();
-            URI managementURI = new URI(protocol, null, NetworkUtils.formatPossibleIpv6Address(interfaceBinding.getValue().getAddress().getHostName()), port, null, null, null);
+            URI managementURI = new URI(protocol, null, NetworkUtils.formatAddress(interfaceBinding.getValue().getAddress()), port, null, null, null);
             serverInventory = new ServerInventoryImpl(domainController, environment, managementURI, processControllerConnectionService.getClient(), extensionRegistry);
             processControllerConnectionService.setServerInventory(serverInventory);
             serverCallback.getValue().setCallbackHandler(serverInventory.getServerCallbackHandler());
