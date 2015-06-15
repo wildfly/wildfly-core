@@ -27,6 +27,15 @@
         <artifact name="${org.jboss.spec.javax.sql:jboss-javax-sql-api_7.0_spec}"/>
     </resources>
 
+    <exports>
+        <include-set>
+            <path name="javax/sql"/>
+            <path name="javax/sql/rowset"/>
+            <path name="javax/sql/rowset/serial"/>
+            <path name="javax/sql/rowset/spi"/>
+        </include-set>
+    </exports>
+
     <dependencies>
         <module name="javax.api"/>
     </dependencies>
