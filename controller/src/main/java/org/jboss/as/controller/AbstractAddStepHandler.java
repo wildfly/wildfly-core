@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -154,7 +155,15 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     protected Resource createResource(final OperationContext context, final ModelNode operation) {
         ResourceCreator resourceCreator = getResourceCreator();
         if (resourceCreator != null) {
-            return resourceCreator.createResoure(context, operation);
+            return resourceCreator.createResource(context, operation);
+        }
+        ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
+        if (registration != null) {
+            Set<String> orderedChildTypes = registration.getOrderedChildTypes();
+            boolean orderedChildResource = registration.isOrderedChildResource();
+            if (orderedChildResource || orderedChildTypes.size() > 0) {
+                return new OrderedResourceCreator(orderedChildResource, orderedChildTypes).createResource(context, operation);
+            }
         }
         return createResource(context);
     }
@@ -408,7 +417,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * standard resource creation mechanism will be used.
      *
      * @return the custom resource creator
+     * @deprecated This handler is now smart enough to figure it out itself
      */
+    @Deprecated
     protected ResourceCreator getResourceCreator() {
         return null;
     }
@@ -423,7 +434,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
          * @param context the operation context
          * @param operation the operation
          */
-        Resource createResoure(OperationContext context, ModelNode operation);
+        Resource createResource(OperationContext context, ModelNode operation);
     }
 
     /**
@@ -472,7 +483,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
         }
 
         @Override
-        public Resource createResoure(OperationContext context, ModelNode operation) {
+        public Resource createResource(OperationContext context, ModelNode operation) {
             // Creates a parent with ordered children (if set is not empty)
             Resource resource = Resource.Factory.create(false, orderedChildTypes);
 

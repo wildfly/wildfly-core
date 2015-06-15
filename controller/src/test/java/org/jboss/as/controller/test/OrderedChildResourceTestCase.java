@@ -158,13 +158,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
         public ParentResourceDefinition() {
             super(PARENT_MAIN,
                     new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES) {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(false, CHILD.getKey());
-                        }
-
-                    },
+                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
                     new ModelOnlyRemoveStepHandler());
         }
 
@@ -184,21 +178,10 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
         public OrderedChildResourceDefinition() {
             super(CHILD,
                     new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES) {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(true);
-                        }
-                    }, new ModelOnlyRemoveStepHandler());
+                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
+                    new ModelOnlyRemoveStepHandler(), false, true);
         }
-
-
-        @Override
-        protected boolean isOrderedChildResource() {
-            return true;
-        }
-
-
+        
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));

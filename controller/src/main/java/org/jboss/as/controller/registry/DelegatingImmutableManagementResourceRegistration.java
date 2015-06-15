@@ -153,4 +153,14 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     public AliasEntry getAliasEntry() {
         return delegate.getAliasEntry();
     }
+
+    @Override
+    public boolean isOrderedChildResource() {
+        return delegate.isOrderedChildResource();
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return delegate.getOrderedChildTypes();
+    }
 }

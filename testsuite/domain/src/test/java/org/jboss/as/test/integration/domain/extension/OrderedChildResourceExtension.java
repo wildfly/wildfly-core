@@ -93,13 +93,7 @@ public class OrderedChildResourceExtension implements Extension {
         public SubsystemResourceDefinition() {
             super(SUBSYSTEM_PATH,
                     new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES) {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(false, CHILD.getKey());
-                        }
-
-                    },
+                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
                     new ModelOnlyRemoveStepHandler());
         }
 
@@ -124,19 +118,10 @@ public class OrderedChildResourceExtension implements Extension {
 
         public OrderedChildResourceDefinition() {
             super(CHILD, new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(true);
-                        }
-
-                    },
-                    new ModelOnlyRemoveStepHandler());
-        }
-
-        @Override
-        protected boolean isOrderedChildResource() {
-            return true;
+                    new AbstractAddStepHandler(),
+                    new ModelOnlyRemoveStepHandler(),
+                    false,
+                    true);
         }
     }
 

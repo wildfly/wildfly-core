@@ -33,7 +33,6 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.NotificationDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
@@ -42,6 +41,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.dmr.ModelNode;
 
@@ -291,6 +291,21 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
 
     @Override
     protected void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
+        throw alreadyRegistered();
+    }
+
+    @Override
+    public boolean isOrderedChildResource() {
+        return target.isOrderedChildResource();
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return target.getOrderedChildTypes();
+    }
+
+    @Override
+    public void setOrderedChild(String key) {
         throw alreadyRegistered();
     }
 }

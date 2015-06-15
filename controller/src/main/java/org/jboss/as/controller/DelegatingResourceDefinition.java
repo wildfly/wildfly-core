@@ -81,4 +81,14 @@ public class DelegatingResourceDefinition implements ResourceDefinition {
         }
         return false;
     }
+
+    @Override
+    public boolean isOrderedChild() {
+        if (delegate != null) {
+            return delegate.isOrderedChild();
+        }
+        return false;
+    }
 }
+
+

@@ -77,6 +77,11 @@ public class ListAttributeDefinitionTestCase {
             public boolean isRuntime() {
                 return false;
             }
+
+            @Override
+            public boolean isOrderedChild() {
+                return false;
+            }
         };
 
         ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.create(resource);
@@ -132,6 +137,11 @@ public class ListAttributeDefinitionTestCase {
 
             @Override
             public boolean isRuntime() {
+                return false;
+            }
+
+            @Override
+            public boolean isOrderedChild() {
                 return false;
             }
         };

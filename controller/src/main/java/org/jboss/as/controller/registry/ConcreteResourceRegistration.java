@@ -69,25 +69,33 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @SuppressWarnings("unused")
     private volatile Map<String, AttributeAccess> attributes;
 
+    @SuppressWarnings("unused")
+    private volatile Map<String, Empty> orderedChildTypes;
+
     private final AtomicBoolean runtimeOnly = new AtomicBoolean();
+    private final boolean ordered;
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
 
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NodeSubregistry> childrenUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "children"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, OperationEntry> operationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "operations"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NotificationEntry> notificationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "notifications"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, AttributeAccess> attributesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "attributes"));
+    private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, Empty> orderedChildUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "orderedChildTypes"));
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
-                                 AccessConstraintUtilizationRegistry constraintUtilizationRegistry, final boolean runtimeOnly) {
+                                 final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
+                                 final boolean runtimeOnly, final boolean ordered) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         childrenUpdater.clear(this);
         operationsUpdater.clear(this);
         attributesUpdater.clear(this);
         notificationsUpdater.clear(this);
+        orderedChildUpdater.clear(this);
         this.resourceDefinition = definition;
         this.runtimeOnly.set(runtimeOnly);
         this.accessConstraintDefinitions = buildAccessConstraints();
+        this.ordered = ordered;
     }
 
     @Override
@@ -106,6 +114,21 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public boolean isRemote() {
         checkPermission();
         return false;
+    }
+
+    @Override
+    public boolean isOrderedChildResource() {
+        return ordered;
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        Map<String, Empty> snapshot = orderedChildUpdater.get(this);
+        if (snapshot == null || snapshot.size() == 0) {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<>(snapshot.keySet());
     }
 
     @Override
@@ -148,7 +171,13 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
         final String key = address.getKey();
         final NodeSubregistry child = getOrCreateSubregistry(key);
-        final ManagementResourceRegistration resourceRegistration = child.register(address.getValue(), resourceDefinition, false);
+        final boolean ordered = resourceDefinition.isOrderedChild();
+        final ManagementResourceRegistration resourceRegistration =
+                child.register(address.getValue(), resourceDefinition, false, ordered);
+        if (ordered) {
+            AbstractResourceRegistration parentRegistration = child.getParent();
+            parentRegistration.setOrderedChild(key);
+        }
         resourceDefinition.registerAttributes(resourceRegistration);
         resourceDefinition.registerOperations(resourceRegistration);
         resourceDefinition.registerNotifications(resourceRegistration);
@@ -601,6 +630,18 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public AliasEntry getAliasEntry() {
         checkPermission();
         return null;
+    }
+
+    @Override
+    protected void setOrderedChild(String type) {
+        if (orderedChildUpdater.putIfAbsent(this, type, Empty.INSTANCE) != null) {
+            throw alreadyRegistered("Ordered child", type);
+        }
+
+    }
+
+    private static class Empty {
+        static final Empty INSTANCE = new Empty();
     }
 }
 

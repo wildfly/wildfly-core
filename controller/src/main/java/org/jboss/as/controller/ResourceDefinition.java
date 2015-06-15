@@ -93,4 +93,11 @@ public interface ResourceDefinition {
      * @since WildFly Core 1.0, WildFly 9.0
      */
     boolean isRuntime();
+
+    /**
+     * Whether this is an ordered child or not
+     *
+     * @return {@code true} if this child is ordered within the parent, false otherwise
+     */
+    boolean isOrderedChild();
 }

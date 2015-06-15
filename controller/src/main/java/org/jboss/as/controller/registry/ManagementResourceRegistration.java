@@ -449,8 +449,13 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                 public boolean isRuntime() {
                     return false;
                 }
+
+                @Override
+                public boolean isOrderedChild() {
+                    return false;
+                }
             };
-            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, rootResourceDefinition.isRuntime());
+            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, rootResourceDefinition.isRuntime(), false);
         }
 
         /**
@@ -480,7 +485,9 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
             if (resourceDefinition == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProviderFactory");
             }
-            ConcreteResourceRegistration resourceRegistration = new ConcreteResourceRegistration(null, null, resourceDefinition, constraintUtilizationRegistry, resourceDefinition.isRuntime());
+            ConcreteResourceRegistration resourceRegistration =
+                    new ConcreteResourceRegistration(null, null, resourceDefinition,
+                            constraintUtilizationRegistry, resourceDefinition.isRuntime(), false);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);
