@@ -92,6 +92,7 @@ import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeRemotingManagementResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
+import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ProcessTypeHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
@@ -134,6 +135,11 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, true))
+            .build();
+
+    public static final SimpleAttributeDefinition UUID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UUID, ModelType.STRING, false)
+            .setValidator(new StringLengthValidator(1, true))
+            .setStorageRuntime()
             .build();
 
     public static final SimpleAttributeDefinition SERVER_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SERVER_GROUP, ModelType.STRING)
@@ -352,6 +358,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, ProcessTypeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
         resourceRegistration.registerReadOnlyAttribute(SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
+        resourceRegistration.registerReadOnlyAttribute(UUID, new InstanceUuidReadHandler(serverEnvironment));
 
 
         resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_MAJOR_VERSION, null);

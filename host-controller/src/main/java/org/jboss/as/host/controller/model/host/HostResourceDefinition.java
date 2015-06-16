@@ -56,6 +56,7 @@ import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
+import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.InterfaceDefinition;
@@ -101,6 +102,7 @@ import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
+import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
@@ -151,6 +153,11 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition SERVER_STATE = new SimpleAttributeDefinitionBuilder("server-state", ModelType.STRING)
             .setAllowNull(true)
             .setMinSize(1)
+            .setStorageRuntime()
+            .build();
+
+    public static final SimpleAttributeDefinition UUID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UUID, ModelType.STRING, false)
+            .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
             .build();
 
@@ -319,6 +326,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(SnapshotListHandler.DEFINITION, snapshotList);
         SnapshotTakeHandler snapshotTake = new SnapshotTakeHandler(configurationPersister.getHostPersister());
         hostRegistration.registerOperationHandler(SnapshotTakeHandler.DEFINITION, snapshotTake);
+        hostRegistration.registerReadOnlyAttribute(UUID, new InstanceUuidReadHandler(environment));
 
         ignoredRegistry.registerResources(hostRegistration);
 

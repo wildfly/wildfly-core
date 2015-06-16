@@ -131,7 +131,6 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         } else {
             this.startTime = -1;
         }
-
         CurrentServiceContainer.setServiceContainer(context.getController().getServiceContainer());
 
         final BootstrapListener bootstrapListener = new BootstrapListener(container, startTime, serviceTarget, futureContainer, prettyVersion);

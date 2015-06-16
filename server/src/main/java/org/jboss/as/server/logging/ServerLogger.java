@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -1153,4 +1154,7 @@ public interface ServerLogger extends BasicLogger {
      */
     @Message(id = 230, value = "Vault is not initialized")
     SecurityException vaultNotInitializedException();
+
+    @Message(id = 231, value = "Could not read or create the server UUID in file: %s")
+    IllegalStateException couldNotObtainServerUuidFile(@Cause Throwable cause, Path file);
 }

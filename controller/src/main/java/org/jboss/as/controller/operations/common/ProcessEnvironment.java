@@ -24,9 +24,15 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -47,6 +53,11 @@ import org.jboss.dmr.ModelType;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public abstract class ProcessEnvironment {
+    /** The name of the file used to store the process UUID */
+    protected static final String UUID_FILE = "process-uuid";
+
+    /** The name of the directory used to store WildFly kernel specific files */
+    protected static final String KERNEL_DIR = "kernel";
 
     /** The special process name value that triggers calculation of a UUID */
     public static final String JBOSS_DOMAIN_UUID = "jboss.domain.uuid";
@@ -116,6 +127,27 @@ public abstract class ProcessEnvironment {
      * @param propertyValue the value of the property. May be {@code null}
      */
     protected abstract void systemPropertyUpdated(String propertyName, String propertyValue);
+
+    /**
+     * Get the UUID of this process.
+     * @return the UUID of this process.
+     */
+    public abstract UUID getInstanceUuid();
+
+    protected UUID obtainProcessUUID(final Path filePath) throws IOException {
+        UUID uuid = null;
+        if (Files.exists(filePath)) {
+            try (Stream<String> lines = Files.lines(filePath)) {
+                uuid = UUID.fromString(lines.findFirst().get());
+            }
+        }
+        if (uuid == null) {
+            uuid = UUID.randomUUID();
+            Files.createDirectories(filePath.getParent());
+            Files.write(filePath, Collections.singletonList(uuid.toString()), StandardOpenOption.CREATE);
+        }
+        return uuid;
+    }
 
     protected static String resolveGUID(final String unresolvedName) {
 
