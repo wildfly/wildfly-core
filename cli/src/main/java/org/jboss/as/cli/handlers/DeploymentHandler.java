@@ -35,7 +35,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.spi.MountHandle;
+import org.jboss.vfs.MountHandle;
 
 
 /**
