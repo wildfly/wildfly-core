@@ -29,9 +29,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.http.HttpStatus;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.integration.logging.Log4jServiceActivator;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -79,5 +84,16 @@ public class Log4jXmlTestCase extends DeploymentBaseTestCase {
         }
         Assert.assertTrue("Log file should contain line: " + traceLine, trace);
         Assert.assertTrue("Log file should contain line: " + fatalLine, fatal);
+    }
+
+    @Test
+    public void testDeploymentConfigurationResource() throws Exception {
+        final ModelNode loggingConfiguration = readDeploymentResource(DEPLOYMENT_NAME);
+        // The address should have jboss-log4j.xml
+        final LinkedList<Property> resultAddress = new LinkedList<>(Operations.getOperationAddress(loggingConfiguration).asPropertyList());
+        Assert.assertTrue("The configuration path did not include log4j.xml", resultAddress.getLast().getValue().asString().contains("log4j.xml"));
+        Assert.assertTrue(loggingConfiguration.has("handler"));
+        // A log4j configuration cannot be defined in the model
+        Assert.assertFalse("No handlers should be defined", loggingConfiguration.get("handler").isDefined());
     }
 }
