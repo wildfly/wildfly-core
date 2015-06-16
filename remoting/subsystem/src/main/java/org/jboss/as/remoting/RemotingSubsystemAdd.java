@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -92,9 +91,7 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             }
         }
 
-        final String ioCapability = RuntimeCapability.buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, workerName);
-        final ServiceName workerService = context.getCapabilityServiceName(ioCapability, XnioWorker.class);
-
+        final ServiceName workerService = context.getCapabilityServiceName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, workerName, XnioWorker.class);
         serviceTarget.addService(RemotingServices.SUBSYSTEM_ENDPOINT, endpointService)
                 .addDependency(workerService, XnioWorker.class, endpointService.getWorker())
                 .install();

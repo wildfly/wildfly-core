@@ -924,6 +924,23 @@ public interface OperationContext extends ExpressionResolver {
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType);
 
     /**
+     * Gets the runtime API associated with a given {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
+     * capability, if there is one.
+     *
+     * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
+     * @param dynamicPart the dynamic part of the capability name. Cannot be {@code null}
+     * @param apiType class of the java type that exposes the API. Cannot be {@code null}
+     * @param <T> the java type that exposes the API
+     * @return the runtime API. Will not return {@code null}
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
+     * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
+     */
+    <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType);
+
+    /**
      * Gets the name of a service associated with a given capability, if there is one.
      * @param capabilityName the name of the capability. Cannot be {@code null}
      * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
@@ -935,6 +952,22 @@ public interface OperationContext extends ExpressionResolver {
      *            the capability does not provide a service of type {@code serviceType}
      */
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType);
+
+    /**
+     * Gets the name of a service associated with a given {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
+     * capability, if there is one.
+     *
+     * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
+     * @param dynamicPart the dynamic part of the capability name. Cannot be {@code null}
+     * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
+     * @return the name of the service. Will not return {@code null}
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
+     */
+    ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType);
 
     /**
      * Whether normally this operation would require a runtime step. It returns {@code true in the following cases}
