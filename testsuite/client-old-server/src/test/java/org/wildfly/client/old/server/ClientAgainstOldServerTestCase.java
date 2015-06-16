@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -93,11 +92,9 @@ public class ClientAgainstOldServerTestCase {
         final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
 
         //Deploy
-        try (final InputStream is = testDeploymentFile.getInputStream()){
-            Future<?> future = manager.execute(
-                    manager.newDeploymentPlan().add(testDeploymentFile.getName(), is).deploy(testDeploymentFile.getName()).build());
-            awaitDeploymentExecution(future);
-        }
+        Future<?> future = manager.execute(
+                manager.newDeploymentPlan().add(testDeploymentFile.getName(), testDeploymentFile.getFile()).deploy(testDeploymentFile.getName()).build());
+        awaitDeploymentExecution(future);
 
         //Check there
         ModelNode findDeployment = Util.createEmptyOperation(READ_RESOURCE_OPERATION,
@@ -106,7 +103,7 @@ public class ClientAgainstOldServerTestCase {
                 managementClient.executeForResult(findDeployment).isDefined());
 
         //Undeploy
-        Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy(testDeploymentFile.getName()).remove(testDeploymentFile.getName()).build());
+        future = manager.execute(manager.newDeploymentPlan().undeploy(testDeploymentFile.getName()).remove(testDeploymentFile.getName()).build());
         awaitDeploymentExecution(future);
 
         //Check deployment is gone
