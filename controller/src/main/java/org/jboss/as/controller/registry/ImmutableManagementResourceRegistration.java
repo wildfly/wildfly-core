@@ -31,6 +31,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.security.ControllerPermission;
@@ -235,4 +236,20 @@ public interface ImmutableManagementResourceRegistration {
     ImmutableManagementResourceRegistration getSubModel(PathAddress address);
 
     List<AccessConstraintDefinition> getAccessConstraints();
+
+
+    /**
+     * Return @code true} if a child resource registration was registered using
+     * {@link #registerSubModel(ResourceDefinition)}, and {@code false} otherwise
+     *
+     * @return whether this is an ordered child or not
+     */
+    boolean isOrderedChildResource();
+
+    /**
+     * Return the names of the child types registered to be ordered.
+     *
+     * @return the set of ordered child types, and and empty set if there are none
+     */
+    Set<String> getOrderedChildTypes();
 }

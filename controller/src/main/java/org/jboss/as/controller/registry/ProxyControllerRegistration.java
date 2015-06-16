@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.NotificationDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -44,6 +43,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -349,8 +349,25 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    public void setOrderedChild(String key) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     protected void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
         throw ControllerLogger.ROOT_LOGGER.proxyHandlerAlreadyRegistered(getLocationString());
+    }
+
+    @Override
+    public boolean isOrderedChildResource() {
+        checkPermission();
+        return false;
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        checkPermission();
+        return Collections.emptySet();
     }
 
     /**
@@ -411,6 +428,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
                 return this;
             }
             return new ChildRegistration(pathAddress.append(address));
+        }
+
+        @Override
+        public boolean isOrderedChildResource() {
+            return false;
+        }
+
+        @Override
+        public Set<String> getOrderedChildTypes() {
+            return Collections.emptySet();
         }
 
         // For all other methods, ProxyControllerRegistration behavior is ok, so delegate

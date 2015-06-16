@@ -1146,6 +1146,16 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public boolean isOrderedChildResource() {
+            return false;
+        }
+
+        @Override
+        public Set<String> getOrderedChildTypes() {
+            return Collections.emptySet();
+        }
+
+        @Override
         public void registerProxyController(PathElement address, ProxyController proxyController) {
         }
 

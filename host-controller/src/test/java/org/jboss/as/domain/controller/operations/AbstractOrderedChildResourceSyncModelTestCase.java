@@ -66,17 +66,14 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
-import org.jboss.as.domain.controller.resources.SocketBindingResourceDefinition;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.util.AbstractControllerTestBase;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.HostFileRepository;
-import org.jboss.as.server.services.net.*;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -281,13 +278,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
         public SubsystemResourceDefinition() {
             super(SUBSYSTEM_ELEMENT,
                     new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES) {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(false, ORDERED_CHILD.getKey());
-                        }
-
-                    },
+                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
                     new ModelOnlyRemoveStepHandler());
         }
 
@@ -318,13 +309,8 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
     abstract class AbstractChildResourceDefinition extends SimpleResourceDefinition {
         public AbstractChildResourceDefinition(PathElement element, OperationStepHandler addHandler) {
-            super(element, new NonResolvingResourceDescriptionResolver(), addHandler, new ModelOnlyRemoveStepHandler());
-        }
-
-        @Override
-        protected boolean isOrderedChildResource() {
-            //'true' here adds the 'add-index' parameter to the add operation
-            return localIndexedAdd;
+            super(element, new NonResolvingResourceDescriptionResolver(),
+                    addHandler, new ModelOnlyRemoveStepHandler(), false, true);
         }
 
         @Override
@@ -338,13 +324,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
         OrderedChildResourceDefinition() {
             super(ORDERED_CHILD,
-                    new AbstractAddStepHandler((REQUEST_ATTRIBUTES)) {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(true, EXTRA_CHILD.getKey());
-                        }
-
-                    });
+                    new AbstractAddStepHandler((REQUEST_ATTRIBUTES)));
         }
 
         @Override
@@ -358,13 +338,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     class ExtraChildResourceDefinition extends AbstractChildResourceDefinition {
         public ExtraChildResourceDefinition() {
             super(EXTRA_CHILD,
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES) {
-                        @Override
-                        protected ResourceCreator getResourceCreator() {
-                            return new OrderedResourceCreator(true);
-                        }
-
-                    });
+                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES));
         }
     }
 

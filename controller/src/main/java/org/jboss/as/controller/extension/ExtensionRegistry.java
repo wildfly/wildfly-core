@@ -748,6 +748,16 @@ public class ExtensionRegistry {
 
     private static class DeploymentManagementResourceRegistration implements ManagementResourceRegistration {
 
+        @Override
+        public boolean isOrderedChildResource() {
+            return false;
+        }
+
+        @Override
+        public Set<String> getOrderedChildTypes() {
+            return Collections.emptySet();
+        }
+
         private final ManagementResourceRegistration deployments;
         private final ManagementResourceRegistration subdeployments;
 

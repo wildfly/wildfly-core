@@ -514,6 +514,8 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         return pathAddress;
     }
 
+    protected abstract void setOrderedChild(String key);
+
     private static class RootInvocation {
         final AbstractResourceRegistration root;
         final PathAddress pathAddress;

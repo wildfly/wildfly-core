@@ -468,6 +468,14 @@ public abstract class ModelTestModelControllerService extends AbstractController
         public boolean isRuntime() {
             return delegate.isRuntime();
         }
+
+        @Override
+        public boolean isOrderedChild() {
+            if (delegate == null) {
+                return false;
+            }
+            return delegate.isOrderedChild();
+        }
     }
 
     //These are here to overload the constuctor used for the different legacy controllers

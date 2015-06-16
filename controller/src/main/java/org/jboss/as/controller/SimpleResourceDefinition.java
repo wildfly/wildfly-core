@@ -56,7 +56,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final OperationEntry.Flag removeRestartLevel;
     private final boolean runtime;
     private volatile DeprecationData deprecationData;
-    private final boolean orderedChildResource;
+    private final boolean orderedChild;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -80,7 +80,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.removeRestartLevel = null;
         this.deprecationData = null;
         this.runtime = false;
-        this.orderedChildResource = isOrderedChildResource();
+        this.orderedChild = false;
     }
 
     /**
@@ -108,6 +108,22 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, boolean isRuntime) {
         this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
+    }
+
+    /**
+     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
+     * {@link DefaultResourceDescriptionProvider} to describe the resource.
+     *
+     * @param pathElement         the path. Cannot be {@code null}.
+     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}
+     * @param isRuntime tells if resource is runtime
+     * @param orderedChild Whether this child type is ordered in the parent or not
+     * @throws IllegalArgumentException if any parameter is {@code null}.
+     */
+    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
+                                    final boolean isRuntime, final boolean orderedChild) {
+        this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
+                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime, orderedChild);
     }
 
     /**
@@ -147,6 +163,26 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
     }
 
+    /**
+     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
+     * {@link DefaultResourceDescriptionProvider} to describe the resource.
+     *
+     * @param pathElement         the path. Cannot be {@code null}.
+     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
+     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
+     *                            Can be {null}
+     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
+     *                            Can be {null}
+     * @param isRuntime tells is resources is runtime or not
+     * @param orderedChild Whether this child type is ordered in the parent or not
+     * @throws IllegalArgumentException if any parameter is {@code null}
+     */
+    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
+                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
+                                    final boolean isRuntime, final boolean orderedChild) {
+        this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
+                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime, orderedChild);
+    }
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
      * {@link DefaultResourceDescriptionProvider} to describe the resource.
@@ -225,6 +261,29 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
                                     final DeprecationData deprecationData, final boolean runtime) {
+        this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel,
+                deprecationData, runtime, false);
+    }
+
+    /**
+     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
+     * {@link DefaultResourceDescriptionProvider} to describe the resource.
+     *
+     * @param pathElement         the path. Can be {@code null}.
+     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
+     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
+     *                            Can be {null}
+     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
+     *                            Can be {null}
+     * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
+     * @param runtime             Whether this is a runtime resource
+     * @param orderedChild  Whether this child type is ordered within the parent
+     * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
+     */
+    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
+                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
+                                    final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
+                                    final DeprecationData deprecationData, final boolean runtime, final boolean orderedChild) {
         if (descriptionResolver == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
         }
@@ -239,7 +298,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 : validateRestartLevel("removeRestartLevel", removeRestartLevel);
         this.deprecationData = deprecationData;
         this.runtime = runtime;
-        this.orderedChildResource = isOrderedChildResource();
+        this.orderedChild = orderedChild;
     }
 
     @Override
@@ -309,7 +368,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, (DescriptionProvider) handler, getFlagsSet(flags));
         } else {
             registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler,
-                    new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChildResource), getFlagsSet(flags));
+                    new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild), getFlagsSet(flags));
         }
     }
 
@@ -383,12 +442,24 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     }
 
     /**
-     * Override this method and return {@code true} if this is for a child resource which supports indexed adds.
-     * It will get the {@code add-index} parameter added to the generated {@code add} operation
+     * Whether this resource registration is ordered in the parent. The automatically generated 'add' operation will
+     * get the {@code add-index} parameter added. Also, it will get registered as an ordered child in the parent's
+     * management resource registration.
      *
      * @return whether this is an ordered child resource
      */
+    @SuppressWarnings("deprecation")
+    public boolean isOrderedChild() {
+        return orderedChild || isOrderedChildResource();
+    }
+
+    /**
+     *
+     * @deprecated Use the constructor variants
+     */
+    @Deprecated
     protected boolean isOrderedChildResource() {
         return false;
     }
+
 }

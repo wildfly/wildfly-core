@@ -877,6 +877,16 @@ public abstract class AbstractOperationTestCase {
 
         }
 
+        @Override
+        public boolean isOrderedChildResource() {
+            return false;
+        }
+
+        @Override
+        public Set<String> getOrderedChildTypes() {
+            return Collections.emptySet();
+        }
+
         public void registerProxyController(PathElement address, ProxyController proxyController) {
 
         }

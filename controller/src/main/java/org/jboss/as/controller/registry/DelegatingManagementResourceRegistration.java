@@ -320,7 +320,19 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
         return getDelegate().getAliasEntry();
     }
 
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return getDelegate().getOrderedChildTypes();
+    }
+
+    @Override
+    public boolean isOrderedChildResource() {
+        return getDelegate().isOrderedChildResource();
+    }
+
     private ManagementResourceRegistration getDelegate() {
         return delegateProvider.getDelegateRegistration();
     }
+
+
 }
