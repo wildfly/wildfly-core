@@ -257,7 +257,7 @@ public class TestUtils {
     }
 
     public static File createZippedPatchFile(File sourceDir, String zipFileName) {
-        tree(sourceDir);
+        //tree(sourceDir);
         File zipFile = new File(sourceDir.getParent(), zipFileName + ".zip");
         ZipUtils.zip(sourceDir, zipFile);
         return zipFile;

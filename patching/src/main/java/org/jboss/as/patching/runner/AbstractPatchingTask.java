@@ -44,7 +44,7 @@ abstract class AbstractPatchingTask<T extends ContentItem> implements PatchingTa
 
     private boolean ignoreApply;   // completely ignore the apply step
     private boolean skipExecution; // Skip the execution step
-    private byte[] backupHash = NO_CONTENT; // The backup hash
+    protected byte[] backupHash = NO_CONTENT; // The backup hash
 
     AbstractPatchingTask(PatchingTaskDescription description, Class<T> expected) {
         this.description = description;

@@ -46,7 +46,9 @@ import java.util.Properties;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
+import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.installation.PatchableTarget;
+import org.jboss.as.patching.metadata.ModuleItem;
 
 /**
  * @author Emanuel Muckenhuber
@@ -260,5 +262,19 @@ public final class PatchUtils {
             return new File(file.getParentFile(), fileName.substring(0, fileName.length() - JAR_EXT.length()) + BACKUP_EXT);
         }
         return file;
+    }
+
+    public static byte[] getAbsentModuleContent(final ModuleItem item) {
+        final StringBuilder builder = new StringBuilder(128);
+        builder.append("<?xml version='1.0' encoding='UTF-8'?>\n<module-absent xmlns=\"urn:jboss:module:1.2\"");
+        builder.append(" name=\"").append(item.getName()).append("\"");
+        builder.append(" slot=\"").append(item.getSlot()).append("\"");
+        builder.append(" />\n");
+        return builder.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static byte[] getAbsentModuleContentHash(final ModuleItem item) throws IOException {
+        final byte[] content = getAbsentModuleContent(item);
+        return HashUtils.hashBytes(content);
     }
 }

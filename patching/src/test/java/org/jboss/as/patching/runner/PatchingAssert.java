@@ -188,7 +188,7 @@ public class PatchingAssert {
         fail("count not found module for " + moduleName + " in " + asList(modulesPath));
     }
 
-    static void assertDefinedAbsentModule(File modulesDir, String moduleName) throws Exception {
+    public static void assertDefinedAbsentModule(File modulesDir, String moduleName) throws Exception {
             final File modulePath = PatchContentLoader.getModulePath(modulesDir, moduleName, "main");
             final File moduleXml = new File(modulePath, "module.xml");
             if (moduleXml.exists()) {

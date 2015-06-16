@@ -26,6 +26,7 @@ import static org.jboss.as.patching.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -35,6 +36,7 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchInfo;
 import org.jboss.as.patching.PatchingException;
@@ -47,7 +49,9 @@ import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.BundledPatch;
 import org.jboss.as.patching.metadata.BundledPatch.BundledPatchEntry;
+import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBundleXml;
+import org.jboss.as.patching.metadata.PatchMerger;
 import org.jboss.as.patching.metadata.PatchMetadataResolver;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.patching.tool.ContentVerificationPolicy;
@@ -268,17 +272,33 @@ public class PatchToolImpl implements PatchTool {
             }
         } else {
             // Parse the xml
-            final File patchXml = new File(workDir, PatchXml.PATCH_XML);
-            final PatchContentProvider contentProvider = PatchContentProvider.DefaultContentProvider.create(workDir);
-            final InputStream patchIS = new FileInputStream(patchXml);
-            final PatchMetadataResolver patchResolver;
-            try {
-                patchResolver = PatchXml.parse(patchIS);
-                patchIS.close();
-            } finally {
-                safeClose(patchIS);
+            File patchXml = new File(workDir, PatchXml.PATCH_XML);
+            PatchMetadataResolver patchResolver = parsePatchXml(patchXml);
+
+            Patch patch = patchResolver.resolvePatch(null, null);
+            final InstalledIdentity installedIdentity = manager.getInstalledIdentity(patch.getIdentity().getName(), null);
+            final String currentVersion = installedIdentity.getIdentity().getVersion();
+            if(!Constants.UNKNOWN.equals(currentVersion) && !patch.getIdentity().getVersion().equals(currentVersion)) {
+                patchXml = new File(workDir, currentVersion + PatchMerger.PATCH_XML_SUFFIX);
+                if(!patchXml.exists()) {
+                    throw new PatchingException("The patch does not contain metadata for currently installed " + patch.getIdentity().getName() + " version " + currentVersion);
+                }
+                patchResolver = parsePatchXml(patchXml);
+                patch = patchResolver.resolvePatch(null, null);
             }
-            return apply(patchResolver, contentProvider, contentPolicy);
+
+            return apply(patchResolver, PatchContentProvider.DefaultContentProvider.create(workDir), contentPolicy);
+        }
+    }
+
+    private PatchMetadataResolver parsePatchXml(final File patchXml)
+            throws FileNotFoundException, XMLStreamException, IOException {
+        InputStream patchIS = null;
+        try {
+            patchIS = new FileInputStream(patchXml);
+            return PatchXml.parse(patchIS);
+        } finally {
+            safeClose(patchIS);
         }
     }
 
