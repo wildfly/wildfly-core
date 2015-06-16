@@ -40,6 +40,7 @@ public class Constants {
     public static final String NAME = "name";
     public static final String VERBOSE = "verbose";
     public static final String VERSION = "version";
+    public static final String UNKNOWN = "Unknown";
 
     public static final String AGEOUT_HISTORY = "ageout-history";
     public static final String PATCH = "patch";

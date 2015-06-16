@@ -41,13 +41,9 @@ import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.List;
-import java.util.Properties;
 
-import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
-import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
@@ -66,7 +62,7 @@ public class LayerTestCase extends AbstractTaskTestCase {
     @Test
     public void layerNotInLayersConf() throws Exception {
         String layerName = randomString();
-        installLayer(env.getModuleRoot(), null, layerName);
+        installLayers(false, layerName);
 
         InstalledIdentity installedIdentity = loadInstalledIdentity();
 
@@ -79,7 +75,7 @@ public class LayerTestCase extends AbstractTaskTestCase {
     @Test
     public void installedLayer() throws Exception {
         String layerName = randomString();
-        installLayer(env.getModuleRoot(), env.getInstalledImage().getLayersConf(), layerName);
+        installLayers(layerName);
 
         TestUtils.tree(env.getInstalledImage().getJbossHome());
         InstalledIdentity installedIdentity = loadInstalledIdentity();
@@ -106,7 +102,7 @@ public class LayerTestCase extends AbstractTaskTestCase {
     public void patchLayer() throws Exception {
         // add a layer
         String layerName = "mylayer";//randomString();
-        installLayer(env.getModuleRoot(), env.getInstalledImage().getLayersConf(), layerName);
+        installLayers(layerName);
 
         InstalledIdentity installedIdentity = loadInstalledIdentity();
 
@@ -149,7 +145,7 @@ public class LayerTestCase extends AbstractTaskTestCase {
     public void patchAndRollbackLayer() throws Exception {
         // add a layer
         String layerName = randomString();
-        installLayer(env.getModuleRoot(), env.getInstalledImage().getLayersConf(), layerName);
+        installLayers(layerName);
 
         InstalledIdentity installedIdentity = loadInstalledIdentity();
 
@@ -210,7 +206,7 @@ public class LayerTestCase extends AbstractTaskTestCase {
         // add a layer
         String layerName = "layer1";
         String layer2Name = "layer2";
-        installLayer(env.getModuleRoot(), env.getInstalledImage().getLayersConf(), layerName, layer2Name);
+        installLayers(layerName, layer2Name);
 
         InstalledIdentity installedIdentity = loadInstalledIdentity();
 
@@ -238,30 +234,6 @@ public class LayerTestCase extends AbstractTaskTestCase {
             fail("duplicate element patch-id error expected");
         } catch(IllegalStateException e) {
             // expected
-        }
-    }
-
-    private static void installLayer(File baseDir, File layerConf, String... layers) throws Exception {
-        for (String layer : layers) {
-            IoUtils.mkdir(baseDir, "system", "layers", layer);
-        }
-        if (layerConf != null) {
-            Properties props = new Properties();
-            StringBuilder str = new StringBuilder();
-            for (int i = 0; i < layers.length; i++) {
-                if (i > 0) {
-                    str.append(',');
-                }
-                str.append(layers[i]);
-            }
-            props.put(Constants.LAYERS, str.toString());
-            props.put(Constants.EXCLUDE_LAYER_BASE, "true");
-            final FileOutputStream os = new FileOutputStream(layerConf);
-            try {
-                props.store(os, "");
-            } finally {
-                IoUtils.safeClose(os);
-            }
         }
     }
 }
