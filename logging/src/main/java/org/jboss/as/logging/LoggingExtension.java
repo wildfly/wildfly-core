@@ -50,6 +50,7 @@ import org.jboss.as.controller.transform.description.ChainedTransformationDescri
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
+import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
@@ -69,7 +70,7 @@ public class LoggingExtension implements Extension {
 
     private static final String RESOURCE_NAME = LoggingExtension.class.getPackage().getName() + ".LocalDescriptions";
 
-    static final String SUBSYSTEM_NAME = "logging";
+    public static final String SUBSYSTEM_NAME = "logging";
 
     static final PathElement LOGGING_PROFILE_PATH = PathElement.pathElement(CommonAttributes.LOGGING_PROFILE);
 
@@ -104,7 +105,7 @@ public class LoggingExtension implements Extension {
      *
      * @return the resolver
      */
-    static ResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
+    public static ResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
             prefix.append('.').append(kp);
@@ -194,6 +195,20 @@ public class LoggingExtension implements Extension {
         };
 
         registerLoggingProfileSubModels(registration.registerSubModel(profile), pathManager);
+
+        // Register deployment resources
+        if (context.isRuntimeOnlyRegistrationValid()) {
+            final SimpleResourceDefinition deploymentSubsystem = new SimpleResourceDefinition(LoggingResourceDefinition.SUBSYSTEM_PATH, getResourceDescriptionResolver("deployment"));
+            final ManagementResourceRegistration deployments = subsystem.registerDeploymentModel(deploymentSubsystem);
+            final ManagementResourceRegistration configurationResource = deployments.registerSubModel(LoggingDeploymentResources.CONFIGURATION);
+            configurationResource.registerSubModel(LoggingDeploymentResources.HANDLER).setRuntimeOnly(true);
+            configurationResource.registerSubModel(LoggingDeploymentResources.LOGGER).setRuntimeOnly(true);
+            configurationResource.registerSubModel(LoggingDeploymentResources.FORMATTER).setRuntimeOnly(true);
+            configurationResource.registerSubModel(LoggingDeploymentResources.FILTER).setRuntimeOnly(true);
+            configurationResource.registerSubModel(LoggingDeploymentResources.POJO).setRuntimeOnly(true);
+            configurationResource.registerSubModel(LoggingDeploymentResources.ERROR_MANAGER).setRuntimeOnly(true);
+            configurationResource.setRuntimeOnly(true);
+        }
 
         subsystem.registerXMLElementWriter(LoggingSubsystemWriter.INSTANCE);
     }

@@ -37,6 +37,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
+import org.jboss.as.logging.deployments.LoggingDeploymentResourceProcessor;
 import org.jboss.as.logging.deployments.LoggingProfileDeploymentProcessor;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
@@ -84,6 +85,8 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
                 processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.POST_MODULE, Phase.POST_MODULE_LOGGING_CONFIG,
                         new LoggingConfigDeploymentProcessor(contextSelector, LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG.getName(), useLoggingConfig));
                 processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.POST_MODULE, Phase.POST_MODULE_LOGGING_PROFILE, new LoggingProfileDeploymentProcessor(contextSelector));
+                processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.INSTALL, Phase.INSTALL_LOGGING_DEPLOYMENT_RESOURCES,
+                        new LoggingDeploymentResourceProcessor());
             }
         }, Stage.RUNTIME);
 
