@@ -22,15 +22,12 @@
 
 package org.wildfly.core.launcher;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 
 import org.wildfly.core.launcher.logger.LauncherMessages;
 
@@ -40,16 +37,12 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
 @SuppressWarnings("unused")
 abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> implements CommandBuilder {
 
-    private static final String MODULES_JAR_NAME = "jboss-modules.jar";
-    private static final String JAVA_EXE = "java" + getExeSuffix();
-
-    static final String HOME_DIR = "jboss.home.dir";
+    static final String HOME_DIR = Environment.HOME_DIR;
     static final String SECURITY_MANAGER_ARG = "-secmgr";
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
     static final String[] DEFAULT_VM_ARGUMENTS;
 
     static {
-        final String jvmVersion = System.getProperty("java.specification.version");
         final Collection<String> javaOpts = new ArrayList<>();
         // Default JVM parameters for all versions
         javaOpts.add("-Xms64m");
@@ -59,26 +52,27 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         javaOpts.add("-Djboss.modules.system.pkgs=org.jboss.byteman");
 
         // Versions below 8 should add a MaxPermSize
-        if (VersionComparator.compareVersion(jvmVersion, "1.8") < 0) {
+        if (Environment.supportsMaxPermSize()) {
             javaOpts.add("-XX:MaxPermSize=256m");
         }
         DEFAULT_VM_ARGUMENTS = javaOpts.toArray(new String[javaOpts.size()]);
     }
 
-    private final Path wildflyHome;
+    protected final Environment environment;
     private boolean useSecMgr;
-    private final List<String> modulesDirs;
     private Path logDir;
     private Path configDir;
     private final Arguments serverArgs;
-    private boolean addDefaultModuleDir;
 
     protected AbstractCommandBuilder(final Path wildflyHome) {
-        this.wildflyHome = wildflyHome;
+        this(wildflyHome, null);
+    }
+
+    protected AbstractCommandBuilder(final Path wildflyHome, final Path javaHome) {
+        environment = new Environment(wildflyHome);
+        environment.setJavaHome(javaHome);
         useSecMgr = false;
-        modulesDirs = new ArrayList<>();
         serverArgs = new Arguments();
-        addDefaultModuleDir = true;
     }
 
     /**
@@ -112,12 +106,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @throws java.lang.IllegalArgumentException if the path is {@code null}
      */
     public T addModuleDir(final String moduleDir) {
-        if (moduleDir == null) {
-            throw LauncherMessages.MESSAGES.nullParam("moduleDir");
-        }
-        // Validate the path
-        final Path path = Paths.get(moduleDir).normalize();
-        modulesDirs.add(path.toString());
+        environment.addModuleDir(moduleDir);
         return getThis();
     }
 
@@ -131,10 +120,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @throws java.lang.IllegalArgumentException if any of the module paths are invalid or {@code null}
      */
     public T addModuleDirs(final String... moduleDirs) {
-        // Validate and add each path
-        for (String path : moduleDirs) {
-            addModuleDir(path);
-        }
+        environment.addModuleDirs(moduleDirs);
         return getThis();
     }
 
@@ -148,10 +134,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @throws java.lang.IllegalArgumentException if any of the module paths are invalid or {@code null}
      */
     public T addModuleDirs(final Iterable<String> moduleDirs) {
-        // Validate and add each path
-        for (String path : moduleDirs) {
-            addModuleDir(path);
-        }
+        environment.addModuleDirs(moduleDirs);
         return getThis();
     }
 
@@ -167,12 +150,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @throws java.lang.IllegalArgumentException if any of the module paths are invalid or {@code null}
      */
     public T setModuleDirs(final Iterable<String> moduleDirs) {
-        this.modulesDirs.clear();
-        // Process each module directory
-        for (String path : moduleDirs) {
-            addModuleDir(path);
-        }
-        addDefaultModuleDir = false;
+        environment.setModuleDirs(moduleDirs);
         return getThis();
     }
 
@@ -188,35 +166,17 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @throws java.lang.IllegalArgumentException if any of the module paths are invalid or {@code null}
      */
     public T setModuleDirs(final String... moduleDirs) {
-        this.modulesDirs.clear();
-        // Process each module directory
-        for (String path : moduleDirs) {
-            addModuleDir(path);
-        }
-        addDefaultModuleDir = false;
+        environment.setModuleDirs(moduleDirs);
         return getThis();
     }
 
     /**
      * Returns the modules paths used on the command line.
      *
-     * @return the paths separated by the {@link File#pathSeparator path separator}
+     * @return the paths separated by the {@link java.io.File#pathSeparator path separator}
      */
     public String getModulePaths() {
-        final StringBuilder result = new StringBuilder();
-        if (addDefaultModuleDir) {
-            result.append(normalizePath("modules").toString());
-        }
-        if (!modulesDirs.isEmpty()) {
-            if (addDefaultModuleDir) result.append(File.pathSeparator);
-            for (Iterator<String>iterator = modulesDirs.iterator(); iterator.hasNext();) {
-                result.append(iterator.next());
-                if (iterator.hasNext()) {
-                    result.append(File.pathSeparator);
-                }
-            }
-        }
-        return result.toString();
+        return environment.getModulePaths();
     }
 
     /**
@@ -519,7 +479,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @return the home directory
      */
     public Path getWildFlyHome() {
-        return wildflyHome;
+        return environment.getWildflyHome();
     }
 
     /**
@@ -550,11 +510,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @return the java executable command
      */
     protected String getJavaCommand(final Path javaHome) {
-        final String exe = javaHome.resolve("bin").resolve("java").toString();
-        if (exe.contains(" ")) {
-            return "\"" + exe + "\"";
-        }
-        return exe;
+        return environment.getJavaCommand(javaHome);
     }
 
     /**
@@ -588,7 +544,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @return the path to {@code jboss-modules.jar}
      */
     public String getModulesJarName() {
-        return normalizePath(MODULES_JAR_NAME).toString();
+        return environment.getModuleJar().toString();
     }
 
 
@@ -600,7 +556,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      * @return the normalized path
      */
     protected Path normalizePath(final String path) {
-        return normalizePath(wildflyHome, path);
+        return environment.resolvePath(path).toAbsolutePath().normalize();
     }
 
     /**
@@ -660,44 +616,28 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         return serverArgs.get(key);
     }
 
+    @Deprecated
     protected static Path resolveJavaHome(final Path javaHome) {
         if (javaHome == null) {
-            return validateJavaHome(System.getProperty("java.home"));
+            return validateJavaHome(Environment.getDefaultJavaHome());
         }
         return validateJavaHome(javaHome);
     }
 
     protected static Path validateWildFlyDir(final String wildflyHome) {
-        final Path result = validateAndNormalizeDir(wildflyHome, false);
-        if (Files.notExists(result.resolve(MODULES_JAR_NAME))) {
-            throw LauncherMessages.MESSAGES.invalidDirectory(MODULES_JAR_NAME, result);
-        }
-        return result;
+        return Environment.validateWildFlyDir(wildflyHome);
     }
 
     protected static Path validateWildFlyDir(final Path wildflyHome) {
-        final Path result = validateAndNormalizeDir(wildflyHome, false);
-        if (Files.notExists(result.resolve(MODULES_JAR_NAME))) {
-            throw LauncherMessages.MESSAGES.invalidDirectory(MODULES_JAR_NAME, wildflyHome);
-        }
-        return result;
+        return Environment.validateWildFlyDir(wildflyHome);
     }
 
     protected static Path validateJavaHome(final String javaHome) {
-        if (javaHome == null) {
-            throw LauncherMessages.MESSAGES.pathDoesNotExist(null);
-        }
-        return validateJavaHome(Paths.get(javaHome));
+        return Environment.validateJavaHome(javaHome);
     }
 
     protected static Path validateJavaHome(final Path javaHome) {
-        final Path result = validateAndNormalizeDir(javaHome, false);
-        final Path exe = result.resolve("bin").resolve(JAVA_EXE);
-        if (Files.notExists(exe)) {
-            final int count = exe.getNameCount();
-            throw LauncherMessages.MESSAGES.invalidDirectory(exe.subpath(count - 2, count).toString(), javaHome);
-        }
-        return result;
+        return Environment.validateJavaHome(javaHome);
     }
 
     protected static Path validateAndNormalizeDir(final String path, final boolean allowNull) {
@@ -723,13 +663,5 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         if (value != null) {
             cmd.add("-D" + key + "=" + value);
         }
-    }
-
-    private static String getExeSuffix() {
-        final String os = System.getProperty("os.name");
-        if (os != null && os.toLowerCase(Locale.ROOT).contains("win")) {
-            return ".exe";
-        }
-        return "";
     }
 }
