@@ -115,10 +115,12 @@ public abstract class AttributeParser {
     public static final AttributeParser STRING_LIST = new AttributeParser() {
         @Override
         public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-            if (value == null) { return; }
-            final ModelNode node = operation.get(attribute.getName());
-            for (final String element : value.split("[ \\r\\n\\t]+")) {
-                node.add(parse(attribute, element, reader));
+            if (value == null) return;
+            final ModelNode node = operation.get(attribute.getName()).setEmptyList();
+            if (!value.isEmpty()) {
+                for (final String element : value.split("\\s+")) {
+                    node.add(parse(attribute, element, reader));
+                }
             }
         }
     };
@@ -126,15 +128,13 @@ public abstract class AttributeParser {
     public static final AttributeParser COMMA_DELIMITED_STRING_LIST = new AttributeParser() {
         @Override
         public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-            if (value == null) { return; }
-            for (String element : value.split(",")) {
-                parseAndAddParameterElement(attribute, element, operation, reader);
+            if (value == null) return;
+            final ModelNode node = operation.get(attribute.getName()).setEmptyList();
+            if (!value.isEmpty()) {
+                for (String element : value.split(",")) {
+                    node.add(parse(attribute, element, reader));
+                }
             }
-        }
-
-        private void parseAndAddParameterElement(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-            ModelNode paramVal = parse(attribute, value, reader);
-            operation.get(attribute.getName()).add(paramVal);
         }
     };
 

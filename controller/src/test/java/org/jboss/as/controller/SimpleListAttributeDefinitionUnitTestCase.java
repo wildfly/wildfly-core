@@ -140,23 +140,42 @@ public class SimpleListAttributeDefinitionUnitTestCase {
 
         // parse the XML attribute
         ModelNode model = new ModelNode();
-        AttributeParser.STRING_LIST.parseAndSetParameter(attributeDefinition, "foo bar", model, null);
+        attributeDefinition.getParser().parseAndSetParameter(attributeDefinition, "foo bar", model, null);
 
-        Assert.assertEquals(2, model.get("connectors").asList().size());
-        Assert.assertEquals("foo", model.get("connectors").asList().get(0).asString());
-        Assert.assertEquals("bar", model.get("connectors").asList().get(1).asString());
+        Assert.assertEquals(2, model.get(attributeDefinition.getName()).asList().size());
+        Assert.assertEquals("foo", model.get(attributeDefinition.getName()).asList().get(0).asString());
+        Assert.assertEquals("bar", model.get(attributeDefinition.getName()).asList().get(1).asString());
 
         StringWriter stringWriter = new StringWriter();
-        XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter);
+        XMLOutputFactory factory = XMLOutputFactory.newInstance();
+        XMLStreamWriter writer = factory.createXMLStreamWriter(stringWriter);
 
         // marshall the XML attribute
         writer.writeStartElement("resource");
         attributeDefinition.getAttributeMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
         writer.writeEndElement();
+        writer.close();
 
         Assert.assertEquals(stringWriter.toString(), "<resource connectors=\"foo bar\"></resource>");
 
+        // Validate that parsing and marshalling of empty string is symmetric (WFCORE-763)
+        model = new ModelNode();
+        attributeDefinition.getParser().parseAndSetParameter(attributeDefinition, "", model, null);
+
+        Assert.assertEquals(0, model.get(attributeDefinition.getName()).asList().size());
+
+        stringWriter = new StringWriter();
+        writer = factory.createXMLStreamWriter(stringWriter);
+
+        // marshall the XML attribute
+        writer.writeStartElement("resource");
+        attributeDefinition.getAttributeMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
+        writer.writeEndElement();
+        writer.close();
+
+        Assert.assertEquals(stringWriter.toString(), "<resource connectors=\"\"></resource>");
     }
+
     private void validateOperation(AttributeDefinition attributeDefinition, ModelNode value, boolean expectSuccess) throws OperationFailedException {
         ModelNode operation = new ModelNode();
         operation.get("test").set(value);
