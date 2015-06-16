@@ -102,7 +102,7 @@
         <version.org.fusesource.jansi>1.9</version.org.fusesource.jansi>
         <version.org.jboss.aesh>0.33.15</version.org.jboss.aesh>
         <version.org.jboss.byteman>2.2.1</version.org.jboss.byteman>
-        <version.org.jboss.classfilewriter>1.1.0.Final</version.org.jboss.classfilewriter>
+        <version.org.jboss.classfilewriter>1.1.2.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.4.1.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>1.2.2.Final</version.org.jboss.jandex>
         <version.org.jboss.jboss-dmr>1.3.0.Final</version.org.jboss.jboss-dmr>
