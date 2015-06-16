@@ -58,8 +58,6 @@ import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VirtualFileFilter;
 import org.jboss.vfs.VirtualFilePermission;
-import org.jboss.vfs.VisitorAttributes;
-import org.jboss.vfs.util.FilterVirtualFileVisitor;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 import static java.security.AccessController.doPrivileged;
@@ -240,20 +238,20 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
             }
         }
 
-        FilterVirtualFileVisitor visitor = new FilterVirtualFileVisitor(new VirtualFileFilter() {
-            @Override
-            public boolean accepts(VirtualFile file) {
-                return file.isDirectory();
-            }
-        }, VisitorAttributes.RECURSE);
+        List<VirtualFile> dirs = null;
         try {
-            root.visit(visitor);
+            dirs = root.getChildrenRecursively(new VirtualFileFilter() {
+                @Override
+                public boolean accepts(VirtualFile file) {
+                    return file.isDirectory();
+                }
+            });
         } catch (IOException e) {
             index.clear();
         }
 
         index.add("");
-        for (VirtualFile dir : visitor.getMatched()) {
+        if (dirs != null) for (VirtualFile dir : dirs) {
             index.add(dir.getPathNameRelativeTo(root));
         }
 
