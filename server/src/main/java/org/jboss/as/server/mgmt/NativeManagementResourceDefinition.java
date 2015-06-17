@@ -58,7 +58,7 @@ import org.jboss.dmr.ModelType;
  */
 public class NativeManagementResourceDefinition extends SimpleResourceDefinition {
 
-    private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.native_interface";
+    private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.native-interface";
     public static final RuntimeCapability<Void> NATIVE_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
 

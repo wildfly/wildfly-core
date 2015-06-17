@@ -42,7 +42,7 @@ import org.xnio.XnioWorker;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
-    static final String IO_WORKER_RUNTIME_CAPABILITY_NAME = "org.wildfly.extension.io.worker";
+    static final String IO_WORKER_RUNTIME_CAPABILITY_NAME = "org.wildfly.io.worker";
     static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
             RuntimeCapability.Builder.of(IO_WORKER_RUNTIME_CAPABILITY_NAME, true, XnioWorker.class).build();
 

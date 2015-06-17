@@ -61,7 +61,7 @@ import org.jboss.dmr.ModelType;
  */
 public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
-    private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http_interface";
+    private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
     public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
 
