@@ -34,5 +34,6 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="sun.jdk"/>
+        <module name="org.jboss.logging"/>
     </dependencies>
 </module>
