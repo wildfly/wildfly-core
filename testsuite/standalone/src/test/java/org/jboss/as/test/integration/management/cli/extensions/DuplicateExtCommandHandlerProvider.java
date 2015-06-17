@@ -20,25 +20,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.manualmode.management.cli.extensions;
+package org.jboss.as.test.integration.management.cli.extensions;
 
 import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
+import org.jboss.as.cli.CommandHandler;
+import org.jboss.as.cli.CommandHandlerProvider;
 
 /**
  * @author Petr Kremensky pkremens@redhat.com
  */
-public class DuplicateExtCommandHandler extends CommandHandlerWithHelp {
-    public static final String NAME = "echo";
-    public static final String OUTPUT = "hello from " + DuplicateExtCommandHandler.class.getSimpleName();
-
-    public DuplicateExtCommandHandler() {
-        super(NAME, false);
+public class DuplicateExtCommandHandlerProvider implements CommandHandlerProvider {
+    @Override
+    public CommandHandler createCommandHandler(CommandContext ctx) {
+        return new DuplicateExtCommandHandler();
     }
 
     @Override
-    protected void doHandle(CommandContext ctx) throws CommandLineException {
-        ctx.printLine(OUTPUT);
+    public boolean isTabComplete() {
+        return false;
+    }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{DuplicateExtCommandHandler.NAME};
     }
 }

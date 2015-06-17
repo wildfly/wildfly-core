@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.manualmode.management.cli.extensions;
+package org.jboss.as.test.integration.management.cli.extensions;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;

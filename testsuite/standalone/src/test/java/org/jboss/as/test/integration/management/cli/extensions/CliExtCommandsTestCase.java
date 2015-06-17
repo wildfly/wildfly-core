@@ -20,14 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.manualmode.management.cli.extensions;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-
-import javax.inject.Inject;
+package org.jboss.as.test.integration.management.cli.extensions;
 
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
@@ -48,10 +41,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
+
+import javax.inject.Inject;
+import java.io.File;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Testing commands loaded from the available management model extensions.
@@ -59,13 +55,15 @@ import org.xnio.IoUtils;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-@ServerControl(manual = true)
 public class CliExtCommandsTestCase extends CliScriptTestBase {
 
     private static final String MODULE_NAME = "test.cli.extension.commands";
 
     @Inject
-    private static ServerController containerController;
+    protected static ManagementClient client;
+
+    @Inject
+    protected static ModelControllerClient controllerClient;
 
     private static TestModule testModule;
 
@@ -77,34 +75,29 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
 
     @AfterClass
     public static void tearDownServer() throws Exception {
-        ModelControllerClient client = null;
         try {
-            client = containerController.getClient().getControllerClient();
-            ModelNode subsystemResult = client.execute(Util.createRemoveOperation(PathAddress.pathAddress(CliExtCommandsSubsystemResourceDescription.PATH)));
-            ModelNode extensionResult = client.execute(Util.createRemoveOperation(PathAddress.pathAddress(ModelDescriptionConstants.EXTENSION, MODULE_NAME)));
+            ModelNode subsystemResult = controllerClient.execute(Util.createRemoveOperation(PathAddress.pathAddress(CliExtCommandsSubsystemResourceDescription.PATH)));
+            ModelNode extensionResult = controllerClient.execute(Util.createRemoveOperation(PathAddress.pathAddress(ModelDescriptionConstants.EXTENSION, MODULE_NAME)));
             ModelTestUtils.checkOutcome(subsystemResult);
             ModelTestUtils.checkOutcome(extensionResult);
         } finally {
-            containerController.stop();
             testModule.remove();
-            IoUtils.safeClose(client);
         }
-        containerController.stop();
     }
 
     @Test
     public void testExtensionCommand() throws Exception {
 
         Assert.assertNotEquals(0,
-                execute(containerController.getClient().getMgmtAddress(),
-                        containerController.getClient().getMgmtPort(),
+                execute(client.getMgmtAddress(),
+                        client.getMgmtPort(),
                         false, // the command won't be available unless the cli connects to the controller
                         CliExtCommandHandler.NAME,
                         false));
 
         assertEquals(0,
-                execute(containerController.getClient().getMgmtAddress(),
-                        containerController.getClient().getMgmtPort(),
+                execute(client.getMgmtAddress(),
+                        client.getMgmtPort(),
                         true,
                         CliExtCommandHandler.NAME,
                         true));
@@ -116,8 +109,8 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
     public void testExtensionCommandHelp() {
         final String help = "--help";
         assertEquals(0,
-                execute(containerController.getClient().getMgmtAddress(),
-                        containerController.getClient().getMgmtPort(),
+                execute(client.getMgmtAddress(),
+                        client.getMgmtPort(),
                         true,
                         String.format("%s %s", CliExtCommandHandler.NAME, help),
                         true));
@@ -155,15 +148,11 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
     }
 
     private static void setupServerWithExtension() throws Exception {
-        containerController.start();
-        ManagementClient managementClient = containerController.getClient();
-        ModelControllerClient client = managementClient.getControllerClient();
-
         //Add the extension
         final ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress(ModelDescriptionConstants.EXTENSION, MODULE_NAME));
-        ModelTestUtils.checkOutcome(client.execute(addExtension));
+        ModelTestUtils.checkOutcome(controllerClient.execute(addExtension));
 
         final ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(CliExtCommandsSubsystemResourceDescription.PATH));
-        ModelTestUtils.checkOutcome(client.execute(addSubsystem));
+        ModelTestUtils.checkOutcome(controllerClient.execute(addSubsystem));
     }
 }
