@@ -64,10 +64,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param pathElement         the path. Can be {@code null}.
      * @param descriptionProvider the description provider. Cannot be {@code null}
      * @throws IllegalArgumentException if {@code descriptionProvider} is {@code null}.
-     * @deprecated
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
     @Deprecated
     public SimpleResourceDefinition(final PathElement pathElement, final DescriptionProvider descriptionProvider) {
+        //Can be removed when we get to 3.0.0
         if (descriptionProvider == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
         }
@@ -104,8 +105,12 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}
      * @param isRuntime tells if resource is runtime
      * @throws IllegalArgumentException if any parameter is {@code null}.
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, boolean isRuntime) {
+        //Can be removed when we get to 3.0.0
         this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
     }
@@ -140,9 +145,13 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      *                            Can be {null}
      * @param isRuntime tells is resources is runtime or not
      * @throws IllegalArgumentException if any parameter is {@code null}
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler, boolean isRuntime) {
+        //Can be removed when we get to 3.0.0
         this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
     }
@@ -159,10 +168,14 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      *                            Can be {null}
      * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
      * @throws IllegalArgumentException if any parameter is {@code null}
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final DeprecationData deprecationData) {
+        //Can be removed when we get to 3.0.0
         this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, deprecationData);
     }
@@ -179,10 +192,14 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
      *                            Can be {null}
      * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel) {
+        //Can be removed when we get to 3.0.0
         this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, null);
     }
 
@@ -199,11 +216,15 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      *                            Can be {null}
      * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
      * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
                                     final DeprecationData deprecationData) {
+        //Can be removed when we get to 3.0.0
         this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, deprecationData, false);
     }
 
@@ -222,13 +243,18 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
      * @param runtime             Whether this is a runtime resource
      * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
+     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
                                     final DeprecationData deprecationData, final boolean runtime) {
         //Don't add new constructor variants!
         //Use the Parameters variety
+
+        //Can be removed when we get to 3.0.0
         if (descriptionResolver == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
         }
