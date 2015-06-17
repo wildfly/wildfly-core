@@ -117,11 +117,10 @@ public class OrderedChildResourceExtension implements Extension {
     private static class OrderedChildResourceDefinition extends SimpleResourceDefinition {
 
         public OrderedChildResourceDefinition() {
-            super(CHILD, new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler(),
-                    new ModelOnlyRemoveStepHandler(),
-                    false,
-                    true);
+            super(new Parameters(CHILD, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler())
+                    .setRemoveHandler(new ModelOnlyRemoveStepHandler())
+                    .setOrderedChild());
         }
     }
 

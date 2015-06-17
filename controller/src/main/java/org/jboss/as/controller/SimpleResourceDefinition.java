@@ -115,22 +115,6 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * {@link DefaultResourceDescriptionProvider} to describe the resource.
      *
      * @param pathElement         the path. Cannot be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}
-     * @param isRuntime tells if resource is runtime
-     * @param orderedChild Whether this child type is ordered in the parent or not
-     * @throws IllegalArgumentException if any parameter is {@code null}.
-     */
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final boolean isRuntime, final boolean orderedChild) {
-        this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime, orderedChild);
-    }
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Cannot be {@code null}.
      * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
      * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
      *                            Can be {null}
@@ -163,26 +147,6 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
     }
 
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Cannot be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @param isRuntime tells is resources is runtime or not
-     * @param orderedChild Whether this child type is ordered in the parent or not
-     * @throws IllegalArgumentException if any parameter is {@code null}
-     */
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
-                                    final boolean isRuntime, final boolean orderedChild) {
-        this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime, orderedChild);
-    }
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
      * {@link DefaultResourceDescriptionProvider} to describe the resource.
@@ -244,26 +208,6 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     }
 
 
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Can be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
-     * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
-     */
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
-                                    final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
-                                    final DeprecationData deprecationData, final boolean runtime) {
-        this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel,
-                deprecationData, runtime, false);
-    }
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
@@ -277,13 +221,14 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      *                            Can be {null}
      * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
      * @param runtime             Whether this is a runtime resource
-     * @param orderedChild  Whether this child type is ordered within the parent
      * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
      */
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
-                                    final DeprecationData deprecationData, final boolean runtime, final boolean orderedChild) {
+                                    final DeprecationData deprecationData, final boolean runtime) {
+        //Don't add new constructor variants!
+        //Use the Parameters variety
         if (descriptionResolver == null) {
             throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
         }
@@ -298,8 +243,28 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                 : validateRestartLevel("removeRestartLevel", removeRestartLevel);
         this.deprecationData = deprecationData;
         this.runtime = runtime;
-        this.orderedChild = orderedChild;
+        this.orderedChild = false;
     }
+
+    /**
+     * Constructs a {@link ResourceDefinition} using the passed in parameters object.
+     *
+     * @param parameters {@link SimpleResourceDefinition.Parameters} to configure this ResourceDefinition
+     * @throws IllegalStateException if the parameters object is not valid.
+     */
+    public SimpleResourceDefinition(Parameters parameters) {
+        this.pathElement = parameters.pathElement;
+        this.descriptionResolver = parameters.descriptionResolver;
+        this.addHandler = parameters.addHandler;
+        this.removeHandler = parameters.removeHandler;
+        this.addRestartLevel = parameters.addRestartLevel;
+        this.removeRestartLevel = parameters.removeRestartLevel;
+        this.deprecationData = parameters.deprecationData;
+        this.runtime = parameters.runtime;
+        this.orderedChild = parameters.orderedChildResource;
+        this.descriptionProvider = null;
+    }
+
 
     @Override
     public PathElement getPathElement() {
@@ -462,4 +427,136 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         return false;
     }
 
+    /**
+     * Parameters object for the SimpleResourceDefinition constructor
+     */
+    public static class Parameters{
+        private final PathElement pathElement;
+        private ResourceDescriptionResolver descriptionResolver;
+        private OperationStepHandler addHandler;
+        private OperationStepHandler removeHandler;
+        private OperationEntry.Flag addRestartLevel = OperationEntry.Flag.RESTART_NONE;
+        private OperationEntry.Flag removeRestartLevel = OperationEntry.Flag.RESTART_ALL_SERVICES;
+        private boolean runtime;
+        private DeprecationData deprecationData;
+        private boolean orderedChildResource;
+
+        /**
+         * Creates a Parameters object
+         * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param descriptionResolver the description provider. Cannot be {@code null}
+         */
+        public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
+            if (pathElement == null) {
+                throw ControllerLogger.ROOT_LOGGER.nullVar("pathElement");
+            }
+            if (descriptionResolver == null) {
+                throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionResolver");
+            }
+            this.pathElement = pathElement;
+            this.descriptionResolver = descriptionResolver;
+        }
+
+        /**
+         * Sets the description resolver to use
+         *
+         * @param descriptionResolver
+         * @return this Parameters object
+         */
+        public Parameters setDescriptionResolver(ResourceDescriptionResolver descriptionResolver) {
+            this.descriptionResolver = descriptionResolver;
+            return this;
+        }
+
+        /**
+         * Sets the add handler. This can also be added by overriding
+         * {@link SimpleResourceDefinition#registerOperations(ManagementResourceRegistration)}
+         *
+         * @param addHandler the add handler to use.
+         * @return this Parameters object
+         */
+        public Parameters setAddHandler(OperationStepHandler addHandler) {
+            this.addHandler = addHandler;
+            return this;
+        }
+
+        /**
+         * Sets the remove handler. This can also be added by overriding
+         * {@link SimpleResourceDefinition#registerOperations(ManagementResourceRegistration)}
+         *
+         * @param removeHandler the add handler to use.
+         * @return this Parameters object
+         */
+        public Parameters setRemoveHandler(OperationStepHandler removeHandler) {
+            this.removeHandler = removeHandler;
+            return this;
+        }
+
+        /**
+         * Sets the add restart level. The default is {@link OperationEntry.Flag#RESTART_NONE}
+         *
+         * @param addRestartLevel the restart level
+         * @return this Parameters object
+         * @throws IllegalStateException if a null {@code addRestartLevel} is used
+         */
+        public Parameters setAddRestartLevel(OperationEntry.Flag addRestartLevel) {
+            if (addRestartLevel == null) {
+                throw ControllerLogger.ROOT_LOGGER.nullVar("addRestartLevel");
+            }
+            this.addRestartLevel = addRestartLevel;
+            return this;
+        }
+
+        /**
+         * Sets the remove restart level. The default is {@link OperationEntry.Flag#RESTART_ALL_SERVICES}
+         * @param removeRestartLevel the restart level
+         * @return this Parameters object
+         * @throws IllegalStateException if a null {@code addRestartLevel} is used
+         */
+        public Parameters setRemoveRestartLevel(OperationEntry.Flag removeRestartLevel) {
+            if (removeRestartLevel == null) {
+                throw ControllerLogger.ROOT_LOGGER.nullVar("addRestartLevel");
+            }
+            this.removeRestartLevel = removeRestartLevel;
+            return this;
+        }
+
+        /**
+         * Call to indicate that a resource is runtime-only. If not called, the default is {@code false}
+         *
+         * @return this Parameters object
+         */
+        public Parameters setRuntime() {
+            this.runtime = true;
+            return this;
+        }
+
+        /**
+         * Call to deprecate the resource
+         *
+         * @param deprecationData Information describing deprecation of this resource.
+         * @return this Parameters object
+         * @throws IllegalStateException if the {@code deprecationData} is null
+         */
+        public Parameters setDeprecationData(DeprecationData deprecationData) {
+            if (deprecationData == null) {
+                throw ControllerLogger.ROOT_LOGGER.nullVar("addRestartLevel");
+            }
+
+            this.deprecationData = deprecationData;
+            return this;
+        }
+
+        /**
+         * Call to indicate that a resource is of a type where ordering matters amongst the siblings of the same type.
+         * If not called, the default is {@code false}.
+         *
+         * @return this Parameters object
+         */
+
+        public Parameters setOrderedChild() {
+            this.orderedChildResource = true;
+            return this;
+        }
+    }
 }
