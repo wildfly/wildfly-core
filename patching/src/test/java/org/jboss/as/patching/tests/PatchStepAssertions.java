@@ -24,11 +24,11 @@ package org.jboss.as.patching.tests;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.IoUtils;
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.PatchableTarget;
@@ -88,8 +88,14 @@ abstract class PatchStepAssertions {
         }
     };
 
-    static void assertApplied(final Patch patch, InstalledIdentity installedIdentity) throws IOException {
+    static void assertApplied(final Patch patch, InstallationManager manager) throws IOException {
         final String patchID = patch.getPatchId();
+        InstalledIdentity installedIdentity = null;
+        try {
+            installedIdentity = manager.getInstalledIdentity(patch.getIdentity().getName(), null);
+        } catch (PatchingException e) {
+            Assert.fail(e.getLocalizedMessage());
+        }
         final PatchableTarget target = installedIdentity.getIdentity();
         final PatchableTarget.TargetInfo identity = target.loadTargetInfo();
         assertIsApplied(patch.getIdentity().getPatchType(), patchID, identity);
@@ -103,7 +109,13 @@ abstract class PatchStepAssertions {
         }
     }
 
-    static void assertNotApplied(final Patch patch, InstalledIdentity installedIdentity) throws IOException {
+    static void assertNotApplied(final Patch patch, InstallationManager manager) throws IOException {
+        InstalledIdentity installedIdentity = null;
+        try {
+            installedIdentity = manager.getInstalledIdentity(patch.getIdentity().getName(), patch.getIdentity().getVersion());
+        } catch (PatchingException e) {
+            Assert.fail(e.getLocalizedMessage());
+        }
         final PatchableTarget.TargetInfo identity = installedIdentity.getIdentity().loadTargetInfo();
         assertNotApplied(patch.getIdentity().getPatchType(), patch.getPatchId(), identity);
         assertDoesNotExists(identity.getDirectoryStructure().getInstalledImage().getPatchHistoryDir(patch.getPatchId()));

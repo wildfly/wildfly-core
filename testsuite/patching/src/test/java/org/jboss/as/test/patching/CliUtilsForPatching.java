@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -318,39 +319,12 @@ public class CliUtilsForPatching {
     public static boolean rollbackAll() throws Exception {
         CLIWrapper cli = null;
         boolean success = true;
-        final String infoCommand = "patch info --distribution=%s --json-output";
-        final String rollbackCommand = "patch rollback --patch-id=%s --distribution=%s --reset-configuration=true";
         try {
             cli = new CLIWrapper(false);
-            boolean doRollback = true;
-            while (doRollback) {
-                doRollback = false;
-                String command = String.format(infoCommand, PatchingTestUtil.AS_DISTRIBUTION);
-                logger.info("----- sending command to CLI: " + command + " -----");
-                cli.sendLine(command);
-                String response = cli.readOutput();
-                ModelNode responseNode = ModelNode.fromJSONString(response);
-                ModelNode result = responseNode.get("result");
-                if (result.has("patches")) {
-                    final List<ModelNode> patchesList = result.get("patches").asList();
-                    if (!patchesList.isEmpty()) {
-                        doRollback = true;
-                        for (ModelNode n : patchesList) {
-                            command = String.format(rollbackCommand, n.asString(), PatchingTestUtil.AS_DISTRIBUTION);
-                            logger.info("----- sending command to CLI: " + command + " -----");
-                            success = success && cli.sendLine(command, true);
-                        }
-                    }
-                }
-                if (result.has("cumulative-patch-id")) {
-                    final String cumulativePatchId = result.get("cumulative-patch-id").asString();
-                    if (!cumulativePatchId.equalsIgnoreCase(BASE)) {
-                        doRollback = true;
-                        command = String.format(rollbackCommand, cumulativePatchId, PatchingTestUtil.AS_DISTRIBUTION);
-                        logger.info("----- sending command to CLI: " + command + " -----");
-                        success = success && cli.sendLine(command, true);
-                    }
-                }
+            cli.sendLine("patch info --streams --json-output");
+            final ModelNode response = ModelNode.fromJSONString(cli.readOutput());
+            for(ModelNode stream : response.get(ModelDescriptionConstants.RESULT).asList()) {
+                success = success && rollbackAll(cli, stream.asString());
             }
             return success;
         } finally {
@@ -358,6 +332,43 @@ public class CliUtilsForPatching {
                 cli.quit();
             }
         }
+    }
+
+    protected static boolean rollbackAll(CLIWrapper cli, String patchStream) {
+        final String infoCommand = "patch info --patch-stream=%s --distribution=%s --json-output";
+        final String rollbackCommand = "patch rollback --patch-stream=%s --patch-id=%s --distribution=%s --reset-configuration=true";
+        boolean success = true;
+        boolean doRollback = true;
+        while (doRollback) {
+            doRollback = false;
+            String command = String.format(infoCommand, patchStream, PatchingTestUtil.AS_DISTRIBUTION);
+            logger.info("----- sending command to CLI: " + command + " -----");
+            cli.sendLine(command);
+            String response = cli.readOutput();
+            ModelNode responseNode = ModelNode.fromJSONString(response);
+            ModelNode result = responseNode.get("result");
+            if (result.has("patches")) {
+                final List<ModelNode> patchesList = result.get("patches").asList();
+                if (!patchesList.isEmpty()) {
+                    doRollback = true;
+                    for (ModelNode n : patchesList) {
+                        command = String.format(rollbackCommand, patchStream, n.asString(), PatchingTestUtil.AS_DISTRIBUTION);
+                        logger.info("----- sending command to CLI: " + command + " -----");
+                        success = success && cli.sendLine(command, true);
+                    }
+                }
+            }
+            if (result.has("cumulative-patch-id")) {
+                final String cumulativePatchId = result.get("cumulative-patch-id").asString();
+                if (!cumulativePatchId.equalsIgnoreCase(BASE)) {
+                    doRollback = true;
+                    command = String.format(rollbackCommand, patchStream, cumulativePatchId, PatchingTestUtil.AS_DISTRIBUTION);
+                    logger.info("----- sending command to CLI: " + command + " -----");
+                    success = success && cli.sendLine(command, true);
+                }
+            }
+        }
+        return success;
     }
 
     public static List<String> getResourceLoaderPathsForModule(String module, boolean ignoreError)

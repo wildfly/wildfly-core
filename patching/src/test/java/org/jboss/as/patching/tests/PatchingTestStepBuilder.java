@@ -65,12 +65,20 @@ public class PatchingTestStepBuilder extends AbstractPatchTestBuilder<PatchingTe
     }
 
     public PatchingTestStepBuilder upgradeIdentity(String version, String resultingVersion) {
-        builder.upgradeIdentity(AbstractPatchingTest.PRODUCT_NAME, version, resultingVersion);
+        return upgradeIdentity(AbstractPatchingTest.PRODUCT_NAME, version, resultingVersion);
+    }
+
+    public PatchingTestStepBuilder upgradeIdentity(String name, String version, String resultingVersion) {
+        builder.upgradeIdentity(name, version, resultingVersion);
         return returnThis();
     }
 
     public PatchingTestStepBuilder oneOffPatchIdentity(String version) {
-        builder.oneOffPatchIdentity(AbstractPatchingTest.PRODUCT_NAME, version);
+        return oneOffPatchIdentity(AbstractPatchingTest.PRODUCT_NAME, version);
+    }
+
+    public PatchingTestStepBuilder oneOffPatchIdentity(String name, String version) {
+        builder.oneOffPatchIdentity(name, version);
         return returnThis();
     }
 

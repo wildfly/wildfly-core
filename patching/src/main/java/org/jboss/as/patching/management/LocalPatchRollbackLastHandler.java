@@ -24,7 +24,6 @@ package org.jboss.as.patching.management;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
 import org.jboss.as.patching.installation.InstallationManagerService;
@@ -34,32 +33,28 @@ import org.jboss.as.patching.tool.PatchOperationTarget;
 import org.jboss.as.patching.tool.PatchTool;
 import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceRegistry;
 
 /**
  * @author Alexey Loubyansky
  */
-public class LocalPatchRollbackLastHandler implements OperationStepHandler {
+public class LocalPatchRollbackLastHandler extends PatchStreamResourceOperationStepHandler {
 
     public static final LocalPatchRollbackLastHandler INSTANCE = new LocalPatchRollbackLastHandler();
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        final boolean resetConfiguration = PatchResourceDefinition.RESET_CONFIGURATION.resolveModelAttribute(context, operation).asBoolean();
-
-        // Acquire the lock and check the write permissions for this operation
-        final ServiceRegistry registry = context.getServiceRegistry(true);
-        final InstallationManager installationManager = (InstallationManager) registry.getRequiredService(InstallationManagerService.NAME).getValue();
+    protected void execute(final OperationContext context, final ModelNode operation, final InstallationManager installationManager, final String patchStream) throws OperationFailedException {
 
         if (installationManager.requiresRestart()) {
             throw PatchLogger.ROOT_LOGGER.serverRequiresRestart();
         }
 
+        final boolean resetConfiguration = PatchResourceDefinition.RESET_CONFIGURATION.resolveModelAttribute(context, operation).asBoolean();
+
         final PatchTool runner = PatchTool.Factory.create(installationManager);
         final ContentVerificationPolicy policy = PatchTool.Factory.create(operation);
         try {
             // Rollback
-            final PatchingResult result = runner.rollbackLast(policy, resetConfiguration);
+            final PatchingResult result = runner.rollbackLast(patchStream, policy, resetConfiguration);
             installationManager.restartRequired();
             context.restartRequired();
             context.completeStep(new OperationContext.ResultHandler() {
@@ -83,5 +78,10 @@ public class LocalPatchRollbackLastHandler implements OperationStepHandler {
         } finally {
             //
         }
+    }
+
+    @Override
+    protected InstallationManager getInstallationManager(OperationContext ctx) {
+        return (InstallationManager) ctx.getServiceRegistry(true).getRequiredService(InstallationManagerService.NAME).getValue();
     }
 }

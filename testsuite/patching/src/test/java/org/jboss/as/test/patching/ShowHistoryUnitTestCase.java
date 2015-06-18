@@ -22,10 +22,7 @@
 
 package org.jboss.as.test.patching;
 
-import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.test.patching.PatchingTestUtil.MODULES_PATH;
-import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
-import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -36,13 +33,8 @@ import java.util.List;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.patching.HashUtils;
-import org.jboss.as.patching.metadata.ContentModification;
-import org.jboss.as.patching.metadata.Patch;
-import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.test.patching.util.module.Module;
-import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,15 +46,13 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
+public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
 
-    protected ProductConfig productConfig;
     private String[] patchIds;
     private boolean[] patchTypes;
 
     @Before
     public void setup() throws Exception {
-        productConfig = new ProductConfig(PatchingTestUtil.PRODUCT, PatchingTestUtil.AS_VERSION, "main");
         patchIds = new String[8];
         patchTypes = new boolean[patchIds.length];
         for (int i = 0; i < patchIds.length; ++i) {
@@ -73,21 +63,7 @@ public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
 
     @Test
     public void testUnpatched() throws Exception {
-        controller.start();
-        ModelControllerClient client = null;
-        final ModelNode response;
-        try {
-            client = controller.getClient().getControllerClient();
-            ModelNode op = new ModelNode();
-            op.get("address").add("core-service", "patching");
-            op.get("operation").set("show-history");
-            response = client.execute(op);
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-            controller.stop();
-        }
+        final ModelNode response = showHistory();
 
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
@@ -106,21 +82,7 @@ public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
         byte[] targetHash = HashUtils.hashFile(moduleDir);
         targetHash = applyCP("cp1", targetHash);
 
-        controller.start();
-        ModelControllerClient client = null;
-        final ModelNode response;
-        try {
-            client = controller.getClient().getControllerClient();
-            ModelNode op = new ModelNode();
-            op.get("address").add("core-service", "patching");
-            op.get("operation").set("show-history");
-            response = client.execute(op);
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-            controller.stop();
-        }
+        final ModelNode response = showHistory();
 
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
@@ -142,21 +104,7 @@ public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
         byte[] targetHash = HashUtils.hashFile(moduleDir);
         targetHash = applyOneOff("oneoff1", targetHash);
 
-        controller.start();
-        ModelControllerClient client = null;
-        final ModelNode response;
-        try {
-            client = controller.getClient().getControllerClient();
-            ModelNode op = new ModelNode();
-            op.get("address").add("core-service", "patching");
-            op.get("operation").set("show-history");
-            response = client.execute(op);
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-            controller.stop();
-        }
+        final ModelNode response = showHistory();
 
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
@@ -179,21 +127,7 @@ public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
         targetHash = applyOneOff("oneoff1", targetHash);
         targetHash = applyCP("cp1", targetHash);
 
-        controller.start();
-        ModelControllerClient client = null;
-        final ModelNode response;
-        try {
-            client = controller.getClient().getControllerClient();
-            ModelNode op = new ModelNode();
-            op.get("address").add("core-service", "patching");
-            op.get("operation").set("show-history");
-            response = client.execute(op);
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-            controller.stop();
-        }
+        final ModelNode response = showHistory();
 
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
@@ -226,21 +160,7 @@ public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
             }
         }
 
-        controller.start();
-        ModelControllerClient client = null;
-        final ModelNode response;
-        try {
-            client = controller.getClient().getControllerClient();
-            ModelNode op = new ModelNode();
-            op.get("address").add("core-service", "patching");
-            op.get("operation").set("show-history");
-            response = client.execute(op);
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-            controller.stop();
-        }
+        final ModelNode response = showHistory();
 
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
@@ -257,59 +177,22 @@ public class ShowHistoryUnitTestCase extends AbstractPatchingTestCase {
         }
     }
 
-    protected byte[] applyOneOff(String patchId, byte[] targetHash) throws IOException, Exception {
-        return applyPatch(patchId, targetHash, false);
-    }
-
-    protected byte[] applyCP(String patchId, byte[] targetHash) throws Exception {
-        return applyPatch(patchId, targetHash, true);
-    }
-
-    protected byte[] applyPatch(String patchID, byte[] targetHash, boolean cp) throws Exception {
-        String moduleName = "module-test";
-        String patchElementId = randomString();
-        File patchDir = mkdir(tempDir, patchID);
-
-        Module module = new Module.Builder(moduleName).
-                miscFile(new ResourceItem("resource-test", ("resource patch " + patchID).getBytes())).
-                build();
-
-        // create the patch with the updated module
-        ContentModification moduleModified = ContentModificationUtils.modifyModule(patchDir, patchElementId, targetHash, module);
-
-        PatchBuilder patchBuilder = PatchBuilder.create()
-                .setPatchId(patchID)
-                .setDescription(randomString());
-        if (cp) {
-            patchBuilder = patchBuilder.
-                    upgradeIdentity(productConfig.getProductName(), productConfig.getProductVersion(), productConfig.getProductVersion() + "_CP" + patchID).
-                    getParent().
-                    upgradeElement(patchElementId, "base", false).
-                    addContentModification(moduleModified).
-                    getParent();
-        } else {
-            patchBuilder = patchBuilder.
-                    oneOffPatchIdentity(productConfig.getProductName(), productConfig.getProductVersion()).
-                    getParent().
-                    oneOffPatchElement(patchElementId, "base", false).
-                    addContentModification(moduleModified).
-                    getParent();
-        }
-        Patch patch = patchBuilder.build();
-
-        // create the patch
-        createPatchXMLFile(patchDir, patch);
-
-        File zippedPatch = createZippedPatchFile(patchDir, patch.getPatchId());
-
-        // apply the patch and check if server is in restart-required mode
+    private ModelNode showHistory() throws IOException {
         controller.start();
+        ModelControllerClient client = null;
+        final ModelNode response;
         try {
-            Assert.assertTrue("Patch should be accepted", CliUtilsForPatching.applyPatch(zippedPatch.getAbsolutePath()));
-            Assert.assertTrue("server should be in restart-required mode", CliUtilsForPatching.doesServerRequireRestart());
+            client = controller.getClient().getControllerClient();
+            ModelNode op = new ModelNode();
+            op.get("address").add("core-service", "patching");
+            op.get("operation").set("show-history");
+            response = client.execute(op);
         } finally {
+            if (client != null) {
+                client.close();
+            }
             controller.stop();
         }
-        return moduleModified.getItem().getContentHash();
+        return response;
     }
 }

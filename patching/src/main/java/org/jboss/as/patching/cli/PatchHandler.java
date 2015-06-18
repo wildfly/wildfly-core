@@ -93,6 +93,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
     private final ArgumentWithoutValue path;
 
     private final ArgumentWithValue patchId;
+    private final ArgumentWithValue patchStream;
     private final ArgumentWithoutValue rollbackTo;
     private final ArgumentWithValue resetConfiguration;
 
@@ -106,6 +107,8 @@ public class PatchHandler extends CommandHandlerWithHelp {
     private final ArgumentWithoutValue bundlePath;
 
     private final ArgumentWithoutValue verbose;
+
+    private final ArgumentWithoutValue streams;
 
     /** whether the output should be displayed in a human friendly form or JSON - tools friendly */
     private final ArgumentWithoutValue jsonOutput;
@@ -199,6 +202,17 @@ public class PatchHandler extends CommandHandlerWithHelp {
         };
         patchId.addRequiredPreceding(action);
 
+        patchStream = new ArgumentWithValue(this, "--patch-stream") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (canOnlyAppearAfterActions(ctx, HISTORY, INFO, ROLLBACK)) {
+                    return super.canAppearNext(ctx);
+                }
+                return false;
+            }
+        };
+        patchStream.addRequiredPreceding(action);
+
         rollbackTo = new ArgumentWithoutValue(this, "--rollback-to") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
@@ -272,6 +286,23 @@ public class PatchHandler extends CommandHandlerWithHelp {
                 return false;
             }
         };
+
+        streams = new ArgumentWithoutValue(this, "--streams") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (canOnlyAppearAfterActions(ctx, INFO)) {
+                    return super.canAppearNext(ctx);
+                }
+                return false;
+            }
+        };
+        streams.addRequiredPreceding(action);
+        streams.addCantAppearAfter(verbose);
+        verbose.addCantAppearAfter(streams);
+        streams.addCantAppearAfter(patchStream);
+        patchStream.addCantAppearAfter(streams);
+        streams.addCantAppearAfter(patchId);
+        patchId.addCantAppearAfter(streams);
     }
 
     private boolean canOnlyAppearAfterActions(CommandContext ctx, String... actions) {
@@ -359,6 +390,17 @@ public class PatchHandler extends CommandHandlerWithHelp {
                 }
             } else if(jsonOutput.isPresent(parsedLine)) {
                 ctx.printLine(response.toJSONString(false));
+            } else if(streams.isPresent(parsedLine)) {
+                final List<ModelNode> list = response.get(ModelDescriptionConstants.RESULT).asList();
+                if(list.size() == 1) {
+                    ctx.printLine(list.get(0).asString());
+                } else {
+                    final List<String> streams = new ArrayList<String>(list.size());
+                    for(ModelNode stream : list) {
+                        streams.add(stream.asString());
+                    }
+                    ctx.printColumns(streams);
+                }
             } else {
                 final ModelNode result = response.get(ModelDescriptionConstants.RESULT);
                 if(!result.isDefined()) {
@@ -571,23 +613,29 @@ public class PatchHandler extends CommandHandlerWithHelp {
             } else {
                 throw new CommandFormatException("Unexpected value for --reset-configuration (only true and false are allowed): " + resetConfigValue);
             }
+            final String patchStream = this.patchStream.getValue(args);
             if(patchId.isPresent(args)) {
                 final String id = patchId.getValue(args, true);
                 final boolean rollbackTo = this.rollbackTo.isPresent(args);
-                builder = PatchOperationBuilder.Factory.rollback(id, rollbackTo, resetConfig);
+                builder = PatchOperationBuilder.Factory.rollback(patchStream, id, rollbackTo, resetConfig);
             } else {
-                builder = PatchOperationBuilder.Factory.rollbackLast(resetConfig);
+                builder = PatchOperationBuilder.Factory.rollbackLast(patchStream, resetConfig);
             }
         } else if (INFO.equals(action)) {
+            if(streams.isPresent(args)) {
+                return PatchOperationBuilder.Factory.streams();
+            }
+            final String patchStream = this.patchStream.getValue(args);
             final String pId = patchId.getValue(args);
             if(pId == null) {
-                builder = PatchOperationBuilder.Factory.info();
+                builder = PatchOperationBuilder.Factory.info(patchStream);
             } else {
-                builder = PatchOperationBuilder.Factory.info(pId, verbose.isPresent(args));
+                builder = PatchOperationBuilder.Factory.info(patchStream, pId, verbose.isPresent(args));
             }
             return builder;
         } else if (HISTORY.equals(action)) {
-            builder = PatchOperationBuilder.Factory.history();
+            final String patchStream = this.patchStream.getValue(args);
+            builder = PatchOperationBuilder.Factory.history(patchStream);
             return builder;
         } else {
             throw new CommandFormatException("Unrecognized action '" + action + "'");

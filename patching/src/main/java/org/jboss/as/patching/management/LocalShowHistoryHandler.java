@@ -26,31 +26,26 @@ package org.jboss.as.patching.management;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerService;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.tool.PatchingHistory;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceRegistry;
 
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012, Red Hat Inc
  * @author Alexey Loubyansky
  */
-public final class LocalShowHistoryHandler implements OperationStepHandler {
+public final class LocalShowHistoryHandler extends PatchStreamResourceOperationStepHandler {
     public static final OperationStepHandler INSTANCE = new LocalShowHistoryHandler();
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    protected void execute(final OperationContext context, final ModelNode operation, final InstalledIdentity installedIdentity) throws OperationFailedException {
 
-        // Acquire the lock and check the write permissions for this operation
-        final ServiceRegistry registry = context.getServiceRegistry(true);
-        final InstallationManager installationManager = (InstallationManager) registry.getRequiredService(InstallationManagerService.NAME).getValue();
         try {
-            final PatchableTarget.TargetInfo info = installationManager.getIdentity().loadTargetInfo();
-            final ModelNode result =  PatchingHistory.Factory.getHistory(installationManager, info);
+            final PatchableTarget.TargetInfo info = installedIdentity.getIdentity().loadTargetInfo();
+            final ModelNode result =  PatchingHistory.Factory.getHistory(installedIdentity, info);
             context.getResult().set(result);
         } catch (Throwable t) {
             PatchLogger.ROOT_LOGGER.debugf(t, "failed to get history");

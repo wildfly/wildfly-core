@@ -166,7 +166,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         Patch patch2 = PatchBuilder.create()
                 .setPatchId(patchID2)
                 .setDescription(randomString())
-                .upgradeIdentity(productConfig.getProductName(), productConfig.getProductVersion(), productConfig.getProductName() + "CP2")
+                .upgradeIdentity(productConfig.getProductName(), productConfig.getProductVersion() + "CP1", productConfig.getProductName() + "CP2")
                 .getParent()
                 .addContentModification(fileModified2)
                 .upgradeElement(patchElementId2, "base", false)

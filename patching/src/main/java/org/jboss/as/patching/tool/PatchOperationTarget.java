@@ -26,13 +26,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
@@ -43,6 +40,7 @@ import java.util.List;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.patching.Constants;
@@ -104,12 +102,25 @@ public abstract class PatchOperationTarget {
 
     //
 
-    protected abstract ModelNode info() throws IOException;
-    protected abstract ModelNode info(String patchId, boolean verbose) throws IOException;
-    protected abstract ModelNode history() throws IOException;
-    protected abstract ModelNode applyPatch(final File file, final ContentPolicyBuilderImpl builder) throws IOException;
-    protected abstract ModelNode rollback(final String patchId, final ContentPolicyBuilderImpl builder, boolean rollbackTo, final boolean restoreConfiguration) throws IOException;
-    protected abstract ModelNode rollbackLast(final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws IOException;
+    protected abstract ModelNode streams() throws PatchingException;
+
+    protected abstract ModelNode info() throws PatchingException;
+    protected abstract ModelNode info(String streamName) throws PatchingException;
+
+    protected abstract ModelNode info(String patchId, boolean verbose) throws PatchingException;
+    protected abstract ModelNode info(String streamName, String patchId, boolean verbose) throws PatchingException;
+
+    protected abstract ModelNode history() throws PatchingException;
+    protected abstract ModelNode history(String streamName) throws PatchingException;
+
+    protected abstract ModelNode applyPatch(final File file, final ContentPolicyBuilderImpl builder) throws PatchingException;
+
+    protected abstract ModelNode rollback(final String patchId, final ContentPolicyBuilderImpl builder, boolean rollbackTo, final boolean restoreConfiguration) throws PatchingException;
+    protected abstract ModelNode rollback(final String streamName, final String patchId,
+            final ContentPolicyBuilderImpl builder, boolean rollbackTo, final boolean restoreConfiguration) throws PatchingException;
+
+    protected abstract ModelNode rollbackLast(final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws PatchingException;
+    protected abstract ModelNode rollbackLast(final String streamName, final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws PatchingException;
 
     protected static class LocalPatchOperationTarget extends PatchOperationTarget {
 
@@ -119,8 +130,25 @@ public abstract class PatchOperationTarget {
         }
 
         @Override
-        protected ModelNode info() throws IOException {
-            final PatchInfo info = tool.getPatchInfo();
+        protected ModelNode streams() throws PatchingException {
+            final List<String> streams = tool.getPatchStreams();
+            final ModelNode result = new ModelNode();
+            result.get(OUTCOME).set(SUCCESS);
+            final ModelNode list = result.get(RESULT).setEmptyList();
+            for(final String stream : streams) {
+                list.add(stream);
+            }
+            return result;
+        }
+
+        @Override
+        protected ModelNode info() throws PatchingException {
+            return info(null);
+        }
+
+        @Override
+        protected ModelNode info(String streamName) throws PatchingException {
+            final PatchInfo info = tool.getPatchInfo(streamName);
             final ModelNode result = new ModelNode();
             result.get(OUTCOME).set(SUCCESS);
             result.get(RESULT, Constants.CUMULATIVE).set(info.getCumulativePatchID());
@@ -133,10 +161,15 @@ public abstract class PatchOperationTarget {
 
         @Override
         protected ModelNode history() {
+            return history(null);
+        }
+
+        @Override
+        protected ModelNode history(String streamName) {
             final ModelNode result = new ModelNode();
             result.get(OUTCOME).set(SUCCESS);
             try {
-                result.get(RESULT).set(tool.getPatchingHistory().getHistory());
+                result.get(RESULT).set(tool.getPatchingHistory(streamName).getHistory());
             } catch (PatchingException e) {
                 return formatFailedResponse(e);
             }
@@ -160,10 +193,15 @@ public abstract class PatchOperationTarget {
 
         @Override
         protected ModelNode rollback(final String patchId, final ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) {
+            return rollback(null, patchId, builder, rollbackTo, resetConfiguration);
+        }
+
+        @Override
+        protected ModelNode rollback(final String streamName, final String patchId, final ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) {
             final ContentVerificationPolicy policy = builder.createPolicy();
             ModelNode result = new ModelNode();
             try {
-                PatchingResult rollback = tool.rollback(patchId, policy, rollbackTo, resetConfiguration);
+                PatchingResult rollback = tool.rollback(streamName, patchId, policy, rollbackTo, resetConfiguration);
                 rollback.commit();
                 result.get(OUTCOME).set(SUCCESS);
                 result.get(RESULT).setEmptyObject();
@@ -175,10 +213,15 @@ public abstract class PatchOperationTarget {
 
         @Override
         protected ModelNode rollbackLast(final ContentPolicyBuilderImpl builder, boolean restoreConfiguration) {
+            return rollbackLast(null, builder, restoreConfiguration);
+        }
+
+        @Override
+        protected ModelNode rollbackLast(final String streamName, final ContentPolicyBuilderImpl builder, boolean restoreConfiguration) {
             final ContentVerificationPolicy policy = builder.createPolicy();
             ModelNode result = new ModelNode();
             try {
-                PatchingResult rollback = tool.rollbackLast(policy, restoreConfiguration);
+                PatchingResult rollback = tool.rollbackLast(streamName, policy, restoreConfiguration);
                 rollback.commit();
                 result.get(OUTCOME).set(SUCCESS);
                 result.get(RESULT).setEmptyObject();
@@ -189,11 +232,16 @@ public abstract class PatchOperationTarget {
         }
 
         @Override
-        protected ModelNode info(String patchId, boolean verbose) throws IOException {
+        protected ModelNode info(String patchId, boolean verbose) throws PatchingException {
+            return info(null, patchId, verbose);
+        }
+
+        @Override
+        protected ModelNode info(String streamName, String patchId, boolean verbose) throws PatchingException {
             if(patchId == null) {
                 throw new IllegalArgumentException("patchId is null");
             }
-            PatchingHistory history = tool.getPatchingHistory();
+            final PatchingHistory history = tool.getPatchingHistory(streamName);
             try {
                 final PatchingHistory.Iterator iterator = history.iterator();
                 while(iterator.hasNext()) {
@@ -244,58 +292,122 @@ public abstract class PatchOperationTarget {
         }
 
         @Override
-        protected ModelNode info() throws IOException {
+        protected ModelNode streams() throws PatchingException {
             final ModelNode operation = new ModelNode();
-            operation.get(OP).set(READ_RESOURCE_OPERATION);
-            operation.get(OP_ADDR).set(address.toModelNode());
-            operation.get(RECURSIVE).set(true);
-            operation.get(INCLUDE_RUNTIME).set(true);
-            return client.execute(operation);
+            operation.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
+            operation.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION);
+            operation.get(ModelDescriptionConstants.CHILD_TYPE).set(Constants.PATCH_STREAM);
+            return executeOp(operation);
         }
 
         @Override
-        protected ModelNode history() throws IOException {
-            final ModelNode operation = new ModelNode();
-            operation.get(OP).set("show-history");
-            operation.get(OP_ADDR).set(address.toModelNode());
-            return client.execute(operation);
+        protected ModelNode info() throws PatchingException {
+            return info(null);
         }
 
         @Override
-        protected ModelNode applyPatch(final File file, final ContentPolicyBuilderImpl policyBuilder) throws IOException {
+        protected ModelNode info(String streamName) throws PatchingException {
+            final ModelNode operation = new ModelNode();
+            operation.get(ModelDescriptionConstants.OP).set(Constants.PATCH_INFO);
+            operation.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
+            if(streamName != null) {
+                operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
+            }
+            operation.get(Constants.VERBOSE).set(true);
+            return executeOp(operation);
+        }
+
+        @Override
+        protected ModelNode history() throws PatchingException {
+            return history(null);
+        }
+
+        @Override
+        protected ModelNode history(String streamName) throws PatchingException {
+            final ModelNode operation = new ModelNode();
+            operation.get(OP).set(Constants.SHOW_HISTORY);
+            operation.get(OP_ADDR).set(address.toModelNode());
+            if(streamName != null) {
+                operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
+            }
+            return executeOp(operation);
+        }
+
+        @Override
+        protected ModelNode applyPatch(final File file, final ContentPolicyBuilderImpl policyBuilder) throws PatchingException {
             final ModelNode operation = createOperation(Constants.PATCH, address.toModelNode(), policyBuilder);
             operation.get(INPUT_STREAM_INDEX).set(0);
             final OperationBuilder operationBuilder = OperationBuilder.create(operation);
             operationBuilder.addFileAsAttachment(file);
-            return client.execute(operationBuilder.build());
+            return executeOp(operationBuilder.build());
         }
 
         @Override
-        protected ModelNode rollback(String patchId, ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) throws IOException {
+        protected ModelNode rollback(String patchId, ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) throws PatchingException {
+            return rollback(null, patchId, builder, rollbackTo, resetConfiguration);
+        }
+
+        @Override
+        protected ModelNode rollback(String streamName, String patchId, ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) throws PatchingException {
             final ModelNode operation = createOperation(Constants.ROLLBACK, address.toModelNode(), builder);
             operation.get(Constants.PATCH_ID).set(patchId);
             operation.get(Constants.RESET_CONFIGURATION).set(resetConfiguration);
             operation.get(Constants.ROLLBACK_TO).set(rollbackTo);
-            return client.execute(operation);
+            if(streamName != null) {
+                operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
+            }
+            return executeOp(operation);
         }
 
         @Override
-        protected ModelNode rollbackLast(ContentPolicyBuilderImpl builder, boolean restoreConfiguration) throws IOException {
+        protected ModelNode rollbackLast(ContentPolicyBuilderImpl builder, boolean restoreConfiguration) throws PatchingException {
+            return rollbackLast(null, builder, restoreConfiguration);
+        }
+
+        @Override
+        protected ModelNode rollbackLast(String streamName, ContentPolicyBuilderImpl builder, boolean restoreConfiguration) throws PatchingException {
             final ModelNode operation = createOperation(Constants.ROLLBACK_LAST, address.toModelNode(), builder);
             operation.get(Constants.RESET_CONFIGURATION).set(restoreConfiguration);
-            return client.execute(operation);
+            if(streamName != null) {
+                operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
+            }
+            return executeOp(operation);
         }
 
         @Override
-        protected ModelNode info(String patchId, boolean verbose) throws IOException {
+        protected ModelNode info(String patchId, boolean verbose) throws PatchingException {
+            return info(null, patchId, verbose);
+        }
+
+        @Override
+        protected ModelNode info(String streamName, String patchId, boolean verbose) throws PatchingException {
             final ModelNode operation = new ModelNode();
-            operation.get(ModelDescriptionConstants.OP).set("patch-info");
+            operation.get(ModelDescriptionConstants.OP).set(Constants.PATCH_INFO);
             operation.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
             operation.get(Constants.PATCH_ID).set(patchId);
+            if(streamName != null) {
+                operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
+            }
             if(verbose) {
                 operation.get(Constants.VERBOSE).set(true);
             }
-            return client.execute(operation);
+            return executeOp(operation);
+        }
+
+        protected ModelNode executeOp(ModelNode operation) throws PatchingException {
+            try {
+                return client.execute(operation);
+            } catch (IOException e) {
+                throw new PatchingException("Failed to execute operation " + operation, e);
+            }
+        }
+
+        protected ModelNode executeOp(Operation operation) throws PatchingException {
+            try {
+                return client.execute(operation);
+            } catch (IOException e) {
+                throw new PatchingException("Failed to execute operation " + operation.getOperation(), e);
+            }
         }
     }
 

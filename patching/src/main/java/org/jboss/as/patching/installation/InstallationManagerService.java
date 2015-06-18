@@ -64,8 +64,10 @@ public class InstallationManagerService implements Service<InstallationManager> 
             final File cleanupMaker = new File(manager.getInstalledImage().getInstallationMetadata(), "cleanup-patching-dirs");
             if (cleanupMaker.exists()) {
                 try {
-                    final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(getValue());
-                    garbageLocator.deleteInactiveContent();
+                    for(InstalledIdentity installedIdentity : getValue().getInstalledIdentities()) {
+                        final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(installedIdentity);
+                        garbageLocator.deleteInactiveContent();
+                    }
                     cleanupMaker.delete();
                 } catch (Exception e) {
                     PatchLogger.ROOT_LOGGER.debugf(e, "failed to garbage collect changes");
@@ -103,8 +105,7 @@ public class InstallationManagerService implements Service<InstallationManager> 
         final InstalledImage installedImage = InstalledIdentity.installedImage(jbossHome);
         final List<File> moduleRoots = getModulePath(installedImage);
         final List<File> bundlesRoots = getBundlePath(installedImage);
-        final InstalledIdentity identity = LayersFactory.load(installedImage, productConfig, moduleRoots, bundlesRoots);
-        return new InstallationManagerImpl(identity);
+        return InstallationManager.load(jbossHome, moduleRoots, bundlesRoots, productConfig);
     }
 
     private static List<File> getModulePath(final InstalledImage image) {

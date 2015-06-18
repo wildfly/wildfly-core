@@ -24,25 +24,29 @@ package org.jboss.as.patching.runner;
 
 import static org.jboss.as.patching.IoUtils.safeClose;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchInfo;
-import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.ZipUtils;
 import org.jboss.as.patching.installation.Identity;
 import org.jboss.as.patching.installation.InstallationManager;
+import org.jboss.as.patching.installation.InstallationManagerImpl;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.PatchableTarget;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.BundledPatch;
+import org.jboss.as.patching.metadata.BundledPatch.BundledPatchEntry;
 import org.jboss.as.patching.metadata.PatchBundleXml;
 import org.jboss.as.patching.metadata.PatchMetadataResolver;
 import org.jboss.as.patching.metadata.PatchXml;
@@ -68,17 +72,29 @@ public class PatchToolImpl implements PatchTool {
         this.callback = runner;
     }
 
-    public PatchToolImpl(final InstallationManager manager, final InstallationManager.ModificationCompletionCallback callback) {
-        this.manager = manager;
-        this.runner = new IdentityPatchRunner(manager.getInstalledImage());
-        this.callback = callback;
+    @Override
+    public List<String> getPatchStreams() throws PatchingException {
+        final List<InstalledIdentity> installedIdentities = manager.getInstalledIdentities();
+        if(installedIdentities.size() == 1) {
+            return Collections.singletonList(installedIdentities.get(0).getIdentity().getName());
+        }
+        final List<String> result = new ArrayList<String>(installedIdentities.size());
+        for(InstalledIdentity ii : installedIdentities) {
+            result.add(ii.getIdentity().getName());
+        }
+        return result;
     }
 
     @Override
-    public PatchInfo getPatchInfo() {
+    public PatchInfo getPatchInfo() throws PatchingException {
+        return getPatchInfo(null);
+    }
+
+    @Override
+    public PatchInfo getPatchInfo(String streamName) throws PatchingException {
         try {
-            final Identity identity = manager.getIdentity();
-            final PatchableTarget.TargetInfo info = manager.getIdentity().loadTargetInfo();
+            final Identity identity = streamName == null ? manager.getDefaultIdentity().getIdentity() : manager.getInstalledIdentity(streamName, null).getIdentity();
+            final PatchableTarget.TargetInfo info = identity.loadTargetInfo();
             return new PatchInfo() {
                 @Override
                 public String getVersion() {
@@ -102,8 +118,14 @@ public class PatchToolImpl implements PatchTool {
     }
 
     @Override
-    public PatchingHistory getPatchingHistory() {
-        return PatchingHistory.Factory.getHistory(manager);
+    public PatchingHistory getPatchingHistory() throws PatchingException {
+        return getPatchingHistory(null);
+    }
+
+    @Override
+    public PatchingHistory getPatchingHistory(String streamName) throws PatchingException {
+        final InstalledIdentity identity = streamName == null ? manager.getDefaultIdentity() : manager.getInstalledIdentity(streamName, null);
+        return PatchingHistory.Factory.getHistory(identity);
     }
 
     @Override
@@ -180,8 +202,32 @@ public class PatchToolImpl implements PatchTool {
     @Override
     public PatchingResult rollback(final String patchId, final ContentVerificationPolicy contentPolicy,
                                    final boolean rollbackTo, final boolean resetConfiguration) throws PatchingException {
+        return rollback(null, patchId, contentPolicy, rollbackTo, resetConfiguration);
+    }
+
+    @Override
+    public PatchingResult rollback(final String streamName, final String patchId, final ContentVerificationPolicy contentPolicy,
+            final boolean rollbackTo, final boolean resetConfiguration) throws PatchingException {
+        InstalledIdentity targetIdentity = null;
+        if (streamName == null) {
+            for (InstalledIdentity identity : manager.getInstalledIdentities()) {
+                if (identity.getAllInstalledPatches().contains(patchId)) {
+                    if (targetIdentity != null) {
+                        throw new PatchingException(PatchLogger.ROOT_LOGGER.patchIdFoundInMoreThanOneStream(patchId,
+                                targetIdentity.getIdentity().getName(), identity.getIdentity().getName()));
+                    }
+                    targetIdentity = identity;
+                }
+            }
+            if(targetIdentity == null) {
+                throw PatchLogger.ROOT_LOGGER.patchNotFoundInHistory(patchId);
+            }
+        } else {
+            targetIdentity = manager.getInstalledIdentity(streamName, null);
+        }
+
         // Rollback the patch
-        final InstallationManager.InstallationModification modification = manager.modifyInstallation(runner);
+        final InstallationManager.InstallationModification modification = targetIdentity.modifyInstallation(runner);
         try {
             return runner.rollbackPatch(patchId, contentPolicy, rollbackTo, resetConfiguration, modification);
         } catch (Exception e) {
@@ -192,8 +238,13 @@ public class PatchToolImpl implements PatchTool {
 
     @Override
     public PatchingResult rollbackLast(final ContentVerificationPolicy contentPolicy, final boolean resetConfiguration) throws PatchingException {
-        // Rollback the patch
-        final InstallationManager.InstallationModification modification = manager.modifyInstallation(runner);
+        return rollbackLast(null, contentPolicy, resetConfiguration);
+    }
+
+    @Override
+    public PatchingResult rollbackLast(final String streamName, final ContentVerificationPolicy contentPolicy, final boolean resetConfiguration) throws PatchingException {
+        final InstalledIdentity targetIdentity = streamName == null ? manager.getDefaultIdentity() : manager.getInstalledIdentity(streamName, null);
+        final InstallationManager.InstallationModification modification = targetIdentity.modifyInstallation(runner);
         try {
             return runner.rollbackLast(contentPolicy, resetConfiguration, modification);
         } catch (Exception e) {
@@ -202,7 +253,8 @@ public class PatchToolImpl implements PatchTool {
         }
     }
 
-    protected PatchingResult execute(final File workDir, final ContentVerificationPolicy contentPolicy) throws PatchingException, IOException, XMLStreamException {
+    protected PatchingResult execute(final File workDir, final ContentVerificationPolicy contentPolicy)
+            throws PatchingException, IOException, XMLStreamException {
 
         final File patchBundleXml = new File(workDir, PatchBundleXml.MULTI_PATCH_XML);
         if (patchBundleXml.exists()) {
@@ -232,7 +284,9 @@ public class PatchToolImpl implements PatchTool {
 
     protected PatchingResult apply(final PatchMetadataResolver patchResolver, final PatchContentProvider contentProvider, final ContentVerificationPolicy contentPolicy) throws PatchingException {
         // Apply the patch
-        final InstallationManager.InstallationModification modification = manager.modifyInstallation(callback);
+        final org.jboss.as.patching.metadata.Identity identity = patchResolver.resolvePatch(null, null).getIdentity();
+        final InstallationManager.InstallationModification modification = ((InstallationManagerImpl)manager).
+                getInstalledIdentity(identity.getName(), identity.getVersion()).modifyInstallation(callback);
         try {
             return runner.applyPatch(patchResolver, contentProvider, contentPolicy, modification);
         } catch (Exception e) {
@@ -242,19 +296,39 @@ public class PatchToolImpl implements PatchTool {
     }
 
     protected PatchingResult applyPatchBundle(final File workDir, final BundledPatch bundledPatch, final ContentVerificationPolicy contentPolicy) throws PatchingException, IOException {
+        final List<BundledPatchEntry> patches = bundledPatch.getPatches();
+        if(patches.isEmpty()) {
+            throw new PatchingException(PatchLogger.ROOT_LOGGER.patchBundleIsEmpty());
+        }
+
         PatchingResult result = null;
-        final List<BundledPatch.BundledPatchEntry> results = new ArrayList<BundledPatch.BundledPatchEntry>();
-        final Iterator<BundledPatch.BundledPatchEntry> iterator = bundledPatch.getPatches().iterator();
-        while (iterator.hasNext()) {
-            final BundledPatch.BundledPatchEntry entry = iterator.next();
-            // Skip applied patches
-            if (manager.getAllInstalledPatches().contains(entry.getPatchId())) {
+        BundledPatchEntry lastCommittedEntry = null;
+        final List<BundledPatch.BundledPatchEntry> results = new ArrayList<BundledPatch.BundledPatchEntry>(patches.size());
+
+        final List<InstalledIdentity> installedIdentities = manager.getInstalledIdentities();
+        for(BundledPatchEntry entry : patches) {
+            // TODO this has to be checked against the specific one targeted by the patch
+            boolean alreadyApplied = false;
+            for (InstalledIdentity identity : installedIdentities) {
+                if (identity.getAllInstalledPatches().contains(entry.getPatchId())) {
+                    alreadyApplied = true;
+                    break;
+                }
+            }
+            if(alreadyApplied) {
                 continue;
             }
+
+            if(result != null) {
+                result.commit();
+                results.add(0, lastCommittedEntry);
+            }
+
             final File patch = new File(workDir, entry.getPatchPath());
             final FileInputStream is = new FileInputStream(patch);
+            PatchingResult currentResult = null;
             try {
-                result = applyPatch(workDir, is, contentPolicy);
+                currentResult = applyPatch(workDir, is, contentPolicy);
             } catch (PatchingException e) {
                 // Undo the changes included as part of this patch
                 for (BundledPatch.BundledPatchEntry committed : results) {
@@ -268,11 +342,13 @@ public class PatchToolImpl implements PatchTool {
             } finally {
                 safeClose(is);
             }
-            if (iterator.hasNext()) {
-                result.commit();
-                results.add(0, entry);
+
+            if (currentResult != null) {
+                result = currentResult;
+                lastCommittedEntry = entry;
             }
         }
+
         if (result == null) {
             throw new PatchingException();
         }

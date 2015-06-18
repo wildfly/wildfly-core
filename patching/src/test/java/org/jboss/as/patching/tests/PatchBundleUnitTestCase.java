@@ -26,7 +26,6 @@ import static org.jboss.as.patching.IoUtils.safeClose;
 import static org.jboss.as.patching.runner.TestUtils.dump;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.touch;
-import static org.jboss.as.patching.runner.TestUtils.tree;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -39,9 +38,10 @@ import java.util.List;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.ZipUtils;
 import org.jboss.as.patching.installation.InstallationManager;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.metadata.BundledPatch;
-import org.jboss.as.patching.metadata.PatchBundleXml;
 import org.jboss.as.patching.metadata.Patch;
+import org.jboss.as.patching.metadata.PatchBundleXml;
 import org.jboss.as.patching.tool.ContentVerificationPolicy;
 import org.jboss.as.patching.tool.PatchTool;
 import org.jboss.as.patching.tool.PatchingResult;
@@ -120,20 +120,21 @@ public class PatchBundleUnitTestCase extends AbstractPatchingTest {
 
         mgr = loadInstallationManager();
 
-        Assert.assertEquals(Arrays.asList(new String[] {"CP1", "CP2", "CP3", "CP4", "CP5"}), mgr.getAllInstalledPatches());
+        final InstalledIdentity installedIdentity = mgr.getDefaultIdentity();
+        Assert.assertEquals(Arrays.asList(new String[] {"CP1", "CP2", "CP3", "CP4", "CP5"}), installedIdentity.getAllInstalledPatches());
 
-        PatchStepAssertions.assertModule("base-CP3", mgr.getLayer("base"), "org.jboss.test", "main");
-        PatchStepAssertions.assertModule("base-CP3", mgr.getLayer("base"), "org.jboss.test.four", "main");
-        PatchStepAssertions.assertModule("layer-1-CP2", mgr.getLayer("layer-1"), "org.jboss.test.two", "main");
-        PatchStepAssertions.assertModule("layer-1-CP2", mgr.getLayer("layer-1"), "org.jboss.test.five", "main");
-        PatchStepAssertions.assertModule("layer-2-CP2", mgr.getLayer("layer-2"), "org.jboss.test.three", "main");
-        PatchStepAssertions.assertModule("layer-2-CP2", mgr.getLayer("layer-2"), "org.jboss.test.six", "main");
+        PatchStepAssertions.assertModule("base-CP3", installedIdentity.getLayer("base"), "org.jboss.test", "main");
+        PatchStepAssertions.assertModule("base-CP3", installedIdentity.getLayer("base"), "org.jboss.test.four", "main");
+        PatchStepAssertions.assertModule("layer-1-CP2", installedIdentity.getLayer("layer-1"), "org.jboss.test.two", "main");
+        PatchStepAssertions.assertModule("layer-1-CP2", installedIdentity.getLayer("layer-1"), "org.jboss.test.five", "main");
+        PatchStepAssertions.assertModule("layer-2-CP2", installedIdentity.getLayer("layer-2"), "org.jboss.test.three", "main");
+        PatchStepAssertions.assertModule("layer-2-CP2", installedIdentity.getLayer("layer-2"), "org.jboss.test.six", "main");
 
         rollback(cp5);
 
         mgr = loadInstallationManager();
-        PatchStepAssertions.assertModule("base-CP2", mgr.getLayer("base"), "org.jboss.test", "main");
-        PatchStepAssertions.assertModule("base-CP2", mgr.getLayer("base"), "org.jboss.test.four", "main");
+        PatchStepAssertions.assertModule("base-CP2", installedIdentity.getLayer("base"), "org.jboss.test", "main");
+        PatchStepAssertions.assertModule("base-CP2", installedIdentity.getLayer("base"), "org.jboss.test.four", "main");
 
         rollback(cp4);
         rollback(cp3);

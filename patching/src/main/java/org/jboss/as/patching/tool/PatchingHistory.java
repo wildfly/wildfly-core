@@ -157,8 +157,8 @@ public interface PatchingHistory {
             return new IteratorImpl(info, mgr);
         }
 
-        public static PatchingHistory getHistory(final InstalledIdentity mgr) {
-            if(mgr == null) {
+        public static PatchingHistory getHistory(final InstalledIdentity installedIdentity) {
+            if(installedIdentity == null) {
                 throw new IllegalStateException("installedImage is null");
             }
 
@@ -167,29 +167,29 @@ public interface PatchingHistory {
                 @Override
                 public ModelNode getHistory() throws PatchingException {
                     try {
-                        return getHistory(mgr.getIdentity().loadTargetInfo());
+                        return getHistory(installedIdentity.getIdentity().loadTargetInfo());
                     } catch (IOException e) {
-                        throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                        throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
                     }
                 }
 
                 @Override
                 public ModelNode getHistory(TargetInfo info) throws PatchingException {
-                    return Factory.getHistory(mgr, info);
+                    return Factory.getHistory(installedIdentity, info);
                 }
 
                 @Override
                 public Iterator iterator() throws PatchingException {
                     try {
-                        return iterator(mgr.getIdentity().loadTargetInfo());
+                        return iterator(installedIdentity.getIdentity().loadTargetInfo());
                     } catch (IOException e) {
-                        throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                        throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
                     }
                 }
 
                 @Override
                 public Iterator iterator(TargetInfo info) throws PatchingException {
-                    return Factory.iterator(mgr, info);
+                    return Factory.iterator(installedIdentity, info);
                 }
             };
         }
@@ -211,14 +211,14 @@ public interface PatchingHistory {
                 this.patchIndex = patchIndex;
             }
 
-            IteratorState(InstalledIdentity mgr) throws PatchingException {
-                if(mgr == null) {
+            IteratorState(InstalledIdentity installedIdentity) throws PatchingException {
+                if(installedIdentity == null) {
                     throw new IllegalArgumentException("Installation manager is null.");
                 }
                 try {
-                    this.currentInfo = mgr.getIdentity().loadTargetInfo();
+                    this.currentInfo = installedIdentity.getIdentity().loadTargetInfo();
                 } catch (IOException e) {
-                    throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity());
+                    throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()));
                 }
                 patchIndex = -1;
             }
@@ -242,7 +242,7 @@ public interface PatchingHistory {
                 return hasNext(mgr, this);
             }
 
-            private static boolean hasNext(InstalledIdentity mgr, IteratorState state) {
+            private static boolean hasNext(InstalledIdentity installedIdentity, IteratorState state) {
                 // current info hasn't been initialized yet
                 if(state.patchIndex < 0) {
                     if(BASE.equals(state.currentInfo.getCumulativePatchID())) {
@@ -257,7 +257,7 @@ public interface PatchingHistory {
                 // one-offs + 1 means the cumulative patch has been returned as well
                 final int size = state.currentInfo.getPatchIDs().size();
                 if(state.patchIndex < size) {
-                    return existsOnDisk(mgr, state.currentInfo.getPatchIDs().get(state.patchIndex));
+                    return existsOnDisk(installedIdentity, state.currentInfo.getPatchIDs().get(state.patchIndex));
                 }
 
                 // see whether there is the next CP
@@ -268,14 +268,14 @@ public interface PatchingHistory {
 
                 // it's not the base yet and the cumulative has not been returned yet
                 if(state.patchIndex == size) {
-                    return existsOnDisk(mgr, state.currentInfo.getCumulativePatchID());
+                    return existsOnDisk(installedIdentity, state.currentInfo.getCumulativePatchID());
                 }
 
                 // if it's not BASE then it's a specific patch, so it actually
                 // means that there should more to iterate. But we rely on
                 // the presence of the patch directory and its rollback.xml.
 
-                File patchHistoryDir = mgr.getInstalledImage().getPatchHistoryDir(releaseID);
+                File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(releaseID);
                 if(patchHistoryDir.exists()) {
                     final File rollbackXml = new File(patchHistoryDir, "rollback.xml");
                     if(rollbackXml.exists()) {
@@ -287,11 +287,11 @@ public interface PatchingHistory {
                                 if(nextInfo.getPatchIDs().isEmpty()) {
                                     return false;
                                 }
-                            } else if(!existsOnDisk(mgr, nextInfo.getCumulativePatchID())) {
+                            } else if(!existsOnDisk(installedIdentity, nextInfo.getCumulativePatchID())) {
                                 return false;
                             }
                         } catch(Exception e) {
-                            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
                         }
                         return true;
                     }
@@ -304,7 +304,7 @@ public interface PatchingHistory {
                 return next(mgr, this);
             }
 
-            private static Entry next(final InstalledIdentity mgr, IteratorState state) {
+            private static Entry next(final InstalledIdentity installedIdentity, IteratorState state) {
 
                 String patchId = nextPatchIdForCurrentInfo(state);
                 if(patchId == null) { // current info is exhausted, try moving to the next CP
@@ -316,7 +316,7 @@ public interface PatchingHistory {
                             throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.noMorePatches());
                         }
 
-                        final File patchHistoryDir = mgr.getInstalledImage().getPatchHistoryDir(releaseID);
+                        final File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(releaseID);
                         if(patchHistoryDir.exists()) {
                             final File rollbackXml = new File(patchHistoryDir, "rollback.xml");
                             if(rollbackXml.exists()) {
@@ -327,7 +327,7 @@ public interface PatchingHistory {
                                     state.patchIndex = 0;
                                     state.type = ONE_OFF;
                                 } catch(Exception e) {
-                                    throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                                    throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
                                 }
                             } else {
                                 throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.patchIsMissingFile(rollbackXml.getAbsolutePath()));
@@ -341,7 +341,7 @@ public interface PatchingHistory {
                     if(patchId == null) {
                         throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.noMorePatches());
                     }
-                    assertExistsOnDisk(mgr, patchId);
+                    assertExistsOnDisk(installedIdentity, patchId);
                 }
 
                 final String entryPatchId = patchId;
@@ -366,7 +366,7 @@ public interface PatchingHistory {
                     @Override
                     public String getAppliedAt() {
                         if(appliedAt == null) {
-                            final File patchHistoryDir = mgr.getInstalledImage().getPatchHistoryDir(entryPatchId);
+                            final File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(entryPatchId);
                             if(patchHistoryDir.exists()) {
                                 try {
                                     appliedAt = getAppliedAt(patchHistoryDir);
@@ -419,7 +419,7 @@ public interface PatchingHistory {
                     @Override
                     public Patch getMetadata() {
                         if(patch == null) {
-                            final File patchDir = mgr.getInstalledImage().getPatchHistoryDir(entryPatchId);
+                            final File patchDir = installedIdentity.getInstalledImage().getPatchHistoryDir(entryPatchId);
                             if(patchDir.exists()) {
                                 final File patchXml = new File(patchDir, "patch.xml");
                                 if(patchXml.exists()) {

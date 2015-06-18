@@ -25,12 +25,20 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
     private String cumulativeID;
     private boolean modified = false;
 
+    // this attribute will be null for layers and add-ons in their current implementation
+    private String version;
+
     MutableTargetImpl(PatchableTarget.TargetInfo current) {
+        this(current, null);
+    }
+
+    MutableTargetImpl(PatchableTarget.TargetInfo current, String currentVersion) {
         this.current = current;
         this.structure = current.getDirectoryStructure();
         this.cumulativeID = current.getCumulativePatchID();
         this.patchIds = new ArrayList<String>(current.getPatchIDs());
         this.properties = new Properties(current.getProperties());
+        this.version = currentVersion;
     }
 
     @Override
@@ -86,6 +94,14 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
         return structure;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
+    public void setResultingVersion(String version) {
+        this.version = version;
+    }
+
     protected Properties getMutableProperties() {
         return properties;
     }
@@ -106,7 +122,6 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
 
     protected void persist(final String cumulativeID, final List<String> patches, final Properties properties) throws IOException {
         assert cumulativeID != null;
-
         // Create the parent
         IoUtils.mkdir(structure.getInstallationInfo().getParentFile());
 
@@ -125,6 +140,9 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
         // Update the properties
         properties.put(Constants.CUMULATIVE, cumulativeID);
         properties.put(Constants.PATCHES, PatchUtils.asString(patches));
+        if(version != null) {
+            properties.put(Constants.CURRENT_VERSION, version);
+        }
 
         // Write layer.conf
         PatchUtils.writeProperties(structure.getInstallationInfo(), properties);
