@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TLS;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import javax.inject.Inject;
+import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -62,9 +64,10 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MIME;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.AbstractContentBody;
@@ -76,6 +79,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.jboss.as.test.http.Authentication;
 import org.jboss.dmr.ModelNode;
@@ -198,7 +202,7 @@ public class HttpGenericOperationUnitTestCase {
         if (encoded) {
             return new DMRContentEncodedBody(operation);
         } else {
-            return new StringBody(operation.toJSONString(true));
+            return new StringBody(operation.toJSONString(true),ContentType.create("application/json"));
         }
     }
 
@@ -281,14 +285,18 @@ public class HttpGenericOperationUnitTestCase {
     private static CloseableHttpClient createHttpClient(String host, int port, String username, String password) {
 
         try {
-            ConnectionSocketFactory sslConnectionFactory = new SSLSocketFactory(new TrustStrategy() {
+            SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(new TrustStrategy() {
                 @Override
-                public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                public boolean isTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
                     return true;
                 }
-            }, new AllowAllHostnameVerifier());
+            }).useProtocol(TLS)
+                    .build();
+
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
+
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("https", sslConnectionFactory)
+                    .register("https", sslSocketFactory)
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())
                     .build();
             CredentialsProvider credsProvider = new BasicCredentialsProvider();
@@ -296,11 +304,10 @@ public class HttpGenericOperationUnitTestCase {
                     new UsernamePasswordCredentials(username, password));
             PoolingHttpClientConnectionManager connectionPool = new PoolingHttpClientConnectionManager(registry);
             HttpClientBuilder.create().setConnectionManager(connectionPool).build();
-            CloseableHttpClient httpClient = HttpClientBuilder.create()
+            return HttpClientBuilder.create()
                     .setConnectionManager(connectionPool)
                     .setRetryHandler(new StandardHttpRequestRetryHandler(5, true))
                     .setDefaultCredentialsProvider(credsProvider).build();
-            return httpClient;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -335,7 +342,7 @@ public class HttpGenericOperationUnitTestCase {
         private final ModelNode model;
 
         DMRContentEncodedBody(ModelNode model) {
-            super(DMR_ENCODED);
+            super(ContentType.create(DMR_ENCODED));
             this.model = model;
         }
 
