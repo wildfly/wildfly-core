@@ -24,6 +24,7 @@ package org.jboss.as.server.operations;
 
 
 import java.util.EnumSet;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -99,12 +100,17 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
                             //to stop new requests being accepted as it is shutting down
                             final ServiceRegistry registry = context.getServiceRegistry(false);
 
-                            final ServiceController<GracefulShutdownService> gracefulController = (ServiceController<GracefulShutdownService>) registry.getRequiredService(GracefulShutdownService.SERVICE_NAME);
-                            gracefulController.getValue().startGracefulShutdown();
-
-                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
-                            final SuspendController suspendController = suspendControllerServiceController.getValue();
-                            suspendController.suspend(timeout > 0 ? timeout * 1000 : timeout);
+                            // WFCORE-765 if either of the services we use are not present, graceful shutdown
+                            // is not possible, but don't fail. The services may be missing if the server
+                            // is already shutting down due to receiving a SIGINT
+                            final ServiceController<GracefulShutdownService> gracefulController = (ServiceController<GracefulShutdownService>) registry.getService(GracefulShutdownService.SERVICE_NAME);
+                            if (gracefulController != null) {
+                                final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getService(SuspendController.SERVICE_NAME);
+                                if (suspendControllerServiceController != null) {
+                                    gracefulController.getValue().startGracefulShutdown();
+                                    suspendControllerServiceController.getValue().suspend(timeout > 0 ? timeout * 1000 : timeout);
+                                }
+                            }
                         }
                     }
                 });
