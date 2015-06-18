@@ -22,13 +22,6 @@
 
 package org.jboss.as.test.manualmode.management.cli.extensions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-
-import javax.inject.Inject;
-
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
@@ -41,9 +34,9 @@ import org.jboss.as.test.module.util.TestModule;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.ArchivePaths;
+import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,14 +46,18 @@ import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.xnio.IoUtils;
 
+import javax.inject.Inject;
+import java.io.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
- * Testing commands loaded from the available management model extensions.
- *
- * @author Alexey Loubyansky
+ * @author Petr Kremensky pkremens@redhat.com
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class CliExtCommandsTestCase extends CliScriptTestBase {
+public class DuplicateExtCommandTestCase extends CliScriptTestBase {
 
     private static final String MODULE_NAME = "test.cli.extension.commands";
 
@@ -93,45 +90,23 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
     }
 
     @Test
-    public void testExtensionCommand() throws Exception {
-
-        Assert.assertNotEquals(0,
-                execute(containerController.getClient().getMgmtAddress(),
-                        containerController.getClient().getMgmtPort(),
-                        false, // the command won't be available unless the cli connects to the controller
-                        CliExtCommandHandler.NAME,
-                        false));
-
+    public void testExtensionCommandCollision() throws Exception {
         assertEquals(0,
                 execute(containerController.getClient().getMgmtAddress(),
                         containerController.getClient().getMgmtPort(),
                         true,
-                        CliExtCommandHandler.NAME,
+                        "extension-commands --errors",
                         true));
-        // the output may contain other logs from the cli initialization
-        assertTrue(getLastCommandOutput().trim().endsWith(CliExtCommandHandler.OUTPUT));
-    }
-
-    @Test
-    public void testExtensionCommandHelp() {
-        final String help = "--help";
-        assertEquals(0,
-                execute(containerController.getClient().getMgmtAddress(),
-                        containerController.getClient().getMgmtPort(),
-                        true,
-                        String.format("%s %s", CliExtCommandHandler.NAME, help),
-                        true));
-        // the output may contain other logs from the cli initialization
-        assertTrue(getLastCommandOutput().trim().endsWith(CliExtCommandHandler.NAME + help));
+        assertTrue(getLastCommandOutput().trim().endsWith(DuplicateExtCommandHandler.NAME));
     }
 
     private static void createTestModule() throws Exception {
-        final File moduleXml = new File(CliExtCommandsTestCase.class.getResource(CliExtCommandsTestCase.class.getSimpleName() + "-module.xml").toURI());
+        final File moduleXml = new File(DuplicateExtCommandTestCase.class.getResource(DuplicateExtCommandTestCase.class.getSimpleName() + "-module.xml").toURI());
         testModule = new TestModule(MODULE_NAME, moduleXml);
 
-        final JavaArchive archive = testModule.addResource("test-cli-ext-commands-module.jar")
-                .addClass(CliExtCommandHandler.class)
-                .addClass(CliExtCommandHandlerProvider.class)
+        final JavaArchive archive = testModule.addResource("test-cli-duplicate-commands-module.jar")
+                .addClass(DuplicateExtCommandHandler.class)
+                .addClass(DuplicateExtCommandHandlerProvider.class)
                 .addClass(CliExtCommandsExtension.class)
                 .addClass(CliExtCommandsParser.class)
                 .addClass(CliExtCommandsSubsystemResourceDescription.class);
@@ -139,18 +114,22 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
         ArchivePath services = ArchivePaths.create("/");
         services = ArchivePaths.create(services, "services");
 
-        ArchivePath help = ArchivePaths.create("/");
-        help = ArchivePaths.create(help, "help");
-
         final ArchivePath extService = ArchivePaths.create(services, Extension.class.getName());
         archive.addAsManifestResource(CliExtCommandHandler.class.getPackage(), Extension.class.getName(), extService);
 
         final ArchivePath cliCmdService = ArchivePaths.create(services, CommandHandlerProvider.class.getName());
-        archive.addAsManifestResource(CliExtCommandHandler.class.getPackage(), CommandHandlerProvider.class.getName(), cliCmdService);
-
-        final ArchivePath helpService = ArchivePaths.create(help, CliExtCommandHandler.NAME + ".txt");
-        archive.addAsResource(CliExtCommandHandler.class.getPackage(), CliExtCommandHandler.NAME + ".txt", helpService);
-
+        archive.addAsManifestResource(new Asset() {
+            @Override
+            public InputStream openStream() {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    baos.write(DuplicateExtCommandHandlerProvider.class.getName().getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return new ByteArrayInputStream(baos.toByteArray());
+            }
+        }, cliCmdService);
         testModule.create(true);
     }
 
