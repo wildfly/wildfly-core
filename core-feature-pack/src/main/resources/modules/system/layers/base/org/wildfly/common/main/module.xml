@@ -22,24 +22,18 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.3" name="org.wildfly.security.elytron">
-
-    <exports>
-        <exclude path="org/wildfly/security/_private"/>
-        <exclude path="org/wildfly/wildfly/security/manager/_private"/>
-        <exclude path="org/wildfly/security/sasl/digest/_private"/>
-        <exclude path="org/wildfly/security/util/_private"/>
-    </exports>
+<module xmlns="urn:jboss:module:1.3" name="org.wildfly.common">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
 
     <resources>
-        <artifact name="${org.wildfly.security:wildfly-elytron}"/>
+        <artifact name="${org.wildfly.common:wildfly-common}"/>
     </resources>
 
     <dependencies>
-        <module name="org.jboss.logging"/>
-        <module name="org.jboss.modules"/>
-        <module name="javax.api" />
+        <module name="javax.api"/>
         <module name="sun.jdk"/>
-        <module name="org.wildfly.common"/>
+        <module name="org.jboss.logging"/>
     </dependencies>
 </module>

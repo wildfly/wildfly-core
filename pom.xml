@@ -135,6 +135,7 @@
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
         <version.org.wildfly.build-tools>1.0.0.Final</version.org.wildfly.build-tools>
+        <version.org.wildfly.common>1.0.0.Alpha3</version.org.wildfly.common>
         <version.org.wildfly.legacy.test>1.0.0.Alpha9</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.elytron>1.0.0.Alpha1</version.org.wildfly.security.elytron>
         <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
@@ -1378,6 +1379,18 @@
                 <groupId>org.eclipse.aether</groupId>
                 <artifactId>aether-transport-http</artifactId>
                 <version>${version.org.eclipse.aether}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${version.org.wildfly.common}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.wildfly.security</groupId>
+                        <artifactId>wildfly-security-manager</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

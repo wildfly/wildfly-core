@@ -196,6 +196,11 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.wildfly.common</groupId>
+            <artifactId>wildfly-common</artifactId>
+        </dependency>
+
         <!-- Add this dependency to make sure that the core model is tested before we build the server -->
         <dependency>
             <groupId>org.wildfly.core</groupId>
