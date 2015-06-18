@@ -112,8 +112,20 @@ class Arguments {
                 } else {
                     argument = create(key, value);
                 }
-                map.put(argument.getKey(), Collections.singleton(argument));
+                set(argument);
             }
+        }
+    }
+
+    /**
+     * Sets an argument to the collection of arguments. This guarantees only one value will be assigned to the
+     * argument key.
+     *
+     * @param argument the argument to add
+     */
+    public void set(final Argument argument) {
+        if (argument != null) {
+            map.put(argument.getKey(), Collections.singleton(argument));
         }
     }
 
