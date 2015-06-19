@@ -12,7 +12,7 @@ This project provides the core runtime that is used by the Wildfly application s
 Building
 -------------------
 
-Ensure you have JDK 7 (or newer) and Maven 3.2.2 installed, then run:
+Ensure you have JDK 8 (or newer) and Maven 3.2.2 installed, then run:
 
 > mvn install
 
