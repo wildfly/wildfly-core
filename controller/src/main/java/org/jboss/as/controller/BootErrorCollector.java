@@ -20,6 +20,10 @@
  */
 package org.jboss.as.controller;
 
+import java.util.Set;
+import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -31,9 +35,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICES_MISSING_DEPENDENCIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICES_MISSING_TRANSITIVE_DEPENDENCIES;
 
+import java.util.HashSet;
 import org.jboss.as.controller.access.management.AuthorizedAddress;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -42,7 +47,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class BootErrorCollector {
-
+    private static final String COMPLETE_OP = "real-operation";
     private final ModelNode errors;
     private final OperationStepHandler listBootErrorsHandler;
 
@@ -79,7 +84,7 @@ public class BootErrorCollector {
         if (report != null) {
             error.get(MISSING_TRANSITIVE_DEPENDENCY_PROBLEMS).set(report);
         }
-
+        error.get(COMPLETE_OP).set(operation);
         synchronized (errors) {
             errors.add(error);
         }
@@ -166,13 +171,43 @@ public class BootErrorCollector {
                 ModelNode failedOperation = bootError.get(FAILED_OPERATION);
                 ModelNode address = failedOperation.get(OP_ADDR);
                 ModelNode fakeOperation = new ModelNode();
-                fakeOperation.get(ModelDescriptionConstants.OP).set(READ_RESOURCE_OPERATION);
-                fakeOperation.get(ModelDescriptionConstants.OP_ADDR).set(address);
+                fakeOperation.get(OP).set(READ_RESOURCE_OPERATION);
+                fakeOperation.get(OP_ADDR).set(address);
                 AuthorizedAddress authorizedAddress = AuthorizedAddress.authorizeAddress(context, fakeOperation);
                 if(authorizedAddress.isElided()) {
                     failedOperation.get(OP_ADDR).set(authorizedAddress.getAddress());
                 }
+                if(bootError.has(FAILURE_DESCRIPTION) && !canReadFailureDescription(context, bootError)) {
+                    bootError.get(FAILURE_DESCRIPTION).set(new ModelNode());
+                }
             }
+            bootError.remove(COMPLETE_OP);
+        }
+
+        private boolean canReadFailureDescription(OperationContext context, ModelNode bootError) {
+            ModelNode completeOPeration = bootError.get(COMPLETE_OP);
+            OperationEntry operationEntry = context.getRootResourceRegistration().getOperationEntry(
+                    PathAddress.pathAddress(completeOPeration.get(OP_ADDR)), completeOPeration.get(OP).asString());
+            Set<Action.ActionEffect> effects = getEffects(operationEntry);
+            return context.authorize(bootError.get(COMPLETE_OP), effects).getDecision() == AuthorizationResult.Decision.PERMIT;
+        }
+
+        Set<Action.ActionEffect> getEffects(OperationEntry operationEntry) {
+            Set<Action.ActionEffect> effects = new HashSet<>(5);
+            effects.add(Action.ActionEffect.ADDRESS);
+            if(operationEntry != null) {
+                effects.add(Action.ActionEffect.READ_RUNTIME);
+                if (!operationEntry.getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)) {
+                    effects.add(Action.ActionEffect.READ_CONFIG);
+                }
+                if(!operationEntry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+                    effects.add(Action.ActionEffect.WRITE_RUNTIME);
+                    if(!operationEntry.getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)) {
+                        effects.add(Action.ActionEffect.WRITE_CONFIG);
+                    }
+                }
+            }
+            return effects;
         }
     }
 }

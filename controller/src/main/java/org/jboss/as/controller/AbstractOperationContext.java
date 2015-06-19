@@ -771,7 +771,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     private void addBootFailureDescription() {
         if (isBooting() && activeStep != null && activeStep.response.hasDefined(FAILURE_DESCRIPTION)) {
-            controller.addFailureDescription(activeStep.operation, activeStep.response.get(FAILURE_DESCRIPTION).clone());
+            controller.addFailureDescription(activeStep.operation.clone(), activeStep.response.get(FAILURE_DESCRIPTION).clone());
         }
     }
 
