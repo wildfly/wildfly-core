@@ -430,7 +430,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         // Other core services
         resourceRegistration.registerSubModel(new ServiceContainerResourceDefinition());
 
-        resourceRegistration.registerSubModel(new ModuleLoadingResourceDefinition());
+        resourceRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
 
         // Platform MBeans
         PlatformMBeanResourceRegistrar.registerPlatformMBeanResources(resourceRegistration);

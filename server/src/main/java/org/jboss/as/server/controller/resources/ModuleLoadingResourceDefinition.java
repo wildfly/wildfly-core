@@ -74,7 +74,9 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
 
     private final List<AccessConstraintDefinition> accessConstraints;
 
-    public ModuleLoadingResourceDefinition() {
+    public static final ModuleLoadingResourceDefinition INSTANCE = new ModuleLoadingResourceDefinition();
+
+    private ModuleLoadingResourceDefinition() {
         super(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING),
                 ServerDescriptions.getResourceDescriptionResolver("core", MODULE_LOADING));
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MODULE_LOADING.wrapAsList();
@@ -105,6 +107,7 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
                 .build();
 
          resourceRegistration.registerOperationHandler(definition, new ModuleLocationHandler());
+         resourceRegistration.registerOperationHandler(ModuleInfoHandler.DEFINITION, ModuleInfoHandler.INSTANCE);
     }
 
     @Override
