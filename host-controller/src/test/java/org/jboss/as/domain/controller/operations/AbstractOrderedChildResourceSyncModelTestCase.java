@@ -309,8 +309,10 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
     abstract class AbstractChildResourceDefinition extends SimpleResourceDefinition {
         public AbstractChildResourceDefinition(PathElement element, OperationStepHandler addHandler) {
-            super(element, new NonResolvingResourceDescriptionResolver(),
-                    addHandler, new ModelOnlyRemoveStepHandler(), false, true);
+            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(addHandler)
+                    .setRemoveHandler(new ModelOnlyRemoveStepHandler())
+                    .setOrderedChild());
         }
 
         @Override
