@@ -21,6 +21,7 @@
  */
 
 package org.jboss.as.controller;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
 
 import java.util.ArrayList;
@@ -84,6 +85,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @param attributes   attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
     public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
+        //Please don't add more constructors, instead use the Parameters variety
         this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
         this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
     }
@@ -117,6 +119,24 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      */
     public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
         this(capabilities, attributes.length > 0 ? Arrays.asList(attributes) : NULL_ATTRIBUTES);
+    }
+
+    public AbstractAddStepHandler(Parameters parameters) {
+        if (parameters.capabilities == null) {
+            capabilities = NULL_CAPABILITIES;
+        } else if (parameters.capabilities.size() == 1) {
+            capabilities = Collections.singleton(parameters.capabilities.iterator().next());
+        } else {
+            capabilities = Collections.unmodifiableSet(parameters.capabilities);
+        }
+
+        if (parameters.attributes == null) {
+            attributes = NULL_ATTRIBUTES;
+        } else if (parameters.attributes.size() == 1) {
+            attributes = Collections.singleton(parameters.attributes.iterator().next());
+        } else {
+            attributes = Collections.unmodifiableSet(parameters.attributes);
+        }
     }
 
     /** {@inheritDoc */
@@ -498,6 +518,54 @@ public class AbstractAddStepHandler implements OperationStepHandler {
                 context.addResource(PathAddress.EMPTY_ADDRESS, resource);
             }
             return resource;
+        }
+    }
+
+    public static class Parameters {
+        private Set<RuntimeCapability> capabilities = null;
+        protected Set<AttributeDefinition> attributes = null;
+
+        public Parameters() {
+        }
+
+        public Parameters addRuntimeCapability(RuntimeCapability...capabilities) {
+            Set<RuntimeCapability> capabilitySet = getOrCreateCapabilities();
+            for (RuntimeCapability capability : capabilities) {
+                capabilitySet.add(capability);
+            }
+            return this;
+        }
+
+        public Parameters addRuntimeCapability(Set<RuntimeCapability> capabilities) {
+            getOrCreateCapabilities().addAll(capabilities);
+            return this;
+        }
+
+        public Parameters addAttribute(AttributeDefinition... attributeDefinitions) {
+            Set<AttributeDefinition> attributeSet = getOrCreateAttributes();
+            for (AttributeDefinition def : attributeDefinitions) {
+                attributeSet.add(def);
+            }
+            return this;
+        }
+
+        public Parameters addAttribute(Collection<AttributeDefinition> attributeDefinitions) {
+            getOrCreateAttributes().addAll(attributeDefinitions);
+            return this;
+        }
+
+        private Set<RuntimeCapability> getOrCreateCapabilities() {
+            if (capabilities == null) {
+                capabilities = new HashSet<>();
+            }
+            return capabilities;
+        }
+
+        private Set<AttributeDefinition> getOrCreateAttributes() {
+            if (attributes == null) {
+                attributes = new HashSet<>();
+            }
+            return attributes;
         }
     }
 }
