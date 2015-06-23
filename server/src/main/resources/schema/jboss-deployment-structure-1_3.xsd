@@ -79,7 +79,8 @@
             <xsd:element name="ear-exclusions-cascaded-to-subdeployments" type="xsd:boolean" minOccurs="0" maxOccurs="1">
                 <annotation xmlns="http://www.w3.org/2001/XMLSchema">
                     <documentation>
-                        TODO: Add documentation here...
+                        Flag indicating whether .ear exclusions defined in the root deployment should be cascaded to
+                        sub-deployments.
                     </documentation>
                 </annotation>
             </xsd:element>

@@ -22,32 +22,6 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
-import org.jboss.as.server.deployment.Attachments;
-import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.MountedDeploymentOverlay;
-import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParser;
-import org.jboss.as.server.deployment.module.FilterSpecification;
-import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.deployment.module.MountHandle;
-import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
-import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.modules.DependencySpec;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoader;
-import org.jboss.modules.filter.MultiplePathFilterBuilder;
-import org.jboss.modules.filter.PathFilter;
-import org.jboss.modules.filter.PathFilters;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
-
-import javax.xml.namespace.QName;
-import javax.xml.stream.Location;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,6 +32,33 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.xml.namespace.QName;
+import javax.xml.stream.Location;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
+import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.deployment.Attachments;
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.server.deployment.MountedDeploymentOverlay;
+import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParser;
+import org.jboss.as.server.deployment.module.FilterSpecification;
+import org.jboss.as.server.deployment.module.ModuleDependency;
+import org.jboss.as.server.deployment.module.MountHandle;
+import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.as.server.deployment.module.TempFileProviderService;
+import org.jboss.modules.DependencySpec;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoader;
+import org.jboss.modules.filter.MultiplePathFilterBuilder;
+import org.jboss.modules.filter.PathFilter;
+import org.jboss.modules.filter.PathFilters;
+import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.vfs.VFS;
+import org.jboss.vfs.VirtualFile;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
@@ -269,7 +270,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
 
     private static void parseDeployment(final XMLStreamReader reader, final ParseResult result) throws XMLStreamException {
         result.setRootDeploymentSpecification(new ModuleStructureSpec());
-        parseModuleStructureSpec(result.getDeploymentUnit(), reader, result.getRootDeploymentSpecification(), result);
+        parseModuleStructureSpec(result.getDeploymentUnit(), reader, result.getRootDeploymentSpecification(), result.getModuleLoader());
     }
 
     private static void parseSubDeployment(XMLStreamReader reader, ParseResult result) throws XMLStreamException {
@@ -295,7 +296,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
         }
         final ModuleStructureSpec moduleSpecification = new ModuleStructureSpec();
         result.getSubDeploymentSpecifications().put(name, moduleSpecification);
-        parseModuleStructureSpec(result.getDeploymentUnit(), reader, moduleSpecification, result);
+        parseModuleStructureSpec(result.getDeploymentUnit(), reader, moduleSpecification, result.getModuleLoader());
     }
 
     private static void parseModule(XMLStreamReader reader, ParseResult result) throws XMLStreamException {
@@ -327,15 +328,11 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
         final ModuleStructureSpec moduleSpecification = new ModuleStructureSpec();
         moduleSpecification.setModuleIdentifier(ModuleIdentifier.create(name, slot));
         result.getAdditionalModules().add(moduleSpecification);
-        parseModuleStructureSpec(result.getDeploymentUnit(), reader, moduleSpecification, result);
+        parseModuleStructureSpec(result.getDeploymentUnit(), reader, moduleSpecification, result.getModuleLoader());
     }
 
     private static void parseModuleStructureSpec(final DeploymentUnit deploymentUnit, final XMLStreamReader reader,
-                                                 final ModuleStructureSpec moduleSpec, final ParseResult result) throws XMLStreamException {
-
-        final ModuleLoader moduleLoader = result.getModuleLoader();
-        List<ModuleIdentifier> rootDeploymentSpecExclusions = result.getRootDeploymentSpecification().getExclusions();
-
+                                                 final ModuleStructureSpec moduleSpec, final ModuleLoader moduleLoader) throws XMLStreamException {
         // xsd:all
         Set<Element> visited = EnumSet.noneOf(Element.class);
         while (reader.hasNext()) {
@@ -1032,31 +1029,6 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
 
 
     private static void parseExclusions(final XMLStreamReader reader, final ModuleStructureSpec specBuilder) throws XMLStreamException {
-
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    switch (Element.of(reader.getName())) {
-                        case MODULE:
-                            parseModuleExclusion(reader, specBuilder);
-                            break;
-                        default:
-                            throw unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw unexpectedContent(reader);
-                }
-            }
-        }
-        throw endOfDocument(reader.getLocation());
-    }
-
-    private static void parseRootExclusions(final XMLStreamReader reader, final ModuleStructureSpec specBuilder) throws XMLStreamException {
 
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
