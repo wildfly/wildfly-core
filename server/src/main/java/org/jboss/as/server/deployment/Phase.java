@@ -216,6 +216,7 @@ public enum Phase {
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_1  = 0x0A17;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_2  = 0x0A18;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_WELD           = 0x0A19;
+    public static final int STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_3  = 0x0A20;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_UNDERTOW_SHARED_SESSION = 0x0A1A;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_BATCH          = 0x0A1B;
     public static final int STRUCTURE_PARSE_JBOSS_ALL_XML               = 0x0AE0;
