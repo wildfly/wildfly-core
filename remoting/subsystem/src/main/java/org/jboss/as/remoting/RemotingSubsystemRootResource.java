@@ -67,9 +67,9 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
             WORKER_WRITE_THREADS
     };
 
-    static final String IO_WORKER_CAPABILITY = "org.wildfly.extension.io.worker";
+    static final String IO_WORKER_CAPABILITY = "org.wildfly.io.worker";
     static final RuntimeCapability<Void> REMOTING_ENDPOINT_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.extension.remoting.endpoint", Endpoint.class).build();
+            RuntimeCapability.Builder.of("org.wildfly.remoting.endpoint", Endpoint.class).build();
 
     public RemotingSubsystemRootResource() {
         super(PATH,

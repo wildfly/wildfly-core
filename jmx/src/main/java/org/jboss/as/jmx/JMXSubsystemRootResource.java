@@ -73,8 +73,9 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
             .setXmlName(CommonAttributes.NON_CORE_MBEANS)
             .setDefaultValue(new ModelNode(false)).build();
 
+    static final String JMX_CAPABILITY_NAME = "org.wildfly.management.jmx";
     static final RuntimeCapability<Void> JMX_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.extension.jmx", MBeanServer.class).build();
+            RuntimeCapability.Builder.of(JMX_CAPABILITY_NAME, MBeanServer.class).build();
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

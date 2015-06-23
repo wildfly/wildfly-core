@@ -42,8 +42,9 @@ import org.xnio.XnioWorker;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
+    static final String IO_WORKER_RUNTIME_CAPABILITY_NAME = "org.wildfly.io.worker";
     static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.extension.io.worker", true, XnioWorker.class).build();
+            RuntimeCapability.Builder.of(IO_WORKER_RUNTIME_CAPABILITY_NAME, true, XnioWorker.class).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
             .setDefaultValue(new ModelNode(2))
