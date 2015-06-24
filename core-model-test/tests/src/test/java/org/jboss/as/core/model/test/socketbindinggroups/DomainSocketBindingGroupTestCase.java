@@ -27,14 +27,14 @@ import org.jboss.as.core.model.test.TestModelType;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class StandaloneSocketBindingGroupTest extends AbstractSocketBindingGroupTest {
+public class DomainSocketBindingGroupTestCase extends AbstractSocketBindingGroupTest {
 
-    public StandaloneSocketBindingGroupTest() {
-        super(TestModelType.STANDALONE);
+    public DomainSocketBindingGroupTestCase() {
+        super(TestModelType.DOMAIN);
     }
 
     @Override
     protected String getXmlResource() {
-        return "standalone.xml";
+        return "domain.xml";
     }
 }
