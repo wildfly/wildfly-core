@@ -45,7 +45,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
- * Handler for the server socket-binding resource's add operation.
+ * Handler for the server and host model socket-binding resource's add operation.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */

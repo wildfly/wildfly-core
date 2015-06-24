@@ -35,7 +35,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 
 /**
- * Handler for the server socket-binding resource's remove operation.
+ * Handler for the server and host model socket-binding resource's remove operation.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */

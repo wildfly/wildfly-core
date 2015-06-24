@@ -105,6 +105,7 @@ import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
@@ -418,5 +419,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         //server configurations
         hostRegistration.registerSubModel(new ServerConfigResourceDefinition(hostControllerInfo, serverInventory, pathManager, processState, environment.getDomainDataDir()));
         hostRegistration.registerSubModel(new StoppedServerResource(serverInventory));
+
+        hostRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
     }
 }
