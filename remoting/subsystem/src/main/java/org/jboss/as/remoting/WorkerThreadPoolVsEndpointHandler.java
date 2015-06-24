@@ -87,7 +87,11 @@ class WorkerThreadPoolVsEndpointHandler implements OperationStepHandler {
             context.addResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH), Resource.Factory.create());
 
             // Record the requirement of the default xnio worker
-            RemotingEndpointResource.WORKER.addCapabilityRequirements(context, new ModelNode()); // use an undefined node to WORKER will use its default value
+            // WFCORE-778 don't do this on an HC so we won't mistakenly trigger a requirement
+            // in a profile meant for servers that don't have the io subsystem
+            if (context.getProcessType().isServer()) {
+                RemotingEndpointResource.WORKER.addCapabilityRequirements(context, new ModelNode()); // use an undefined node so WORKER will use its default value
+            }
         }
     }
 }
