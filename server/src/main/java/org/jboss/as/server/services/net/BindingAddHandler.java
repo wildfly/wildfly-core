@@ -41,6 +41,7 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -111,11 +112,13 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final List<ClientMapping> clientMappings = mappingsNode.isDefined() ? parseClientMappings(context, mappingsNode) : null;
 
         final SocketBindingService service = new SocketBindingService(name, port, fixedPort, mcastInet, mcastPort, clientMappings);
-        final ServiceBuilder<SocketBinding> builder = serviceTarget.addService(SocketBinding.JBOSS_BINDING_NAME.append(name), service);
+        final ServiceName serviceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, name, SocketBinding.class);
+        final ServiceBuilder<SocketBinding> builder = serviceTarget.addService(serviceName, service);
         if (intf != null) {
             builder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(intf), NetworkInterfaceBinding.class, service.getInterfaceBinding());
         }
         builder.addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, service.getSocketBindings())
+                .addAliases(SocketBinding.JBOSS_BINDING_NAME.append(name))
                 .setInitialMode(Mode.ON_DEMAND)
                 .install();
     }

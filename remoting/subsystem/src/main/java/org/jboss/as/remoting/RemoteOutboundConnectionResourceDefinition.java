@@ -48,6 +48,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
+            .setCapabilityReference("org.wildfly.network.outbound-socket-binding", AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition USERNAME = new SimpleAttributeDefinitionBuilder(CommonAttributes.USERNAME, ModelType.STRING, true)
@@ -79,7 +80,8 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     private RemoteOutboundConnectionResourceDefinition() {
         super(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION),
                 RemoteOutboundConnectionAdd.INSTANCE,
-                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, RemoteOutboundConnectionAdd.INSTANCE));
+                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, RemoteOutboundConnectionAdd.INSTANCE,
+                        AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY));
     }
 
     @Override

@@ -44,6 +44,7 @@ class LocalOutboundConnectionResourceDefinition extends AbstractOutboundConnecti
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
+            .setCapabilityReference("org.wildfly.network.outbound-socket-binding", AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY_NAME, true)
             .build();
 
     static final LocalOutboundConnectionResourceDefinition INSTANCE = new LocalOutboundConnectionResourceDefinition();
@@ -52,7 +53,8 @@ class LocalOutboundConnectionResourceDefinition extends AbstractOutboundConnecti
     private LocalOutboundConnectionResourceDefinition() {
         super(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.LOCAL_OUTBOUND_CONNECTION),
                 LocalOutboundConnectionAdd.INSTANCE,
-                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, LocalOutboundConnectionAdd.INSTANCE));
+                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, LocalOutboundConnectionAdd.INSTANCE,
+                        AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY));
     }
 
     @Override

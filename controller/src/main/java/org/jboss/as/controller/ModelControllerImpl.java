@@ -1228,19 +1228,20 @@ class ModelControllerImpl implements ModelController {
         }
 
         /**
-         * Compares the registered requirements to the registered capabilities, returning any missing requirements.
+         * Compares the registered requirements to the registered capabilities, returning any missing
+         * or inconsistent requirements.
          *
          * Cannot be called while other threads may be adding or removing capabilities
          *
          * @return a map whose keys are missing capabilities and whose values are the names of other capabilities
          *         that require that capability. Will not return {@code null} but may be empty
          */
-        Map<CapabilityId, Set<RuntimeRequirementRegistration>> validateCapabilityRegistry() {
+        CapabilityValidation validateCapabilityRegistry() {
             if (!published) {
-                return capabilityRegistry.getMissingRequirements();
+                return capabilityRegistry.getInvalidRequirements();
             } else {
                 // we're unmodified so nothing to validate
-                return Collections.emptyMap();
+                return CapabilityValidation.OK;
             }
         }
 
@@ -1393,7 +1394,7 @@ class ModelControllerImpl implements ModelController {
 
         @Override
         public synchronized boolean hasCapability(String capabilityName, CapabilityContext capabilityContext) {
-            return findSatisfactoryCapability(capabilityName, capabilityContext) != null;
+            return findSatisfactoryCapability(capabilityName, capabilityContext, false) != null;
         }
 
         @Override
@@ -1413,15 +1414,15 @@ class ModelControllerImpl implements ModelController {
         }
 
         private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
-            CapabilityId capabilityId = findSatisfactoryCapability(capabilityName, capabilityContext);
-            if (capabilityId == null) {
+            SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, false);
+            if (satisfactoryCapability == null) {
                 if (forServer) {
                     throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
                 } else {
                     throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
                 }
             }
-            return capabilities.get(capabilityId);
+            return capabilities.get(satisfactoryCapability.singleCapability);
         }
 
         synchronized CapabilityRegistryImpl copy() {
@@ -1447,44 +1448,152 @@ class ModelControllerImpl implements ModelController {
 
         }
 
-        synchronized Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {
-            Map<CapabilityId, Set<RuntimeRequirementRegistration>> result = new HashMap<>();
+        synchronized CapabilityValidation getInvalidRequirements() {
+            Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = new HashMap<>();
+
+            // Vars for tracking inconsistent contexts
+            boolean isInconsistent = false;
+            Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency = null;
+            Map<CapabilityContext, Set<CapabilityContext>> consistentSets = null;
+
             for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
                 CapabilityContext dependentContext = entry.getKey().getContext();
+                Set<CapabilityContext> consistentSet = consistentSets == null ? null : consistentSets.get(dependentContext);
                 for (RuntimeRequirementRegistration req : entry.getValue().values()) {
-                    CapabilityId satisfiesId = findSatisfactoryCapability(req.getRequiredName(), dependentContext);
-                    if (satisfiesId == null) {
+                    SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, !forServer);
+                    if (satisfactory == null) {
+                        // Missing
                         CapabilityId basicId = new CapabilityId(req.getRequiredName(), dependentContext);
-                        Set<RuntimeRequirementRegistration> set = result.get(basicId);
+                        Set<RuntimeRequirementRegistration> set = missing.get(basicId);
                         if (set == null) {
                             set = new HashSet<>();
-                            result.put(basicId, set);
+                            missing.put(basicId, set);
                         }
                         set.add(req);
+                    } else if (satisfactory.multipleCapabilities != null) {
+                        // This requirement is one that needs tracking to ensure that all similar ones for this
+                        // dependent context can be resolved against at least one context
+                        if (requiresConsistency == null) {
+                            requiresConsistency = new HashMap<>();
+                            consistentSets = new HashMap<>();
+                        }
+                        Set<RuntimeRequirementRegistration> requiresForDependent = requiresConsistency.get(req.getDependentContext());
+                        if (requiresForDependent == null) {
+                            requiresForDependent = new HashSet<>();
+                            requiresConsistency.put(req.getDependentContext(), requiresForDependent);
+                        }
+                        requiresForDependent.add(req);
+                        if (consistentSet == null) {
+                            consistentSet = new HashSet<>(satisfactory.multipleCapabilities); // copy okContexts so retainAll calls won't mutate it
+                            consistentSets.put(dependentContext, consistentSet);
+                        } else {
+                            consistentSet.retainAll(satisfactory.multipleCapabilities);
+                            isInconsistent = isInconsistent || consistentSet.size() == 0;
+                        }
+                    } // else simple capability match
+                }
+            }
+
+            if (isInconsistent) {
+                // This is the exception case. Figure out the details of the problems
+                return new CapabilityValidation(missing, findInconsistent(requiresConsistency, consistentSets));
+            } else if (!missing.isEmpty()) {
+                return new CapabilityValidation(missing, null);
+            }
+
+            return CapabilityValidation.OK;
+        }
+
+        private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
+                                                                  boolean requireConsistency) {
+
+            // Check for a simple match
+            CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
+            if (capabilities.containsKey(requestedId)) {
+                return new SatisfactoryCapability(requestedId);
+            }
+
+            if (!forServer) {
+                // Try other contexts that satisfy the requested one
+                Set<CapabilityContext> multiple = null;
+                for (CapabilityContext satisfies : satisfiedByMap.get(capabilityContext)) {
+                    CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
+                    if (capabilities.containsKey(satisfiesId)) {
+                        if (!requireConsistency || !satisfies.requiresConsistencyCheck()) {
+                            return new SatisfactoryCapability(satisfiesId);
+                        } else {
+                            if (multiple == null) {
+                                multiple = new HashSet<>();
+                            }
+                            multiple.add(satisfies);
+                        }
+                    }
+                }
+                if (multiple != null) {
+                    return new SatisfactoryCapability(multiple);
+                }
+            }
+            return null;
+        }
+
+        private static Set<RuntimeRequirementRegistration> findInconsistent(Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency,
+                                                                                               Map<CapabilityContext, Set<CapabilityContext>> consistentSets) {
+            Set<RuntimeRequirementRegistration> result = new HashSet<>();
+            for (Map.Entry<CapabilityContext, Set<CapabilityContext>> entry : consistentSets.entrySet()) {
+                if (entry.getValue().isEmpty()) {
+                    // This one is a problem; see what all requirements are from the dependent context
+                    Set<RuntimeRequirementRegistration> contextDependents = requiresConsistency.get(entry.getKey());
+                    if (contextDependents != null) {
+                        result.addAll(contextDependents);
                     }
                 }
             }
             return result;
         }
+    }
 
-        private CapabilityId findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext) {
+    private static class SatisfactoryCapability {
+        private final CapabilityId singleCapability;
+        private final Set<CapabilityContext> multipleCapabilities;
 
-            // Check for a simple match
-            CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
-            if (capabilities.containsKey(requestedId)) {
-                return requestedId;
-            }
+        SatisfactoryCapability(CapabilityId singleCapability) {
+            this.singleCapability = singleCapability;
+            this.multipleCapabilities = null;
+        }
 
-            if (!forServer) {
-                // Try other contexts that satisfy the requested one
-                for (CapabilityContext satisfies : satisfiedByMap.get(capabilityContext)) {
-                    CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
-                    if (capabilities.containsKey(satisfiesId)) {
-                        return satisfiesId;
-                    }
-                }
-            }
-            return null;
+        SatisfactoryCapability(Set<CapabilityContext> multipleCapabilities) {
+            this.singleCapability = null;
+            this.multipleCapabilities = multipleCapabilities;
+        }
+    }
+
+    /**
+     *
+     */
+    static class CapabilityValidation {
+
+        private static final CapabilityValidation OK = new CapabilityValidation(null, null);
+        private final Map<CapabilityId, Set<RuntimeRequirementRegistration>> missingRequirements;
+        private final Set<RuntimeRequirementRegistration> inconsistentRequirements;
+
+        private CapabilityValidation(Map<CapabilityId, Set<RuntimeRequirementRegistration>> missingRequirements,
+                             Set<RuntimeRequirementRegistration> inconsistentRequirements) {
+            this.missingRequirements = missingRequirements == null
+                    ? Collections.<CapabilityId, Set<RuntimeRequirementRegistration>>emptyMap() : missingRequirements;
+            this.inconsistentRequirements = inconsistentRequirements == null
+                    ? Collections.emptySet() : inconsistentRequirements;
+        }
+
+        Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {
+            return missingRequirements;
+        }
+
+        Set<RuntimeRequirementRegistration> getInconsistentRequirements() {
+            return inconsistentRequirements;
+        }
+
+        boolean isValid() {
+            return missingRequirements.isEmpty() && inconsistentRequirements.isEmpty();
         }
     }
 

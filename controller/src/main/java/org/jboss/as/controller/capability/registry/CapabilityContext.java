@@ -47,6 +47,15 @@ public interface CapabilityContext {
     boolean canSatisfyRequirements(CapabilityContext dependentContext);
 
     /**
+     * Gets whether a consistency check must be performed when other capabilities depend on capabilities
+     * in this context. A consistency check is necessary if different capabilities in the dependent context
+     * can potentially require capabilities in different other contexts, but all such capabilities must be
+     * available in at least one context.
+     * @return {@code true} if a consistency check is required
+     */
+    boolean requiresConsistencyCheck();
+
+    /**
      * Gets a descriptive name of the context
      * @return the name. Will not return {@code null}
      */
@@ -64,6 +73,11 @@ public interface CapabilityContext {
         @Override
         public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
             return true;
+        }
+
+        @Override
+        public boolean requiresConsistencyCheck() {
+            return false;
         }
 
         @Override

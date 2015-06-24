@@ -26,6 +26,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
@@ -33,6 +34,10 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  * @author Jaikiran Pai
  */
 abstract class AbstractOutboundConnectionResourceDefinition extends SimpleResourceDefinition {
+
+    static final String OUTBOUND_CONNECTION_CAPABILITY_NAME = "org.wildfly.remoting.outbound-connection";
+    static final RuntimeCapability<Void> OUTBOUND_CONNECTION_CAPABILITY =
+            RuntimeCapability.Builder.of(OUTBOUND_CONNECTION_CAPABILITY_NAME, true, AbstractOutboundConnectionService.class).build();
 
     protected AbstractOutboundConnectionResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                                            final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {

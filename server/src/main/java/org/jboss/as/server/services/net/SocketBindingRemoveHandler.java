@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
  */
-package org.jboss.as.controller.operations.common;
+package org.jboss.as.server.services.net;
 
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -38,5 +38,6 @@ public class SocketBindingRemoveHandler extends AbstractRemoveStepHandler {
      * Create the SocketBindingRemoveHandler
      */
     protected SocketBindingRemoveHandler() {
+        super(SocketBindingAddHandler.SOCKET_BINDING_CAPABILITY);
     }
 }

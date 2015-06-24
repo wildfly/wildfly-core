@@ -44,6 +44,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -184,7 +185,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private volatile boolean readOnly = true;
 
     /** Associates a requirement for a capability with the step that added it */
-    private final ConcurrentMap<CapabilityId, Set<Step>> addedRequirements = new ConcurrentHashMap<>();
+    private final ConcurrentMap<RuntimeRequirementRegistration, Set<Step>> addedRequirements = new ConcurrentHashMap<>();
     /** Associates a removed capability with the step that removed it */
     private final ConcurrentMap<CapabilityId, Step> removedCapabilities = new ConcurrentHashMap<>();
 
@@ -259,12 +260,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private boolean validateCapabilities() {
         // Validate that all required capabilities are available and fail any steps that broke this
-        Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = managementModel.validateCapabilityRegistry();
-        boolean ok = missing.size() == 0;
+        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry();
+        boolean ok = validation.isValid();
         if (!ok) {
             // Whether we care about context depends on whether we are a server
             boolean ignoreContext = getProcessType().isServer();
 
+            Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = validation.getMissingRequirements();
             Map<Step, Set<CapabilityId>> missingForStep = new HashMap<>();
             for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : missing.entrySet()) {
                 CapabilityId required = entry.getKey();
@@ -292,17 +294,19 @@ final class OperationContextImpl extends AbstractOperationContext {
                         ControllerLogger.ROOT_LOGGER.error(guilty.address.toCLIStyleString() + " -- " + msgString);
                     }
                 } else {
-                    // Problem wasn't a capability removal.
-                    // See what step(s) added this requirement
-                    Set<Step> bereft = addedRequirements.get(required);
-                    assert bereft != null && bereft.size() > 0;
-                    for (Step step : bereft) {
-                        Set<CapabilityId> set = missingForStep.get(step);
-                        if (set == null) {
-                            set = new HashSet<>();
-                            missingForStep.put(step, set);
+                    for (RuntimeRequirementRegistration reqReq : entry.getValue()) {
+                        // Problem wasn't a capability removal.
+                        // See what step(s) added this requirement
+                        Set<Step> bereft = addedRequirements.get(reqReq);
+                        assert bereft != null && bereft.size() > 0;
+                        for (Step step : bereft) {
+                            Set<CapabilityId> set = missingForStep.get(step);
+                            if (set == null) {
+                                set = new HashSet<>();
+                                missingForStep.put(step, set);
+                            }
+                            set.add(required);
                         }
-                       set.add(required);
                     }
                 }
             }
@@ -334,6 +338,29 @@ final class OperationContextImpl extends AbstractOperationContext {
                 if (bootMsg != null) {
                     ControllerLogger.ROOT_LOGGER.error(bootMsg.toString());
                 }
+            }
+
+            if (!ignoreContext) {
+
+                for (RuntimeRequirementRegistration reg : validation.getInconsistentRequirements()) {
+                    // See what step(s) added this requirement
+                    Set<Step> inconsistent = addedRequirements.get(reg);
+                    assert inconsistent != null && inconsistent.size() > 0;
+                    for (Step step : inconsistent) {
+                        ModelNode response = step.response;
+                        String depConName = reg.getDependentContext().getName();
+                        // only overwrite reponse failure-description if there isn't one
+                        if (!response.hasDefined(FAILURE_DESCRIPTION)) {
+                            response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
+                                    reg.getDependentName(), depConName, depConName));
+                        }
+                        if (isBooting()) {
+                            ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getDependentName(),
+                                    depConName, step.address.toCLIStyleString(),reg.getRequiredName(), depConName);
+                        }
+                    }
+                }
+
             }
         }
         return ok;
@@ -1280,7 +1307,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         RuntimeCapabilityRegistration registration = createCapabilityRegistration(capability, step, attribute);
         managementModel.getCapabilityRegistry().registerCapability(registration);
         for (String required : capability.getRequirements()) {
-            recordRequirement(required, registration.getCapabilityContext(), step);
+            RuntimeRequirementRegistration requirementRegistration = createRequirementRegistration(required, capability.getName(), false, step, attribute);
+            recordRequirement(requirementRegistration, step);
         }
     }
 
@@ -1295,15 +1323,14 @@ final class OperationContextImpl extends AbstractOperationContext {
         ensureLocalCapabilityRegistry();
         RuntimeRequirementRegistration requirementRegistration = createRequirementRegistration(required, dependent, false, step, attribute);
         managementModel.getCapabilityRegistry().registerAdditionalCapabilityRequirement(requirementRegistration);
-        recordRequirement(required, requirementRegistration.getDependentContext(), step);
+        recordRequirement(requirementRegistration, step);
     }
 
-    private void recordRequirement(String required, CapabilityContext context, Step step) {
-        CapabilityId id = new CapabilityId(required, context);
-        Set<Step> dependents = addedRequirements.get(id);
+    private void recordRequirement(RuntimeRequirementRegistration reg, Step step) {
+        Set<Step> dependents = addedRequirements.get(reg);
         if (dependents == null) {
             dependents = new HashSet<>();
-            Set<Step> existing = addedRequirements.putIfAbsent(id, dependents);
+            Set<Step> existing = addedRequirements.putIfAbsent(reg, dependents);
             if (existing != null) {
                 dependents = existing;
             }
@@ -1333,7 +1360,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         CapabilityContext context = registration.getDependentContext();
         if (registry.hasCapability(required, context)) {
             registry.registerAdditionalCapabilityRequirement(registration);
-            recordRequirement(required, context, step);
+            recordRequirement(registration, step);
             return true;
         }
         return false;
@@ -1725,8 +1752,13 @@ final class OperationContextImpl extends AbstractOperationContext {
     private CapabilityContext createCapabilityContext(Step step) {
         CapabilityContext context = CapabilityContext.GLOBAL;
         PathElement pe = getProcessType().isServer() || step.address.size() == 0 ? null : step.address.getElement(0);
-        if (pe != null && pe.getKey().equals(PROFILE)) {
-            context = new ProfileCapabilityContext(pe.getValue());
+        if (pe != null) {
+            String type = pe.getKey();
+            if (type.equals(PROFILE)) {
+                context = new DomainCapabilityContext(false, pe.getValue(), false);
+            } else if (type.equals(SOCKET_BINDING_GROUP)) {
+                context = new DomainCapabilityContext(true, pe.getValue(), true);
+            }
         }
         return context;
     }
@@ -2436,24 +2468,37 @@ final class OperationContextImpl extends AbstractOperationContext {
         private boolean done = false;
     }
 
-    private static class ProfileCapabilityContext implements CapabilityContext {
-        private final String profileName;
+    private static class DomainCapabilityContext implements CapabilityContext {
 
-        private ProfileCapabilityContext(String profileName) {
-            this.profileName = profileName;
+        private final String type;
+        private final boolean socketBinding;
+        private final String value;
+        private final boolean requiresConsistencyCheck;
+
+        private DomainCapabilityContext(boolean socketBinding, String value, boolean requiresConsistencyCheck) {
+            this.socketBinding = socketBinding;
+            this.type = socketBinding ? SOCKET_BINDING_GROUP : PROFILE;
+            this.value = value;
+            this.requiresConsistencyCheck = requiresConsistencyCheck;
         }
 
         @Override
         public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
-            // Currently this is a simple match of profile name, but once profile includes are
-            // once again supported we need to account for those
-            return dependentContext instanceof ProfileCapabilityContext
-                    && profileName.equals(((ProfileCapabilityContext) dependentContext).profileName);
+            // Currently this is a simple match of type and value, but once profile/socket-binding-group
+            // includes are once again supported we need to account for those
+            return equals(dependentContext) ||
+                    (socketBinding && (!(dependentContext instanceof DomainCapabilityContext)
+                            || !((DomainCapabilityContext) dependentContext).socketBinding));
+        }
+
+        @Override
+        public boolean requiresConsistencyCheck() {
+            return requiresConsistencyCheck;
         }
 
         @Override
         public String getName() {
-            return "profile=" + profileName;
+            return type + "=" + value;
         }
 
         @Override
@@ -2466,15 +2511,16 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ProfileCapabilityContext that = (ProfileCapabilityContext) o;
+            DomainCapabilityContext that = (DomainCapabilityContext) o;
 
-            return profileName.equals(that.profileName);
-
+            return type.equals(that.type) && value.equals(that.value);
         }
 
         @Override
         public int hashCode() {
-            return profileName.hashCode();
+            int result = type.hashCode();
+            result = 31 * result + value.hashCode();
+            return result;
         }
     }
 

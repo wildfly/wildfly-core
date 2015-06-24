@@ -42,6 +42,8 @@ import java.net.UnknownHostException;
  */
 public class OutboundSocketBinding {
 
+    /** @deprecated use capability based injection */
+    @Deprecated
     public static final ServiceName OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME = ServiceName.JBOSS.append("outbound-socket-binding");
 
     private final String name;

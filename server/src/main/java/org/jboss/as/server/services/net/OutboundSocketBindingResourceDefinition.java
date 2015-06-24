@@ -43,6 +43,8 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class OutboundSocketBindingResourceDefinition extends SimpleResourceDefinition {
 
+    static final String OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.outbound-socket-binding";
+
     /*public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false)
             .setValidator(new StringLengthValidator(1)).build();*/
 
@@ -58,12 +60,10 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
             .setAllowExpression(true).setDefaultValue(new ModelNode().set(false)).build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT,SOURCE_INTERFACE,FIXED_SOURCE_PORT};
-    private final boolean remoteDestination;
 
     protected OutboundSocketBindingResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                                      final OperationStepHandler addHandler, final OperationStepHandler removeHandler, final boolean remoteDestination) {
+                                                      final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
         super(pathElement, descriptionResolver, addHandler, removeHandler);
-        this.remoteDestination = remoteDestination;
     }
 
     @Override
