@@ -86,7 +86,8 @@
                 <xs:element name="interfaces" type="specified-interfacesType" minOccurs="0"/>
                 <xs:element name="jvms" type="jvmsType" minOccurs="0"/>
                 <xs:element name="servers" type="serversType" minOccurs="0"/>
-                <xs:element name="profile" type="host-profileType" minOccurs="0"/>                
+                <xs:element name="profile" type="host-profileType" minOccurs="0"/>
+                <xs:element name="socket-binding-group" type="host-socket-binding-groupType" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" type="xs:string" use="optional">
                 <xs:annotation>
@@ -2905,6 +2906,34 @@
     </xs:complexType>
 
     <xs:complexType name="standalone-socket-binding-groupType">
+        <xs:annotation>
+            <xs:documentation>Contains a list of socket configurations</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="socket-binding" type="socket-bindingType" maxOccurs="unbounded"/>
+            <xs:element name="outbound-socket-binding" type="outbound-socket-bindingType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="default-interface" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of an interface that should be used as the interface for
+                    any sockets that do not explicitly declare one.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="port-offset" type="xs:int" use="optional" default="0">
+            <xs:annotation>
+                <xs:documentation>
+                    Increment to apply to the base port values defined in the
+                    socket group to derive the values to use on this
+                    server.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="host-socket-binding-groupType">
         <xs:annotation>
             <xs:documentation>Contains a list of socket configurations</xs:documentation>
         </xs:annotation>

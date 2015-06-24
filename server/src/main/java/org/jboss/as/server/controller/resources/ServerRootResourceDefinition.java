@@ -448,7 +448,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         interfaces.registerReadOnlyAttribute(NetworkInterfaceRuntimeHandler.RESOLVED_ADDRESS, NetworkInterfaceRuntimeHandler.INSTANCE);
         interfaces.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
 
-        //TODO socket-binding-group currently lives in controller and the child RDs live in server so they currently need passing in from here
         resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
         // Deployments
