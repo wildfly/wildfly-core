@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
@@ -55,6 +56,7 @@ import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
+import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -66,6 +68,7 @@ import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
 import org.jboss.as.domain.controller.operations.HostProcessReloadHandler;
+import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
 import org.jboss.as.host.controller.DirectoryGrouping;
@@ -157,6 +160,15 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final SimpleAttributeDefinition UUID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UUID, ModelType.STRING, false)
+            .setValidator(new StringLengthValidator(1, true))
+            .setStorageRuntime()
+            .build();
+
+    public static final SimpleAttributeDefinition ORGANIZATION_IDENTIFIER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ORGANIZATION, ModelType.STRING, true)
+            .setValidator(new StringLengthValidator(1, true))
+            .build();
+
+    public static final SimpleAttributeDefinition DOMAIN_ORGANIZATION_IDENTIFIER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DOMAIN_ORGANIZATION, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
             .build();
@@ -264,7 +276,10 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             }
 
         });
+        hostRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
+        hostRegistration.registerReadOnlyAttribute(DOMAIN_ORGANIZATION_IDENTIFIER, null);
         hostRegistration.registerReadOnlyAttribute(PRODUCT_NAME, null);
+        hostRegistration.registerReadOnlyAttribute(UUID, new InstanceUuidReadHandler(environment));
         hostRegistration.registerReadOnlyAttribute(SERVER_STATE, null);
         hostRegistration.registerReadOnlyAttribute(RELEASE_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(RELEASE_CODENAME, null);
@@ -290,6 +305,9 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(NamespaceRemoveHandler.DEFINITION, NamespaceRemoveHandler.INSTANCE);
         hostRegistration.registerOperationHandler(SchemaLocationAddHandler.DEFINITION, SchemaLocationAddHandler.INSTANCE);
         hostRegistration.registerOperationHandler(SchemaLocationRemoveHandler.DEFINITION, SchemaLocationRemoveHandler.INSTANCE);
+
+        hostRegistration.registerOperationHandler(GlobalInstallationReportHandler.DEFINITION, GlobalInstallationReportHandler.INSTANCE, false);
+        hostRegistration.registerOperationHandler(InstallationReportHandler.DEFINITION, InstallationReportHandler.createOperation(environment), false);
 
 
         hostRegistration.registerOperationHandler(ValidateAddressOperationHandler.DEFINITION, ValidateAddressOperationHandler.INSTANCE);
@@ -326,7 +344,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(SnapshotListHandler.DEFINITION, snapshotList);
         SnapshotTakeHandler snapshotTake = new SnapshotTakeHandler(configurationPersister.getHostPersister());
         hostRegistration.registerOperationHandler(SnapshotTakeHandler.DEFINITION, snapshotTake);
-        hostRegistration.registerReadOnlyAttribute(UUID, new InstanceUuidReadHandler(environment));
 
         ignoredRegistry.registerResources(hostRegistration);
 

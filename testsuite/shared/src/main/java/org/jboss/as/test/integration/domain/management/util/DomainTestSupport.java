@@ -110,9 +110,14 @@ public class DomainTestSupport {
     public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
                 String testName, WildFlyManagedConfiguration baseConfig,
                 boolean readOnlyDomain, boolean readOnlyHost) {
-        return Configuration.getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost);
+        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, false);
     }
 
+    public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
+                String testName, WildFlyManagedConfiguration baseConfig,
+                boolean readOnlyDomain, boolean readOnlyHost, boolean debug) {
+        return Configuration.getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, debug);
+    }
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
                                                                     boolean readOnlyHost) {
         return getSlaveConfiguration("slave", hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
@@ -132,7 +137,13 @@ public class DomainTestSupport {
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost) {
-        return Configuration.getSlaveConfiguration(hostConfigPath, testName, hostName, baseConfig, readOnlyHost);
+        return getSlaveConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, false);
+    }
+
+    public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
+                                                                    WildFlyManagedConfiguration baseConfig,
+                                                                    boolean readOnlyHost, boolean debug) {
+        return Configuration.getSlaveConfiguration(hostConfigPath, testName, hostName, baseConfig, readOnlyHost, debug);
     }
 
     private static URI toURI(URL url) {
@@ -430,20 +441,24 @@ public class DomainTestSupport {
         public static Configuration create(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
             return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false);
         }
+        public static Configuration create(final String testName, final String domainConfig, final String masterConfig,
+                                           final String slaveConfig, boolean readOnlyMasterDomain, boolean readOnlyMasterHost, boolean readOnlySlaveHost) {
+            return create(testName, domainConfig, masterConfig, slaveConfig, readOnlyMasterDomain, readOnlyMasterHost, false, readOnlySlaveHost, false);
+        }
 
         public static Configuration create(final String testName, final String domainConfig, final String masterConfig,
                                            final String slaveConfig,
-                                           boolean readOnlyMasterDomain, boolean readOnlyMasterHost,
-                                           boolean readOnlySlaveHost) {
+                                           boolean readOnlyMasterDomain, boolean readOnlyMasterHost, boolean masterDebug,
+                                           boolean readOnlySlaveHost, boolean slaveDebug) {
 
-            WildFlyManagedConfiguration masterConfiguration = getMasterConfiguration(domainConfig, masterConfig, testName, null, readOnlyMasterDomain, readOnlyMasterHost);
-            WildFlyManagedConfiguration slaveConfiguration = slaveConfig == null ? null : getSlaveConfiguration(slaveConfig, testName, "slave", null, readOnlySlaveHost);
+            WildFlyManagedConfiguration masterConfiguration = getMasterConfiguration(domainConfig, masterConfig, testName, null, readOnlyMasterDomain, readOnlyMasterHost, masterDebug);
+            WildFlyManagedConfiguration slaveConfiguration = slaveConfig == null ? null : getSlaveConfiguration(slaveConfig, testName, "slave", null, readOnlySlaveHost, slaveDebug);
             return new Configuration(testName, masterConfiguration, slaveConfiguration);
         }
 
         private static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
                                                                          String testName, WildFlyManagedConfiguration baseConfig,
-                                                                         boolean readOnlyDomain, boolean readOnlyHost) {
+                                                                         boolean readOnlyDomain, boolean readOnlyHost, boolean debug) {
             final String hostName = "master";
             File domains = getBaseDir(testName);
             File extraModules = getAddedModulesDir(testName);
@@ -453,6 +468,10 @@ public class DomainTestSupport {
             configureModulePath(masterConfig, overrideModules, extraModules);
             masterConfig.setHostControllerManagementAddress(masterAddress);
             masterConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress);
+            if(debug) {
+                masterConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y " +
+                       masterConfig.getHostCommandLineProperties());
+            }
             masterConfig.setReadOnlyDomain(readOnlyDomain);
             masterConfig.setReadOnlyHost(readOnlyHost);
             URL url = tccl.getResource(domainConfigPath);
@@ -472,7 +491,7 @@ public class DomainTestSupport {
 
         private static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
                                                                          String hostName, WildFlyManagedConfiguration baseConfig,
-                                                                         boolean readOnlyHost) {
+                                                                         boolean readOnlyHost, boolean debug) {
             File domains = getBaseDir(testName);
             File extraModules = getAddedModulesDir(testName);
             File overrideModules = getHostOverrideModulesDir(testName, hostName);
@@ -484,6 +503,10 @@ public class DomainTestSupport {
             slaveConfig.setHostControllerManagementPort(19999);
             slaveConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress +
                     " -Djboss.test.host.slave.address=" + slaveAddress);
+            if(debug) {
+                slaveConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8788,server=y,suspend=y " +
+                       slaveConfig.getHostCommandLineProperties());
+            }
             slaveConfig.setReadOnlyHost(readOnlyHost);
             URL url = tccl.getResource(hostConfigPath);
             slaveConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());

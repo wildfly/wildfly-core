@@ -44,6 +44,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
@@ -178,7 +179,9 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
         if (modelNode.hasDefined(NAME)) {
             HostResourceDefinition.NAME.marshallAsAttribute(modelNode, writer);
         }
-
+        if (modelNode.hasDefined(ORGANIZATION)) {
+            HostResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
+        }
         writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
@@ -263,7 +266,7 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
     private void readHostElement(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
             throws XMLStreamException {
         String hostName = null;
-
+        String organization = null;
         // Deffer adding the namespaces and schema locations until after the host has been created.
         List<ModelNode> namespaceOperations = new LinkedList<ModelNode>();
         parseNamespaces(reader, address, namespaceOperations);
@@ -278,6 +281,10 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
                     switch (attribute) {
                         case NAME: {
                             hostName = value;
+                            break;
+                        }
+                        case ORGANIZATION : {
+                            organization = value;
                             break;
                         }
                         default:
@@ -309,6 +316,7 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
         addLocalHost(address, list, hostName);
+        setOrganization(address, list, organization);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -549,6 +557,12 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
+    private void setOrganization(final ModelNode address, final List<ModelNode> operationList, final String value) {
+        if (value != null && !value.isEmpty()) {
+            final ModelNode update = Util.getWriteAttributeOperation(address, ORGANIZATION, value);
+            operationList.add(update);
+        }
+    }
     /**
      * Add the operation to add the local host definition.
      */

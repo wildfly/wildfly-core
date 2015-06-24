@@ -100,6 +100,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:attribute name="organization" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the organization running this server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 
@@ -137,6 +144,13 @@
 
                         If the special value "jboss.domain.uuid" is used, a java.util.UUID will be created
                         and used, based on the value of InetAddress.getLocalHost().
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="organization" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the organization running this server.
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>

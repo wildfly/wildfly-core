@@ -568,6 +568,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @return the running mode control
      */
+    @Override
     public HostRunningModeControl getRunningModeControl() {
         return runningModeControl;
     }
@@ -716,6 +717,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @return the qualified host name
      */
+    @Override
     public String getQualifiedHostName() {
         return qualifiedHostName;
     }
@@ -727,6 +729,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @return the local host name
      */
+    @Override
     public String getHostName() {
         return hostName;
     }
@@ -738,6 +741,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @return the name of the host controller
      */
+    @Override
     public String getHostControllerName() {
         return hostControllerName;
     }

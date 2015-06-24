@@ -58,6 +58,7 @@ import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
+import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -95,6 +96,7 @@ import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ProcessTypeHandler;
+import org.jboss.as.server.operations.InstallationReportHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessReloadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
@@ -136,10 +138,12 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, true))
             .build();
-
     public static final SimpleAttributeDefinition UUID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UUID, ModelType.STRING, false)
             .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
+            .build();
+    public static final SimpleAttributeDefinition ORGANIZATION_IDENTIFIER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ORGANIZATION, ModelType.STRING, true)
+            .setValidator(new StringLengthValidator(1, true))
             .build();
 
     public static final SimpleAttributeDefinition SERVER_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SERVER_GROUP, ModelType.STRING)
@@ -294,6 +298,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         resourceRegistration.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(WhoAmIOperation.DEFINITION, WhoAmIOperation.createOperation(authorizer), true);
+        resourceRegistration.registerOperationHandler(GlobalInstallationReportHandler.DEFINITION, GlobalInstallationReportHandler.INSTANCE, false);
+        resourceRegistration.registerOperationHandler(InstallationReportHandler.DEFINITION, InstallationReportHandler.createOperation(serverEnvironment), false);
         resourceRegistration.registerOperationHandler(CleanObsoleteContentHandler.DEFINITION, CleanObsoleteContentHandler.createOperation(contentRepository), false);
 
         // Reload op available in standalone and domain
@@ -350,6 +356,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
                 resourceRegistration.registerReadWriteAttribute(NAME, serverEnvironment.getProcessNameReadHandler(), serverEnvironment.getProcessNameWriteHandler());
                 // The legacy "undefined" profile-name
                 resourceRegistration.registerReadOnlyAttribute(NULL_PROFILE_NAME, null);
+                resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
             }
             resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(serverEnvironment.getLaunchType()));
         }

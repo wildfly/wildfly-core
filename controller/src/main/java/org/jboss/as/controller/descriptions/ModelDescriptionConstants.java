@@ -135,6 +135,7 @@ public class ModelDescriptionConstants {
     public static final String DOMAIN = "domain";
     public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
     public static final String DOMAIN_CONTROLLER = "domain-controller";
+    public static final String DOMAIN_ORGANIZATION = "domain-organization";
     public static final String DOMAIN_MODEL = "domain-model";
     public static final String DOMAIN_RESULTS = "domain-results";
     public static final String DOMAIN_UUID = "domain-uuid";
@@ -277,6 +278,7 @@ public class ModelDescriptionConstants {
     public static final String OP = "operation";
     /** Use this standard operation address field in the operation *request* ModelNode */
     public static final String OP_ADDR = "address";
+    public static final String ORGANIZATION = "organization";
     public static final String OPERATION_HEADERS = "operation-headers";
     public static final String OPERATION_NAME = "operation-name";
     public static final String OPERATIONS = "operations";

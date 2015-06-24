@@ -29,7 +29,6 @@ import java.util.ResourceBundle;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -64,23 +63,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         this.suffix = suffix == null ? "" : suffix;
     }
 
-    private static AttributeMarshaller getAttributeMarshaller(final AttributeMarshaller provided, final AttributeDefinition[] valueTypes) {
-        return provided != null ? provided : new AttributeMarshaller() {
-            @Override
-            public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                if (resourceModel.hasDefined(attribute.getName())) {
-                    writer.writeStartElement(attribute.getXmlName());
-                    for (AttributeDefinition valueType : valueTypes) {
-                        for (ModelNode handler : resourceModel.get(attribute.getName()).asList()) {
-                            valueType.marshallAsElement(handler, writer);
-                        }
-                    }
-                    writer.writeEndElement();
-                }
-            }
-        };
-    }
-
     @Override
     protected ModelNode convertParameterExpressions(ModelNode parameter) {
         ModelNode result = parameter;
@@ -106,6 +88,10 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             }
         }
         return result;
+    }
+
+    AttributeDefinition[] getValueTypes() {
+        return valueTypes;
     }
 
     @Override

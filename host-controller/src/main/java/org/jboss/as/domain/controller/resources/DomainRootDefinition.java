@@ -65,6 +65,7 @@ import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
+import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.validation.AbstractParameterValidator;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -170,6 +171,9 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .build();
 
+    public static final SimpleAttributeDefinition ORGANIZATION_IDENTIFIER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DOMAIN_ORGANIZATION, ModelType.STRING, true)
+            .setValidator(new StringLengthValidator(1, true))
+            .build();
 
     private final DomainController domainController;
     private final LocalHostControllerInfo hostControllerInfo;
@@ -216,7 +220,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         resourceRegistration.registerReadWriteAttribute(NAME, null, new ModelOnlyWriteAttributeHandler(NAME));
-
+        resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, isMaster ? ProcessTypeHandler.MASTER : ProcessTypeHandler.SLAVE);
         resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(ServerEnvironment.LaunchType.DOMAIN));
         resourceRegistration.registerReadOnlyAttribute(LOCAL_HOST_NAME, new LocalHostNameOperationHandler(hostControllerInfo));
@@ -247,9 +251,10 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(NamespaceRemoveHandler.DEFINITION, NamespaceRemoveHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(SchemaLocationAddHandler.DEFINITION, SchemaLocationAddHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(SchemaLocationRemoveHandler.DEFINITION, SchemaLocationRemoveHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(GlobalInstallationReportHandler.DEFINITION,
+                GlobalInstallationReportHandler.createDomainOperation(), false);
 
         resourceRegistration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, GenericModelDescribeOperationHandler.INSTANCE, true);
-
         if (isMaster) {
             DeploymentUploadURLHandler.registerMaster(resourceRegistration, contentRepo);
             DeploymentUploadStreamAttachmentHandler.registerMaster(resourceRegistration, contentRepo);
@@ -312,7 +317,6 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         } else { //We need a contentRepository as adding a /deployment=* won't reference it.
             resourceRegistration.registerSubModel(new ServerGroupResourceDefinition(isMaster, hostControllerInfo, fileRepository, contentRepo));
         }
-
         //TODO socket-binding-group currently lives in controller and the child RDs live in domain so they currently need passing in from here
         resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 

@@ -1,0 +1,21 @@
+SYNOPSIS
+
+  Standalone mode:
+
+    installation-info --target-file=target_file_path
+                    [--format={xml|json}]
+
+  Domain mode:
+
+    installation-info --target-file=target_file_path
+                    [--format={xml|json}]
+
+DESCRIPTION
+
+    Reports information about the current installation in a file fomatted as XML or JSON.
+
+ARGUMENTS
+
+ --target-file      - the path to the report file is to be created.
+
+ --format           - the format of the report.

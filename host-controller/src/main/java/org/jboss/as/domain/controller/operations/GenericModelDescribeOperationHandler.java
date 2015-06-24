@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -29,7 +30,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +71,7 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
             .setPrivateEntry()
             .build();
 
+    private static final Set<String> ROOT_ATTRIBUTES = new HashSet<>(Arrays.asList(DOMAIN_ORGANIZATION));
     private final String operationName;
     private final boolean skipLocalAdd;
     protected GenericModelDescribeOperationHandler(final String operationName, final boolean skipAdd) {
@@ -177,58 +181,55 @@ public class GenericModelDescribeOperationHandler implements OperationStepHandle
             return;
         }
 
-        if (address.size() == 0) {
-            // Do we need to set any root attributes?
-            result.setEmptyList();
+        // Generic operation generation
+        final ModelNode model = resource.getModel();
+        final OperationStepHandler addHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD);
+        if (addHandler != null) {
+
+            final ModelNode add = new ModelNode();
+            add.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
+            add.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
+            final Set<String> attributes = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
+            for (final String attribute : attributes) {
+                if (!model.hasDefined(attribute)) {
+                    continue;
+                }
+
+                // Process attributes
+                final AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute);
+                if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
+                    add.get(attribute).set(model.get(attribute));
+                }
+            }
+
+            // Allow the profile describe handler to process profile includes
+            processMore(context, operation, resource, address, includeResults);
+            if (!skipLocalAdd) {
+                addOrderedChildTypeInfo(context, resource, add);
+                result.add(add);
+            }
+
         } else {
-            // Generic operation generation
-            final ModelNode model = resource.getModel();
-            final OperationStepHandler addHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD);
-            if (addHandler != null) {
-
-                final ModelNode add = new ModelNode();
-                add.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
-                add.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
-                final Set<String> attributes = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
-                for (final String attribute : attributes) {
-                    if (!model.hasDefined(attribute)) {
-                        continue;
-                    }
-
-                    // Process attributes
-                    final AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute);
-                    if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
-                        add.get(attribute).set(model.get(attribute));
-                    }
+            // Create write attribute operations
+            final Set<String> attributes = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
+            for (final String attribute : attributes) {
+                if (!model.hasDefined(attribute)) {
+                    continue;
                 }
-
-                // Allow the profile describe handler to process profile includes
-                processMore(context, operation, resource, address, includeResults);
-                if (!skipLocalAdd) {
-                    addOrderedChildTypeInfo(context, resource, add);
-                    result.add(add);
+                if (address.size() == 0 && !ROOT_ATTRIBUTES.contains(attribute)) {
+                    continue;
                 }
+                // Process attributes
+                final AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute);
+                if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
+                    final ModelNode writeAttribute = new ModelNode();
+                    writeAttribute.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
+                    writeAttribute.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
 
-            } else {
-                // Create write attribute operations
-                final Set<String> attributes = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
-                for (final String attribute : attributes) {
-                    if (!model.hasDefined(attribute)) {
-                        continue;
-                    }
-
-                    // Process attributes
-                    final AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute);
-                    if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
-                        final ModelNode writeAttribute = new ModelNode();
-                        writeAttribute.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
-                        writeAttribute.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());
-
-                        writeAttribute.get(NAME).set(attribute);
-                        writeAttribute.get(VALUE).set(model.get(attribute));
-                        addOrderedChildTypeInfo(context, resource, writeAttribute);
-                        result.add(writeAttribute);
-                    }
+                    writeAttribute.get(NAME).set(attribute);
+                    writeAttribute.get(VALUE).set(model.get(attribute));
+                    addOrderedChildTypeInfo(context, resource, writeAttribute);
+                    result.add(writeAttribute);
                 }
             }
         }

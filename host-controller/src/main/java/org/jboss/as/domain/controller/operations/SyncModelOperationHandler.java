@@ -679,7 +679,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         void add(ModelNode op) {
             final String name = op.require(OP).asString();
             final PathAddress addr = PathAddress.pathAddress(op.require(OP_ADDR));
-            final String type = addr.getElement(0).getKey();
+            final String type = addr.size() == 0 ? "" : addr.getElement(0).getKey();
 
             if (name.equals(ADD) || name.equals(WRITE_ATTRIBUTE_OPERATION)) {
                 if (type.equals(EXTENSION)) {
