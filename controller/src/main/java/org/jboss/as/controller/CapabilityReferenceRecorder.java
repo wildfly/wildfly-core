@@ -35,7 +35,7 @@ public interface CapabilityReferenceRecorder {
      * Registers capability requirement information to the given context.
      * @param context the context
      * @param attributeName the name of the attribute
-     * @param attributeValue the values of the attribute
+     * @param attributeValues the values of the attribute
      */
     void addCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
 
@@ -43,7 +43,7 @@ public interface CapabilityReferenceRecorder {
      * Deregisters capability requirement information from the given context.
      * @param context the context
      * @param attributeName the name of the attribute
-     * @param attributeValue the values of the attribute
+     * @param attributeValues the values of the attribute
      */
     void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
 
