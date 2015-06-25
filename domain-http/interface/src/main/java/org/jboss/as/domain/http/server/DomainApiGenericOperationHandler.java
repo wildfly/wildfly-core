@@ -111,7 +111,7 @@ class DomainApiGenericOperationHandler implements HttpHandler {
             if (contents != null && !contents.isEmpty()) {
                 for (final FormData.FormValue value : contents) {
                     if (value.isFile()) {
-                        builder.addFileAsAttachment(value.getFile().toFile());
+                        builder.addFileAsAttachment(value.getPath().toFile());
                     }
                 }
             }
