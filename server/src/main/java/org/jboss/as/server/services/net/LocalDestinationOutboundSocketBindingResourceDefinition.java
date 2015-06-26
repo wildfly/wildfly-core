@@ -32,7 +32,6 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -60,7 +59,7 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
         super(PathElement.pathElement(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
                 ControllerResolver.getResolver(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
                 LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                new ServiceRemoveStepHandler(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME, LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
+                new ServiceRemoveStepHandler(LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
                         OUTBOUND_SOCKET_BINDING_CAPABILITY));
     }
 
