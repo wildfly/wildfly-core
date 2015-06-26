@@ -50,7 +50,7 @@ public class ClassReflectionIndexUtil {
     public static Method findMethod(final DeploymentReflectionIndex deploymentReflectionIndex, final Class<?> clazz, final MethodIdentifier methodIdentifier) {
         Class<?> c = clazz;
         while (c != null) {
-            final ClassReflectionIndex<?> index = deploymentReflectionIndex.getClassIndex(c);
+            final ClassReflectionIndex index = deploymentReflectionIndex.getClassIndex(c);
             final Method method = index.getMethod(methodIdentifier);
             if(method != null) {
                 return method;
@@ -142,7 +142,7 @@ public class ClassReflectionIndexUtil {
         // find on super class
         Class<?> superClass = classReflectionIndex.getIndexedClass().getSuperclass();
         if (superClass != null) {
-            ClassReflectionIndex<?> superClassIndex = deploymentReflectionIndex.getClassIndex(superClass);
+            ClassReflectionIndex superClassIndex = deploymentReflectionIndex.getClassIndex(superClass);
             if (superClassIndex != null) {
                 return findMethods(deploymentReflectionIndex, superClassIndex, methodName, paramTypes);
             }
@@ -171,7 +171,7 @@ public class ClassReflectionIndexUtil {
         // find on super class
         Class<?> superClass = classReflectionIndex.getIndexedClass().getSuperclass();
         if (superClass != null) {
-            ClassReflectionIndex<?> superClassIndex = deploymentReflectionIndex.getClassIndex(superClass);
+            ClassReflectionIndex superClassIndex = deploymentReflectionIndex.getClassIndex(superClass);
             if (superClassIndex != null) {
                 return findAllMethods(deploymentReflectionIndex, superClassIndex, methodName, paramCount);
             }
@@ -199,7 +199,7 @@ public class ClassReflectionIndexUtil {
         // find on super class
         Class<?> superClass = classReflectionIndex.getIndexedClass().getSuperclass();
         if (superClass != null) {
-            ClassReflectionIndex<?> superClassIndex = deploymentReflectionIndex.getClassIndex(superClass);
+            ClassReflectionIndex superClassIndex = deploymentReflectionIndex.getClassIndex(superClass);
             if (superClassIndex != null) {
                 return findAllMethodsByName(deploymentReflectionIndex, superClassIndex, methodName);
             }

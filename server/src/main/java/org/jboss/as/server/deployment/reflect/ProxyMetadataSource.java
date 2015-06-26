@@ -41,7 +41,7 @@ public class ProxyMetadataSource implements ReflectionMetadataSource {
 
     @Override
     public ClassMetadataSource getClassMetadata(final Class<?> clazz) {
-        final ClassReflectionIndex<?> index = this.index.getClassIndex(clazz);
+        final ClassReflectionIndex index = this.index.getClassIndex(clazz);
         return new ClassMetadataSource() {
             @Override
             public Collection<Method> getDeclaredMethods() {
