@@ -138,7 +138,6 @@ import org.jboss.as.cli.handlers.jca.JDBCDriverInfoHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverNameProvider;
 import org.jboss.as.cli.handlers.jca.XADataSourceAddCompositeHandler;
 import org.jboss.as.cli.handlers.module.ASModuleHandler;
-import org.jboss.as.cli.handlers.report.InstallationReportHandler;
 import org.jboss.as.cli.handlers.trycatch.CatchHandler;
 import org.jboss.as.cli.handlers.trycatch.EndTryHandler;
 import org.jboss.as.cli.handlers.trycatch.FinallyHandler;
@@ -470,9 +469,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
-
-        //report product installation
-        cmdRegistry.registerHandler(new InstallationReportHandler(this), false, "installation-report");
 
         // Embedded server/host, if we are running in a modular environment
         AtomicReference<EmbeddedServerLaunch> embeddedServerRef = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);

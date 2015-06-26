@@ -139,7 +139,6 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
 
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME,
             ControllerResolver.getResolver("global"))
-            .setParameters(CREATE_REPORT_DEFINITION, FILE_FORMAT_DEFINITION)
             .setRuntimeOnly()
             .setReadOnly()
             .setReplyType(ModelType.LIST)
@@ -275,7 +274,7 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            boolean record = CREATE_REPORT_DEFINITION.resolveModelAttribute(context, operation).asBoolean();
+            boolean record = false;
             ModelNode rootModel = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS,false).getModel();
             String defaultOrganization = null;
             if(rootModel.hasDefined(ORGANIZATION)) {
