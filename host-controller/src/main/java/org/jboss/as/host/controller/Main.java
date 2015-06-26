@@ -125,7 +125,9 @@ public final class Main {
 
     private HostControllerBootstrap boot(String[] args, final byte[] authCode) {
         try {
-            final HostControllerEnvironment config = determineEnvironment(args);
+            // TODO make this settable via an embedding process
+            final long startTime = Module.getStartTime();
+            final HostControllerEnvironment config = determineEnvironment(args, startTime);
             if (config == null) {
                 usage(); // In case there was an error determining the environment print the usage
                 abort();
@@ -183,7 +185,7 @@ public final class Main {
         CommandLineArgumentUsageImpl.printUsage(STDOUT);
     }
 
-    private static HostControllerEnvironment determineEnvironment(String[] args) {
+    private static HostControllerEnvironment determineEnvironment(String[] args, long startTime) {
         Integer pmPort = null;
         InetAddress pmAddress = null;
         final PCSocketConfig pcSocketConfig = new PCSocketConfig();
@@ -441,7 +443,8 @@ public final class Main {
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.HOME_DIR, null), hostSystemProperties);
         return new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath, pmAddress, pmPort,
                 pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM,
-                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc, productConfig, securityManagerEnabled);
+                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles,
+                cachedDc, productConfig, securityManagerEnabled, startTime);
     }
 
     private static String parseValue(final String arg, final String key) {

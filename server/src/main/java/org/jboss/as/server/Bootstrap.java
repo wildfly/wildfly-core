@@ -85,7 +85,7 @@ public interface Bootstrap {
         private final DelegatingConfigurableAuthorizer authorizer;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
-        private long startTime = Module.getStartTime();
+        private long startTime;
 
         public Configuration(final ServerEnvironment serverEnvironment) {
             assert serverEnvironment != null : "serverEnvironment is null";
@@ -94,6 +94,7 @@ public interface Bootstrap {
             this.auditLogger = serverEnvironment.createAuditLogger();
             this.authorizer = new DelegatingConfigurableAuthorizer();
             this.extensionRegistry = new ExtensionRegistry(serverEnvironment.getLaunchType().getProcessType(), runningModeControl, this.auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
+            this.startTime = serverEnvironment.getStartTime();
         }
 
         /**

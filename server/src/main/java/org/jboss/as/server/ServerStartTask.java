@@ -127,8 +127,8 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         final ProductConfig productConfig = new ProductConfig(Module.getBootModuleLoader(), home, properties);
         // Create server environment on the server, so that the system properties are getting initialized on the right side
         final ServerEnvironment providedEnvironment = new ServerEnvironment(hostControllerName, properties,
-
-                WildFlySecurityManager.getSystemEnvironmentPrivileged(), null, null, ServerEnvironment.LaunchType.DOMAIN, RunningMode.NORMAL, productConfig);
+                WildFlySecurityManager.getSystemEnvironmentPrivileged(), null, null, ServerEnvironment.LaunchType.DOMAIN,
+                RunningMode.NORMAL, productConfig, Module.getStartTime());
         DomainServerCommunicationServices.updateOperationID(initialOperationID);
 
         // TODO perhaps have ConfigurationPersisterFactory as a Service
