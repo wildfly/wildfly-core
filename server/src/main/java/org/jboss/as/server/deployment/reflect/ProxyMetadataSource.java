@@ -45,7 +45,7 @@ public class ProxyMetadataSource implements ReflectionMetadataSource {
         return new ClassMetadataSource() {
             @Override
             public Collection<Method> getDeclaredMethods() {
-                return index.getMethods();
+                return index.getClassMethods();
             }
 
             @Override
