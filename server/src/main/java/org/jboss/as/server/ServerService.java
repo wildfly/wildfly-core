@@ -25,6 +25,8 @@ package org.jboss.as.server;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.File;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +40,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
@@ -124,7 +127,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.threads.JBossThreadFactory;
+import org.jboss.threads.JBossThread;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -203,11 +206,13 @@ public final class ServerService extends AbstractControllerService {
                                   final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
                                   final DelegatingConfigurableAuthorizer authorizer) {
 
-        final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
-        final String namePattern = "ServerService Thread Pool -- %t";
+        // Use our own thread factory for now
+        //final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
+        //final String namePattern = "ServerService Thread Pool -- %t";
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
             public ThreadFactory run() {
-                return new JBossThreadFactory(threadGroup, Boolean.FALSE, null, namePattern, null, null);
+                //return new JBossThreadFactory(threadGroup, Boolean.FALSE, null, namePattern, null, null);
+                return new ServerExecutorThreadFactory();
             }
         });
 
@@ -513,6 +518,41 @@ public final class ServerService extends AbstractControllerService {
         @Override
         public synchronized ScheduledExecutorService getValue() throws IllegalStateException {
             return scheduledExecutorService;
+        }
+    }
+
+    private static class ServerExecutorThreadFactory implements ThreadFactory {
+
+        private final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
+        private final AtomicLong threadSequenceNum = new AtomicLong(1L);
+        private final AccessControlContext creatingContext;
+
+        private ServerExecutorThreadFactory() {
+            this.creatingContext = AccessController.getContext();
+        }
+
+        @Override
+        public Thread newThread(Runnable target) {
+            return doPrivileged(new ThreadCreateAction(target), creatingContext);
+        }
+
+        private final class ThreadCreateAction implements PrivilegedAction<Thread> {
+            private final Runnable target;
+
+            private ThreadCreateAction(final Runnable target) {
+                this.target = target;
+            }
+
+            public Thread run() {
+                return createThread(target);
+            }
+        }
+
+        private Thread createThread(final Runnable target) {
+            final JBossThread thread = new JBossThread(threadGroup, target);
+            thread.setName(String.format("ServerService Thread Pool -- %d", threadSequenceNum.getAndIncrement()));
+            thread.setDaemon(false);
+            return thread;
         }
     }
 }
