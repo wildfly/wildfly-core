@@ -37,6 +37,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * Base class for handlers that remove resources.
@@ -150,6 +151,47 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
 
     protected boolean requiresRuntime(OperationContext context) {
         return context.isDefaultRequiresRuntime();
+    }
+
+    /**
+     * Gets the service name provided by the given capability for the given service type. This can be used by
+     * subclasses to determine the name of a service to remove in {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}
+     * after the capability itself has been removed in {@link org.jboss.as.controller.OperationContext.Stage#MODEL}
+     * by {@link #recordCapabilitiesAndRequirements(OperationContext, ModelNode, Resource)}.
+     *
+     * @param removed the capability. Must be a capability passed to the constructor, and must not be
+     *                {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
+     * @param serviceType the value type of the service for which a service name is wanted
+     * @return  the service name. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
+     */
+    protected final ServiceName getCapabilityRemovedServiceName(RuntimeCapability removed, Class<?> serviceType) {
+        assert capabilities.contains(removed);
+        assert !removed.isDynamicallyNamed();
+        return removed.getCapabilityServiceName(serviceType);
+    }
+
+    /**
+     * Gets the service name provided by the given capability for the given service type. This can be used by
+     * subclasses to determine the name of a service to remove in {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}
+     * after the capability itself has been removed in {@link org.jboss.as.controller.OperationContext.Stage#MODEL}
+     * by {@link #recordCapabilitiesAndRequirements(OperationContext, ModelNode, Resource)}.
+     *
+     * @param removed the capability. Must be a capability passed to the constructor, and must be
+     *                {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
+     * @param dynamicPart the dynamic part of the capability name. Cannot be {@code null}
+     * @param serviceType the value type of the service for which a service name is wanted
+     * @return  the service name. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
+     */
+    protected final ServiceName getCapabilityRemovedServiceName(RuntimeCapability removed, String dynamicPart, Class<?> serviceType) {
+        assert capabilities.contains(removed);
+        assert removed.isDynamicallyNamed();
+        return RuntimeCapability.fromBaseCapability(removed, dynamicPart).getCapabilityServiceName(serviceType);
     }
 
     private List<PathElement> getChildren(Resource resource) {
