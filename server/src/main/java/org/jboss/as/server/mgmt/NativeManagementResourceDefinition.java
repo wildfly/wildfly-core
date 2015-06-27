@@ -58,6 +58,7 @@ import org.jboss.dmr.ModelType;
  */
 public class NativeManagementResourceDefinition extends SimpleResourceDefinition {
 
+    public static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
     private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.native-interface";
     public static final RuntimeCapability<Void> NATIVE_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
@@ -77,6 +78,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setAlternatives(ModelDescriptionConstants.INTERFACE)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
             .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)

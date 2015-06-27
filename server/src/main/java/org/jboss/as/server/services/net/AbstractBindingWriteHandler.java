@@ -22,12 +22,13 @@
 
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.AbstractWriteAttributeHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
 
 import java.net.UnknownHostException;
 
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -45,7 +46,6 @@ import org.jboss.msc.service.ServiceName;
  */
 abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler<AbstractBindingWriteHandler.RollbackInfo> {
 
-    private static final ServiceName SOCKET_BINDING = SocketBinding.JBOSS_BINDING_NAME;
     public AbstractBindingWriteHandler(AttributeDefinition... definitions) {
         super(definitions);
     }
@@ -89,12 +89,13 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
         final PathElement element = address.getLastElement();
         final String bindingName = element.getValue();
         final ModelNode bindingModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-        final ServiceController<?> controller = context.getServiceRegistry(true).getRequiredService(SOCKET_BINDING.append(bindingName));
+        final ServiceName serviceName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(bindingName, SocketBinding.class);
+        final ServiceController<?> controller = context.getServiceRegistry(true).getRequiredService(serviceName);
         final SocketBinding binding = controller.getState() == ServiceController.State.UP ? SocketBinding.class.cast(controller.getValue()) : null;
         final boolean bound = binding != null && binding.isBound();
         if (binding == null) {
             // existing is not started, so can't update it. Instead reinstall the service
-            handleBindingReinstall(context, bindingName, bindingModel);
+            handleBindingReinstall(context, bindingName, bindingModel, serviceName);
         } else if (bound) {
             // Cannot edit bound sockets
             return true;
@@ -118,8 +119,8 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
         }
     }
 
-    private void handleBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel) throws OperationFailedException {
-        context.removeService(SOCKET_BINDING.append(bindingName));
+    private void handleBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel, ServiceName serviceName) throws OperationFailedException {
+        context.removeService(serviceName);
         try {
             BindingAddHandler.installBindingService(context, bindingModel, bindingName);
         } catch (UnknownHostException e) {
@@ -129,7 +130,8 @@ abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler
 
     private void revertBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel,
                                         String attributeName, ModelNode previousValue) {
-        context.removeService(SOCKET_BINDING.append(bindingName));
+        final ServiceName serviceName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(bindingName, SocketBinding.class);
+        context.removeService(serviceName);
         ModelNode unresolvedConfig = bindingModel.clone();
         unresolvedConfig.get(attributeName).set(previousValue);
         try {
