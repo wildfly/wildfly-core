@@ -81,6 +81,7 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
             ModelTestUtils.checkOutcome(subsystemResult);
             ModelTestUtils.checkOutcome(extensionResult);
         } finally {
+            // cannot remove test module on running server on Windows due to file locks
             testModule.remove();
         }
     }

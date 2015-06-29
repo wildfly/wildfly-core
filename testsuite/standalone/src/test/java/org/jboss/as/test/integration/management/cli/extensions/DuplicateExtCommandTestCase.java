@@ -55,7 +55,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(WildflyTestRunner.class)
 public class DuplicateExtCommandTestCase extends CliScriptTestBase {
 
-    private static final String MODULE_NAME = "test.cli.extension.commands";
+    private static final String MODULE_NAME = "test.cli.extension.duplicate";
 
     @Inject
     protected static ManagementClient client;
@@ -75,11 +75,12 @@ public class DuplicateExtCommandTestCase extends CliScriptTestBase {
     @AfterClass
     public static void tearDownServer() throws Exception {
         try {
-            ModelNode subsystemResult = controllerClient.execute(Util.createRemoveOperation(PathAddress.pathAddress(CliExtCommandsSubsystemResourceDescription.PATH)));
+            ModelNode subsystemResult = controllerClient.execute(Util.createRemoveOperation(PathAddress.pathAddress(DuplicateExtCommandSubsystemResourceDescription.PATH)));
             ModelNode extensionResult = controllerClient.execute(Util.createRemoveOperation(PathAddress.pathAddress(ModelDescriptionConstants.EXTENSION, MODULE_NAME)));
             ModelTestUtils.checkOutcome(subsystemResult);
             ModelTestUtils.checkOutcome(extensionResult);
         } finally {
+            // cannot remove test module on running server on Windows due to file locks
             testModule.remove();
         }
     }
@@ -102,30 +103,34 @@ public class DuplicateExtCommandTestCase extends CliScriptTestBase {
         final JavaArchive archive = testModule.addResource("test-cli-duplicate-commands-module.jar")
                 .addClass(DuplicateExtCommandHandler.class)
                 .addClass(DuplicateExtCommandHandlerProvider.class)
-                .addClass(CliExtCommandsExtension.class)
+                .addClass(DuplicateExtCommandsExtension.class)
                 .addClass(CliExtCommandsParser.class)
-                .addClass(CliExtCommandsSubsystemResourceDescription.class);
+                .addClass(DuplicateExtCommandSubsystemResourceDescription.class);
 
         ArchivePath services = ArchivePaths.create("/");
         services = ArchivePaths.create(services, "services");
 
         final ArchivePath extService = ArchivePaths.create(services, Extension.class.getName());
-        archive.addAsManifestResource(CliExtCommandHandler.class.getPackage(), Extension.class.getName(), extService);
+        archive.addAsManifestResource(getResource(DuplicateExtCommandsExtension.class), extService);
 
         final ArchivePath cliCmdService = ArchivePaths.create(services, CommandHandlerProvider.class.getName());
-        archive.addAsManifestResource(new Asset() {
+        archive.addAsManifestResource(getResource(DuplicateExtCommandHandlerProvider.class), cliCmdService);
+        testModule.create(true);
+    }
+
+    private static Asset getResource(Class clazz) {
+        return new Asset() {
             @Override
             public InputStream openStream() {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try {
-                    baos.write(DuplicateExtCommandHandlerProvider.class.getName().getBytes());
+                    baos.write(clazz.getName().getBytes());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 return new ByteArrayInputStream(baos.toByteArray());
             }
-        }, cliCmdService);
-        testModule.create(true);
+        };
     }
 
     private static void setupServerWithExtension() throws Exception {
@@ -133,7 +138,7 @@ public class DuplicateExtCommandTestCase extends CliScriptTestBase {
         final ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress(ModelDescriptionConstants.EXTENSION, MODULE_NAME));
         ModelTestUtils.checkOutcome(controllerClient.execute(addExtension));
 
-        final ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(CliExtCommandsSubsystemResourceDescription.PATH));
+        final ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(DuplicateExtCommandSubsystemResourceDescription.PATH));
         ModelTestUtils.checkOutcome(controllerClient.execute(addSubsystem));
     }
 }
