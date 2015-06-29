@@ -441,16 +441,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      */
     @SuppressWarnings("deprecation")
     public boolean isOrderedChild() {
-        return orderedChild || isOrderedChildResource();
-    }
-
-    /**
-     *
-     * @deprecated Use the constructor variants
-     */
-    @Deprecated
-    protected boolean isOrderedChildResource() {
-        return false;
+        return orderedChild;
     }
 
     /**

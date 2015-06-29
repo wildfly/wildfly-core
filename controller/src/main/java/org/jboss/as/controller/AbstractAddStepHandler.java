@@ -173,10 +173,6 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @param operation the operation
      */
     protected Resource createResource(final OperationContext context, final ModelNode operation) {
-        ResourceCreator resourceCreator = getResourceCreator();
-        if (resourceCreator != null) {
-            return resourceCreator.createResource(context, operation);
-        }
         ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
         if (registration != null) {
             Set<String> orderedChildTypes = registration.getOrderedChildTypes();
@@ -433,21 +429,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     }
 
     /**
-     * Allows overriding of the standard resource creation. If {@code null} is returned, the
-     * standard resource creation mechanism will be used.
-     *
-     * @return the custom resource creator
-     * @deprecated This handler is now smart enough to figure it out itself
-     */
-    @Deprecated
-    protected ResourceCreator getResourceCreator() {
-        return null;
-    }
-
-    /**
      * Interface to handle custom resource creation
      */
-    protected interface ResourceCreator {
+    private interface ResourceCreator {
         /**
          * Create a resource
          *
@@ -462,7 +446,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * and putting the ordered children in the correct place in the parent
      *
      */
-    protected class OrderedResourceCreator implements ResourceCreator {
+    private class OrderedResourceCreator implements ResourceCreator {
         private final Set<String> orderedChildTypes;
         private final boolean indexedAdd;
 
