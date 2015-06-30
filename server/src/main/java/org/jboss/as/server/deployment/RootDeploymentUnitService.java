@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment;
 
 import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -48,23 +49,27 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final DeploymentUnit parent;
     private final ImmutableManagementResourceRegistration registration;
     private final ManagementResourceRegistration mutableRegistration;
-    private Resource resource;
+    private final Resource resource;
+    private final CapabilityServiceSupport capabilityServiceSupport;
     private final AbstractVaultReader vaultReader;
     private final DeploymentOverlayIndex deploymentOverlays;
 
     /**
      * Construct a new instance.
-     *
-     * @param name the deployment unit simple name
+     *  @param name the deployment unit simple name
      * @param managementName the deployment's domain-wide unique name
      * @param parent the parent deployment unit
      * @param registration the registration
      * @param mutableRegistration the mutable registration
      * @param resource the model
+     * @param capabilityServiceSupport support for capability integration
      * @param vaultReader the vault reader
      * @param deploymentOverlays the deployment overlays
      */
-    public RootDeploymentUnitService(final String name, final String managementName, final DeploymentUnit parent, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays) {
+    public RootDeploymentUnitService(final String name, final String managementName, final DeploymentUnit parent,
+                                     final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration,
+                                     final Resource resource, final CapabilityServiceSupport capabilityServiceSupport,
+                                     final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays) {
         assert name != null : "name is null";
         this.name = name;
         this.managementName = managementName;
@@ -72,6 +77,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         this.registration = registration;
         this.mutableRegistration = mutableRegistration;
         this.resource = resource;
+        this.capabilityServiceSupport = capabilityServiceSupport;
         this.vaultReader = vaultReader;
         this.deploymentOverlays = deploymentOverlays;
     }
@@ -85,6 +91,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(DeploymentResourceSupport.MUTABLE_REGISTRATION_ATTACHMENT, mutableRegistration);
         deploymentUnit.putAttachment(DeploymentResourceSupport.DEPLOYMENT_RESOURCE, resource);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_RESOURCE_SUPPORT, new DeploymentResourceSupport(deploymentUnit));
+        deploymentUnit.putAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT, capabilityServiceSupport);
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, deploymentOverlays);
         deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManagerInjector.getValue());

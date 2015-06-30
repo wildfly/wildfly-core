@@ -30,6 +30,7 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -397,6 +398,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
         return primaryContext.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart),
                 serviceType, activeStep);
+    }
+
+    @Override
+    public CapabilityServiceSupport getCapabilityServiceSupport() {
+        return primaryContext.getCapabilityServiceSupport();
     }
 
     @Override
