@@ -163,6 +163,15 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     }
 
     /**
+     * Gets the valid types to pass to {@link #getCapabilityServiceName(Class)}.
+     *
+     * @return  the valid types. Will not be {@code null} but may be empty
+     */
+    public Set<Class<?>> getCapabilityServiceValueTypes() {
+        return serviceNameProvider.getServiceValueTypes();
+    }
+
+    /**
      * Object encapsulating the API exposed by this capability to other capabilities that require it, if it does
      * expose such an API.
      *

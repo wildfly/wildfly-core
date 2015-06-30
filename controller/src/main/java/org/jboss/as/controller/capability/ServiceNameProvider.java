@@ -24,6 +24,7 @@ package org.jboss.as.controller.capability;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.msc.service.ServiceName;
@@ -63,6 +64,15 @@ public interface ServiceNameProvider {
     ServiceName getCapabilityServiceName(Class<?> serviceType, String dynamicPortion);
 
     /**
+     * Gets the value types of the services for which this object provides services names.
+     * These are the valid values to pass as the {@code serviceType} parameter to the
+     * {@code getCapabilityServiceName} methods.
+     *
+     * @return the types. Will not be {@code null} but may be empty.
+     */
+    Set<Class<?>> getServiceValueTypes();
+
+    /**
      * Default {@link ServiceNameProvider} implementation that provides
      * a service name that is created by splitting the capability name
      * on any '.' character.
@@ -82,7 +92,7 @@ public interface ServiceNameProvider {
         }
 
         private final String capabilityName;
-        private final Map<Class, ServiceName> serviceNames;
+        private final Map<Class<?>, ServiceName> serviceNames;
 
         /**
          * Creates a provider for the given capability that provides no service names.
@@ -110,7 +120,7 @@ public interface ServiceNameProvider {
          * @param capabilityName the capability name. Cannot be {@code null} or empty
          * @param services the mapping of valid types to services names. Cannot be {@code null}, but can be empty
          */
-        public DefaultProvider(String capabilityName, Map<Class, ServiceName> services) {
+        public DefaultProvider(String capabilityName, Map<Class<?>, ServiceName> services) {
             assert capabilityName != null;
             assert services != null;
             this.capabilityName = capabilityName;
@@ -122,7 +132,7 @@ public interface ServiceNameProvider {
             assert serviceType != null;
             ServiceName result = serviceNames.get(serviceType);
             if (result == null) {
-                for (Map.Entry<Class, ServiceName> entry : serviceNames.entrySet()) {
+                for (Map.Entry<Class<?>, ServiceName> entry : serviceNames.entrySet()) {
                     if (serviceType.isAssignableFrom(entry.getKey())) {
                         return entry.getValue();
                     }
@@ -140,6 +150,11 @@ public interface ServiceNameProvider {
                 throw ControllerLogger.MGMT_OP_LOGGER.nullVar("dynamicPortion");
             }
             return getCapabilityServiceName(serviceType).append(dynamicPortion);
+        }
+
+        @Override
+        public Set<Class<?>> getServiceValueTypes() {
+            return Collections.unmodifiableSet(serviceNames.keySet());
         }
     }
 }
