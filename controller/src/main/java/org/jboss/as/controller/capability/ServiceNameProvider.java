@@ -80,7 +80,7 @@ public interface ServiceNameProvider {
     class DefaultProvider implements ServiceNameProvider {
 
         /**
-         * Converts a capability name to a service name by splitting the capability name on any '.' character.
+         * Converts a capability name to a service name by {@link ServiceName#parse(String) parsing} the capability name.
          *
          * @param capabilityName the capability name. Cannot be {@code null} or empty
          * @return the service name. Will not be {@code null}
@@ -88,7 +88,7 @@ public interface ServiceNameProvider {
         public static ServiceName capabilityToServiceName(String capabilityName) {
             assert capabilityName != null;
             assert capabilityName.length() > 0;
-            return ServiceName.of(capabilityName.split("\\."));
+            return ServiceName.parse(capabilityName);
         }
 
         private final String capabilityName;
