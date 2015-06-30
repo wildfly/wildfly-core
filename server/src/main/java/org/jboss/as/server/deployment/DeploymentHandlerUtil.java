@@ -133,7 +133,8 @@ public class DeploymentHandlerUtil {
     }
 
     public static void doDeploy(final OperationContext context, final String deploymentUnitName, final String managementName,
-                                                            final Resource deploymentResource, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader, final ContentItem... contents) {
+                                final Resource deploymentResource, final ImmutableManagementResourceRegistration registration,
+                                final ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader, final ContentItem... contents) {
         final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
@@ -149,7 +150,8 @@ public class DeploymentHandlerUtil {
         }
         DeploymentOverlayIndex overlays = DeploymentOverlayIndex.createDeploymentOverlayIndex(context);
 
-        final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitName, managementName, null, registration, mutableRegistration, deploymentResource, vaultReader, overlays);
+        final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitName, managementName, null,
+                registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), vaultReader, overlays);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
                 .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())

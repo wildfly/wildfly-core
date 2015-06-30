@@ -76,6 +76,7 @@ import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
@@ -1471,6 +1472,13 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
+    @Override
+    public CapabilityServiceSupport getCapabilityServiceSupport() {
+        assert isControllingThread();
+        assertCapabilitiesAvailable(currentStage);
+        return new CapabilityServiceSupportImpl(managementModel);
+    }
+
 
     private boolean isModelUpdateRejectionRequired() {
         if (requiresModelUpdateAuthorization == null) {
@@ -2521,6 +2529,52 @@ final class OperationContextImpl extends AbstractOperationContext {
             int result = type.hashCode();
             result = 31 * result + value.hashCode();
             return result;
+        }
+    }
+
+    private static class CapabilityServiceSupportImpl implements CapabilityServiceSupport {
+        private final ManagementModel managementModel;
+
+        private CapabilityServiceSupportImpl(ManagementModel managementModel) {
+            this.managementModel = managementModel;
+        }
+
+        @Override
+        public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) throws NoSuchCapabilityException {
+            try {
+                return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityContext.GLOBAL, apiType);
+            } catch (IllegalStateException e) {
+                if (managementModel.getCapabilityRegistry().hasCapability(capabilityName, CapabilityContext.GLOBAL)) {
+                    // Must have been some other problem
+                    throw e;
+                }
+            }
+            throw new NoSuchCapabilityException(capabilityName);
+        }
+
+        @Override
+        public <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) throws NoSuchCapabilityException {
+            String fullName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart);
+            return getCapabilityRuntimeAPI(fullName, apiType);
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) throws NoSuchCapabilityException {
+            try {
+                return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, CapabilityContext.GLOBAL, serviceType);
+            } catch (IllegalStateException e) {
+                if (managementModel.getCapabilityRegistry().hasCapability(capabilityName, CapabilityContext.GLOBAL)) {
+                    // Must have been some other problem
+                    throw e;
+                }
+            }
+            throw new NoSuchCapabilityException(capabilityName);
+        }
+
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) throws NoSuchCapabilityException {
+            String fullName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart);
+            return getCapabilityServiceName(fullName, serviceType);
         }
     }
 

@@ -24,6 +24,7 @@ package org.jboss.as.server.deployment;
 
 import java.util.List;
 
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -62,9 +63,11 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             final Resource resource = DeploymentResourceSupport.getOrCreateSubDeployment(childRoot.getRootName(), deploymentUnit);
             final ImmutableManagementResourceRegistration registration = deploymentUnit.getAttachment(DeploymentResourceSupport.REGISTRATION_ATTACHMENT);
             final ManagementResourceRegistration mutableRegistration =  deploymentUnit.getAttachment(DeploymentResourceSupport.MUTABLE_REGISTRATION_ATTACHMENT);
+            final CapabilityServiceSupport capabilityServiceSupport = deploymentUnit.getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
             final AbstractVaultReader vaultReader = deploymentUnit.getAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY);
             final PathManager pathManager = deploymentUnit.getAttachment(Attachments.PATH_MANAGER);
-            final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration, mutableRegistration, resource, vaultReader, pathManager);
+            final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration,
+                    mutableRegistration, resource, capabilityServiceSupport, vaultReader, pathManager);
 
             final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
 
