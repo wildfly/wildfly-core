@@ -125,4 +125,11 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(DEPLOYMENT_TIMEOUT, null, WriteDeploymentTimeoutAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(RUNTIME_FAILURE_CAUSES_ROLLBACK, null, WriteRuntimeFailureCausesRollbackAttributeHandler.INSTANCE);
     }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        resourceRegistration.registerOperationHandler(FileSystemDeploymentScanHandler.DEFINITION, FileSystemDeploymentScanHandler.INSTANCE);
+    }
+
 }
