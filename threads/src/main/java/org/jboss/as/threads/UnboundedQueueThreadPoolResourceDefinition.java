@@ -22,11 +22,14 @@
 
 package org.jboss.as.threads;
 
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -34,51 +37,65 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class UnboundedQueueThreadPoolResourceDefinition extends SimpleResourceDefinition {
+public class UnboundedQueueThreadPoolResourceDefinition extends PersistentResourceDefinition {
+    public static final UnboundedQueueThreadPoolResourceDefinition INSTANCE = create();
 
-    private final boolean registerRuntimeOnly;
-    private final ServiceName serviceNameBase;
 
+    private final UnboundedQueueThreadPoolWriteAttributeHandler writeAttributeHandler;
+    private final UnboundedQueueThreadPoolMetricsHandler metricsHandler;
+
+    @Deprecated
     public static UnboundedQueueThreadPoolResourceDefinition create(boolean registerRuntimeOnly) {
         return create(CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
-                ThreadsServices.EXECUTOR, registerRuntimeOnly);
+                ThreadsServices.EXECUTOR);
     }
+
+    public static UnboundedQueueThreadPoolResourceDefinition create() {
+        return create(CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
+                ThreadsServices.EXECUTOR);
+    }
+
+    @Deprecated
     public static UnboundedQueueThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
-                                                 ServiceName serviceNameBase, boolean registerRuntimeOnly) {
-        return create(PathElement.pathElement(type), threadFactoryResolver, serviceNameBase, registerRuntimeOnly);
+                                                                    ServiceName serviceNameBase, boolean registerRuntimeOnly) {
+        return create(type, threadFactoryResolver, serviceNameBase);
     }
+
+    public static UnboundedQueueThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
+                                                                    ServiceName serviceNameBase) {
+        return create(PathElement.pathElement(type), threadFactoryResolver, serviceNameBase);
+    }
+
+    @Deprecated
     public static UnboundedQueueThreadPoolResourceDefinition create(PathElement path, ThreadFactoryResolver threadFactoryResolver,
                                                                     ServiceName serviceNameBase, boolean registerRuntimeOnly) {
+        return create(path, threadFactoryResolver, serviceNameBase);
+    }
+
+    public static UnboundedQueueThreadPoolResourceDefinition create(PathElement path, ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
         UnboundedQueueThreadPoolAdd addHandler = new UnboundedQueueThreadPoolAdd(threadFactoryResolver, serviceNameBase);
-        return new UnboundedQueueThreadPoolResourceDefinition(path, addHandler, serviceNameBase, registerRuntimeOnly);
+        return new UnboundedQueueThreadPoolResourceDefinition(path, addHandler, serviceNameBase);
     }
 
     private UnboundedQueueThreadPoolResourceDefinition(PathElement path, UnboundedQueueThreadPoolAdd addHandler,
-                                                 ServiceName serviceNameBase, boolean registerRuntimeOnly) {
+                                                       ServiceName serviceNameBase) {
         super(path,
                 new ThreadPoolResourceDescriptionResolver(CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL, ThreadsExtension.RESOURCE_NAME,
-                ThreadsExtension.class.getClassLoader()),
+                        ThreadsExtension.class.getClassLoader()),
                 addHandler, new UnboundedQueueThreadPoolRemove(addHandler));
-        this.registerRuntimeOnly = registerRuntimeOnly;
-        this.serviceNameBase = serviceNameBase;
+        this.writeAttributeHandler = new UnboundedQueueThreadPoolWriteAttributeHandler(serviceNameBase);
+        this.metricsHandler = new UnboundedQueueThreadPoolMetricsHandler(serviceNameBase);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(PoolAttributeDefinitions.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        new UnboundedQueueThreadPoolWriteAttributeHandler(serviceNameBase).registerAttributes(resourceRegistration);
-        if (registerRuntimeOnly) {
-            new UnboundedQueueThreadPoolMetricsHandler(serviceNameBase).registerAttributes(resourceRegistration);
-        }
+        writeAttributeHandler.registerAttributes(resourceRegistration);
+        metricsHandler.registerAttributes(resourceRegistration);
     }
 
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent) {
-        registerTransformers1_0(parent, CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL);
-    }
-
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent, String type) {
-        parent.addChildResource(PathElement.pathElement(type))
-        .getAttributeBuilder()
-            .addRejectCheck(KeepAliveTimeAttributeDefinition.TRANSFORMATION_CHECKER, PoolAttributeDefinitions.KEEPALIVE_TIME);
+    @Override
+    public Collection<AttributeDefinition> getAttributes() {
+        return Arrays.asList(writeAttributeHandler.attributes);
     }
 }

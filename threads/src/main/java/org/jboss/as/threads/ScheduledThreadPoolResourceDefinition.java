@@ -22,11 +22,14 @@
 
 package org.jboss.as.threads;
 
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -34,46 +37,53 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ScheduledThreadPoolResourceDefinition extends SimpleResourceDefinition {
+public class ScheduledThreadPoolResourceDefinition extends PersistentResourceDefinition {
+    public static final ScheduledThreadPoolResourceDefinition INSTANCE = create();
 
-    private final boolean registerRuntimeOnly;
-    private final ServiceName serviceNameBase;
+    private final ScheduledThreadPoolWriteAttributeHandler writeAttributeHandler;
+    private final ScheduledThreadPoolMetricsHandler metricsHandler;
 
+    @Deprecated
     public static ScheduledThreadPoolResourceDefinition create(boolean registerRuntimeOnly) {
-        return create(CommonAttributes.SCHEDULED_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+        return create(CommonAttributes.SCHEDULED_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, ThreadsServices.EXECUTOR);
     }
+
+    @Deprecated
     public static ScheduledThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
-                                                 ServiceName serviceNameBase, boolean registerRuntimeOnly) {
+                                                               ServiceName serviceNameBase, boolean registerRuntimeOnly) {
         ScheduledThreadPoolAdd addHandler = new ScheduledThreadPoolAdd(threadFactoryResolver, serviceNameBase);
-        return new ScheduledThreadPoolResourceDefinition(type, addHandler, serviceNameBase, registerRuntimeOnly);
+        return new ScheduledThreadPoolResourceDefinition(type, addHandler, serviceNameBase);
+    }
+
+    public static ScheduledThreadPoolResourceDefinition create() {
+        return create(CommonAttributes.SCHEDULED_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, ThreadsServices.EXECUTOR);
+    }
+
+    public static ScheduledThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
+                                                               ServiceName serviceNameBase) {
+        ScheduledThreadPoolAdd addHandler = new ScheduledThreadPoolAdd(threadFactoryResolver, serviceNameBase);
+        return new ScheduledThreadPoolResourceDefinition(type, addHandler, serviceNameBase);
     }
 
     private ScheduledThreadPoolResourceDefinition(String type, ScheduledThreadPoolAdd addHandler,
-                                                 ServiceName serviceNameBase, boolean registerRuntimeOnly) {
+                                                  ServiceName serviceNameBase) {
         super(PathElement.pathElement(type),
                 new ThreadPoolResourceDescriptionResolver(CommonAttributes.SCHEDULED_THREAD_POOL, ThreadsExtension.RESOURCE_NAME,
-                ThreadsExtension.class.getClassLoader()),
+                        ThreadsExtension.class.getClassLoader()),
                 addHandler, new ScheduledThreadPoolRemove(addHandler));
-        this.registerRuntimeOnly = registerRuntimeOnly;
-        this.serviceNameBase = serviceNameBase;
+        this.writeAttributeHandler = new ScheduledThreadPoolWriteAttributeHandler(serviceNameBase);
+        this.metricsHandler = new ScheduledThreadPoolMetricsHandler(serviceNameBase);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(PoolAttributeDefinitions.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        new ScheduledThreadPoolWriteAttributeHandler(serviceNameBase).registerAttributes(resourceRegistration);
-        if (registerRuntimeOnly) {
-            new ScheduledThreadPoolMetricsHandler(serviceNameBase).registerAttributes(resourceRegistration);
-        }
+        writeAttributeHandler.registerAttributes(resourceRegistration);
+        metricsHandler.registerAttributes(resourceRegistration);
     }
 
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent) {
-        registerTransformers1_0(parent, CommonAttributes.SCHEDULED_THREAD_POOL);
-    }
-
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent, String type) {
-        parent.addChildResource(PathElement.pathElement(type))
-        .getAttributeBuilder()
-            .addRejectCheck(KeepAliveTimeAttributeDefinition.TRANSFORMATION_CHECKER, PoolAttributeDefinitions.KEEPALIVE_TIME);
+    @Override
+    public Collection<AttributeDefinition> getAttributes() {
+        return Arrays.asList(writeAttributeHandler.attributes);
     }
 }

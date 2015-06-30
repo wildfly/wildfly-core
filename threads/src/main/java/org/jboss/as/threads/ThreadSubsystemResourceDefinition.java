@@ -22,12 +22,15 @@
 
 package org.jboss.as.threads;
 
-import org.jboss.as.controller.PathElement;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.DeprecatedResourceDescriptionResolver;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 
 /**
@@ -36,32 +39,33 @@ import org.jboss.as.controller.registry.OperationEntry;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 @Deprecated
-class ThreadSubsystemResourceDefinition extends SimpleResourceDefinition {
+class ThreadSubsystemResourceDefinition extends PersistentResourceDefinition {
 
-    private final boolean registerRuntimeOnly;
-
-    ThreadSubsystemResourceDefinition(boolean registerRuntimeOnly) {
-        super(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, ThreadsExtension.SUBSYSTEM_NAME),
+    ThreadSubsystemResourceDefinition() {
+        super(ThreadsExtension.SUBSYSTEM_PATH,
                 new DeprecatedResourceDescriptionResolver(ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.RESOURCE_NAME,
                         ThreadsExtension.class.getClassLoader(), true, false), ThreadsSubsystemAdd.INSTANCE, ReloadRequiredRemoveStepHandler.INSTANCE,
                 OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_ALL_SERVICES);
-        this.registerRuntimeOnly = registerRuntimeOnly;
         setDeprecated(ThreadsExtension.DEPRECATED_SINCE);
     }
 
     @Override
-    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+    public Collection<AttributeDefinition> getAttributes() {
+        return Collections.emptySet();
+    }
 
-        resourceRegistration.registerSubModel(new ThreadFactoryResourceDefinition());
+    @Override
+    protected List<? extends PersistentResourceDefinition> getChildren() {
+        return Arrays.asList(
+                ThreadFactoryResourceDefinition.DEFAULT_INSTANCE,
+                QueuelessThreadPoolResourceDefinition.BLOCKING,
+                QueuelessThreadPoolResourceDefinition.NON_BLOCKING,
 
-        resourceRegistration.registerSubModel(QueuelessThreadPoolResourceDefinition.create(true, registerRuntimeOnly));
-        resourceRegistration.registerSubModel(QueuelessThreadPoolResourceDefinition.create(false, registerRuntimeOnly));
+                BoundedQueueThreadPoolResourceDefinition.BLOCKING,
+                BoundedQueueThreadPoolResourceDefinition.NON_BLOCKING,
 
-        resourceRegistration.registerSubModel(BoundedQueueThreadPoolResourceDefinition.create(true, registerRuntimeOnly));
-        resourceRegistration.registerSubModel(BoundedQueueThreadPoolResourceDefinition.create(false, registerRuntimeOnly));
-
-        resourceRegistration.registerSubModel(UnboundedQueueThreadPoolResourceDefinition.create(registerRuntimeOnly));
-
-        resourceRegistration.registerSubModel(ScheduledThreadPoolResourceDefinition.create(registerRuntimeOnly));
+                UnboundedQueueThreadPoolResourceDefinition.INSTANCE,
+                ScheduledThreadPoolResourceDefinition.INSTANCE
+        );
     }
 }
