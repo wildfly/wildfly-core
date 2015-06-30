@@ -76,6 +76,7 @@ import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -681,6 +682,11 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public ServiceName getCapabilityServiceName(String capabilitBaseyName, String dynamicPart, Class<?> serviceType) {
+            return null;
+        }
+
+        @Override
+        public CapabilityServiceSupport getCapabilityServiceSupport() {
             return null;
         }
 

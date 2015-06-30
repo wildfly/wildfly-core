@@ -30,6 +30,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.notification.Notification;
@@ -968,6 +969,17 @@ public interface OperationContext extends ExpressionResolver {
      *            the capability does not provide a service of type {@code serviceType}
      */
     ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType);
+
+    /**
+     * Gets a support object that allows service implementations installed from this context to
+     * integrate with capabilities.
+     *
+     * @return the support object. Will not return {@code null}
+     *
+     * * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}.
+     *                                          Service integration is not supported in the model stage.
+     */
+    CapabilityServiceSupport getCapabilityServiceSupport();
 
     /**
      * Whether normally this operation would require a runtime step. It returns {@code true in the following cases}

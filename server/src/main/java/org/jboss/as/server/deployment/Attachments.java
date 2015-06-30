@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Manifest;
 
 import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
@@ -204,11 +205,14 @@ public final class Attachments {
     public static final AttachmentKey<Map<String, MountedDeploymentOverlay>> DEPLOYMENT_OVERLAY_LOCATIONS = AttachmentKey.create(Map.class);
 
     /**
-     * Support for getting and creating resource models on a deployments resource.
+     * Support for getting and creating resource models on a deployment's resource.
      */
     public static final AttachmentKey<DeploymentResourceSupport> DEPLOYMENT_RESOURCE_SUPPORT = AttachmentKey.create(DeploymentResourceSupport.class);
 
-
+    /**
+     * Support for integrating with services and other runtime API provided by managed capabilities.
+     */
+    public static final AttachmentKey<CapabilityServiceSupport> CAPABILITY_SERVICE_SUPPORT = AttachmentKey.create(CapabilityServiceSupport.class);
 
     //
     // VALIDATE

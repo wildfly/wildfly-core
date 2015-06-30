@@ -43,6 +43,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.notification.Notification;
@@ -547,6 +548,11 @@ public class AuthorizedAddressTest {
 
         @Override
         public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public CapabilityServiceSupport getCapabilityServiceSupport() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
