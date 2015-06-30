@@ -20,25 +20,31 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.manualmode.management.cli.extensions;
+package org.jboss.as.test.integration.management.cli.extensions;
 
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
+import org.jboss.as.controller.Extension;
+import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.parsing.ExtensionParsingContext;
 
 /**
  * @author Petr Kremensky pkremens@redhat.com
  */
-public class DuplicateExtCommandHandler extends CommandHandlerWithHelp {
-    public static final String NAME = "echo";
-    public static final String OUTPUT = "hello from " + DuplicateExtCommandHandler.class.getSimpleName();
+public class DuplicateExtCommandsExtension implements Extension {
 
-    public DuplicateExtCommandHandler() {
-        super(NAME, false);
+    public static final String SUBSYSTEM_NAME = "test-cli-duplicate-commands";
+
+    @Override
+    public void initialize(ExtensionContext context) {
+        SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
+        registration.registerSubsystemModel(new DuplicateExtCommandSubsystemResourceDescription());
+        registration.registerXMLElementWriter(new CliExtCommandsParser());
     }
 
     @Override
-    protected void doHandle(CommandContext ctx) throws CommandLineException {
-        ctx.printLine(OUTPUT);
+    public void initializeParsers(ExtensionParsingContext context) {
+        //Don't need a parser, just register a dummy writer in the initialize() method
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, CliExtCommandsParser.NAMESPACE, new CliExtCommandsParser());
     }
 }

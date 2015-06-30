@@ -20,31 +20,32 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.manualmode.management.cli.extensions;
+package org.jboss.as.test.integration.management.cli.extensions;
 
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandHandler;
-import org.jboss.as.cli.CommandHandlerProvider;
+import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+
 
 /**
  *
  * @author Alexey Loubyansky
  */
-public class CliExtCommandHandlerProvider implements CommandHandlerProvider {
+public class CliExtCommandsSubsystemResourceDescription extends SimpleResourceDefinition {
 
-    @Override
-    public CommandHandler createCommandHandler(CommandContext ctx) {
-        return new CliExtCommandHandler();
+
+    public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, CliExtCommandsExtension.SUBSYSTEM_NAME);
+
+    public CliExtCommandsSubsystemResourceDescription() {
+        super(PATH, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(), new AbstractRemoveStepHandler(){});
     }
 
     @Override
-    public boolean isTabComplete() {
-        return false;
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
     }
-
-    @Override
-    public String[] getNames() {
-        return new String[]{CliExtCommandHandler.NAME};
-    }
-
 }

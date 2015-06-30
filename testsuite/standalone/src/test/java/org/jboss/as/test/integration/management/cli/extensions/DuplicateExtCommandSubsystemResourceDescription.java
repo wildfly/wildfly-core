@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.manualmode.management.cli.extensions;
+package org.jboss.as.test.integration.management.cli.extensions;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyAddStepHandler;
@@ -30,18 +30,16 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
-
 /**
- *
- * @author Alexey Loubyansky
+ * @author Petr Kremensky pkremens@redhat.com
  */
-public class CliExtCommandsSubsystemResourceDescription extends SimpleResourceDefinition {
+public class DuplicateExtCommandSubsystemResourceDescription extends SimpleResourceDefinition {
 
+    public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, DuplicateExtCommandsExtension.SUBSYSTEM_NAME);
 
-    public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, CliExtCommandsExtension.SUBSYSTEM_NAME);
-
-    public CliExtCommandsSubsystemResourceDescription() {
-        super(PATH, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(), new AbstractRemoveStepHandler(){});
+    public DuplicateExtCommandSubsystemResourceDescription() {
+        super(PATH, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(), new AbstractRemoveStepHandler() {
+        });
     }
 
     @Override
