@@ -58,7 +58,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.vfs.VirtualFile;
-import org.jboss.vfs.VirtualFilePermission;
 
 /**
  * Processor responsible for creating the module spec service for this deployment. Once the module spec service is created the
@@ -224,7 +223,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
         for (final ResourceRoot resourceRoot : resourceRoots) {
             logger.debugf("Adding resource %s to module %s", resourceRoot.getRoot(), moduleIdentifier);
-            addResourceRoot(specBuilder, resourceRoot, permFactories);
+            addResourceRoot(specBuilder, resourceRoot);
         }
 
         createDependencies(specBuilder, dependencies, false);
@@ -330,7 +329,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    private void addResourceRoot(final ModuleSpec.Builder specBuilder, final ResourceRoot resource, final List<PermissionFactory> permFactories)
+    private void addResourceRoot(final ModuleSpec.Builder specBuilder, final ResourceRoot resource)
             throws DeploymentUnitProcessingException {
         try {
             final VirtualFile root = resource.getRoot();
@@ -345,12 +344,6 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
                 specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource
                         .getRootName(), root, resource.isUsePhysicalCodeSource()), filterBuilder.create()));
             }
-            // start with the root
-            permFactories.add(new ImmediatePermissionFactory(
-                    new VirtualFilePermission(root.getPathName(), VirtualFilePermission.FLAG_READ)));
-            // also include all children, recursively
-            permFactories.add(new ImmediatePermissionFactory(
-                    new VirtualFilePermission(root.getChild("-").getPathName(), VirtualFilePermission.FLAG_READ)));
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.failedToCreateVFSResourceLoader(resource.getRootName(), e);
         }

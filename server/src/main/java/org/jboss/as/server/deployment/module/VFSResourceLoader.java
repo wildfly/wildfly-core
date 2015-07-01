@@ -57,7 +57,6 @@ import org.jboss.vfs.VFS;
 import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VirtualFileFilter;
-import org.jboss.vfs.VirtualFilePermission;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 import static java.security.AccessController.doPrivileged;
@@ -98,11 +97,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
      * @throws IOException if the manifest could not be read or the root URL is invalid
      */
     public VFSResourceLoader(final String rootName, final VirtualFile root, final boolean usePhysicalCodeSource) throws IOException {
-        final SecurityManager sm = System.getSecurityManager();
         final boolean checking = WildFlySecurityManager.isChecking();
-        if (checking) {
-            sm.checkPermission(new VirtualFilePermission(root.getPathName(), "read"));
-        }
         this.root = root;
         this.rootName = rootName;
         try {
