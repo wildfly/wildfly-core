@@ -45,6 +45,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -1758,6 +1759,21 @@ final class OperationContextImpl extends AbstractOperationContext {
                 context = new DomainCapabilityContext(false, pe.getValue(), false);
             } else if (type.equals(SOCKET_BINDING_GROUP)) {
                 context = new DomainCapabilityContext(true, pe.getValue(), true);
+            } else if (type.equals(HOST) && step.address.size() >= 2) {
+                context = createHostCapabilityContext(context, step);
+            }
+        }
+        return context;
+    }
+
+    private CapabilityContext createHostCapabilityContext(CapabilityContext context, Step step) {
+        if (step.address.size() >= 2) {
+            PathElement hostElement = step.address.getElement(1);
+            final String hostType = hostElement.getKey();
+            switch (hostType) {
+                case SUBSYSTEM:
+                case SOCKET_BINDING_GROUP:
+                    return new HostCapabilityContext();
             }
         }
         return context;
@@ -2524,4 +2540,38 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
+    private static class HostCapabilityContext implements CapabilityContext {
+        @Override
+        public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
+            return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
+        }
+
+        @Override
+        public boolean requiresConsistencyCheck() {
+            return false;
+        }
+
+        @Override
+        public String getName() {
+            return HOST;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
+
+        @Override
+        public int hashCode() {
+            return getName().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            return true;
+        }
+    }
 }

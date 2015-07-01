@@ -24,6 +24,9 @@ package org.jboss.as.test.integration.domain.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.Extension;
@@ -40,20 +43,25 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
 
 /**
  * Fake extension to use in testing extension management.
@@ -84,8 +92,19 @@ public class TestHostCapableExtension implements Extension {
     }
 
     private static class RootResourceDefinition extends SimpleResourceDefinition {
+        static final String SOCKET_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
+        private static final String TEST_CAPABILITY_NAME = "org.wildfly.test.hc.capability";
+        static final RuntimeCapability<Void> TEST_CAPABILITY =
+                RuntimeCapability.Builder.of(TEST_CAPABILITY_NAME, true)
+                        .addDynamicRequirements(SOCKET_CAPABILITY_NAME)
+                        .build();
+
 
         private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING, false).build();
+        private static final SimpleAttributeDefinition SOCKET_BINDING =
+                new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
+                .setCapabilityReference(SOCKET_CAPABILITY_NAME, TEST_CAPABILITY_NAME, true)
+                .build();
         private static final OperationDefinition TEST_OP = new SimpleOperationDefinitionBuilder("test-op", new NonResolvingResourceDescriptionResolver()).build();
 
         public RootResourceDefinition(String name) {
@@ -96,7 +115,9 @@ public class TestHostCapableExtension implements Extension {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             super.registerAttributes(resourceRegistration);
-            resourceRegistration.registerReadWriteAttribute(NAME, null, new ReloadRequiredWriteAttributeHandler(NAME));
+            OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(NAME, SOCKET_BINDING);
+            resourceRegistration.registerReadWriteAttribute(NAME, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING, null, writeHandler);
         }
 
         @Override
@@ -124,20 +145,32 @@ public class TestHostCapableExtension implements Extension {
 
         private static class AddSubsystemHandler extends AbstractAddStepHandler {
 
-            @Override
-            protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-                NAME.validateAndSet(operation, model);
+            AddSubsystemHandler() {
+                super(TEST_CAPABILITY, NAME, SOCKET_BINDING);
             }
 
             @Override
             protected void performRuntime(OperationContext context, ModelNode operation, Resource resource)
                     throws OperationFailedException {
-                context.getServiceTarget().addService(createServiceName(context.getCurrentAddress()), new TestService()).install();
+                boolean hasSocketBinding = resource.getModel().hasDefined(SOCKET_BINDING.getName());
+                TestService service = new TestService(hasSocketBinding);
+                ServiceBuilder<TestService> serviceBuilder = context.getServiceTarget().addService(createServiceName(context.getCurrentAddress()), service);
+                if (hasSocketBinding) {
+                    final String socketName = SOCKET_BINDING.resolveModelAttribute(context, resource.getModel()).asString();
+                    final ServiceName socketBindingName = context.getCapabilityServiceName(RootResourceDefinition.SOCKET_CAPABILITY_NAME, socketName, SocketBinding.class);
+                    serviceBuilder.addDependency(socketBindingName, SocketBinding.class, service.socketBindingInjector);
+                }
+                serviceBuilder.install();
             }
         }
 
 
         private static class RemoveSubsystemHandler extends AbstractRemoveStepHandler {
+
+            RemoveSubsystemHandler(){
+                super(TEST_CAPABILITY);
+            }
+
             @Override
             protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                     throws OperationFailedException {
@@ -146,6 +179,13 @@ public class TestHostCapableExtension implements Extension {
         }
 
         private static class TestService implements Service<TestService> {
+            private final boolean hasSocketBinding;
+            InjectedValue<SocketBinding> socketBindingInjector = new InjectedValue<>();
+            private volatile ServerSocket serverSocket;
+
+            public TestService(boolean hasSocketBinding) {
+                this.hasSocketBinding = hasSocketBinding;
+            }
 
             @Override
             public TestService getValue() throws IllegalStateException, IllegalArgumentException {
@@ -154,12 +194,25 @@ public class TestHostCapableExtension implements Extension {
 
             @Override
             public void start(StartContext context) throws StartException {
+                if (hasSocketBinding) {
+                    SocketBinding binding = socketBindingInjector.getValue();
+                    try {
+                        serverSocket = binding.createServerSocket();
+                    } catch (IOException e) {
+                        throw new StartException(e);
+                    }
+                }
             }
 
             @Override
             public void stop(StopContext context) {
+                if (serverSocket != null) {
+                    try {
+                        serverSocket.close();
+                    } catch (IOException ignore) {
+                    }
+                }
             }
-
         }
     }
 
