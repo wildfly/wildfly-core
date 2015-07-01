@@ -40,6 +40,8 @@ import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
+import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
+import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.version.Version;
 
@@ -82,10 +84,22 @@ public class DomainTransformers {
         //The chains for transforming will be as follows
         //For JBoss EAP: 3.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
+        registerRootTransformers(registry);
         registerChainedManagementTransformers(registry, currentVersion);
         registerChainedServerGroupTransformers(registry, currentVersion);
         registerProfileTransformers(registry, currentVersion);
         registerSocketBindingGroupTransformers(registry, currentVersion);
+    }
+
+    private static void registerRootTransformers(TransformerRegistry registry) {
+        //todo we should use ChainedTransformationDescriptionBuilder but it doesn't work properly with "root" resources
+        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(null);
+        DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
+        ModelVersion[] versions = {VERSION_1_5, VERSION_1_6, VERSION_1_7};
+        for (ModelVersion version : versions){
+            TransformersSubRegistration domain = registry.getDomainRegistration(version);
+            TransformationDescription.Tools.register(builder.build(), domain);
+        }
     }
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
