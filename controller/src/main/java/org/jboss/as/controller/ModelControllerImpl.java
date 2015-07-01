@@ -782,9 +782,14 @@ class ModelControllerImpl implements ModelController {
 
             @Override
             public void rollback() {
+                model.discard();
                 delegate.rollback();
             }
         };
+    }
+
+    void discardModel(final ManagementModelImpl model) {
+        model.discard();
     }
 
     void acquireLock(Integer permit, final boolean interruptibly) throws InterruptedException {
@@ -1248,6 +1253,15 @@ class ModelControllerImpl implements ModelController {
         private void publish() {
             ModelControllerImpl.this.managementModel.set(this);
             ControllerLogger.MGMT_OP_LOGGER.tracef("published %s", this);
+            published = true;
+        }
+
+        private void discard() {
+            // We don't actually "discard". What we do is mark ourselves as published
+            // without actually publishing. The result is calls against this object
+            // will now see the value of ModelControllerImpl.this.managementModel.get,
+            // which will be
+            ControllerLogger.MGMT_OP_LOGGER.tracef("discarded %s", this);
             published = true;
         }
     }

@@ -437,6 +437,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    void operationRollingBack() {
+        modelController.discardModel(managementModel);
+    }
+
+    @Override
     public boolean isRollbackOnRuntimeFailure() {
         return contextFlags.contains(ContextFlag.ROLLBACK_ON_FAIL);
     }

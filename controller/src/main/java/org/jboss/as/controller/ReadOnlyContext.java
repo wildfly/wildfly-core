@@ -101,6 +101,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    void operationRollingBack() {
+        // don't need to do anything
+    }
+
+    @Override
     void waitForRemovals() throws InterruptedException {
         // nothing here
     }

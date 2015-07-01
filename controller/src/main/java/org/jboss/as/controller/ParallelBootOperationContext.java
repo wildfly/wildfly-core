@@ -323,6 +323,15 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    void operationRollingBack() {
+        // BES 2015/06/30 hmm. telling the primary context to discarding the management model
+        // here will screw up other parallel contexts that are still running. but if we don't,
+        // during rollback our OSHs will still see the changes made to the model.
+        // Oh well, I'm not going to worry about it as this runs in boot, and a rollback in
+        // boot should just result in the whole process going away anyway.
+    }
+
+    @Override
     public void emit(Notification notification) {
         primaryContext.emit(notification);
     }

@@ -49,7 +49,6 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.IOException;
 import java.io.InputStream;
-import javax.security.auth.Subject;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.util.ArrayDeque;
@@ -70,6 +69,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.security.auth.Subject;
 
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
@@ -458,6 +459,11 @@ abstract class AbstractOperationContext implements OperationContext {
     abstract ConfigurationPersister.PersistenceResource createPersistenceResource() throws ConfigurationPersistenceException;
 
     /**
+     * Notification that the operation is not going to proceed to normal completion.
+     */
+    abstract void operationRollingBack();
+
+    /**
      * Release any locks held by the given step.
      *
      * @param step the step
@@ -565,6 +571,7 @@ abstract class AbstractOperationContext implements OperationContext {
         if (!canContinueProcessing()) {
             respectInterruption = false;
             logAuditRecord();
+            operationRollingBack();
             return;
         }
 
@@ -637,9 +644,13 @@ abstract class AbstractOperationContext implements OperationContext {
                             // if this was a recursive step
                             respectInterruption = false;
                             logAuditRecord();
+                            operationRollingBack();
                             step.finalizeStep(toThrow);
                             exit = true; // we're on the return path
                         } else {
+                            if (toThrow != null) {
+                                operationRollingBack();
+                            }
                             throwThrowable(toThrow);
                             // else move on to next step
                             response = activeStep.response;
