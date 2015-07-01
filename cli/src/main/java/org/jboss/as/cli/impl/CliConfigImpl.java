@@ -85,6 +85,10 @@ class CliConfigImpl implements CliConfig {
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
     static CliConfig load(final CommandContext ctx) throws CliInitializationException {
+        return load(ctx, null);
+    }
+
+    static CliConfig load(final CommandContext ctx, CommandContextConfiguration configuration) throws CliInitializationException {
         File jbossCliFile = findCLIFileFromSystemProperty();
 
         if (jbossCliFile == null) {
@@ -100,7 +104,13 @@ class CliConfigImpl implements CliConfig {
             return new CliConfigImpl();
         }
 
-        return parse(ctx, jbossCliFile);
+        CliConfigImpl config = parse(ctx, jbossCliFile);
+
+        if( configuration != null ){
+            config = overrideConfigWithArguments(config, configuration);
+        }
+
+        return config;
     }
 
     private static File findCLIFileFromSystemProperty() {
@@ -132,7 +142,7 @@ class CliConfigImpl implements CliConfig {
         return jbossCliFile;
     }
 
-    static CliConfig parse(final CommandContext ctx, File f) throws CliInitializationException {
+    private static CliConfigImpl parse(final CommandContext ctx, File f) throws CliInitializationException {
         if(f == null) {
             throw new CliInitializationException("The file argument is null.");
         }
@@ -161,6 +171,12 @@ class CliConfigImpl implements CliConfig {
             StreamUtils.safeClose(input);
         }
         return config;
+    }
+
+    private static CliConfigImpl overrideConfigWithArguments(CliConfigImpl cliConfig, CommandContextConfiguration configuration){
+        cliConfig.connectionTimeout = configuration.getConnectionTimeout() != -1 ? configuration.getConnectionTimeout() : cliConfig.getConnectionTimeout();
+
+        return cliConfig;
     }
 
     private static String resolveString(String str) throws XMLStreamException {

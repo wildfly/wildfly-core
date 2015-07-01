@@ -209,8 +209,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private final char[] password;
     /** flag to disable the local authentication mechanism */
     private final boolean disableLocalAuth;
-    /** the time to connect to a controller */
-    private final int connectionTimeout;
     /** The SSLContext when managed by the CLI */
     private SSLContext sslContext;
     /** The TrustManager in use by the SSLContext, a reference is kept to rejected certificates can be captured. */
@@ -285,7 +283,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         config = CliConfigImpl.load(this);
         addressResolver = ControllerAddressResolver.newInstance(config, null);
         resolveParameterValues = config.isResolveParameterValues();
-        this.connectionTimeout = config.getConnectionTimeout();
         silent = config.isSilent();
         username = null;
         password = null;
@@ -303,7 +300,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      *
      */
     CommandContextImpl(CommandContextConfiguration configuration) throws CliInitializationException {
-        config = CliConfigImpl.load(this);
+        config = CliConfigImpl.load(this, configuration);
         addressResolver = ControllerAddressResolver.newInstance(config, configuration.getController());
 
         operationHandler = new OperationRequestHandler();
@@ -311,7 +308,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.username = configuration.getUsername();
         this.password = configuration.getPassword();
         this.disableLocalAuth = configuration.isDisableLocalAuth();
-        this.connectionTimeout =  configuration.getConnectionTimeout() != -1 ? configuration.getConnectionTimeout() : config.getConnectionTimeout();
         this.clientBindAddress = configuration.getClientBindAddress();
 
         resolveParameterValues = config.isResolveParameterValues();
@@ -877,7 +873,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     log.debug("connecting to " + address.getHost() + ':' + address.getPort() + " as " + username);
                 }
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(address, cbh,
-                        disableLocalAuth, sslContext, connectionTimeout, this, timeoutHandler, clientBindAddress);
+                        disableLocalAuth, sslContext, config.getConnectionTimeout(), this, timeoutHandler, clientBindAddress);
                 retry = false;
                 connInfoBean = new ConnectionInfoBean();
                 tryConnection(tempClient, address);
