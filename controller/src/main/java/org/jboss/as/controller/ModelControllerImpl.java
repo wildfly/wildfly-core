@@ -1440,13 +1440,20 @@ class ModelControllerImpl implements ModelController {
 
         synchronized CapabilityRegistryImpl copy() {
             CapabilityRegistryImpl result = new CapabilityRegistryImpl(forServer);
-            result.capabilities.putAll(this.capabilities);
+            copyCapabilities(capabilities, result.capabilities);
             copyRequirements(requirements, result.requirements);
             copyRequirements(runtimeOnlyRequirements, result.runtimeOnlyRequirements);
             if (!forServer) {
                 result.satisfiedByMap.putAll(this.satisfiedByMap);
             }
             return result;
+        }
+
+        private static void copyCapabilities(final Map<CapabilityId, RuntimeCapabilityRegistration> source,
+                                             final Map<CapabilityId, RuntimeCapabilityRegistration> dest) {
+            for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : source.entrySet()) {
+                dest.put(entry.getKey(), new RuntimeCapabilityRegistration(entry.getValue()));
+            }
         }
 
         private static void copyRequirements(Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> source,
