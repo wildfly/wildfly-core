@@ -24,7 +24,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      * @param baseServiceName base name to remove. Cannot be {@code null} unless {@code unavailableCapabilities} are provided
      * @param addOperation the add operation to use to rollback service removal. Cannot be {@code null}
      * @param unavailableCapabilities capabilities that will no longer be available once the remove occurs. Any services
-     *          {@link RuntimeCapability#getCapabilityServiceValueTypes() exposed by the capabilities} will also be removed
+     *          {@link RuntimeCapability#getCapabilityServiceValueType() exposed by the capabilities} will also be removed
      */
     public ServiceRemoveStepHandler(final ServiceName baseServiceName, final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
         super(unavailableCapabilities);
@@ -46,7 +46,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      * Creates a {@code ServiceRemoveStepHandler}.
      * @param addOperation the add operation to use to rollback service removal. Cannot be {@code null}
      * @param unavailableCapabilities capabilities that will no longer be available once the remove occurs. Any services
-     *          {@link RuntimeCapability#getCapabilityServiceValueTypes() exposed by the capabilities} will also be removed.
+     *          {@link RuntimeCapability#getCapabilityServiceValueType() exposed by the capabilities} will also be removed.
      *          Cannot be {@code null} or empty.
      */
     public ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
@@ -83,7 +83,8 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
 
             for (RuntimeCapability<?> capability : unavailableCapabilities) {
                 boolean dynamic = capability.isDynamicallyNamed();
-                for (Class valueType : capability.getCapabilityServiceValueTypes()) {
+                Class<?> valueType = capability.getCapabilityServiceValueType();
+                if (valueType != null) {
                     ServiceName sname;
                     if (dynamic) {
                         sname = getCapabilityRemovedServiceName(capability, name, valueType);
