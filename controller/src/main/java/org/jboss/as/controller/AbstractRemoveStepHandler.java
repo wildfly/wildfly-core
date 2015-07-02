@@ -188,10 +188,11 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
      * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
      *            the capability does not provide a service of type {@code serviceType}
      */
-    protected final ServiceName getCapabilityRemovedServiceName(RuntimeCapability removed, String dynamicPart, Class<?> serviceType) {
+    protected final ServiceName getCapabilityRemovedServiceName(RuntimeCapability<?> removed, String dynamicPart, Class<?> serviceType) {
         assert capabilities.contains(removed);
         assert removed.isDynamicallyNamed();
-        return RuntimeCapability.fromBaseCapability(removed, dynamicPart).getCapabilityServiceName(serviceType);
+        RuntimeCapability<?> full =  removed.fromBaseCapability(dynamicPart);
+        return full.getCapabilityServiceName(serviceType);
     }
 
     private List<PathElement> getChildren(Resource resource) {

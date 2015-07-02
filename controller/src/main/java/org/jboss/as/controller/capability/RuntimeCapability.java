@@ -61,15 +61,12 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * @param dynamicElement the dynamic portion of the full capability name. Cannot be {@code null} or empty
      * @param <T> the type of the runtime API object exposed by the capability
      * @return the fully name capability.
+     *
+     * @deprecated use {@link #fromBaseCapability(String)} on {@code base}
      */
+    @Deprecated
     public static <T> RuntimeCapability<T> fromBaseCapability(RuntimeCapability<T> base, String dynamicElement) {
-        assert base != null;
-        assert base.isDynamicallyNamed();
-        assert dynamicElement != null;
-        assert dynamicElement.length() > 0;
-        return new RuntimeCapability<T>(base.getName(), dynamicElement, base.serviceValueType, base.runtimeAPI,
-                base.getRequirements(), base.getOptionalRequirements(),
-                base.getRuntimeOnlyRequirements(), base.getDynamicRequirements(), base.getDynamicOptionalRequirements());
+        return base.fromBaseCapability(dynamicElement);
     }
 
     private final Class<?> serviceValueType;
@@ -135,7 +132,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     }
 
     /**
-     * Constructor for use by {@link #fromBaseCapability(RuntimeCapability, String)}
+     * Constructor for use by {@link #fromBaseCapability(String)}
      */
     private RuntimeCapability(String baseName, String dynamicElement, Class<?> serviceValueType, T runtimeAPI,
                               Set<String> requirements, Set<String> optionalRequirements,
@@ -149,20 +146,67 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     }
 
     /**
-     * Gets the name of service provided by this capability whose value is of the given type.
+     * Gets the name of the service provided by this capability, if there is one.
      *
-     * @param serviceValueType the expected type of the service's value. Cannot be {@code null}
      * @return the name of the service. Will not be {@code null}
      *
-     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
-     *            the capability does not provide a service of type {@code serviceType}
+     * @throws IllegalArgumentException if the capability does not provide a service
+     */
+    public ServiceName getCapabilityServiceName() {
+        return getCapabilityServiceName((Class<?>) null);
+    }
+
+    /**
+     * Gets the name of service provided by this capability.
+     *
+     * @param serviceValueType the expected type of the service's value. Only used to provide validate that
+     *                         the service value type provided by the capability matches the caller's
+     *                         expectation. May be {@code null} in which case no validation is performed
+     *
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if the capability does not provide a service or if its value type
+     *                                  is not assignable to {@code serviceValueType}
      */
     public ServiceName getCapabilityServiceName(Class<?> serviceValueType) {
-        assert serviceValueType != null;
-        if (this.serviceValueType == null || !serviceValueType.isAssignableFrom(this.serviceValueType)) {
+        if (this.serviceValueType == null ||
+                (serviceValueType != null && !serviceValueType.isAssignableFrom(this.serviceValueType))) {
             throw ControllerLogger.MGMT_OP_LOGGER.invalidCapabilityServiceType(getName(), serviceValueType);
         }
         return serviceName;
+    }
+
+    /**
+     * Gets the name of the service provided by this capability, if there is one. Only usable with
+     * {@link #isDynamicallyNamed() dynamically named} capabilities.
+     *
+     * @param dynamicNameElement the dynamic portion of the capability name. Cannot be {@code null}
+     *
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if the capability does not provide a service
+     * @throws AssertionError if {@link #isDynamicallyNamed()} does not return {@code true}
+     */
+    public ServiceName getCapabilityServiceName(String dynamicNameElement) {
+        return getCapabilityServiceName(dynamicNameElement, null);
+    }
+
+    /**
+     * Gets the name of service provided by this capability.
+     *
+     * @param dynamicNameElement the dynamic portion of the capability name. Cannot be {@code null}
+     * @param serviceValueType the expected type of the service's value. Only used to provide validate that
+     *                         the service value type provided by the capability matches the caller's
+     *                         expectation. May be {@code null} in which case no validation is performed
+     *
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if the capability does not provide a service or if its value type
+     *                                  is not assignable to {@code serviceValueType}
+     * @throws IllegalStateException if {@link #isDynamicallyNamed()} does not return {@code true}
+     */
+    public ServiceName getCapabilityServiceName(String dynamicNameElement, Class<?> serviceValueType) {
+        return fromBaseCapability(dynamicNameElement).getCapabilityServiceName(serviceValueType);
     }
 
     /**
@@ -183,6 +227,26 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     public T getRuntimeAPI() {
         return runtimeAPI;
+    }
+
+    /**
+     * Creates a fully named capability from a {@link #isDynamicallyNamed() dynamically named} base
+     * capability. Capability providers should use this method to generate fully named capabilities in logic
+     * that handles dynamically named resources.
+     *
+     * @param dynamicElement the dynamic portion of the full capability name. Cannot be {@code null} or empty
+     * @return the fully named capability.
+     *
+     * @throws AssertionError if {@link #isDynamicallyNamed()} returns {@code false}
+     */
+    public RuntimeCapability<T> fromBaseCapability(String dynamicElement) {
+        assert isDynamicallyNamed();
+        assert dynamicElement != null;
+        assert dynamicElement.length() > 0;
+        return new RuntimeCapability<T>(getName(), dynamicElement, serviceValueType, runtimeAPI,
+                getRequirements(), getOptionalRequirements(),
+                getRuntimeOnlyRequirements(), getDynamicRequirements(), getDynamicOptionalRequirements());
+
     }
 
     /**
