@@ -269,7 +269,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         for (RuntimeCapability capability : capabilities) {
             if (capability.isDynamicallyNamed()) {
-                context.registerCapability(RuntimeCapability.fromBaseCapability(capability, context.getCurrentAddressValue()), null);
+                context.registerCapability(capability.fromBaseCapability(context.getCurrentAddressValue()), null);
             } else {
                 context.registerCapability(capability, null);
             }

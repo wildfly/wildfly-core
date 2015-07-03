@@ -26,7 +26,7 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.wildfly.extension.io.WorkerResourceDefinition.ATTRIBUTES;
-import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY_NAME;
+import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
 
@@ -191,7 +191,7 @@ class WorkerAdd extends AbstractAddStepHandler {
 
         final WorkerService workerService = new WorkerService(builder.getMap());
 
-        ServiceName serviceName = context.getCapabilityServiceName(IO_WORKER_RUNTIME_CAPABILITY_NAME, name, XnioWorker.class);
+        ServiceName serviceName = IO_WORKER_RUNTIME_CAPABILITY.getCapabilityServiceName(name, XnioWorker.class);
         context.getServiceTarget().addService(serviceName, workerService)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();

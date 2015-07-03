@@ -112,7 +112,7 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final List<ClientMapping> clientMappings = mappingsNode.isDefined() ? parseClientMappings(context, mappingsNode) : null;
 
         final SocketBindingService service = new SocketBindingService(name, port, fixedPort, mcastInet, mcastPort, clientMappings);
-        final ServiceName serviceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, name, SocketBinding.class);
+        final ServiceName serviceName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(name, SocketBinding.class);
         final ServiceBuilder<SocketBinding> builder = serviceTarget.addService(serviceName, service);
         if (intf != null) {
             builder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(intf), NetworkInterfaceBinding.class, service.getInterfaceBinding());

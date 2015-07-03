@@ -39,7 +39,6 @@ abstract class AbstractOutboundConnectionResourceDefinition extends SimpleResour
     static final String OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.outbound-socket-binding";
     static final RuntimeCapability<Void> OUTBOUND_CONNECTION_CAPABILITY =
             RuntimeCapability.Builder.of(OUTBOUND_CONNECTION_CAPABILITY_NAME, true, AbstractOutboundConnectionService.class)
-                    .addDynamicOptionalRequirements(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME)
                     .build();
 
     protected AbstractOutboundConnectionResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,

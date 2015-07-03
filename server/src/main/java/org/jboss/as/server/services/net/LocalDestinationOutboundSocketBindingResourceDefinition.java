@@ -27,7 +27,6 @@ import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -44,11 +43,6 @@ import org.jboss.dmr.ModelType;
 public class LocalDestinationOutboundSocketBindingResourceDefinition extends OutboundSocketBindingResourceDefinition {
 
     static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
-    static final RuntimeCapability<Void> OUTBOUND_SOCKET_BINDING_CAPABILITY =
-            RuntimeCapability.Builder.of(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME,
-                    true, OutboundSocketBinding.class)
-                    .addDynamicRequirements(SOCKET_BINDING_CAPABILITY_NAME)
-                    .build(); // TODO require interface capability
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_REF, ModelType.STRING, false)
             .setAllowExpression(true)
