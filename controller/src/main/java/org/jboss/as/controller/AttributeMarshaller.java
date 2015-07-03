@@ -105,6 +105,34 @@ public abstract class AttributeMarshaller {
         }
     }
 
+    private static class ObjectMarshaller extends DefaultAttributeMarshaller {
+        private final boolean marshallSimpleTypeAsElement;
+
+        private ObjectMarshaller(boolean marshallSimpleTypeAsAttribute) {
+            this.marshallSimpleTypeAsElement = marshallSimpleTypeAsAttribute;
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            assert attribute instanceof ObjectTypeAttributeDefinition;
+            if (resourceModel.hasDefined(attribute.getName())) {
+                AttributeDefinition[] valueTypes = ((ObjectTypeAttributeDefinition) attribute).getValueTypes();
+                writer.writeStartElement(attribute.getXmlName());
+                for (AttributeDefinition valueType : valueTypes) {
+                    if(resourceModel.hasDefined(attribute.getName(), valueType.getName())) {
+                        ModelNode handler = resourceModel.get(attribute.getName());
+                        if(marshallSimpleTypeAsElement) {
+                            valueType.marshallAsElement(handler, marshallDefault, writer);
+                        } else {
+                            marshallAsAttribute(valueType, handler, marshallDefault, writer);
+                        }
+                    }
+                }
+                writer.writeEndElement();
+            }
+        }
+    }
+
     /**
      * simple marshaller
      */
@@ -119,4 +147,14 @@ public abstract class AttributeMarshaller {
      * comma delimited list marshaller
      */
     public static final AttributeMarshaller COMMA_STRING_LIST = new ListMarshaller(',');
+
+    /**
+     * Marshaller for ObjectTypeAttributeDefinition. The object and all its attributes will be marshalled as element only.
+     */
+    public static final AttributeMarshaller ELEMENT_ONLY_OBJECT = new ObjectMarshaller(true);
+
+    /**
+     * Marshaller for ObjectTypeAttributeDefinition. The object and all its complex types descendants will get marshalled as elements whereas simple types will get marshalled as attributes.
+     */
+    public static final AttributeMarshaller ATTRIBUTE_OBJECT = new ObjectMarshaller(false);
 }

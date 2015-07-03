@@ -651,6 +651,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * @return server's host controller name if the instance is running in domain mode, or <code>null</code> if running in standalone
      *         mode
      */
+    @Override
     public String getHostControllerName() {
         return hostControllerName;
     }
@@ -685,6 +686,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      *
      * @return the qualified host name
      */
+    @Override
     public String getQualifiedHostName() {
         return qualifiedHostName;
     }
@@ -735,6 +737,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      *
      * @return the local host name
      */
+    @Override
     public String getHostName() {
         return hostName;
     }
@@ -997,6 +1000,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      *
      * @return the running mode control
      */
+    @Override
     public RunningModeControl getRunningModeControl() {
         return runningModeControl;
     }

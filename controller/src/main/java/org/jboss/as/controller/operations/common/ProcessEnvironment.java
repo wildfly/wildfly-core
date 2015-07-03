@@ -40,6 +40,7 @@ import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
@@ -133,6 +134,38 @@ public abstract class ProcessEnvironment {
      * @return the UUID of this process.
      */
     public abstract UUID getInstanceUuid();
+
+    /**
+     * Get the fully-qualified host name detected at server startup.
+     *
+     * @return the qualified host name
+     */
+    public abstract String getQualifiedHostName();
+
+    /**
+     * Get the local host name detected at server startup. Note that this is not the same as the
+     * {@link #getHostControllerName() host controller name}. Defaults to the portion of
+     * {@link #getQualifiedHostName() the qualified host name} following the first '.'.
+     *
+     * @return the local host name
+     */
+    public abstract String getHostName();
+
+    /**
+     * Get the {@link RunningModeControl} containing the current running mode of the server
+     *
+     * @return the running mode control
+     */
+    public abstract RunningModeControl getRunningModeControl();
+
+    /**
+     * Get the name of this server's host controller. For domain-mode servers, this is the name given in the domain configuration. For
+     * standalone servers, which do not utilize a host controller, the value should be <code>null</code>.
+     *
+     * @return server's host controller name if the instance is running in domain mode, or <code>null</code> if running in standalone
+     *         mode
+     */
+    public abstract String getHostControllerName();
 
     protected UUID obtainProcessUUID(final Path filePath) throws IOException {
         UUID uuid = null;

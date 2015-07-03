@@ -40,6 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -55,6 +56,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -176,6 +178,10 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
                     switch (attribute) {
                         case NAME: {
                             serverName = ServerRootResourceDefinition.NAME.parse(value, reader);
+                            break;
+                        }
+                        case ORGANIZATION: {
+                            setOrganization(address, list, ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER.parse(value, reader));
                             break;
                         }
                         default:
@@ -561,6 +567,12 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
+    private void setOrganization(final ModelNode address, final List<ModelNode> operationList, final ModelNode value) {
+        if (value != null && value.isDefined() && value.asString().length() > 0) {
+            final ModelNode update = Util.getWriteAttributeOperation(address, ORGANIZATION, value);
+            operationList.add(update);
+        }
+    }
     private void setServerName(final ModelNode address, final List<ModelNode> operationList, final ModelNode value) {
         if (value != null && value.isDefined() && value.asString().length() > 0) {
             final ModelNode update = Util.getWriteAttributeOperation(address, NAME, value);
@@ -577,6 +589,10 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
 
         if (modelNode.hasDefined(NAME)) {
             ServerRootResourceDefinition.NAME.marshallAsAttribute(modelNode, false, writer);
+        }
+
+        if (modelNode.hasDefined(ORGANIZATION_IDENTIFIER.getName())) {
+            ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, false, writer);
         }
 
         writer.writeDefaultNamespace(CURRENT.getUriString());

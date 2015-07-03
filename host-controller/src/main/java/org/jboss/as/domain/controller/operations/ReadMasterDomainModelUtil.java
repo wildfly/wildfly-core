@@ -167,9 +167,11 @@ public class ReadMasterDomainModelUtil {
                 }
             }
 
-            final Iterator<PathElement> i = resourceAddress.iterator();
-
             Resource resource = root;
+            final Iterator<PathElement> i = resourceAddress.iterator();
+            if (!i.hasNext()) { //Those are root attributes
+                resource.getModel().set(model.require(DOMAIN_RESOURCE_MODEL));
+            }
             while (i.hasNext()) {
                 final PathElement e = i.next();
 

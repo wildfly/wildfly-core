@@ -47,9 +47,11 @@ public class ProductConfig implements Serializable {
     private final String name;
     private final String version;
     private final String consoleSlot;
+    private boolean isProduct;
 
     public ProductConfig(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
         String productName = null;
+        String projectName = null;
         String productVersion = null;
         String consoleSlot = null;
 
@@ -73,6 +75,7 @@ public class ProductConfig implements Serializable {
                     productName = manifest.getMainAttributes().getValue("JBoss-Product-Release-Name");
                     productVersion = manifest.getMainAttributes().getValue("JBoss-Product-Release-Version");
                     consoleSlot = manifest.getMainAttributes().getValue("JBoss-Product-Console-Slot");
+                    projectName = manifest.getMainAttributes().getValue("JBoss-Project-Release-Name");
                 }
             }
 
@@ -82,8 +85,8 @@ public class ProductConfig implements Serializable {
         } finally {
             safeClose(reader);
         }
-
-        name = productName;
+        isProduct = productName != null && !productName.isEmpty() && projectName == null;
+        name = isProduct ? productName : projectName;
         version = productVersion;
         this.consoleSlot = consoleSlot;
     }
@@ -118,14 +121,18 @@ public class ProductConfig implements Serializable {
         return version;
     }
 
+    public boolean isProduct() {
+        return isProduct;
+    }
+
     public String getConsoleSlot() {
         return consoleSlot;
     }
 
     public String getPrettyVersionString() {
-        if (name != null)
-           return String.format("%s %s (WildFly Core %s)", name, version, Version.AS_VERSION);
-
+        if (name != null) {
+            return String.format("%s %s (WildFly Core %s)", name, version, Version.AS_VERSION);
+        }
         return String.format("WildFly Core %s \"%s\"", Version.AS_VERSION, Version.AS_RELEASE_CODENAME);
     }
 

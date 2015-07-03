@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
@@ -153,9 +154,11 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         writeSchemaLocation(writer, modelNode);
 
         DomainRootDefinition.NAME.marshallAsAttribute(modelNode, false, writer);
+        if (modelNode.hasDefined(DOMAIN_ORGANIZATION)) {
+            DomainRootDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
+        }
 
         WriteUtils.writeNewLine(writer);
-
         if (modelNode.hasDefined(EXTENSION)) {
             extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
             WriteUtils.writeNewLine(writer);
@@ -309,13 +312,22 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
                 }
                 default:
                     switch (Attribute.forName(reader.getAttributeLocalName(i))) {
-                    case NAME:
+                    case NAME: {
                         ModelNode op = new ModelNode();
                         op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
                         op.get(NAME).set(NAME);
                         op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
                         list.add(op);
                         break;
+                    }
+                    case  ORGANIZATION: {
+                        ModelNode op = new ModelNode();
+                        op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+                        op.get(NAME).set(DOMAIN_ORGANIZATION);
+                        op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
+                        list.add(op);
+                        break;
+                    }
                     default:
                         throw unexpectedAttribute(reader, i);
                 }

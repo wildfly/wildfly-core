@@ -123,6 +123,7 @@ public enum Attribute {
     MULTICAST_PORT("multicast-port"),
     NAME("name"),
     NATIVE("native"),
+    ORGANIZATION("organization"),
     PASSWORD("password"),
     PATH("path"),
     PATTERN("pattern"),

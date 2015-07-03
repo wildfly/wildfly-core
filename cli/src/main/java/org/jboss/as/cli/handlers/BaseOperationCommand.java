@@ -49,6 +49,9 @@ import org.jboss.as.cli.operation.impl.HeadersCompleter;
 import org.jboss.as.cli.parsing.ParserUtil;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -225,16 +228,22 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
         final ModelNode request = buildRequest(ctx);
 
         final ModelControllerClient client = ctx.getModelControllerClient();
-        final ModelNode response;
+        final OperationResponse operationResponse;
         try {
-            response = client.execute(request);
+            operationResponse = client.executeOperation(Operation.Factory.create(request), OperationMessageHandler.DISCARD);
         } catch (Exception e) {
             throw new CommandLineException("Failed to perform operation", e);
         }
-        if (!Util.isSuccess(response)) {
-            throw new CommandLineException(Util.getFailureDescription(response));
+        try {
+            final ModelNode response = operationResponse.getResponseNode();
+            if (!Util.isSuccess(response)) {
+                throw new CommandLineException(Util.getFailureDescription(response));
+            }
+            handleResponse(ctx, operationResponse, Util.COMPOSITE.equals(request.get(Util.OPERATION).asString()));
+            operationResponse.close();
+        } catch (IOException ex) {
+            throw new CommandLineException("Failed to perform operation", ex);
         }
-        handleResponse(ctx, response, Util.COMPOSITE.equals(request.get(Util.OPERATION).asString()));
     }
 
     @Override
@@ -258,6 +267,14 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
         final ModelNode headersNode = headers.toModelNode(ctx);
         final ModelNode opHeaders = request.get(Util.OPERATION_HEADERS);
         opHeaders.set(headersNode);
+    }
+
+    protected void handleResponse(CommandContext ctx, OperationResponse response, boolean composite) throws CommandLineException {
+        handleResponse(ctx, response.getResponseNode(), composite);
+        handleAttachedFile(ctx, response);
+    }
+
+    protected void handleAttachedFile(CommandContext ctx, OperationResponse operationResponse) throws CommandLineException {
     }
 
     protected void handleResponse(CommandContext ctx, ModelNode response, boolean composite) throws CommandLineException {

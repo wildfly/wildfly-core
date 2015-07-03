@@ -21,7 +21,7 @@
   -->
 
 <domain xmlns="urn:jboss:domain:4.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" organization="wildfly-core">
 
     <extensions>
         <extension module="org.jboss.as.logging"/>

@@ -3361,4 +3361,7 @@ public interface ControllerLogger extends BasicLogger {
             "It is available in one or more socket binding groups, but not all socket binding capabilities required by " +
             "'%s' can be resolved from a single socket binding group, so this configuration is invalid")
     void inconsistentCapabilityContexts(String dependentName, String dependentContext, String address, String requiredName, String dependentContextAgain);
+
+    @Message(id = 407, value = "Couldn't build the report")
+    RuntimeException failedToBuildReport(@Cause Throwable t);
 }
