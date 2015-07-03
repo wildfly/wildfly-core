@@ -130,6 +130,11 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.parser = basis.getParser();
         Set<AttributeAccess.Flag> basisFlags = basis.getFlags();
         this.flags = basisFlags.toArray(new AttributeAccess.Flag[basisFlags.size()]);
+        if (basis.getAllowedValues().size() > 0) {
+            List<ModelNode> basisAllowedValues = basis.getAllowedValues();
+            this.allowedValues = basisAllowedValues.toArray(new ModelNode[basisAllowedValues.size()]);
+        }
+        this.attributeGroup = basis.getAttributeGroup();
     }
 
     /**
