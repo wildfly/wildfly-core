@@ -370,6 +370,9 @@ public abstract class AttributeDefinition {
      * @return allowed values
      */
     public List<ModelNode> getAllowedValues() {
+        if (allowedValues == null) {
+            return Collections.emptyList();
+        }
         return Arrays.asList(this.allowedValues);
     }
 
