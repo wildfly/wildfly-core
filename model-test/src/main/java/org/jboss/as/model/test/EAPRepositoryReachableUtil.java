@@ -21,17 +21,14 @@
  */
 package org.jboss.as.model.test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 /**
  * Utility to check if the EAP repository is available
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class EAPRepositoryReachableUtil {
-
-    //System property to turn on transformers tests for eap
+    //keep this code around in case we need it again for when we will be doing EAP7 as target for transformers
+    /*//System property to turn on transformers tests for eap
     private static String TEST_TRANSFORMERS_EAP = "jboss.test.transformers.eap";
     private static final String EAP_REPOSITORY_HOST = "download.lab.bos.redhat.com";
 
@@ -51,5 +48,10 @@ public class EAPRepositoryReachableUtil {
             }
         }
         return reachable;
+    }*/
+
+
+    public static boolean isReachable() {
+        return true;
     }
 }
