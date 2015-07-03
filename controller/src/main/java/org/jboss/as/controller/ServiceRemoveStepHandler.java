@@ -82,14 +82,12 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
             }
 
             for (RuntimeCapability<?> capability : unavailableCapabilities) {
-                boolean dynamic = capability.isDynamicallyNamed();
-                Class<?> valueType = capability.getCapabilityServiceValueType();
-                if (valueType != null) {
+                if (capability.getCapabilityServiceValueType() != null) {
                     ServiceName sname;
-                    if (dynamic) {
-                        sname = getCapabilityRemovedServiceName(capability, name, valueType);
+                    if (capability.isDynamicallyNamed()) {
+                        sname = capability.getCapabilityServiceName(name);
                     } else {
-                        sname = getCapabilityRemovedServiceName(capability, valueType);
+                        sname = capability.getCapabilityServiceName();
                     }
                     context.removeService(sname);
                 }
