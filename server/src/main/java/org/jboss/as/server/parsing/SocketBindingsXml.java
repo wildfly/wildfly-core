@@ -507,4 +507,11 @@ public abstract class SocketBindingsXml {
             SocketBindingGroupResourceDefinition.PORT_OFFSET.marshallAsAttribute(bindingGroup, writer);
         }
     }
+
+    public static class HostSocketBindingsXml extends SocketBindingsXml {
+        @Override
+        protected void writeExtraAttributes(XMLExtendedStreamWriter writer, ModelNode bindingGroup) throws XMLStreamException {
+            SocketBindingGroupResourceDefinition.PORT_OFFSET.marshallAsAttribute(bindingGroup, writer);
+        }
+    }
 }

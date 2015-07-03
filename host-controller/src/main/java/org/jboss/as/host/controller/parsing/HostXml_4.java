@@ -95,6 +95,7 @@ import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -111,6 +112,8 @@ import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.parsing.CommonXml;
+import org.jboss.as.server.parsing.SocketBindingsXml;
+import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -139,7 +142,7 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
 
     HostXml_4(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
             final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final Namespace namespace) {
-        super(null);
+        super(new SocketBindingsXml.HostSocketBindingsXml());
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;
@@ -255,6 +258,18 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
 
         writeHostProfile(writer, context);
 
+        if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
+            Set<String> groups = modelNode.get(SOCKET_BINDING_GROUP).keys();
+            if (groups.size() > 1) {
+                throw ControllerLogger.ROOT_LOGGER.multipleModelNodes(SOCKET_BINDING_GROUP);
+            }
+            for (String group : groups) {
+                writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), true);
+            }
+            WriteUtils.writeNewLine(writer);
+        }
+
+
         writer.writeEndElement();
         WriteUtils.writeNewLine(writer);
         writer.writeEndDocument();
@@ -364,6 +379,12 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
             parseHostProfile(reader, address, list);
             element = nextElement(reader, namespace);
         }
+        // Single socket binding group
+        if (element == Element.SOCKET_BINDING_GROUP) {
+            parseSocketBindingGroup(reader, interfaceNames, address, list);
+            element = nextElement(reader, namespace);
+        }
+
         if (element != null) {
             throw unexpectedElement(reader);
         }
@@ -1217,6 +1238,83 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
                 }
                 update.get(OP_ADDR).set(subsystemAddress);
                 list.add(update);
+            }
+        }
+    }
+
+    private void parseSocketBindingGroup(final XMLExtendedStreamReader reader, final Set<String> interfaces,
+                                         final ModelNode address, final List<ModelNode> updates) throws XMLStreamException {
+
+        // unique names for both socket-binding and outbound-socket-binding(s)
+        final Set<String> uniqueBindingNames = new HashSet<String>();
+
+        ModelNode op = Util.getEmptyOperation(ADD, null);
+        // Handle attributes
+        String socketBindingGroupName = null;
+
+        final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.DEFAULT_INTERFACE);
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            }
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            switch (attribute) {
+                case NAME: {
+                    socketBindingGroupName = value;
+                    required.remove(attribute);
+                    break;
+                }
+                case DEFAULT_INTERFACE: {
+                    SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.parseAndSetParameter(value, op, reader);
+                    required.remove(attribute);
+                    if (op.get(AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
+                            && !interfaces.contains(value)) {
+                        throw ControllerLogger.ROOT_LOGGER.unknownInterface(value, Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());
+                    }
+                    break;
+                }
+                case PORT_OFFSET: {
+                    SocketBindingGroupResourceDefinition.PORT_OFFSET.parseAndSetParameter(value, op, reader);
+                    break;
+                }
+                default:
+                    throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+        }
+
+        if (!required.isEmpty()) {
+            throw missingRequired(reader, required);
+        }
+
+
+        ModelNode groupAddress = address.clone().add(SOCKET_BINDING_GROUP, socketBindingGroupName);
+        op.get(OP_ADDR).set(groupAddress);
+
+        updates.add(op);
+
+        // Handle elements
+        while (reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case SOCKET_BINDING: {
+                    final String bindingName = parseSocketBinding(reader, interfaces, groupAddress, updates);
+                    if (!uniqueBindingNames.add(bindingName)) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDeclared(Element.SOCKET_BINDING.getLocalName(), Element.OUTBOUND_SOCKET_BINDING.getLocalName(), bindingName, Element.SOCKET_BINDING_GROUP.getLocalName(), socketBindingGroupName, reader.getLocation());
+                    }
+                    break;
+                }
+                case OUTBOUND_SOCKET_BINDING: {
+                    final String bindingName = parseOutboundSocketBinding(reader, interfaces, groupAddress, updates);
+                    if (!uniqueBindingNames.add(bindingName)) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDeclared(Element.SOCKET_BINDING.getLocalName(), Element.OUTBOUND_SOCKET_BINDING.getLocalName(), bindingName, Element.SOCKET_BINDING_GROUP.getLocalName(), socketBindingGroupName, reader.getLocation());
+                    }
+                    break;
+                }
+                default:
+                    throw unexpectedElement(reader);
             }
         }
     }

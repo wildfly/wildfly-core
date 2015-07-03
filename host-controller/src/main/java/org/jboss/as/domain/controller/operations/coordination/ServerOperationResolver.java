@@ -153,7 +153,8 @@ public class ServerOperationResolver {
         JVM(ModelDescriptionConstants.JVM),
         SERVER(ModelDescriptionConstants.SERVER),
         SERVER_CONFIG(ModelDescriptionConstants.SERVER_CONFIG),
-        SUBSYSTEM(ModelDescriptionConstants.SUBSYSTEM);
+        SUBSYSTEM(ModelDescriptionConstants.SUBSYSTEM),
+        SOCKET_BINDING_GROUP(ModelDescriptionConstants.SOCKET_BINDING_GROUP);
 
         private final String name;
 
@@ -625,8 +626,9 @@ public class ServerOperationResolver {
                     return resolveServerConfigOperation(operation, address, domain, host);
                 }
                 case EXTENSION:
-                case SUBSYSTEM: {
-                    //Changes made to the subsystems on a host should not be propagated to the servers
+                case SUBSYSTEM:
+                case SOCKET_BINDING_GROUP: {
+                    //Changes made to the extensions, subsystems and socket-bindings on a host should not be propagated to the servers
                     return Collections.emptyMap();
                 }
                 case SERVER:

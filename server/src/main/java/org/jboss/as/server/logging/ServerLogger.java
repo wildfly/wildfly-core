@@ -995,7 +995,7 @@ public interface ServerLogger extends BasicLogger {
     // UnsupportedOperationException attributeValidationUnimplemented(String attribute);
 
     @Message(id = 190, value = "Cannot add more than one socket binding group. Add of '%s' attempted, but '%s' already exists")
-    OperationFailedException cannotAddMoreThanOneSocketBindingGroupForServer(PathAddress wanted, PathAddress existing);
+    OperationFailedException cannotAddMoreThanOneSocketBindingGroupForServerOrHost(PathAddress wanted, PathAddress existing);
 
     @Message(id = 191, value = "Can't use both --server-config and --initial-server-config")
     IllegalArgumentException cannotHaveBothInitialServerConfigAndServerConfig();

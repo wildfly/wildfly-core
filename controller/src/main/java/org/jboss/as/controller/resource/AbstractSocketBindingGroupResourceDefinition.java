@@ -22,8 +22,6 @@
 
 package org.jboss.as.controller.resource;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-
 import java.util.List;
 
 import org.jboss.as.controller.OperationContext;
@@ -101,7 +99,17 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
         ModelNode defaultInterfaceNode = bindingGroup.get(DEFAULT_INTERFACE.getName());
         if (defaultInterfaceNode.getType() == ModelType.STRING) { // ignore UNDEFINED and EXPRESSION
             String defaultInterface = defaultInterfaceNode.asString();
-            PathAddress interfaceAddress = PathAddress.pathAddress(PathElement.pathElement(INTERFACE, defaultInterface));
+            PathAddress operationAddress = context.getCurrentAddress();
+            //This can be used on both the host and the server, the socket binding group will be a
+            //sibling to the interface in the model
+            PathAddress interfaceAddress = PathAddress.EMPTY_ADDRESS;
+            for (PathElement element : operationAddress) {
+                if (element.getKey().equals(ModelDescriptionConstants.SOCKET_BINDING_GROUP)) {
+                    break;
+                }
+                interfaceAddress = interfaceAddress.append(element);
+            }
+            interfaceAddress = interfaceAddress.append(ModelDescriptionConstants.INTERFACE, defaultInterface);
             try {
                 context.readResourceFromRoot(interfaceAddress, false);
             } catch (RuntimeException e) {

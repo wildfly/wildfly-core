@@ -78,13 +78,13 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
                 // Do a non-recursive read, which will bring in placeholders for the children
-                final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
+                final Resource root = context.readResourceFromRoot(context.getCurrentAddress().getParent(), false);
 
                 Set<ResourceEntry> children = root.getChildren(SOCKET_BINDING_GROUP);
                 if (children.size() > 1) {
                     for (ResourceEntry entry : children) {
                         if (!entry.getName().equals(mine.getLastElement().getValue())) {
-                            throw ServerLogger.ROOT_LOGGER.cannotAddMoreThanOneSocketBindingGroupForServer(
+                            throw ServerLogger.ROOT_LOGGER.cannotAddMoreThanOneSocketBindingGroupForServerOrHost(
                                     mine,
                                     PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, entry.getName())));
                         }

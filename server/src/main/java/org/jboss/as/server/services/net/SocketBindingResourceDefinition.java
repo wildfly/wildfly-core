@@ -22,13 +22,13 @@
 
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -92,7 +92,17 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
         ModelNode interfaceNode = binding.get(INTERFACE.getName());
         if (interfaceNode.getType() == ModelType.STRING) { // ignore UNDEFINED and EXPRESSION
             String interfaceName = interfaceNode.asString();
-            PathAddress interfaceAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.INTERFACE, interfaceName));
+            PathAddress operationAddress = context.getCurrentAddress();
+            //This can be used on both the host and the server, the socket binding group will be a
+            //sibling to the interface in the model
+            PathAddress interfaceAddress = PathAddress.EMPTY_ADDRESS;
+            for (PathElement element : operationAddress) {
+                if (element.getKey().equals(ModelDescriptionConstants.SOCKET_BINDING_GROUP)) {
+                    break;
+                }
+                interfaceAddress = interfaceAddress.append(element);
+            }
+            interfaceAddress = interfaceAddress.append(ModelDescriptionConstants.INTERFACE, interfaceName);
             try {
                 context.readResourceFromRoot(interfaceAddress, false);
             } catch (RuntimeException e) {
