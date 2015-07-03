@@ -448,15 +448,14 @@ class ModelControllerImpl implements ModelController {
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
         BootOperations bootOperations = organizeBootOperations(bootList, operationID, parallelBootRootResourceRegistrationProvider);
-        for (ParsedBootOp initialOp : bootOperations.initialOps) {
-            context.addBootStep(initialOp);
+        OperationContext.ResultAction resultAction = bootOperations.invalid ? OperationContext.ResultAction.ROLLBACK : OperationContext.ResultAction.KEEP;
+        if (bootOperations.initialOps.size() > 0) {
+            // Run the steps up to the last ExtensionAddHandlerß
+            for (ParsedBootOp initialOp : bootOperations.initialOps) {
+                context.addBootStep(initialOp);
+            }
+            resultAction = context.executeOperation();
         }
-        if (bootOperations.invalid) {
-            // something was wrong so ensure we fail
-            context.setRollbackOnly();
-        }
-        // Run the steps up to the last ExtensionAddHandler
-        OperationContext.ResultAction resultAction = context.executeOperation();
         if (resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
             // Success. Now any extension handlers are registered. Continue with remaining ops
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
@@ -782,9 +781,14 @@ class ModelControllerImpl implements ModelController {
 
             @Override
             public void rollback() {
+                model.discard();
                 delegate.rollback();
             }
         };
+    }
+
+    void discardModel(final ManagementModelImpl model) {
+        model.discard();
     }
 
     void acquireLock(Integer permit, final boolean interruptibly) throws InterruptedException {
@@ -1250,6 +1254,15 @@ class ModelControllerImpl implements ModelController {
             ControllerLogger.MGMT_OP_LOGGER.tracef("published %s", this);
             published = true;
         }
+
+        private void discard() {
+            // We don't actually "discard". What we do is mark ourselves as published
+            // without actually publishing. The result is calls against this object
+            // will now see the value of ModelControllerImpl.this.managementModel.get,
+            // which will be
+            ControllerLogger.MGMT_OP_LOGGER.tracef("discarded %s", this);
+            published = true;
+        }
     }
 
     /** Capability registry implementation. */
@@ -1427,13 +1440,20 @@ class ModelControllerImpl implements ModelController {
 
         synchronized CapabilityRegistryImpl copy() {
             CapabilityRegistryImpl result = new CapabilityRegistryImpl(forServer);
-            result.capabilities.putAll(this.capabilities);
+            copyCapabilities(capabilities, result.capabilities);
             copyRequirements(requirements, result.requirements);
             copyRequirements(runtimeOnlyRequirements, result.runtimeOnlyRequirements);
             if (!forServer) {
                 result.satisfiedByMap.putAll(this.satisfiedByMap);
             }
             return result;
+        }
+
+        private static void copyCapabilities(final Map<CapabilityId, RuntimeCapabilityRegistration> source,
+                                             final Map<CapabilityId, RuntimeCapabilityRegistration> dest) {
+            for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : source.entrySet()) {
+                dest.put(entry.getKey(), new RuntimeCapabilityRegistration(entry.getValue()));
+            }
         }
 
         private static void copyRequirements(Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> source,

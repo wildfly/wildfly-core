@@ -271,20 +271,21 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - failure description: %s")
     void operationFailed(ModelNode op, ModelNode opAddress, ModelNode failureDescription);
 
-    /**
-     * Logs an error message indicating operation failed.
-     *
-     * @param cause        the cause of the error.
-     * @param op           the operation that failed.
-     * @param opAddress    the address the operation failed on.
-     * @param propertyName the boot stack size property name.
-     * @param defaultSize  the default boot stack size property size.
-     */
-    @LogMessage(level = ERROR)
-    @Message(id = 14, value = "Operation (%s) failed - address: (%s) -- due to insufficient stack space for the thread used to " +
-            "execute operations. If this error is occurring during server boot, setting " +
-            "system property %s to a value higher than [%d] may resolve this problem.")
-    void operationFailedInsufficientStackSpace(@Cause Throwable cause, ModelNode op, ModelNode opAddress, String propertyName, int defaultSize);
+    // WFCORE-792 -- no longer used
+//    /**
+//     * Logs an error message indicating operation failed.
+//     *
+//     * @param cause        the cause of the error.
+//     * @param op           the operation that failed.
+//     * @param opAddress    the address the operation failed on.
+//     * @param propertyName the boot stack size property name.
+//     * @param defaultSize  the default boot stack size property size.
+//     */
+//    @LogMessage(level = ERROR)
+//    @Message(id = 14, value = "Operation (%s) failed - address: (%s) -- due to insufficient stack space for the thread used to " +
+//            "execute operations. If this error is occurring during server boot, setting " +
+//            "system property %s to a value higher than [%d] may resolve this problem.")
+//    void operationFailedInsufficientStackSpace(@Cause Throwable cause, ModelNode op, ModelNode opAddress, String propertyName, int defaultSize);
 
     /**
      * Logs a warning message indicating a wildcard address was detected and will ignore other interface criteria.

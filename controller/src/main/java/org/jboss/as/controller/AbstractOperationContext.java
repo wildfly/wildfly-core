@@ -49,7 +49,6 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.IOException;
 import java.io.InputStream;
-import javax.security.auth.Subject;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.util.ArrayDeque;
@@ -70,6 +69,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.security.auth.Subject;
 
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
@@ -345,8 +346,20 @@ abstract class AbstractOperationContext implements OperationContext {
      * @return the result action
      */
     ResultAction executeOperation() {
+
+        assert isControllingThread();
         try {
-            return completeStepInternal();
+            /** Execution has begun */
+            executing = true;
+
+            processStages();
+
+            if (resultAction == ResultAction.KEEP) {
+                report(MessageSeverity.INFO, ControllerLogger.ROOT_LOGGER.operationSucceeded());
+            } else {
+                report(MessageSeverity.INFO, ControllerLogger.ROOT_LOGGER.operationRollingBack());
+            }
+            return resultAction;
         } finally {
             // On failure close any attached response streams
             if (resultAction != ResultAction.KEEP && !isBooting()) {
@@ -365,20 +378,6 @@ abstract class AbstractOperationContext implements OperationContext {
                     }
                 }
             }
-        }
-    }
-
-    private ResultAction completeStepInternal() {
-        try {
-            doCompleteStep();
-            if (resultAction == ResultAction.KEEP) {
-                report(MessageSeverity.INFO, ControllerLogger.ROOT_LOGGER.operationSucceeded());
-            } else {
-                report(MessageSeverity.INFO, ControllerLogger.ROOT_LOGGER.operationRollingBack());
-            }
-            return resultAction;
-        } finally {
-            respectInterruption = false;
         }
     }
 
@@ -456,6 +455,11 @@ abstract class AbstractOperationContext implements OperationContext {
      * @throws ConfigurationPersistenceException if there is a problem creating the persistence resource
      */
     abstract ConfigurationPersister.PersistenceResource createPersistenceResource() throws ConfigurationPersistenceException;
+
+    /**
+     * Notification that the operation is not going to proceed to normal completion.
+     */
+    abstract void operationRollingBack();
 
     /**
      * Release any locks held by the given step.
@@ -548,28 +552,12 @@ abstract class AbstractOperationContext implements OperationContext {
     abstract Resource getModel();
 
     /**
-     * Perform the work of completing a step.
+     * Perform the work of processing the various OperationContext.Stage queues, and then the DONE stage.
      */
-    private void doCompleteStep() {
-
-        assert isControllingThread();
-        // If someone called this when the operation is done, fail.
-        if (currentStage == null) {
-            throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
-        }
-
-        /** Execution has begun */
-        executing = true;
-
-        // If previous steps have put us in a state where we shouldn't do any more, just stop
-        if (!canContinueProcessing()) {
-            respectInterruption = false;
-            logAuditRecord();
-            return;
-        }
+    private void processStages() {
 
         // Locate the next step to execute.
-        ModelNode response = activeStep == null ? null : activeStep.response;
+        ModelNode primaryResponse = null;
         Step step;
         do {
             step = steps.get(currentStage).pollFirst();
@@ -583,10 +571,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 if (!stageCompleted(currentStage)) {
                     // Can't continue
                     resultAction = ResultAction.ROLLBACK;
-                    if (activeStep != null) { // won't be null; this is just a guard against later changes
-                        // kick off the result handler callbacks
-                        activeStep.finalizeStep(null);
-                    }
+                    executeResultHandlerPhase(null);
                     return;
                 }
                 // Proceed to the next stage
@@ -599,51 +584,40 @@ abstract class AbstractOperationContext implements OperationContext {
                             awaitServiceContainerStability();
                         } catch (InterruptedException e) {
                             cancelled = true;
-                            handleContainerStabilityFailure(response, e);
+                            handleContainerStabilityFailure(primaryResponse, e);
+                            executeResultHandlerPhase(null);
                             return;
                         }  catch (TimeoutException te) {
                             // The service container is in an unknown state; but we don't require restart
                             // because rollback may allow the container to stabilize. We force require-restart
                             // in the rollback handling if the container cannot stabilize (see OperationContextImpl.releaseStepLocks)
                             //processState.setRestartRequired();  // don't use our restartRequired() method as this is not reversible in rollback
-                            handleContainerStabilityFailure(response, te);
+                            handleContainerStabilityFailure(primaryResponse, te);
+                            executeResultHandlerPhase(null);
                             return;
                         }
                     }
                 }
             } else {
+                // The response to the first step is what goes to the outside caller
+                if (primaryResponse == null) {
+                    primaryResponse = step.response;
+                }
                 // Execute the step, but make sure we always finalize any steps
                 Throwable toThrow = null;
                 // Whether to return after try/finally
                 boolean exit = false;
                 try {
                     executeStep(step);
-                } catch (RuntimeException re) {
+                } catch (RuntimeException | Error re) {
+                    resultAction = ResultAction.ROLLBACK;
                     toThrow = re;
-                } catch (Error e) {
-                    toThrow = e;
                 } finally {
-                    if (step.resultHandler == null) {
-                        // A recursive step executed
-                        throwThrowable(toThrow);
+                    // See if executeStep put us in a state where we shouldn't do any more
+                    if (toThrow != null || !canContinueProcessing()) {
+                        // We're done.
+                        executeResultHandlerPhase(toThrow);
                         exit = true; // we're on the return path
-                    } else {
-                        // A non-recursive step executed
-                        // See if it put us in a state where we shouldn't do any
-                        // more
-                        if (!canContinueProcessing()) {
-                            // We're done. Do the cleanup that would happen in
-                            // executeStep's finally block
-                            // if this was a recursive step
-                            respectInterruption = false;
-                            logAuditRecord();
-                            step.finalizeStep(toThrow);
-                            exit = true; // we're on the return path
-                        } else {
-                            throwThrowable(toThrow);
-                            // else move on to next step
-                            response = activeStep.response;
-                        }
                     }
                 }
                 if (exit) {
@@ -652,58 +626,81 @@ abstract class AbstractOperationContext implements OperationContext {
             }
         } while (currentStage != Stage.DONE);
 
-        // All steps are completed without triggering rollback; time for final
-        // processing
+        assert primaryResponse != null; // else ModelControllerImpl executed an op with no steps
 
-        // Prepare persistence of any configuration changes
-        ConfigurationPersister.PersistenceResource persistenceResource = null;
-        if (isModelAffected() && resultAction != ResultAction.ROLLBACK) {
-            try {
-                persistenceResource = createPersistenceResource();
-            } catch (ConfigurationPersistenceException e) {
-                MGMT_OP_LOGGER.failedToPersistConfigurationChange(e);
-                if (response != null) {
-                    response.get(OUTCOME).set(FAILED);
-                    response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.failedToPersistConfigurationChange(e.getLocalizedMessage()));
+        // All steps ran and canContinueProcessing returned true for the last one, so...
+        executeDoneStage(primaryResponse);
+    }
+
+    private void executeDoneStage(ModelNode primaryResponse) {
+
+        // All steps are completed without triggering rollback;
+        // time for final processing
+
+        Throwable toThrow = null;
+        try {
+            // Prepare persistence of any configuration changes
+            ConfigurationPersister.PersistenceResource persistenceResource = null;
+            if (isModelAffected() && resultAction != ResultAction.ROLLBACK) {
+                try {
+                    persistenceResource = createPersistenceResource();
+                } catch (ConfigurationPersistenceException e) {
+                    MGMT_OP_LOGGER.failedToPersistConfigurationChange(e);
+                    primaryResponse.get(OUTCOME).set(FAILED);
+                    primaryResponse.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.failedToPersistConfigurationChange(e.getLocalizedMessage()));
+                    resultAction = ResultAction.ROLLBACK;
+                    executeResultHandlerPhase(null);
+                    return;
                 }
-                resultAction = ResultAction.ROLLBACK;
-                logAuditRecord();
-                return;
             }
-        }
 
-        // Allow any containing TransactionControl to vote
-        final AtomicReference<ResultAction> ref = new AtomicReference<ResultAction>(
-                transactionControl == null ? ResultAction.KEEP : ResultAction.ROLLBACK);
-        if (transactionControl != null) {
-            if (MGMT_OP_LOGGER.isTraceEnabled()) {
-                MGMT_OP_LOGGER.trace("Prepared response is " + response);
-            }
-            transactionControl.operationPrepared(new ModelController.OperationTransaction() {
-                public void commit() {
-                    ref.set(ResultAction.KEEP);
+            // Allow any containing TransactionControl to vote
+            final AtomicReference<ResultAction> ref = new AtomicReference<ResultAction>(
+                    transactionControl == null ? ResultAction.KEEP : ResultAction.ROLLBACK);
+            if (transactionControl != null) {
+                if (MGMT_OP_LOGGER.isTraceEnabled()) {
+                    MGMT_OP_LOGGER.trace("Prepared response is " + activeStep.response);
                 }
+                transactionControl.operationPrepared(new ModelController.OperationTransaction() {
+                    public void commit() {
+                        ref.set(ResultAction.KEEP);
+                    }
 
-                public void rollback() {
-                    ref.set(ResultAction.ROLLBACK);
-                }
-            }, response);
-        }
-        resultAction = ref.get();
-
-        // Commit the persistence of any configuration changes
-        if (persistenceResource != null) {
-            if (resultAction == ResultAction.ROLLBACK) {
-                persistenceResource.rollback();
-            } else {
-                persistenceResource.commit();
+                    public void rollback() {
+                        ref.set(ResultAction.ROLLBACK);
+                    }
+                }, primaryResponse);
             }
+            resultAction = ref.get();
+
+            // Commit the persistence of any configuration changes
+            if (persistenceResource != null) {
+                if (resultAction == ResultAction.ROLLBACK) {
+                    persistenceResource.rollback();
+                } else {
+                    persistenceResource.commit();
+                }
+            }
+        } catch (Throwable t) {
+            toThrow = t;
+            resultAction = ResultAction.ROLLBACK;
+        } finally {
+            executeResultHandlerPhase(toThrow);
         }
+    }
 
-        logAuditRecord();
-
-        // fire the notifications only after the eventual persistent resource is committed
-        emitNotifications();
+    private void executeResultHandlerPhase(Throwable toThrow) {
+        respectInterruption = false;
+        try {
+            logAuditRecord();
+            emitNotifications();
+        } finally {
+            if (resultAction != ResultAction.KEEP) {
+                operationRollingBack();
+            }
+            // Execute the result handlers
+            activeStep.finalizeStep(toThrow);
+        }
     }
 
     @Override
@@ -812,6 +809,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @SuppressWarnings("ConstantConditions")
     private void executeStep(final Step step) {
+
         step.predecessor = this.activeStep;
         this.activeStep = step;
 
@@ -820,10 +818,6 @@ abstract class AbstractOperationContext implements OperationContext {
                 ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(step.handler.getClass());
                 try {
                     step.handler.execute(this, step.operation);
-                    if (step.resultHandler == null) {
-                        // Add a default one
-                        completeStep(ResultHandler.NOOP_RESULT_HANDLER);
-                    }
                     // AS7-6046
                     if (isErrorLoggingNecessary() && step.hasFailed()) {
                         MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
@@ -838,70 +832,37 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
 
             } catch (Throwable t) {
-                // Special handling for OperationClientException marker
-                // interface
+                // If t doesn't implement OperationClientException marker interface, throw it on to outer catch block
                 if (!(t instanceof OperationClientException)) {
-                    logAuditRecord();
                     throw t;
-                } else if (currentStage != Stage.DONE) {
-                    // Handler threw OCE before calling completeStep(); that's
-                    // equivalent to
-                    // a request that we set the failure description and call
-                    // completeStep()
-                    final ModelNode failDesc = OperationClientException.class.cast(t).getFailureDescription();
-                    step.response.get(FAILURE_DESCRIPTION).set(failDesc);
-                    if (isErrorLoggingNecessary()) {
-                        MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
-                                step.response.get(FAILURE_DESCRIPTION));
-                    } else {
-                        // A client-side mistake post-boot that only affects model, not runtime, is logged at DEBUG
-                        MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
-                                step.response.get(FAILURE_DESCRIPTION));
-                    }
-
-                    completeStep(ResultHandler.NOOP_RESULT_HANDLER);
+                }
+                // Handler threw OCE; that's equivalent to a request that we set the failure description
+                final ModelNode failDesc = OperationClientException.class.cast(t).getFailureDescription();
+                step.response.get(FAILURE_DESCRIPTION).set(failDesc);
+                if (isErrorLoggingNecessary()) {
+                    MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
+                            step.response.get(FAILURE_DESCRIPTION));
                 } else {
-                    // Handler threw OCE after calling completeStep()
-                    // Throw it on and let standard error handling deal with it
-                    throw t;
+                    // A client-side mistake post-boot that only affects model, not runtime, is logged at DEBUG
+                    MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
+                            step.response.get(FAILURE_DESCRIPTION));
                 }
             }
         } catch (Throwable t) {
-            if (t instanceof StackOverflowError) {
-                // This can happen with an operation with many, many steps that use the recursive no-arg completeStep()
-                // variant. This should be rare now as handlers are largely migrated from this variant.
-                // But, log a special message for this case
-                MGMT_OP_LOGGER.operationFailedInsufficientStackSpace(t, step.operation.get(OP), step.operation.get(OP_ADDR),
-                        AbstractControllerService.BOOT_STACK_SIZE_PROPERTY, AbstractControllerService.DEFAULT_BOOT_STACK_SIZE);
-            } else {
-                MGMT_OP_LOGGER.operationFailed(t, step.operation.get(OP), step.operation.get(OP_ADDR));
+            // Handling for throwables that don't implement OperationClientException marker interface
+            MGMT_OP_LOGGER.operationFailed(t, step.operation.get(OP), step.operation.get(OP_ADDR));
+
+            // Provide a failure description if there isn't one already
+            if (!step.hasFailed()) {
+                step.response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationHandlerFailed(t.toString()));
             }
-            // If this block is entered, then the step failed
-            // The question is, did it fail before or after calling
-            // completeStep()?
-            if (currentStage != Stage.DONE) {
-                // It failed before, so consider the operation a failure.
-                if (!step.hasFailed()) {
-                    // If the failure is an OperationClientException we just want its localized message, no class name
-                    String cause = t instanceof OperationClientException ? t.getLocalizedMessage() : t.toString();
-                    if (cause == null) {
-                        cause = t.toString();
-                    }
-                    step.response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationHandlerFailed(cause));
-                }
-                step.response.get(OUTCOME).set(FAILED);
-                resultAction = getFailedResultAction(t);
-                if (resultAction == ResultAction.ROLLBACK) {
-                    step.response.get(ROLLED_BACK).set(true);
-                }
-            } else {
-                // It failed after! Just return, ignore the failure
-                report(MessageSeverity.WARN, ControllerLogger.ROOT_LOGGER.stepHandlerFailed(step.handler));
+            step.response.get(OUTCOME).set(FAILED);
+            resultAction = getFailedResultAction(t);
+            if (resultAction == ResultAction.ROLLBACK) {
+                step.response.get(ROLLED_BACK).set(true);
             }
         } finally {
             addBootFailureDescription();
-            // Make sure non-recursive steps finalize
-            finishStep(step);
         }
     }
 
@@ -924,45 +885,6 @@ abstract class AbstractOperationContext implements OperationContext {
         return isBooting() || currentStage == Stage.RUNTIME || currentStage == Stage.VERIFY;
     }
 
-    private void finishStep(Step step) {
-        boolean finalize = true;
-        Throwable toThrow = null;
-        try {
-            if (step.resultHandler != null) {
-                // A non-recursive step executed
-                if (!hasMoreSteps()) {
-                    // this step was the last registered step;
-                    // go ahead and shift back into recursive mode to wrap
-                    // things up
-                    completeStepInternal();
-                } else {
-                    // Let doCompleteStep carry on with subsequent steps.
-                    // If this step has failed in a way that will prevent
-                    // subsequent steps running,
-                    // and doCompleteStep will finalize this step.
-                    // Otherwise, some subsequent step will finalize this step
-                    finalize = false;
-                }
-            }
-        } catch (RuntimeException re) {
-            toThrow = re;
-        } catch (Error e) {
-            toThrow = e;
-        } finally {
-            if (finalize) {
-                // We're on the way out on the recursive call path. Finish off
-                // this step.
-                // Any throwable we caught will get rethrown by this call
-                step.finalizeStep(toThrow);
-            } else {
-                // non-recursive steps get finished off by the succeeding
-                // recursive step
-                // Throw on toThrow if it's not null; otherwise just return
-                throwThrowable(toThrow);
-            }
-        }
-    }
-
     private void handleContainerStabilityFailure(ModelNode response, Exception cause) {
         boolean interrupted = cause instanceof InterruptedException;
         assert interrupted || cause instanceof TimeoutException;
@@ -974,15 +896,9 @@ abstract class AbstractOperationContext implements OperationContext {
         }
         resultAction = ResultAction.ROLLBACK;
         respectInterruption = false;
-        logAuditRecord();
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
-        if (activeStep != null && activeStep.resultHandler != null) {
-            // Finalize
-            activeStep.finalizeStep(null);
-        }
-
     }
 
     private static void throwThrowable(Throwable toThrow) {
@@ -1225,6 +1141,10 @@ abstract class AbstractOperationContext implements OperationContext {
             // Create the outcome node early so it appears at the top of the
             // response
             response.get(OUTCOME);
+            // Initialize a default no-op result handler. This will get used in two cases:
+            // 1) execute completes normally, and OSH just didn't register a handler, meaning default behavior was wanted
+            // 2) execute throws an exception. Here we just want a handler to avoid NPEs later, but we don't want it to do anything
+            this.resultHandler = ResultHandler.NOOP_RESULT_HANDLER;
         }
 
         /**
@@ -1309,11 +1229,7 @@ abstract class AbstractOperationContext implements OperationContext {
         private void finalizeStep(Throwable toThrow) {
             try {
                 finalizeInternal();
-            } catch (RuntimeException t) {
-                if (toThrow == null) {
-                    toThrow = t;
-                }
-            } catch (Error t) {
+            } catch (RuntimeException | Error t) {
                 if (toThrow == null) {
                     toThrow = t;
                 }
@@ -1321,23 +1237,14 @@ abstract class AbstractOperationContext implements OperationContext {
 
             Step step = this.predecessor;
             while (step != null) {
-                if (step.resultHandler != null) {
-                    try {
-                        step.finalizeInternal();
-                    } catch (RuntimeException t) {
-                        if (toThrow == null) {
-                            toThrow = t;
-                        }
-                    } catch (Error t) {
-                        if (toThrow == null) {
-                            toThrow = t;
-                        }
+                try {
+                    step.finalizeInternal();
+                } catch (RuntimeException | Error t) {
+                    if (toThrow == null) {
+                        toThrow = t;
                     }
-                    step = step.predecessor;
-                } else {
-                    AbstractOperationContext.this.activeStep = step;
-                    break;
                 }
+                step = step.predecessor;
             }
 
             throwThrowable(toThrow);
@@ -1413,19 +1320,11 @@ abstract class AbstractOperationContext implements OperationContext {
         }
 
         private void invokeResultHandler() {
-            if (resultHandler != null) {
-                try {
-                    ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
-                    try {
-                        resultHandler.handleResult(resultAction, AbstractOperationContext.this, operation);
-                    } finally {
-                        WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
-                    }
-                } finally {
-                    // Clear the result handler so we never try and finalize
-                    // this step again
-                    resultHandler = null;
-                }
+            ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
+            try {
+                resultHandler.handleResult(resultAction, AbstractOperationContext.this, operation);
+            } finally {
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
         }
 

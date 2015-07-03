@@ -48,6 +48,16 @@ public class RuntimeCapabilityRegistration extends CapabilityRegistration<Runtim
     }
 
     /**
+     * Copy constructor.
+     *
+     * @param toCopy the registration to copy. Cannot be {@code null}
+     */
+    public RuntimeCapabilityRegistration(RuntimeCapabilityRegistration toCopy) {
+        super(toCopy.getCapability(), toCopy.getCapabilityContext());
+        this.registrationPoints.putAll(toCopy.registrationPoints);
+    }
+
+    /**
      * Gets the registration point that been associated with the registration for the longest period.
      * @return the initial registration point, or {@code null} if there are no longer any registration points
      */
