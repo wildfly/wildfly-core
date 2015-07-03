@@ -349,7 +349,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         }
 
         /**
-         * Adds the names of other capabilities that this capability requires.
+         * Adds the names of other capabilities that this capability requires. The requirement
+         * for these capabilities will automatically be registered when this capability is registered.
          *
          * @param requirements the capability names
          * @return the builder
@@ -367,7 +368,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          * Adds the names of other capabilities that this capability optionally requires.
          * @param requirements the capability names
          * @return the builder
+         *
+         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
          */
+        @Deprecated
         public Builder<T> addOptionalRequirements(String... requirements) {
             assert requirements != null;
             if (this.optionalRequirements == null) {
@@ -384,7 +388,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          *
          * @param requirements the capability names
          * @return the builder
+         *
+         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
          */
+        @Deprecated
         public Builder<T> addRuntimeOnlyRequirements(String... requirements) {
             assert requirements != null;
             if (this.runtimeOnlyRequirements == null) {
@@ -400,7 +407,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          *
          * @param requirements the capability names
          * @return the builder
+         *
+         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
          */
+        @Deprecated
         public Builder<T> addDynamicRequirements(String... requirements) {
             assert requirements != null;
             if (this.dynamicRequirements == null) {
@@ -416,7 +426,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          *
          * @param requirements the capability names
          * @return the builder
+         *
+         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
          */
+        @Deprecated
         public Builder<T> addDynamicOptionalRequirements(String... requirements) {
             assert requirements != null;
             if (this.dynamicOptionalRequirements == null) {

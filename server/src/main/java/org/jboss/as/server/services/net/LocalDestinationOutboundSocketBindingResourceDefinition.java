@@ -47,8 +47,7 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
     static final RuntimeCapability<Void> OUTBOUND_SOCKET_BINDING_CAPABILITY =
             RuntimeCapability.Builder.of(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME,
                     true, OutboundSocketBinding.class)
-                    .addDynamicRequirements(SOCKET_BINDING_CAPABILITY_NAME)
-                    .build(); // TODO require interface capability
+                    .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_REF, ModelType.STRING, false)
             .setAllowExpression(true)
