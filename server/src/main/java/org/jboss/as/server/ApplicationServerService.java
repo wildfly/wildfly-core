@@ -133,7 +133,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         }
         CurrentServiceContainer.setServiceContainer(context.getController().getServiceContainer());
 
-        final BootstrapListener bootstrapListener = new BootstrapListener(container, startTime, serviceTarget, futureContainer, prettyVersion);
+        final BootstrapListener bootstrapListener = new BootstrapListener(container, startTime, serviceTarget, futureContainer, prettyVersion, serverEnvironment.getServerTempDir());
         bootstrapListener.getStabilityMonitor().addController(myController);
         // Install either a local or remote content repository
         if(standalone) {
@@ -200,6 +200,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         CurrentServiceContainer.setServiceContainer(null);
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
+        BootstrapListener.deleteStartupMarker(configuration.getServerEnvironment().getServerTempDir());
     }
 
     @Override
