@@ -49,7 +49,7 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, true)
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, OUTBOUND_SOCKET_BINDING_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT, SOURCE_INTERFACE, FIXED_SOURCE_PORT, SOCKET_BINDING_REF};

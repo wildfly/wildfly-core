@@ -53,7 +53,7 @@ public class RemotingEndpointResource extends PersistentResourceDefinition {
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
             .setDefaultValue(new ModelNode("default"))
-            .setCapabilityReference(IO_WORKER_CAPABILITY, REMOTING_ENDPOINT_CAPABILITY.getName(), false)
+            .setCapabilityReference(IO_WORKER_CAPABILITY, REMOTING_ENDPOINT_CAPABILITY)
             .build();
 
 

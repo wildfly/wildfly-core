@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -96,8 +97,29 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
      * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
      * <p>
      * This method is a convenience method equivalent to calling
-     * {@link #setCapabilityReference(SimpleAttributeDefinition.CapabilityReferenceRecorder)}
-     * passing in a {@link org.jboss.as.controller.SimpleAttributeDefinition.DefaultCapabilityReferenceRecorder}
+     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
+     * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
+     * constructed using the parameters passed to this method.
+     *
+     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
+     *                             represented by the attribute's value
+     * @param dependentCapability the capability that depends on {@code referencedCapability}
+     * @return the builder
+     *
+     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
+     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+     */
+    public SimpleAttributeDefinitionBuilder setCapabilityReference(String referencedCapability, RuntimeCapability<?> dependentCapability) {
+        return setCapabilityReference(referencedCapability, dependentCapability.getName(), dependentCapability.isDynamicallyNamed());
+    }
+
+    /**
+     * Records that this attribute's value represents a reference to an instance of a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
+     * <p>
+     * This method is a convenience method equivalent to calling
+     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
+     * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
      * constructed using the parameters passed to this method.
      *
      * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
