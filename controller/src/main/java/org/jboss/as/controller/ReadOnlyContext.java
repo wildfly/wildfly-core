@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -420,6 +421,11 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
+        throw readOnlyContext();
+    }
+
+    @Override
+    public CapabilityServiceSupport getCapabilityServiceSupport() {
         throw readOnlyContext();
     }
 }

@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment;
 
 import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -44,10 +45,11 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ImmutableManagementResourceRegistration registration;
     private final ManagementResourceRegistration mutableRegistration;
     private Resource resource;
+    private final CapabilityServiceSupport capabilityServiceSupport;
     private final AbstractVaultReader vaultReader;
     private final PathManager pathManager;
 
-    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, final AbstractVaultReader vaultReader, PathManager pathManager) {
+    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, CapabilityServiceSupport capabilityServiceSupport, final AbstractVaultReader vaultReader, PathManager pathManager) {
         this.pathManager = pathManager;
         if (deploymentRoot == null) throw ServerLogger.ROOT_LOGGER.deploymentRootRequired();
         this.deploymentRoot = deploymentRoot;
@@ -56,6 +58,7 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
         this.registration = registration;
         this.mutableRegistration = mutableRegistration;
         this.resource = resource;
+        this.capabilityServiceSupport = capabilityServiceSupport;
         this.vaultReader = vaultReader;
     }
 
@@ -68,6 +71,7 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(DeploymentResourceSupport.MUTABLE_REGISTRATION_ATTACHMENT, mutableRegistration);
         deploymentUnit.putAttachment(DeploymentResourceSupport.DEPLOYMENT_RESOURCE, resource);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_RESOURCE_SUPPORT, new DeploymentResourceSupport(deploymentUnit));
+        deploymentUnit.putAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT, capabilityServiceSupport);
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, parent.getAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX));
         deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManager);
