@@ -48,7 +48,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, OUTBOUND_CONNECTION_CAPABILITY_NAME, true)
+            .setCapabilityReference(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, OUTBOUND_CONNECTION_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition USERNAME = new SimpleAttributeDefinitionBuilder(CommonAttributes.USERNAME, ModelType.STRING, true)
