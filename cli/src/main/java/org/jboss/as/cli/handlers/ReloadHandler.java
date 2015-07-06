@@ -160,20 +160,7 @@ public class ReloadHandler extends BaseOperationCommand {
             }
         }
 
-        // if I try to reconnect immediately, it'll hang for 5 sec
-        // which the default connection timeout for model controller client
-        // waiting half a sec on my machine works perfectly
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            throw new CommandLineException("Interrupted while pausing before reconnecting.", e);
-        }
-        try {
-            cliClient.ensureConnected(ctx.getConfig().getConnectionTimeout() + 1000);
-        } catch(CommandLineException e) {
-            ctx.disconnectController();
-            throw e;
-        }
+        ensureServerRebootComplete(ctx, client);
     }
 
     private void doHandleEmbedded(CommandContext ctx, ModelControllerClient client) throws CommandLineException {
@@ -190,6 +177,10 @@ public class ReloadHandler extends BaseOperationCommand {
             throw new CommandLineException("Failed to execute :reload", e);
         }
 
+        ensureServerRebootComplete(ctx, client);
+    }
+
+    private void ensureServerRebootComplete(CommandContext ctx, ModelControllerClient client) throws CommandLineException {
         final long start = System.currentTimeMillis();
         final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000;
         final ModelNode getStateOp = new ModelNode();
@@ -202,15 +193,13 @@ public class ReloadHandler extends BaseOperationCommand {
                 final ModelNode response = client.execute(getStateOp);
                 if (Util.isSuccess(response)) {
                     serverState = response.get(ClientConstants.RESULT).asString();
-                    if ("running".equals(serverState)) {
+                    if ("running".equals(serverState) || "restart-required".equals(serverState)) {
                         // we're reloaded and the server is started
                         break;
                     }
                 }
             } catch (IOException|IllegalStateException e) {
                 // ignore and try again
-                // IOException is because ModelControllerClient method sig includes it, although
-                // it should not happen with an embedded server
                 // IllegalStateException is because the embedded server ModelControllerClient will
                 // throw that when the server-state is "stopping"
             }
@@ -220,17 +209,8 @@ public class ReloadHandler extends BaseOperationCommand {
                     ctx.disconnectController();
                     throw new CommandLineException("Failed to establish connection in " + (System.currentTimeMillis() - start)
                             + "ms");
-                } // else we don't wait any longer for start to finish. This is roughly consistent with
-                  // non-embedded behavior, where the reload command returns as soon as a connection is
-                  // re-established, not waiting for the server to completely start. In the embedded case
-                  // if admin-only is not used, returning from reload may take a bit longer than it does
-                  // non-embedded, because we will wait ctx.getConfig().getConnectionTimeout() + 1000
-                  // (or 6000 ms by default) for *start* to complete, while non-embedded will only wait
-                  // to get a connection, which may happen faster. But in the standard admin-only usage
-                  // expected with embedded, a start should happen so fast that the behavior difference
-                  // is not noticeable.
-                  // Waiting for full start is preferable with embedded because if server logging is
-                  // displayed in the console, log messages during boot can interfere with the CLI prompt
+                }
+                // else we don't wait any longer for start to finish
             }
 
             try {
