@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
-
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -3004,7 +3003,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 303, value = "Resource %s is rejected on the target host, and will need to be ignored on the host")
     String rejectedResourceResourceTransformation(PathAddress address);
 
-    @Message(id = 304, value = "Resource %s is rejected on the target host and will need to be ignored on the host: %s")
+    @Message(id = 304, value = "Operation %2$s at %1s is rejected on the target host and will need to be ignored on the host")
     String rejectResourceOperationTransformation(PathAddress address, ModelNode operation);
 
     /**

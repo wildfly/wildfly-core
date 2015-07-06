@@ -55,4 +55,11 @@ public interface OperationTransformationOverrideBuilder extends BaseAttributeTra
      */
     OperationTransformationOverrideBuilder inheritResourceAttributeDefinitions();
 
+    /**
+     * Reject this operation
+     *
+     * @return this operation transformer builder
+     */
+    OperationTransformationOverrideBuilder setReject();
+
 }

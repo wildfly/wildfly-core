@@ -50,6 +50,8 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.resources.DomainResolver;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.process.ProcessInfo;
@@ -127,7 +129,7 @@ public class DomainServerLifecycleHandlers {
         SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(operationName,
                 DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
                 .setRuntimeOnly();
-        if(operationName.equals(SUSPEND_SERVERS_NAME)) {
+        if (operationName.equals(SUSPEND_SERVERS_NAME)) {
             builder.setParameters(TIMEOUT);
         }
         return builder.build();
@@ -154,13 +156,13 @@ public class DomainServerLifecycleHandlers {
             return address.getLastElement().getValue();
         }
 
-        Set<String> getServersForGroup(final ModelNode model, final String groupName){
+        Set<String> getServersForGroup(final ModelNode model, final String groupName) {
             if (groupName == null) {
                 return Collections.emptySet();
             }
             final String hostName = model.get(HOST).keys().iterator().next();
             final ModelNode serverConfig = model.get(HOST, hostName).get(SERVER_CONFIG);
-            if(! serverConfig.isDefined()) {
+            if (!serverConfig.isDefined()) {
                 return Collections.emptySet();
             }
             final Set<String> servers = new HashSet<String>();
@@ -194,14 +196,14 @@ public class DomainServerLifecycleHandlers {
                         final Set<String> waitForServers = new HashSet<String>();
                         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
                         for (String server : getServersForGroup(model, group)) {
-                            serverInventory.stopServer(server,  timeout > 0 ? timeout * 1000 : timeout);
+                            serverInventory.stopServer(server, timeout > 0 ? timeout * 1000 : timeout);
                             waitForServers.add(server);
                         }
                         if (blocking) {
                             serverInventory.awaitServersState(waitForServers, false);
                         }
                     } else {
-                        serverInventory.stopServers( timeout > 0 ? timeout * 1000 : timeout, blocking);
+                        serverInventory.stopServers(timeout > 0 ? timeout * 1000 : timeout, blocking);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
@@ -227,7 +229,7 @@ public class DomainServerLifecycleHandlers {
                     final ModelNode serverConfig = model.get(HOST, hostName).get(SERVER_CONFIG);
                     final Set<String> serversInGroup = getServersForGroup(model, group);
                     final Set<String> waitForServers = new HashSet<String>();
-                    if(serverConfig.isDefined()) {
+                    if (serverConfig.isDefined()) {
                         // Even though we don't read from the service registry, we are modifying a service
                         context.getServiceRegistry(true);
                         for (Property config : serverConfig.asPropertyList()) {
@@ -352,7 +354,7 @@ public class DomainServerLifecycleHandlers {
                         }
                     }
                     if (timeout != 0) {
-                        serverInventory.awaitServerSuspend(waitForServers, timeout > 0 ? timeout * 1000: timeout);
+                        serverInventory.awaitServerSuspend(waitForServers, timeout > 0 ? timeout * 1000 : timeout);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
@@ -389,6 +391,14 @@ public class DomainServerLifecycleHandlers {
                 }
             }, Stage.RUNTIME);
         }
+    }
+
+    public static void registerServerLifeCycleOperationsTransformers(ResourceTransformationDescriptionBuilder builder) {
+        builder.addOperationTransformationOverride(SUSPEND_SERVERS).setReject().end()
+                .discardOperations(RESUME_SERVERS) //If the legacy slave was not able to suspend a server, then nothing is suspended and the "resume" can be interpreted as having worked.
+                .addOperationTransformationOverride(STOP_SERVERS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, TIMEOUT)
+                .end();
     }
 
 }

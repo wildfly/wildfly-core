@@ -28,6 +28,7 @@ import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
+import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 
 /**
@@ -47,6 +48,7 @@ class ServerGroupTransformers {
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .end();
+        DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
 
         return chainedBuilder;

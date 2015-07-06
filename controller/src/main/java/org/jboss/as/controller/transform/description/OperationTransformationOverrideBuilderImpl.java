@@ -33,6 +33,9 @@ import java.util.Map;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.transform.OperationRejectionPolicy;
+import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.dmr.ModelNode;
@@ -57,6 +60,12 @@ class OperationTransformationOverrideBuilderImpl extends AttributeTransformation
     @Override
     public OperationTransformationOverrideBuilder inheritResourceAttributeDefinitions() {
         this.inherit = true;
+        return this;
+    }
+
+    @Override
+    public OperationTransformationOverrideBuilder setReject() {
+        this.discardPolicy = DiscardPolicy.REJECT_AND_WARN;
         return this;
     }
 
@@ -95,7 +104,19 @@ class OperationTransformationOverrideBuilderImpl extends AttributeTransformation
 
                 if(discardPolicy == DiscardPolicy.SILENT) {
                     return OperationTransformer.DISCARD.transformOperation(ctx, address, operation);
-                } // TODO handle other cases
+                } else if (discardPolicy == DiscardPolicy.REJECT_AND_WARN){
+                    return new TransformedOperation(operation, new OperationRejectionPolicy() {
+                        @Override
+                        public boolean rejectOperation(ModelNode preparedResult) {
+                            return true;
+                        }
+
+                        @Override
+                        public String getFailureDescription() {
+                            return ControllerLogger.ROOT_LOGGER.rejectResourceOperationTransformation(address, operation);
+                        }
+                    }, OperationResultTransformer.ORIGINAL_RESULT );
+                }
 
                 final Iterator<TransformationRule> iterator = Collections.<TransformationRule>emptyList().iterator();
                 final TransformationRule.ChainedOperationContext context = new TransformationRule.ChainedOperationContext(ctx) {
