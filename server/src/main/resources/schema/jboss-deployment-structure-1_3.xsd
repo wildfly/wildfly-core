@@ -79,8 +79,11 @@
             <xsd:element name="ear-exclusions-cascaded-to-subdeployments" type="xsd:boolean" minOccurs="0" maxOccurs="1">
                 <annotation xmlns="http://www.w3.org/2001/XMLSchema">
                     <documentation>
-                        Flag indicating whether .ear exclusions defined in the root deployment should be cascaded to
-                        sub-deployments.
+                        Flag indicating whether .ear module exclusions should be cascaded to sub-deployments.
+                        When this flag is set to true, module exclusions declared at the .ear level will be
+                        applied (casacaded) to each subdployment defined within the .ear.  This is useful in
+                        cases where an .ear has many subdeployments and it is desired to exclude a module
+                        dependency from every subdeployment within the .ear.
                     </documentation>
                 </annotation>
             </xsd:element>
