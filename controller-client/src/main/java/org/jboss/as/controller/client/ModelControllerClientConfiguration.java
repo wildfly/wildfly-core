@@ -31,8 +31,6 @@ import javax.security.auth.callback.CallbackHandler;
 import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -235,11 +233,11 @@ public interface ModelControllerClientConfiguration extends Closeable {
         private static final ThreadGroup defaultThreadGroup = new ThreadGroup("management-client-thread");
 
         static ExecutorService createDefaultExecutor() {
-            final ThreadFactory threadFactory = new JBossThreadFactory(defaultThreadGroup, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null, doPrivileged(new PrivilegedAction<AccessControlContext>() {
-                public AccessControlContext run() {
-                    return AccessController.getContext();
+            final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+                public JBossThreadFactory run() {
+                    return new JBossThreadFactory(defaultThreadGroup, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
                 }
-            }));
+            });
             return new ThreadPoolExecutor(2, getSystemProperty("org.jboss.as.controller.client.max-threads", 6), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
         }
 

@@ -29,6 +29,7 @@ import java.io.DataOutput;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -64,7 +65,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.xnio.IoUtils;
 /**
  *
@@ -101,7 +101,11 @@ public class ModelControllerClientTestCase {
 
                 private ExecutorService getClientRequestExecutor() {
                     final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(512);
-                    final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+                    final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
+                        public ThreadFactory run() {
+                            return new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null);
+                        }
+                    });
                     ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4,
                             250L, TimeUnit.MILLISECONDS, workQueue,
                             threadFactory);

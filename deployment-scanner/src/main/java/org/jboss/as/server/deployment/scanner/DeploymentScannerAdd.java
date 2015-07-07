@@ -37,6 +37,7 @@ import static org.jboss.as.server.deployment.scanner.DeploymentScannerDefinition
 
 import java.io.File;
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +65,6 @@ import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Operation adding a new {@link DeploymentScannerService}.
@@ -209,7 +209,11 @@ class DeploymentScannerAdd implements OperationStepHandler {
     }
 
     static ScheduledExecutorService createScannerExecutorService() {
-        final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("DeploymentScanner-threads"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+        final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
+            public ThreadFactory run() {
+                return new JBossThreadFactory(new ThreadGroup("DeploymentScanner-threads"), Boolean.FALSE, null, "%G - %t", null, null);
+            }
+        });
         return Executors.newScheduledThreadPool(2, threadFactory);
     }
 

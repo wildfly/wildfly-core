@@ -22,8 +22,8 @@
 
 package org.jboss.as.threads;
 
+import java.security.PrivilegedAction;
 import java.util.concurrent.ThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -67,7 +67,11 @@ public final class ThreadFactoryService implements Service<ThreadFactory> {
 
     public synchronized void start(final StartContext context) throws StartException {
         final ThreadGroup threadGroup = new ThreadGroup(threadGroupName);
-        value = new JBossThreadFactory(threadGroup, Boolean.FALSE, priority, namePattern, null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+        value = doPrivileged(new PrivilegedAction<ThreadFactory>() {
+            public ThreadFactory run() {
+                return new JBossThreadFactory(threadGroup, Boolean.FALSE, priority, namePattern, null, null);
+            }
+        });
     }
 
     public synchronized void stop(final StopContext context) {
