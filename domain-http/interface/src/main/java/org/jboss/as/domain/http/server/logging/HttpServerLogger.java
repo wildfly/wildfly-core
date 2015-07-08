@@ -53,11 +53,11 @@ public interface HttpServerLogger extends BasicLogger {
 
     @LogMessage(level = ERROR)
     @Message(id = 3, value = "Unable to load console module for slot %s, disabling console")
-    void consoleModuleNotFound(String slot);
+    void consoleModuleNotFound(String slot, @Cause Throwable cause);
 
     @LogMessage(level = ERROR)
     @Message(id = 4, value = "Unable to load error context for slot %s, disabling error context.")
-    void errorContextModuleNotFound(String slot);
+    void errorContextModuleNotFound(String slot, @Cause Throwable cause);
 
     @Message(id = 5, value = "Invalid operation '%s'")
     IllegalArgumentException invalidOperation(@Cause Throwable cause, String value);

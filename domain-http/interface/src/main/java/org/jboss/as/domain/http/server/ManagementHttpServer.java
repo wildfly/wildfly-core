@@ -239,13 +239,13 @@ public class ManagementHttpServer {
         try {
             consoleHandler = consoleMode.createConsoleHandler(consoleSlot);
         } catch (ModuleLoadException e) {
-            ROOT_LOGGER.consoleModuleNotFound(consoleSlot == null ? "main" : consoleSlot);
+            ROOT_LOGGER.consoleModuleNotFound(consoleSlot == null ? "main" : consoleSlot, e);
         }
 
         try {
             pathHandler.addPrefixPath(ErrorContextHandler.ERROR_CONTEXT, ErrorContextHandler.createErrorContext(consoleSlot));
         } catch (ModuleLoadException e) {
-            ROOT_LOGGER.errorContextModuleNotFound(consoleSlot == null ? "main" : consoleSlot);
+            ROOT_LOGGER.errorContextModuleNotFound(consoleSlot == null ? "main" : consoleSlot, e);
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
