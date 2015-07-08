@@ -39,6 +39,7 @@ class ParseResult {
     private final DeploymentUnit deploymentUnit;
 
     private Boolean earSubDeploymentsIsolated = null;
+    private Boolean earExclusionsCascadedToSubDeployments = null;
     private ModuleStructureSpec rootDeploymentSpecification;
     private final Map<String, ModuleStructureSpec> subDeploymentSpecifications = new HashMap<String, ModuleStructureSpec>();
     private final List<ModuleStructureSpec> additionalModules = new ArrayList<ModuleStructureSpec>();
@@ -54,6 +55,10 @@ class ParseResult {
 
     public void setRootDeploymentSpecification(final ModuleStructureSpec rootDeploymentSpecification) {
         this.rootDeploymentSpecification = rootDeploymentSpecification;
+    }
+
+    public void setEarExclusionsCascadedToSubDeployments(Boolean earExclusionsCascadedToSubDeployments) {
+        this.earExclusionsCascadedToSubDeployments = earExclusionsCascadedToSubDeployments;
     }
 
     public ModuleLoader getModuleLoader() {
@@ -78,5 +83,9 @@ class ParseResult {
 
     public List<ModuleStructureSpec> getAdditionalModules() {
         return additionalModules;
+    }
+
+    public Boolean getEarExclusionsCascadedToSubDeployments() {
+        return earExclusionsCascadedToSubDeployments;
     }
 }

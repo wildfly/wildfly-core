@@ -93,12 +93,14 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         DeployerChainAddHandler.addDeploymentProcessor(ServerService.SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_0, new JBossAllXmlParserRegisteringProcessor<ParseResult>(ROOT_1_0, RESULT_ATTACHMENT_KEY, JBossDeploymentStructureParser10.JBOSS_ALL_XML_PARSER));
         DeployerChainAddHandler.addDeploymentProcessor(ServerService.SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_1, new JBossAllXmlParserRegisteringProcessor<ParseResult>(ROOT_1_1, RESULT_ATTACHMENT_KEY, JBossDeploymentStructureParser11.JBOSS_ALL_XML_PARSER));
         DeployerChainAddHandler.addDeploymentProcessor(ServerService.SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_2, new JBossAllXmlParserRegisteringProcessor<ParseResult>(ROOT_1_2, RESULT_ATTACHMENT_KEY, JBossDeploymentStructureParser12.JBOSS_ALL_XML_PARSER));
+        DeployerChainAddHandler.addDeploymentProcessor(ServerService.SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_3, new JBossAllXmlParserRegisteringProcessor<ParseResult>(ROOT_1_3, RESULT_ATTACHMENT_KEY, JBossDeploymentStructureParser13.JBOSS_ALL_XML_PARSER));
     }
 
 
     private static final QName ROOT_1_0 = new QName(JBossDeploymentStructureParser10.NAMESPACE_1_0, "jboss-deployment-structure");
     private static final QName ROOT_1_1 = new QName(JBossDeploymentStructureParser11.NAMESPACE_1_1, "jboss-deployment-structure");
     private static final QName ROOT_1_2 = new QName(JBossDeploymentStructureParser12.NAMESPACE_1_2, "jboss-deployment-structure");
+    private static final QName ROOT_1_3 = new QName(JBossDeploymentStructureParser13.NAMESPACE_1_3, "jboss-deployment-structure");
     private static final QName ROOT_NO_NAMESPACE = new QName("jboss-deployment-structure");
 
 
@@ -113,7 +115,8 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         mapper.registerRootElement(ROOT_1_0, JBossDeploymentStructureParser10.INSTANCE);
         mapper.registerRootElement(ROOT_1_1, JBossDeploymentStructureParser11.INSTANCE);
         mapper.registerRootElement(ROOT_1_2, JBossDeploymentStructureParser12.INSTANCE);
-        mapper.registerRootElement(ROOT_NO_NAMESPACE, JBossDeploymentStructureParser12.INSTANCE);
+        mapper.registerRootElement(ROOT_1_3, JBossDeploymentStructureParser13.INSTANCE);
+        mapper.registerRootElement(ROOT_NO_NAMESPACE, JBossDeploymentStructureParser13.INSTANCE);
     }
 
     @Override
@@ -162,6 +165,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 // set the ear subdeployment isolation value overridden via the jboss-deployment-structure.xml
                 moduleSpec.setSubDeploymentModulesIsolated(result.getEarSubDeploymentsIsolated());
             }
+            if(result.getEarExclusionsCascadedToSubDeployments() != null) {
+                // set the ear cascade exclusions to sub-deployments flag as configured in jboss-deployment-structure.xml
+                moduleSpec.setExclusionsCascadedToSubDeployments(result.getEarExclusionsCascadedToSubDeployments());
+            }
             // handle the the root deployment
             final ModuleStructureSpec rootDeploymentSpecification = result.getRootDeploymentSpecification();
             if (rootDeploymentSpecification != null) {
@@ -184,6 +191,13 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 }
                 final ResourceRoot subDeployment = subDeploymentMap.get(path);
                 subDeployment.putAttachment(SUB_DEPLOYMENT_STRUCTURE, spec);
+
+                // cascade the exclusions if configured
+                if(moduleSpec.isExclusionsCascadedToSubDeployments() && rootDeploymentSpecification != null) {
+                    for(ModuleIdentifier exclusion : rootDeploymentSpecification.getExclusions()) {
+                        spec.getExclusions().add(exclusion);
+                    }
+                }
             }
 
             // handle additional modules
