@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment.module;
 
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.server.logging.ServerLogger;
@@ -34,7 +35,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFSUtils;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -49,7 +49,11 @@ public class TempFileProviderService implements Service<TempFileProvider> {
     private static final TempFileProvider PROVIDER;
     static {
        try {
-           final JBossThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("TempFileProviderService-temp-threads"), true, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+           final JBossThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+               public JBossThreadFactory run() {
+                   return new JBossThreadFactory(new ThreadGroup("TempFileProviderService-temp-threads"), Boolean.TRUE, null, "%G - %t", null, null);
+               }
+           });
            PROVIDER = TempFileProvider.create("deployment", Executors.newScheduledThreadPool(0, threadFactory), true);
        }
        catch (final IOException ioe) {

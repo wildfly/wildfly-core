@@ -25,6 +25,7 @@ package org.jboss.as.host.controller.mgmt;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.File;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -44,7 +45,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Channel;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Operation handler responsible for requests coming in from server processes on the host controller.
@@ -65,7 +65,11 @@ public class ServerToHostOperationHandlerFactoryService implements ManagementCha
     private final ExpressionResolver expressionResolver;
     private final File tempDir;
 
-    private final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("server-registration-threads"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+    private final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+        public JBossThreadFactory run() {
+            return new JBossThreadFactory(new ThreadGroup("server-registration-threads"), Boolean.FALSE, null, "%G - %t", null, null);
+        }
+    });
     private volatile ExecutorService registrations;
 
     ServerToHostOperationHandlerFactoryService(ExecutorService executorService, ServerToHostProtocolHandler.OperationExecutor operationExecutor, DomainController domainController, ExpressionResolver expressionResolver, File tempDir) {
