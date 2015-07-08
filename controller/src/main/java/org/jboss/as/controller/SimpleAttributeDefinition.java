@@ -280,6 +280,11 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
         }
     }
 
+    @Override
+    public boolean hasCapabilityRequirements() {
+        return requirementRecorder!=null;
+    }
+
     static ModelNode parse(AttributeDefinition attribute, ParameterValidator validator, final String value) throws OperationFailedException  {
         ModelNode node = ParseUtils.parseAttributeValue(value, attribute.isAllowExpression(), attribute.getType());
         validator.validateParameter(attribute.getXmlName(), node);

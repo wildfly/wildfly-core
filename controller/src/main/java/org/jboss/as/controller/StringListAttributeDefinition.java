@@ -89,6 +89,11 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         }
     }
 
+    @Override
+    public boolean hasCapabilityRequirements() {
+        return referenceRecorder != null;
+    }
+
     public static class Builder extends ListAttributeDefinition.Builder<Builder, StringListAttributeDefinition> {
 
         private CapabilityReferenceRecorder referenceRecorder;
