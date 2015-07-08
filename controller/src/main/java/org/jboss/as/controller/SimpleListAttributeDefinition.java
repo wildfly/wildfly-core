@@ -91,6 +91,11 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     }
 
     @Override
+    public boolean hasCapabilityRequirements() {
+        return valueType.hasCapabilityRequirements();
+    }
+
+    @Override
     protected void addValueTypeDescription(final ModelNode node, final ResourceBundle bundle) {
         addValueTypeDescription(node);
     }

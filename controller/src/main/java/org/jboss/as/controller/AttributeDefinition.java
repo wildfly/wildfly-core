@@ -30,7 +30,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -875,6 +874,19 @@ public abstract class AttributeDefinition {
      */
     public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
         // no-op
+    }
+
+    /**
+     * Based on the given attribute value, tell if attribute has any capability requirements.
+     * If this definition is for an attribute whose value is or contains a reference to the name of some capability,
+     * this method will return true otherwise false.
+     * <p>
+     * This is a no-op in this base class. Subclasses that support attribute types that can represent
+     * capability references should override this method.
+     * @return
+     */
+    public boolean hasCapabilityRequirements(){
+        return false;
     }
 
     /**

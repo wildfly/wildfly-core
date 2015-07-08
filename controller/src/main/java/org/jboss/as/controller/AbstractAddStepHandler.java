@@ -276,7 +276,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
         }
         ModelNode model = resource.getModel();
         for (AttributeDefinition ad : attributes) {
-            if (model.hasDefined(ad.getName())) {
+            if (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements()) {
                 ad.addCapabilityRequirements(context, model.get(ad.getName()));
             }
         }
