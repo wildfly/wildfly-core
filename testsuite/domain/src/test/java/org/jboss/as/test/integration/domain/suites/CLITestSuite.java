@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import org.jboss.as.test.integration.domain.management.cli.BasicOpsTestCase;
+import org.jboss.as.test.integration.domain.management.cli.CloneProfileTestCase;
 import org.jboss.as.test.integration.domain.management.cli.UndeployWildcardDomainTestCase;
 import org.jboss.as.test.integration.domain.management.cli.WildCardReadsTestCase;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -45,7 +46,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     BasicOpsTestCase.class,
     UndeployWildcardDomainTestCase.class,
-    WildCardReadsTestCase.class
+    WildCardReadsTestCase.class,
+    CloneProfileTestCase.class
 })
 public class CLITestSuite {
 
