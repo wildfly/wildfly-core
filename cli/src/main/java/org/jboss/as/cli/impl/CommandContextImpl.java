@@ -264,6 +264,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private InputStream stdIn = Settings.getInstance().getInputStream();
     private boolean uninstallIO;
 
+    private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
+
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -576,15 +579,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      * own definition for GSSAPI.
      */
     private void initJaasConfig() {
-        Configuration coreConfig = null;
+        // create the wrapper only once to avoid memory leak
+        if (jaasConfigurationWrapper == null) {
+            Configuration coreConfig = null;
 
-        try {
-            coreConfig = SecurityActions.getGlobalJaasConfiguration();
-        } catch (SecurityException e) {
-            log.debug("Unable to obtain default configuration", e);
+            try {
+                coreConfig = SecurityActions.getGlobalJaasConfiguration();
+            } catch (SecurityException e) {
+                log.debug("Unable to obtain default configuration", e);
+            }
+
+            jaasConfigurationWrapper = new JaasConfigurationWrapper(coreConfig);
+            SecurityActions.setGlobalJaasConfiguration(jaasConfigurationWrapper);
         }
-
-        SecurityActions.setGlobalJaasConfiguration(new JaasConfigurationWrapper(coreConfig));
     }
 
     @Override
