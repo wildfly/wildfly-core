@@ -22,11 +22,9 @@
 
 package org.jboss.as.test.integration.logging.profiles;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -282,6 +280,24 @@ public class LoggingProfilesTestCase extends AbstractLoggingTestCase {
         }
     }
 
+    @Test
+    public void testDeploymentConfigurationResource() throws Exception {
+        try {
+            deploy(RUNTIME_NAME1, PROFILE1);
+            // Get the resulting model
+            final ModelNode loggingConfiguration = readDeploymentResource(RUNTIME_NAME1, "profile-" + PROFILE1);
+
+            Assert.assertTrue("No logging subsystem resource found on the deployment", loggingConfiguration.isDefined());
+
+            // Check the handler exists on the configuration
+            final ModelNode handler = loggingConfiguration.get("handler", "DUMMY1");
+            Assert.assertTrue("The DUMMY1 handler was not found effective configuration", handler.isDefined());
+            Assert.assertEquals("The level should be FATAL", "FATAL", handler.get("level").asString());
+        } finally {
+            undeploy(RUNTIME_NAME1);
+        }
+    }
+
     private static void deploy(final String name, final String profileName) throws ServerDeploymentException {
         deploy(name, profileName, true);
     }
@@ -294,21 +310,5 @@ public class LoggingProfilesTestCase extends AbstractLoggingTestCase {
         }
         archive.addAsResource(new StringAsset("Dependencies: io.undertow.core\nLogging-Profile: " + profileName), "META-INF/MANIFEST.MF");
         deploy(archive, name);
-    }
-
-    private static void undeploy(final String... deployments) throws Exception {
-        // Safely undeploy each deployment only logging deployment errors and throwing and exception at the end
-        boolean error = false;
-        final StringWriter stringWriter = new StringWriter();
-        final PrintWriter writer = new PrintWriter(stringWriter);
-        for (String name : deployments) {
-            try {
-                undeploy(name);
-            } catch (Exception e) {
-                error = true;
-                e.printStackTrace(writer);
-            }
-        }
-        Assert.assertFalse(stringWriter.toString(), error);
     }
 }

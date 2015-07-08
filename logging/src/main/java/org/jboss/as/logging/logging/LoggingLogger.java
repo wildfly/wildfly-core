@@ -32,6 +32,7 @@ import java.util.EnumSet;
 import java.util.logging.Handler;
 
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.Target;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -897,4 +898,14 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 85, value = "Resources of type %s cannot be removed")
     UnsupportedOperationException cannotRemoveResourceOfType(String childType);
+
+    /**
+     * Creates an exception indicating the deployment name was not found on the address.
+     *
+     * @param address the invalid address
+     *
+     * @return an {@link IllegalArgumentException} for the error
+     */
+    @Message(id = 86, value = "Could not determine deployment name from the address %s.")
+    IllegalArgumentException deploymentNameNotFound(PathAddress address);
 }

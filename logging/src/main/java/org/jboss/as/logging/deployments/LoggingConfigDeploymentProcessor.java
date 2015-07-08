@@ -90,6 +90,8 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                 LoggingLogger.ROOT_LOGGER.perLoggingDeploymentIgnored(PER_DEPLOYMENT_LOGGING, attributeName, deploymentUnit.getName());
             }
         }
+        LoggingConfigurationService loggingConfigurationService = null;
+
         // Check that per-deployment logging is not turned off
         if (process) {
             LoggingLogger.ROOT_LOGGER.trace("Scanning for logging configuration files.");
@@ -106,24 +108,32 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                 } else {
                     logContext = LogContext.create();
                 }
+
+                boolean processSubdeployments = true;
                 // Configure the deployments logging based on the top-level configuration file
-                if (configure(configFile, module.getClassLoader(), logContext)) {
+                loggingConfigurationService = configure(root, configFile, module.getClassLoader(), logContext);
+                if (loggingConfigurationService != null) {
                     registerLogContext(deploymentUnit, module, logContext);
                 } else {
-                    // Exit processing if the configuration was not successful, failures should already be logged
-                    return;
+                    processSubdeployments = false;
                 }
 
-                // Process the sub-deployments
-                for (DeploymentUnit subDeployment : subDeployments) {
-                    if (subDeployment.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
-                        processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
-                    }
-                    // No configuration file found, use the top-level configuration
-                    if (subDeployment.hasAttachment(Attachments.MODULE) && !hasRegisteredLogContext(subDeployment)) {
-                        final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
-                        if (subDeploymentModule != null) {
-                            registerLogContext(subDeployment, subDeploymentModule, logContext);
+                if (processSubdeployments) {
+                    // Process the sub-deployments
+                    for (DeploymentUnit subDeployment : subDeployments) {
+                        if (subDeployment.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
+                            processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
+                        }
+                        // No configuration file found, use the top-level configuration
+                        if (subDeployment.hasAttachment(Attachments.MODULE) && !hasRegisteredLogContext(subDeployment)) {
+                            final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
+                            if (subDeploymentModule != null) {
+                                registerLogContext(subDeployment, subDeploymentModule, logContext);
+                            }
+                        }
+                        // Add the parent's logging service if it should be inherited
+                        if (!subDeployment.hasAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY)) {
+                            subDeployment.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
                         }
                     }
                 }
@@ -135,6 +145,11 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                     }
                 }
             }
+        }
+        // Add the configuration service
+        if (loggingConfigurationService != null) {
+            // Add the service to the deployment unit
+            deploymentUnit.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
         }
     }
 
@@ -204,8 +219,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
      *
      * @throws DeploymentUnitProcessingException if the configuration fails
      */
-    private boolean configure(final VirtualFile configFile, final ClassLoader classLoader, final LogContext logContext) throws DeploymentUnitProcessingException {
-        boolean result = false;
+    private LoggingConfigurationService configure(final ResourceRoot root, final VirtualFile configFile, final ClassLoader classLoader, final LogContext logContext) throws DeploymentUnitProcessingException {
         InputStream configStream = null;
         try {
             LoggingLogger.ROOT_LOGGER.debugf("Found logging configuration file: %s", configFile);
@@ -231,8 +245,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                     logContextSelector.getAndSet(CONTEXT_LOCK, old);
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
                 }
-                // Successfully configured
-                result = true;
+                return new LoggingConfigurationService(null, resolveRelativePath(root, configFile));
             } else {
                 // Create a properties file
                 final Properties properties = new Properties();
@@ -244,8 +257,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                     // Load non-log4j types
                     final PropertyConfigurator propertyConfigurator = new PropertyConfigurator(logContext);
                     propertyConfigurator.configure(properties);
-                    // Successfully configured
-                    result = true;
+                    return new LoggingConfigurationService(propertyConfigurator.getLogContextConfiguration(), resolveRelativePath(root, configFile));
                 }
             }
         } catch (Exception e) {
@@ -253,7 +265,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
         } finally {
             safeClose(configStream);
         }
-        return result;
+        return null;
     }
 
     private static boolean isLog4jConfiguration(final String fileName) {
@@ -280,6 +292,16 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
         }
         // Assume it's okay
         return false;
+    }
+
+    private static String resolveRelativePath(final ResourceRoot root, final VirtualFile configFile) {
+        // Get the parent of the root resource so the deployment name will be included in the path
+        final VirtualFile deployment = root.getRoot().getParent();
+        if (deployment != null) {
+            return configFile.getPathNameRelativeTo(deployment);
+        }
+        // This shouldn't be reached, but a fallback is always safe
+        return configFile.getPathNameRelativeTo(root.getRoot());
     }
 
     private static class ConfigFilter implements VirtualFileFilter {

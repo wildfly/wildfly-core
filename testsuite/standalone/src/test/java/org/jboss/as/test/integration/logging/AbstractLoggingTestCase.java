@@ -22,6 +22,7 @@
 
 package org.jboss.as.test.integration.logging;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -30,9 +31,13 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import javax.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -43,6 +48,7 @@ import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -165,13 +171,28 @@ public abstract class AbstractLoggingTestCase {
     /**
      * Undeploys the application from the running server.
      *
-     * @param runtimeName the runtime name
+     * @param runtimeNames the runtime names
      *
      * @throws ServerDeploymentException if an error occurs undeploying the application
      */
-    public static void undeploy(final String runtimeName) throws ServerDeploymentException {
+    public static void undeploy(final String... runtimeNames) throws ServerDeploymentException {
         final ServerDeploymentHelper helper = new ServerDeploymentHelper(client.getControllerClient());
-        helper.undeploy(runtimeName);
+        final Collection<Throwable> errors = new ArrayList<>();
+        for (String runtimeName : runtimeNames) {
+            try {
+                final ModelNode op = Operations.createReadResourceOperation(Operations.createAddress("deployment", runtimeName));
+                final ModelNode result = client.getControllerClient().execute(op);
+                if (Operations.isSuccessfulOutcome(result))
+                    helper.undeploy(runtimeName);
+            } catch (Exception e) {
+                errors.add(e);
+            }
+        }
+        if (!errors.isEmpty()) {
+            final RuntimeException e = new RuntimeException("Error undeploying: " + Arrays.asList(runtimeNames));
+            errors.forEach(e::addSuppressed);
+            throw e;
+        }
     }
 
     public static ModelNode createAddress(final String resourceKey, final String resourceName) {
@@ -267,5 +288,47 @@ public abstract class AbstractLoggingTestCase {
      */
     public static int getResponse(final URL url) throws IOException {
         return ((HttpURLConnection) url.openConnection()).getResponseCode();
+    }
+
+    /**
+     * Reads the deployment resource.
+     *
+     * @param deploymentName the name of the deployment
+     *
+     * @return the model for the deployment
+     *
+     * @throws IOException if an error occurs connecting to the server
+     */
+    public static ModelNode readDeploymentResource(final String deploymentName) throws IOException {
+        // Don't guess on the address, just parse it as it comes back
+        final ModelNode address = Operations.createAddress("deployment", deploymentName, "subsystem", "logging", "configuration", "*");
+        final ModelNode op = Operations.createReadResourceOperation(address);
+        op.get("include-runtime").set(true);
+        final ModelNode result = executeOperation(op);
+        // Get the resulting model
+        final List<ModelNode> loggingConfigurations = Operations.readResult(result).asList();
+        Assert.assertEquals("There should only be one logging configuration defined", 1, loggingConfigurations.size());
+        final LinkedList<Property> resultAddress = new LinkedList<>(Operations.getOperationAddress(loggingConfigurations.get(0)).asPropertyList());
+        return readDeploymentResource(deploymentName, resultAddress.getLast().getValue().asString());
+    }
+
+    /**
+     * Reads the deployment resource.
+     *
+     * @param deploymentName    the name of the deployment
+     * @param configurationName the name of the configuration for the address
+     *
+     * @return the model for the deployment
+     *
+     * @throws IOException if an error occurs connecting to the server
+     */
+    public static ModelNode readDeploymentResource(final String deploymentName, final String configurationName) throws IOException {
+        ModelNode address = Operations.createAddress("deployment", deploymentName, "subsystem", "logging", "configuration", configurationName);
+        ModelNode op = Operations.createReadResourceOperation(address, true);
+        op.get("include-runtime").set(true);
+        final ModelNode result = Operations.readResult(executeOperation(op));
+        // Add the address on the result as the tests might need it
+        result.get(ModelDescriptionConstants.OP_ADDR).set(address);
+        return result;
     }
 }

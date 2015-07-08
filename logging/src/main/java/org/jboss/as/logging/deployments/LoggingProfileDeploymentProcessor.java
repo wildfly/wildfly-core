@@ -27,6 +27,7 @@ import java.util.jar.Manifest;
 
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.LoggingProfileContextSelector;
+import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -50,6 +51,7 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
 
     @Override
     protected void processDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ResourceRoot root) throws DeploymentUnitProcessingException {
+        LoggingConfigurationService loggingConfigurationService = null;
         final List<DeploymentUnit> subDeployments = getSubDeployments(deploymentUnit);
         final String loggingProfile = findLoggingProfile(root);
         if (loggingProfile != null) {
@@ -61,6 +63,7 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
                 final LogContext logContext = loggingProfileContext.get(loggingProfile);
                 LoggingLogger.ROOT_LOGGER.tracef("Registering log context '%s' on '%s' for profile '%s'", logContext, root, loggingProfile);
                 registerLogContext(deploymentUnit, module, logContext);
+                loggingConfigurationService = new LoggingConfigurationService(ConfigurationPersistence.getConfigurationPersistence(logContext), "profile-" + loggingProfile);
                 // Process sub-deployments
                 for (DeploymentUnit subDeployment : subDeployments) {
                     // A sub-deployment must have a module to process
@@ -73,6 +76,10 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
                             final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
                             LoggingLogger.ROOT_LOGGER.tracef("Registering log context '%s' on '%s' for profile '%s'", logContext, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT), loggingProfile);
                             registerLogContext(subDeployment, subDeploymentModule, logContext);
+                        }
+                        // Add the parents service to the sub-deployment if the sub-deployment did not define it's own log context
+                        if (!subDeployment.hasAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY)) {
+                            subDeployment.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
                         }
                     }
                 }
@@ -87,6 +94,10 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
                     processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
                 }
             }
+        }
+        // Add the service to the deployment unit
+        if (loggingConfigurationService != null) {
+            deploymentUnit.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
         }
     }
 

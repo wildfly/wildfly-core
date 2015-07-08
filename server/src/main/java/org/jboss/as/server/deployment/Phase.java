@@ -573,6 +573,7 @@ public enum Phase {
     public static final int INSTALL_WAB_SERVLETCONTEXT_SERVICE          = 0x2050;
     public static final int INSTALL_PERSISTENCE_SERVICES                = 0x2060;
     public static final int INSTALL_BATCH_RESOURCES                     = 0x2070;
+    public static final int INSTALL_LOGGING_DEPLOYMENT_RESOURCES        = 0x207a;
     public static final int INSTALL_DEPLOYMENT_COMPLETE_SERVICE         = 0x2100;
 
     // CLEANUP
