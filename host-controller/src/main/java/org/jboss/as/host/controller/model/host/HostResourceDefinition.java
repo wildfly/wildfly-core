@@ -411,7 +411,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         //host-environment
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));
-        hostRegistration.registerSubModel(new ModuleLoadingResourceDefinition());
+        hostRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
 
         // discovery options
         ManagementResourceRegistration discoveryOptions = hostRegistration.registerSubModel(DiscoveryOptionsResourceDefinition.INSTANCE);

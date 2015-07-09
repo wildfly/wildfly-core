@@ -1157,4 +1157,7 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 231, value = "Could not read or create the server UUID in file: %s")
     IllegalStateException couldNotObtainServerUuidFile(@Cause Throwable cause, Path file);
+
+    @Message(id = 232, value = "Could not get module info for module name: %s")
+    OperationFailedException couldNotGetModuleInfo(String moduleName, @Cause Throwable cause);
 }
