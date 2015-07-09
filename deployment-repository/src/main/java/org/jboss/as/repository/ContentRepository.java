@@ -300,7 +300,7 @@ public interface ContentRepository {
                     }
                 } else if (!Files.isDirectory(dir)) {
                     throw DeploymentRepositoryLogger.ROOT_LOGGER.notADirectory(dir.toAbsolutePath().toString());
-                } else if (!Files.isWritable(dir)) {
+                } else if (!dir.toFile().canWrite()) { //WFCORE-799 workaround for broken Files.isWritable() on Windows in JDK8
                     throw DeploymentRepositoryLogger.ROOT_LOGGER.directoryNotWritable(dir.toAbsolutePath().toString());
                 }
             }
