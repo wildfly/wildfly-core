@@ -44,9 +44,4 @@ public class ProfileRemoveHandler extends AbstractRemoveStepHandler {
     protected boolean requiresRuntime(OperationContext context) {
         return false;
     }
-
-    @Override
-    protected boolean requireNoChildResources() {
-        return true;
-    }
 }
