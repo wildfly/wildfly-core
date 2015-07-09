@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>17</version>
+      <version>19</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -67,11 +67,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
 
-        <!-- sticking with 3.1 as 3.2 has problems with partial recompile -->
-        <version.compiler.plugin>3.1</version.compiler.plugin>
-        <version.checkstyle.plugin>2.15</version.checkstyle.plugin>
-        <version.checkstyle>6.3</version.checkstyle>
-        <version.enforcer.plugin>1.4</version.enforcer.plugin>
         <version.surefire.plugin>2.17</version.surefire.plugin>
         <!--
             Dependency versions. Please keep alphabetical.
@@ -138,7 +133,7 @@
         <version.org.wildfly.common>1.0.0.Alpha3</version.org.wildfly.common>
         <version.org.wildfly.legacy.test>1.0.0.Alpha9</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.elytron>1.0.0.Alpha1</version.org.wildfly.security.elytron>
-        <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
         <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
@@ -287,13 +282,6 @@
                           <argLine>-Duser.region=US -Duser.language=en</argLine>
                     </configuration>
 
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <additionalparam>-Xdoclint:none</additionalparam>
-                    </configuration>
                 </plugin>
                 <!-- Checkstyle -->
                 <plugin>

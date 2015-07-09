@@ -123,8 +123,7 @@ final class SubsystemTestDelegate {
     private static final String TEST_NAMESPACE = "urn.org.jboss.test:1.0";
 
     private static final ModelNode SUCCESS;
-    static
-    {
+    static{
         SUCCESS = new ModelNode();
         SUCCESS.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
         SUCCESS.get(ModelDescriptionConstants.RESULT);
