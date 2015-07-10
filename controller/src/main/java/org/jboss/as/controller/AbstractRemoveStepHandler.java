@@ -131,7 +131,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
             AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
             if (aa != null) {
                 AttributeDefinition ad = aa.getAttributeDefinition();
-                if (ad != null && model.hasDefined(ad.getName())) {
+                if (ad != null && (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements())) {
                     ad.removeCapabilityRequirements(context, model.get(ad.getName()));
                 }
             }
