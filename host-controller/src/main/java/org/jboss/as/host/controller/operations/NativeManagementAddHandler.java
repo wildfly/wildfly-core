@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
-import org.wildfly.security.auth.login.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityDomain;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 

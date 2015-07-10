@@ -33,7 +33,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.security.auth.login.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityDomain;
 
 /**
  * The service to make the RealmAuthenticationProvider available.
@@ -55,6 +55,7 @@ public class RealmSecurityProviderService implements Service<RemotingSecurityPro
         return BASE_NAME.append(connectorName);
     }
 
+    @Override
     public void start(StartContext startContext) throws StartException {
         String path = tmpDirValue.getValue();
 
@@ -82,10 +83,12 @@ public class RealmSecurityProviderService implements Service<RemotingSecurityPro
         securityProvider = new RealmSecurityProvider(securityRealmInjectedValue.getOptionalValue(), serverCallbackValue.getOptionalValue(), authDir.getAbsolutePath());
     }
 
+    @Override
     public void stop(StopContext stopContext) {
         securityProvider = null;
     }
 
+    @Override
     public RemotingSecurityProvider getValue() throws IllegalStateException, IllegalArgumentException {
         return securityProvider;
     }

@@ -53,7 +53,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.security.auth.login.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityDomain;
 
 /**
  *
@@ -150,6 +150,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             return binding;
         }
 
+        @Override
         public boolean hasConsole() {
             return consoleMode.hasConsole();
         }
@@ -166,6 +167,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @param context The start context
      * @throws StartException If any errors occur
      */
+    @Override
     public synchronized void start(StartContext context) throws StartException {
         final ModelController modelController = modelControllerValue.getValue();
         final ControlledProcessStateService controlledProcessStateService = controlledProcessStateServiceValue.getValue();
@@ -277,6 +279,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      *
      * @param context The stop context
      */
+    @Override
     public synchronized void stop(StopContext context) {
         ListenerRegistry lr = listenerRegistry.getOptionalValue();
         if(lr != null) {
@@ -310,6 +313,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public HttpManagement getValue() throws IllegalStateException {
         return httpManagement;
     }
