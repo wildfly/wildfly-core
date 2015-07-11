@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>2.0.0.Alpha9-SNAPSHOT</version>
+    <version>2.0.0.Alpha9</version>
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
