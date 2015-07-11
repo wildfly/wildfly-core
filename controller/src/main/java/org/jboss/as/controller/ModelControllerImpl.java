@@ -1366,22 +1366,27 @@ class ModelControllerImpl implements ModelController {
             if (candidate != null) {
                 RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
                 if (candidate.removeRegistrationPoint(rp)) {
-                    Map<String, RuntimeRequirementRegistration> candidateRequirements = requirements.get(capabilityId);
-                    if (candidateRequirements != null) {
-                        // Iterate over array to avoid ConcurrentModificationException
-                        for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                            removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), false);
-                        }
-                    }
-                    candidateRequirements = runtimeOnlyRequirements.get(capabilityId);
-                    if (candidateRequirements != null) {
-                        // Iterate over array to avoid ConcurrentModificationException
-                        for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                            removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), true);
-                        }
-                    }
                     if (candidate.getRegistrationPointCount() == 0) {
                         removed = capabilities.remove(capabilityId);
+                        requirements.remove(capabilityId);
+                        runtimeOnlyRequirements.remove(capabilityId);
+                    } else {
+                        // There are still registration points for this capability.
+                        // So just remove the requirements for this registration point
+                        Map<String, RuntimeRequirementRegistration> candidateRequirements = requirements.get(capabilityId);
+                        if (candidateRequirements != null) {
+                            // Iterate over array to avoid ConcurrentModificationException
+                            for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
+                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), false);
+                            }
+                        }
+                        candidateRequirements = runtimeOnlyRequirements.get(capabilityId);
+                        if (candidateRequirements != null) {
+                            // Iterate over array to avoid ConcurrentModificationException
+                            for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
+                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), true);
+                            }
+                        }
                     }
                 }
             }
