@@ -231,45 +231,46 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
 
         void validate(Set<String> missingEntries) throws OperationFailedException {
             //Look for cycles
-            for (String profileName : resourceIncludes.keySet()) {
-                if (!seen.contains(profileName)) {
-                    dfsForMissingOrCyclicIncludes(profileName, missingEntries);
+            for (String resourceName : resourceIncludes.keySet()) {
+                if (!seen.contains(resourceName)) {
+                    dfsForMissingOrCyclicIncludes(resourceName, missingEntries);
                 }
             }
 
             if (missingEntries.size() > 0) {
-                //We are missing some profiles, don't continue with the validation since it has failed
+                //We are missing some entries, don't continue with the validation since it has failed
                 return;
             }
 
-            //Check that subsystems are not overridden, by traversing them in the order child->parent
+            //Check that children are not overridden, by traversing them in the order child->parent
             //using the reverse post-order of the dfs
             seen.clear();
             for (ListIterator<String> it = post.listIterator(post.size()) ; it.hasPrevious() ; ) {
-                String profile = it.previous();
-                if (seen.contains(profile)) {
+                String resourceName = it.previous();
+                if (seen.contains(resourceName)) {
                     continue;
                 }
-                Map<String, String> subsystems = new HashMap<>();
-                validateChildrenNotOverridden(profile, subsystems);
+                Map<String, String> reachableChildren = new HashMap<>();
+                validateChildrenNotOverridden(resourceName, reachableChildren);
             }
         }
 
-        void validateChildrenNotOverridden(String resourceName, Map<String, String> children) throws OperationFailedException {
+        void validateChildrenNotOverridden(String resourceName, Map<String, String> reachableChildren) throws OperationFailedException {
             seen.add(resourceName);
             Set<String> includes = resourceIncludes.get(resourceName);
-            if (includes.size() == 0 && children.size() == 0) {
+
+            if (includes.size() == 0 && reachableChildren.size() == 0) {
                 return;
             }
             for (String child : resourceChildren.get(resourceName)) {
-                String existingSubsystemProfile = children.get(child);
-                if (existingSubsystemProfile != null) {
-                    throw profileAttemptingToOverrideSubsystem(existingSubsystemProfile, child, resourceName);
+                String existingChildParent = reachableChildren.get(child);
+                if (existingChildParent != null) {
+                    throw attemptingToOverride(existingChildParent, child, resourceName);
                 }
-                children.put(child, resourceName);
+                reachableChildren.put(child, resourceName);
             }
             for (String include : includes) {
-                validateChildrenNotOverridden(include, children);
+                validateChildrenNotOverridden(include, reachableChildren);
             }
         }
 
@@ -287,7 +288,7 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
                         linkTo.put(include, resourceName);
                         dfsForMissingOrCyclicIncludes(include, missingEntries);
                     } else if (onStack.contains(include)) {
-                        throw profileInvolvedInACycle(include);
+                        throw involvedInACycle(include);
                     }
                 }
             } finally {
@@ -296,8 +297,8 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
             post.add(resourceName);
         }
 
-        abstract OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName);
-        abstract OperationFailedException profileInvolvedInACycle(String profile);
+        abstract OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName);
+        abstract OperationFailedException involvedInACycle(String profile);
     }
 
 
@@ -317,12 +318,12 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         }
 
         @Override
-        OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName) {
-            return ControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(existingSubsystemProfile, child, resourceName);
+        OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName) {
+            return ControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(parentOfExistingChild, child, resourceName);
         }
 
         @Override
-        OperationFailedException profileInvolvedInACycle(String include) {
+        OperationFailedException involvedInACycle(String include) {
             return ControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
         }
     }
@@ -361,12 +362,12 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         }
 
         @Override
-        OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName) {
-            return ControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(existingSubsystemProfile, child, resourceName);
+        OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName) {
+            return ControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(parentOfExistingChild, child, resourceName);
         }
 
         @Override
-        OperationFailedException profileInvolvedInACycle(String include) {
+        OperationFailedException involvedInACycle(String include) {
             return ControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
         }
 
