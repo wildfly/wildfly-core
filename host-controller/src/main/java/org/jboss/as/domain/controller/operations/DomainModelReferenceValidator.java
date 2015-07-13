@@ -250,29 +250,60 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
                 if (seen.contains(resourceName)) {
                     continue;
                 }
-                Map<String, String> reachableChildren = new HashMap<>();
-                validateChildrenNotOverridden(resourceName, reachableChildren);
+                List<String> stack = new ArrayList<>();
+                Map<String, List<String>> reachableChildren = new HashMap<>();
+                validateChildrenNotOverridden(resourceName, reachableChildren, stack);
             }
         }
 
-        void validateChildrenNotOverridden(String resourceName, Map<String, String> reachableChildren) throws OperationFailedException {
-            seen.add(resourceName);
-            Set<String> includes = resourceIncludes.get(resourceName);
-            Set<String> children = resourceChildren.get(resourceName);
-            if (includes.size() == 0 && children.size() == 0) {
-                return;
-            }
-            for (String child : resourceChildren.get(resourceName)) {
-                String existingChildParent = reachableChildren.get(child);
-                if (existingChildParent != null) {
-                    throw attemptingToOverride(existingChildParent, child, resourceName);
+        void validateChildrenNotOverridden(String resourceName, Map<String, List<String>> reachableChildren,
+                                           List<String> stack) throws OperationFailedException {
+            stack.add(resourceName);
+            try {
+                seen.add(resourceName);
+                Set<String> includes = resourceIncludes.get(resourceName);
+                Set<String> children = resourceChildren.get(resourceName);
+                if (includes.size() == 0 && children.size() == 0) {
+                    return;
                 }
-                reachableChildren.put(child, resourceName);
-            }
-            for (String include : includes) {
-                validateChildrenNotOverridden(include, reachableChildren);
+                for (String child : resourceChildren.get(resourceName)) {
+                    List<String> existingChildParentStack = reachableChildren.get(child);
+                    if (existingChildParentStack != null) {
+                        logError(resourceName, stack, child, existingChildParentStack);
+                    }
+                    reachableChildren.put(child, new ArrayList<>(stack));
+                }
+                for (String include : includes) {
+                    validateChildrenNotOverridden(include, reachableChildren, stack);
+                }
+            } finally {
+                stack.remove(stack.size() - 1);
             }
         }
+
+        private void logError(String resourceName, List<String> stack, String child, List<String> existingChildParentStack) throws OperationFailedException {
+            //Now figure out if this is a direct override, or no override but including two parents
+            //with the same child
+            for (ListIterator<String> it = stack.listIterator(stack.size()) ; it.hasPrevious() ; ) {
+                String commonParent = it.previous();
+                if (existingChildParentStack.contains(commonParent)) {
+                    if (!getLastElement(existingChildParentStack).equals(commonParent)) {
+                        //This is not an override but 'commonParent' includes two parents with the same child
+                        throw twoParentsWithSameChild(commonParent, getLastElement(stack), getLastElement(existingChildParentStack), child);
+                    }
+                }
+            }
+            //It is a direct override
+            //Alternatively, something went wrong when trying to determine the cause, in which case this message
+            //will not be 100% correct, but it is better to get an error than not.
+            throw attemptingToOverride(getLastElement(existingChildParentStack), child, resourceName);
+        }
+
+        private String getLastElement(List<String> list) {
+            return list.get(list.size() - 1);
+        }
+
+        protected abstract OperationFailedException twoParentsWithSameChild(String commonParent, String include1, String include2, String child);
 
         void dfsForMissingOrCyclicIncludes(String resourceName, Set<String> missingEntries) throws OperationFailedException {
             onStack.add(resourceName);
@@ -326,6 +357,11 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         OperationFailedException involvedInACycle(String include) {
             return HostControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
         }
+
+        @Override
+        protected OperationFailedException twoParentsWithSameChild(String commonParent, String include1, String include2, String child) {
+            return HostControllerLogger.ROOT_LOGGER.profileIncludesSameSubsystem(commonParent, include1, include2, child);
+        }
     }
 
     private static class SocketBindingGroupIncludeValidator extends AbstractIncludeValidator {
@@ -371,5 +407,9 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
             return HostControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
         }
 
+        @Override
+        protected OperationFailedException twoParentsWithSameChild(String commonParent, String include1, String include2, String child) {
+            return HostControllerLogger.ROOT_LOGGER.socketBindingGroupIncludesSameSocketBinding(commonParent, include1, include2, child);
+        }
     }
 }

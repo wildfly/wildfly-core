@@ -1243,8 +1243,13 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 165, value = "Socket binding group '%s' is involved in a cycle")
     OperationFailedException socketBindingGroupInvolvedInACycle(String include);
 
-    @Message(id = 166, value = "Socket binding group %s defines socket binding %s which is also defined in its ancestor socket binding group %s. Overriding socket bindings is not supported")
+    @Message(id = 166, value = "Socket binding group '%s' defines socket binding '%s' which is also defined in its ancestor socket binding group '%s'. Overriding socket bindings is not supported")
     OperationFailedException socketBindingGroupAttemptingToOverrideSocketBinding(String existingSubsystemProfile, String child, String resourceName);
 
+    @Message(id = 167, value = "Profile '%s' includes profile '%s' and profile '%s'. Both these profiles define subsystem '%s', which is not supported")
+    OperationFailedException profileIncludesSameSubsystem(String profile, String include1, String include2, String child);
+
+    @Message(id = 168, value = "Socket binding group '%s' includes socket binding group '%s' and socket binding group '%s'. Both these socket binding groups define socket binding '%s', which is not supported")
+    OperationFailedException socketBindingGroupIncludesSameSocketBinding(String socketBindingGroup, String include1, String include2, String child);
 
 }
