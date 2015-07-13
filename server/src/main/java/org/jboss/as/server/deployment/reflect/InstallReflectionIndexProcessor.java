@@ -56,14 +56,16 @@ public final class InstallReflectionIndexProcessor implements DeploymentUnitProc
 
         if(deploymentUnit.getParent() == null) {
             final DeploymentReflectionIndex index = DeploymentReflectionIndex.create();
+            final DeploymentClassIndex deploymentClassIndex = new DeploymentClassIndex(index, module);
             deploymentUnit.putAttachment(Attachments.REFLECTION_INDEX, index);
-            deploymentUnit.putAttachment(Attachments.PROXY_REFLECTION_INDEX, new ProxyMetadataSource(index));
-            deploymentUnit.putAttachment(Attachments.CLASS_INDEX, new DeploymentClassIndex(index, module));
+            deploymentUnit.putAttachment(Attachments.PROXY_REFLECTION_INDEX, new ProxyMetadataSource(index,deploymentClassIndex));
+            deploymentUnit.putAttachment(Attachments.CLASS_INDEX, deploymentClassIndex);
         } else {
             final DeploymentReflectionIndex index = deploymentUnit.getParent().getAttachment(Attachments.REFLECTION_INDEX);
+            final DeploymentClassIndex deploymentClassIndex = new DeploymentClassIndex(index, module);
             deploymentUnit.putAttachment(Attachments.REFLECTION_INDEX, index);
-            deploymentUnit.putAttachment(Attachments.PROXY_REFLECTION_INDEX, deploymentUnit.getParent().getAttachment(Attachments.PROXY_REFLECTION_INDEX));
-            deploymentUnit.putAttachment(Attachments.CLASS_INDEX, new DeploymentClassIndex(index, module));
+            deploymentUnit.putAttachment(Attachments.PROXY_REFLECTION_INDEX, new ProxyMetadataSource(index,deploymentClassIndex));
+            deploymentUnit.putAttachment(Attachments.CLASS_INDEX, deploymentClassIndex);
         }
     }
 
