@@ -180,6 +180,60 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         operationContext.executeNextStep();
     }
 
+    @Test(expected = OperationFailedException.class)
+    public void testProfileWithSubsystemsIncludesSameSubsystems() throws Exception {
+        //Here we test changing the includes attribute value
+        //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        //so we test that in ServerManagementTestCase
+        PathAddress addr = getProfileAddress("profile-five");
+        ModelNode list = new ModelNode().add("profile-three").add("profile-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource subsystemA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
+                        .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
+
+                Resource subsystemB = Resource.Factory.create();
+                Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
+                profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
+
+                Resource subsystemC = Resource.Factory.create();
+                Resource profile5 = root.getChild(PathElement.pathElement(PROFILE, "profile-five"));
+                profile5.registerChild(PathElement.pathElement(SUBSYSTEM, "x"), subsystemC);
+            }
+        });
+        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        operationContext.executeNextStep();
+    }
+
+    @Test(expected = OperationFailedException.class)
+    public void testEmptyProfileIncludesSameSubsystems() throws Exception {
+        //Here we test changing the includes attribute value
+        //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        //so we test that in ServerManagementTestCase
+        PathAddress addr = getProfileAddress("profile-five");
+        ModelNode list = new ModelNode().add("profile-three").add("profile-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource subsystemA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
+                        .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
+
+                Resource subsystemB = Resource.Factory.create();
+                Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
+                profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
+
+                //profile-four is empty
+            }
+        });
+        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        operationContext.executeNextStep();
+    }
+
     private PathAddress getProfileAddress(String profileName) {
         return PathAddress.pathAddress(PROFILE, profileName);
     }
@@ -209,6 +263,10 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
 
         Resource profileFour = Resource.Factory.create();
         root.registerChild(PathElement.pathElement(PROFILE, "profile-four"), profileFour);
+
+        Resource profileFive = Resource.Factory.create();
+        root.registerChild(PathElement.pathElement(PROFILE, "profile-five"), profileFive);
+
         initializer.addAdditionalResources(root);
         return new MockOperationContext(root, false, operationAddress, false);
     }

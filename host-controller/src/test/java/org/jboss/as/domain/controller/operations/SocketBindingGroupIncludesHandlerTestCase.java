@@ -45,6 +45,7 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
@@ -184,6 +185,62 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         operationContext.executeNextStep();
     }
 
+
+    @Test(expected = OperationFailedException.class)
+    public void testGroupWithBindingsIncludesSameBindings() throws Exception {
+        //Here we test changing the includes attribute value
+        //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        //so we test that in ServerManagementTestCase
+        PathAddress addr = getSocketBindingGroupAddress("binding-five");
+        ModelNode list = new ModelNode().add("binding-three").add("binding-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource bindingA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
+                        .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingA);
+
+                Resource bindingB = Resource.Factory.create();
+                Resource group4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
+                group4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingB);
+
+                Resource bindingC = Resource.Factory.create();
+                Resource group5 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-five"));
+                group5.registerChild(PathElement.pathElement(SOCKET_BINDING, "x"), bindingC);
+            }
+        });
+        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        operationContext.executeNextStep();
+    }
+
+    @Test(expected = OperationFailedException.class)
+    public void testEmptyGroupIncludesSameBindings() throws Exception {
+        //Here we test changing the includes attribute value
+        //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        //so we test that in ServerManagementTestCase
+        PathAddress addr = getSocketBindingGroupAddress("binding-five");
+        ModelNode list = new ModelNode().add("binding-three").add("binding-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource bindingA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
+                        .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingA);
+
+                Resource bindingB = Resource.Factory.create();
+                Resource group4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
+                group4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingB);
+
+                //binding-five is empty
+            }
+        });
+        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        operationContext.executeNextStep();
+    }
+
+
     private PathAddress getSocketBindingGroupAddress(String SocketBindingGroupName) {
         return PathAddress.pathAddress(SOCKET_BINDING_GROUP, SocketBindingGroupName);
     }
@@ -196,23 +253,28 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 
     MockOperationContext getOperationContextWithIncludes(final PathAddress operationAddress) {
         final Resource root = createRootResource();
-        Resource SocketBindingGroupThree = Resource.Factory.create();
-        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"), SocketBindingGroupThree);
+        Resource socketBindingGroupThree = Resource.Factory.create();
+        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"), socketBindingGroupThree);
 
-        Resource SocketBindingGroupFour = Resource.Factory.create();
-        SocketBindingGroupFour.getModel().get(INCLUDES).add("binding-three");
-        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"), SocketBindingGroupFour);
+        Resource socketBindingGroupFour = Resource.Factory.create();
+        socketBindingGroupFour.getModel().get(INCLUDES).add("binding-three");
+        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"), socketBindingGroupFour);
+
         return new MockOperationContext(root, false, operationAddress, false);
 
     }
 
     MockOperationContext getOperationContextForSocketBindingIncludes(final PathAddress operationAddress, RootResourceInitializer initializer) {
         final Resource root = createRootResource();
-        Resource SocketBindingGroupThree = Resource.Factory.create();
-        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"), SocketBindingGroupThree);
+        Resource socketBindingGroupThree = Resource.Factory.create();
+        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"), socketBindingGroupThree);
 
-        Resource SocketBindingGroupFour = Resource.Factory.create();
-        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"), SocketBindingGroupFour);
+        Resource socketBindingGroupFour = Resource.Factory.create();
+        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"), socketBindingGroupFour);
+
+        Resource socketBindingGroupFive = Resource.Factory.create();
+        root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-five"), socketBindingGroupFive);
+
         initializer.addAdditionalResources(root);
         return new MockOperationContext(root, false, operationAddress, false);
     }

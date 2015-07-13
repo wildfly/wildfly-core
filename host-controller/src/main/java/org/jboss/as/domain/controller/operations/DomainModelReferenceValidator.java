@@ -258,8 +258,8 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         void validateChildrenNotOverridden(String resourceName, Map<String, String> reachableChildren) throws OperationFailedException {
             seen.add(resourceName);
             Set<String> includes = resourceIncludes.get(resourceName);
-
-            if (includes.size() == 0 && reachableChildren.size() == 0) {
+            Set<String> children = resourceChildren.get(resourceName);
+            if (includes.size() == 0 && children.size() == 0) {
                 return;
             }
             for (String child : resourceChildren.get(resourceName)) {
