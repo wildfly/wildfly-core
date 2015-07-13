@@ -24,7 +24,6 @@ package org.jboss.as.server.mgmt;
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 
-import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -79,7 +78,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<SocketBindingManager> injectedSocketBindingManager = new InjectedValue<SocketBindingManager>();
     private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
-    private final InjectedValue<SecurityRealm> securityRealmServiceValue = new InjectedValue<SecurityRealm>();
+    private final InjectedValue<SecurityRealm> securityRealmValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
@@ -148,6 +147,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             return binding;
         }
 
+        @Override
         public boolean hasConsole() {
             return consoleMode.hasConsole();
         }
@@ -164,12 +164,13 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @param context The start context
      * @throws StartException If any errors occur
      */
+    @Override
     public synchronized void start(StartContext context) throws StartException {
         final ModelController modelController = modelControllerValue.getValue();
         final ControlledProcessStateService controlledProcessStateService = controlledProcessStateServiceValue.getValue();
         socketBindingManager = injectedSocketBindingManager.getOptionalValue();
 
-        final SecurityRealm securityRealmService = securityRealmServiceValue.getOptionalValue();
+        final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
 
         InetSocketAddress bindAddress = null;
         InetSocketAddress secureBindAddress = null;
@@ -227,10 +228,18 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         final ManagementHttpRequestProcessor requestProcessor = requestProcessorValue.getValue();
 
         try {
-
-            serverManagement = ManagementHttpServer.create(bindAddress, secureBindAddress, 50, modelController,
-                    securityRealmService, controlledProcessStateService, consoleMode, consoleSlot, upgradeHandler,
-                    requestProcessor, allowedOriginsValue.getOptionalValue());
+            serverManagement = ManagementHttpServer.builder()
+                    .setBindAddress(bindAddress)
+                    .setSecureBindAddress(secureBindAddress)
+                    .setModelController(modelController)
+                    .setSecurityRealm(securityRealm)
+                    .setControlledProcessStateService(controlledProcessStateService)
+                    .setConsoleMode(consoleMode)
+                    .setConsoleSloe(consoleSlot)
+                    .setChannelUpgradeHandler(upgradeHandler)
+                    .setManagementHttpRequestProcessor(requestProcessor)
+                    .setAllowedOrigins(allowedOriginsValue.getOptionalValue())
+                    .build();
 
             serverManagement.start();
 
@@ -258,13 +267,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     }
                 }
             }
-        } catch (BindException e) {
-            final StringBuilder sb = new StringBuilder().append(e.getMessage());
-            if (bindAddress != null)
-                sb.append(" ").append(bindAddress);
-            if (secureBindAddress != null)
-                sb.append(" ").append(secureBindAddress);
-            throw new StartException(sb.toString(), e);
         } catch (Exception e) {
             throw ServerLogger.ROOT_LOGGER.failedToStartHttpManagementService(e);
         }
@@ -275,6 +277,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      *
      * @param context The stop context
      */
+    @Override
     public synchronized void stop(StopContext context) {
         ListenerRegistry lr = listenerRegistry.getOptionalValue();
         if(lr != null) {
@@ -308,6 +311,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public HttpManagement getValue() throws IllegalStateException {
         return httpManagement;
     }
@@ -375,7 +379,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @return the securityRealmServiceValue
      */
     public InjectedValue<SecurityRealm> getSecurityRealmInjector() {
-        return securityRealmServiceValue;
+        return securityRealmValue;
     }
 
     /**
