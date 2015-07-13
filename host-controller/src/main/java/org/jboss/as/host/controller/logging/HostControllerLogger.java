@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Set;
 
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
@@ -1226,4 +1227,24 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 160, value = "Could not read or create the domain UUID in file: %s")
     IllegalStateException couldNotObtainDomainUuid(@Cause Throwable cause, Path file);
+
+    @Message(id = 161, value = "Model references of type '%s' are missing: %s")
+    OperationFailedException missingReferences(String type, Set<String> missing);
+
+    @Message(id = 162, value = "The binding name '%s' in socket binding group '%s' is not unique. Names must be unique across socket-binding, local-destination-outbound-socket-binding and remote-destination-outbound-socket-binding")
+    OperationFailedException bindingNameNotUnique(String name, String groupName);
+
+    @Message(id = 163, value = "Profile '%s' is involved in a cycle")
+    OperationFailedException profileInvolvedInACycle(String profile);
+
+    @Message(id = 164, value = "Profile '%s' defines subsystem '%s' which is also defined in its ancestor profile '%s'. Overriding subsystems is not supported")
+    OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String subsystem, String profileName);
+
+    @Message(id = 165, value = "Socket binding group '%s' is involved in a cycle")
+    OperationFailedException socketBindingGroupInvolvedInACycle(String include);
+
+    @Message(id = 166, value = "Socket binding group %s defines socket binding %s which is also defined in its ancestor socket binding group %s. Overriding socket bindings is not supported")
+    OperationFailedException socketBindingGroupAttemptingToOverrideSocketBinding(String existingSubsystemProfile, String child, String resourceName);
+
+
 }

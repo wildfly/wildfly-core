@@ -53,9 +53,9 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -150,19 +150,19 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         }
         // If we are missing a server group
         if (!serverGroups.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
         }
         // We are missing a profile
         if (!missingProfiles.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
         }
         // Process socket-binding groups
         if (!missingSocketBindingGroups.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
         }
         //We are missing an interface
         if (!interfaces.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
         }
 
     }
@@ -319,12 +319,12 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
 
         @Override
         OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName) {
-            return ControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(parentOfExistingChild, child, resourceName);
+            return HostControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(parentOfExistingChild, child, resourceName);
         }
 
         @Override
         OperationFailedException involvedInACycle(String include) {
-            return ControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
+            return HostControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
         }
     }
 
@@ -355,7 +355,7 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
             if (groupEntry.hasChildren(bindingType)) {
                 for (String name : groupEntry.getChildrenNames(bindingType)) {
                     if (!bindings.add(name)) {
-                        throw ControllerLogger.ROOT_LOGGER.bindingNameNotUnique(name, groupEntry.getName());
+                        throw HostControllerLogger.ROOT_LOGGER.bindingNameNotUnique(name, groupEntry.getName());
                     }
                 }
             }
@@ -363,12 +363,12 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
 
         @Override
         OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName) {
-            return ControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(parentOfExistingChild, child, resourceName);
+            return HostControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(parentOfExistingChild, child, resourceName);
         }
 
         @Override
         OperationFailedException involvedInACycle(String include) {
-            return ControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
+            return HostControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
         }
 
     }
