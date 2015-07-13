@@ -84,6 +84,7 @@ public abstract class AttributeDefinition {
     private final Boolean nilSignificant;
     private final AttributeParser parser;
     private final String attributeGroup;
+    protected final CapabilityReferenceRecorder referenceRecorder;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Expected to be a common use case; no one-offs.
@@ -99,7 +100,7 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -112,7 +113,7 @@ public abstract class AttributeDefinition {
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, wrapFlags(flags));
+                nilSignificant, parser, null, null, null, wrapFlags(flags));
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
@@ -166,7 +167,8 @@ public abstract class AttributeDefinition {
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
+                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
+                                ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -197,6 +199,7 @@ public abstract class AttributeDefinition {
         this.nilSignificant = nilSignificant;
         this.attributeGroup = attributeGroup;
         this.allowedValues = allowedValues;
+        this.referenceRecorder = referenceRecorder;
     }
 
     /**
@@ -812,6 +815,10 @@ public abstract class AttributeDefinition {
                 result.get(ModelDescriptionConstants.REQUIRES).add(required);
             }
         }
+        if (referenceRecorder != null) {
+            result.get(ModelDescriptionConstants.CAPABILITY_REFERENCE).set(referenceRecorder.getBaseRequirementName());
+        }
+
         if (validator instanceof MinMaxValidator) {
             MinMaxValidator minMax = (MinMaxValidator) validator;
             Long min = minMax.getMin();
@@ -858,7 +865,16 @@ public abstract class AttributeDefinition {
      * @param attributeValue the value of the attribute described by this object
      */
     public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        // no-op;
+        if (referenceRecorder != null) {
+            if (!attributeValue.isDefined()) {
+                attributeValue = getDefaultValue();
+            }
+            // We can't process expressions, and there's no point processing undefined
+            if (attributeValue != null && attributeValue.isDefined()
+                    && attributeValue.getType() != ModelType.EXPRESSION) {
+                referenceRecorder.addCapabilityRequirements(context, getName(), attributeValue.asString());
+            }
+        }
     }
 
     /**
@@ -873,7 +889,16 @@ public abstract class AttributeDefinition {
      * @param attributeValue the value of the attribute described by this object
      */
     public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        // no-op
+        if (referenceRecorder != null) {
+            if (!attributeValue.isDefined()) {
+                attributeValue = getDefaultValue();
+            }
+            // We can't process expressions, and there's no point processing undefined
+            if (attributeValue != null && attributeValue.isDefined()
+                    && attributeValue.getType() != ModelType.EXPRESSION) {
+                referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValue.asString());
+            }
+        }
     }
 
     /**
@@ -886,7 +911,11 @@ public abstract class AttributeDefinition {
      * @return
      */
     public boolean hasCapabilityRequirements(){
-        return false;
+        return getReferenceRecorder() != null;
+    }
+
+    protected CapabilityReferenceRecorder getReferenceRecorder(){
+        return referenceRecorder;
     }
 
     /**

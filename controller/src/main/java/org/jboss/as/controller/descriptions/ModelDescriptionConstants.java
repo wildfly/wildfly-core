@@ -83,6 +83,7 @@ public class ModelDescriptionConstants {
     public static final String CALLER_THREAD = "caller-thread";
     public static final String CALLER_TYPE = "caller-type";
     public static final String CANCELLED = "cancelled";
+    public static final String CAPABILITY_REFERENCE = "capability-reference";
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
     public static final String CLASSIFICATION = "classification";

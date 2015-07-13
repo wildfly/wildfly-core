@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller;
 
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -73,8 +72,6 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         return new SimpleAttributeDefinitionBuilder(attributeName, basis);
     }
 
-    private CapabilityReferenceRecorder referenceRecorder;
-
     public SimpleAttributeDefinitionBuilder(final String attributeName, final ModelType type) {
         this(attributeName, type, false);
     }
@@ -92,73 +89,8 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         super(attributeName, basis);
     }
 
-    /**
-     * Records that this attribute's value represents a reference to an instance of a
-     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
-     * <p>
-     * This method is a convenience method equivalent to calling
-     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
-     * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
-     * constructed using the parameters passed to this method.
-     *
-     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
-     *                             represented by the attribute's value
-     * @param dependentCapability the capability that depends on {@code referencedCapability}
-     * @return the builder
-     *
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
-     */
-    public SimpleAttributeDefinitionBuilder setCapabilityReference(String referencedCapability, RuntimeCapability<?> dependentCapability) {
-        return setCapabilityReference(referencedCapability, dependentCapability.getName(), dependentCapability.isDynamicallyNamed());
-    }
-
-    /**
-     * Records that this attribute's value represents a reference to an instance of a
-     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
-     * <p>
-     * This method is a convenience method equivalent to calling
-     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
-     * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
-     * constructed using the parameters passed to this method.
-     *
-     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
-     *                             represented by the attribute's value
-     * @param dependentCapability the name of the capability that depends on {@code referencedCapability}
-     * @param dynamicDependent {@code true} if {@code dependentCapability} is a dynamic capability, the dynamic
-     *                                     portion of which comes from the name of the resource with which
-     *                                     the attribute is associated
-     * @return the builder
-     *
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
-     */
-    public SimpleAttributeDefinitionBuilder setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
-        referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
-        return this;
-    }
-
-    /**
-     * Records that this attribute's value represents a reference to an instance of a
-     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability} and assigns the
-     * object that should be used to handle adding and removing capability requirements.
-     *
-     * @param referenceRecorder recorder to handle adding and removing capability requirements. May be {@code null}
-     * @return the builder
-     *
-     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
-     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
-     */
-    public SimpleAttributeDefinitionBuilder setCapabilityReference(CapabilityReferenceRecorder referenceRecorder) {
-        this.referenceRecorder = referenceRecorder;
-        return this;
-    }
-
     public SimpleAttributeDefinition build() {
         return new SimpleAttributeDefinition(this);
     }
 
-    CapabilityReferenceRecorder getReferenceRecorder() {
-        return referenceRecorder;
-    }
 }
