@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -118,21 +119,11 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
         final ListIterator<RegisteredDeploymentUnitProcessor> iterator = list.listIterator();
         final ServiceContainer container = context.getController().getServiceContainer();
         final ServiceTarget serviceTarget = context.getChildTarget().subTarget();
-        final Phase nextPhase = phase.next();
         final String name = deploymentUnit.getName();
         final DeploymentUnit parent = deploymentUnit.getParent();
-        final ServiceBuilder<?> phaseServiceBuilder;
-        final DeploymentUnitPhaseService<?> phaseService;
-        if (nextPhase != null) {
-            final ServiceName serviceName = DeploymentUtils.getDeploymentUnitPhaseServiceName(deploymentUnit, nextPhase);
-            phaseService = DeploymentUnitPhaseService.create(deploymentUnit, nextPhase);
-            phaseServiceBuilder = serviceTarget.addService(serviceName, phaseService);
-        } else {
-            phaseServiceBuilder = null;
-            phaseService = null;
-        }
-        final DeploymentPhaseContext processorContext = new DeploymentPhaseContextImpl(serviceTarget, new DelegatingServiceRegistry(container), phaseServiceBuilder,
-                deploymentUnit, phase);
+
+        final List<DeploymentUnitPhaseDependency> dependencies = new LinkedList<>();
+        final DeploymentPhaseContext processorContext = new DeploymentPhaseContextImpl(serviceTarget, new DelegatingServiceRegistry(container), dependencies, deploymentUnit, phase);
 
         // attach any injected values from the last phase
         for (AttachedDependency attachedDependency : injectedAttachedDependencies) {
@@ -163,7 +154,19 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
                 throw ServerLogger.ROOT_LOGGER.deploymentPhaseFailed(phase, deploymentUnit, e);
             }
         }
+
+        final Phase nextPhase = phase.next();
         if (nextPhase != null) {
+            final ServiceName serviceName = DeploymentUtils.getDeploymentUnitPhaseServiceName(deploymentUnit, nextPhase);
+            final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, nextPhase);
+
+            final DeploymentUnitPhaseBuilder builder = processorContext.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
+            final ServiceBuilder<?> phaseServiceBuilder = (builder != null) ? builder.build(serviceTarget, serviceName, phaseService) : serviceTarget.addService(serviceName, phaseService);
+
+            for (DeploymentUnitPhaseDependency dependency: dependencies) {
+                dependency.register(phaseServiceBuilder);
+            }
+
             phaseServiceBuilder.addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector());
             phaseServiceBuilder.addDependency(context.getController().getName());
 

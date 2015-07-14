@@ -219,6 +219,7 @@ public enum Phase {
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_STRUCTURE_1_3  = 0x0A20;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_UNDERTOW_SHARED_SESSION = 0x0A1A;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_BATCH          = 0x0A1B;
+    public static final int STRUCTURE_REGISTER_JBOSS_ALL_SINGLETON_DEPLOYMENT = 0x0A1C;
     public static final int STRUCTURE_PARSE_JBOSS_ALL_XML               = 0x0AE0;
     public static final int STRUCTURE_EAR_APP_XML_PARSE                 = 0x0B00;
     public static final int STRUCTURE_JBOSS_EJB_CLIENT_XML_PARSE        = 0x0C00;
@@ -354,6 +355,7 @@ public enum Phase {
     public static final int PARSE_EE_DEFAULT_BINDINGS_CONFIG            = 0x4880;
     public static final int PARSE_JSF_MANAGED_BEANS                     = 0x4900;
     public static final int PARSE_JSF_METADATA                          = 0x4A00;
+    public static final int PARSE_SINGLETON_DEPLOYMENT                  = 0x4B00;
 
     // REGISTER
     public static final int REGISTER_BUNDLE_INSTALL                     = 0x0100;
@@ -402,11 +404,13 @@ public enum Phase {
     public static final int DEPENDENCIES_APPLICATION_CLIENT             = 0x2000;
     public static final int DEPENDENCIES_VISIBLE_MODULES                = 0x2100;
     public static final int DEPENDENCIES_EE_CLASS_DESCRIPTIONS          = 0x2200;
+    public static final int DEPENDENCIES_SINGLETON_DEPLOYMENT           = 0x2300;
 
     // CONFIGURE_MODULE
     public static final int CONFIGURE_RESOLVE_BUNDLE                    = 0x0100;
     public static final int CONFIGURE_MODULE_SPEC                       = 0x0200;
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
+    public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
 
     // FIRST_MODULE_USE
     public static final int FIRST_MODULE_USE_PERSISTENCE_CLASS_FILE_TRANSFORMER = 0x0100; // need to be before POST_MODULE_REFLECTION_INDEX
@@ -415,7 +419,6 @@ public enum Phase {
     public static final int FIRST_MODULE_USE_PERSISTENCE_PREPARE        = 0x0300;
     public static final int FIRST_MODULE_USE_DSXML_DEPLOYMENT           = 0x0400;
     public static final int FIRST_MODULE_USE_TRANSFORMER                = 0x0500;
-
 
     // POST_MODULE
     public static final int POST_MODULE_INJECTION_ANNOTATION            = 0x0100;

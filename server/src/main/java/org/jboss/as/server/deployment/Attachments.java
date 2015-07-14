@@ -54,6 +54,7 @@ import org.jboss.vfs.VirtualFile;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings("deprecation")
 public final class Attachments {
 
     //
@@ -100,11 +101,16 @@ public final class Attachments {
      * @deprecated the object attached under this key does nothing
      */
     @Deprecated
-    @SuppressWarnings("deprecation")
     public static final AttachmentKey<ServiceVerificationHandler> SERVICE_VERIFICATION_HANDLER = AttachmentKey.create(ServiceVerificationHandler.class);
 
 
     public static final AttachmentKey<Boolean> ALLOW_PHASE_RESTART = AttachmentKey.create(Boolean.class);
+
+    /**
+     * A builder used to install a deployment phase
+     */
+    public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
+
     //
     // STRUCTURE
     //
