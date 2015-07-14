@@ -52,7 +52,8 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
     private final InjectedSetValue<KeytabService> keytabServices = new InjectedSetValue<KeytabService>();
 
     private volatile KeytabService defaultService = null;
-    private volatile Map<String, KeytabService> hostServiceMap = null;
+    private volatile Map<String, KeytabService> hostServiceMapByForHosts = null;
+    private volatile Map<String, KeytabService> hostServiceMapByPrincipal = null;
 
     /*
      * Service Methods.
@@ -62,7 +63,8 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
     public void start(StartContext context) throws StartException {
         Set<KeytabService> services = keytabServices.getValue();
 
-        hostServiceMap = new HashMap<String, KeytabService>(services.size()); // Assume at least one per service.
+        hostServiceMapByForHosts = new HashMap<String, KeytabService>(services.size()); // Assume at least one per service.
+        hostServiceMapByPrincipal = new HashMap<String, KeytabService>(services.size());
         /*
          * Iterate the services and find the first one to offer default resolution, also create a hostname to KeytabService map
          * for the first one that claims each host.
@@ -73,8 +75,8 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
                     if (defaultService == null) {
                         defaultService = current;
                     }
-                } else if (hostServiceMap.containsKey(currentHost) == false) {
-                    hostServiceMap.put(currentHost, current);
+                } else if (!hostServiceMapByForHosts.containsKey(currentHost)) {
+                    hostServiceMapByForHosts.put(currentHost, current);
                 }
             }
         }
@@ -89,12 +91,12 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
             int end = principal.indexOf('@');
 
             String currentHost = principal.substring(start > -1 ? start + 1 : 0, end > -1 ? end : principal.length() - 1);
-            if (hostServiceMap.containsKey(currentHost) == false) {
-                hostServiceMap.put(currentHost, current);
+            if (!hostServiceMapByPrincipal.containsKey(currentHost)) {
+                hostServiceMapByPrincipal.put(currentHost, current);
             }
             principal = principal.substring(0, end > -1 ? end : principal.length() - 1);
-            if (principal.equals(currentHost) == false && hostServiceMap.containsKey(principal) == false) {
-                hostServiceMap.put(principal, current);
+            if (!principal.equals(currentHost) && !hostServiceMapByPrincipal.containsKey(principal)) {
+                hostServiceMapByPrincipal.put(principal, current);
             }
         }
     }
@@ -102,8 +104,8 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
     @Override
     public void stop(StopContext context) {
         defaultService = null;
-        hostServiceMap = null;
-    }
+        hostServiceMapByForHosts = null;
+        hostServiceMapByPrincipal = null;    }
 
     @Override
     public KeytabIdentityFactoryService getValue() throws IllegalStateException, IllegalArgumentException {
@@ -119,17 +121,25 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
      */
 
     SubjectIdentity getSubjectIdentity(final String protocol, final String forHost) {
-        KeytabService selectedService = null;
+        KeytabService selectedService;
 
         String name = protocol + "/" + forHost;
-        selectedService = hostServiceMap.get(name);
+        selectedService = hostServiceMapByForHosts.get(name);
         if (selectedService == null) {
-            SECURITY_LOGGER.tracef("No mapping for name '%s' to KeytabService, attempting to use host only match.", name);
-            selectedService = hostServiceMap.get(forHost);
-            if (selectedService == null) {
-                SECURITY_LOGGER.tracef("No mapping for host '%s' to KeytabService, attempting to use default.", forHost);
-                selectedService = defaultService;
-            }
+            SECURITY_LOGGER.tracef("No for-hosts mapping for name '%s' to KeytabService, attempting to use host only match.", name);
+            selectedService = hostServiceMapByForHosts.get(forHost);
+        }
+        if (selectedService == null) {
+            SECURITY_LOGGER.tracef("No for-hosts mapping for name '%s' to KeytabService, attempting to use mapping by principal.", name);
+            selectedService = hostServiceMapByPrincipal.get(name);
+        }
+        if (selectedService == null) {
+            SECURITY_LOGGER.tracef("No principal mapping for name '%s' to KeytabService, attempting to use host only match.", name);
+            selectedService = hostServiceMapByPrincipal.get(forHost);
+        }
+        if (selectedService == null) {
+            SECURITY_LOGGER.tracef("No principal mapping for host '%s' to KeytabService, attempting to use default.", forHost);
+            selectedService = defaultService;
         }
 
         if (selectedService != null) {
