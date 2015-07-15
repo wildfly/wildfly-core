@@ -1466,7 +1466,12 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
         CapabilityContext context = createCapabilityContext(step);
-        return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, context, serviceType);
+        try {
+            return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, context, serviceType);
+        } catch (IllegalStateException ignored) {
+            // not registered. just do it directly
+        }
+        return ServiceName.parse(capabilityName);
     }
 
     private void rejectUserDomainServerUpdates() {
