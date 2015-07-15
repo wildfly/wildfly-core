@@ -325,7 +325,7 @@ public class SocketCapabilityResolutionUnitTestCase {
         assertTrue(response.toString(), response.hasDefined(FAILURE_DESCRIPTION));
         String failDesc = response.get(RESULT, step, FAILURE_DESCRIPTION).asString();
         int lastLoc = -1;
-        int loc = failDesc.indexOf("WFLYCTL0405");
+        int loc = failDesc.indexOf("WFLYCTL0399");
         assertTrue(response.toString(), loc > lastLoc);
         lastLoc = loc;
         loc = failDesc.indexOf(req);

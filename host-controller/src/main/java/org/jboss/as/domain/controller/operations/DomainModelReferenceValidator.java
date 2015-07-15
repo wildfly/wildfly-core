@@ -53,9 +53,9 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -150,19 +150,19 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         }
         // If we are missing a server group
         if (!serverGroups.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
         }
         // We are missing a profile
         if (!missingProfiles.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
         }
         // Process socket-binding groups
         if (!missingSocketBindingGroups.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
         }
         //We are missing an interface
         if (!interfaces.isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
+            throw HostControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
         }
 
     }
@@ -231,47 +231,79 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
 
         void validate(Set<String> missingEntries) throws OperationFailedException {
             //Look for cycles
-            for (String profileName : resourceIncludes.keySet()) {
-                if (!seen.contains(profileName)) {
-                    dfsForMissingOrCyclicIncludes(profileName, missingEntries);
+            for (String resourceName : resourceIncludes.keySet()) {
+                if (!seen.contains(resourceName)) {
+                    dfsForMissingOrCyclicIncludes(resourceName, missingEntries);
                 }
             }
 
             if (missingEntries.size() > 0) {
-                //We are missing some profiles, don't continue with the validation since it has failed
+                //We are missing some entries, don't continue with the validation since it has failed
                 return;
             }
 
-            //Check that subsystems are not overridden, by traversing them in the order child->parent
+            //Check that children are not overridden, by traversing them in the order child->parent
             //using the reverse post-order of the dfs
             seen.clear();
             for (ListIterator<String> it = post.listIterator(post.size()) ; it.hasPrevious() ; ) {
-                String profile = it.previous();
-                if (seen.contains(profile)) {
+                String resourceName = it.previous();
+                if (seen.contains(resourceName)) {
                     continue;
                 }
-                Map<String, String> subsystems = new HashMap<>();
-                validateChildrenNotOverridden(profile, subsystems);
+                List<String> stack = new ArrayList<>();
+                Map<String, List<String>> reachableChildren = new HashMap<>();
+                validateChildrenNotOverridden(resourceName, reachableChildren, stack);
             }
         }
 
-        void validateChildrenNotOverridden(String resourceName, Map<String, String> children) throws OperationFailedException {
-            seen.add(resourceName);
-            Set<String> includes = resourceIncludes.get(resourceName);
-            if (includes.size() == 0 && children.size() == 0) {
-                return;
-            }
-            for (String child : resourceChildren.get(resourceName)) {
-                String existingSubsystemProfile = children.get(child);
-                if (existingSubsystemProfile != null) {
-                    throw profileAttemptingToOverrideSubsystem(existingSubsystemProfile, child, resourceName);
+        void validateChildrenNotOverridden(String resourceName, Map<String, List<String>> reachableChildren,
+                                           List<String> stack) throws OperationFailedException {
+            stack.add(resourceName);
+            try {
+                seen.add(resourceName);
+                Set<String> includes = resourceIncludes.get(resourceName);
+                Set<String> children = resourceChildren.get(resourceName);
+                if (includes.size() == 0 && children.size() == 0) {
+                    return;
                 }
-                children.put(child, resourceName);
-            }
-            for (String include : includes) {
-                validateChildrenNotOverridden(include, children);
+                for (String child : resourceChildren.get(resourceName)) {
+                    List<String> existingChildParentStack = reachableChildren.get(child);
+                    if (existingChildParentStack != null) {
+                        logError(resourceName, stack, child, existingChildParentStack);
+                    }
+                    reachableChildren.put(child, new ArrayList<>(stack));
+                }
+                for (String include : includes) {
+                    validateChildrenNotOverridden(include, reachableChildren, stack);
+                }
+            } finally {
+                stack.remove(stack.size() - 1);
             }
         }
+
+        private void logError(String resourceName, List<String> stack, String child, List<String> existingChildParentStack) throws OperationFailedException {
+            //Now figure out if this is a direct override, or no override but including two parents
+            //with the same child
+            for (ListIterator<String> it = stack.listIterator(stack.size()) ; it.hasPrevious() ; ) {
+                String commonParent = it.previous();
+                if (existingChildParentStack.contains(commonParent)) {
+                    if (!getLastElement(existingChildParentStack).equals(commonParent)) {
+                        //This is not an override but 'commonParent' includes two parents with the same child
+                        throw twoParentsWithSameChild(commonParent, getLastElement(stack), getLastElement(existingChildParentStack), child);
+                    }
+                }
+            }
+            //It is a direct override
+            //Alternatively, something went wrong when trying to determine the cause, in which case this message
+            //will not be 100% correct, but it is better to get an error than not.
+            throw attemptingToOverride(getLastElement(existingChildParentStack), child, resourceName);
+        }
+
+        private String getLastElement(List<String> list) {
+            return list.get(list.size() - 1);
+        }
+
+        protected abstract OperationFailedException twoParentsWithSameChild(String commonParent, String include1, String include2, String child);
 
         void dfsForMissingOrCyclicIncludes(String resourceName, Set<String> missingEntries) throws OperationFailedException {
             onStack.add(resourceName);
@@ -287,7 +319,7 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
                         linkTo.put(include, resourceName);
                         dfsForMissingOrCyclicIncludes(include, missingEntries);
                     } else if (onStack.contains(include)) {
-                        throw profileInvolvedInACycle(include);
+                        throw involvedInACycle(include);
                     }
                 }
             } finally {
@@ -296,8 +328,8 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
             post.add(resourceName);
         }
 
-        abstract OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName);
-        abstract OperationFailedException profileInvolvedInACycle(String profile);
+        abstract OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName);
+        abstract OperationFailedException involvedInACycle(String profile);
     }
 
 
@@ -317,13 +349,18 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
         }
 
         @Override
-        OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName) {
-            return ControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(existingSubsystemProfile, child, resourceName);
+        OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName) {
+            return HostControllerLogger.ROOT_LOGGER.profileAttemptingToOverrideSubsystem(parentOfExistingChild, child, resourceName);
         }
 
         @Override
-        OperationFailedException profileInvolvedInACycle(String include) {
-            return ControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
+        OperationFailedException involvedInACycle(String include) {
+            return HostControllerLogger.ROOT_LOGGER.profileInvolvedInACycle(include);
+        }
+
+        @Override
+        protected OperationFailedException twoParentsWithSameChild(String commonParent, String include1, String include2, String child) {
+            return HostControllerLogger.ROOT_LOGGER.profileIncludesSameSubsystem(commonParent, include1, include2, child);
         }
     }
 
@@ -354,21 +391,25 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
             if (groupEntry.hasChildren(bindingType)) {
                 for (String name : groupEntry.getChildrenNames(bindingType)) {
                     if (!bindings.add(name)) {
-                        throw ControllerLogger.ROOT_LOGGER.bindingNameNotUnique(name, groupEntry.getName());
+                        throw HostControllerLogger.ROOT_LOGGER.bindingNameNotUnique(name, groupEntry.getName());
                     }
                 }
             }
         }
 
         @Override
-        OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String child, String resourceName) {
-            return ControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(existingSubsystemProfile, child, resourceName);
+        OperationFailedException attemptingToOverride(String parentOfExistingChild, String child, String resourceName) {
+            return HostControllerLogger.ROOT_LOGGER.socketBindingGroupAttemptingToOverrideSocketBinding(parentOfExistingChild, child, resourceName);
         }
 
         @Override
-        OperationFailedException profileInvolvedInACycle(String include) {
-            return ControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
+        OperationFailedException involvedInACycle(String include) {
+            return HostControllerLogger.ROOT_LOGGER.socketBindingGroupInvolvedInACycle(include);
         }
 
+        @Override
+        protected OperationFailedException twoParentsWithSameChild(String commonParent, String include1, String include2, String child) {
+            return HostControllerLogger.ROOT_LOGGER.socketBindingGroupIncludesSameSocketBinding(commonParent, include1, include2, child);
+        }
     }
 }
