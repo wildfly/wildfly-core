@@ -63,7 +63,10 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                     boolean servicesRestarted = false;
                     final boolean reloadRequired = service != null && !isResourceServiceRestartAllowed(context, service);
                     if (reloadRequired) {
-                        context.reloadRequired();
+                        parentModel = getModel(context, address);
+                        if (parentModel != null) {
+                            context.reloadRequired();
+                        } // else the parent remove must have run as part of this op and we're not responsible for runtime
                     } else if (service != null ) {
                         parentModel = getModel(context, address);
                         if (parentModel != null && context.markResourceRestarted(address, RestartParentResourceHandlerBase.this)) {
