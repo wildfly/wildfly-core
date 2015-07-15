@@ -31,7 +31,7 @@ import java.util.Set;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public abstract class AbstractCapability {
+public abstract class AbstractCapability implements Capability {
 
     private final String name;
     private final boolean dynamic;
@@ -89,6 +89,7 @@ public abstract class AbstractCapability {
      *
      * @see #getDynamicName(String)
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -99,6 +100,7 @@ public abstract class AbstractCapability {
      *
      * @return the capability names. Will not be {@code null} but may be empty.
      */
+    @Override
     public Set<String> getRequirements() {
         return requirements;
     }
@@ -110,6 +112,7 @@ public abstract class AbstractCapability {
      *
      * @return the capability names. Will not be {@code null} but may be empty.
      */
+    @Override
     public Set<String> getOptionalRequirements() {
         return optionalRequirements;
     }
@@ -125,6 +128,7 @@ public abstract class AbstractCapability {
      *
      * @return the capability names. Will not be {@code null} but may be empty.
      */
+    @Override
     public Set<String> getRuntimeOnlyRequirements() {
         return runtimeOnlyRequirements;
     }
@@ -137,6 +141,7 @@ public abstract class AbstractCapability {
      *
      * @return the capability names. Will not be {@code null} but may be empty.
      */
+    @Override
     public Set<String> getDynamicRequirements() {
         return dynamicRequirements;
     }
@@ -149,6 +154,7 @@ public abstract class AbstractCapability {
      *
      * @return the capability names. Will not be {@code null} but may be empty.
      */
+    @Override
     public Set<String> getDynamicOptionalRequirements() {
         return dynamicOptionalRequirements;
     }
@@ -159,6 +165,7 @@ public abstract class AbstractCapability {
      *
      * @return {@code true} if this capability is dynamically named
      */
+    @Override
     public boolean isDynamicallyNamed() {
         return dynamic;
     }
@@ -170,6 +177,7 @@ public abstract class AbstractCapability {
      *
      * @throws IllegalStateException if {@link #isDynamicallyNamed()} returns {@code false}
      */
+    @Override
     public String getDynamicName(String dynamicNameElement) {
         if (!dynamic) {
             throw new IllegalStateException();

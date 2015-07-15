@@ -83,6 +83,7 @@ public class ModelDescriptionConstants {
     public static final String CALLER_THREAD = "caller-thread";
     public static final String CALLER_TYPE = "caller-type";
     public static final String CANCELLED = "cancelled";
+    public static final String CAPABILITIES = " capabilities";
     public static final String CAPABILITY_REFERENCE = "capability-reference";
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
@@ -140,6 +141,7 @@ public class ModelDescriptionConstants {
     public static final String DOMAIN_MODEL = "domain-model";
     public static final String DOMAIN_RESULTS = "domain-results";
     public static final String DOMAIN_UUID = "domain-uuid";
+    public static final String DYNAMIC = "capability";
     public static final String DUMP_SERVICES = "dump-services";
     public static final String ENABLE = "enable";
     public static final String ENABLED = "enabled";

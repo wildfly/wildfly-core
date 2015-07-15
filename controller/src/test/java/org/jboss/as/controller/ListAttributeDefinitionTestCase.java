@@ -28,6 +28,7 @@ import org.jboss.dmr.ModelType;
 import org.junit.Assert;
 import org.junit.Test;
 
+//todo consider using ResourceBuilder instead of ucstom impl of ResourceDefinition
 public class ListAttributeDefinitionTestCase {
 
     private static final String MY_RESOURCE = "my-resource";
@@ -55,6 +56,11 @@ public class ListAttributeDefinitionTestCase {
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 final PrimitiveListAttributeDefinition attr = PrimitiveListAttributeDefinition.Builder.of(MY_LIST_OF_STRINGS, STRING).build();
                 resourceRegistration.registerReadOnlyAttribute(attr, null);
+            }
+
+            @Override
+            public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+                //no op
             }
 
             @Override
@@ -143,6 +149,11 @@ public class ListAttributeDefinitionTestCase {
             @Override
             public boolean isOrderedChild() {
                 return false;
+            }
+
+            @Override
+            public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+
             }
         };
 

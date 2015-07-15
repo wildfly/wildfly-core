@@ -25,7 +25,9 @@ package org.jboss.as.controller.descriptions;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 
@@ -41,6 +43,7 @@ import org.jboss.as.controller.DeprecationData;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.access.management.AccessConstraintDescriptionProviderUtil;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -75,6 +78,15 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
 
         final ResourceBundle bundle = descriptionResolver.getResourceBundle(locale);
         result.get(DESCRIPTION).set(descriptionResolver.getResourceDescription(locale, bundle));
+
+        Set<Capability> capabilities = registration.getCapabilities();
+        if (capabilities!=null&&!capabilities.isEmpty()){
+            for (Capability capability: capabilities) {
+                ModelNode cap = result.get(ModelDescriptionConstants.CAPABILITIES).add();
+                cap.get(NAME).set(capability.getName());
+                cap.get(DYNAMIC).set(capability.isDynamicallyNamed());
+            }
+        }
 
         if (deprecationData != null) {
             ModelNode deprecated = addDeprecatedInfo(result);

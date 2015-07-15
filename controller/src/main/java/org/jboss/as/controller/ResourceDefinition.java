@@ -81,6 +81,15 @@ public interface ResourceDefinition {
     void registerChildren(final ManagementResourceRegistration resourceRegistration);
 
     /**
+     * Register capabilities associated with this resource.
+     *
+     * @param resourceRegistration a {@link ManagementResourceRegistration} created from this definition
+     */
+    default void registerCapabilities(final ManagementResourceRegistration resourceRegistration){
+        // no op
+    }
+
+    /**
      * Get the definition of any access constraints associated with the resource.
      *
      * @return the access constraints or an empty list; will not return {@code null}.

@@ -67,6 +67,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -1019,6 +1020,12 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public void registerCapability(Capability capability) {
+            deployments.registerCapability(capability);
+            subdeployments.registerCapability(capability);
+        }
+
+        @Override
         public AliasEntry getAliasEntry() {
             return deployments.getAliasEntry();
         }
@@ -1026,6 +1033,11 @@ public class ExtensionRegistry {
         @Override
         public boolean isAlias() {
             return deployments.isAlias();
+        }
+
+        @Override
+        public Set<Capability> getCapabilities() {
+            return deployments.getCapabilities();
         }
     }
 

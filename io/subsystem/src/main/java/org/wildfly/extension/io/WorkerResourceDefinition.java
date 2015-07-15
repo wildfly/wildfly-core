@@ -33,6 +33,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
@@ -96,5 +97,10 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     @Override
     public Collection<AttributeDefinition> getAttributes() {
         return (Collection) ATTRIBUTES_BY_XMLNAME.values();
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(IO_WORKER_RUNTIME_CAPABILITY);
     }
 }

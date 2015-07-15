@@ -27,11 +27,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPRECATED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXPRESSIONS_ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HEAD_COMMENT_ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX;
@@ -41,6 +43,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIN_LENGTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIN_OCCURS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL_SIGNIFICANT;
@@ -94,6 +97,7 @@ public class ModelTestModelDescriptionValidator {
         validResourceKeys.put(HEAD_COMMENT_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         validResourceKeys.put(TAIL_COMMENT_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         validResourceKeys.put(NAMESPACE, NullDescriptorValidator.INSTANCE);
+        validResourceKeys.put(CAPABILITIES, CapabilitiesValidator.INSTANCE);
         validResourceKeys.put(ATTRIBUTES, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(OPERATIONS, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(NOTIFICATIONS, NullDescriptorValidator.INSTANCE);
@@ -607,6 +611,44 @@ public class ModelTestModelDescriptionValidator {
                         return "'" + descriptor + "' is not a string";
                     }
 
+                }
+            }
+            return null;
+        }
+    }
+
+
+    private static class CapabilitiesValidator implements ArbitraryDescriptorValidator, AttributeOrParameterArbitraryDescriptorValidator {
+        static final StringListValidator INSTANCE = new StringListValidator();
+
+        @Override
+        public String validate(ModelType currentType, ModelNode currentNode, String descriptor) {
+            return validate(currentNode, descriptor);
+        }
+
+        @Override
+        public String validate(ModelNode currentNode, String descriptor) {
+            if (currentNode.hasDefined(descriptor)) {
+                List<ModelNode> list;
+                try {
+                    list = currentNode.asList();
+                } catch (Exception e) {
+                    return "'" + descriptor + "' is not a list";
+                }
+                for (ModelNode entry : list) {
+                    if (!entry.hasDefined(NAME)) {
+                        return "'" + descriptor + "." + entry + "'.name is not defined";
+                    }
+                    if (entry.get(NAME).getType() != ModelType.STRING) {
+                        return "'" + descriptor + "." + entry + "'.name is not of type string";
+                    }
+                    if (!entry.hasDefined(DYNAMIC)) {
+                        return "'" + descriptor + "." + entry + "'.dynamic is not defined";
+                    }
+
+                    if (!entry.hasDefined(DYNAMIC) || entry.get(DYNAMIC).getType() != ModelType.BOOLEAN) {
+                        return "'" + descriptor + "." + entry + "'.dynamic is not of type boolean";
+                    }
                 }
             }
             return null;

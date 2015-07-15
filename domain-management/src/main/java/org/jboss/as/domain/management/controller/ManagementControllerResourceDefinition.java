@@ -44,7 +44,9 @@ public class ManagementControllerResourceDefinition extends SimpleResourceDefini
     public static final ResourceDefinition INSTANCE = new ManagementControllerResourceDefinition();
 
     private ManagementControllerResourceDefinition() {
-        super(PATH_ELEMENT, DomainManagementResolver.getResolver(CORE, MANAGEMENT_OPERATIONS));
+        super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver(CORE, MANAGEMENT_OPERATIONS))
+                        .setRuntime()
+        );
     }
 
     @Override

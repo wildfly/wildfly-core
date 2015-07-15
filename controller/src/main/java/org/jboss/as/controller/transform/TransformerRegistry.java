@@ -236,10 +236,12 @@ public final class TransformerRegistry {
         return ModelVersion.create(major, minor, micro);
     }
 
+    //todo consider moving this to test harness for transformers
     public static ResourceDefinition loadSubsystemDefinitionFromFile(final Class<?> classForDmrPackage, final String subsystemName, final ModelVersion version) {
         return TransformationUtils.loadSubsystemDefinitionFromFile(classForDmrPackage, subsystemName, version);
     }
 
+    //todo consider moving this to test harness for transformers
     public static Resource modelToResource(final ImmutableManagementResourceRegistration reg, final ModelNode model, boolean includeUndefined) {
         return TransformationUtils.modelToResource(PathAddress.EMPTY_ADDRESS, reg, model, includeUndefined);
     }

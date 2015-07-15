@@ -33,6 +33,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.security.ControllerPermission;
 
@@ -252,4 +253,11 @@ public interface ImmutableManagementResourceRegistration {
      * @return the set of ordered child types, and and empty set if there are none
      */
     Set<String> getOrderedChildTypes();
+
+    /**
+     * Returns all capabilities defined for this resource.
+     *
+     * @return Set of capabilities if any registered otherwise empty set
+     */
+    Set<Capability> getCapabilities();
 }
