@@ -146,7 +146,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         Long bootTimeout = null;
         String timeoutString = timeout.getValue(parsedCmd);
         if (timeoutString != null) {
-            bootTimeout = TimeUnit.SECONDS.toMillis(Long.parseLong(timeoutString));
+            bootTimeout = TimeUnit.SECONDS.toNanos(Long.parseLong(timeoutString));
         }
 
         final EnvironmentRestorer restorer = new EnvironmentRestorer();
@@ -236,7 +236,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                     // Stop server and restore environment
                     StopEmbeddedServerHandler.cleanup(serverReference);
                     throw new CommandLineException("Embedded server did not exit 'starting' status within " +
-                            TimeUnit.MILLISECONDS.toSeconds(bootTimeout) + " seconds");
+                            TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
                 }
 
             }
