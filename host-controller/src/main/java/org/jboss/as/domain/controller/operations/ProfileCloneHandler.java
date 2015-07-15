@@ -31,7 +31,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -80,17 +82,48 @@ public class ProfileCloneHandler implements OperationStepHandler {
 
                 final PathAddress newPA = PathAddress.pathAddress(PROFILE, newProfile);
                 final List<ModelNode> operations = new ArrayList<>(result.get(RESULT).asList());
-                Collections.reverse(operations);
-                for (final ModelNode op : operations) {
-                    final PathAddress a = newPA.append(PathAddress.pathAddress(op.require(OP_ADDR)).subAddress(1));
+
+                //Make sure that we add everything in exactly the same order as the original profile
+                Map<String, List<ModelNode>> opsBySubsystem = new LinkedHashMap<>();
+                ModelNode profileAdd = null;
+
+                for (ModelNode op : operations) {
+                    PathAddress addr = PathAddress.pathAddress(op.require(OP_ADDR)).subAddress(1);
+
+                    //Adjust the address for the new profile
+                    final PathAddress a = newPA.append(addr);
                     op.get(OP_ADDR).set(a.toModelNode());
 
-                    final OperationStepHandler h = context.getRootResourceRegistration().getOperationHandler(a, op.get(OP).asString());
-                    context.addStep(op, h, OperationContext.Stage.MODEL, true);
+                    if (addr.size() == 0) {
+                        profileAdd = op;
+                    } else {
+                        String subsystem = addr.getElement(0).getValue();
+                        List<ModelNode> subsystemOps = opsBySubsystem.get(subsystem);
+                        if (subsystemOps == null) {
+                            subsystemOps = new ArrayList<>();
+                            opsBySubsystem.put(subsystem, subsystemOps);
+                        }
+                        subsystemOps.add(op);
+                    }
                 }
+
+                for (List<ModelNode> ops : opsBySubsystem.values()) {
+                    Collections.reverse(ops);
+                    for (final ModelNode op : ops) {
+                        addOperation(context, op);
+                    }
+                }
+                addOperation(context, profileAdd);
             }
         }, OperationContext.Stage.MODEL, true);
 
         context.addStep(result, describeOp, handler, OperationContext.Stage.MODEL, true);
+    }
+
+    private void addOperation(OperationContext context, ModelNode op) {
+        final PathAddress addr = PathAddress.pathAddress(op.require(OP_ADDR));
+        final OperationStepHandler h =
+                context.getRootResourceRegistration().getOperationHandler(addr, op.get(OP).asString());
+        context.addStep(op, h, OperationContext.Stage.MODEL, true);
     }
 }
