@@ -60,9 +60,10 @@ import org.jboss.dmr.ModelType;
  */
 public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
+    public static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
     private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
-    public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
-            .of(RUNTIME_CAPABILITY_NAME).build();
+    public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder.of(RUNTIME_CAPABILITY_NAME)
+            .build();
 
     private static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
 
@@ -76,6 +77,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setXmlName(Attribute.HTTP.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
             .build();
 
     public static final SimpleAttributeDefinition SECURE_SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_SOCKET_BINDING, ModelType.STRING, true)
@@ -83,6 +85,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
             .setRequires(SECURITY_REALM.getName())
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
             .build();
 
     public static final SimpleAttributeDefinition CONSOLE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONSOLE_ENABLED, ModelType.BOOLEAN, true)

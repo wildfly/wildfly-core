@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.services.net;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
 import java.net.UnknownHostException;
 
@@ -34,6 +34,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * A write attribute handler for handling updates to attributes of a client socket binding.
@@ -64,14 +65,15 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                            ModelNode resolvedValue, ModelNode currentValue,
                                            HandbackHolder<Boolean> handbackHolder) throws OperationFailedException {
-        final String bindingName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
+        final String bindingName = context.getCurrentAddressValue();
         final ModelNode bindingModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-        final ServiceController<?> controller = context.getServiceRegistry(true).getRequiredService(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(bindingName));
+        final ServiceName serviceName = OUTBOUND_SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(bindingName, OutboundSocketBinding.class);
+        final ServiceController<?> controller = context.getServiceRegistry(true).getRequiredService(serviceName);
         final OutboundSocketBinding binding = controller.getState() == ServiceController.State.UP ? OutboundSocketBinding.class.cast(controller.getValue()) : null;
         final boolean bound = binding != null && binding.isConnected(); // FIXME see if this can be used, or remove
         if (binding == null) {
             // existing is not started, so can't "update" it. Instead reinstall the service
-            handleBindingReinstall(context, bindingName, bindingModel);
+            handleBindingReinstall(context, bindingName, bindingModel, serviceName);
             handbackHolder.setHandback(Boolean.TRUE);
         } else {
             // We don't allow runtime changes without a context reload for outbound socket bindings
@@ -87,7 +89,7 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                          ModelNode valueToRestore, ModelNode valueToRevert, Boolean handback) throws OperationFailedException {
         if (handback != null && handback.booleanValue()) {
-            final String bindingName = PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue();
+            final String bindingName = context.getCurrentAddressValue();
             final ModelNode bindingModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
             // Back to the old service
             revertBindingReinstall(context, bindingName, bindingModel, attributeName, valueToRestore);
@@ -96,8 +98,8 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
         }
     }
 
-    private void handleBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel) throws OperationFailedException {
-        context.removeService(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(bindingName));
+    private void handleBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel, ServiceName serviceName) throws OperationFailedException {
+        context.removeService(serviceName);
         try {
             if (remoteDestination) {
                 RemoteDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, bindingModel, bindingName);
@@ -111,8 +113,8 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
 
     private void revertBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel,
                                         String attributeName, ModelNode previousValue) {
-
-        context.removeService(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(bindingName));
+        final ServiceName serviceName = OUTBOUND_SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(bindingName, OutboundSocketBinding.class);
+        context.removeService(serviceName);
         final ModelNode unresolvedConfig = bindingModel.clone();
         unresolvedConfig.get(attributeName).set(previousValue);
         try {

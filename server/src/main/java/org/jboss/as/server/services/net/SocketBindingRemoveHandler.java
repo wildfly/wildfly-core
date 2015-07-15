@@ -38,6 +38,6 @@ public class SocketBindingRemoveHandler extends AbstractRemoveStepHandler {
      * Create the SocketBindingRemoveHandler
      */
     protected SocketBindingRemoveHandler() {
-        super(SocketBindingAddHandler.SOCKET_BINDING_CAPABILITY);
+        super(SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY);
     }
 }
