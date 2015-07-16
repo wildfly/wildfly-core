@@ -42,6 +42,7 @@ public class PersistentResourceXMLDescription {
     protected final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
     protected final LinkedHashMap<String, PropertiesAttributeDefinition> propertyAttributes;
     protected final List<PersistentResourceXMLDescription> children;
+    protected final Map<String,AttributeDefinition> attributeElements =  new HashMap<>();
     protected final boolean useValueAsElementName;
     protected final boolean noAddOperation;
     protected final AdditionalOperationsGenerator additionalOperationsGenerator;
@@ -53,6 +54,7 @@ public class PersistentResourceXMLDescription {
     private final String namespaceURI;
     private final Set<String> attributeGroups;
     private final String forcedName;
+
 
     /**
      * @deprecated use a {@link org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder}
@@ -104,6 +106,10 @@ public class PersistentResourceXMLDescription {
                     }
                     forGroup.put(ad.getXmlName(), ad);
                 }
+                if (ad.getParser()!=null&&ad.getParser().isParseAsElement()){
+                    attributeElements.put(ad.getName(), ad);
+                }
+
             }
         } else {
             LinkedHashMap<String,AttributeDefinition> attrs = new LinkedHashMap<>();
@@ -163,7 +169,7 @@ public class PersistentResourceXMLDescription {
             additionalOperationsGenerator.additionalOperations(address, op, list);
         }
         if (!reader.isEndElement()) { //only parse children if we are not on end of tag already
-            parseChildren(reader, address, list);
+            parseChildren(reader, address, list, op);
         }
     }
 
@@ -176,6 +182,9 @@ public class PersistentResourceXMLDescription {
                     ParseUtils.requireNoContent(reader);
                 } else if(propertyAttributes.containsKey(reader.getLocalName())) {
                     parseProperty(reader, op);
+                } else if (attributeElements.containsKey(reader.getLocalName())) {
+                    AttributeDefinition ad = attributeElements.get(reader.getLocalName());
+                    ad.getParser().parseElement(ad, reader, op);
                 } else {
                     //don't break, as we read all attributes, we set that child was already read so readChildren wont do .nextTag()
                     childAlreadyRead = true;
@@ -238,7 +247,7 @@ public class PersistentResourceXMLDescription {
         return res;
     }
 
-    private void parseChildren(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+    private void parseChildren(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list, ModelNode op) throws XMLStreamException {
         if (children.size() == 0) {
             if (flushRequired && attributeGroups.isEmpty()) {
                 ParseUtils.requireNoContent(reader);
@@ -266,6 +275,9 @@ public class PersistentResourceXMLDescription {
                             child.parse(reader, parentAddress, list);
                         }
 
+                    } else if (attributeElements.containsKey(reader.getLocalName())){
+                        AttributeDefinition ad = attributeElements.get(reader.getLocalName());
+                        ad.getParser().parseElement(ad, reader, op);
                     } else {
                         throw ParseUtils.unexpectedElement(reader, children.keySet());
                     }
@@ -359,8 +371,8 @@ public class PersistentResourceXMLDescription {
     private void persistAttributes(XMLExtendedStreamWriter writer, ModelNode model, boolean marshalDefault) throws XMLStreamException {
         // Persist all attributes in the 'null' group
         for (AttributeDefinition def : attributesByGroup.get(null).values()) {
-            AttributeMarshaller marshaller = attributeMarshallers.containsKey(def.getName()) ? attributeMarshallers.get(def.getName()) : def.getAttributeMarshaller();
-            marshaller.marshallAsAttribute(def, model, marshalDefault, writer);
+            AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(def.getName(), def.getAttributeMarshaller());
+            marshaller.marshall(def, model, marshalDefault, writer);
         }
         if (useElementsForGroups) {
             for (Map.Entry<String, LinkedHashMap<String, AttributeDefinition>> entry : attributesByGroup.entrySet()) {
@@ -370,20 +382,20 @@ public class PersistentResourceXMLDescription {
                 boolean started = false;
                 for (Map.Entry<String, AttributeDefinition> def : entry.getValue().entrySet()) {
                     AttributeDefinition ad = def.getValue();
-                    AttributeMarshaller marshaller = attributeMarshallers.containsKey(ad.getName()) ? attributeMarshallers.get(ad.getName()) : ad.getAttributeMarshaller();
+                    AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getName(), ad.getAttributeMarshaller());
                     if (marshaller.isMarshallable(ad, model, marshalDefault)) {
                         if (!started) {
                             writer.writeEmptyElement(entry.getKey());
                             started = true;
                         }
-                        marshaller.marshallAsAttribute(ad, model, marshalDefault, writer);
+                        marshaller.marshall(ad, model, marshalDefault, writer);
                     }
                 }
             }
         } // else we will only have attributes under the 'null' group
         for (AttributeDefinition def : propertyAttributes.values()) {
-            AttributeMarshaller marshaller = attributeMarshallers.containsKey(def.getName()) ? attributeMarshallers.get(def.getName()) : def.getAttributeMarshaller();
-            marshaller.marshallAsAttribute(def, model, marshalDefault, writer);
+            AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(def.getName(), def.getAttributeMarshaller());
+            marshaller.marshall(def, model, marshalDefault, writer);
         }
     }
 

@@ -48,6 +48,8 @@ import javax.xml.transform.stream.StreamSource;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
@@ -262,6 +264,31 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
+    @Test
+    public void testServerWithComplexAttributeParser() throws Exception {
+        ServerParser parser = new ServerParser();
+
+        String xml = readResource("server-complex-attribute.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(MyParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        Assert.assertEquals(4, operations.size());
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
+    }
+
     private ModelNode opsToModel(List<ModelNode> operations) {
         ModelNode subsystem = new ModelNode();
 
@@ -386,6 +413,23 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
 
+        public static final ObjectTypeAttributeDefinition CLASS = ObjectTypeAttributeDefinition.Builder.of("class", create("name", ModelType.STRING, false)
+                        .setAllowExpression(false)
+                        .build(),
+                create("module", ModelType.STRING, false)
+                        .setAllowExpression(false)
+                        .build())
+                .build();
+
+
+        public static final ObjectListAttributeDefinition INTERCEPTORS = ObjectListAttributeDefinition.Builder.of("interceptors", CLASS)
+                .setAllowNull(true)
+                .setAllowExpression(false)
+                .setMinSize(1)
+                .setMaxSize(Integer.MAX_VALUE)
+                .build();
+
+
 
         protected static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
             @Override
@@ -422,6 +466,7 @@ public class PersistentResourceXMLParserTestCase {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
                 attributes.add(STATISTICS_ENABLED);
                 attributes.add(SECURITY_ENABLED);
+                attributes.add(INTERCEPTORS);
                 return attributes;
             }
 
@@ -518,6 +563,7 @@ public class PersistentResourceXMLParserTestCase {
                     .addChild(
                             builder(SERVER_INSTANCE)
                                     .addAttributes(SECURITY_ENABLED, STATISTICS_ENABLED)
+                                    .addAttribute(INTERCEPTORS)
                                     .addChild(
                                             builder(BUFFER_CACHE_INSTANCE)
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)

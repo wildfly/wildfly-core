@@ -225,6 +225,10 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         //Don't add allowed values for object types, since they simply enumerate the fields given in the value type
     }
 
+    ObjectTypeAttributeDefinition getValueType() {
+        return valueType;
+    }
+
     public static final class Builder extends ListAttributeDefinition.Builder<Builder, ObjectListAttributeDefinition> {
         private final ObjectTypeAttributeDefinition valueType;
 
@@ -232,6 +236,8 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             super(name);
             this.valueType = valueType;
             setElementValidator(valueType.getValidator());
+            setAttributeParser(AttributeParser.OBJECT_LIST_PARSER);
+            setAttributeMarshaller(AttributeMarshaller.OBJECT_LIST_MARSHALLER);
         }
 
         public static Builder of(final String name, final ObjectTypeAttributeDefinition valueType) {

@@ -316,7 +316,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         public Builder(final String name, final AttributeDefinition... valueTypes) {
             super(name, ModelType.OBJECT, true);
             this.valueTypes = valueTypes;
-
+            setAttributeParser(AttributeParser.OBJECT_PARSER);
         }
 
         public static Builder of(final String name, final AttributeDefinition... valueTypes) {
