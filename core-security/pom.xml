@@ -29,11 +29,11 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>2.0.0.Alpha10</version>
+        <version>2.0.0.Alpha11-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-security-parent</artifactId>
-    <version>2.0.0.Alpha10</version>
+    <version>2.0.0.Alpha11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>WildFly: Core Security parent</name>
