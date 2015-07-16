@@ -66,7 +66,7 @@ public class DefaultAttributeMarshaller extends AttributeMarshaller {
 
     @Override
     public boolean isMarshallableAsElement() {
-        return true;
+        return false;
     }
 
     protected String asString(ModelNode value) {

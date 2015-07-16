@@ -25,12 +25,19 @@
 package org.jboss.as.controller;
 
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
@@ -101,6 +108,14 @@ public abstract class AttributeParser {
         return node;
     }
 
+    public boolean isParseAsElement() {
+        return false;
+    }
+
+    public void parseElement(final AttributeDefinition attribute, final XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+
+    }
+
     public static final AttributeParser SIMPLE = new AttributeParser() {
     };
 
@@ -138,6 +153,50 @@ public abstract class AttributeParser {
         }
     };
 
+    public static final AttributeParser OBJECT_LIST_PARSER = new AttributeParser() {
+        @Override
+        public boolean isParseAsElement() {
+            return true;
+        }
+
+        @Override
+        public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+            assert attribute instanceof ObjectListAttributeDefinition;
+
+            ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
+            ObjectTypeAttributeDefinition objectType = list.getValueType();
+            AttributeDefinition[] valueTypes = objectType.getValueTypes();
+
+            Map<String, AttributeDefinition> attributes = Arrays.asList(valueTypes).stream()
+                    .collect(Collectors.toMap(AttributeDefinition::getXmlName,
+                            Function.identity()));
+            while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
+                if (objectType.getXmlName().equals(reader.getLocalName())){
+                    ModelNode op = operation.get(attribute.getName()).add();
+                    for (int i = 0; i < reader.getAttributeCount(); i++) {
+                        String attributeName = reader.getAttributeLocalName(i);
+                        String value = reader.getAttributeValue(i);
+                        if (attributes.containsKey(attributeName)) {
+                            AttributeDefinition def = attributes.get(attributeName);
+                            AttributeParser parser = def.getParser();
+                            assert parser != null;
+                            parser.parseAndSetParameter(def, value, op, reader);
+                        } else {
+                            throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
+                        }
+                    }
+                }else{
+                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(objectType.getXmlName()));
+                }
+                ParseUtils.requireNoContent(reader);
+            }
+        }
+    };
+
+    public static final AttributeParser OBJECT_PARSER = new AttributeParser() {
+
+    };
+
     public static final class DiscardOldDefaultValueParser extends AttributeParser{
         private final String value;
 
@@ -153,4 +212,5 @@ public abstract class AttributeParser {
             return new ModelNode();
         }
     }
+
 }
