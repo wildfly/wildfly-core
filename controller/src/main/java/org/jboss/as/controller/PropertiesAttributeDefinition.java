@@ -29,9 +29,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -114,53 +112,11 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         return wrapperElement;
     }
 
-    private static class PropertiesAttributeMarshaller extends AttributeMarshaller {
-        private final boolean wrapElement;
-        private final String wrapperElement;
-
-        protected PropertiesAttributeMarshaller(final boolean wrapElement, String wrapperElement) {
-            this.wrapElement = wrapElement;
-            this.wrapperElement = wrapperElement;
-        }
-
-        @Override
-        public boolean isMarshallable(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault) {
-            return resourceModel.isDefined() && resourceModel.hasDefined(attribute.getName());
-        }
-
-        @Override
-        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-            if (!resourceModel.hasDefined(attribute.getName())) {
-                return;
-            }
-            resourceModel = resourceModel.get(attribute.getName());
-            if (wrapElement) {
-                writer.writeStartElement(wrapperElement == null ? attribute.getName() : wrapperElement);
-            }
-            for (ModelNode property : resourceModel.asList()) {
-                writer.writeEmptyElement(attribute.getXmlName());
-                writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), property.asProperty().getName());
-                writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName(), property.asProperty().getValue().asString());
-            }
-            if (wrapElement) {
-                writer.writeEndElement();
-            }
-        }
-
-        @Override
-        public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-            marshallAsElement(attribute, resourceModel, marshallDefault, writer);
-        }
-
-        @Override
-        public boolean isMarshallableAsElement() {
-            return true;
-        }
-    }
-
     public static class Builder extends MapAttributeDefinition.Builder<Builder, PropertiesAttributeDefinition> {
         private boolean wrapXmlElement = true;
         private String wrapperElement = null;
+        //for backward compatibilty, until we get new core out and used by wildfly full.
+        private boolean xmlNameExplicitlySet = false;
 
         public Builder(final String name, boolean allowNull) {
             super(name, allowNull);
@@ -174,14 +130,32 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
             super(basis);
         }
 
+        /**
+         *
+         * @deprecated use setParser(new AttributeParser.PropertiesParsers(wrapper)
+         */
+        @Deprecated
         public Builder setWrapXmlElement(boolean wrap) {
             this.wrapXmlElement = wrap;
             return this;
         }
 
+        /**
+         * @deprecated use setParser(new AttributeParser.PropertiesParsers(wrapper)
+         */
+        @Deprecated
         public Builder setWrapperElement(String name) {
             this.wrapperElement = name;
             return this;
+        }
+
+        /**
+         * @deprecated use setParser(new AttributeParser.PropertiesParsers(wrapper)
+         */
+        @Override
+        public Builder setXmlName(String xmlName) {
+            this.xmlNameExplicitlySet = true;
+            return super.setXmlName(xmlName);
         }
 
         @Override
@@ -189,9 +163,14 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
             if (elementValidator == null) {
                 elementValidator = new ModelTypeValidator(ModelType.STRING, allowNull, allowExpression);
             }
+            String elementName = name.equals(xmlName) ? null : xmlName;
             if (attributeMarshaller == null) {
-                attributeMarshaller = new PropertiesAttributeMarshaller(wrapXmlElement, wrapperElement);
+                attributeMarshaller = new AttributeMarshallers.PropertiesAttributeMarshaller(wrapperElement, xmlNameExplicitlySet ? xmlName : elementName, wrapXmlElement);
             }
+            if (parser == null) {
+                parser = new AttributeParsers.PropertiesParser(wrapperElement, elementName, wrapXmlElement);
+            }
+
             return new PropertiesAttributeDefinition(this);
         }
     }

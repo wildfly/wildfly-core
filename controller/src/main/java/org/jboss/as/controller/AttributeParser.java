@@ -116,6 +116,10 @@ public abstract class AttributeParser {
 
     }
 
+    public String getXmlName(final AttributeDefinition attribute){
+        return attribute.getXmlName();
+    }
+
     public static final AttributeParser SIMPLE = new AttributeParser() {
     };
 
@@ -196,6 +200,8 @@ public abstract class AttributeParser {
     public static final AttributeParser OBJECT_PARSER = new AttributeParser() {
 
     };
+
+
 
     public static final class DiscardOldDefaultValueParser extends AttributeParser{
         private final String value;
