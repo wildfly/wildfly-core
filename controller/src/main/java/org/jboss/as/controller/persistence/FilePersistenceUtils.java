@@ -18,19 +18,27 @@
 * License along with this software; if not, write to the Free
 * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ */
 package org.jboss.as.controller.persistence;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
 
@@ -62,21 +70,7 @@ class FilePersistenceUtils {
     }
 
     static void copyFile(final File file, final File backup) throws IOException {
-        final InputStream in = new BufferedInputStream(new FileInputStream(file));
-        try {
-            final FileOutputStream fos = new FileOutputStream(backup);
-            final BufferedOutputStream output = new BufferedOutputStream(fos);
-            try {
-                StreamUtils.copyStream(in, output);
-                output.flush();
-                fos.getFD().sync();
-                fos.close();
-            } finally {
-                StreamUtils.safeClose(output);
-            }
-        } finally {
-            StreamUtils.safeClose(in);
-        }
+        Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
     }
 
     static void rename(File file, File to) throws IOException {
@@ -105,26 +99,62 @@ class FilePersistenceUtils {
         }
     }
 
-    static File writeToTempFile(ExposedByteArrayOutputStream marshalled, File tempFileName) throws IOException {
+    static File writeToTempFile(ExposedByteArrayOutputStream marshalled, File tempFileName, File fileName) throws IOException {
+        Path targetPath = tempFileName.toPath();
         deleteFile(tempFileName);
-
-        final FileOutputStream fos = new FileOutputStream(tempFileName);
-        final InputStream is = marshalled.getInputStream();
         try {
-            BufferedOutputStream output = new BufferedOutputStream(fos);
-            byte[] bytes = new byte[1024];
-            int read;
-            while ((read = is.read(bytes)) > -1) {
-                output.write(bytes, 0, read);
-            }
-            output.flush();
-            fos.getFD().sync();
-            output.close();
-            is.close();
-        } finally {
-            IoUtils.safeClose(fos);
-            IoUtils.safeClose(is);
+            createTempFileWithAttributes(targetPath, fileName);
+        } catch (IOException ioex) {
+           ioex.printStackTrace();
+        }
+        try (InputStream is = marshalled.getInputStream()) {
+            Files.copy(is, targetPath, StandardCopyOption.REPLACE_EXISTING);
         }
         return tempFileName;
+    }
+
+    static void createTempFileWithAttributes(Path tempFilePath, File fileName) throws IOException {
+        Path exisitingFilePath = fileName.toPath();
+        List<FileAttribute> attributes = new ArrayList<>(2);
+        attributes.addAll(getPosixAttributes(exisitingFilePath));
+        attributes.addAll(getAclAttributes(exisitingFilePath));
+        if (attributes.isEmpty()) {
+            Files.createFile(tempFilePath);
+        } else {
+            Files.createFile(tempFilePath, attributes.toArray(new FileAttribute<?>[attributes.size()]));
+        }
+    }
+
+    private static List<FileAttribute<Set<PosixFilePermission>>> getPosixAttributes(Path file) throws IOException {
+        if (Files.getFileStore(file).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            PosixFileAttributeView posixView = Files.getFileAttributeView(file, PosixFileAttributeView.class);
+            if (posixView != null) {
+                return Collections.singletonList(PosixFilePermissions.asFileAttribute(posixView.readAttributes().permissions()));
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private static List<FileAttribute<List<AclEntry>>> getAclAttributes(Path file) throws IOException {
+        if (Files.getFileStore(file).supportsFileAttributeView(AclFileAttributeView.class)) {
+            AclFileAttributeView aclView = Files.getFileAttributeView(file, AclFileAttributeView.class);
+            if (aclView != null) {
+                final List<AclEntry> entries = aclView.getAcl();
+                return Collections.singletonList(new FileAttribute<List<AclEntry>>() {
+
+                    @Override
+                    public List<AclEntry> value() {
+                        return entries;
+                    }
+
+                    @Override
+                    public String name() {
+                        return "acl:acl";
+                    }
+
+                });
+            }
+        }
+        return Collections.emptyList();
     }
 }
