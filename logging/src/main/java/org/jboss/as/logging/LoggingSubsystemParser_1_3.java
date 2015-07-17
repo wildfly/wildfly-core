@@ -83,6 +83,7 @@ import java.util.Set;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
+import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -185,6 +186,9 @@ class LoggingSubsystemParser_1_3 extends LoggingSubsystemParser implements XMLSt
             required.remove(attribute);
             switch (attribute) {
                 case CATEGORY: {
+                    if (value == null || value.trim().isEmpty()) {
+                        throw invalidAttributeValue(reader, i);
+                    }
                     name = value;
                     break;
                 }
