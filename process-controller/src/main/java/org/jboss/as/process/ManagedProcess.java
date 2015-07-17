@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +179,7 @@ final class ManagedProcess {
             StreamUtils.writeUTFZBytes(base64, hostName);
             StreamUtils.writeInt(base64, port);
             StreamUtils.writeBoolean(base64, managementSubsystemEndpoint);
-            base64.write(asAuthKey.getBytes());
+            base64.write(asAuthKey.getBytes(Charset.forName("US-ASCII")));
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
         } catch (IOException e) {
@@ -229,7 +230,7 @@ final class ManagedProcess {
         try {
             // WFLY-2697 All writing is in Base64
             OutputStream base64 = getBase64OutputStream(stdin);
-            base64.write(authKey.getBytes());
+            base64.write(authKey.getBytes(Charset.forName("US-ASCII")));
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
             ok = true;

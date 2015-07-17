@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.jboss.as.network.NetworkUtils;
 
@@ -135,11 +136,10 @@ public final class DomainServerMain {
                 final String hostName = StreamUtils.readUTFZBytes(initialInput);
                 final int port = StreamUtils.readInt(initialInput);
                 final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
-                final byte[] asAuthKey = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
-                StreamUtils.readFully(initialInput, asAuthKey);
-
+                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                StreamUtils.readFully(initialInput, authBytes);
+                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
                 URI hostControllerUri = new URI(scheme, null, NetworkUtils.formatPossibleIpv6Address(hostName), port, null, null, null);
-
                 // Get the host-controller server client
                 final ServiceContainer container = containerFuture.get();
                 if (!container.isShutdown()) {
@@ -147,7 +147,7 @@ public final class DomainServerMain {
                     final HostControllerClient client = getRequiredService(container,
                             HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                     // Reconnect to the host-controller
-                    client.reconnect(hostControllerUri, new String(asAuthBytes), managementSubsystemEndpoint);
+                    client.reconnect(hostControllerUri, authKey, managementSubsystemEndpoint);
                 }
 
             } catch (InterruptedIOException e) {

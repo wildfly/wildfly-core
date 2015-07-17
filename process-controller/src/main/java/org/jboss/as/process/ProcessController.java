@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
@@ -117,7 +118,7 @@ public final class ProcessController {
             }
             final ManagedProcess process = new ManagedProcess(processName, command, env, workingDirectory, lock, this, authKey, isPrivileged, respawn);
             processes.put(processName, process);
-            processesByKey.put(new Key(authKey.getBytes()), process);
+            processesByKey.put(new Key(authKey.getBytes(Charset.forName("US-ASCII"))), process);
             processAdded(processName);
         }
     }
@@ -185,7 +186,7 @@ public final class ProcessController {
                 return;
             }
             boolean removed = processes.remove(processName) != null;
-            processesByKey.remove(new Key(process.getAuthKey().getBytes()));
+            processesByKey.remove(new Key(process.getAuthKey().getBytes(Charset.forName("US-ASCII"))));
             if(removed) {
                 processRemoved(processName);
             }
@@ -341,7 +342,7 @@ public final class ProcessController {
                         StreamUtils.writeInt(os, processCollection.size());
                         for (ManagedProcess process : processCollection) {
                             StreamUtils.writeUTFZBytes(os, process.getProcessName());
-                            os.write(process.getAuthKey().getBytes());
+                            os.write(process.getAuthKey().getBytes(Charset.forName("US-ASCII")));
                             StreamUtils.writeBoolean(os, process.isRunning());
                             StreamUtils.writeBoolean(os, process.isStopping());
                         }

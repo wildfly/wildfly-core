@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -114,7 +115,8 @@ public final class ProcessControllerClient implements Closeable {
                             readFully(dataStream, processAuthBytes);
                             final boolean processRunning = StreamUtils.readBoolean(dataStream);
                             final boolean processStopping = StreamUtils.readBoolean(dataStream);
-                            inventory.put(processName, new ProcessInfo(processName, new String(processAuthBytes), processRunning, processStopping));
+                            final String processAuthKey = new String(processAuthBytes, Charset.forName("US-ASCII"));
+                            inventory.put(processName, new ProcessInfo(processName, processAuthKey, processRunning, processStopping));
                         }
                         dataStream.close();
                         ProcessLogger.CLIENT_LOGGER.tracef("Received process_inventory");
@@ -160,7 +162,7 @@ public final class ProcessControllerClient implements Closeable {
             try {
                 os.write(Protocol.AUTH);
                 os.write(1);
-                os.write(authCode.getBytes());
+                os.write(authCode.getBytes(Charset.forName("US-ASCII")));
                 final ProcessControllerClient processControllerClient = new ProcessControllerClient(connection);
                 connection.attach(processControllerClient);
                 ProcessLogger.CLIENT_LOGGER.trace("Sent initial greeting message");
@@ -219,7 +221,7 @@ public final class ProcessControllerClient implements Closeable {
         try {
             os.write(Protocol.ADD_PROCESS);
             writeUTFZBytes(os, processName);
-            os.write(authKey.getBytes());
+            os.write(authKey.getBytes(Charset.forName("US-ASCII")));
             writeInt(os, cmd.length);
             for (String c : cmd) {
                 writeUTFZBytes(os, c);
@@ -305,7 +307,7 @@ public final class ProcessControllerClient implements Closeable {
             writeUTFZBytes(os, managementURI.getHost());
             writeInt(os, managementURI.getPort());
             writeBoolean(os, managementSubsystemEndpoint);
-            os.write(authKey.getBytes());
+            os.write(authKey.getBytes(Charset.forName("US-ASCII")));
             os.close();
         } finally {
             safeClose(os);
