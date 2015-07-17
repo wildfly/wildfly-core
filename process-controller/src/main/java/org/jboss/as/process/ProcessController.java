@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,7 +62,8 @@ public final class ProcessController {
 
     private volatile boolean shutdown;
 
-
+    public static final short AUTH_BYTES_LENGTH = 16;
+    public static final short AUTH_BYTES_ENCODED_LENGTH = 24;
 
     private final PrintStream stdout;
     private final PrintStream stderr;
@@ -91,13 +93,13 @@ public final class ProcessController {
 
     public void addProcess(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
         // Create a new authKey
-        final byte[] authKey = new byte[16];
-        new Random(new SecureRandom().nextLong()).nextBytes(authKey);
-        //
+        final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
+        new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
+        String authKey = Base64.getEncoder().encodeToString(authBytes);
         addProcess(processName, authKey, command, env, workingDirectory, isPrivileged, respawn);
     }
 
-    public void addProcess(final String processName, final byte[] authKey, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
+    public void addProcess(final String processName, final String authKey, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
         for (String s : command) {
             if (s == null) {
                 throw ProcessLogger.ROOT_LOGGER.nullCommandComponent();
@@ -115,7 +117,7 @@ public final class ProcessController {
             }
             final ManagedProcess process = new ManagedProcess(processName, command, env, workingDirectory, lock, this, authKey, isPrivileged, respawn);
             processes.put(processName, process);
-            processesByKey.put(new Key(authKey), process);
+            processesByKey.put(new Key(authKey.getBytes()), process);
             processAdded(processName);
         }
     }
@@ -183,7 +185,7 @@ public final class ProcessController {
                 return;
             }
             boolean removed = processes.remove(processName) != null;
-            processesByKey.remove(new Key(process.getAuthKey()));
+            processesByKey.remove(new Key(process.getAuthKey().getBytes()));
             if(removed) {
                 processRemoved(processName);
             }
@@ -339,7 +341,7 @@ public final class ProcessController {
                         StreamUtils.writeInt(os, processCollection.size());
                         for (ManagedProcess process : processCollection) {
                             StreamUtils.writeUTFZBytes(os, process.getProcessName());
-                            os.write(process.getAuthKey());
+                            os.write(process.getAuthKey().getBytes());
                             StreamUtils.writeBoolean(os, process.isRunning());
                             StreamUtils.writeBoolean(os, process.isStopping());
                         }
@@ -355,7 +357,7 @@ public final class ProcessController {
         }
     }
 
-    public void sendReconnectProcess(String processName, String scheme, String hostName, int port, boolean managementSubsystemEndpoint, byte[] asAuthKey) {
+    public void sendReconnectProcess(String processName, String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String asAuthKey) {
         synchronized (lock) {
             ManagedProcess process = processes.get(processName);
             if (process == null) {

@@ -61,7 +61,7 @@ final class ManagedProcess {
     private final Object lock;
 
     private final ProcessController processController;
-    private final byte[] authKey;
+    private final String authKey;
     private final boolean isPrivileged;
     private final RespawnPolicy respawnPolicy;
 
@@ -72,7 +72,7 @@ final class ManagedProcess {
     private boolean stopRequested = false;
     private final AtomicInteger respawnCount = new AtomicInteger(0);
 
-    public byte[] getAuthKey() {
+    public String getAuthKey() {
         return authKey;
     }
 
@@ -95,7 +95,7 @@ final class ManagedProcess {
         ;
     }
 
-    ManagedProcess(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final byte[] authKey, final boolean privileged, final boolean respawn) {
+    ManagedProcess(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String authKey, final boolean privileged, final boolean respawn) {
         if (processName == null) {
             throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
         }
@@ -117,7 +117,7 @@ final class ManagedProcess {
         if (authKey == null) {
             throw ProcessLogger.ROOT_LOGGER.nullVar("authKey");
         }
-        if (authKey.length != 16) {
+        if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
             throw ProcessLogger.ROOT_LOGGER.invalidLength("authKey");
         }
         this.processName = processName;
@@ -169,7 +169,7 @@ final class ManagedProcess {
         }
     }
 
-    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, byte[] asAuthKey) {
+    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String asAuthKey) {
         assert holdsLock(lock); // Call under lock
         try {
             // WFLY-2697 All writing is in Base64
@@ -178,7 +178,7 @@ final class ManagedProcess {
             StreamUtils.writeUTFZBytes(base64, hostName);
             StreamUtils.writeInt(base64, port);
             StreamUtils.writeBoolean(base64, managementSubsystemEndpoint);
-            base64.write(asAuthKey);
+            base64.write(asAuthKey.getBytes());
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
         } catch (IOException e) {
@@ -229,7 +229,7 @@ final class ManagedProcess {
         try {
             // WFLY-2697 All writing is in Base64
             OutputStream base64 = getBase64OutputStream(stdin);
-            base64.write(authKey);
+            base64.write(authKey.getBytes());
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
             ok = true;

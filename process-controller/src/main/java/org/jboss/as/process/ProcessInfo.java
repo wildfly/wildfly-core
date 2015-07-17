@@ -27,11 +27,11 @@ package org.jboss.as.process;
  */
 public final class ProcessInfo {
     private final String processName;
-    private final byte[] authKey;
+    private final String authKey;
     private final boolean running;
     private final boolean stopping;
 
-    ProcessInfo(final String processName, final byte[] authKey, final boolean running, final boolean stopping) {
+    ProcessInfo(final String processName, final String authKey, final boolean running, final boolean stopping) {
         this.processName = processName;
         this.authKey = authKey;
         this.running = running;
@@ -42,7 +42,7 @@ public final class ProcessInfo {
         return processName;
     }
 
-    public byte[] getAuthKey() {
+    public String getAuthKey() {
         return authKey;
     }
 

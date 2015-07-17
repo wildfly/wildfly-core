@@ -79,7 +79,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                 connection.close();
                 return;
             }
-            final byte[] authCode = new byte[16];
+            final byte[] authCode = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
             StreamUtils.readFully(dataStream, authCode);
             final ManagedProcess process = processController.getServerByAuthCode(authCode);
             if (process == null) {
@@ -147,8 +147,8 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             if (isPrivileged) {
                                 operationType = ProcessMessageHandler.OperationType.ADD;
                                 processName = readUTFZBytes(dataStream);
-                                final byte[] authKey = new byte[16];
-                                readFully(dataStream, authKey);
+                                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                                readFully(dataStream, authBytes);
                                 final int commandCount = readInt(dataStream);
                                 final String[] command = new String[commandCount];
                                 for (int i = 0; i < commandCount; i ++) {
@@ -161,7 +161,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 }
                                 final String workingDirectory = readUTFZBytes(dataStream);
                                 ProcessLogger.SERVER_LOGGER.tracef("Received add_process for process %s", processName);
-                                processController.addProcess(processName, authKey, Arrays.asList(command), env, workingDirectory, false, false);
+                                processController.addProcess(processName, new String(authBytes), Arrays.asList(command), env, workingDirectory, false, false);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring add_process message from untrusted source");
                             }
@@ -221,10 +221,9 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 final String hostName = readUTFZBytes(dataStream);
                                 final int port = readInt(dataStream);
                                 final boolean managementSubsystemEndpoint = readBoolean(dataStream);
-                                final byte[] asAuthKey = new byte[16];
-                                readFully(dataStream, asAuthKey);
-                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, asAuthKey);
-                            } else {
+                                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                                readFully(dataStream, authBytes);
+                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, new String(authBytes));                            } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring reconnect_process message from untrusted source");
                             }
                             dataStream.close();

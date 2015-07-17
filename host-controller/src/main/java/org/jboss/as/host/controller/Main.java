@@ -43,6 +43,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.CommandLineArgumentUsageImpl;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
+import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
 import org.jboss.as.version.ProductConfig;
@@ -85,7 +86,7 @@ public final class Main {
         //final PrintStream out = System.out;
         //final PrintStream err = System.err;
 
-        final byte[] authKey = new byte[16];
+        byte[] authKey = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
         try {
             StreamUtils.readFully(new Base64InputStream(System.in), authKey);
         } catch (IOException e) {
@@ -109,7 +110,7 @@ public final class Main {
         );
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
 
-        create(args, authKey);
+        create(args, new String(authKey));
 
         while (in.read() != -1) {}
         exit();
@@ -118,12 +119,12 @@ public final class Main {
     private Main() {
     }
 
-    private static HostControllerBootstrap create(String[] args, final byte[] authCode) {
+    private static HostControllerBootstrap create(String[] args, final String authCode) {
         Main main = new Main();
         return main.boot(args, authCode);
     }
 
-    private HostControllerBootstrap boot(String[] args, final byte[] authCode) {
+    private HostControllerBootstrap boot(String[] args, final String authCode) {
         try {
             // TODO make this settable via an embedding process
             final long startTime = Module.getStartTime();

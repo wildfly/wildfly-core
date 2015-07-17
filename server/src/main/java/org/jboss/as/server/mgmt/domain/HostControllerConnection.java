@@ -22,8 +22,6 @@
 
 package org.jboss.as.server.mgmt.domain;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -150,7 +148,7 @@ class HostControllerConnection extends FutureManagementChannel {
      * @param authKey         the updated authentication key
      * @param callback        the current callback
      */
-    synchronized void asyncReconnect(final URI reconnectUri, byte[] authKey, final ReconnectCallback callback) {
+    synchronized void asyncReconnect(final URI reconnectUri, String authKey, final ReconnectCallback callback) {
         if (getState() != State.OPEN) {
             return;
         }
@@ -382,16 +380,16 @@ class HostControllerConnection extends FutureManagementChannel {
      * @param authKey the authentication key
      * @return the callback handler
      */
-    static CallbackHandler createClientCallbackHandler(final String userName, final byte[] authKey) {
+    static CallbackHandler createClientCallbackHandler(final String userName, final String authKey) {
         return new ClientCallbackHandler(userName, authKey);
     }
 
     private static class ClientCallbackHandler implements CallbackHandler {
 
         private final String userName;
-        private final byte[] authKey;
+        private final String authKey;
 
-        private ClientCallbackHandler(String userName, byte[] authKey) {
+        private ClientCallbackHandler(String userName, String authKey) {
             this.userName = userName;
             this.authKey = authKey;
         }
@@ -409,7 +407,7 @@ class HostControllerConnection extends FutureManagementChannel {
                     ncb.setName(userName);
                 } else if (current instanceof PasswordCallback) {
                     PasswordCallback pcb = (PasswordCallback) current;
-                    pcb.setPassword(new String(authKey, UTF_8).toCharArray());
+                    pcb.setPassword(authKey.toCharArray());
                 } else {
                     throw new UnsupportedCallbackException(current);
                 }
