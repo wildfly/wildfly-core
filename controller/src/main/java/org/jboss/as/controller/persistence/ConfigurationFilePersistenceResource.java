@@ -52,7 +52,7 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
         final File tempFileName = FilePersistenceUtils.createTempFile(fileName);
         try {
             try {
-                FilePersistenceUtils.writeToTempFile(marshalled, tempFileName);
+                FilePersistenceUtils.writeToTempFile(marshalled, tempFileName, fileName);
             } catch (Exception e) {
                 MGMT_OP_LOGGER.failedToStoreConfiguration(e, fileName.getName());
                 return;

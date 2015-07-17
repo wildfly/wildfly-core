@@ -48,7 +48,7 @@ public class FilePersistenceResource extends AbstractFilePersistenceResource {
     protected void doCommit(ExposedByteArrayOutputStream marshalled) {
         final File tempFileName = FilePersistenceUtils.createTempFile(fileName);
         try {
-            FilePersistenceUtils.writeToTempFile(marshalled, tempFileName);
+            FilePersistenceUtils.writeToTempFile(marshalled, tempFileName, fileName);
             FilePersistenceUtils.moveTempFileToMain(tempFileName, fileName);
         } catch (Exception e) {
             MGMT_OP_LOGGER.failedToStoreConfiguration(e, fileName.getName());
