@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 
-import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +41,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootErrorCollector;
@@ -71,6 +72,7 @@ import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
+import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.persistence.XmlConfigurationPersister;
@@ -278,6 +280,8 @@ public class ModelParserUtils {
                 def.registerOperations(rootRegistration);
                 def.registerChildren(rootRegistration);
                 def.registerNotifications(rootRegistration);
+
+                GlobalNotifications.registerGlobalNotifications(rootRegistration, ProcessType.STANDALONE_SERVER);
             }
         });
 
@@ -309,6 +313,9 @@ public class ModelParserUtils {
 
         final ModelController controller = createController(serviceContainer, ProcessType.HOST_CONTROLLER, model, new Setup() {
             public void setup(ModelControllerService modelControllerService, Resource resource, ManagementResourceRegistration root, DelegatingConfigurableAuthorizer authorizer) {
+
+
+                GlobalNotifications.registerGlobalNotifications(root, ProcessType.HOST_CONTROLLER);
 
                 final Resource host = Resource.Factory.create();
                 resource.registerChild(PathElement.pathElement(HOST, "master"), host);
@@ -416,6 +423,8 @@ public class ModelParserUtils {
                 DomainRootDefinition def = new DomainRootDefinition(null, null, persister, new MockContentRepository(), new MockFileRepository(), true, null, extensionRegistry, null,
                         MOCK_PATH_MANAGER, authorizer, null, modelControllerService.getRootResourceRegProvider());
                 def.initialize(rootRegistration);
+
+                GlobalNotifications.registerGlobalNotifications(rootRegistration, ProcessType.HOST_CONTROLLER);
             }
         });
 
