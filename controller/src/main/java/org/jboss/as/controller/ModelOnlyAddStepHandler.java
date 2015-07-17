@@ -44,6 +44,10 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
         super(attributes);
     }
 
+    public ModelOnlyAddStepHandler(Parameters parameters) {
+        super(parameters);
+    }
+
     /**
      * Returns {@code false}.
      *
