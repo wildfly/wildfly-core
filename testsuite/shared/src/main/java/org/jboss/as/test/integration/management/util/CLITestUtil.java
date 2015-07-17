@@ -48,6 +48,7 @@ public class CLITestUtil {
     private static final int serverPort = TestSuiteEnvironment.getServerPort();
 
     public static CommandContext getCommandContext() throws CliInitializationException {
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(constructUri("http-remoting", serverAddr , serverPort), null, null);
     }
@@ -57,7 +58,8 @@ public class CLITestUtil {
     }
 
     public static CommandContext getCommandContext(WildFlyManagedConfiguration config) throws CliInitializationException {
-            setJBossCliConfig();
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
+        setJBossCliConfig();
             return CommandContextFactory.getInstance().newCommandContext(
                     constructUri(config.getHostControllerManagementProtocol(),
                             config.getHostControllerManagementAddress(),
@@ -67,7 +69,7 @@ public class CLITestUtil {
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
             throws CliInitializationException {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, null, null, in, out);
     }
@@ -75,14 +77,15 @@ public class CLITestUtil {
     public static CommandContext getCommandContext(String protocol, String address, int port)
             throws CliInitializationException {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port), null, null);
     }
 
     public static CommandContext getCommandContext(OutputStream out) throws CliInitializationException {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
+        System.setProperty("aesh.ansi","false");
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), null, null, null, out);
     }
