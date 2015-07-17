@@ -99,6 +99,10 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
         super(capabilities, attributes);
     }
 
+    public AbstractBoottimeAddStepHandler(Parameters parameters) {
+        super(parameters);
+    }
+
     /**
      * If {@link OperationContext#isBooting()} returns {@code true}, invokes
      * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)},
