@@ -655,9 +655,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *
      * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
      * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
-     * @deprecated should probably not be exposed in this way, for now CapabilityReferenceRecorder is internal impl detail more than anything else.
      */
-    @Deprecated
     public BUILDER setCapabilityReference(CapabilityReferenceRecorder referenceRecorder) {
         this.referenceRecorder = referenceRecorder;
         return (BUILDER)this;
