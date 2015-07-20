@@ -72,8 +72,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
 import org.jboss.as.controller.capability.registry.DelegatingRuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
@@ -1242,7 +1244,7 @@ class ModelControllerImpl implements ModelController {
          */
         CapabilityValidation validateCapabilityRegistry() {
             if (!published) {
-                return capabilityRegistry.getInvalidRequirements();
+                return capabilityRegistry.resolveCapabilities();
             } else {
                 // we're unmodified so nothing to validate
                 return CapabilityValidation.OK;
@@ -1272,11 +1274,12 @@ class ModelControllerImpl implements ModelController {
         private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
         private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
         private final boolean forServer;
-        private final Map<CapabilityContext, Set<CapabilityContext>> satisfiedByMap;
+        private final Set<CapabilityContext> knownContexts;
+        private final ResolutionContextImpl resolutionContext = new ResolutionContextImpl();
 
         CapabilityRegistryImpl(boolean forServer) {
             this.forServer =  forServer;
-            satisfiedByMap = forServer ? null : new HashMap<CapabilityContext, Set<CapabilityContext>>();
+            this.knownContexts = forServer ? null : new HashSet<>();
         }
 
         @Override
@@ -1306,19 +1309,7 @@ class ModelControllerImpl implements ModelController {
 
             if (!forServer) {
                 CapabilityContext capContext = capabilityId.getContext();
-                if (!satisfiedByMap.containsKey(capContext)) {
-                    // Figure out who we can satisfy and who satisfies us
-                    Set<CapabilityContext> satisfiesUs = new HashSet<>();
-                    satisfiedByMap.put(capContext, satisfiesUs);
-                    for (Map.Entry<CapabilityContext, Set<CapabilityContext>> entry : satisfiedByMap.entrySet()) {
-                        if (entry.getKey().canSatisfyRequirements(capContext)) {
-                            satisfiesUs.add(entry.getKey());
-                        }
-                        if (capContext.canSatisfyRequirements(entry.getKey())) {
-                            entry.getValue().add(capContext);
-                        }
-                    }
-                }
+                knownContexts.add(capContext);
             }
         }
 
@@ -1411,8 +1402,8 @@ class ModelControllerImpl implements ModelController {
         }
 
         @Override
-        public synchronized boolean hasCapability(String capabilityName, CapabilityContext capabilityContext) {
-            return findSatisfactoryCapability(capabilityName, capabilityContext, false) != null;
+        public synchronized boolean hasCapability(String capabilityName, String dependentName, CapabilityContext capabilityContext) {
+            return findSatisfactoryCapability(capabilityName, capabilityContext, dependentName, false) != null;
         }
 
         @Override
@@ -1426,13 +1417,16 @@ class ModelControllerImpl implements ModelController {
         }
 
         @Override
-        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class serviceType) {
+        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
             RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
-            return reg.getCapability().getCapabilityServiceName(serviceType);
+            RuntimeCapability<?> cap = reg.getCapability();
+            return cap.getCapabilityServiceName(serviceType);
         }
 
         private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
-            SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, false);
+            // Here we can't know the dependent name. So this can only be called when resolution is complete.
+            assert resolutionContext.resolutionComplete;
+            SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, null, false);
             if (satisfactoryCapability == null) {
                 if (forServer) {
                     throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
@@ -1449,7 +1443,7 @@ class ModelControllerImpl implements ModelController {
             copyRequirements(requirements, result.requirements);
             copyRequirements(runtimeOnlyRequirements, result.runtimeOnlyRequirements);
             if (!forServer) {
-                result.satisfiedByMap.putAll(this.satisfiedByMap);
+                result.knownContexts.addAll(this.knownContexts);
             }
             return result;
         }
@@ -1473,7 +1467,7 @@ class ModelControllerImpl implements ModelController {
 
         }
 
-        synchronized CapabilityValidation getInvalidRequirements() {
+        synchronized CapabilityValidation resolveCapabilities() {
             Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = new HashMap<>();
 
             // Vars for tracking inconsistent contexts
@@ -1482,10 +1476,12 @@ class ModelControllerImpl implements ModelController {
             Map<CapabilityContext, Set<CapabilityContext>> consistentSets = null;
 
             for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
-                CapabilityContext dependentContext = entry.getKey().getContext();
+                CapabilityId dependentId = entry.getKey();
+                String dependentName = dependentId.getName();
+                CapabilityContext dependentContext = dependentId.getContext();
                 Set<CapabilityContext> consistentSet = consistentSets == null ? null : consistentSets.get(dependentContext);
                 for (RuntimeRequirementRegistration req : entry.getValue().values()) {
-                    SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, !forServer);
+                    SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, dependentName, !forServer);
                     if (satisfactory == null) {
                         // Missing
                         CapabilityId basicId = new CapabilityId(req.getRequiredName(), dependentContext);
@@ -1519,18 +1515,21 @@ class ModelControllerImpl implements ModelController {
                 }
             }
 
+            // We've finished resolution
+            resolutionContext.resolutionComplete = true;
+
             if (isInconsistent) {
                 // This is the exception case. Figure out the details of the problems
-                return new CapabilityValidation(missing, findInconsistent(requiresConsistency, consistentSets));
+                return new CapabilityValidation(missing, findInconsistent(requiresConsistency, consistentSets), resolutionContext);
             } else if (!missing.isEmpty()) {
-                return new CapabilityValidation(missing, null);
+                return new CapabilityValidation(missing, null, resolutionContext);
             }
 
             return CapabilityValidation.OK;
         }
 
         private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
-                                                                  boolean requireConsistency) {
+                                                                  String dependentName, boolean requireConsistency) {
 
             // Check for a simple match
             CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
@@ -1541,9 +1540,13 @@ class ModelControllerImpl implements ModelController {
             if (!forServer) {
                 // Try other contexts that satisfy the requested one
                 Set<CapabilityContext> multiple = null;
-                for (CapabilityContext satisfies : satisfiedByMap.get(capabilityContext)) {
+                for (CapabilityContext satisfies : knownContexts) {
+                    if (satisfies.equals(capabilityContext)) {
+                        // We already know this one doesn't exist
+                        continue;
+                    }
                     CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
-                    if (capabilities.containsKey(satisfiesId)) {
+                    if (capabilities.containsKey(satisfiesId) && satisfies.canSatisfyRequirement(requestedId, dependentName, resolutionContext)) {
                         if (!requireConsistency || !satisfies.requiresConsistencyCheck()) {
                             return new SatisfactoryCapability(satisfiesId);
                         } else {
@@ -1577,6 +1580,10 @@ class ModelControllerImpl implements ModelController {
         }
     }
 
+    private static class ResolutionContextImpl extends CapabilityResolutionContext {
+        private boolean resolutionComplete;
+    }
+
     private static class SatisfactoryCapability {
         private final CapabilityId singleCapability;
         private final Set<CapabilityContext> multipleCapabilities;
@@ -1597,12 +1604,15 @@ class ModelControllerImpl implements ModelController {
      */
     static class CapabilityValidation {
 
-        private static final CapabilityValidation OK = new CapabilityValidation(null, null);
+        private static final CapabilityValidation OK = new CapabilityValidation(null, null, null);
         private final Map<CapabilityId, Set<RuntimeRequirementRegistration>> missingRequirements;
         private final Set<RuntimeRequirementRegistration> inconsistentRequirements;
+        private final CapabilityResolutionContext resolutionContext;
 
         private CapabilityValidation(Map<CapabilityId, Set<RuntimeRequirementRegistration>> missingRequirements,
-                             Set<RuntimeRequirementRegistration> inconsistentRequirements) {
+                                     Set<RuntimeRequirementRegistration> inconsistentRequirements,
+                                     CapabilityResolutionContext resolutionContext) {
+            this.resolutionContext = resolutionContext;
             this.missingRequirements = missingRequirements == null
                     ? Collections.<CapabilityId, Set<RuntimeRequirementRegistration>>emptyMap() : missingRequirements;
             this.inconsistentRequirements = inconsistentRequirements == null
@@ -1615,6 +1625,10 @@ class ModelControllerImpl implements ModelController {
 
         Set<RuntimeRequirementRegistration> getInconsistentRequirements() {
             return inconsistentRequirements;
+        }
+
+        CapabilityResolutionContext getCapabilityResolutionContext() {
+            return resolutionContext;
         }
 
         boolean isValid() {

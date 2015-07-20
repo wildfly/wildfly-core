@@ -81,6 +81,7 @@ import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
 import org.jboss.as.controller.capability.registry.DomainCapabilityContext;
 import org.jboss.as.controller.capability.registry.HostCapabilityContext;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -269,13 +270,13 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (!ok) {
             // Whether we care about context depends on whether we are a server
             boolean ignoreContext = getProcessType().isServer();
-
+            CapabilityResolutionContext resolutionContext = validation.getCapabilityResolutionContext();
             Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = validation.getMissingRequirements();
             Map<Step, Set<CapabilityId>> missingForStep = new HashMap<>();
             for (Map.Entry<CapabilityId, Set<RuntimeRequirementRegistration>> entry : missing.entrySet()) {
                 CapabilityId required = entry.getKey();
                 // See if any step removed this capability
-                Step guilty = findCapabilityRemovalStep(required, ignoreContext);
+                Step guilty = findCapabilityRemovalStep(required, ignoreContext, resolutionContext);
                 if (guilty != null) {
                     // Change the response for the step to mark as failed
                     StringBuilder msg = new StringBuilder();
@@ -371,11 +372,12 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     }
 
-    private Step findCapabilityRemovalStep(CapabilityId missingRequirement, boolean ignoreContext) {
+    private Step findCapabilityRemovalStep(CapabilityId missingRequirement, boolean ignoreContext, CapabilityResolutionContext resolutionContext) {
         Step result = removedCapabilities.get(missingRequirement);
         if (result == null && !ignoreContext) {
             for (Map.Entry<CapabilityId, Step> entry : removedCapabilities.entrySet()) {
-                if (entry.getKey().canSatisfyRequirements(missingRequirement)) {
+                CapabilityId removedId = entry.getKey();
+                if (removedId.getContext().canSatisfyRequirement(missingRequirement, removedId.getName(), resolutionContext)) {
                     result = entry.getValue();
                     break;
                 }
@@ -1367,7 +1369,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
         CapabilityContext context = registration.getDependentContext();
-        if (registry.hasCapability(required, context)) {
+        if (registry.hasCapability(required, dependent, context)) {
             registry.registerAdditionalCapabilityRequirement(registration);
             recordRequirement(registration, step);
             return true;
@@ -2516,12 +2518,8 @@ final class OperationContextImpl extends AbstractOperationContext {
             try {
                 return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityContext.GLOBAL, apiType);
             } catch (IllegalStateException e) {
-                if (managementModel.getCapabilityRegistry().hasCapability(capabilityName, CapabilityContext.GLOBAL)) {
-                    // Must have been some other problem
-                    throw e;
-                }
+                throw new NoSuchCapabilityException(capabilityName);
             }
-            throw new NoSuchCapabilityException(capabilityName);
         }
 
         @Override

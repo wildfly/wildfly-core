@@ -39,12 +39,15 @@ package org.jboss.as.controller.capability.registry;
 public interface CapabilityContext {
 
     /**
-     * Gets whether this context can satisfy a requirement associated with another context.
-     * @param dependentContext a context associated with a capability that may require the capabilities associated
-     *                         with this context
-     * @return {@code true} if this context can satisfy requirements from capabilities in {@code dependentContext}
+     * Gets whether a given capability associated with this context can satisfy the given requirement.
+     * @param dependent id of the dependent capability. Cannot be {@code null}
+     * @param required name of the capability associated with this capability context. May be {@code null} if the
+     *                 dependent name is not known.
+     * @param context resolution context in use for this resolution run
+     *
+     * @return {@code true} if the requirement can be satisfied from this context; {@code false} otherwise
      */
-    boolean canSatisfyRequirements(CapabilityContext dependentContext);
+    boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context);
 
     /**
      * Gets whether a consistency check must be performed when other capabilities depend on capabilities
@@ -66,12 +69,13 @@ public interface CapabilityContext {
      * regardless of any context, or for convenience use in cases where there is only one context.
      */
     CapabilityContext GLOBAL = new CapabilityContext() {
+
         /**
          * Always returns {@code true}
          * @return {@code true}, always
          */
         @Override
-        public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
+        public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
             return true;
         }
 

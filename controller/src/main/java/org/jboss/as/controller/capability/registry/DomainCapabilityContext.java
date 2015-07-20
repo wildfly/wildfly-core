@@ -45,9 +45,10 @@ public final class DomainCapabilityContext implements CapabilityContext {
     }
 
     @Override
-    public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
+    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
         // Currently this is a simple match of type and value, but once profile/socket-binding-group
         // includes are once again supported we need to account for those
+        CapabilityContext dependentContext = dependent.getContext();
         return equals(dependentContext) ||
                 (socketBinding && (!(dependentContext instanceof DomainCapabilityContext)
                         || !((DomainCapabilityContext) dependentContext).socketBinding));

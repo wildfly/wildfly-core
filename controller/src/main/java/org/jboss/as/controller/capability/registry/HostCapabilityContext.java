@@ -33,7 +33,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
  */
 public final class HostCapabilityContext implements CapabilityContext {
     @Override
-    public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
+    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
+        CapabilityContext dependentContext = dependent.getContext();
         return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
     }
 
