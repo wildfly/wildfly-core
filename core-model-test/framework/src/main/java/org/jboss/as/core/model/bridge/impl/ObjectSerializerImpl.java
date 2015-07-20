@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -46,6 +48,7 @@ public class ObjectSerializerImpl implements ObjectSerializer {
     private static final String PARENT_ADDRESS = "_parent_address";
     private static final String RELATIVE_RESOURCE_ADDRESS = "_relative_resource_address";
     private static final String MODEL_NODE = "_model_node";
+    private static final String CAPABILITIES = "_capabilities";
 
     @Override
     public byte[] serializeModelNode(Object object) throws IOException {
@@ -98,6 +101,12 @@ public class ObjectSerializerImpl implements ObjectSerializer {
         if (entry.getModel() != null) {
             node.get(MODEL_NODE).set(entry.getModel());
         }
+        if (entry.getCapabilities() != null) {
+            ModelNode caps = node.get(CAPABILITIES).setEmptyList();
+            for (String cap : entry.getCapabilities()) {
+                caps.add(cap);
+            }
+        }
         return serializeModelNode(node);
     }
 
@@ -114,7 +123,17 @@ public class ObjectSerializerImpl implements ObjectSerializer {
         if (node.hasDefined(MODEL_NODE)) {
             model = node.get(MODEL_NODE);
         }
-        return new LegacyModelInitializerEntry(parentAddress, relativeResourceAddress, model);
+        String[] capabilities;
+        if (node.hasDefined(CAPABILITIES)) {
+            List<String> list = new ArrayList<>();
+            for (ModelNode mn : node.get(CAPABILITIES).asList()) {
+                list.add(mn.asString());
+            }
+            capabilities = list.toArray(new String[list.size()]);
+        } else {
+            capabilities = new String[0];
+        }
+        return new LegacyModelInitializerEntry(parentAddress, relativeResourceAddress, model, capabilities);
     }
 
     @Override

@@ -75,6 +75,12 @@ public class DomainServerGroupSystemPropertyTestCase extends AbstractSystemPrope
     protected String getXmlResource() {
         return "domain-servergroup-systemproperties.xml";
     }
+
+    @Override
+    protected ModelInitializer getModelInitializer() {
+        return StandardServerGroupInitializers.XML_MODEL_INITIALIZER;
+    }
+
     private ModelInitializer BOOT_OP_MODEL_INITIALIZER = new ModelInitializer() {
         @Override
         public void populateModel(Resource rootResource) {

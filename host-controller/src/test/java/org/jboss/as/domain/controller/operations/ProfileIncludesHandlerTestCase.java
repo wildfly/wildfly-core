@@ -94,15 +94,16 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         operationContext.executeNextStep();
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testBadProfileIncludesWrite() throws Exception {
-        PathAddress addr = getProfileAddress("profile-one");
-        ModelNode list = new ModelNode().add("bad-profile");
-        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-        MockOperationContext operationContext = getOperationContext(addr);
-        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
-        operationContext.executeNextStep();
-    }
+//    // WFCORE-833 Replaced with test in core-model-test ProfileTestCase
+//    @Test(expected=OperationFailedException.class)
+//    public void testBadProfileIncludesWrite() throws Exception {
+//        PathAddress addr = getProfileAddress("profile-one");
+//        ModelNode list = new ModelNode().add("bad-profile");
+//        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+//        MockOperationContext operationContext = getOperationContext(addr);
+//        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+//        operationContext.executeNextStep();
+//    }
 
     @Test(expected=OperationFailedException.class)
     public void testCyclicProfileIncludesWrite() throws Exception {
@@ -120,17 +121,19 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         ModelNode op = Util.createRemoveOperation(addr);
         MockOperationContext operationContext = getOperationContextWithIncludes(addr);
         ProfileRemoveHandler.INSTANCE.execute(operationContext, op);
-        operationContext.executeNextStep();
+        // WFCORE-833 no next validation step any more
+        //operationContext.executeNextStep();
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testBadProfileIncludesRemove() throws Exception {
-        PathAddress addr = getProfileAddress("profile-three");
-        ModelNode op = Util.createRemoveOperation(addr);
-        MockOperationContext operationContext = getOperationContextWithIncludes(addr);
-        ProfileRemoveHandler.INSTANCE.execute(operationContext, op);
-        operationContext.executeNextStep();
-    }
+//    // WFCORE-833 Replaced with test in core-model-test ProfileTestCase
+//    @Test(expected=OperationFailedException.class)
+//    public void testBadProfileIncludesRemove() throws Exception {
+//        PathAddress addr = getProfileAddress("profile-three");
+//        ModelNode op = Util.createRemoveOperation(addr);
+//        MockOperationContext operationContext = getOperationContextWithIncludes(addr);
+//        ProfileRemoveHandler.INSTANCE.execute(operationContext, op);
+//        operationContext.executeNextStep();
+//    }
 
     @Test
     public void testIncludesWithNoOverriddenSubsystems() throws Exception {

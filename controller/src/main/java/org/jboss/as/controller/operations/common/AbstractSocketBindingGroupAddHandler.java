@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -42,6 +43,13 @@ public abstract class AbstractSocketBindingGroupAddHandler extends AbstractAddSt
      * Create the AbstractSocketBindingGroupAddHandler
      */
     protected AbstractSocketBindingGroupAddHandler() {
+    }
+
+    /**
+     * Create the AbstractSocketBindingGroupAddHandler
+     */
+    protected AbstractSocketBindingGroupAddHandler(RuntimeCapability capability) {
+        super(capability);
     }
 
     @Override
