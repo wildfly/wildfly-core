@@ -81,6 +81,8 @@ import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.DomainCapabilityContext;
+import org.jboss.as.controller.capability.registry.HostCapabilityContext;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -2500,97 +2502,6 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private static class BooleanHolder {
         private boolean done = false;
-    }
-
-    private static class DomainCapabilityContext implements CapabilityContext {
-
-        private final String type;
-        private final boolean socketBinding;
-        private final String value;
-        private final boolean requiresConsistencyCheck;
-
-        private DomainCapabilityContext(boolean socketBinding, String value, boolean requiresConsistencyCheck) {
-            this.socketBinding = socketBinding;
-            this.type = socketBinding ? SOCKET_BINDING_GROUP : PROFILE;
-            this.value = value;
-            this.requiresConsistencyCheck = requiresConsistencyCheck;
-        }
-
-        @Override
-        public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
-            // Currently this is a simple match of type and value, but once profile/socket-binding-group
-            // includes are once again supported we need to account for those
-            return equals(dependentContext) ||
-                    (socketBinding && (!(dependentContext instanceof DomainCapabilityContext)
-                            || !((DomainCapabilityContext) dependentContext).socketBinding));
-        }
-
-        @Override
-        public boolean requiresConsistencyCheck() {
-            return requiresConsistencyCheck;
-        }
-
-        @Override
-        public String getName() {
-            return type + "=" + value;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "{" + getName() + "}";
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            DomainCapabilityContext that = (DomainCapabilityContext) o;
-
-            return type.equals(that.type) && value.equals(that.value);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = type.hashCode();
-            result = 31 * result + value.hashCode();
-            return result;
-        }
-    }
-
-    private static class HostCapabilityContext implements CapabilityContext {
-        @Override
-        public boolean canSatisfyRequirements(CapabilityContext dependentContext) {
-            return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
-        }
-
-        @Override
-        public boolean requiresConsistencyCheck() {
-            return false;
-        }
-
-        @Override
-        public String getName() {
-            return HOST;
-        }
-
-        @Override
-        public String toString() {
-            return getName();
-        }
-
-        @Override
-        public int hashCode() {
-            return getName().hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            return true;
-        }
     }
 
     private static class CapabilityServiceSupportImpl implements CapabilityServiceSupport {
