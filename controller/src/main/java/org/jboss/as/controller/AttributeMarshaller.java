@@ -23,7 +23,6 @@
 package org.jboss.as.controller;
 
 import java.util.Iterator;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -84,6 +83,15 @@ public abstract class AttributeMarshaller {
         return false;
     }
 
+
+    public void marshall(final AttributeDefinition attribute,final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
+        if (isMarshallableAsElement()){
+            marshallAsElement(attribute,resourceModel, marshallDefault, writer);
+        }else{
+            marshallAsAttribute(attribute, resourceModel, marshallDefault, writer);
+        }
+    }
+
     private static class ListMarshaller extends DefaultAttributeMarshaller {
         private final char delimiter;
 
@@ -133,6 +141,38 @@ public abstract class AttributeMarshaller {
         }
     }
 
+
+    private static class ObjectListMarshaller extends AttributeMarshaller {
+        private ObjectListMarshaller() {
+
+        }
+
+        @Override
+        public boolean isMarshallableAsElement() {
+            return true;
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            assert attribute instanceof ObjectListAttributeDefinition;
+            ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
+            ObjectTypeAttributeDefinition objectType = list.getValueType();
+            AttributeDefinition[] valueTypes = objectType.getValueTypes();
+            if (resourceModel.hasDefined(attribute.getName())) {
+                writer.writeStartElement(attribute.getXmlName());
+                for (ModelNode element: resourceModel.get(attribute.getName()).asList()) {
+                    writer.writeStartElement(objectType.getXmlName());
+                    for (AttributeDefinition valueType : valueTypes) {
+                        valueType.getAttributeMarshaller().marshall(valueType, element, false, writer);
+                    }
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+        }
+    }
+
+
     /**
      * simple marshaller
      */
@@ -157,4 +197,7 @@ public abstract class AttributeMarshaller {
      * Marshaller for ObjectTypeAttributeDefinition. The object and all its complex types descendants will get marshalled as elements whereas simple types will get marshalled as attributes.
      */
     public static final AttributeMarshaller ATTRIBUTE_OBJECT = new ObjectMarshaller(false);
+
+
+    public static final AttributeMarshaller OBJECT_LIST_MARSHALLER = new ObjectListMarshaller();
 }

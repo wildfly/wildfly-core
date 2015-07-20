@@ -1,0 +1,35 @@
+<!--
+  ~ JBoss, Home of Professional Open Source
+  ~ Copyright 2015, Red Hat, Inc., and individual contributors as indicated
+  ~ by the @authors tag.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<subsystem xmlns="urn:jboss:domain:orb-test:1.0">
+    <properties>
+        <property name="some_property" value="some_value"/>
+    </properties>
+    <orb persistent-server-id="wildfly" giop-version="1.1" socket-binding="iiop2" ssl-socket-binding="iiop-ssl2"/>
+    <tcp high-water-mark="500" number-to-reclaim="30"/>
+    <initializers security="client" transactions="spec"/>
+    <naming root-context="JBoss/Naming/root2" export-corbaloc="false"/>
+    <security support-ssl="true" add-component-via-interceptor="false" client-supports="MutualAuth2"
+              client-requires="None1"
+              server-supports="MutualAuth2" server-requires="None3"/>
+    <transport-config integrity="required" confidentiality="required" detect-replay="supported"
+                      detect-misordering="supported"
+                      trust-in-client="why" trust-in-target="never"/>
+    <as-context auth-method="username_password2" realm="test_realm" required="true"/>
+    <sas-context caller-propagation="supported"/>
+</subsystem>
