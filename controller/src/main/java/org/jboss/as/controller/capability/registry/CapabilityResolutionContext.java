@@ -25,15 +25,23 @@ package org.jboss.as.controller.capability.registry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.jboss.as.controller.registry.Resource;
+
 /**
  * Contextual object that the {@code ModelController} and {@link CapabilityContext} implementations
  * can use to temporarily store data during the course of a capability resolution.
  *
  * @author Brian Stansberry
  */
-public class CapabilityResolutionContext {
+public abstract class CapabilityResolutionContext {
 
     private final ConcurrentMap<AttachmentKey<?>, Object> contextAttachments = new ConcurrentHashMap<>();
+
+    /**
+     * Gets the root resource of the resource tree in effect during this resolution.
+     * @return the root resource. Will not return {@code null}
+     */
+    public abstract Resource getResourceRoot();
 
     /**
      * Retrieves an object that has been attached to this context.
@@ -88,6 +96,13 @@ public class CapabilityResolutionContext {
     public <V> V detach(final AttachmentKey<V> key) {
         assert key != null;
         return key.cast(contextAttachments.remove(key));
+    }
+
+    /**
+     * Resets this object, removing all attachments.
+     */
+    protected void reset() {
+        contextAttachments.clear();
     }
 
     /**

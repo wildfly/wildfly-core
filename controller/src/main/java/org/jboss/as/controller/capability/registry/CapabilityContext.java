@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Context in which a {@link org.jboss.as.controller.capability.AbstractCapability capability} is available.
  * <p>
@@ -63,6 +66,17 @@ public interface CapabilityContext {
      * @return the name. Will not return {@code null}
      */
     String getName();
+
+    /**
+     * Gets any contexts that logically include this one, i.e. where this context can satisfy
+     * requirements as if it were the including context.
+     *
+     * @param context resolution context in use for this resolution run
+     * @return the including contexts. Will not be {@code null} but may be empty.
+     */
+    default Set<CapabilityContext> getIncludingContexts(CapabilityResolutionContext context) {
+        return Collections.emptySet();
+    }
 
     /**
      * A {@code CapabilityContext} that can satisfy any dependent context. Meant for capabilities that are present

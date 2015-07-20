@@ -1244,7 +1244,7 @@ class ModelControllerImpl implements ModelController {
          */
         CapabilityValidation validateCapabilityRegistry() {
             if (!published) {
-                return capabilityRegistry.resolveCapabilities();
+                return capabilityRegistry.resolveCapabilities(getRootResource());
             } else {
                 // we're unmodified so nothing to validate
                 return CapabilityValidation.OK;
@@ -1467,7 +1467,9 @@ class ModelControllerImpl implements ModelController {
 
         }
 
-        synchronized CapabilityValidation resolveCapabilities() {
+        synchronized CapabilityValidation resolveCapabilities(Resource rootResource) {
+            resolutionContext.setRootResource(rootResource);
+
             Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = new HashMap<>();
 
             // Vars for tracking inconsistent contexts
@@ -1498,18 +1500,16 @@ class ModelControllerImpl implements ModelController {
                             requiresConsistency = new HashMap<>();
                             consistentSets = new HashMap<>();
                         }
-                        Set<RuntimeRequirementRegistration> requiresForDependent = requiresConsistency.get(req.getDependentContext());
-                        if (requiresForDependent == null) {
-                            requiresForDependent = new HashSet<>();
-                            requiresConsistency.put(req.getDependentContext(), requiresForDependent);
-                        }
-                        requiresForDependent.add(req);
-                        if (consistentSet == null) {
-                            consistentSet = new HashSet<>(satisfactory.multipleCapabilities); // copy okContexts so retainAll calls won't mutate it
-                            consistentSets.put(dependentContext, consistentSet);
-                        } else {
-                            consistentSet.retainAll(satisfactory.multipleCapabilities);
-                            isInconsistent = isInconsistent || consistentSet.size() == 0;
+
+                        CapabilityContext reqDependent = req.getDependentContext();
+                        recordConsistentSets(requiresConsistency, consistentSets, reqDependent, consistentSet, req, satisfactory, reqDependent);
+                        isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
+
+                        // Record for any contexts that include this one
+                        for (CapabilityContext including : dependentContext.getIncludingContexts(resolutionContext)) {
+                            consistentSet = consistentSets.get(including);
+                            recordConsistentSets(requiresConsistency, consistentSets,including, consistentSet, req, satisfactory, reqDependent);
+                            isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
                         }
                     } // else simple capability match
                 }
@@ -1526,6 +1526,21 @@ class ModelControllerImpl implements ModelController {
             }
 
             return CapabilityValidation.OK;
+        }
+
+        private void recordConsistentSets(Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency, Map<CapabilityContext, Set<CapabilityContext>> consistentSets, CapabilityContext dependentContext, Set<CapabilityContext> consistentSet, RuntimeRequirementRegistration req, SatisfactoryCapability satisfactory, CapabilityContext reqDependent) {
+            Set<RuntimeRequirementRegistration> requiresForDependent = requiresConsistency.get(reqDependent);
+            if (requiresForDependent == null) {
+                requiresForDependent = new HashSet<>();
+                requiresConsistency.put(reqDependent, requiresForDependent);
+            }
+            requiresForDependent.add(req);
+            if (consistentSet == null) {
+                consistentSet = new HashSet<>(satisfactory.multipleCapabilities); // copy okContexts so retainAll calls won't mutate it
+                consistentSets.put(dependentContext, consistentSet);
+            } else {
+                consistentSet.retainAll(satisfactory.multipleCapabilities);
+            }
         }
 
         private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
@@ -1554,6 +1569,7 @@ class ModelControllerImpl implements ModelController {
                                 multiple = new HashSet<>();
                             }
                             multiple.add(satisfies);
+                            multiple.addAll(satisfies.getIncludingContexts(resolutionContext));
                         }
                     }
                 }
@@ -1582,6 +1598,19 @@ class ModelControllerImpl implements ModelController {
 
     private static class ResolutionContextImpl extends CapabilityResolutionContext {
         private boolean resolutionComplete;
+        private Resource rootResource;
+
+        @Override
+        public Resource getResourceRoot() {
+            assert rootResource != null;
+            return rootResource;
+        }
+
+        void setRootResource(Resource rootResource) {
+            this.rootResource = rootResource;
+            reset();
+            this.resolutionComplete = false;
+        }
     }
 
     private static class SatisfactoryCapability {

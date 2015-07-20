@@ -146,6 +146,8 @@ abstract class AbstractOperationContext implements OperationContext {
     Caller caller;
     /** Whether operation execution has begun; i.e. whether completeStep() has been called */
     private boolean executing;
+    /** First response node provided to addStep  */
+    ModelNode initialResponse;
 
     /** Operations that were added by the controller, before execution started */
     private final List<ModelNode> controllerOperations = new ArrayList<ModelNode>(2);
@@ -317,6 +319,9 @@ abstract class AbstractOperationContext implements OperationContext {
 
         if (!executing && stage == Stage.MODEL) {
             recordControllerOperation(operation);
+            if (initialResponse == null) {
+                initialResponse = response;
+            }
         }
     }
 
@@ -1279,18 +1284,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 handleResult();
 
                 if (currentStage != null && currentStage != Stage.DONE) {
-                    // This is a failure because the next step failed to call
-                    // completeStep().
-                    // Either an exception occurred beforehand, or the
-                    // implementer screwed up.
-                    // If an exception occurred, then this will have no effect.
-                    // If the implementer screwed up, then we're essentially
-                    // fixing the context state and treating
-                    // the overall operation as a failure.
                     currentStage = Stage.DONE;
-                    if (!hasFailed()) {
-                        response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationHandlerFailedToComplete());
-                    }
                     response.get(OUTCOME).set(cancelled ? CANCELLED : FAILED);
                     response.get(ROLLED_BACK).set(true);
                     resultAction = getFailedResultAction(null);

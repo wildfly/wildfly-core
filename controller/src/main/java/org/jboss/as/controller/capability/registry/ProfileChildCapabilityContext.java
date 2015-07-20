@@ -22,23 +22,37 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
- * {@link CapabilityContext} for capabilities whose use is restricted to
- * the Host Controller in which they are installed; e.g. they cannot be
- * resolved by requirers in a domain level context.
+ * {@link CapabilityContext} for the children of a Host Controller {@code profile} resource.
+ * Note this does not include the profile capability itself.
  *
  * @author Brian Stansberry
+ *
+ * @see ProfilesCapabilityContext
  */
-public final class HostCapabilityContext implements CapabilityContext {
+public class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
 
-    public static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
+    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> PROFILE_KEY =
+            CapabilityResolutionContext.AttachmentKey.create(Map.class);
+
+    public ProfileChildCapabilityContext(String value) {
+        super(PROFILE_KEY, PROFILE, value);
+    }
 
     @Override
     public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
         CapabilityContext dependentContext = dependent.getContext();
-        return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
+        boolean result = equals(dependentContext);
+        if (!result && dependentContext instanceof ProfileChildCapabilityContext) {
+            Set<CapabilityContext> includers = getIncludingContexts(context);
+            result = includers.contains(dependentContext);
+        }
+        return result;
     }
 
     @Override
@@ -47,22 +61,7 @@ public final class HostCapabilityContext implements CapabilityContext {
     }
 
     @Override
-    public String getName() {
-        return HOST;
-    }
-
-    @Override
-    public String toString() {
-        return getName();
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || !(o == null || getClass() != o.getClass());
+    protected CapabilityContext createIncludedContext(String name) {
+        return new ProfileChildCapabilityContext(name);
     }
 }

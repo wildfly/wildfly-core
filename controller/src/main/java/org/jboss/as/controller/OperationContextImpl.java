@@ -21,6 +21,7 @@
  */
 
 package org.jboss.as.controller;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -82,12 +83,13 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
-import org.jboss.as.controller.capability.registry.DomainCapabilityContext;
 import org.jboss.as.controller.capability.registry.HostCapabilityContext;
+import org.jboss.as.controller.capability.registry.ProfileChildCapabilityContext;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
+import org.jboss.as.controller.capability.registry.SocketBindingGroupChildContext;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -268,6 +270,10 @@ final class OperationContextImpl extends AbstractOperationContext {
         ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry();
         boolean ok = validation.isValid();
         if (!ok) {
+
+            boolean failureRecorded = false;
+            StringBuilder unexplainedProblem = null;
+
             // Whether we care about context depends on whether we are a server
             boolean ignoreContext = getProcessType().isServer();
             CapabilityResolutionContext resolutionContext = validation.getCapabilityResolutionContext();
@@ -295,6 +301,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     }
                     String msgString = msg.toString();
                     guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    failureRecorded = true;
                     if (isBooting()) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
                         ControllerLogger.ROOT_LOGGER.error(guilty.address.toCLIStyleString() + " -- " + msgString);
                     }
@@ -303,14 +310,23 @@ final class OperationContextImpl extends AbstractOperationContext {
                         // Problem wasn't a capability removal.
                         // See what step(s) added this requirement
                         Set<Step> bereft = addedRequirements.get(reqReq);
-                        assert bereft != null && bereft.size() > 0;
-                        for (Step step : bereft) {
-                            Set<CapabilityId> set = missingForStep.get(step);
-                            if (set == null) {
-                                set = new HashSet<>();
-                                missingForStep.put(step, set);
+                        if (bereft != null && bereft.size() > 0) {
+                            for (Step step : bereft) {
+                                Set<CapabilityId> set = missingForStep.get(step);
+                                if (set == null) {
+                                    set = new HashSet<>();
+                                    missingForStep.put(step, set);
+                                }
+                                set.add(required);
                             }
-                            set.add(required);
+                        } else {
+                            if (unexplainedProblem == null) {
+                                unexplainedProblem = new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
+                            }
+                            String formattedCapability = ignoreContext
+                                    ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(reqReq.getRequiredName())
+                                    : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(reqReq.getRequiredName(), reqReq.getDependentContext().getName());
+                            unexplainedProblem = unexplainedProblem.append('\n').append(formattedCapability);
                         }
                     }
                 }
@@ -339,6 +355,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 }
                 if (msg != null) {
                     response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    failureRecorded = true;
                 }
                 if (bootMsg != null) {
                     ControllerLogger.ROOT_LOGGER.error(bootMsg.toString());
@@ -350,22 +367,38 @@ final class OperationContextImpl extends AbstractOperationContext {
                 for (RuntimeRequirementRegistration reg : validation.getInconsistentRequirements()) {
                     // See what step(s) added this requirement
                     Set<Step> inconsistent = addedRequirements.get(reg);
-                    assert inconsistent != null && inconsistent.size() > 0;
-                    for (Step step : inconsistent) {
-                        ModelNode response = step.response;
+                    if (inconsistent != null && inconsistent.size() > 0) {
+                        for (Step step : inconsistent) {
+                            ModelNode response = step.response;
+                            String depConName = reg.getDependentContext().getName();
+                            // only overwrite reponse failure-description if there isn't one
+                            if (!response.hasDefined(FAILURE_DESCRIPTION)) {
+                                response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
+                                        reg.getDependentName(), depConName, depConName));
+                                failureRecorded = true;
+                            }
+                            if (isBooting()) {
+                                ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getDependentName(),
+                                        depConName, step.address.toCLIStyleString(), reg.getRequiredName(), depConName);
+                            }
+                        }
+                    } else {
+                        if (unexplainedProblem == null) {
+                            unexplainedProblem = new StringBuilder();
+                        } else {
+                            unexplainedProblem.append('\n');
+                        }
                         String depConName = reg.getDependentContext().getName();
-                        // only overwrite reponse failure-description if there isn't one
-                        if (!response.hasDefined(FAILURE_DESCRIPTION)) {
-                            response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
-                                    reg.getDependentName(), depConName, depConName));
-                        }
-                        if (isBooting()) {
-                            ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getDependentName(),
-                                    depConName, step.address.toCLIStyleString(),reg.getRequiredName(), depConName);
-                        }
+                        unexplainedProblem.append(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
+                                reg.getDependentName(), depConName, depConName));
                     }
                 }
 
+            }
+
+            // If we didn't record a failure on any response, put one on the initial response
+            if (!failureRecorded && unexplainedProblem != null && !initialResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
             }
         }
         return ok;
@@ -1777,25 +1810,27 @@ final class OperationContextImpl extends AbstractOperationContext {
         PathElement pe = getProcessType().isServer() || step.address.size() == 0 ? null : step.address.getElement(0);
         if (pe != null) {
             String type = pe.getKey();
-            if (type.equals(PROFILE)) {
-                context = new DomainCapabilityContext(false, pe.getValue(), false);
-            } else if (type.equals(SOCKET_BINDING_GROUP)) {
-                context = new DomainCapabilityContext(true, pe.getValue(), true);
-            } else if (type.equals(HOST) && step.address.size() >= 2) {
-                context = createHostCapabilityContext(context, step);
-            }
-        }
-        return context;
-    }
-
-    private CapabilityContext createHostCapabilityContext(CapabilityContext context, Step step) {
-        if (step.address.size() >= 2) {
-            PathElement hostElement = step.address.getElement(1);
-            final String hostType = hostElement.getKey();
-            switch (hostType) {
-                case SUBSYSTEM:
-                case SOCKET_BINDING_GROUP:
-                    return new HostCapabilityContext();
+            switch (type) {
+                case PROFILE: {
+                    context = step.address.size() == 1 ? context : new ProfileChildCapabilityContext(pe.getValue());
+                    break;
+                }
+                case SOCKET_BINDING_GROUP: {
+                    context = step.address.size() == 1 ? context : new SocketBindingGroupChildContext(pe.getValue());
+                    break;
+                }
+                case HOST: {
+                    if (step.address.size() >= 2) {
+                        PathElement hostElement = step.address.getElement(1);
+                        final String hostType = hostElement.getKey();
+                        switch (hostType) {
+                            case SUBSYSTEM:
+                            case SOCKET_BINDING_GROUP:
+                                context = HostCapabilityContext.INSTANCE;
+                        }
+                    }
+                    break;
+                }
             }
         }
         return context;

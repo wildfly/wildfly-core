@@ -22,47 +22,46 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
- * {@link CapabilityContext} for capabilities whose use is restricted to
- * the Host Controller in which they are installed; e.g. they cannot be
- * resolved by requirers in a domain level context.
+ * {@link CapabilityContext} for the children of a Host Controller {@code socket-binding-group} resource.
+ * Note this does not include the socket binding group capability itself.
  *
  * @author Brian Stansberry
+ *
+ * @see SocketBindingGroupsCapabilityContext
  */
-public final class HostCapabilityContext implements CapabilityContext {
+public class SocketBindingGroupChildContext extends IncludingResourceCapabilityContext {
 
-    public static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
+    public static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> SBG_KEY =
+            CapabilityResolutionContext.AttachmentKey.create(Map.class);
+
+    public SocketBindingGroupChildContext(String value) {
+        super(SBG_KEY, SOCKET_BINDING_GROUP, value);
+    }
 
     @Override
     public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
         CapabilityContext dependentContext = dependent.getContext();
-        return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
+        boolean result = !(dependentContext instanceof SocketBindingGroupChildContext) || equals(dependentContext);
+        if (!result) {
+            Set<CapabilityContext> includers = getIncludingContexts(context);
+            result = includers.contains(dependentContext);
+        }
+        return result;
     }
 
     @Override
     public boolean requiresConsistencyCheck() {
-        return false;
+        return true;
     }
 
     @Override
-    public String getName() {
-        return HOST;
-    }
-
-    @Override
-    public String toString() {
-        return getName();
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || !(o == null || getClass() != o.getClass());
+    protected CapabilityContext createIncludedContext(String name) {
+        return new SocketBindingGroupChildContext(name);
     }
 }
