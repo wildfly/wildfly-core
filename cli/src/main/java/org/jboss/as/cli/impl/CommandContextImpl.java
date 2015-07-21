@@ -1007,7 +1007,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 response = readLine("Accept certificate? [N]o, [T]emporarily : ", false, true);
             }
 
-            if (response != null && response.length() == 1) {
+            if (response == null)
+                return false;
+            else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
                         return false;
