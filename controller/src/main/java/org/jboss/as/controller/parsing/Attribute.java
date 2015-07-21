@@ -32,6 +32,7 @@ import java.util.Map;
  */
 public enum Attribute {
     // always first
+// always first
     UNKNOWN(null),
 
     // xsi attributes in alpha order
@@ -110,6 +111,7 @@ public enum Attribute {
     LOG_READ_ONLY("log-read-only"),
     MANAGEMENT_SUBSYSTEM_ENDPOINT("management-subsystem-endpoint"),
     MAP_GROUPS_TO_ROLES("map-groups-to-roles"),
+    MAX_HISTORY("max-history"),
     MAX_BACKUP_INDEX("max-backup-index"),
     MAX_CACHE_SIZE("max-cache-size"),
     MAX_FAILURE_COUNT("max-failure-count"),

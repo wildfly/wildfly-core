@@ -95,6 +95,8 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerSubModel(SecurityRealmResourceDefinition.INSTANCE);
             resourceRegistration.registerSubModel(LdapConnectionResourceDefinition.newInstance());
         }
+        // Configuration Changes
+        resourceRegistration.registerSubModel(ConfigurationChangeResourceDefinition.INSTANCE);
 
         for (ResourceDefinition current : interfaces) {
             resourceRegistration.registerSubModel(current);

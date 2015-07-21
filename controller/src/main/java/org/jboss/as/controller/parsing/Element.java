@@ -52,6 +52,7 @@ public enum Element {
     CACHE("cache"),
     CLIENT_CERT_STORE("client-certificate-store"),
     CLIENT_MAPPING("client-mapping"),
+    CONFIGURATION_CHANGES("configuration-changes"),
     CONSTRAINTS("constraints"),
     CONTENT("content"),
 
