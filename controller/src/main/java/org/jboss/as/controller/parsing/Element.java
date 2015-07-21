@@ -32,6 +32,7 @@ import java.util.Map;
  */
 public enum Element {
     // must be first
+// must be first
     UNKNOWN(null),
 
     // Domain elements in alpha order
@@ -92,6 +93,7 @@ public enum Element {
     HTTP_INTERFACE("http-interface"),
 
     IGNORED_RESOURCE("ignored-resources"),
+    IN_MEMORY_HANDLER("in-memory-handler"),
     INCLUDE("include"),
     INSTANCE("instance"),
     INET_ADDRESS("inet-address"),

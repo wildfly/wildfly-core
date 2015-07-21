@@ -22,6 +22,7 @@
 package org.jboss.as.domain.management.audit;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_HANDLER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_MEMORY_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER;
@@ -83,7 +84,7 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
 
     private static final AttributeDefinition[] RUNTIME_ATTRIBUTES = new AttributeDefinition[] {FAILURE_COUNT, DISABLED_DUE_TO_FAILURE};
 
-    static final String[] HANDLER_TYPES = new String[] {FILE_HANDLER, SYSLOG_HANDLER, PERIODIC_ROTATING_FILE_HANDLER, SIZE_ROTATING_FILE_HANDLER};
+    static final String[] HANDLER_TYPES = new String[] {FILE_HANDLER, SYSLOG_HANDLER, PERIODIC_ROTATING_FILE_HANDLER, SIZE_ROTATING_FILE_HANDLER, IN_MEMORY_HANDLER};
 
     protected final ManagedAuditLogger auditLogger;
     protected final PathManagerService pathManager;
