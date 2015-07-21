@@ -40,6 +40,8 @@ import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,12 +63,15 @@ public final class SelfContainedContainer {
     public SelfContainedContainer() {
     }
 
+    public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
+        return start( containerDefinition, contentProvider, Collections.emptyList() );
+    }
     /**
      * The main method.
      *
      * @param containerDefinition The container definition.
      */
-    public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
+    public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider, Collection<ServiceActivator> additionalActivators) throws ExecutionException, InterruptedException, ModuleLoadException {
 
         final long startTime = System.currentTimeMillis();
         if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
@@ -101,7 +106,11 @@ public final class SelfContainedContainer {
                 });
         configuration.setModuleLoader(Module.getBootModuleLoader());
 
-        return bootstrap.startup(configuration, Collections.<ServiceActivator>singletonList(new ContentProviderServiceActivator(contentProvider))).get();
+        List<ServiceActivator> activators = new ArrayList<>();
+        activators.add( new ContentProviderServiceActivator(contentProvider));
+        activators.addAll(additionalActivators);
+
+        return bootstrap.startup(configuration, activators).get();
     }
 
     public static ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType, long startTime) {
