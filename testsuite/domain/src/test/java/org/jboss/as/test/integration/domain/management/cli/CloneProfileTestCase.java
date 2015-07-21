@@ -21,6 +21,8 @@
  */
 package org.jboss.as.test.integration.domain.management.cli;
 
+import static java.nio.file.Files.readAllLines;
+
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
@@ -35,8 +37,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
+import java.io.IOException;
 
 
 /**
@@ -94,12 +95,16 @@ public class CloneProfileTestCase extends AbstractCliTestBase {
         return output;
     }
 
-    private String readFileToString(File file) throws FileNotFoundException {
-        return new Scanner(file).useDelimiter("\\Z").next();
+    private String readFileToString(File file) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        for(String line : readAllLines(file.toPath())){
+            builder.append(line);
+        }
+        return builder.toString();
     }
 
     @Test
-    public void testProfile() throws FileNotFoundException {
+    public void testProfile() throws IOException {
         // get domain configuration
         String domainCfgContent = readFileToString(domainCfg);
         assertFalse("Domain configuration is not initialized correctly.", domainCfgContent.contains(NEW_PROFILE));
