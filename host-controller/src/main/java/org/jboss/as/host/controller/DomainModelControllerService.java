@@ -1028,7 +1028,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().startServer(serverName, domainModel, blocking);
         }
 
-        public void reconnectServer(String serverName, ModelNode domainModel, byte[] authKey, boolean running, boolean stopping) {
+        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
             getServerInventory().reconnectServer(serverName, domainModel, authKey, running, stopping);
         }
 

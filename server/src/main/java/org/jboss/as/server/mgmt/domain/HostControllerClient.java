@@ -87,7 +87,7 @@ public class HostControllerClient implements Closeable {
         this.controller = controller;
     }
 
-    public void reconnect(final URI uri, final byte[] authKey, final boolean mgmtSubsystemEndpoint) throws IOException, URISyntaxException {
+    public void reconnect(final URI uri, final String authKey, final boolean mgmtSubsystemEndpoint) throws IOException, URISyntaxException {
         // In case the server is out of sync after the reconnect, set reload required
         final boolean mgmtEndpointChanged = this.managementSubsystemEndpoint != mgmtSubsystemEndpoint;
         connection.asyncReconnect(uri, authKey, new HostControllerConnection.ReconnectCallback() {

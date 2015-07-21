@@ -57,7 +57,7 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
     static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "process-controller-connection");
 
     private final HostControllerEnvironment environment;
-    private final byte[] authCode;
+    private final String authCode;
     private volatile ProcessControllerClient client;
     private volatile ServerInventory serverInventory;
 
@@ -65,7 +65,7 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
     private static final int THREAD_POOL_CORE_SIZE = 1;
     private static final int THREAD_POOL_MAX_SIZE = 4;
 
-    ProcessControllerConnectionService(final HostControllerEnvironment environment, final byte[] authCode) {
+    ProcessControllerConnectionService(final HostControllerEnvironment environment, final String authCode) {
         this.environment = environment;
         this.authCode = authCode;
     }

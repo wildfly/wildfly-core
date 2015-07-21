@@ -32,6 +32,7 @@ import static org.jboss.as.process.protocol.StreamUtils.safeClose;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +80,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                 connection.close();
                 return;
             }
-            final byte[] authCode = new byte[16];
+            final byte[] authCode = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
             StreamUtils.readFully(dataStream, authCode);
             final ManagedProcess process = processController.getServerByAuthCode(authCode);
             if (process == null) {
@@ -147,8 +148,8 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             if (isPrivileged) {
                                 operationType = ProcessMessageHandler.OperationType.ADD;
                                 processName = readUTFZBytes(dataStream);
-                                final byte[] authKey = new byte[16];
-                                readFully(dataStream, authKey);
+                                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                                readFully(dataStream, authBytes);
                                 final int commandCount = readInt(dataStream);
                                 final String[] command = new String[commandCount];
                                 for (int i = 0; i < commandCount; i ++) {
@@ -161,6 +162,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 }
                                 final String workingDirectory = readUTFZBytes(dataStream);
                                 ProcessLogger.SERVER_LOGGER.tracef("Received add_process for process %s", processName);
+                                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
                                 processController.addProcess(processName, authKey, Arrays.asList(command), env, workingDirectory, false, false);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring add_process message from untrusted source");
@@ -221,9 +223,10 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 final String hostName = readUTFZBytes(dataStream);
                                 final int port = readInt(dataStream);
                                 final boolean managementSubsystemEndpoint = readBoolean(dataStream);
-                                final byte[] asAuthKey = new byte[16];
-                                readFully(dataStream, asAuthKey);
-                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, asAuthKey);
+                                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                                readFully(dataStream, authBytes);
+                                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
+                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, authKey);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring reconnect_process message from untrusted source");
                             }

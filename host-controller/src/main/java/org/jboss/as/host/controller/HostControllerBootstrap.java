@@ -41,9 +41,9 @@ public class HostControllerBootstrap {
     private final ShutdownHook shutdownHook;
     private final ServiceContainer serviceContainer;
     private final HostControllerEnvironment environment;
-    private final byte[] authCode;
+    private final String authCode;
 
-    public HostControllerBootstrap(final HostControllerEnvironment environment, final byte[] authCode) {
+    public HostControllerBootstrap(final HostControllerEnvironment environment, final String authCode) {
         this.environment = environment;
         this.authCode = authCode;
         this.shutdownHook = new ShutdownHook();

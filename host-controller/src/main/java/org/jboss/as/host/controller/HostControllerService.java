@@ -84,12 +84,12 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final HostControllerEnvironment environment;
     private final HostRunningModeControl runningModeControl;
     private final ControlledProcessState processState;
-    private final byte[] authCode;
+    private final String authCode;
     private volatile FutureServiceContainer futureContainer;
     private volatile long startTime;
 
     HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
-                          final byte[] authCode, final ControlledProcessState processState) {
+                          final String authCode, final ControlledProcessState processState) {
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.authCode = authCode;
