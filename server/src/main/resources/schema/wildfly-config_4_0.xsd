@@ -478,8 +478,8 @@
                             
                             At the time authentication is going to be handled the keytab will be selected as follows: -
                              1 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching protocol/hostname.
-                             2 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching hostname.
-                             3 - Iterate the list of keytabs and identify one where the name of the principal matches matches protocol/hostname.
+                             2 - Iterate the list of keytabs and identify one where the name of the principal matches matches protocol/hostname.
+                             3 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching hostname.
                              4 - Iterate the list of keytabs and identify one where the hostname portion of the principal matches the hostname of the request.
                              5 - Use the keytab where for-hosts is set to '*'.
                               
