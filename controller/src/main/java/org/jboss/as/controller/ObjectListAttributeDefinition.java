@@ -24,7 +24,6 @@ package org.jboss.as.controller;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -59,7 +58,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         final ModelNode attr = getNoTextDescription(false);
         attr.get(ModelDescriptionConstants.DESCRIPTION).set(getAttributeTextDescription(bundle, prefix));
         final ModelNode result = resourceDescription.get(ModelDescriptionConstants.ATTRIBUTES, getName()).set(attr);
-        addValueTypeDescription(result, prefix, bundle, false,null,null);
+        addValueTypeDescription(result, prefix, bundle, false, null, null);
         addAccessConstraints(result, bundle.getLocale());
         return result;
     }
@@ -69,7 +68,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         final ModelNode param = getNoTextDescription(true);
         param.get(ModelDescriptionConstants.DESCRIPTION).set(getAttributeTextDescription(bundle, prefix));
         final ModelNode result = operationDescription.get(ModelDescriptionConstants.REQUEST_PROPERTIES, getName()).set(param);
-        addValueTypeDescription(result, prefix, bundle, true,null,null);
+        addValueTypeDescription(result, prefix, bundle, true, null, null);
         return result;
     }
 
@@ -221,6 +220,10 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         valueType.addValueTypeDescription(node, prefix, bundle,resolver,locale);
     }
 
+    @Override
+    protected void addAllowedValuesToDescription(ModelNode result, ParameterValidator validator) {
+        //Don't add allowed values for object types, since they simply enumerate the fields given in the value type
+    }
 
     public static final class Builder extends ListAttributeDefinition.Builder<Builder, ObjectListAttributeDefinition> {
         private final ObjectTypeAttributeDefinition valueType;
