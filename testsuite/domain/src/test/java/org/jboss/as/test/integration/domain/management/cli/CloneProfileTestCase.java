@@ -22,22 +22,33 @@
 package org.jboss.as.test.integration.domain.management.cli;
 
 import static java.nio.file.Files.readAllLines;
-
-import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.suites.CLITestSuite;
-import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.jboss.logging.Logger;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.suites.CLITestSuite;
+import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
+import org.jboss.logging.Logger;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 
 /**
@@ -104,7 +115,7 @@ public class CloneProfileTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testProfile() throws IOException {
+    public void testProfile() throws IOException, SAXException, ParserConfigurationException {
         // get domain configuration
         String domainCfgContent = readFileToString(domainCfg);
         assertFalse("Domain configuration is not initialized correctly.", domainCfgContent.contains(NEW_PROFILE));
@@ -121,6 +132,9 @@ public class CloneProfileTestCase extends AbstractCliTestBase {
         domainCfgContent = readFileToString(domainCfg);
         assertTrue("Domain configuration doesn't contain " + NEW_PROFILE + " profile.", domainCfgContent.contains(NEW_PROFILE));
 
+        //check xml
+        checkXML();
+
         // Remove the new profile (WFCORE-808 test)
         cliRequest("/profile=" + NEW_PROFILE + ":remove", true);
 
@@ -128,6 +142,109 @@ public class CloneProfileTestCase extends AbstractCliTestBase {
         domainCfgContent = readFileToString(domainCfg);
         assertFalse("Domain configuration still contains " + NEW_PROFILE + " profile.", domainCfgContent.contains(NEW_PROFILE));
 
+    }
+
+    /**
+     * Check subsystems from original and new profile
+     */
+    private void checkXML() throws ParserConfigurationException, IOException, SAXException {
+        // parse xml
+        DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = dBuilder.parse(domainCfg);
+
+        // get subsystems
+        List<String> originalSubsystemsInXML = findProfileSubsystemsInXML(doc, ORIGINAL_PROFILE);
+        List<String> newSubsystemsInXML = findProfileSubsystemsInXML(doc, NEW_PROFILE);
+
+        // basic check
+        if (originalSubsystemsInXML == null || newSubsystemsInXML == null) {
+            Assert.fail("Error during parsing domain.xml file");
+        }
+        if (originalSubsystemsInXML.size() != newSubsystemsInXML.size()) {
+            Assert.fail("Different subsystems in original and new profile in domain.xml file");
+        }
+
+        // log subsystems
+        log.info("Subsystems in original profile in xml: " + originalSubsystemsInXML);
+        log.info("Subsystems in new profile in xml: " + newSubsystemsInXML);
+
+        // check order
+        Iterator<String> itOriginal = originalSubsystemsInXML.iterator();
+        Iterator<String> itNew = newSubsystemsInXML.iterator();
+        while (itOriginal.hasNext()) {
+            String originalSubsystem = itOriginal.next();
+            String newSubsystem = itNew.next();
+            if (!originalSubsystem.equals(newSubsystem)) {
+                Assert.fail("Different order of subsystems in cloned profile.");
+            }
+        }
+    }
+
+    /**
+     * Parse root node
+     */
+    private List<String> findProfileSubsystemsInXML(Document doc, String profileName) {
+        List<String> output = null;
+        if (!doc.hasChildNodes()) {
+            return output;
+        }
+        NodeList nodeList = doc.getChildNodes();
+        return findProfileSubsystems(nodeList, profileName);
+    }
+
+    /**
+     * Find profile node in XML
+     */
+    private List<String> findProfileSubsystems(NodeList nodeList, String profileName) {
+        List<String> output = null;
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node tempNode = nodeList.item(i);
+            if (tempNode.getNodeType() == Node.ELEMENT_NODE) {
+                String nodeName = tempNode.getNodeName();
+                if (!nodeName.contains("domain") && !nodeName.contains("profiles") && !nodeName.contains("profile")) {
+                    continue;
+                }
+                if (nodeName.equals("profile") && tempNode.hasAttributes()) {
+                    NamedNodeMap nodeMap = tempNode.getAttributes();
+                    for (int j = 0; j < nodeMap.getLength(); j++) {
+                        Node node = nodeMap.item(j);
+                        if (node.getNodeName().equals("name") && node.getNodeValue().equals(profileName)) {
+                            return findSubsystemsInProfile(tempNode.getChildNodes());
+                        }
+                    }
+                }
+                if (!nodeName.equals("profile") && tempNode.hasChildNodes()) {
+                    return findProfileSubsystems(tempNode.getChildNodes(), profileName);
+                }
+            }
+        }
+        return output;
+    }
+
+    /**
+     * Find subsystems from profile node
+     */
+    private List<String> findSubsystemsInProfile(NodeList nodeList) {
+        List<String> output = new LinkedList<>();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node tempNode = nodeList.item(i);
+            if (tempNode.getNodeType() == Node.ELEMENT_NODE) {
+                String nodeName = tempNode.getNodeName();
+                if (!nodeName.contains("subsystem")) {
+                    continue;
+                }
+                if (tempNode.hasAttributes()) {
+                    NamedNodeMap nodeMap = tempNode.getAttributes();
+                    for (int j = 0; j < nodeMap.getLength(); j++) {
+                        Node node = nodeMap.item(j);
+                        if (node.getNodeName().equals("xmlns")) {
+                            output.add(node.getNodeValue());
+                        }
+                    }
+                }
+            }
+        }
+        return output;
     }
 
 }
