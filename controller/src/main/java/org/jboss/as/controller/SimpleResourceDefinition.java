@@ -334,6 +334,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         // no-op
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        // no-op
+    }
+
     /**
      * Gets the {@link ResourceDescriptionResolver} used by this resource definition, or {@code null}
      * if a {@code ResourceDescriptionResolver} is not used.
@@ -565,6 +570,22 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         }
 
         /**
+         * Call to deprecate the resource
+         *
+         * @param deprecatedSince version in which model was deprecated
+         * @return this Parameters object
+         * @throws IllegalStateException if the {@code deprecationData} is null
+         */
+        public Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
+            if (deprecationData == null) {
+                throw ControllerLogger.ROOT_LOGGER.nullVar("addRestartLevel");
+            }
+
+            this.deprecationData = new DeprecationData(deprecatedSince);
+            return this;
+        }
+
+        /**
          * Call to indicate that a resource is of a type where ordering matters amongst the siblings of the same type.
          * If not called, the default is {@code false}.
          *
@@ -575,5 +596,6 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             this.orderedChildResource = true;
             return this;
         }
+
     }
 }

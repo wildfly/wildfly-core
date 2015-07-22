@@ -39,6 +39,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -201,6 +202,11 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    public void registerCapability(Capability capability) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     void getOperationDescriptions(final ListIterator<PathElement> iterator, final Map<String, OperationEntry> providers, final boolean inherited) {
         Map<String, OperationEntry> temp = new HashMap<String, OperationEntry>();
         target.getOperationDescriptions(iterator, temp, inherited);
@@ -307,5 +313,10 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     @Override
     public void setOrderedChild(String key) {
         throw alreadyRegistered();
+    }
+
+    @Override
+    public Set<Capability> getCapabilities() {
+        return target.getCapabilities();
     }
 }

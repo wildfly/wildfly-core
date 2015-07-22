@@ -476,6 +476,11 @@ public abstract class ModelTestModelControllerService extends AbstractController
             }
             return delegate.isOrderedChild();
         }
+
+        @Override
+        public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+            delegate.registerCapabilities(resourceRegistration);
+        }
     }
 
     //These are here to overload the constuctor used for the different legacy controllers

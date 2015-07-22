@@ -80,7 +80,7 @@ public abstract class AbstractResourceModelTransformer implements ResourceTransf
          ResourceDefinition load(TransformationTarget target);
 
     }
-
+    //todo consider removing this class or moving it to test harness for transformers
     public abstract static class AbstractDefinitionLoader implements ResourceDefinitionLoader {
 
         /**
