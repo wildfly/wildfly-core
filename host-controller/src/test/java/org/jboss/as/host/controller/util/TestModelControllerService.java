@@ -43,6 +43,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
@@ -70,9 +71,10 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final ManagedAuditLogger auditLogger,
-                                         final AbstractControllerTestBase.DelegatingResourceDefinitionInitializer initializer) {
+                                         final AbstractControllerTestBase.DelegatingResourceDefinitionInitializer initializer,
+                                         final CapabilityRegistry capabilityRegistry) {
         super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition,
-                null, ExpressionResolver.TEST_RESOLVER, auditLogger, new DelegatingConfigurableAuthorizer());
+                null, ExpressionResolver.TEST_RESOLVER, auditLogger, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
         this.processState = processState;
         internalExecutor = new InternalExecutor();
         this.initializer = initializer;

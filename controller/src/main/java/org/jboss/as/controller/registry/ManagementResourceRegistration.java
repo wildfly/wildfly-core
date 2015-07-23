@@ -37,6 +37,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -467,7 +468,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                     return false;
                 }
             };
-            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, rootResourceDefinition.isRuntime(), false);
+            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, rootResourceDefinition.isRuntime(), false, null);
         }
 
         /**
@@ -479,8 +480,25 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
          */
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition) {
-            return create(resourceDefinition, null);
+            return create(resourceDefinition, null, null);
         }
+
+        /**
+         * Create a new root model node registration.
+         *
+         * @param resourceDefinition            the facotry for the model description provider for the root model node
+         * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
+         *                                      tracking access constraint usage is not supported
+         * @return the new root model node registration
+         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         * @deprecated use {@link #create(ResourceDefinition, AccessConstraintUtilizationRegistry, CapabilityRegistry)}
+         */
+        @Deprecated
+        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
+                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
+            return create(resourceDefinition, constraintUtilizationRegistry, null);
+        }
+
 
         /**
          * Create a new root model node registration.
@@ -493,13 +511,14 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
          */
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
-                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
+                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
+                                                            CapabilityRegistry registry) {
             if (resourceDefinition == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProviderFactory");
             }
             ConcreteResourceRegistration resourceRegistration =
                     new ConcreteResourceRegistration(null, null, resourceDefinition,
-                            constraintUtilizationRegistry, resourceDefinition.isRuntime(), false);
+                            constraintUtilizationRegistry, resourceDefinition.isRuntime(), false, registry);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);

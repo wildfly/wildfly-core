@@ -3209,7 +3209,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 362, value = "Capabilities required by resource '%s' are not available:")
     String requiredCapabilityMissing(String demandingAddress);
 
-    @Message(id = 363, value = "Capability '%s' is already registered in context '%s.")
+    @Message(id = 363, value = "Capability '%s' is already registered in context '%s'.")
     IllegalStateException capabilityAlreadyRegisteredInContext(String capability, String context);
 
     @Message(id = 364, value = "Capability '%s' is unknown.")

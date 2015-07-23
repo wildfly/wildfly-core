@@ -45,6 +45,7 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     private final ControlledProcessState processState;
     final AtomicBoolean state = new AtomicBoolean(true);
     private final CountDownLatch latch = new CountDownLatch(2);
+    private final CapabilityRegistry capabilityRegistry;
 
     protected TestModelControllerService() {
         this(new NullConfigurationPersister(), new ControlledProcessState(true));
@@ -57,8 +58,15 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition) {
-        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+        this(processType, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()));
+    }
+
+    protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
+                                             final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
+        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+                        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
         this.processState = processState;
+        this.capabilityRegistry = capabilityRegistry;
     }
 
     public AtomicBoolean getSharedState() {
@@ -85,6 +93,10 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     protected void bootThreadDone() {
         super.bootThreadDone();
         latch.countDown();
+    }
+
+    public CapabilityRegistry getCapabilityRegistry() {
+        return capabilityRegistry;
     }
 
     protected static OperationDefinition getOD(String name) {

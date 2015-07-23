@@ -24,9 +24,11 @@
 
 package org.jboss.as.controller;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -38,8 +40,9 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 class ResourceBuilderRoot implements ResourceBuilder {
     private final PathElement pathElement;
     private final StandardResourceDescriptionResolver resourceResolver;
-    private final List<AttributeBinding> attributes = new LinkedList<AttributeBinding>();
-    private final List<OperationBinding> operations = new LinkedList<OperationBinding>();
+    private final List<AttributeBinding> attributes = new LinkedList<>();
+    private final List<OperationBinding> operations = new LinkedList<>();
+    private final List<Capability> capabilities = new LinkedList<>();
     private ResourceDescriptionResolver attributeResolver = null;
     private OperationStepHandler addHandler;
     private OperationStepHandler removeHandler;
@@ -160,6 +163,18 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return this;
     }
 
+    @Override
+    public ResourceBuilder addCapability(Capability capability) {
+        capabilities.add(capability);
+        return this;
+    }
+
+    @Override
+    public ResourceBuilder addCapabilities(Capability... capabilities) {
+        this.capabilities.addAll(Arrays.asList(capabilities));
+        return this;
+    }
+
     public ResourceBuilder pushChild(final PathElement pathElement) {
         return pushChild(pathElement, resourceResolver.getChildResolver(pathElement.getKey()));
     }
@@ -220,7 +235,15 @@ class ResourceBuilderRoot implements ResourceBuilder {
         final ResourceBuilderRoot builder;
 
         private BuilderResourceDefinition(ResourceBuilderRoot builder) {
-            super(builder.pathElement, builder.resourceResolver, builder.addHandler, builder.removeHandler, null, null, builder.deprecationData, builder.isRuntime);
+            //super(builder.pathElement, builder.resourceResolver, builder.addHandler, builder.removeHandler, null, null, builder.deprecationData, builder.isRuntime);
+            super(new Parameters(builder.pathElement, builder.resourceResolver)
+            .setAddHandler(builder.addHandler)
+                    .setRemoveHandler(builder.removeHandler)
+                    .setDeprecationData(builder.deprecationData)
+                    .setRuntime(builder.isRuntime)
+                    .setCapabilities(builder.capabilities.toArray(new Capability[builder.capabilities.size()]))
+
+            );
             this.builder = builder;
         }
 

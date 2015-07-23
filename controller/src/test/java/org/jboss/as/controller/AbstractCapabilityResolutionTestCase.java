@@ -87,8 +87,6 @@ abstract class AbstractCapabilityResolutionTestCase {
 
     @Before
     public void setupController() throws InterruptedException {
-        System.out.println("=========  New Test \n");
-
         container = ServiceContainer.Factory.create("test");
         ServiceTarget target = container.subTarget();
         ModelControllerService svc = new ModelControllerService();
@@ -113,7 +111,6 @@ abstract class AbstractCapabilityResolutionTestCase {
                 container = null;
             }
         }
-        System.out.println("======================");
     }
 
     protected static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability) {

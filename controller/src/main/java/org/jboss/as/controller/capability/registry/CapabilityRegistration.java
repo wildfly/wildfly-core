@@ -22,7 +22,14 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import org.jboss.as.controller.capability.AbstractCapability;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.Capability;
 
 /**
  * Encapsulates the registration information for an {@link org.jboss.as.controller.capability.AbstractCapability capability}.
@@ -31,15 +38,30 @@ import org.jboss.as.controller.capability.AbstractCapability;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class CapabilityRegistration<C extends AbstractCapability> {
+public class CapabilityRegistration<C extends Capability> {
 
+    private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
     private final C capability;
     private final CapabilityId id;
 
     public CapabilityRegistration(C capability, CapabilityContext context) {
         this.capability = capability;
         this.id = new CapabilityId(capability.getName(), context);
+    }
 
+    public CapabilityRegistration(C capability, CapabilityContext context, RegistrationPoint registrationPoint) {
+        this(capability, context);
+        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
+    }
+
+    /**
+     * Copy constructor.
+     *
+     * @param toCopy the registration to copy. Cannot be {@code null}
+     */
+    public CapabilityRegistration(CapabilityRegistration<C> toCopy) {
+        this(toCopy.getCapability(), toCopy.getCapabilityContext());
+        this.registrationPoints.putAll(toCopy.registrationPoints);
     }
 
     /**
@@ -81,5 +103,44 @@ public class CapabilityRegistration<C extends AbstractCapability> {
     @Override
     public int hashCode() {
         return id.hashCode();
+    }
+
+    /**
+     * Gets the registration point that been associated with the registration for the longest period.
+     * @return the initial registration point, or {@code null} if there are no longer any registration points
+     */
+    public synchronized RegistrationPoint getOldestRegistrationPoint() {
+        return registrationPoints.size() == 0 ? null : registrationPoints.values().iterator().next();
+    }
+
+    /**
+     * Get all registration points associated with this registration.
+     *
+     * @return all registration points. Will not be {@code null} but may be empty
+     */
+    public synchronized Set<RegistrationPoint> getRegistrationPoints() {
+        return Collections.unmodifiableSet(new HashSet<>(registrationPoints.values()));
+    }
+
+    public synchronized boolean addRegistrationPoint(RegistrationPoint toAdd) {
+        PathAddress addedAddress = toAdd.getAddress();
+        if (registrationPoints.containsKey(addedAddress)) {
+            return false;
+        }
+        registrationPoints.put(addedAddress, toAdd);
+        return true;
+    }
+
+    public synchronized boolean removeRegistrationPoint(RegistrationPoint toAdd) {
+        PathAddress addedAddress = toAdd.getAddress();
+        if (!registrationPoints.containsKey(addedAddress)) {
+            return false;
+        }
+        registrationPoints.remove(addedAddress);
+        return true;
+    }
+
+    public synchronized int getRegistrationPointCount() {
+        return registrationPoints.size();
     }
 }

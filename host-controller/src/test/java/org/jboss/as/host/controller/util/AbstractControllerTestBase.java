@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
@@ -59,6 +60,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.Util;
@@ -113,6 +115,7 @@ public abstract class AbstractControllerTestBase {
     protected final DomainController domainController;
     protected volatile DelegatingResourceDefinitionInitializer initializer;
     private final TestDelegatingResourceDefiniton rootResourceDefinition;
+    private final CapabilityRegistry capabilityRegistry;
 
     protected AbstractControllerTestBase() {
         this(ProcessType.EMBEDDED_SERVER);
@@ -130,6 +133,7 @@ public abstract class AbstractControllerTestBase {
         hostControllerInfo = new LocalHostControllerInfoImpl(new ControlledProcessState(false), hostControllerEnvironment);
         domainController = new MockDomainController();
         rootResourceDefinition = useDelegateRootResourceDefinition ?  new TestDelegatingResourceDefiniton() : null;
+        capabilityRegistry = new CapabilityRegistry(processType.isServer());
     }
 
 
@@ -278,13 +282,13 @@ public abstract class AbstractControllerTestBase {
         public ModelControllerService(final ManagedAuditLogger auditLogger) {
             super(AbstractControllerTestBase.this.processType, new EmptyConfigurationPersister(), new ControlledProcessState(true),
                     ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
-                    auditLogger, initializer);
+                    auditLogger, initializer, capabilityRegistry);
         }
 
         public ModelControllerService(final ManagedAuditLogger auditLogger,
                                DelegatingResourceDefinition rootResourceDefinition) {
             super(AbstractControllerTestBase.this.processType, new EmptyConfigurationPersister(), new ControlledProcessState(true),
-                    rootResourceDefinition, auditLogger, initializer);
+                    rootResourceDefinition, auditLogger, initializer, capabilityRegistry);
         }
 
         @Override
@@ -416,7 +420,7 @@ public abstract class AbstractControllerTestBase {
         //Copied from core-model-test
         try {
             Map<String, String> props = new HashMap<String, String>();
-            File home = new File("target/jbossas");
+            File home = new File("target/wildfly");
             delete(home);
             home.mkdir();
             props.put(HostControllerEnvironment.HOME_DIR, home.getAbsolutePath());
@@ -459,7 +463,7 @@ public abstract class AbstractControllerTestBase {
 
         @Override
         public RunningMode getCurrentRunningMode() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         @Override
@@ -470,62 +474,60 @@ public abstract class AbstractControllerTestBase {
         @Override
         public void registerRemoteHost(String hostName, ManagementChannelHandler handler, Transformers transformers,
                                        Long remoteConnectionId, boolean registerProxyController) throws SlaveRegistrationException {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public boolean isHostRegistered(String id) {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
+            return false;
         }
 
         @Override
         public void unregisterRemoteHost(String id, Long remoteConnectionId, boolean cleanShutdown) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public void pingRemoteHost(String hostName) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public void registerRunningServer(ProxyController serverControllerClient) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public void unregisterRunningServer(String serverName) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public ModelNode getProfileOperations(String profileName) {
-            return new ModelNode().setEmptyList();  //To change body of implemented methods use File | Settings | File Templates.
+            return new ModelNode().setEmptyList();
         }
 
         @Override
         public HostFileRepository getLocalFileRepository() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         @Override
         public HostFileRepository getRemoteFileRepository() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
 
         @Override
         public void stopLocalHost() {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public void stopLocalHost(int exitCode) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public ExtensionRegistry getExtensionRegistry() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
+        }
+
+        @Override
+        public ImmutableCapabilityRegistry getCapabilityRegistry() {
+            return capabilityRegistry;
         }
 
         @Override
@@ -540,12 +542,10 @@ public abstract class AbstractControllerTestBase {
 
         @Override
         public void initializeMasterDomainRegistry(ManagementResourceRegistration root, ExtensibleConfigurationPersister configurationPersister, ContentRepository contentRepository, HostFileRepository fileRepository, ExtensionRegistry extensionRegistry, PathManagerService pathManager) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
         public void initializeSlaveDomainRegistry(ManagementResourceRegistration root, ExtensibleConfigurationPersister configurationPersister, ContentRepository contentRepository, HostFileRepository fileRepository, LocalHostControllerInfo hostControllerInfo, ExtensionRegistry extensionRegistry, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry, PathManagerService pathManager) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 

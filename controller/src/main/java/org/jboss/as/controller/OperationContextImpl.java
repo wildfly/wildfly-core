@@ -244,7 +244,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.partialModel = partialModel;
         if(runningMode == RunningMode.ADMIN_ONLY) {
             boolean hostXmlOnly = booting && !processType.isServer() && partialModel;
-            ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry(true, hostXmlOnly);
+            CapabilityRegistry.CapabilityValidation validation = managementModel.validateCapabilityRegistry(true, hostXmlOnly);
             this.capabilitiesAlreadyBroken = !validation.isValid();
         } else {
             this.capabilitiesAlreadyBroken = false;
@@ -274,7 +274,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private boolean validateCapabilities() {
         // Validate that all required capabilities are available and fail any steps that broke this
         boolean hostXmlOnly = isBooting() && !getProcessType().isServer() && partialModel;
-        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false, hostXmlOnly);
+        CapabilityRegistry.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false, hostXmlOnly);
         boolean ok = validation.isValid();
         final boolean adminOnly = this.getRunningMode() == RunningMode.ADMIN_ONLY;
         //if we are in admin only mode and everything is already broken then we don't care about failures
@@ -502,6 +502,10 @@ final class OperationContextImpl extends AbstractOperationContext {
     @Override
     void operationRollingBack() {
         modelController.discardModel(managementModel);
+    }
+
+    void publishCapabilityRegistry() {
+        modelController.publishCapabilityRegistry(managementModel);
     }
 
     @Override
@@ -1792,7 +1796,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private synchronized void ensureLocalCapabilityRegistry() {
         if (!affectsCapabilityRegistry) {
             takeWriteLock();
-            managementModel = managementModel.cloneCapabilityRegistry();
             affectsCapabilityRegistry = true;
         }
     }
