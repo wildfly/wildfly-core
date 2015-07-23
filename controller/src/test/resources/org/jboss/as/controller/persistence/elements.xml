@@ -17,19 +17,18 @@
   -->
 
 <subsystem xmlns="urn:jboss:domain:test:1.0">
-    <resource name="foo" no-attr1="yada" alias="localhost,some.host">
-        <property name="prop" value="val"/>
-        <cluster attr1="bar" attr2="baz"/>
-        <security my-attr1="alice" my-attr2="bob"/>
-        <mygroup>
-            <wrapped-properties>
+    <resources>
+        <resource name="foo" no-attr1="yada" alias="localhost,some.host">
+            <property name="prop" value="val"/>
+            <property name="prop2" value="val2"/>
+        </resource>
+        <resource name="bah" no-attr1="yada" alias="localhost,some.host">
+            <properties>
                 <property name="prop" value="val"/>
                 <property name="prop2" value="val2"/>
-            </wrapped-properties>
-        </mygroup>
-    </resource>
-    <resource name="foo2" no-attr1="blah" alias="localhost,some.host,bah,boh,yak">
-        <cluster attr1="bar2" attr2="baz2"/>
-    </resource>
-    <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3" />
+            </properties>
+        </resource>
+    </resources>
+    <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3"/>
+    <buffer-cache name="extra" buffer-size="1025" buffers-per-region="1054" max-regions="15"/>
 </subsystem>

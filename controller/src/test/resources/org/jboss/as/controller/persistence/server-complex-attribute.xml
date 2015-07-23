@@ -17,19 +17,18 @@
   -->
 
 <subsystem xmlns="urn:jboss:domain:test:1.0">
-    <resource name="foo" no-attr1="yada" alias="localhost,some.host">
-        <property name="prop" value="val"/>
-        <cluster attr1="bar" attr2="baz"/>
-        <security my-attr1="alice" my-attr2="bob"/>
-        <mygroup>
-            <wrapped-properties>
-                <property name="prop" value="val"/>
-                <property name="prop2" value="val2"/>
-            </wrapped-properties>
-        </mygroup>
-    </resource>
-    <resource name="foo2" no-attr1="blah" alias="localhost,some.host,bah,boh,yak">
-        <cluster attr1="bar2" attr2="baz2"/>
-    </resource>
-    <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3" />
+    <server name="default">
+        <interceptors>
+            <class name="org.bar.MyInterceptor" module="org.bar"/>
+            <class name="org.baz.MyOtherInterceptor" module="org.baz"/>
+        </interceptors>
+        <security enabled="${security.enabled:false}"/>
+        <statistics enabled="${statistics.enabled:true}"/>
+        <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3"/>
+    </server>
+    <server name="bar"> <!-- we are testing if parsing empty tags works properly -->
+    </server>
+    <server name="foo">
+        <property name="custom_prop" value="some-custom-prop-value"/>
+    </server>
 </subsystem>

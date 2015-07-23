@@ -3,7 +3,7 @@
 <config>
    <extension-module>org.jboss.as.remoting</extension-module>
    <subsystem xmlns="urn:jboss:domain:remoting:3.0">
-       <endpoint worker="default"/>
+       <endpoint/>
        <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
    </subsystem>
 </config>
