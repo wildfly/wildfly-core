@@ -39,10 +39,6 @@ import static org.junit.Assert.assertArrayEquals;
 import java.io.File;
 
 import org.jboss.as.patching.ContentConflictsException;
-import org.jboss.as.patching.IoUtils;
-import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerImpl;
-import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.Patch;
@@ -66,8 +62,6 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
 
     @Before
     public void setUp() throws Exception{
-        // start from a base installation
-        final InstalledIdentity identity = loadInstalledIdentity();
         // with a file in it
         File binDir = mkdir(env.getInstalledImage().getJbossHome(), "bin");
         String fileName = "standalone.sh";
@@ -98,8 +92,7 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
         createPatchXMLFile(patchDir, patch);
         zippedPatch = createZippedPatchFile(patchDir, patch.getPatchId());
 
-        final InstallationManager manager = new InstallationManagerImpl(identity);
-        runner = PatchTool.Factory.create(manager);
+        runner = newPatchTool();
     }
 
     @After

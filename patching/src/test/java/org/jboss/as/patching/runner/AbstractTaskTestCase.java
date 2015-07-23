@@ -74,19 +74,20 @@ public abstract class AbstractTaskTestCase {
         }
     }
 
-    public InstalledIdentity loadInstalledIdentity() throws IOException {
+    private InstallationManager loadInstallationManager() throws IOException {
         List<File> moduleRoots = new ArrayList<File>();
         moduleRoots.add(env.getInstalledImage().getModulesDir());
         List<File> bundleRoots = new ArrayList<File>();
         bundleRoots.add(env.getInstalledImage().getBundlesDir());
-        InstalledIdentity installedIdentity = InstalledIdentity.load(env.getInstalledImage(), productConfig, moduleRoots, bundleRoots);
-        return installedIdentity;
+        return new InstallationManagerImpl(env.getInstalledImage(), moduleRoots, bundleRoots, productConfig);
+    }
+
+    public InstalledIdentity loadInstalledIdentity() throws IOException {
+        return loadInstallationManager().getDefaultIdentity();
     }
 
     protected PatchTool newPatchTool() throws IOException {
-        final InstalledIdentity installedIdentity = loadInstalledIdentity();
-        final InstallationManager manager = new InstallationManagerImpl(installedIdentity);
-        return PatchTool.Factory.create(manager);
+        return PatchTool.Factory.create(loadInstallationManager());
     }
 
     protected PatchingResult executePatch(final File file) throws IOException, PatchingException {

@@ -97,7 +97,9 @@ public class PatchingTestUtil {
     public static final String PATCHES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_PATCHES_PATH;
     private static final String RELATIVE_MODULES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE});
     public static final String MODULES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_MODULES_PATH;
-    public static final File BASE_MODULE_DIRECTORY = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), MODULES, SYSTEM, LAYERS, BASE);
+    public static final File MODULES_DIRECTORY = newFile(new File(AS_DISTRIBUTION), MODULES);
+    public static final File LAYERS_DIRECTORY = newFile(MODULES_DIRECTORY, SYSTEM, LAYERS);
+    public static final File BASE_MODULE_DIRECTORY = newFile(LAYERS_DIRECTORY, BASE);
     public static final File BASE_BUNDLE_DIRECTORY = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), BUNDLES, SYSTEM, LAYERS, BASE);
     public static final boolean DO_CLEANUP = Boolean.getBoolean("cleanup.tmp");
 

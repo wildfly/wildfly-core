@@ -65,7 +65,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
         final List<String> moduleDirs = new ArrayList<String>();
         final List<String> bundleDirs = new ArrayList<String>();
 
-        final PatchHistoryIterator.Builder builder = PatchHistoryIterator.Builder.create(updateInstallationManager());
+        final PatchHistoryIterator.Builder builder = PatchHistoryIterator.Builder.create(updateInstallationManager().getDefaultIdentity());
         builder.addStateHandler(PatchingArtifacts.HISTORY_DIR, new PatchingArtifactStateHandler<PatchingFileArtifact.DirectoryArtifactState>() {
             @Override
             public void handleValidatedState(PatchingFileArtifact.DirectoryArtifactState state) {
@@ -104,7 +104,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
         final List<String> historyDirs = new ArrayList<String>();
         final List<String> moduleDirs = new ArrayList<String>();
         final List<String> bundleDirs = new ArrayList<String>();
-        final PatchHistoryIterator.Builder builder = PatchHistoryIterator.Builder.create(updateInstallationManager());
+        final PatchHistoryIterator.Builder builder = PatchHistoryIterator.Builder.create(updateInstallationManager().getDefaultIdentity());
         builder.addStateHandler(PatchingArtifacts.HISTORY_DIR, new PatchingArtifactStateHandler<PatchingFileArtifact.DirectoryArtifactState>() {
             @Override
             public void handleValidatedState(PatchingFileArtifact.DirectoryArtifactState state) {
@@ -159,7 +159,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
     @Test
     public void testSimpleValidRollbackOneOff() throws Exception {
         installOneOff();
-        validateRollbackState(ONE_OFF_1_ID, updateInstallationManager());
+        validateRollbackState(ONE_OFF_1_ID, updateInstallationManager().getDefaultIdentity());
     }
 
     @Test
@@ -197,7 +197,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
         final PatchingTestBuilder builder = installOneOffCpOneOff();
 
         // Can rollback incl. the first one off
-        validateRollbackState(ONE_OFF_1_ID, updateInstallationManager());
+        validateRollbackState(ONE_OFF_1_ID, updateInstallationManager().getDefaultIdentity());
 
         // Remove one off history
         final File oneOffHistory = getHistory(builder, ONE_OFF_1_ID);
@@ -205,7 +205,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
         cannotRollbackPatch(ONE_OFF_1_ID);
 
         // Can rollback CP1
-        validateRollbackState(CP_1_ID, updateInstallationManager());
+        validateRollbackState(CP_1_ID, updateInstallationManager().getDefaultIdentity());
 
         // Remove cp1 history
         final File cpHistory = getHistory(builder, CP_1_ID);
@@ -213,7 +213,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
         cannotRollbackPatch(CP_1_ID);
 
         // Could still rollback 2nd one off
-        validateRollbackState(ONE_OFF_2_ID, updateInstallationManager());
+        validateRollbackState(ONE_OFF_2_ID, updateInstallationManager().getDefaultIdentity());
     }
 
     @Test
@@ -222,7 +222,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
         final PatchingTestBuilder builder = installOneOffCpOneOff();
 
         // Can rollback incl. the first one off
-        validateRollbackState(ONE_OFF_1_ID, updateInstallationManager());
+        validateRollbackState(ONE_OFF_1_ID, updateInstallationManager().getDefaultIdentity());
         final File overlays = getOverlays(builder, "base", "base-" + ONE_OFF_1_ID);
         IoUtils.recursiveDelete(overlays);
 
@@ -233,7 +233,7 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
 
     protected void cannotRollbackPatch(final String patchID) throws Exception {
         try {
-            validateRollbackState(patchID, updateInstallationManager());
+            validateRollbackState(patchID, updateInstallationManager().getDefaultIdentity());
             Assert.fail("should not be able to rollback " + patchID);
         } catch (PatchingException e) {
             // ok

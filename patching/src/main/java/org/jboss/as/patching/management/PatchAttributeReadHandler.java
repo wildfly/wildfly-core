@@ -26,27 +26,22 @@ import java.io.IOException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.patching.installation.Identity;
-import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerService;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
-abstract class PatchAttributeReadHandler implements OperationStepHandler {
+abstract class PatchAttributeReadHandler extends PatchStreamResourceOperationStepHandler {
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    protected void execute(final OperationContext context, final ModelNode operation, final InstalledIdentity installedIdentity) throws OperationFailedException {
 
-        final ServiceController<?> mgrService = context.getServiceRegistry(false).getRequiredService(InstallationManagerService.NAME);
-        final InstallationManager mgr = (InstallationManager) mgrService.getValue();
         final ModelNode result = context.getResult();
-        final Identity info = mgr.getIdentity();
+        final Identity info = installedIdentity.getIdentity();
         try {
             handle(result, info);
         } catch (IOException e) {
-            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(info.getName()), e);
         }
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }

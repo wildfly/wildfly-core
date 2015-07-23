@@ -286,7 +286,7 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
                 throw PatchLogger.ROOT_LOGGER.noPatchesApplied();
             }
         } else {
-            patchId = oneOffs.get(oneOffs.size() - 1);
+            patchId = oneOffs.get(0);//oneOffs.get(oneOffs.size() - 1);
         }
         return rollbackPatch(patchId, contentPolicy, false, resetConfiguration, modification);
     }

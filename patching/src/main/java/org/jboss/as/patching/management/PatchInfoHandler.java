@@ -22,14 +22,13 @@
 
 package org.jboss.as.patching.management;
 
-import java.io.IOException;
-
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerService;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.Identity;
@@ -38,40 +37,54 @@ import org.jboss.as.patching.metadata.PatchElement;
 import org.jboss.as.patching.tool.PatchingHistory;
 import org.jboss.as.patching.tool.PatchingHistory.Entry;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * This handler returns the info about specific patch
  *
  * @author Alexey Loubyansky
  */
-public class PatchInfoHandler implements OperationStepHandler {
+public class PatchInfoHandler extends PatchStreamResourceOperationStepHandler {
 
     public static final PatchInfoHandler INSTANCE = new PatchInfoHandler();
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    protected void execute(final OperationContext context, final ModelNode operation, final InstalledIdentity installedIdentity) throws OperationFailedException {
 
-        final String patchId = PatchResourceDefinition.PATCH_ID.resolveModelAttribute(context, operation).asString();
-        final boolean verbose = PatchResourceDefinition.VERBOSE.resolveModelAttribute(context, operation).asBoolean();
+        final ModelNode patchIdNode = PatchResourceDefinition.PATCH_ID_OPTIONAL.resolveModelAttribute(context, operation);
+        final String patchId = patchIdNode.isDefined() ? patchIdNode.asString() : null;
 
-        final InstallationManager mgr = getInstallationManager(context);
-        if(mgr == null) {
-            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity());
+        if(patchId == null) {
+            final ModelNode readResource = new ModelNode();
+            readResource.get("address").set(operation.get("address"));
+            readResource.get("operation").set("read-resource");
+            readResource.get("recursive").set(true);
+            readResource.get("include-runtime").set(true);
+            final OperationStepHandler readResHandler = context.getRootResourceRegistration().getOperationHandler(PathAddress.EMPTY_ADDRESS, "read-resource");
+            context.addStep(readResource, readResHandler, Stage.MODEL);
+        } else {
+            final boolean verbose = PatchResourceDefinition.VERBOSE.resolveModelAttribute(context, operation).asBoolean();
+            final PatchableTarget.TargetInfo info;
+            try {
+                info = installedIdentity.getIdentity().loadTargetInfo();
+            } catch (Exception e) {
+                throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
+            }
+
+            final PatchingHistory.Iterator i = PatchingHistory.Factory.iterator(installedIdentity, info);
+            final ModelNode result = patchIdInfo(context, patchId, verbose, i);
+            if (result == null) {
+                context.getFailureDescription().set(PatchLogger.ROOT_LOGGER.patchNotFoundInHistory(patchId).getLocalizedMessage());
+            }
+            context.getResult().set(result);
         }
-        final PatchableTarget.TargetInfo info;
-        try {
-            info = mgr.getIdentity().loadTargetInfo();
-        } catch (IOException e) {
-            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
-        }
+        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+    }
 
-        ModelNode result = null;
-        final PatchingHistory.Iterator i = PatchingHistory.Factory.iterator(mgr, info);
+    protected ModelNode patchIdInfo(final OperationContext context, final String patchId, final boolean verbose, final PatchingHistory.Iterator i) {
         while(i.hasNext()) {
             final Entry entry = i.next();
             if(patchId.equals(entry.getPatchId())) {
-                result = new ModelNode();
+                final ModelNode result = new ModelNode();
                 result.get(Constants.PATCH_ID).set(entry.getPatchId());
                 result.get(Constants.TYPE).set(entry.getType().getName());
                 result.get(Constants.DESCRIPTION).set(entry.getMetadata().getDescription());
@@ -95,24 +108,7 @@ public class PatchInfoHandler implements OperationStepHandler {
                         list.add(element);
                     }
                 }
-
-                context.getResult().set(result);
-                break;
-            }
-        }
-        if(result == null) {
-            context.getFailureDescription().set(PatchLogger.ROOT_LOGGER.patchNotFoundInHistory(patchId).getLocalizedMessage());
-        }
-        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-    }
-
-    private InstallationManager getInstallationManager(OperationContext ctx) {
-        final ServiceController<?> imController = ctx.getServiceRegistry(false).getRequiredService(InstallationManagerService.NAME);
-        while (imController != null && imController.getState() == ServiceController.State.UP) {
-            try {
-                return (InstallationManager) imController.getValue();
-            } catch (IllegalStateException e) {
-                // ignore, caused by race from WFLY-3505
+                return result;
             }
         }
         return null;

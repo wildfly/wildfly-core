@@ -25,35 +25,44 @@ package org.jboss.as.patching.management;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.patching.logging.PatchLogger;
+import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.installation.AddOn;
-import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerService;
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.Layer;
 import org.jboss.as.patching.installation.PatchableTarget;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * @author Alexey Loubyansky
  */
-abstract class ElementProviderAttributeReadHandler implements OperationStepHandler {
+abstract class ElementProviderAttributeReadHandler extends PatchStreamResourceOperationStepHandler {
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    protected String getPatchStreamName(OperationContext context) {
+        final PathAddress currentAddress = context.getCurrentAddress();
+        final PathElement stream = currentAddress.getElement(currentAddress.size() - 2);
+        final String streamName;
+        if(Constants.PATCH_STREAM.equals(stream.getKey())) {
+            streamName = stream.getValue();
+        } else {
+            streamName = null;
+        }
+        return streamName;
+
+    }
+
+    @Override
+    protected void execute(final OperationContext context, final ModelNode operation, final InstalledIdentity installedIdentity) throws OperationFailedException {
 
         final PathAddress address = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
         final PathElement element = address.getLastElement();
         final String name = element.getValue();
 
-        final ServiceController<?> mgrService = context.getServiceRegistry(false).getRequiredService(InstallationManagerService.NAME);
-        final InstallationManager mgr = (InstallationManager) mgrService.getValue();
-        PatchableTarget target = getProvider(name, mgr);
+        PatchableTarget target = getProvider(name, installedIdentity);
         final ModelNode result = context.getResult();
         handle(result, target);
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
