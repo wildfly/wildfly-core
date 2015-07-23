@@ -22,27 +22,53 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import org.jboss.msc.service.ServiceName;
+import org.jboss.as.controller.PathAddress;
 
 /**
  * Registry of {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} available in the runtime.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
-public interface RuntimeCapabilityRegistry extends CapabilityRegistry<RuntimeCapabilityRegistration, RuntimeRequirementRegistration> {
+public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
+    /**
+     * Registers a capability with the system. Any
+     * {@link org.jboss.as.controller.capability.AbstractCapability#getRequirements() requirements}
+     * associated with the capability will be recorded as requirements.
+     *
+     * @param capability the capability. Cannot be {@code null}
+     */
+    void registerCapability(RuntimeCapabilityRegistration capability);
 
     /**
-     * Gets the runtime API associated with a given capability, if there is one.
-     * @param capabilityName the name of the capability. Cannot be {@code null}
-     * @param context the context in which to resolve the capability. Cannot be {@code null}
-     * @param apiType class of the java type that exposes the API. Cannot be {@code null}
-     * @param <T> the java type that exposes the API
-     * @return the runtime API. Will not return {@code null}
+     * Registers an additional requirement a capability has beyond what it was aware of when {@code capability}
+     * was passed to {@link #registerCapability(RuntimeCapabilityRegistration)}. Used for cases
+     * where a capability optionally depends on another capability, and whether or not that requirement is needed is
+     * not known when the capability is first registered.
      *
-     * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
-     * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
+     * @param requirement the requirement
+     * @throws java.lang.IllegalArgumentException if no matching capability is currently
+     *                                            {@link #registerCapability(RuntimeCapabilityRegistration) registered} for either {@code required} or {@code dependent}
      */
-    <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType);
+    boolean registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement);
 
-    ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType);
+    /**
+     * Remove a previously registered requirement for a capability.
+     *
+     * @param requirement the requirement. Cannot be {@code null}
+     * @see #registerAdditionalCapabilityRequirement(org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration)
+     */
+    void removeCapabilityRequirement(RuntimeRequirementRegistration requirement);
+
+    /**
+     * Remove a previously registered capability if all registration points for it have been removed.
+     *
+     * @param capabilityName    the name of the capability. Cannot be {@code null}
+     * @param context           the context in which the capability is registered. Cannot be {@code null}
+     * @param registrationPoint the specific registration point that is being removed
+     * @return the capability that was removed, or {@code null} if no matching capability was registered or other
+     * registration points for the capability still exist
+     */
+    RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context, PathAddress registrationPoint);
+
 }

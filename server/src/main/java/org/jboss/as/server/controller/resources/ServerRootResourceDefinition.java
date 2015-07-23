@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
@@ -215,6 +216,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
     private final DelegatingConfigurableAuthorizer authorizer;
     private final ManagedAuditLogger auditLogger;
+    private final CapabilityRegistry capabilityRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
     private final BootErrorCollector bootErrorCollector;
 
@@ -232,7 +234,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final DelegatingConfigurableAuthorizer authorizer,
             final ManagedAuditLogger auditLogger,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
-            final BootErrorCollector bootErrorCollector) {
+            final BootErrorCollector bootErrorCollector,
+            final CapabilityRegistry capabilityRegistry) {
         super(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false));
         this.contentRepository = contentRepository;
         this.extensibleConfigurationPersister = extensibleConfigurationPersister;
@@ -245,6 +248,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         this.pathManager = pathManager;
         this.operationIDUpdater = operationIDUpdater;
         this.auditLogger = auditLogger;
+        this.capabilityRegistry = capabilityRegistry;
 
         this.isDomain = serverEnvironment == null || serverEnvironment.getLaunchType() == LaunchType.DOMAIN;
         this.authorizer = authorizer;
@@ -436,6 +440,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         // Other core services
         resourceRegistration.registerSubModel(new ServiceContainerResourceDefinition());
 
+        //module loading
         resourceRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
 
         // Platform MBeans
@@ -443,6 +448,9 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         // Paths
         resourceRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManager));
+
+        //capability registry
+        resourceRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(capabilityRegistry));
 
         // Interfaces
         ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceDefinition(

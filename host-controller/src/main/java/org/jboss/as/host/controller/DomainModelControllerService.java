@@ -89,6 +89,7 @@ import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -242,13 +243,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        final CapabilityRegistry capabilityRegistry = new CapabilityRegistry(processType.isServer());
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded, capabilityRegistry);
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -275,9 +277,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ExtensionRegistry extensionRegistry,
                                          final ManagedAuditLogger auditLogger,
                                          final DelegatingConfigurableAuthorizer authorizer,
-                                         final boolean isEmbedded) {
+                                         final boolean isEmbedded,
+                                         final CapabilityRegistry capabilityRegistry) {
         super(isEmbedded ? ProcessType.EMBEDDED_HOST_CONTROLLER : ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
-                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer);
+                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, capabilityRegistry);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.processState = processState;

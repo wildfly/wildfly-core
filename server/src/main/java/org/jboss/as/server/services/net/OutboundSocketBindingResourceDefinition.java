@@ -79,4 +79,9 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
             resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(ad, false));
         }
     }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY);
+    }
 }

@@ -55,6 +55,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -283,13 +284,14 @@ public class InterfaceManagementUnitTestCase {
         final ServerDelegatingResourceDefinition rootResourceDefinition;
         final ServerEnvironment environment;
         final ExtensionRegistry extensionRegistry;
+        final CapabilityRegistry capabilityRegistry;
         volatile ManagementResourceRegistration rootRegistration;
         volatile Exception error;
 
 
         ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final ServerDelegatingResourceDefinition rootResourceDefinition) {
             super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY), persister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                    AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+                    AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(true));
             this.persister = persister;
             this.processState = processState;
             this.rootResourceDefinition = rootResourceDefinition;
@@ -301,6 +303,8 @@ public class InterfaceManagementUnitTestCase {
             environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null, ServerEnvironment.LaunchType.DOMAIN, null, new ProductConfig(Module.getBootModuleLoader(), ".", properties));
             extensionRegistry =
                     new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+
+            capabilityRegistry = new CapabilityRegistry(processType.isServer());
         }
 
         @Override
@@ -326,7 +330,7 @@ public class InterfaceManagementUnitTestCase {
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
                     persister, environment, processState, null, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
-                    authorizer, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector()));
+                    authorizer, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
             super.start(context);
         }
     }

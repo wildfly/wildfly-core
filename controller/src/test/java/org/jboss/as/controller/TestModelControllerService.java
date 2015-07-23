@@ -57,7 +57,8 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition) {
-        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(processType.isServer()));
         this.processState = processState;
     }
 

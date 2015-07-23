@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.Set;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.msc.service.ServiceName;
 
@@ -43,6 +45,7 @@ public class DelegatingRuntimeCapabilityRegistry implements RuntimeCapabilityReg
     public interface CapabilityRegistryDelegateProvider {
         /**
          * Gets the delegate.
+         *
          * @return the delegate. Cannot return {@code null}
          */
         RuntimeCapabilityRegistry getDelegateCapabilityRegistry();
@@ -79,8 +82,8 @@ public class DelegatingRuntimeCapabilityRegistry implements RuntimeCapabilityReg
     }
 
     @Override
-    public void registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirementRegistration) {
-        getDelegate().registerAdditionalCapabilityRequirement(requirementRegistration);
+    public boolean registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirementRegistration) {
+        return getDelegate().registerAdditionalCapabilityRequirement(requirementRegistration);
     }
 
     @Override
@@ -106,6 +109,21 @@ public class DelegatingRuntimeCapabilityRegistry implements RuntimeCapabilityReg
     @Override
     public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
         return getDelegate().getCapabilityServiceName(capabilityName, context, serviceType);
+    }
+
+    @Override
+    public Set<CapabilityRegistration> getPossibleCapabilities() {
+        return getDelegate().getPossibleCapabilities();
+    }
+
+    @Override
+    public Set<CapabilityRegistration> getCapabilities() {
+        return getDelegate().getCapabilities();
+    }
+
+    @Override
+    public Set<RegistrationPoint> getPossibleProviderPoints(CapabilityId capabilityId) {
+        return getDelegate().getPossibleProviderPoints(capabilityId);
     }
 
     private RuntimeCapabilityRegistry getDelegate() {

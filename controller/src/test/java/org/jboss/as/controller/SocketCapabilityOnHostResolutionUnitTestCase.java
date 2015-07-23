@@ -112,7 +112,10 @@ public class SocketCapabilityOnHostResolutionUnitTestCase {
 
     @Test
     public void testSimpleGlobalRef() {
-        ModelNode op = getCompositeOperation(getCapabilityOperation(SOCKET_A_1, "cap_a"), getCapabilityOperation(GLOBAL_A, "dep_a", "cap_a"));
+        ModelNode op = getCompositeOperation(
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(GLOBAL_A, "dep_a", "cap_a")
+        );
         ModelNode response = controller.execute(op, null, null, null);
         assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
         assertTrue(response.toString(), response.get(RESULT, "step-2", RESULT).asBoolean());

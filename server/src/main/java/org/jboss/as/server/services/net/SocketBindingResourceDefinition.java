@@ -65,6 +65,11 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
     }
 
     @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SOCKET_BINDING_CAPABILITY);
+    }
+
+    @Override
     protected OperationStepHandler getInterfaceWriteAttributeHandler() {
         return BindingInterfaceHandler.INSTANCE;
     }

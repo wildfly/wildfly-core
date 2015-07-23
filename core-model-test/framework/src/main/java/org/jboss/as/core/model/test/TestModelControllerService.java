@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
@@ -120,6 +121,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private final TestDelegatingResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
     private final ExtensionRegistry extensionRegistry;
+    private final CapabilityRegistry capabilityRegistry;
     private final AbstractVaultReader vaultReader;
     private volatile Initializer initializer;
 
@@ -135,6 +137,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         this.rootResourceDefinition = rootResourceDefinition;
         this.processState = processState;
         this.extensionRegistry = extensionRegistry;
+        this.capabilityRegistry = new CapabilityRegistry(processType.isServer()); //maybe get this as paramter?
         this.vaultReader = vaultReader;
 
         if (type == TestModelType.STANDALONE) {
@@ -469,7 +472,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     authorizer,
                     AuditLogger.NO_OP_LOGGER,
                     getMutableRootResourceRegistrationProvider(),
-                    getBootErrorCollector()));
+                    getBootErrorCollector(), capabilityRegistry));
         }
 
         @Override

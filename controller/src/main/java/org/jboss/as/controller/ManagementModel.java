@@ -27,10 +27,10 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 
 /**
-* Encapsulates the elements of a management model.
-*
-* @author Brian Stansberry (c) 2014 Red Hat Inc.
-*/
+ * Encapsulates the elements of a management model.
+ *
+ * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ */
 public interface ManagementModel {
 
     /**
