@@ -112,7 +112,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
-    private final AuditLogXml auditLogDelegate = new AuditLogXml(true);
+    private final AuditLogXml auditLogDelegate;
 
     private final String defaultHostControllerName;
     private final RunningMode runningMode;
@@ -124,6 +124,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     HostXml_Legacy(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
             final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final Namespace namespace) {
         super(null);
+        this.auditLogDelegate = AuditLogXml.newInstance(namespace, true);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;

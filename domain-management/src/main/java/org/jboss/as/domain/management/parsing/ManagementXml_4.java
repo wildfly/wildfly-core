@@ -63,15 +63,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE
 import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.controller.parsing.WriteUtils.writeAttribute;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_ACCESS_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH_TIME;
@@ -133,6 +130,14 @@ import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
+
+
 /**
  * Bits of parsing and marshaling logic that are related to {@code <management>} elements in domain.xml, host.xml and
  * standalone.xml.
@@ -153,6 +158,7 @@ class ManagementXml_4 extends ManagementXml {
         this.delegate = delegate;
     }
 
+    @Override
     public void parseManagement(final XMLExtendedStreamReader reader, final ModelNode address,
             final List<ModelNode> list, boolean requireNativeInterface) throws XMLStreamException {
         int securityRealmsCount = 0;
@@ -205,7 +211,10 @@ class ManagementXml_4 extends ManagementXml {
                     if (delegate.parseAccessControl(reader, managementAddress, list) == false) {
                         throw unexpectedElement(reader);
                     }
-
+                    break;
+                }
+                case CONFIGURATION_CHANGES: {
+                    parseConfigurationChanges(reader, managementAddress, list);
                     break;
                 }
                 default: {
@@ -216,6 +225,35 @@ class ManagementXml_4 extends ManagementXml {
 
         if (requireNativeInterface && managementInterfacesCount < 1) {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT_INTERFACES));
+        }
+    }
+
+    private void parseConfigurationChanges(final XMLExtendedStreamReader reader, final ModelNode address,
+                                          final List<ModelNode> list) throws XMLStreamException {
+        PathAddress operationAddress = PathAddress.pathAddress(address);
+        operationAddress = operationAddress.append(ConfigurationChangeResourceDefinition.PATH);
+        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(operationAddress));
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case MAX_HISTORY: {
+                        ConfigurationChangeResourceDefinition.MAX_HISTORY.parseAndSetParameter(value, add, reader);
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+        list.add(add);
+        if(reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+             throw unexpectedElement(reader);
         }
     }
 
@@ -1819,6 +1857,7 @@ class ManagementXml_4 extends ManagementXml {
 
 
 
+    @Override
     public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
             throws XMLStreamException {
         boolean hasSecurityRealm = management.hasDefined(SECURITY_REALM);
@@ -1831,6 +1870,7 @@ class ManagementXml_4 extends ManagementXml {
         ModelNode accessAuthorization = management.hasDefined(ACCESS) ? management.get(ACCESS, AUTHORIZATION) : null;
         boolean accessAuthorizationDefined = accessAuthorization != null && accessAuthorization.isDefined();
         boolean hasServerGroupRoles = accessAuthorizationDefined && accessAuthorization.hasDefined(SERVER_GROUP_SCOPED_ROLE);
+        boolean hasConfigurationChanges = management.hasDefined(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES);
         boolean hasHostRoles = accessAuthorizationDefined && (accessAuthorization.hasDefined(HOST_SCOPED_ROLE) || accessAuthorization.hasDefined(HOST_SCOPED_ROLES));
         boolean hasRoleMapping = accessAuthorizationDefined && accessAuthorization.hasDefined(ROLE_MAPPING);
         Map<String, Map<String, Set<String>>> configuredAccessConstraints = AccessControlXml.getConfiguredAccessConstraints(accessAuthorization);
@@ -1845,6 +1885,10 @@ class ManagementXml_4 extends ManagementXml {
         }
 
         writer.writeStartElement(Element.MANAGEMENT.getLocalName());
+        if(hasConfigurationChanges) {
+            writeConfigurationChanges(writer, management.get(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES));
+        }
+
         if (hasSecurityRealm) {
             writeSecurityRealm(writer, management);
         }
@@ -2260,6 +2304,12 @@ class ManagementXml_4 extends ManagementXml {
             }
         }
 
+        writer.writeEndElement();
+    }
+
+    private void writeConfigurationChanges(XMLExtendedStreamWriter writer, ModelNode configurationChanges) throws XMLStreamException {
+        writer.writeStartElement(Element.CONFIGURATION_CHANGES.getLocalName());
+        ConfigurationChangeResourceDefinition.MAX_HISTORY.marshallAsAttribute(configurationChanges, writer);
         writer.writeEndElement();
     }
 

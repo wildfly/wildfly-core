@@ -94,6 +94,7 @@ public class ModelDescriptionConstants {
     public static final String CODE = "code";
     public static final String COMPACT = "compact";
     public static final String COMPOSITE = "composite";
+    public static final String CONFIGURATION_CHANGES="configuration-changes";
     public static final String CONSTRAINT = "constraint";
     public static final String CONCURRENT_GROUPS = "concurrent-groups";
     public static final String CONFIGURED_APPLICATION = "configured-application";
@@ -206,6 +207,7 @@ public class ModelDescriptionConstants {
     public static final String IGNORED_RESOURCES = "ignored-resources";
     public static final String IGNORED_RESOURCE_TYPE = "ignored-resource-type";
     public static final String IGNORE_UNUSED_CONFIG = "ignore-unused-configuration";
+    public static final String IN_MEMORY_HANDLER="in-memory-handler";
     public static final String IN_SERIES = "in-series";
     public static final String INCLUDE = "include";
     public static final String INCLUDE_ALL = "include-all";
@@ -248,6 +250,7 @@ public class ModelDescriptionConstants {
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";
     public static final String MAX_FAILURE_COUNT = "max-failure-count";
     public static final String MAX_FAILURE_PERCENTAGE = "max-failure-percentage";
+    public static final String MAX_HISTORY = "max-history";
     public static final String MAX_LENGTH = "max-length";
     public static final String MAX_OCCURS = "max-occurs";
     public static final String MAX_THREADS = "max-threads";
@@ -282,6 +285,7 @@ public class ModelDescriptionConstants {
     /** Use this standard operation address field in the operation *request* ModelNode */
     public static final String OP_ADDR = "address";
     public static final String ORGANIZATION = "organization";
+    public static final String OPERATION_DATE = "operation-date";
     public static final String OPERATION_HEADERS = "operation-headers";
     public static final String OPERATION_NAME = "operation-name";
     public static final String OPERATIONS = "operations";

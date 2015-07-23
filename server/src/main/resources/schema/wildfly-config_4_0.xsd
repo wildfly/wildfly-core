@@ -165,6 +165,22 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
+            <xs:element name="configuration-changes" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configuration for the history of configuration changes.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="max-history" type="xs:integer" use="optional" default="10">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Number of configuration changes that are available in history.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="security-realms" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
@@ -1477,6 +1493,29 @@
             <xs:element name="size-rotating-file-handler" type="size-rotating-file-audit-log-handlerType"/>
             <xs:element name="periodic-rotating-file-handler" type="periodic-rotating-file-audit-log-handlerType"/>
             <xs:element name="syslog-handler" type="syslog-audit-log-handlerType"/>
+            <xs:element name="in-memory-handler">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration of a in memory handler for the audit log.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="name" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The name of the handler. The name must be unique across all types of handler.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="max-history" type="xs:integer" default="10">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The number of logging entries stored in memory.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
         </xs:choice>
     </xs:complexType>
 
