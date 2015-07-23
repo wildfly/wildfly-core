@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,7 +42,6 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.MountedDeploymentOverlay;
@@ -48,7 +50,8 @@ import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
+
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -57,11 +60,8 @@ import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import org.jboss.vfs.VirtualFile;
 
 /**
  * @author Stuart Douglas
@@ -757,8 +757,8 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                         Closeable closable = null;
                         if(overlay != null) {
                             overlay.remountAsZip(false);
-                        } else if(child.isFile()) {
-                            closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                        } else {
+                            closable = SharedMountHandle.newReference(child);
                         }
                         final MountHandle mountHandle = new MountHandle(closable);
                         final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);

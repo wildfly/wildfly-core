@@ -36,7 +36,7 @@ import org.jboss.vfs.VFSUtils;
  * @author Stuart Douglas
  */
 public class MountHandle implements Closeable {
-    private final Closeable handle;
+    private Closeable handle;
 
     /**
      * Construct new instance with the mount handle to close.
@@ -53,6 +53,7 @@ public class MountHandle implements Closeable {
     public void close() {
         if (handle != null) {
             VFSUtils.safeClose(handle);
+            handle = null; // it is already closed. not need to close again during gc.
         }
     }
 

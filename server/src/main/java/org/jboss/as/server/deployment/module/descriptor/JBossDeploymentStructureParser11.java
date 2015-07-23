@@ -48,7 +48,7 @@ import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
+
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -57,7 +57,7 @@ import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.vfs.VFS;
+
 import org.jboss.vfs.VirtualFile;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
@@ -750,8 +750,8 @@ public class JBossDeploymentStructureParser11 implements XMLElementReader<ParseR
                         Closeable closable = null;
                         if(overlay != null) {
                             overlay.remountAsZip(false);
-                        } else if(child.isFile()) {
-                            closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                        } else {
+                            closable = SharedMountHandle.newReference(child);
                         }
                         final MountHandle mountHandle = new MountHandle(closable);
                         final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
