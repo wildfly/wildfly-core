@@ -44,7 +44,10 @@ public class HelpFormatter {
 
     public static void format(CommandContext ctx, BufferedReader reader) throws IOException {
 
-        final int width = ctx.getTerminalWidth();
+        int width = ctx.getTerminalWidth();
+        if(width <= 0) {
+             width = 80;
+        }
         String line = reader.readLine();
 
         while(line != null) {

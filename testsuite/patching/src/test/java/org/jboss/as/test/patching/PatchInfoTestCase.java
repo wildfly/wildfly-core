@@ -222,7 +222,7 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
         controller.start();
 
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
+        System.setProperty("aesh.terminal", "org.jboss.aesh.terminal.TestTerminal");
         final CommandContext ctx = CommandContextFactory.getInstance().newCommandContext(null, null, null, System.in, bytesOs);
 
         final ModelControllerClient client = ModelControllerClient.Factory.create(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());

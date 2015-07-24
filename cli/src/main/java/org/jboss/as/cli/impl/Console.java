@@ -21,19 +21,21 @@
  */
 package org.jboss.as.cli.impl;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import org.jboss.aesh.complete.CompleteOperation;
 import org.jboss.aesh.complete.Completion;
-import org.jboss.aesh.console.Config;
-import org.jboss.aesh.console.ConsoleOutput;
+import org.jboss.aesh.console.AeshConsoleCallback;
+import org.jboss.aesh.console.ConsoleCallback;
+import org.jboss.aesh.console.ConsoleOperation;
 import org.jboss.aesh.console.Prompt;
 import org.jboss.aesh.console.settings.Settings;
+import org.jboss.aesh.parser.Parser;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandHistory;
@@ -49,11 +51,9 @@ public interface Console {
 
     boolean isUseHistory();
 
-    void setUseHistory(boolean useHistory);
-
     CommandHistory getHistory();
 
-    void setHistoryFile(File f);
+    void setCompletion(boolean complete);
 
     void clearScreen();
 
@@ -83,7 +83,7 @@ public interface Console {
      *
      * @param completionEnabled  true will enable the tab-completion, false will disable it
      */
-    void setCompletionEnabled(boolean completionEnabled);
+    // void setCompletionEnabled(boolean completionEnabled);
 
     /**
      * Interrupts blocking readLine method.
@@ -92,38 +92,55 @@ public interface Console {
      */
     void interrupt();
 
+    void setCallback(ConsoleCallback consoleCallback);
+
+    void start();
+
+    void stop();
+
+    boolean running();
+
+    void setPrompt(String prompt);
+
+    void setPrompt(String prompt, Character mask);
+
     static final class Factory {
 
-        public static Console getConsole(CommandContext ctx) throws CliInitializationException {
-            return getConsole(ctx, null, null);
+        public static Console getConsole(CommandContext ctx, Settings settings) throws CliInitializationException {
+            return getConsole(ctx, null, null, settings);
         }
 
-        public static Console getConsole(final CommandContext ctx, InputStream is, OutputStream os) throws CliInitializationException {
+        public static Console getConsole(final CommandContext ctx, InputStream is, OutputStream os, final Settings settings) throws CliInitializationException {
 
             org.jboss.aesh.console.Console aeshConsole = null;
             try {
-                aeshConsole = new org.jboss.aesh.console.Console();
+                aeshConsole = new org.jboss.aesh.console.Console(settings);
             } catch (Throwable e) {
                 throw new CliInitializationException("Failed to initialize Aesh console", e);
             }
 
             final org.jboss.aesh.console.Console finalAeshConsole = aeshConsole;
-            return new Console() {
+
+            Console console =  new Console() {
 
                 private CommandContext cmdCtx = ctx;
                 private org.jboss.aesh.console.Console console = finalAeshConsole;
                 private CommandHistory history = new HistoryImpl();
+                private InternalReadline activeRead = new InternalReadline();
+
 
                 @Override
                 public void addCompleter(final CommandLineCompleter completer) {
                     console.addCompletion(new Completion() {
                         @Override
                         public void complete(CompleteOperation co) {
-                            int offset =  completer.complete(cmdCtx,
-                                    co.getBuffer(), co.getCursor(), co.getCompletionCandidates());
+                            List<String> candidates = new ArrayList<>();
+                            int offset = completer.complete(cmdCtx,
+                                    co.getBuffer(), co.getCursor(), candidates);
                             co.setOffset(offset);
-                            if(co.getCompletionCandidates().size() == 1 &&
-                                    co.getCompletionCandidates().get(0).startsWith(co.getBuffer()))
+                            co.setCompletionCandidates(candidates);
+                            if (co.getCompletionCandidates().size() == 1 &&
+                                    co.getCompletionCandidates().get(0).getCharacters().startsWith(co.getBuffer()))
                                 co.doAppendSeparator(true);
                             else
                                 co.doAppendSeparator(false);
@@ -133,12 +150,7 @@ public interface Console {
 
                 @Override
                 public boolean isUseHistory() {
-                    return !Settings.getInstance().isHistoryDisabled();
-                }
-
-                @Override
-                public void setUseHistory(boolean useHistory) {
-                    Settings.getInstance().setHistoryDisabled(!useHistory);
+                    return !settings.isHistoryDisabled();
                 }
 
                 @Override
@@ -147,8 +159,8 @@ public interface Console {
                 }
 
                 @Override
-                public void setHistoryFile(File f) {
-                    Settings.getInstance().setHistoryFile(f);
+                public void setCompletion(boolean complete){
+                    console.setCompletionEnabled(complete);
                 }
 
                 @Override
@@ -164,53 +176,40 @@ public interface Console {
                 public void printColumns(Collection<String> list) {
                     String[] newList = new String[list.size()];
                     list.toArray(newList);
-                    try {
-                        console.pushToStdOut(
-                                org.jboss.aesh.util.Parser.formatDisplayList(newList,
-                                        console.getTerminalSize().getHeight(),
-                                        console.getTerminalSize().getWidth()));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    console.getShell().out().println(
+                            Parser.formatDisplayList(newList,
+                                    console.getTerminalSize().getHeight(),
+                                    console.getTerminalSize().getWidth()));
                 }
 
                 @Override
                 public void print(String line) {
-                    try {
-                        console.pushToStdOut(line);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    console.getShell().out().print(line);
                 }
 
                 @Override
                 public void printNewLine() {
-                    try {
-                        console.pushToStdOut(Config.getLineSeparator());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    console.getShell().out().println();
                 }
 
                 @Override
                 public String readLine(String prompt) {
-                    try {
-                        ConsoleOutput output = console.read(prompt);
-                        return output != null ? output.getBuffer() : null;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
+                    return read(prompt, null);
                 }
 
                 @Override
                 public String readLine(String prompt, Character mask) {
-                    try {
-                        return console.read(new Prompt(prompt), mask).getBuffer();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
+                    return read(prompt, mask);
+                }
+
+                private String read(String prompt, Character mask) {
+                    // Only use this threaded madness while we use the AESH low-level console
+                    if(console.getConsoleCallback() instanceof CommandContextImpl.CLIAeshConsoleCallback){
+                        return activeRead.executeReadLine(prompt, mask);
                     }
+
+                    // Something is wrong.
+                    return null;
                 }
 
                 @Override
@@ -224,57 +223,157 @@ public interface Console {
                 }
 
                 @Override
-                public boolean isCompletionEnabled() {
-                    return !Settings.getInstance().isDisableCompletion();
-                }
-
-                @Override
-                public void setCompletionEnabled(boolean completionEnabled) {
-                    Settings.getInstance().setDisableCompletion(!completionEnabled);
+                public boolean isCompletionEnabled(){
+                    return settings.isCompletionDisabled();
                 }
 
                 @Override
                 public void interrupt() {
-                    try {
-                        Settings.getInstance().getInputStream().close(); // BZ-1149099 - enables interruption of active prompt
-                    } catch (IOException e) {
-                        //
+                    activeRead.interrupt();
+                }
+
+                @Override
+                public void setCallback(ConsoleCallback consoleCallback) {
+                    if(console != null)
+                        console.setConsoleCallback(consoleCallback);
+                }
+
+                @Override
+                public void start(){
+                    if(console != null)
+                        console.start();
+                }
+
+                @Override
+                public void stop() {
+                    if(console != null) {
+                        console.stop();
+                        console.isRunning();
                     }
+                }
+
+                @Override
+                public boolean running(){
+                    return console != null && console.isRunning();
+                }
+
+                @Override
+                public void setPrompt(String prompt){
+                    setPrompt(prompt, null);
+                }
+
+                @Override
+                public void
+                setPrompt(String prompt, Character mask){
+                    console.setPrompt(new Prompt(prompt, mask));
                 }
 
                 class HistoryImpl implements CommandHistory {
 
-                @SuppressWarnings("unchecked")
-                @Override
-                public List<String> asList() {
-                    return console.getHistory().getAll();
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public List<String> asList() {
+                        return console.getHistory().getAll();
+                    }
+
+                    @Override
+                    public boolean isUseHistory() {
+                        return console.getHistory().isEnabled();
+                    }
+
+                    @Override
+                    public void setUseHistory(boolean useHistory) {
+                        if(useHistory){
+                            console.getHistory().enable();
+                        }else{
+                            console.getHistory().disable();
+                        }
+                    }
+
+                    @Override
+                    public void clear() {
+                        console.getHistory().clear();
+                    }
+
+                    @Override
+                    public int getMaxSize() {
+                        return settings.getHistorySize();
+                    }
                 }
 
-                @Override
-                public boolean isUseHistory() {
-                    return !Settings.getInstance().isHistoryDisabled();
-                }
+                class InternalReadline {
 
-                @Override
-                public void setUseHistory(boolean useHistory) {
-                    Settings.getInstance().setHistoryDisabled(!useHistory);
-                }
+                    private volatile boolean active = false;
+                    private volatile String line;
+                    private volatile boolean interrupt = false;
 
-                @Override
-                public void clear() {
-                    console.getHistory().clear();
-                }
+                    public void interrupt(){
+                        if(active){
+                            interrupt = true;
+                        }
+                    }
 
-                @Override
-                public void setMaxSize(int maxSize) {
-                    Settings.getInstance().setHistorySize(maxSize);
-                }
+                    public String executeReadLine(String prompt, Character mask){
+                        active = true;
+                        try {
+                            Prompt existingPrompt = console.getPrompt();
+                            ConsoleCallback existingCallback = console.getConsoleCallback();
 
-                @Override
-                public int getMaxSize() {
-                    return Settings.getInstance().getHistorySize();
+                            try {
+                                setPrompt(prompt, mask);
+
+                                console.setConsoleCallback(new AeshConsoleCallback() {
+                                    @Override
+                                    public int execute(ConsoleOperation output) throws InterruptedException {
+                                        line = output.getBuffer().trim();
+                                        return 0;
+                                    }
+                                });
+
+                                if (existingCallback instanceof CommandContextImpl.CLIAeshConsoleCallback) {
+                                    // If there is an active process, push it back to allow a read to occur
+                                    if(((CommandContextImpl.CLIAeshConsoleCallback) existingCallback).hasActiveProcess()) {
+                                        int pid = ((CommandContextImpl.CLIAeshConsoleCallback) existingCallback).getProcessPID();
+                                        console.putProcessInBackground(pid);
+
+                                        while (line == null && !interrupt) {
+                                            try {
+                                                Thread.sleep(500);
+                                            } catch (InterruptedException e) {
+                                                break;
+                                            }
+                                        }
+
+                                        console.putProcessInForeground(pid);
+                                    } else{
+                                        // If no process is active, just read
+                                        while (line == null && !interrupt) {
+                                            try {
+                                                Thread.sleep(500);
+                                            } catch (InterruptedException e) {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                            } finally {
+                                console.setConsoleCallback(existingCallback);
+                                interrupt = false;
+                            }
+
+                            return line;
+                        }finally{
+                            line = null;
+                            active = false;
+                        }
+                    }
+
                 }
-            }};
+            };
+
+            return console;
         }
     }
+
 }
