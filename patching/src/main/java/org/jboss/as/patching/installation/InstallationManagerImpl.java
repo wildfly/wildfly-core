@@ -24,11 +24,10 @@ import org.jboss.as.version.ProductConfig;
 public class InstallationManagerImpl extends InstallationManager {
 
     private final InstalledImage installedImage;
-    private final InstalledIdentity defaultIdentity;
+    private InstalledIdentity defaultIdentity;
 
     private List<File> moduleRoots;
     private List<File> bundleRoots;
-    private ProductConfig productConfig;
 
     /**
      * This field is set to true when a patch is applied/rolled back at runtime.
@@ -45,7 +44,6 @@ public class InstallationManagerImpl extends InstallationManager {
 
         this.moduleRoots = moduleRoots;
         this.bundleRoots = bundlesRoots;
-        this.productConfig = productConfig;
 
         defaultIdentity = LayersFactory.load(installedImage, productConfig, moduleRoots, bundleRoots);
     }
@@ -71,17 +69,9 @@ public class InstallationManagerImpl extends InstallationManager {
      */
     @Override
     public InstalledIdentity getInstalledIdentity(String productName, String productVersion) throws PatchingException {
-        if(productConfig.getProductName() == null) {
-            if(productName == null) {
-                return defaultIdentity;
-            }
-        } else  if(productConfig.getProductName().equals(productName)) {
-            if(productVersion != null && !productConfig.getProductVersion().equals(productVersion)) {
-                throw new PatchingException(PatchLogger.ROOT_LOGGER.productVersionDidNotMatchInstalled(productName, productVersion, productConfig.getProductVersion()));
-            }
-            return defaultIdentity;
-        } else if(productName == null) {
-            return defaultIdentity;
+        final String defaultIdentityName = defaultIdentity.getIdentity().getName();
+        if(productName == null) {
+            productName = defaultIdentityName;
         }
 
         final File productConf = new File(installedImage.getInstallationMetadata(), productName + Constants.DOT_CONF);
@@ -93,7 +83,25 @@ public class InstallationManagerImpl extends InstallationManager {
             recordedProductVersion = props.getProperty(Constants.CURRENT_VERSION);
         }
 
-        if(recordedProductVersion != null && !"Unknown".equals(recordedProductVersion)) {
+        if(defaultIdentityName.equals(productName)) {
+            if(recordedProductVersion != null && !recordedProductVersion.equals(defaultIdentity.getIdentity().getVersion())) {
+                // this means the patching history indicates that the current version is different from the one specified in the server's version module,
+                // which could happen in case:
+                // - the last applied CP didn't include the new version module or
+                // - the version module version included in the last CP didn't match the version specified in the CP's metadata, or
+                // - the version module was updated from a one-off, or
+                // - the patching history was edited somehow
+                // In any case, here I decided to rely on the patching history.
+                defaultIdentity = loadIdentity(productName, recordedProductVersion);
+            }
+            if(productVersion != null && !defaultIdentity.getIdentity().getVersion().equals(productVersion)) {
+                throw new PatchingException(PatchLogger.ROOT_LOGGER.productVersionDidNotMatchInstalled(
+                        productName, productVersion, defaultIdentity.getIdentity().getVersion()));
+            }
+            return defaultIdentity;
+        }
+
+        if(recordedProductVersion != null && !Constants.UNKNOWN.equals(recordedProductVersion)) {
             if(productVersion != null) {
                 if (!productVersion.equals(recordedProductVersion)) {
                     throw new PatchingException(PatchLogger.ROOT_LOGGER.productVersionDidNotMatchInstalled(productName, productVersion, recordedProductVersion));
@@ -103,9 +111,13 @@ public class InstallationManagerImpl extends InstallationManager {
             }
         }
 
+        return loadIdentity(productName, productVersion);
+    }
+
+    private InstalledIdentity loadIdentity(String productName, String productVersion) throws PatchingException {
         try {
             return LayersFactory.load(installedImage,
-                    new ProductConfig(productName, productVersion == null ? "Unknown" : productVersion, null),
+                    new ProductConfig(productName, productVersion == null ? Constants.UNKNOWN : productVersion, null),
                     moduleRoots, bundleRoots);
         } catch (IOException e) {
             throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(productName), e);
