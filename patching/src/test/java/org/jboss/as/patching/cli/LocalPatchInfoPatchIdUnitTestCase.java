@@ -51,6 +51,7 @@ import org.jboss.as.patching.runner.AbstractTaskTestCase;
 import org.jboss.as.patching.runner.ContentModificationUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -58,6 +59,7 @@ import org.junit.Test;
  *
  * @author Alexey Loubyansky
  */
+@Ignore("WFCORE-841")
 public class LocalPatchInfoPatchIdUnitTestCase extends AbstractTaskTestCase {
 
     private ByteArrayOutputStream bytesOs;
