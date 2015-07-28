@@ -32,10 +32,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -91,7 +91,7 @@ public final class ServiceLoaderProcessor implements DeploymentUnitProcessor {
                         list.add(className);
                     }
                 } finally {
-                    VFSUtils.safeClose(stream);
+                    Utils.safeClose(stream);
                 }
             } catch (IOException e) {
                 throw ServerLogger.ROOT_LOGGER.failedToReadVirtualFile(child, e);

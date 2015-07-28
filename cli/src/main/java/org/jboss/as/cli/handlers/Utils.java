@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2010, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -19,48 +19,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.as.cli.handlers;
 
-package org.jboss.as.server.deployment.module;
+import org.jboss.as.server.logging.ServerLogger;
 
 import java.io.Closeable;
-
-import org.jboss.as.server.Utils;
+import java.io.IOException;
 
 /**
- * Wrapper object to hold onto and close a VFS mount handle.
+ * Safe close utility class.
  *
- * If the provided mount handle is null then no action will be taken.
- *
- * @author John E. Bailey
- * @author Jason T. Greene
- * @author Stuart Douglas
+ * @author <A href="mailto:ropalka@redhat.com">Richard Opalka</A>
  */
-public class MountHandle implements Closeable {
-    private final Closeable handle;
+public final class Utils {
 
-    /**
-     * Construct new instance with the mount handle to close.
-     *
-     * @param handle The mount handle to close
-     */
-    public MountHandle(final Closeable handle) {
-        this.handle = handle;
+    private Utils() {
+        // forbidden instantiation
     }
 
-    /**
-     * Forcefully close this handle. Use with caution.
-     */
-    public void close() {
-        if (handle != null) {
-            Utils.safeClose(handle);
+    public static void safeClose(final Closeable closeable) {
+        if(closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                ServerLogger.ROOT_LOGGER.trace("Failed to close resource", e);
+            }
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        if (handle != null) {
-            Utils.safeClose(handle);
-        }
-        super.finalize();
-    }
 }

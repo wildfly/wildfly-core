@@ -56,7 +56,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.TempFileProvider;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.MountHandle;
 
 /**
@@ -602,7 +601,8 @@ public class DeployHandler extends DeploymentHandler {
                 ctx.setCurrentDir(currentDir);
                 discardBatch(ctx, holdbackBatch);
 
-                VFSUtils.safeClose(root, tempFileProvider);
+                Utils.safeClose(root);
+                Utils.safeClose(tempFileProvider);
             }
         }
 

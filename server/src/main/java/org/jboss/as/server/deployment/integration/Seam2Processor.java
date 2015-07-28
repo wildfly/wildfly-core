@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -55,7 +56,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -107,7 +107,7 @@ public class Seam2Processor implements DeploymentUnitProcessor {
                     }
 
                     public void stop(StopContext stopContext) {
-                        VFSUtils.safeClose(mountHandle);
+                        Utils.safeClose(mountHandle);
                     }
 
                     public Closeable getValue() throws IllegalStateException, IllegalArgumentException {

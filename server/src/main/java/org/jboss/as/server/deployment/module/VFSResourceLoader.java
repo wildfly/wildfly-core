@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.ClassSpec;
@@ -156,7 +157,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                                 throw ServerLogger.ROOT_LOGGER.resourceTooLarge();
                             }
                         } finally {
-                            VFSUtils.safeClose(is);
+                            Utils.safeClose(is);
                         }
                     }
                 }

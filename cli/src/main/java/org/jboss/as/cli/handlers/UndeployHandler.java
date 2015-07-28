@@ -52,7 +52,6 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.TempFileProvider;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.MountHandle;
 
 /**
@@ -378,7 +377,8 @@ public class UndeployHandler extends DeploymentHandler {
                 ctx.setCurrentDir(currentDir);
                 discardBatch(ctx, holdbackBatch);
 
-                VFSUtils.safeClose(root, tempFileProvider);
+                Utils.safeClose(root);
+                Utils.safeClose(tempFileProvider);
             }
         }
 

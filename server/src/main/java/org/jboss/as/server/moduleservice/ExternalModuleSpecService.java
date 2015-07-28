@@ -22,6 +22,7 @@
 package org.jboss.as.server.moduleservice;
 
 import org.jboss.as.server.deployment.module.ModuleDependency;
+import org.jboss.as.server.Utils;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
@@ -31,7 +32,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFSUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,7 +83,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
     @Override
     public synchronized void stop(StopContext context) {
-        VFSUtils.safeClose(jarFile);
+        Utils.safeClose(jarFile);
         jarFile = null;
         moduleDefinition = null;
     }

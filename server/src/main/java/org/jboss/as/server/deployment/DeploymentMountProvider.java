@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -44,7 +45,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -135,7 +135,7 @@ public interface DeploymentMountProvider {
                     @Override
                     public void run() {
                         try {
-                            VFSUtils.safeClose(tempFileProvider);
+                            Utils.safeClose(tempFileProvider);
                         } finally {
                             try {
                                 ScheduledExecutorService ses = scheduledExecutorService;

@@ -27,6 +27,7 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -35,7 +36,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.vfs.TempFileProvider;
-import org.jboss.vfs.VFSUtils;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -74,7 +74,7 @@ public class TempFileProviderService implements Service<TempFileProvider> {
      * {@inheritDoc}
      */
     public void stop(StopContext context) {
-        VFSUtils.safeClose(PROVIDER);
+        Utils.safeClose(PROVIDER);
     }
 
     /**

@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment.module;
 import java.io.Closeable;
 import java.io.IOException;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
@@ -36,7 +37,6 @@ import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
 import org.jboss.as.server.deployment.MountExplodedMarker;
 import org.jboss.as.server.deployment.MountType;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -95,7 +95,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
                 throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
             } finally {
                 if(failed) {
-                    VFSUtils.safeClose(handle);
+                    Utils.safeClose(handle);
                 }
             }
         }
@@ -109,7 +109,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
         final ResourceRoot resourceRoot = context.removeAttachment(Attachments.DEPLOYMENT_ROOT);
         if (resourceRoot != null) {
             final Closeable mountHandle = resourceRoot.getMountHandle();
-            VFSUtils.safeClose(mountHandle);
+            Utils.safeClose(mountHandle);
         }
     }
 }
