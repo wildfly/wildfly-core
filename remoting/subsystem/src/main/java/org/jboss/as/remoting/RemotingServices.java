@@ -36,6 +36,9 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
 import org.xnio.OptionMap;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -170,5 +173,16 @@ public class RemotingServices {
         final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
         context.removeService(serverServiceName(connectorName));
         context.removeService(securityProviderName);
+    }
+
+    static List<ServiceName> createConnectionServiceNames(final String groupName, final int connectionCount) {
+        final List<ServiceName> serviceNames = new LinkedList<>();
+        for (int i = 1; i <= connectionCount; i++) {
+            final String connectionName = new StringBuilder(groupName).append(i).toString();
+            final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME
+                    .append(connectionName);
+            serviceNames.add(serviceName);
+        }
+        return serviceNames;
     }
 }

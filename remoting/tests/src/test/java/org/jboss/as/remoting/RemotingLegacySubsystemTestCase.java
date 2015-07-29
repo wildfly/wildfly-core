@@ -75,6 +75,7 @@ import org.xnio.XnioWorker;
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
@@ -265,6 +266,31 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
         assertNotNull("Local outbound connection service for outbound connection:" + localOutboundConnectionName + " was null", localOutboundConnectionService);
         LocalOutboundConnectionService localService = (LocalOutboundConnectionService) localOutboundConnectionService.getService();
         assertEquals(2, localService.connectionCreationOptions.size());
+    }
+
+
+    @Test
+    public void testOutboundConnectionGroups() throws Exception {
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+                .setSubsystemXmlResource("remoting-with-outbound-connection-group.xml")
+                .build();
+
+        ServiceController<?> endPointService = services.getContainer().getRequiredService(RemotingServices.SUBSYSTEM_ENDPOINT);
+        assertNotNull("Endpoint service was null", endPointService);
+
+        final String remoteOutboundConnectionName1 = "group1";
+        ServiceName remoteOutboundConnectionServiceName1 = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(remoteOutboundConnectionName1);
+        ServiceController<?> remoteOutboundConnectionService1 = services.getContainer().getRequiredService(remoteOutboundConnectionServiceName1);
+        assertNotNull("Remote outbound connection service for outbound connection:" + remoteOutboundConnectionName1 + " was null", remoteOutboundConnectionService1);
+        RemoteOutboundConnectionService remoteService1 = (RemoteOutboundConnectionService) remoteOutboundConnectionService1.getService();
+        assertEquals(2, remoteService1.connectionCreationOptions.size());
+
+        final String remoteOutboundConnectionName2 = "group2";
+        ServiceName remoteOutboundConnectionServiceName2 = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(remoteOutboundConnectionName2);
+        ServiceController<?> remoteOutboundConnectionService2 = services.getContainer().getRequiredService(remoteOutboundConnectionServiceName2);
+        assertNotNull("Local outbound connection service for outbound connection:" + remoteOutboundConnectionName2 + " was null", remoteOutboundConnectionService2);
+        RemoteOutboundConnectionService remoteService2 = (RemoteOutboundConnectionService) remoteOutboundConnectionService2.getService();
+        assertEquals(2, remoteService2.connectionCreationOptions.size());
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -105,6 +106,17 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
                     final ModelNode localOutboundConnectionModel = property.getValue();
                     // process and write local outbound connection
                     this.writeLocalOutboundConnection(writer, connectionName, localOutboundConnectionModel);
+
+                }
+            }
+            if (model.hasDefined(REMOTE_OUTBOUND_CONNECTION_GROUP)) {
+                final List<Property> groupNode = model.get(REMOTE_OUTBOUND_CONNECTION_GROUP).asPropertyList();
+                for (Property property : groupNode) {
+                    final String groupName = property.getName();
+                    // get the specific group
+                    final ModelNode group = property.getValue();
+                    // process and write group
+                    this.writeRemoteOutboundConnectionGroup(writer, groupName, group);
 
                 }
             }
@@ -288,6 +300,30 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
 
         // </local-outbound-connection>
         writer.writeEndElement();
+    }
+
+    private void writeRemoteOutboundConnectionGroup(final XMLExtendedStreamWriter writer, final String groupName, final ModelNode model) throws XMLStreamException {
+        // <remote-outbound-connection-group>
+        writer.writeStartElement(Element.REMOTE_OUTBOUND_CONNECTION_GROUP.getLocalName());
+
+        writer.writeAttribute(Attribute.NAME.getLocalName(), groupName);
+
+        writeAttribute(writer, model, RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_SOCKET_BINDINGS_REFS);
+        writeAttribute(writer, model, RemoteOutboundConnectionGroupResourceDefinition.PROTOCOL);
+        writeAttribute(writer, model, RemoteOutboundConnectionGroupResourceDefinition.SECURITY_REALM);
+        writeAttribute(writer, model, RemoteOutboundConnectionGroupResourceDefinition.USERNAME);
+
+        // write the connection-creation-options if any
+        if (model.hasDefined(PROPERTY)) {
+            writeProperties(writer, model.get(PROPERTY));
+        }
+
+        // <remote-outbound-connection-group/>
+        writer.writeEndElement();
+    }
+
+    private void writeAttribute(XMLExtendedStreamWriter writer, ModelNode model, AttributeDefinition attribute) throws XMLStreamException {
+        attribute.getAttributeMarshaller().marshallAsAttribute(attribute, model, true, writer);
     }
 
 }

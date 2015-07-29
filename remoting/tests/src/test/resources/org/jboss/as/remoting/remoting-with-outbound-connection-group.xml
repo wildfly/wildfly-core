@@ -1,0 +1,12 @@
+<subsystem xmlns="urn:jboss:domain:remoting:3.1">
+    <connector name="test-connector" socket-binding="test"/>
+    <outbound-connections>
+        <remote-outbound-connection-group name="group" outbound-socket-binding-refs="dummy-outbound-socket, other-outbound-socket">
+            <properties>
+                <property name="org.xnio.Options.SASL_POLICY_NOANONYMOUS" value="false"/>
+                <property name="org.xnio.Options.SSL_ENABLED" value="false"/>
+            </properties>
+        </remote-outbound-connection-group>
+    </outbound-connections>
+</subsystem>
+

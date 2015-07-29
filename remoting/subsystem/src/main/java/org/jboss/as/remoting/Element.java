@@ -52,6 +52,7 @@ public enum Element {
     PROPERTIES("properties"),
     PROPERTY("property"),
     REMOTE_OUTBOUND_CONNECTION("remote-outbound-connection"),
+    REMOTE_OUTBOUND_CONNECTION_GROUP("remote-outbound-connection-group"),
     QOP("qop"),
     REUSE_SESSION("reuse-session"),
     SASL("sasl"),
