@@ -104,9 +104,9 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
         try {
             manifest = checking ? doPrivileged(new PrivilegedExceptionAction<Manifest>() {
                 public Manifest run() throws IOException {
-                    return VFSUtils.getManifest(root);
+                    return org.jboss.as.server.deployment.module.Utils.getManifest(root);
                 }
-            }) : VFSUtils.getManifest(root);
+            }) : org.jboss.as.server.deployment.module.Utils.getManifest(root);
         } catch (PrivilegedActionException pe) {
             try {
                 throw pe.getException();

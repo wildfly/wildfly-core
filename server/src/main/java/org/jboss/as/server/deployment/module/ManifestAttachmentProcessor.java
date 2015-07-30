@@ -33,7 +33,6 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentUtils;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -73,7 +72,7 @@ public class ManifestAttachmentProcessor implements DeploymentUnitProcessor {
         if (manifest == null) {
             final VirtualFile deploymentRoot = resourceRoot.getRoot();
             try {
-                manifest = VFSUtils.getManifest(deploymentRoot);
+                manifest = Utils.getManifest(deploymentRoot);
             } catch (IOException e) {
                 throw ServerLogger.ROOT_LOGGER.failedToGetManifest(deploymentRoot, e);
             }

@@ -47,7 +47,6 @@ import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -237,7 +236,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
 
         final Manifest manifest;
         try {
-            manifest = VFSUtils.getManifest(resourceRoot.getRoot());
+            manifest = Utils.getManifest(resourceRoot.getRoot());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
