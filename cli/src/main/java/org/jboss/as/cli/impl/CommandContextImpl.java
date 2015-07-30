@@ -1641,6 +1641,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             password = temp.toCharArray();
                         }
                     }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     pcb.setPassword(password);
                 } else if (current instanceof DigestHashCallback && digest != null) {
                     // We don't support an interactive use of this callback so it must have been set in advance.
