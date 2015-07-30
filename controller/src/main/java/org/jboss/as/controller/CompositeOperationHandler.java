@@ -117,7 +117,8 @@ public class CompositeOperationHandler implements OperationStepHandler {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
                 // don't override useful failure information in the domain
-                if (context.getAttachment(DOMAIN_EXECUTION_KEY) != null) {
+                // or any existing failure message
+                if (context.getAttachment(DOMAIN_EXECUTION_KEY) != null || context.hasFailureDescription()) {
                     return;
                 }
 

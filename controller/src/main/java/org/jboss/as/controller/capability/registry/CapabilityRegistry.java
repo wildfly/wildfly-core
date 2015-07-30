@@ -79,9 +79,10 @@ public interface CapabilityRegistry<C extends CapabilityRegistration, R extends 
     /**
      * Gets whether a capability with the given name is registered.
      * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @param dependentName
      * @param context the context in which to check for the capability
      * @return {@code true} if there is a capability with the given name registered
      *
      */
-    boolean hasCapability(String capabilityName, CapabilityContext context);
+    boolean hasCapability(String capabilityName, String dependentName, CapabilityContext context);
 }

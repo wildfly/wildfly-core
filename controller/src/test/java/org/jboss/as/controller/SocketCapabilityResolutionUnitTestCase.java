@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -76,6 +77,8 @@ public class SocketCapabilityResolutionUnitTestCase {
     private static final PathAddress SOCKET_A_2 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "a"), PathElement.pathElement(SOCKET_BINDING, "2"));
     private static final PathAddress SOCKET_B_1 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "b"), PathElement.pathElement(SOCKET_BINDING, "1"));
     private static final PathAddress SOCKET_B_2 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "b"), PathElement.pathElement(SOCKET_BINDING, "2"));
+    private static final PathAddress SOCKET_C_3 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "c"), PathElement.pathElement(SOCKET_BINDING, "3"));
+    private static final PathAddress SOCKET_D_4 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "d"), PathElement.pathElement(SOCKET_BINDING, "4"));
 
     private ServiceContainer container;
     private ModelController controller;
@@ -221,6 +224,114 @@ public class SocketCapabilityResolutionUnitTestCase {
         validateMissingFailureDesc(response, "step-5", "cap_b", "socket-binding-group=a");
     }
 
+    @Test
+    public void testResolveFromParentGroup() {
+        // 'b' includes 'a', 'b' requires from 'a'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(SOCKET_B_2, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-3", RESULT).asBoolean());
+    }
+
+    @Test
+    public void testResolveFromGrandParentGroup() {
+        // 'c' includes 'b', 'b' includes 'a', 'c' requires from 'a'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getParentIncludeOperation(SOCKET_C_3.getParent(), "b"),
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(SOCKET_C_3, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-4", RESULT).asBoolean());
+    }
+
+    @Test
+    public void testResolveFromChildGroup() {
+        // 'b' includes 'a', 'a' requires from 'b'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getCapabilityOperation(SOCKET_B_2, "cap_a"),
+                getCapabilityOperation(SOCKET_A_1, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        validateMissingFailureDesc(response, "step-3", "cap_a", "socket-binding-group=a");
+    }
+
+    @Test
+    public void testResolveFromGrandChildGroup() {
+        // 'c' includes 'b', 'b' includes 'a', 'a' requires from 'c'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getParentIncludeOperation(SOCKET_C_3.getParent(), "b"),
+                getCapabilityOperation(SOCKET_C_3, "cap_a"),
+                getCapabilityOperation(SOCKET_A_1, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        validateMissingFailureDesc(response, "step-4", "cap_a", "socket-binding-group=a");
+    }
+
+    @Test
+    public void testIncludesChangeBreaksResolution() {
+        // 'b' requires from parent 'a', then 'includes' changes so 'a' is no longer a parent
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(SOCKET_B_2, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+
+        // Drop the include
+        response = controller.execute(getParentIncludeOperation(SOCKET_B_2.getParent()), null, null, null);
+        assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
+        validateMissingFailureDesc(response, null, "cap_a", "socket-binding-group=b");
+    }
+
+    @Test
+    public void testProfileRequiresIncludedSockets() {
+        // profile requires 'a' and 'b', while 'b' includes 'a'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(SOCKET_B_2, "cap_b"),
+                getCapabilityOperation(SUBSYSTEM_A_1, "dep_b", "cap_b"),
+                getCapabilityOperation(SUBSYSTEM_A_2, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-4", RESULT).asBoolean());
+        assertTrue(response.toString(), response.get(RESULT, "step-5", RESULT).asBoolean());
+    }
+
+    @Test
+    public void testParentProfileRequiresIncludedSockets() {
+        // Parent profile requires 'a', child requires 'b' and 'b' includes 'a'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SUBSYSTEM_B_2.getParent(), "a"),
+                getParentIncludeOperation(SOCKET_B_2.getParent(), "a"),
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(SOCKET_B_2, "cap_b"),
+                getCapabilityOperation(SUBSYSTEM_A_1, "dep_a", "cap_a"),
+                getCapabilityOperation(SUBSYSTEM_B_2, "dep_b", "cap_b"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-5", RESULT).asBoolean());
+        assertTrue(response.toString(), response.get(RESULT, "step-6", RESULT).asBoolean());
+    }
+
+    @Test
+    public void testInconsistentParentChildProfile() {
+        // Parent profile requires 'a', child requires 'b' but 'b' does not include 'a'
+        ModelNode op = getCompositeOperation(
+                getParentIncludeOperation(SUBSYSTEM_B_2.getParent(), "a"),
+                getCapabilityOperation(SOCKET_A_1, "cap_a"),
+                getCapabilityOperation(SOCKET_B_2, "cap_b"),
+                getCapabilityOperation(SUBSYSTEM_A_1, "dep_a", "cap_a"),
+                getCapabilityOperation(SUBSYSTEM_B_2, "dep_b", "cap_b"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
+    }
+
     private static class ModelControllerService extends TestModelControllerService {
 
         ModelControllerService() {
@@ -242,9 +353,22 @@ public class SocketCapabilityResolutionUnitTestCase {
             // real address pattern a bit, as those patterns are what drive the WFCORE-750 capability resolution logic
             rootRegistration.registerSubModel(createResourceDefinition(GLOBAL));
             ManagementResourceRegistration profile = rootRegistration.registerSubModel(createResourceDefinition(PROFILE));
+            OperationDefinition od = new SimpleOperationDefinitionBuilder("include", new NonResolvingResourceDescriptionResolver()).build();
+            OperationStepHandler includeHandler = new ParentIncludeHandler();
+            profile.registerOperationHandler(od, includeHandler);
             profile.registerSubModel(createResourceDefinition(SUBSYSTEM));
             ManagementResourceRegistration sbg = rootRegistration.registerSubModel(createResourceDefinition(SOCKET_BINDING_GROUP));
+            sbg.registerOperationHandler(od, includeHandler);
             sbg.registerSubModel(createResourceDefinition(SOCKET_BINDING));
+
+            // Add the expected parent resources
+            Resource rootResource = managementModel.getRootResource();
+            rootResource.registerChild(SUBSYSTEM_A_1.getElement(0), Resource.Factory.create());
+            rootResource.registerChild(SUBSYSTEM_B_1.getElement(0), Resource.Factory.create());
+            rootResource.registerChild(SOCKET_A_1.getElement(0), Resource.Factory.create());
+            rootResource.registerChild(SOCKET_B_1.getElement(0), Resource.Factory.create());
+            rootResource.registerChild(SOCKET_C_3.getElement(0), Resource.Factory.create());
+            rootResource.registerChild(SOCKET_D_4.getElement(0), Resource.Factory.create());
         }
     }
 
@@ -276,6 +400,15 @@ public class SocketCapabilityResolutionUnitTestCase {
         }
     }
 
+    private static class ParentIncludeHandler implements OperationStepHandler {
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            resource.getModel().get(INCLUDES).set(operation.get(INCLUDES));
+        }
+    }
+
     private static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability) {
         return getCapabilityOperation(pathAddress, capability, null);
     }
@@ -286,6 +419,16 @@ public class SocketCapabilityResolutionUnitTestCase {
         op.get(CAPABILITY).set(capability);
         if (requirement != null) {
             op.get(REQUIREMENT).set(requirement);
+        }
+        return op;
+    }
+
+    private static ModelNode getParentIncludeOperation(PathAddress pathAddress, String... includes) {
+
+        ModelNode op = Util.createEmptyOperation("include", pathAddress);
+        ModelNode includesNode = op.get(INCLUDES);
+        for (String include : includes) {
+            includesNode.add(include);
         }
         return op;
     }
@@ -305,8 +448,11 @@ public class SocketCapabilityResolutionUnitTestCase {
         assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
         assertTrue(response.toString(), response.hasDefined(FAILURE_DESCRIPTION));
         String failDesc = response.get(FAILURE_DESCRIPTION).asString();
-        int loc = failDesc.indexOf(step);
-        assertTrue(response.toString(), loc > 0);
+        int loc = -1;
+        if (step != null) {
+            loc = failDesc.indexOf(step);
+            assertTrue(response.toString(), loc > 0);
+        }
         int lastLoc = loc;
         loc = failDesc.indexOf("WFLYCTL0369");
         assertTrue(response.toString(), loc > lastLoc);

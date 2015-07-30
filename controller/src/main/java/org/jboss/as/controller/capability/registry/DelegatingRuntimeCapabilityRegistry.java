@@ -94,8 +94,8 @@ public class DelegatingRuntimeCapabilityRegistry implements RuntimeCapabilityReg
     }
 
     @Override
-    public boolean hasCapability(String capabilityName, CapabilityContext context) {
-        return getDelegate().hasCapability(capabilityName, context);
+    public boolean hasCapability(String capabilityName, String dependentName, CapabilityContext context) {
+        return getDelegate().hasCapability(capabilityName, dependentName, context);
     }
 
     @Override
