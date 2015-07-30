@@ -22,6 +22,8 @@
 
 package org.jboss.as.remoting;
 
+import java.util.Set;
+
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -32,8 +34,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-
-import java.util.List;
 
 /**
  * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
@@ -71,19 +71,26 @@ class RemoteOutboundConnectionGroupWriteHandler extends AbstractWriteAttributeHa
                 .getValue();
         final int connectionsCount = RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_SOCKET_BINDINGS_REFS.resolveModelAttribute(context, fullModel)
                 .asList().size();
-        final List<ServiceName> serviceNames = RemotingServices.createConnectionServiceNames(groupName,
+        final ServiceName groupServiceName = RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_CONNECTION_GROUP_BASE_SERVICE_NAME
+                .append(groupName);
+        final Set<ServiceName> connectionServiceNames = RemotingServices.createConnectionServiceNames(groupName,
                 connectionsCount);
         boolean reloadRequired = false;
-        for (final ServiceName serviceName: serviceNames) {
+        for (final ServiceName serviceName: connectionServiceNames) {
             final ServiceController sc = registry.getService(serviceName);
             if (sc != null && sc.getState() == ServiceController.State.UP) {
                 reloadRequired = true;
                 break;
             }
         }
+        final ServiceController sc = registry.getService(groupServiceName);
+        if (sc != null && sc.getState() == ServiceController.State.UP) {
+            reloadRequired = true;
+        }
         if (!reloadRequired) {
-            for (final ServiceName serviceName : serviceNames) {
-                context.removeService(serviceName);
+            context.removeService(groupServiceName);
+            for (final ServiceName connectionServiceName : connectionServiceNames) {
+                context.removeService(connectionServiceName);
             }
             RemoteOutboundConnectionGroupAdd.INSTANCE.installRuntimeService(context, operation, fullModel);
         }

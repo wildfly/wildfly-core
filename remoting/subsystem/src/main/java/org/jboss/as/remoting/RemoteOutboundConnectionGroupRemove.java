@@ -22,6 +22,8 @@
 
 package org.jboss.as.remoting;
 
+import java.util.Set;
+
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -29,8 +31,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
-
-import java.util.List;
 
 /**
  * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
@@ -52,11 +52,14 @@ public class RemoteOutboundConnectionGroupRemove extends AbstractRemoveStepHandl
                     .getLastElement().getValue();
             final int connectionsCount = RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_SOCKET_BINDINGS_REFS
                     .resolveModelAttribute(context, model).asList().size();
-            List<ServiceName> connectionServiceNames = RemotingServices.createConnectionServiceNames(groupName,
+            Set<ServiceName> connectionServiceNames = RemotingServices.createConnectionServiceNames(groupName,
                     connectionsCount);
             for (final ServiceName connectionServiceName : connectionServiceNames) {
                 context.removeService(connectionServiceName);
             }
+            final ServiceName groupServiceName = RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_CONNECTION_GROUP_BASE_SERVICE_NAME
+                    .append(groupName);
+            context.removeService(groupServiceName);
         } else {
             context.reloadRequired();
         }

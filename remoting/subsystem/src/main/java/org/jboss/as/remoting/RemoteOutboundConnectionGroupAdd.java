@@ -37,6 +37,7 @@ import org.jboss.remoting3.Endpoint;
 import org.xnio.OptionMap;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
@@ -87,6 +88,8 @@ class RemoteOutboundConnectionGroupAdd extends AbstractAddStepHandler {
             installConnectionService(context, socketRef, connectionName, username, protocol, securityRealm,
                     connectionCreationOptions);
         }
+
+        installGroupService(context, groupName, socketRefs.size());
     }
 
     void installConnectionService(final OperationContext context, final String socketRef, final String connectionName,
@@ -117,6 +120,20 @@ class RemoteOutboundConnectionGroupAdd extends AbstractAddStepHandler {
             SecurityRealm.ServiceUtil.addDependency(svcBuilder, outboundConnectionService.getSecurityRealmInjector(),
                     securityRealm, false);
         }
+        svcBuilder.install();
+    }
+
+    void installGroupService(final OperationContext context, final String groupName, final int connectionCount){
+        final Set<ServiceName> connections = RemotingServices.createConnectionServiceNames(groupName, connectionCount);
+        final RemoteOutboundConnectionGroupService groupService = new RemoteOutboundConnectionGroupService(connections);
+        final ServiceName groupServiceName = RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_CONNECTION_GROUP_BASE_SERVICE_NAME
+                        .append(groupName);
+
+        final ServiceBuilder<RemoteOutboundConnectionGroupService> svcBuilder = context
+                .getServiceTarget()
+                .addService(groupServiceName, groupService)
+                .addDependencies(connections);
+
         svcBuilder.install();
     }
 }

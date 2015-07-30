@@ -39,6 +39,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
@@ -46,6 +47,7 @@ import org.jboss.dmr.ModelType;
 class RemoteOutboundConnectionGroupResourceDefinition extends SimpleResourceDefinition {
 
     static final PathElement ADDRESS = PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION_GROUP);
+    static final ServiceName OUTBOUND_CONNECTION_GROUP_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection-group");
 
     static final StringListAttributeDefinition OUTBOUND_SOCKET_BINDINGS_REFS = new StringListAttributeDefinition.Builder(
             CommonAttributes.OUTBOUND_SOCKET_BINDING_REFS)

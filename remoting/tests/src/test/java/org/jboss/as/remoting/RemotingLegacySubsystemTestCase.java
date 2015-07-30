@@ -278,6 +278,14 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
         ServiceController<?> endPointService = services.getContainer().getRequiredService(RemotingServices.SUBSYSTEM_ENDPOINT);
         assertNotNull("Endpoint service was null", endPointService);
 
+        final String groupName = "group";
+        final ServiceName groupServiceName = RemoteOutboundConnectionGroupResourceDefinition.OUTBOUND_CONNECTION_GROUP_BASE_SERVICE_NAME
+                .append(groupName);
+        ServiceController<?> groupServiceController = services.getContainer().getRequiredService(groupServiceName);
+        assertNotNull("Remote outbound connection service for outbound connection:" + groupServiceName + " was null", groupServiceController);
+        RemoteOutboundConnectionGroupService groupService = (RemoteOutboundConnectionGroupService) groupServiceController.getService();
+        assertEquals(2, groupService.getRemoteOutboundConnections().size());
+
         final String remoteOutboundConnectionName1 = "group1";
         ServiceName remoteOutboundConnectionServiceName1 = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(remoteOutboundConnectionName1);
         ServiceController<?> remoteOutboundConnectionService1 = services.getContainer().getRequiredService(remoteOutboundConnectionServiceName1);
