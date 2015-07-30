@@ -121,7 +121,7 @@ public class HierarchicalCompositionTestCase extends AbstractCliTestBase {
         try {
             output = (String) cli.readAllAsOpResult().getResult();
         } catch (IOException e) {
-            Assert.fail("Fail to get result of CLI command: " + line);
+            Assert.fail("Fail to get result of CLI command: " + line + "\n" + e.getMessage() + "\n" + e.getStackTrace());
         }
         return output;
     }
