@@ -27,7 +27,6 @@ import static org.jboss.as.patching.IoUtils.copy;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.logging.PatchLogger;
@@ -56,11 +55,11 @@ class ModuleRemoveTask extends AbstractModuleTask {
     @Override
     byte[] apply(PatchingTaskContext context, PatchContentLoader loader) throws IOException {
         final File targetDir = context.getTargetFile(contentItem);
-        if(! targetDir.mkdirs()) {
+        if(!targetDir.exists() && ! targetDir.mkdirs()) {
             throw PatchLogger.ROOT_LOGGER.cannotCreateDirectory(targetDir.getAbsolutePath());
         }
         final File moduleXml = new File(targetDir, MODULE_XML);
-        final ByteArrayInputStream is = new ByteArrayInputStream(getFileContent(contentItem));
+        final ByteArrayInputStream is = new ByteArrayInputStream(PatchUtils.getAbsentModuleContent(contentItem));
         try {
             return copy(is, moduleXml);
         } finally {
@@ -80,14 +79,4 @@ class ModuleRemoveTask extends AbstractModuleTask {
         final ModuleItem item = createContentItem(contentItem, itemHash);
         return new ContentModification(item, targetHash, ModificationType.MODIFY);
     }
-
-    static byte[] getFileContent(final ModuleItem item) {
-        final StringBuilder builder = new StringBuilder(128);
-        builder.append("<?xml version='1.0' encoding='UTF-8'?>\n<module-absent xmlns=\"urn:jboss:module:1.2\"");
-        builder.append(" name=\"").append(item.getName()).append("\"");
-        builder.append(" slot=\"").append(item.getSlot()).append("\"");
-        builder.append(" />\n");
-        return builder.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
 }

@@ -25,7 +25,6 @@ package org.jboss.as.patching.runner;
 import static org.jboss.as.patching.Constants.BUNDLES;
 import static org.jboss.as.patching.Constants.MISC;
 import static org.jboss.as.patching.Constants.MODULES;
-import static org.jboss.as.patching.Constants.SYSTEM;
 import static org.jboss.as.patching.HashUtils.hashFile;
 import static org.jboss.as.patching.IoUtils.NO_CONTENT;
 import static org.jboss.as.patching.IoUtils.newFile;
@@ -40,10 +39,7 @@ import static org.jboss.as.patching.runner.TestUtils.touch;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
 
-import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.metadata.BundleItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
@@ -70,8 +66,12 @@ public class ContentModificationUtils {
     }
 
     public static ContentModification removeModule(File existingModule) throws IOException {
-        byte[] existingHash = hashFile(existingModule);
-        return new ContentModification(new ModuleItem(existingModule.getName(), ModuleItem.MAIN_SLOT, NO_CONTENT), existingHash, REMOVE);
+        return removeModule(existingModule, existingModule.getName());
+    }
+
+    public static ContentModification removeModule(File moduleDir, String moduleName) throws IOException {
+        byte[] existingHash = hashFile(moduleDir);
+        return new ContentModification(new ModuleItem(moduleName, ModuleItem.MAIN_SLOT, NO_CONTENT), existingHash, REMOVE);
     }
 
     public static ContentModification modifyModule(File patchDir, String patchElementID, File existingModule, String newContent) throws IOException {
