@@ -138,7 +138,7 @@ public class AttributesTestCase {
         TransformationDescription.Tools.register(builder.build(), transformersSubRegistration);
 
         dontRejectChecker.called = false;
-        rejectAttributeChecker.clear();;
+        rejectAttributeChecker.clear();
         final Resource resource = transformResource();
         Assert.assertNotNull(resource);
         final Resource toto = resource.getChild(PATH);

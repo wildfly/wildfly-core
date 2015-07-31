@@ -42,7 +42,7 @@ import org.junit.Assert;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class DomainServerGroupSystemPropertyTestCase extends AbstractSystemPropertyTest {
-    final static PathAddress PARENT = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "test"));
+    static final PathAddress PARENT = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "test"));
 
     public DomainServerGroupSystemPropertyTestCase() {
         super(false, true);

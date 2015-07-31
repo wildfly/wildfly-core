@@ -382,6 +382,7 @@
                 <module>rbac</module>
                 <module>domain</module>
                 <module>manualmode</module>
+                <module>patching</module>
             </modules>
         </profile>
 

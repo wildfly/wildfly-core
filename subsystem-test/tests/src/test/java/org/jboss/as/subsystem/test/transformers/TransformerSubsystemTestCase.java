@@ -147,7 +147,7 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
         Assert.assertTrue(op.rejectOperation(success()));
     }
 
-    private static final ModelNode success() {
+    private static ModelNode success() {
         final ModelNode result = new ModelNode();
         result.get(OUTCOME).set(SUCCESS);
         result.get(RESULT);

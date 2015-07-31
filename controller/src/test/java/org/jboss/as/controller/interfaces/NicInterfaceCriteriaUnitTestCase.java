@@ -25,7 +25,6 @@ package org.jboss.as.controller.interfaces;
 import static org.jboss.as.controller.interfaces.InterfaceCriteriaTestUtil.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;

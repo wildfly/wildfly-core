@@ -51,7 +51,6 @@ public class AuditLogPeriodicRotatingFileHandlerTestCase extends AbstractAuditLo
 
     private static final String LOG_FILE_NAME_PREFIX = "test-periodic-rotating-file";
     private static final String LOG_FILE_NAME = LOG_FILE_NAME_PREFIX + ".log";
-    
     private static final String SUFFIX = ".yyyy-MM-dd-hh-mm";
 
     public AuditLogPeriodicRotatingFileHandlerTestCase() {

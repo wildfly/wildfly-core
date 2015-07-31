@@ -649,7 +649,7 @@ public class RolloutPlanParsingTestCase {
     public void testNonConcurrentGroups() throws Exception {
 
         parse("/profile=default/subsystem=threads/thread-factory=mytf:do{ rollout " +
-        		"groupA(rolling-to-servers=true,max-failure-percentage=20) , groupB");
+                "groupA(rolling-to-servers=true,max-failure-percentage=20) , groupB");
 
         assertTrue(handler.hasAddress());
         assertTrue(handler.hasOperationName());

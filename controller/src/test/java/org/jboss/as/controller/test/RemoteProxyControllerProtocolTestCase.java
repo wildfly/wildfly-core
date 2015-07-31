@@ -588,7 +588,7 @@ public class RemoteProxyControllerProtocolTestCase {
         return proxyController;
     }
 
-    private static abstract class MockModelController extends org.jboss.as.controller.MockModelController {
+    private abstract static class MockModelController extends org.jboss.as.controller.MockModelController {
         protected volatile ModelNode operation;
 
         ModelNode getOperation() {

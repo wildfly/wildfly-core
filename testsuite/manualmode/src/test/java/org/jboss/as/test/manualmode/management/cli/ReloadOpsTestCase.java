@@ -36,20 +36,16 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;

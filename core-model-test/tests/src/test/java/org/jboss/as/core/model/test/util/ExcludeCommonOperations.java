@@ -45,7 +45,7 @@ public class ExcludeCommonOperations {
     public static void excludeBadOps_7_1_x(LegacyKernelServicesInitializer initializer) {
         //deployment overlays don't exist in 7.1.x
         initializer.addOperationValidationExclude(ADD, PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT_OVERLAY)));
-        
+
         initializer.addOperationValidationExclude(ADD, PathAddress.pathAddress(PathElement.pathElement(DEPLOYMENT_OVERLAY), PathElement.pathElement(CONTENT)));
         initializer.addOperationValidationExclude(ADD, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP), PathElement.pathElement(DEPLOYMENT_OVERLAY)));
 
