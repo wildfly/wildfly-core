@@ -132,7 +132,7 @@
         <version.org.wildfly.build-tools>1.1.0.Beta1</version.org.wildfly.build-tools>
         <version.org.wildfly.common>1.0.0.Alpha3</version.org.wildfly.common>
         <version.org.wildfly.legacy.test>1.0.0.Alpha9</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.0.0.Alpha2</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.0.0.Alpha3</version.org.wildfly.security.elytron>
         <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
