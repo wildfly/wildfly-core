@@ -33,23 +33,39 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.logging.Logger;
+import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
+import org.junit.After;
+import org.junit.Before;
+
 /**
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class XmlCompletionScannerTest {
         
-    private final FakeHandler handler;
+    private FakeHandler handler;
+    private final static DeploymentScannerLogger logger = DeploymentScannerLogger.ROOT_LOGGER;
 
     public XmlCompletionScannerTest() {
-        handler = new FakeHandler();
-        org.jboss.logmanager.Logger lmLogger = org.jboss.logmanager.Logger.getLogger("org.jboss.as.server.deployment.scanner");
-        lmLogger.addHandler(handler);
     }
 
-   
+    @Before
+    public void preparehandler() {
+        Logger lmLogger = Logger.getLogger("org.jboss.as.server.deployment.scanner");
+        handler = new FakeHandler();
+        lmLogger.addHandler(handler);
+    }
+    
+    @After
+    public void removehandler() {
+        Logger lmLogger = Logger.getLogger("org.jboss.as.server.deployment.scanner");
+        lmLogger.removeHandler(handler);
+    }
+
     @Test
     public void testCompleteDocument() throws Exception {
+        handler.messages.clear();
         File file = new File(XmlCompletionScannerTest.class.getClassLoader().getResource("loop-vdb.xml").toURI());
         boolean result = XmlCompletionScanner.isCompleteDocument(file);
         assertThat(result, is(true));
@@ -68,6 +84,7 @@ public class XmlCompletionScannerTest {
         assertThat(infoMessage, containsString("loop-vdb-error.xml"));
         assertThat(infoMessage, containsString("lineNumber: 18"));
         assertThat(infoMessage, containsString("columnNumber: 7"));
+        handler.messages.clear();
     }
     
     private static class FakeHandler extends Handler {
