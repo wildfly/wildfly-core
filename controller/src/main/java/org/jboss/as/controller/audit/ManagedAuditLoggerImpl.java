@@ -507,6 +507,27 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         }
     }
 
+    @Override
+    public List<ModelNode> listLastEntries(String name) {
+        config.lock();
+        try {
+            return config.getConfiguredHandler(name).listLastEntries();
+        } finally {
+            config.unlock();
+        }
+    }
+
+    @Override
+    public void updateInMemoryHandlerMaxHistory(String name, int maxHistory) {
+        config.lock();
+        try {
+            InMemoryAuditLogHander handler = (InMemoryAuditLogHander)config.getConfiguredHandler(name);
+            handler.setMaxHistory(maxHistory);
+        } finally {
+            config.unlock();
+        }
+    }
+
 
     /**
      * Abstract base class for core and new configuration

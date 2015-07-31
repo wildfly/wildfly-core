@@ -190,5 +190,9 @@ public interface AuditLogger {
         @Override
         public void updateSyslogHandlerReconnectTimeout(String name, int reconnectTimeout) {
         }
+
+        @Override
+        public void updateInMemoryHandlerMaxHistory(String name, int maxHistory) {
+        }
     };
 }
