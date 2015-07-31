@@ -435,6 +435,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         }
         settings.outputStream(cliPrintStream);
 
+        settings.enableExport(false);
+
         settings.disableHistory(!config.isHistoryEnabled());
         settings.historyFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
         settings.historySize(config.getHistoryMaxSize());
