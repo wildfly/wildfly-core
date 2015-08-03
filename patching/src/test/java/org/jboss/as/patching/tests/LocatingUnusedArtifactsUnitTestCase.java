@@ -154,7 +154,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
         installOneOffCpOneOff();
         removeRollbackXml(CP_1_ID);
 
-        final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager());
+        final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager().getDefaultIdentity());
         final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
         assertEquals(1, inactiveHistory.size());
         assertEquals(getExpectedHistoryDir(ONE_OFF_1_ID), inactiveHistory.get(0).getAbsolutePath());
@@ -170,7 +170,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
         installOneOffCpOneOff();
         removeRollbackXml(ONE_OFF_2_ID);
 
-        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager());
+        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager().getDefaultIdentity());
         final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
 
         List<String> inactivePaths = Arrays.asList(new String[] { getExpectedHistoryDir(ONE_OFF_1_ID) });
@@ -228,7 +228,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
 
         removeRollbackXml("CP3");
 
-        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager());
+        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager().getDefaultIdentity());
         final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
         List<String> inactivePaths = Arrays.asList(new String[]{getExpectedHistoryDir("CP1"), getExpectedHistoryDir("CP2")});
         assertEqualPaths(inactivePaths, inactiveHistory);
@@ -262,7 +262,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
             new File(overlayGarbage.get(i)).mkdirs();
         }
 
-        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(loadInstallationManager());
+        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(loadInstallationManager().getDefaultIdentity());
         final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
         assertEqualPaths(historyGarbage, inactiveHistory);
 
@@ -292,7 +292,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
     }
 
     protected String getExpectedOverlayDir(String layerName, final String patchId) throws IOException {
-        final Layer layer = updateInstallationManager().getLayer(layerName);
+        final Layer layer = updateInstallationManager().getDefaultIdentity().getLayer(layerName);
         if(layer == null) {
             fail("No layer " + layerName);
         }
@@ -356,7 +356,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
     }
 
     protected void assertNoGarbage() throws Exception {
-        final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(loadInstallationManager());
+        final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(loadInstallationManager().getDefaultIdentity());
         List<File> inactiveHistory = garbageLocator.getInactiveHistory();
         assertTrue(inactiveHistory.toString(), inactiveHistory.isEmpty());
         assertTrue(garbageLocator.getInactiveOverlays().toString(), garbageLocator.getInactiveOverlays().isEmpty());

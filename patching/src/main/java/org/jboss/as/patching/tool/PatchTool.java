@@ -32,10 +32,10 @@ import java.util.List;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.PatchInfo;
-import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
 import org.jboss.as.patching.installation.LayersConfig;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.runner.PatchToolImpl;
 import org.jboss.as.patching.runner.PatchUtils;
@@ -54,18 +54,42 @@ public interface PatchTool {
     ContentVerificationPolicy DEFAULT = ContentVerificationPolicy.STRICT;
 
     /**
-     * Get the patch info.
+     * Returns a list of patch streams applicable to the current installation.
+     *
+     * @return  list of patch streams applicable to the current installation
+     * @throws PatchingException
+     */
+    List<String> getPatchStreams() throws PatchingException;
+
+    /**
+     * Get the patch info for the default patch stream.
      *
      * @return the patch info
      */
-    PatchInfo getPatchInfo();
+    PatchInfo getPatchInfo() throws PatchingException;
+
+    /**
+     * Get the patch info for specific patch stream.
+     *
+     * @param streamName  patch stream
+     * @return the patch info
+     */
+    PatchInfo getPatchInfo(String streamName) throws PatchingException;
 
     /**
      * Get patching history
      *
      * @return  patching history
      */
-    PatchingHistory getPatchingHistory();
+    PatchingHistory getPatchingHistory() throws PatchingException;
+
+    /**
+     * Get patching history for the default patch stream.
+     *
+     * @param streamName  patch stream
+     * @return  patching history
+     */
+    PatchingHistory getPatchingHistory(String streamName) throws PatchingException;
 
     /**
      * Apply a patch.
@@ -110,6 +134,19 @@ public interface PatchTool {
     PatchingResult rollback(String patchId, ContentVerificationPolicy contentPolicy, boolean rollbackTo, boolean resetConfiguration) throws PatchingException;
 
     /**
+     * Rollback a patch.
+     *
+     * @param streamName patch stream name
+     * @param patchId the patch id
+     * @param contentPolicy the content verification policy
+     * @param rollbackTo rollback all one off patches until the given patch-id
+     * @param resetConfiguration whether to reset the configuration from the backup
+     * @return the patching result
+     * @throws PatchingException
+     */
+    PatchingResult rollback(String streamName, String patchId, ContentVerificationPolicy contentPolicy, boolean rollbackTo, boolean resetConfiguration) throws PatchingException;
+
+    /**
      * Rollback the last applied patch.
      *
      * @param contentPolicy the content verification policy
@@ -118,6 +155,17 @@ public interface PatchTool {
      * @throws PatchingException
      */
     PatchingResult rollbackLast(ContentVerificationPolicy contentPolicy, boolean resetConfiguration) throws PatchingException;
+
+    /**
+     * Rollback the last applied patch.
+     *
+     * @param streamName patch stream name
+     * @param contentPolicy the content verification policy
+     * @param resetConfiguration whether to reset the configuration from the backup
+     * @return the patching result
+     * @throws PatchingException
+     */
+    PatchingResult rollbackLast(String streamName, ContentVerificationPolicy contentPolicy, boolean resetConfiguration) throws PatchingException;
 
     public class Factory {
 

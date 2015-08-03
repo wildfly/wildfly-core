@@ -54,13 +54,6 @@ public interface CommandHistory {
     void clear();
 
     /**
-     * Sets the maximum length of the history log.
-     *
-     * @param maxSize  maximum length of the history log
-     */
-    void setMaxSize(int maxSize);
-
-    /**
      * The maximum length of the history log.
      *
      * @return maximum length of the history log

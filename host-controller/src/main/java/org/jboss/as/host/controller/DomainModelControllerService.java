@@ -44,6 +44,7 @@ import static org.jboss.as.remoting.Protocol.REMOTE;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -159,7 +160,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Creates the service that acts as the {@link org.jboss.as.controller.ModelController} for a Host Controller process.
@@ -458,7 +458,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.hostControllerConfigurationPersister = new HostControllerConfigurationPersister(environment, hostControllerInfo, executorService, hostExtensionRegistry, extensionRegistry);
         setConfigurationPersister(hostControllerConfigurationPersister);
         prepareStepHandler.setExecutorService(executorService);
-        ThreadFactory pingerThreadFactory = new JBossThreadFactory(new ThreadGroup("proxy-pinger-threads"), Boolean.TRUE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+        ThreadFactory pingerThreadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+            public JBossThreadFactory run() {
+                return new JBossThreadFactory(new ThreadGroup("proxy-pinger-threads"), Boolean.TRUE, null, "%G - %t", null, null);
+            }
+        });
         pingScheduler = Executors.newScheduledThreadPool(PINGER_POOL_SIZE, pingerThreadFactory);
 
         super.start(context);
@@ -1024,7 +1028,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().startServer(serverName, domainModel, blocking);
         }
 
-        public void reconnectServer(String serverName, ModelNode domainModel, byte[] authKey, boolean running, boolean stopping) {
+        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
             getServerInventory().reconnectServer(serverName, domainModel, authKey, running, stopping);
         }
 

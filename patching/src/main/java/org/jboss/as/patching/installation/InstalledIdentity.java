@@ -27,9 +27,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.patching.Constants;
+import org.jboss.as.patching.installation.InstallationManager.InstallationModification;
+import org.jboss.as.patching.installation.InstallationManager.ModificationCompletionCallback;
 import org.jboss.as.version.ProductConfig;
 
 /**
@@ -38,6 +42,9 @@ import org.jboss.as.version.ProductConfig;
  * @author Emanuel Muckenhuber
  */
 public abstract class InstalledIdentity {
+
+    // TODO track this state a better way
+    private final AtomicBoolean writable = new AtomicBoolean(true);
 
     /**
      * Get a list of all installed patches.
@@ -97,12 +104,82 @@ public abstract class InstalledIdentity {
      */
     public abstract Collection<AddOn> getAddOns();
 
+    protected abstract void updateState(final String name, final InstallationModificationImpl modification, final InstallationModificationImpl.InstallationState state);
+
     /**
      * Get the installed image.
      *
      * @return the installed image
      */
     public abstract InstalledImage getInstalledImage();
+
+    public InstallationModification modifyInstallation(final ModificationCompletionCallback callback) {
+        if (! writable.compareAndSet(true, false)) {
+            throw new ConcurrentModificationException();
+        }
+        try {
+            // Load the state
+            final InstalledIdentity original = copy(this);
+            final Identity identity = original.getIdentity();
+            final PatchableTarget.TargetInfo identityInfo = identity.loadTargetInfo();
+            final InstallationModificationImpl.InstallationState state = load(this);
+
+            return new InstallationModificationImpl(identityInfo, identity.getName(), identity.getVersion(), this.getAllInstalledPatches(), state) {
+
+                @Override
+                public InstalledIdentity getUnmodifiedInstallationState() {
+                    return original;
+                }
+
+                @Override
+                public void complete() {
+                    try {
+                        // Update the state
+                        updateState(identity.getName(), this, internalComplete());
+                        writable.set(true);
+                    } catch (Exception e) {
+                        cancel();
+                        throw new RuntimeException(e);
+                    }
+                    if (callback != null) {
+                        callback.completed();
+                    }
+                }
+
+                @Override
+                public void cancel() {
+                    try {
+                        if (callback != null) {
+                            callback.canceled();
+                        }
+                    } finally {
+                        writable.set(true);
+                    }
+                }
+            };
+        } catch (Exception e) {
+            writable.set(true);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Load the installation state based on the identity
+     *
+     * @param installedIdentity the installed identity
+     * @return the installation state
+     * @throws IOException
+     */
+    protected static InstallationModificationImpl.InstallationState load(final InstalledIdentity installedIdentity) throws IOException {
+        final InstallationModificationImpl.InstallationState state = new InstallationModificationImpl.InstallationState();
+        for (final Layer layer : installedIdentity.getLayers()) {
+            state.putLayer(layer);
+        }
+        for (final AddOn addOn : installedIdentity.getAddOns()) {
+            state.putAddOn(addOn);
+        }
+        return state;
+    }
 
     /**
      * Load the layers based on the default setup.
@@ -130,6 +207,17 @@ public abstract class InstalledIdentity {
      */
     public static InstalledIdentity load(final InstalledImage installedImage, final ProductConfig productConfig,  List<File> moduleRoots, final List<File> bundleRoots) throws IOException {
         return LayersFactory.load(installedImage, productConfig, moduleRoots, bundleRoots);
+    }
+
+    protected static InstalledIdentity copy(InstalledIdentity original) throws IOException {
+        final InstalledIdentityImpl copy = new InstalledIdentityImpl(original.getIdentity(), original.getAllInstalledPatches(), original.getInstalledImage());
+        for (final Layer layer : original.getLayers()) {
+            copy.putLayer(layer.getName(), new LayerInfo(layer.getName(), layer.loadTargetInfo(), layer.getDirectoryStructure()));
+        }
+        for (final AddOn addOn : original.getAddOns()) {
+            copy.putAddOn(addOn.getName(), new LayerInfo(addOn.getName(), addOn.loadTargetInfo(), addOn.getDirectoryStructure()));
+        }
+        return copy;
     }
 
     static InstalledImage installedImage(final File jbossHome) {

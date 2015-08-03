@@ -76,7 +76,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private final String serverName;
     private final String userName;
     private final String serverProcessName;
-    private final byte[] initialAuthKey;
+    private final String initialAuthKey;
     private final int connectOperationID;
     private final boolean managementSubsystemEndpoint;
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
@@ -84,7 +84,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private HostControllerClient client;
 
     public HostControllerConnectionService(final URI connectionURI, final String serverName, final String serverProcessName,
-                                           final byte[] authKey, final int connectOperationID,
+                                           final String authKey, final int connectOperationID,
                                            final boolean managementSubsystemEndpoint) {
         this.connectionURI= connectionURI;
         this.serverName = serverName;

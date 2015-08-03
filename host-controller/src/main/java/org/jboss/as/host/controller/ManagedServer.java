@@ -101,7 +101,7 @@ class ManagedServer {
         return serverProcessName.substring(SERVER_PROCESS_NAME_PREFIX.length());
     }
 
-    private final byte[] authKey;
+    private final String authKey;
     private final String serverName;
     private final String serverProcessName;
     private final String hostControllerName;
@@ -120,7 +120,7 @@ class ManagedServer {
     private volatile int operationID = CurrentOperationIdHolder.getCurrentOperationID();
     private volatile ManagedServerBootConfiguration bootConfiguration;
 
-    ManagedServer(final String hostControllerName, final String serverName, final byte[] authKey,
+    ManagedServer(final String hostControllerName, final String serverName, final String authKey,
                   final ProcessControllerClient processControllerClient, final URI managementURI,
                   final TransformationTarget transformationTarget) {
 
@@ -150,7 +150,7 @@ class ManagedServer {
      *
      * @return the auth key
      */
-    byte[] getAuthKey() {
+    String getAuthKey() {
         return authKey;
     }
 

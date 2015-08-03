@@ -33,19 +33,25 @@ public class Constants {
     public static final String BUNDLES = "bundles";
     public static final String CONFLICTS = "conflicts";
     public static final String CUMULATIVE = "cumulative-patch-id";
+    public static final String CURRENT_VERSION = "current-version";
     public static final String MESSAGE = "message";
     public static final String MISC = "misc";
     public static final String MODULES = "modules";
     public static final String NAME = "name";
     public static final String VERBOSE = "verbose";
     public static final String VERSION = "version";
+    public static final String UNKNOWN = "Unknown";
 
+    public static final String AGEOUT_HISTORY = "ageout-history";
     public static final String PATCH = "patch";
     public static final String PATCH_ID = "patch-id";
+    public static final String PATCH_INFO = "patch-info";
+    public static final String PATCH_STREAM = "patch-stream";
     public static final String RESET_CONFIGURATION = "reset-configuration";
     public static final String ROLLBACK = "rollback";
     public static final String ROLLBACK_LAST = "rollback-last";
     public static final String ROLLBACK_TO = "rollback-to";
+    public static final String SHOW_HISTORY = "show-history";
     /** The default if no patches are active. */
     public static final String BASE = "base";
     public static final String NOT_PATCHED = BASE;
@@ -88,6 +94,7 @@ public class Constants {
     public static final String INSTALLATION_METADATA = "layer.conf";   // .installation/layer/xxx/layer.conf
     public static final String LAYERS_CONF = "layers.conf";            // modules/layers.conf
     public static final String ROLLBACK_XML = "rollback.xml";
+    public static final String DOT_CONF = ".conf";
 
     // Service names
     public static final ServiceName JBOSS_AS = ServiceName.JBOSS.append("as");

@@ -63,11 +63,11 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
     private final URI managementURI;
     private final String serverName;
     private final String serverProcessName;
-    private final byte[] authKey;
+    private final String authKey;
 
     private final boolean managementSubsystemEndpoint;
 
-    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, byte[] authKey, boolean managementSubsystemEndpoint) {
+    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String authKey, boolean managementSubsystemEndpoint) {
         this.endpointConfig = endpointConfig;
         this.managementURI = managementURI;
         this.serverName = serverName;
@@ -116,7 +116,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
      * @return the service activator
      */
     public static ServiceActivator create(final ModelNode endpointConfig, final URI managementURI, final String serverName, final String serverProcessName,
-                                          final byte[] authKey, final boolean managementSubsystemEndpoint) {
+                                          final String authKey, final boolean managementSubsystemEndpoint) {
 
         return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, authKey, managementSubsystemEndpoint);
     }

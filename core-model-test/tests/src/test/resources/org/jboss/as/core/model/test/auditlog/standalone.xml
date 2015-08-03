@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <server xmlns="urn:jboss:domain:4.0">
     <management>
+        <configuration-changes max-history="3" />
         <audit-log>
             <formatters>
                <json-formatter name="json-one"/>
@@ -40,6 +41,7 @@
                <syslog-handler name="syslog-tls-default" formatter="json-two" >
                   <tls/>
                </syslog-handler>
+               <in-memory-handler name="in-memory" max-history="10"/>
             </handlers>
             <logger log-boot="${config.log-boot:true}" log-read-only="${config.read-only:true}" enabled="${config.enabled:true}">
                <handlers>
@@ -50,6 +52,7 @@
                   <handler name="size-file1"/>
                   <handler name="size-file2"/>
                   <handler name="syslog-udp"/>
+                  <handler name="in-memory"/>
                </handlers>
             </logger>
         </audit-log>

@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -3332,35 +3333,17 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 398, value = "An attempt was made to rename the resource found at %s to %s. However, '%s' is one of the resource types defined to be ordered on the parent resource %s")
     OperationFailedRuntimeException orderedChildTypeRenamed(PathAddress read, PathAddress transformed, String type, Set<String> parentOrderedChildren);
 
-    @Message(id = 399, value = "Model references of type '%s' are missing: %s")
-    OperationFailedException missingReferences(String type, Set<String> missing);
-
-    @Message(id = 400, value = "Profile '%s' is involved in a cycle")
-    OperationFailedException profileInvolvedInACycle(String profile);
-
-    @Message(id = 401, value = "Profile '%s' defines subsystem '%s' which is also defined in its ancestor profile '%s'. Overriding subsystems is not supported")
-    OperationFailedException profileAttemptingToOverrideSubsystem(String existingSubsystemProfile, String subsystem, String profileName);
-
-    @Message(id = 402, value = "Socket binding group '%s' is involved in a cycle")
-    OperationFailedException socketBindingGroupInvolvedInACycle(String include);
-
-    @Message(id = 403, value = "Socket binding group %s defines socket binding %s which is also defined in its ancestor socket binding group %s. Overriding socket bindings is not supported")
-    OperationFailedException socketBindingGroupAttemptingToOverrideSocketBinding(String existingSubsystemProfile, String child, String resourceName);
-
-    @Message(id = 404, value = "The binding name '%s' in socket binding group '%s' is not unique. Names must be unique across socket-binding, local-destination-outbound-socket-binding and remote-destination-outbound-socket-binding")
-    OperationFailedException bindingNameNotUnique(String name, String groupName);
-
-    @Message(id = 405, value = "The capability '%s' required by capability '%s' in context '%s' is available in one or " +
+    @Message(id = 399, value = "The capability '%s' required by capability '%s' in context '%s' is available in one or " +
             "more socket binding groups, but not all socket binding capabilities required by '%s' can be resolved from a " +
             "single socket binding group, so this configuration is invalid")
     String inconsistentCapabilityContexts(String requiredName, String dependentName, String dependentContext, String dependentContextAgain);
 
     @LogMessage(level = Level.ERROR)
-    @Message(id = 406, value = "Capability '%s' in context '%s' associated with resource '%s' requires capability '%s'. " +
+    @Message(id = 400, value = "Capability '%s' in context '%s' associated with resource '%s' requires capability '%s'. " +
             "It is available in one or more socket binding groups, but not all socket binding capabilities required by " +
             "'%s' can be resolved from a single socket binding group, so this configuration is invalid")
     void inconsistentCapabilityContexts(String dependentName, String dependentContext, String address, String requiredName, String dependentContextAgain);
 
-    @Message(id = 407, value = "Couldn't build the report")
+    @Message(id = 401, value = "Couldn't build the report")
     RuntimeException failedToBuildReport(@Cause Throwable t);
 }

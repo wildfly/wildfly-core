@@ -29,6 +29,8 @@ import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_S
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_DOMAIN;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
+import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
+
 import io.undertow.server.ListenerRegistry;
 
 import java.util.List;
@@ -119,12 +121,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         final ModelNode socketBindingNode = SOCKET_BINDING.resolveModelAttribute(context, model);
         if (socketBindingNode.isDefined()) {
             final String bindingName = socketBindingNode.asString();
-            socketBindingServiceName = SocketBinding.JBOSS_BINDING_NAME.append(bindingName);
+            socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
         }
         final ModelNode secureSocketBindingNode = SECURE_SOCKET_BINDING.resolveModelAttribute(context, model);
         if (secureSocketBindingNode.isDefined()) {
             final String bindingName = secureSocketBindingNode.asString();
-            secureSocketBindingServiceName = SocketBinding.JBOSS_BINDING_NAME.append(bindingName);
+            secureSocketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
         }
 
         // Log the config

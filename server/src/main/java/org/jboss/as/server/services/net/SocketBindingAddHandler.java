@@ -32,11 +32,9 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
-import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -71,18 +69,13 @@ public class SocketBindingAddHandler extends AbstractAddStepHandler {
         return op;
     }
 
-    static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
-    static final RuntimeCapability<Void> SOCKET_BINDING_CAPABILITY =
-            RuntimeCapability.Builder.of(SOCKET_BINDING_CAPABILITY_NAME, true, SocketBinding.class)
-                    .build(); // TODO require interface capability
-
     public static final SocketBindingAddHandler INSTANCE = new SocketBindingAddHandler();
 
     /**
      * Create the SocketBindingAddHandler
      */
     protected SocketBindingAddHandler() {
-        super(SOCKET_BINDING_CAPABILITY);
+        super(SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY);
     }
 
     @Override

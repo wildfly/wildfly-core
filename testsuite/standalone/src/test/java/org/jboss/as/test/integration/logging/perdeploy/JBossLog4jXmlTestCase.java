@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.logging.perdeploy;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,8 +29,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.LinkedList;
 
 import org.apache.http.HttpStatus;
+import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -78,5 +82,17 @@ public class JBossLog4jXmlTestCase extends DeploymentBaseTestCase {
         }
         Assert.assertTrue("Log file should contain line: " + traceLine, trace);
         Assert.assertTrue("Log file should contain line: " + fatalLine, fatal);
+    }
+
+    @Test
+    public void testDeploymentConfigurationResource() throws Exception {
+        final ModelNode loggingConfiguration = readDeploymentResource(DEPLOYMENT_NAME);
+        // The address should have jboss-log4j.xml
+        final LinkedList<Property> resultAddress = new LinkedList<>(Operations.getOperationAddress(loggingConfiguration).asPropertyList());
+        final String name = resultAddress.getLast().getValue().asString();
+        Assert.assertTrue("The configuration path did not include jboss-log4j.xml: " + name, name.endsWith("jboss-log4j.xml"));
+        Assert.assertTrue(loggingConfiguration.has("handler"));
+        // A log4j configuration cannot be defined in the model
+        Assert.assertFalse("No handlers should be defined", loggingConfiguration.get("handler").isDefined());
     }
 }

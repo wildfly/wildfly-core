@@ -81,7 +81,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
     public void before() throws Exception {
         bytesOs = new ByteArrayOutputStream();
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        org.jboss.aesh.console.settings.Settings.getInstance().setTerminal(new org.jboss.aesh.terminal.TestTerminal());
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         String controller =   "http-remoting://" + NetworkUtils.formatPossibleIpv6Address(System.getProperty("node0", "127.0.0.1")) + ":9990";
         ctx = CommandContextFactory.getInstance().newCommandContext(controller, null, null, System.in, bytesOs);
     }
@@ -126,10 +126,11 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         final File zippedCP = createCP(cpDir, cpId, cpElementId, patchElementId, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
         handle("patch apply " + zippedCP.getAbsolutePath());
 
+        productConfig = new ProductConfig(PRODUCT, AS_VERSION + "_CP" + cpId, "main");
+
         final String oneOff1 = "oneOff1";
         final String oneOffElement1 = "oneOff1element";
         final File oneOff1Dir = mkdir(tempDir, oneOff1);
-        //productConfig = new ProductConfig(productConfig.getProductName(), productConfig.getProductVersion() + "_CP" + cpId, "main");
         final File zippedOneOff1 = createOneOff2(oneOff1Dir, oneOff1, oneOffElement1, cpElementId, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
         handle("patch apply " + zippedOneOff1.getAbsolutePath());
 
@@ -142,7 +143,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         handle("patch info");
         Map<String, String> table = CLIPatchInfoUtil.parseTable(bytesOs.toByteArray());
         assertEquals(3, table.size());
-        assertEquals(productConfig.getProductVersion(), table.get("Version"));
+        assertEquals(AS_VERSION, table.get("Version")); // the CP didn't include the version module update
         assertEquals(cpId, table.get("Cumulative patch ID"));
         assertEquals(oneOff2 + ',' + oneOff1, table.get("One-off patches"));
 
@@ -153,7 +154,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         try {
             table = CLIPatchInfoUtil.parseTable(buf);
             assertEquals(3, table.size());
-            assertEquals(productConfig.getProductVersion(), table.get("Version"));
+            assertEquals(AS_VERSION, table.get("Version"));
             assertEquals(cpId, table.get("Cumulative patch ID"));
             assertEquals(oneOff2 + ',' + oneOff1, table.get("One-off patches"));
             // layers

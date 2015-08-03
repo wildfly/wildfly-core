@@ -174,7 +174,7 @@ public interface ServerInventory {
      *                recorded but no attempt to contact it will be made
      * @param stopping whether the process is currently stopping
      */
-    void reconnectServer(String serverName, ModelNode domainModel, byte[] authKey, boolean running, boolean stopping);
+    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping);
 
     /**
      * Reload a server with the given name.

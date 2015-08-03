@@ -29,12 +29,10 @@ import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 import java.util.Properties;
 
 import org.jboss.as.patching.Constants;
@@ -47,8 +45,8 @@ import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.patching.tool.ContentVerificationPolicy;
-import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.as.patching.tool.PatchTool;
+import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.as.version.ProductConfig;
 import org.junit.After;
 import org.junit.Assert;
@@ -65,7 +63,7 @@ public class AbstractPatchingTest {
 
     private static final String SYSTEM_TEMP_DIR = System.getProperty("java.io.tmpdir");
 
-    private File tempDir;
+    protected File tempDir;
     private ProductConfig productConfig;
     private InstallationManager installationManager;
 
@@ -92,12 +90,13 @@ public class AbstractPatchingTest {
     }
 
     protected InstallationManager loadInstallationManager() throws IOException {
-        final InstalledIdentity identity = loadInstalledIdentity(tempDir, productConfig);
-        return new InstallationManagerImpl(identity);
+        final File jbossHome = new File(tempDir, JBOSS_INSTALLATION);
+        final File modules = new File(jbossHome, MODULES);
+        return InstallationManager.load(jbossHome, Collections.singletonList(modules), Collections.emptyList(), productConfig);
     }
 
     PatchableTarget getLayer(final String layerName) {
-        return installationManager.getLayer(layerName);
+        return installationManager.getDefaultIdentity().getLayer(layerName);
     }
 
     /**
@@ -156,7 +155,8 @@ public class AbstractPatchingTest {
         final PatchTool patchTool = PatchTool.Factory.create(installationManager);
         final PatchingResult result = patchTool.applyPatch(builder.getPatchDir(), verificationPolicy);
         result.commit();
-        Assert.assertTrue(installationManager.getAllInstalledPatches().contains(patch.getPatchId()));
+        final InstalledIdentity identity = ((InstallationManagerImpl)installationManager).getInstalledIdentity(patch.getIdentity().getName(), null);
+        Assert.assertTrue(identity.getAllInstalledPatches().contains(patch.getPatchId()));
         try {
             assertions.after(installation, patch, installationManager);
         } catch (IOException e) {
@@ -189,7 +189,8 @@ public class AbstractPatchingTest {
         final PatchTool patchTool = PatchTool.Factory.create(installationManager);
         final PatchingResult result = patchTool.rollback(patchId, verificationPolicy, rollbackTo, false);
         result.commit();
-        Assert.assertFalse(installationManager.getAllInstalledPatches().contains(patch.getPatchId()));
+        final InstalledIdentity identity = installationManager.getInstalledIdentity(patch.getIdentity().getName(), null);
+        Assert.assertFalse(identity.getAllInstalledPatches().contains(patch.getPatchId()));
         try {
             assertions.after(installation, patch, installationManager);
         } catch (IOException e) {
@@ -233,12 +234,4 @@ public class AbstractPatchingTest {
             }
         }
     }
-
-    static InstalledIdentity loadInstalledIdentity(File tempDir, ProductConfig productConfig) throws IOException {
-        final File jbossHome = new File(tempDir, JBOSS_INSTALLATION);
-        final File modules = new File(jbossHome, MODULES);
-        final InstalledIdentity installedIdentity = InstalledIdentity.load(jbossHome, productConfig, modules);
-        return installedIdentity;
-    }
-
 }

@@ -14,15 +14,15 @@ import org.jboss.as.version.ProductConfig;
  *
  * @author Emanuel Muckenhuber
  */
-public abstract class InstallationManager extends InstalledIdentity {
+public abstract class InstallationManager {
 
-    /**
-     * Modify the installation.
-     *
-     * @param callback a completed callback
-     * @return the modification
-     */
-    public abstract InstallationModification modifyInstallation(ModificationCompletionCallback callback);
+    public abstract InstalledIdentity getDefaultIdentity();
+
+    public abstract List<InstalledIdentity> getInstalledIdentities() throws PatchingException;
+
+    public abstract InstalledIdentity getInstalledIdentity(String productName, String productVersion) throws PatchingException;
+
+    public abstract InstalledImage getInstalledImage();
 
     /**
      * Check whether the instance requires a restart.
@@ -173,9 +173,8 @@ public abstract class InstallationManager extends InstalledIdentity {
      * @throws IOException
      */
     public static InstallationManager load(final File jbossHome, final List<File> moduleRoots, final List<File> bundlesRoots, final ProductConfig productConfig) throws IOException {
-        final InstalledImage installedImage = installedImage(jbossHome);
-        final InstalledIdentity identity = LayersFactory.load(installedImage, productConfig, moduleRoots, bundlesRoots);
-        return new InstallationManagerImpl(identity);
+        final InstalledImage installedImage = InstalledIdentity.installedImage(jbossHome);
+        return new InstallationManagerImpl(installedImage, moduleRoots, bundlesRoots, productConfig);
     }
 
 }

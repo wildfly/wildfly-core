@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.logging.profiles;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,6 +54,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
 
     private static final String LOG_FILE_NAME = "non-existing-profile-test.log";
+    private static final String RUNTIME_NAME = "test-logging.jar";
     private static final Path loggingTestLog = Paths.get(resolveRelativePath("jboss.server.log.dir"), LOG_FILE_NAME);
 
     static class NonExistingProfileTestCaseSetup implements ServerSetupTask {
@@ -100,7 +101,7 @@ public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
 
     @BeforeClass
     public static void deploy() throws Exception {
-        deploy(createDeployment(Collections.singletonMap("Logging-Profile", "non-existing-profile")), "test-logging.jar");
+        deploy(createDeployment(Collections.singletonMap("Logging-Profile", "non-existing-profile")), RUNTIME_NAME);
     }
 
     @AfterClass
@@ -141,5 +142,17 @@ public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
             }
         }
         Assert.assertTrue(logFound);
+    }
+
+    @Test
+    public void testDeploymentConfigurationResource() throws Exception {
+        // Get the resulting model
+        final ModelNode loggingConfiguration = readDeploymentResource(RUNTIME_NAME, "default");
+
+        Assert.assertTrue("No logging subsystem resource found on the deployment", loggingConfiguration.isDefined());
+
+        // Check the handler exists on the configuration
+        final ModelNode handler = loggingConfiguration.get("handler", "CONSOLE");
+        Assert.assertTrue("The CONSOLE handler was not found effective configuration", handler.isDefined());
     }
 }

@@ -303,7 +303,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
                 .setDescription(randomString());
         if (cp) {
             patchBuilder = patchBuilder.
-                    upgradeIdentity(productConfig.getProductName(), productConfig.getProductVersion(), productConfig.getProductVersion() + "_CP" + patchID).
+                    upgradeIdentity(productConfig.getProductName(), productConfig.getProductVersion(), PatchingTestUtil.AS_VERSION + "_CP" + patchID).
                     getParent().
                     upgradeElement(patchElementId, "base", false).
                     addContentModification(moduleModified).
@@ -328,6 +328,9 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         try {
             Assert.assertTrue("Patch should be accepted", CliUtilsForPatching.applyPatch(zippedPatch.getAbsolutePath()));
             Assert.assertTrue("server should be in restart-required mode", CliUtilsForPatching.doesServerRequireRestart());
+            if(cp) {
+                productConfig = new ProductConfig(PatchingTestUtil.PRODUCT, PatchingTestUtil.AS_VERSION + "_CP" + patchID, "main");
+            }
         } finally {
             controller.stop();
         }

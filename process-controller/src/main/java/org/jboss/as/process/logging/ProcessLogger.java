@@ -486,7 +486,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return an {@link IllegalArgumentException} for the error.
      */
-    @Message(id = 25, value = "Authentication key must be 16 bytes long")
+    @Message(id = 25, value = "Authentication key must be 24 bytes long")
     IllegalArgumentException invalidAuthKeyLen();
 
     /**

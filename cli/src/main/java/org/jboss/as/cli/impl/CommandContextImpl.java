@@ -67,8 +67,15 @@ import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import javax.security.sasl.SaslException;
 
+import org.jboss.aesh.console.AeshConsoleCallback;
+import org.jboss.aesh.console.ConsoleCallback;
+import org.jboss.aesh.console.ConsoleOperation;
+import org.jboss.aesh.console.Process;
+import org.jboss.aesh.console.helper.InterruptHook;
 import org.jboss.aesh.console.settings.FileAccessPermission;
 import org.jboss.aesh.console.settings.Settings;
+import org.jboss.aesh.console.settings.SettingsBuilder;
+import org.jboss.aesh.edit.actions.Action;
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliEvent;
 import org.jboss.as.cli.CliEventListener;
@@ -252,6 +259,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private CliShutdownHook.Handler shutdownHook;
 
+    private InterruptHook interruptHook;
+
     /** command line handling redirection */
     private CommandLineRedirectionRegistration redirection;
 
@@ -261,8 +270,14 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private final CLIPrintStream cliPrintStream;
 
     // Store a ref to the default input stream aesh will use before we do any manipulation of stdin
-    private InputStream stdIn = Settings.getInstance().getInputStream();
+    private InputStream stdIn = new SettingsBuilder().create().getInputStream();
     private boolean uninstallIO;
+
+    private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
+
+
+    // If the CLI is not in interact mode, act like there is no console.
+    private boolean interact = false;
 
     /**
      * Version mode - only used when --version is called from the command line.
@@ -349,29 +364,103 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     protected void initBasicConsole(InputStream consoleInput) throws CliInitializationException {
-        copyConfigSettingsToConsole(consoleInput);
-        setConfigDefaultsToConsole();
-        this.console = Console.Factory.getConsole(this);
+        Settings settings = createSettings(consoleInput);
+        this.console = Console.Factory.getConsole(this, settings);
+        console.setCallback(initCallback());
+        console.start();
     }
 
-    private void copyConfigSettingsToConsole(InputStream consoleInput) {
+    private ConsoleCallback initCallback() {
+        return new CLIAeshConsoleCallback() {
 
-        Settings.getInstance().setInputStream(consoleInput == null ? stdIn : consoleInput);
-        Settings.getInstance().setStdOut(cliPrintStream);
+            @Override
+            public int execute(ConsoleOperation output) throws InterruptedException {
+                // Track the active process
+                setActiveProcess(true);
 
-        Settings.getInstance().setHistoryDisabled(!config.isHistoryEnabled());
-        Settings.getInstance().setHistoryFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
-        Settings.getInstance().setHistorySize(config.getHistoryMaxSize());
-        Settings.getInstance().setEnablePipelineAndRedirectionParser(false);
+                try {
+                    // Actual work stuff
+                    if (cmdCompleter == null) {
+                        throw new IllegalStateException("The console hasn't been initialized at construction time.");
+                    }
+                    if (output.getBuffer() == null)
+                        terminateSession();
+                    else {
+                        handleSafe(output.getBuffer().trim());
+                        if (client == null && !terminate) {
+                            printLine("You are disconnected at the moment. Type 'connect' to connect to the server or" +
+                                    " 'help' for the list of supported commands.");
+                        }
+                        if (!terminate && interact)
+                            console.setPrompt(getPrompt());
+                    }
+                    return 0;
+
+                }finally{
+                    setActiveProcess(false);
+                }
+            }
+
+        };
     }
 
-    private void setConfigDefaultsToConsole(){
+    abstract class CLIAeshConsoleCallback extends AeshConsoleCallback{
+
+        private Process process;
+
+        public boolean hasActiveProcess() {
+            return activeProcess;
+        }
+
+        public void setActiveProcess(boolean activeProcess) {
+            this.activeProcess = activeProcess;
+        }
+
+        private boolean activeProcess = false;
+
+        @Override
+        public void setProcess(org.jboss.aesh.console.Process process){
+            this.process = process;
+        }
+
+        public int getProcessPID(){
+            return process.getPID();
+        }
+    }
+
+    private Settings createSettings(InputStream consoleInput) {
+        SettingsBuilder settings = new SettingsBuilder();
+        if(consoleInput != null) {
+            settings.inputStream(consoleInput);
+        }
+        settings.outputStream(cliPrintStream);
+
+        settings.disableHistory(!config.isHistoryEnabled());
+        settings.historyFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
+        settings.historySize(config.getHistoryMaxSize());
+
         // Modify Default History File Permissions
         FileAccessPermission permissions = new FileAccessPermission();
         permissions.setReadableOwnerOnly(true);
         permissions.setWritableOwnerOnly(true);
-        Settings.getInstance().setHistoryFilePermission(permissions);
+        settings.historyFilePermission(permissions);
 
+        settings.parseOperators(false);
+
+        settings.interruptHook(
+                interruptHook = new InterruptHook() {
+                    @Override
+                    public void handleInterrupt(org.jboss.aesh.console.Console console, Action action) {
+                        if(shutdownHook != null ){
+                            shutdownHook.shutdown();
+                        }else {
+                            terminateSession();
+                        }
+                    }
+                }
+        );
+
+        return settings.create();
     }
 
     private void initStdIO() {
@@ -576,15 +665,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      * own definition for GSSAPI.
      */
     private void initJaasConfig() {
-        Configuration coreConfig = null;
+        // create the wrapper only once to avoid memory leak
+        if (jaasConfigurationWrapper == null) {
+            Configuration coreConfig = null;
 
-        try {
-            coreConfig = SecurityActions.getGlobalJaasConfiguration();
-        } catch (SecurityException e) {
-            log.debug("Unable to obtain default configuration", e);
+            try {
+                coreConfig = SecurityActions.getGlobalJaasConfiguration();
+            } catch (SecurityException e) {
+                log.debug("Unable to obtain default configuration", e);
+            }
+
+            jaasConfigurationWrapper = new JaasConfigurationWrapper(coreConfig);
+            SecurityActions.setGlobalJaasConfiguration(jaasConfigurationWrapper);
         }
-
-        SecurityActions.setGlobalJaasConfiguration(new JaasConfigurationWrapper(coreConfig));
     }
 
     @Override
@@ -705,12 +798,14 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     @Override
     public void terminateSession() {
         if(!terminate) {
-            terminate = true;
             disconnectController();
             restoreStdIO();
+            if(console != null)
+                console.stop();
             if (shutdownHook != null) {
                 CliShutdownHook.remove(shutdownHook);
             }
+            terminate = true;
         }
     }
 
@@ -760,28 +855,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         printLine(message);
     }
 
-    private String readLine(String prompt, boolean password, boolean disableHistory) throws CommandLineException {
+    private String readLine(String prompt, boolean password) throws CommandLineException {
+
         if (console == null) {
             initBasicConsole(null);
         }
 
-        boolean useHistory = console.isUseHistory();
-        if (useHistory && disableHistory) {
-            console.setUseHistory(false);
+        if (password) {
+            return console.readLine(prompt, (char) 0x00);
+        } else {
+            return console.readLine(prompt);
         }
-        try {
-            if (password) {
-                return console.readLine(prompt, (char) 0x00);
-            } else {
-                return console.readLine(prompt);
-            }
 
-        } finally {
-            if (disableHistory && useHistory) {
-                console.setUseHistory(true);
-            }
-        }
     }
+
 
     @Override
     public void printColumns(Collection<String> col) {
@@ -995,12 +1082,14 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         for (;;) {
             String response;
             if (trustManager.isModifyTrustStore()) {
-                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermenantly : ", false, true);
+                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermenantly : ", false);
             } else {
-                response = readLine("Accept certificate? [N]o, [T]emporarily : ", false, true);
+                response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
             }
 
-            if (response != null && response.length() == 1) {
+            if (response == null)
+                return false;
+            else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
                         return false;
@@ -1171,6 +1260,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandHistory getHistory() {
+        if( !interact ){
+            return null;
+        }
+
         if(console == null) {
             try {
                 initBasicConsole(null);
@@ -1299,6 +1392,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void interact() {
+        interact = true;
         if(cmdCompleter == null) {
             throw new IllegalStateException("The console hasn't been initialized at construction time.");
         }
@@ -1308,18 +1402,14 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     + " 'help' for the list of supported commands.");
         }
 
-        try {
-            while (!isTerminated()) {
-                final String line = console.readLine(getPrompt());
-                if (line == null) {
-                    terminateSession();
-                } else {
-                    handleSafe(line.trim());
-                }
+        console.setPrompt(getPrompt());
+
+        while(!isTerminated()){
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            printLine("");
-        } catch (Throwable t) {
-            t.printStackTrace();
         }
     }
 
@@ -1373,6 +1463,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public int getTerminalWidth() {
+        if( !interact ){
+            return 0;
+        }
+
         if(console == null) {
             try {
                 this.initBasicConsole(null);
@@ -1386,6 +1480,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public int getTerminalHeight() {
+        if( !interact ){
+            return 0;
+        }
+
         if(console == null) {
             try {
                 this.initBasicConsole(null);
@@ -1507,18 +1605,14 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     NameCallback ncb = (NameCallback) current;
                     if (username == null) {
                         showRealm();
-                        final boolean completionEnabled = console.isCompletionEnabled();
-                        if(completionEnabled) {
-                            console.setCompletionEnabled(false);
-                        }
                         try {
-                            username = readLine("Username: ", false, true);
+                            console.setCompletion(false);
+                            console.getHistory().setUseHistory(false);
+                            username = readLine("Username: ", false);
+                            console.getHistory().setUseHistory(true);
+                            console.setCompletion(true);
                         } catch (CommandLineException e) {
                             throw new IOException("Failed to read username.", e);
-                        } finally {
-                            if (completionEnabled) {
-                                console.setCompletionEnabled(true);
-                            }
                         }
                         if (username == null || username.length() == 0) {
                             throw new SaslException("No username supplied.");
@@ -1531,19 +1625,15 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     PasswordCallback pcb = (PasswordCallback) current;
                     if (password == null) {
                         showRealm();
-                        final boolean completionEnabled = console.isCompletionEnabled();
-                        if(completionEnabled) {
-                            console.setCompletionEnabled(false);
-                        }
                         String temp;
                         try {
-                            temp = readLine("Password: ", true, false);
+                            console.setCompletion(false);
+                            console.getHistory().setUseHistory(false);
+                            temp = readLine("Password: ", true);
+                            console.getHistory().setUseHistory(true);
+                            console.setCompletion(true);
                         } catch (CommandLineException e) {
                             throw new IOException("Failed to read password.", e);
-                        } finally {
-                            if (completionEnabled) {
-                                console.setCompletionEnabled(true);
-                            }
                         }
                         if (temp != null) {
                             password = temp.toCharArray();

@@ -18,8 +18,14 @@
 * License along with this software; if not, write to the Free
 * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ */
 package org.jboss.as.controller.persistence;
+
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -28,8 +34,14 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Arrays;
 import java.util.Collections;
-
+import java.util.HashSet;
+import java.util.Set;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -37,6 +49,19 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.xnio.IoUtils;
+
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
+
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryFlag;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -321,12 +346,12 @@ public class PersistanceResourceTestCase {
         checkFiles(null, "Four", "boot", "Four", "Four");
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testPersistentBadRawName() {
         new ConfigurationFile(standardDir, "standard.xml", "crap.xml", true);
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testPersistentNameFromOutsideConfigDirectory() throws Exception {
         File file = createFile(externalDir, "standard.xml", "test");
         ConfigurationFile configurationFile = new ConfigurationFile(standardDir, "standard.xml", file.getAbsolutePath(), true);
@@ -369,7 +394,6 @@ public class PersistanceResourceTestCase {
         store(persister, "Four");
         checkFiles(null, "std", "std", "std", "Four", "std");
     }
-
 
     @Test
     public void testOtherNonPersistentConfigurationFile() throws Exception {
@@ -562,7 +586,7 @@ public class PersistanceResourceTestCase {
         checkFiles(null, "std", "boot", "Four", "Four");
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testNonPersistentBadRawName() {
         new ConfigurationFile(standardDir, "standard.xml", "crap.xml", false);
     }
@@ -616,6 +640,97 @@ public class PersistanceResourceTestCase {
         assertFileContents(externalFile, "ext2");
     }
 
+    @Test
+    public void testPosixFilePermissions() throws Exception {
+        assertFileContents(standardFile, "std");
+        if (!Files.getFileStore(standardFile.toPath()).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            return;
+        }
+        PosixFileAttributeView posixStandardFileView = Files.getFileAttributeView(standardFile.toPath(), PosixFileAttributeView.class);
+        assert posixStandardFileView != null;
+        Set<PosixFilePermission> readWritePermissions = new HashSet<>(Arrays.asList(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, OTHERS_READ));
+        //Setting 761 on the file
+        posixStandardFileView.setPermissions(readWritePermissions);
+        ConfigurationFile configurationFile = new ConfigurationFile(standardDir, "standard.xml", standardFile.getCanonicalPath(), false);
+        File bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(standardFile.getCanonicalPath(), bootingFile.getCanonicalPath());
+        Path testPermissions = Files.createFile(standardDir.toPath().resolve("TestPermissions.tmp"));
+        PosixFileAttributeView posixDefaultCreatedFilePermissionView = Files.getFileAttributeView(testPermissions, PosixFileAttributeView.class);
+        assert posixDefaultCreatedFilePermissionView != null;
+        Set<PosixFilePermission> defaultPermissions = posixDefaultCreatedFilePermissionView.readAttributes().permissions();
+        assertThat(defaultPermissions, hasItem(OWNER_READ));
+        assertThat(defaultPermissions, hasItem(OWNER_WRITE));
+        assertThat(defaultPermissions, not(hasItem(OWNER_EXECUTE)));
+        Files.delete(testPermissions);
+        configurationFile.successfulBoot();
+        Set<PosixFilePermission> configurationFilePemissions = posixStandardFileView.readAttributes().permissions();
+        assertThat(configurationFilePemissions, hasItem(OWNER_READ));
+        assertThat(configurationFilePemissions, hasItem(OWNER_WRITE));
+        assertThat(configurationFilePemissions, hasItem(OWNER_EXECUTE));
+    }
+
+    @Test
+    public void testAclFilePermissions() throws Exception {
+        assertFileContents(standardFile, "std");
+        if (!Files.getFileStore(standardFile.toPath()).supportsFileAttributeView(AclFileAttributeView.class)) {
+            return;
+        }
+        AclFileAttributeView aclStandardFileView = Files.getFileAttributeView(standardFile.toPath(), AclFileAttributeView.class);
+        assert aclStandardFileView != null;
+        List<AclEntry> aclEntries = aclStandardFileView.getAcl();
+        List<AclEntry> readWritePermissions = new ArrayList<>(aclEntries.size());
+        UserPrincipal owner = aclStandardFileView.getOwner();
+        //Setting execute permissions on the file
+        for(AclEntry entry : aclEntries) {
+            if(entry.principal().equals(owner)) {
+                readWritePermissions.add(createConfigurationAccessACLEntry(entry.principal()));
+            } else {
+                readWritePermissions.add(entry);
+            }
+        }
+        aclStandardFileView.setAcl(readWritePermissions);
+        ConfigurationFile configurationFile = new ConfigurationFile(standardDir, "standard.xml", standardFile.getCanonicalPath(), false);
+        File bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(standardFile.getCanonicalPath(), bootingFile.getCanonicalPath());
+        Path testPermissions = Files.createFile(standardDir.toPath().resolve("TestPermissions.tmp"));
+        AclFileAttributeView aclDefaultCreatedFilePermissionView = Files.getFileAttributeView(testPermissions, AclFileAttributeView.class);
+        assert aclDefaultCreatedFilePermissionView != null;
+        List<AclEntry> defaultPermissions = aclDefaultCreatedFilePermissionView.getAcl();
+        for(AclEntry entry : defaultPermissions) {
+            if(entry.principal().equals(aclDefaultCreatedFilePermissionView.getOwner())) {
+                assertThat(entry.toString(), entry.permissions(), hasItem(AclEntryPermission.WRITE_OWNER));
+            }
+        }
+        Files.delete(testPermissions);
+        configurationFile.successfulBoot();
+        List<AclEntry> configurationFilePemissions = aclStandardFileView.getAcl();
+         for(AclEntry entry : configurationFilePemissions) {
+            if(entry.principal().equals(owner)) {
+                 assertThat(entry.toString(),entry.permissions(), not(hasItem(AclEntryPermission.WRITE_OWNER)));
+            }
+        }
+    }
+
+    private AclEntry createConfigurationAccessACLEntry(UserPrincipal user) {
+        AclEntry entry = AclEntry
+                .newBuilder()
+                .setType(AclEntryType.ALLOW)
+                .setPrincipal(user)
+                .setPermissions(
+                        AclEntryPermission.WRITE_NAMED_ATTRS,
+                        AclEntryPermission.WRITE_DATA,
+                        AclEntryPermission.WRITE_ATTRIBUTES,
+                        AclEntryPermission.READ_ATTRIBUTES,
+                        AclEntryPermission.APPEND_DATA,
+                        AclEntryPermission.READ_DATA,
+                        AclEntryPermission.READ_NAMED_ATTRS,
+                        AclEntryPermission.READ_ACL,
+                        AclEntryPermission.SYNCHRONIZE,
+                        AclEntryPermission.DELETE)
+                .setFlags(AclEntryFlag.FILE_INHERIT)
+                .build();
+        return entry;
+    }
 
     @Test
     public void testNonPersistentReload() throws Exception {
@@ -663,7 +778,7 @@ public class PersistanceResourceTestCase {
         return builder.toString();
     }
 
-    private void checkFiles(String mainFileName, String main, String initial, String boot, String last, String...versions) throws Exception {
+    private void checkFiles(String mainFileName, String main, String initial, String boot, String last, String... versions) throws Exception {
         File mainFile = this.standardFile;
         File bootFile = this.bootFile;
         File lastFile = this.lastFile;
@@ -714,6 +829,7 @@ public class PersistanceResourceTestCase {
         Assert.assertTrue(dir + " does not exist", dir.exists());
         Assert.assertTrue(dir + " is not a directory", dir.isDirectory());
     }
+
     private void delete(File file) {
         if (file.isDirectory()) {
             for (String name : file.list()) {
@@ -741,8 +857,8 @@ public class PersistanceResourceTestCase {
         Assert.assertEquals(expectedContents, sb.toString());
     }
 
-    private void checkVersionedHistory(String name, String...versions) throws Exception {
-        for (int i = 0 ; i <= versions.length ; i++) {
+    private void checkVersionedHistory(String name, String... versions) throws Exception {
+        for (int i = 0; i <= versions.length; i++) {
             File file = new File(currentHistoryDir, name + ".v" + (i + 1) + ".xml");
             if (i == versions.length) {
                 Assert.assertFalse(file.exists());
@@ -752,8 +868,8 @@ public class PersistanceResourceTestCase {
         }
     }
 
-
     private class TestFileResourcePersister extends TestConfigurationPersister {
+
         private final File fileName;
 
         public TestFileResourcePersister(File fileName) {
@@ -766,8 +882,8 @@ public class PersistanceResourceTestCase {
         }
     }
 
-
     private class TestConfigurationFilePersister extends TestConfigurationPersister {
+
         private final ConfigurationFile configurationFile;
 
         public TestConfigurationFilePersister(ConfigurationFile configurationFile) {

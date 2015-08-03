@@ -48,6 +48,23 @@ public interface CapabilityReferenceRecorder {
     void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
 
     /**
+     * @return base name of dependant, usually name of the attribute that provides reference to capability
+     */
+    String getBaseDependentName();
+
+    /**
+     *
+     * @return requirement name of the capability this reference depends on
+     */
+    String getBaseRequirementName();
+
+    /**
+     *
+     * @return tells is reference is dynamic or static, in case where it is dynamic it uses base name + name of dependant attribute to construct name of capability
+     */
+    boolean isDynamicDependent();
+
+    /**
      * Default implementation of {@link org.jboss.as.controller.CapabilityReferenceRecorder}.
      * Derives the required capability name from the {@code baseRequirementName} provided to the constructor and from
      * the attribute value. Derives the dependent capability name from the {@code baseDependentName} provided to the
@@ -106,5 +123,21 @@ public interface CapabilityReferenceRecorder {
         protected String getDynamicDependentName(PathAddress currentAddress) {
             return currentAddress.getLastElement().getValue();
         }
+
+        @Override
+        public String getBaseDependentName() {
+            return baseDependentName;
+        }
+
+        @Override
+        public String getBaseRequirementName() {
+            return baseRequirementName;
+        }
+
+        @Override
+        public boolean isDynamicDependent() {
+            return dynamicDependent;
+        }
+
     }
 }

@@ -397,5 +397,9 @@ class LayersFactory {
             return LayerInfo.loadTargetInfoFromDisk(getDirectoryStructure());
         }
 
+        @Override
+        public File getInstallationInfo() {
+            return new File(getPatchesMetadata(), getName() + Constants.DOT_CONF);
+        }
     }
 }

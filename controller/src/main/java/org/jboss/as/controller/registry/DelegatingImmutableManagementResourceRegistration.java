@@ -31,6 +31,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 
 /**
@@ -162,5 +163,10 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public Set<String> getOrderedChildTypes() {
         return delegate.getOrderedChildTypes();
+    }
+
+    @Override
+    public Set<Capability> getCapabilities() {
+        return delegate.getCapabilities();
     }
 }

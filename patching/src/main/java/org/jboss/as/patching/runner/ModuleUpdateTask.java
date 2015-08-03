@@ -22,11 +22,16 @@
 
 package org.jboss.as.patching.runner;
 
+import static org.jboss.as.patching.IoUtils.copy;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.IoUtils;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.ModificationType;
 import org.jboss.as.patching.metadata.ModuleItem;
@@ -43,12 +48,49 @@ class ModuleUpdateTask extends AbstractModuleTask {
     }
 
     @Override
+    public boolean prepare(final PatchingTaskContext context) throws IOException {
+        // Backup
+        backupHash = backup(context);
+        // If the content is already present just resolve any conflict automatically
+        final byte[] contentHash = contentItem.getContentHash();
+        if(Arrays.equals(backupHash, contentHash)) {
+            return true;
+        }
+        // See if the content matches our expected target
+        final byte[] expected = description.getModification().getTargetHash();
+        if(Arrays.equals(backupHash, expected)) {
+            // Don't resolve conflicts from the history
+            return ! description.hasConflicts();
+        }
+        // System.out.println("ModuleUpdateTask.prepare " + description.getModificationType() + " backup " + (backupHash == IoUtils.NO_CONTENT));
+        // the problem here appears for compact CPs when a module at some point was added then removed and then re-added
+        // re-adding will be MODIFY because the removed module will exist on the FS but will be marked as absent in its module.xml
+        // so applying re-add (MODIFY) to the version where the module didn't exist will fail
+        return false;
+    }
+
+    @Override
     byte[] apply(PatchingTaskContext context, PatchContentLoader loader) throws IOException {
         // Copy the new module resources to the patching directory
         final File targetDir = context.getTargetFile(contentItem);
         final File sourceDir = loader.getFile(contentItem);
-        // Recursively copy module contents (incl. native libs)
-        IoUtils.copyFile(sourceDir, targetDir);
+        if(sourceDir.exists()) {
+            // Recursively copy module contents (incl. native libs)
+            IoUtils.copyFile(sourceDir, targetDir);
+        } else { // ADD an absent module
+            // this situation happens when merging ADD and REMOVE modifications
+            // which results in an ADD of an absent module
+            if(!targetDir.exists() && ! targetDir.mkdirs()) {
+                throw PatchLogger.ROOT_LOGGER.cannotCreateDirectory(targetDir.getAbsolutePath());
+            }
+            final File moduleXml = new File(targetDir, MODULE_XML);
+            final ByteArrayInputStream is = new ByteArrayInputStream(PatchUtils.getAbsentModuleContent(contentItem));
+            try {
+                return copy(is, moduleXml);
+            } finally {
+                IoUtils.safeClose(is);
+            }
+        }
         // return contentItem.getContentHash();
         return HashUtils.hashFile(targetDir);
     }

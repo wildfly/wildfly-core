@@ -29,24 +29,22 @@ import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerService;
-import org.jboss.as.patching.installation.InstalledImage;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.Layer;
 import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.patching.tool.PatchingHistory;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * This handler removes the part of the history which is inactive.
  *
  * @author Alexey Loubyansky
  */
-public class LocalAgeoutHistoryHandler implements OperationStepHandler {
+public class LocalAgeoutHistoryHandler extends PatchStreamResourceOperationStepHandler {
 
     public static final LocalAgeoutHistoryHandler INSTANCE = new LocalAgeoutHistoryHandler();
 
@@ -68,20 +66,31 @@ public class LocalAgeoutHistoryHandler implements OperationStepHandler {
     };
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    protected void execute(OperationContext context, ModelNode operation, InstallationManager instMgr, String patchStream) throws OperationFailedException {
+        try {
+            if (patchStream != null) {
+                final InstalledIdentity installedIdentity = instMgr.getInstalledIdentity(patchStream, null);
+                ageOutHistory(installedIdentity);
+            } else {
+                for (InstalledIdentity installedIdentity : instMgr.getInstalledIdentities()) {
+                    ageOutHistory(installedIdentity);
+                }
+            }
+        } catch (PatchingException e) {
+            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+        }
+        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+    }
 
-        context.acquireControllerLock();
-        final ServiceController<?> mgrService = context.getServiceRegistry(true).getRequiredService(InstallationManagerService.NAME);
-        final InstallationManager mgr = (InstallationManager) mgrService.getValue();
-        InstalledImage installedImage = mgr.getInstalledImage();
+    protected void ageOutHistory(final InstalledIdentity installedIdentity) {
+
         final PatchableTarget.TargetInfo info;
         try {
-            info = mgr.getIdentity().loadTargetInfo();
+            info = installedIdentity.getIdentity().loadTargetInfo();
         } catch (IOException e) {
-            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
         }
-
-        final PatchingHistory.Iterator i = PatchingHistory.Factory.iterator(mgr, info);
+        final PatchingHistory.Iterator i = PatchingHistory.Factory.iterator(installedIdentity, info);
         if(i.hasNextCP()) {
             i.nextCP();
             // everything else down to the base is inactive
@@ -90,9 +99,12 @@ public class LocalAgeoutHistoryHandler implements OperationStepHandler {
                 final Map<String, String> layerPatches = entry.getLayerPatches();
                 if(!layerPatches.isEmpty()) {
                     for(String layerName : layerPatches.keySet()) {
-                        final Layer layer = mgr.getLayer(layerName);
+                        final Layer layer = installedIdentity.getLayer(layerName);
                         if(layer == null) {
-                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.layerNotFound(layerName));
+                            // if an identity is missing a layer that means either it was re-configured and the layer was removed
+                            // or the layer in the patch is optional and may be missing on the disk
+                            // we haven't had this case yet, not sure how critical this is to terminate the process of cleaning up
+                            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.layerNotFound(layerName));
                         }
                         final File patchDir = layer.getDirectoryStructure().getModulePatchDirectory(layerPatches.get(layerName));
                         if(patchDir.exists()) {
@@ -100,13 +112,12 @@ public class LocalAgeoutHistoryHandler implements OperationStepHandler {
                         }
                     }
                 }
-                final File patchHistoryDir = installedImage.getPatchHistoryDir(entry.getPatchId());
+                final File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(entry.getPatchId());
                 if(patchHistoryDir.exists()) {
                     recursiveDelete(patchHistoryDir, HISTORY_FILTER);
                 }
             }
         }
-        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
     static boolean recursiveDelete(final File root) {

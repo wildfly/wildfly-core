@@ -284,7 +284,6 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(ValidateAddressOperationHandler.DEFINITION, ValidateAddressOperationHandler.INSTANCE);
 
         resourceRegistration.registerOperationHandler(ResolveExpressionOnDomainHandler.DEFINITION, ResolveExpressionOnDomainHandler.INSTANCE);
-
         DomainServerLifecycleHandlers.registerDomainHandlers(resourceRegistration);
     }
 
@@ -332,7 +331,6 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
 
         // Initialize the domain transformers
         DomainTransformers.initializeDomainRegistry(extensionRegistry.getTransformerRegistry());
-
     }
 
     public void initialize(ManagementResourceRegistration resourceRegistration) {

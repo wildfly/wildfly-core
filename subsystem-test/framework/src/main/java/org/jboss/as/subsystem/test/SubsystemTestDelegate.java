@@ -68,6 +68,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -123,8 +124,7 @@ final class SubsystemTestDelegate {
     private static final String TEST_NAMESPACE = "urn.org.jboss.test:1.0";
 
     private static final ModelNode SUCCESS;
-    static
-    {
+    static{
         SUCCESS = new ModelNode();
         SUCCESS.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
         SUCCESS.get(ModelDescriptionConstants.RESULT);
@@ -1107,6 +1107,16 @@ final class SubsystemTestDelegate {
         @Override
         public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
 
+        }
+
+        @Override
+        public void registerCapability(Capability capability) {
+
+        }
+
+        @Override
+        public Set<Capability> getCapabilities() {
+            return Collections.emptySet();
         }
 
         @Override

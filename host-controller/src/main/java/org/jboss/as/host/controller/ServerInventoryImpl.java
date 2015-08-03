@@ -22,7 +22,6 @@
 
 package org.jboss.as.host.controller;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
@@ -37,7 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -63,6 +62,7 @@ import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
@@ -185,9 +185,9 @@ public class ServerInventoryImpl implements ServerInventory {
         }
         if(server == null) {
             // Create a new authKey
-            final byte[] authKey = new byte[16];
-            new Random(new SecureRandom().nextLong()).nextBytes(authKey);
-            removeNullChar(authKey);
+            final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
+            new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
+            String authKey = Base64.getEncoder().encodeToString(authBytes);
             // Create the managed server
             final ManagedServer newServer = createManagedServer(serverName, authKey);
             server = servers.putIfAbsent(serverName, newServer);
@@ -258,7 +258,7 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public void reconnectServer(final String serverName, final ModelNode domainModel, final byte[] authKey, final boolean running, final boolean stopping) {
+    public void reconnectServer(final String serverName, final ModelNode domainModel, final String authKey, final boolean running, final boolean stopping) {
         if(shutdown || connectionFinished) {
             throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
         }
@@ -611,7 +611,7 @@ public class ServerInventoryImpl implements ServerInventory {
         }
     }
 
-    private ManagedServer createManagedServer(final String serverName, final byte[] authKey) {
+    private ManagedServer createManagedServer(final String serverName, final String authKey) {
         final String hostControllerName = domainController.getLocalHostInfo().getLocalHostName();
         // final ManagedServerBootConfiguration configuration = combiner.createConfiguration();
         final Map<PathAddress, ModelVersion> subsystems = TransformerRegistry.resolveVersions(extensionRegistry);
@@ -674,8 +674,6 @@ public class ServerInventoryImpl implements ServerInventory {
                     return;
                 }
 
-                final String password = new String(server.getAuthKey(), UTF_8);
-
                 // Second Pass - Now iterate the Callback(s) requiring a response.
                 for (Callback current : toRespondTo) {
                     if (current instanceof AuthorizeCallback) {
@@ -683,10 +681,10 @@ public class ServerInventoryImpl implements ServerInventory {
                         // Don't support impersonating another identity
                         authorizeCallback.setAuthorized(authorizeCallback.getAuthenticationID().equals(authorizeCallback.getAuthorizationID()));
                     } else if (current instanceof PasswordCallback) {
-                        ((PasswordCallback) current).setPassword(password.toCharArray());
+                        ((PasswordCallback) current).setPassword(server.getAuthKey().toCharArray());
                     } else if (current instanceof VerifyPasswordCallback) {
                         VerifyPasswordCallback vpc = (VerifyPasswordCallback) current;
-                        vpc.setVerified(Arrays.equals(password.getBytes(UTF_8), vpc.getPassword().getBytes(UTF_8)));
+                        vpc.setVerified(server.getAuthKey().equals(vpc.getPassword()));
                     } else if (current instanceof DigestHashCallback) {
                         DigestHashCallback dhc = (DigestHashCallback) current;
                         try {
@@ -694,7 +692,7 @@ public class ServerInventoryImpl implements ServerInventory {
                             if (userName == null || realm == null) {
                                 throw HostControllerLogger.ROOT_LOGGER.insufficientInformationToGenerateHash();
                             }
-                            dhc.setHash(uph.generateHashedURP(userName, realm, password.toCharArray()));
+                            dhc.setHash(uph.generateHashedURP(userName, realm, server.getAuthKey().toCharArray()));
                         } catch (NoSuchAlgorithmException e) {
                             throw HostControllerLogger.ROOT_LOGGER.unableToGenerateHash(e);
                         }
@@ -703,13 +701,5 @@ public class ServerInventoryImpl implements ServerInventory {
 
             }
         };
-    }
-
-    static void removeNullChar(byte[] authKey) {
-        for(int i =0; i < authKey.length; i++) {
-            if(authKey[i] == 0x00) {
-                authKey[i] = 0x01;
-            }
-        }
     }
 }

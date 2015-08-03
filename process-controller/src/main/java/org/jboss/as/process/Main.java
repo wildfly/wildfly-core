@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -48,7 +49,6 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.modules.Module;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * The main entry point for the process controller.
@@ -209,7 +209,11 @@ public final class Main {
         InetSocketAddress pcInetSocketAddress = new InetSocketAddress(pcInetAddress, pcSocketConfig.getBindPort());
         configuration.setBindAddress(pcInetSocketAddress);
         configuration.setSocketFactory(ServerSocketFactory.getDefault());
-        final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("ProcessController-threads"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+        final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+            public JBossThreadFactory run() {
+                return new JBossThreadFactory(new ThreadGroup("ProcessController-threads"), Boolean.FALSE, null, "%G - %t", null, null);
+            }
+        });
         configuration.setThreadFactory(threadFactory);
         configuration.setReadExecutor(Executors.newCachedThreadPool(threadFactory));
 

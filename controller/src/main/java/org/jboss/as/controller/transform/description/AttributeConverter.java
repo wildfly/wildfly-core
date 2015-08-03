@@ -21,6 +21,7 @@
  */
 package org.jboss.as.controller.transform.description;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.TransformationContext;
@@ -84,6 +85,26 @@ public interface AttributeConverter {
          * @param context the context of the transformation
          */
         protected abstract void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context);
+    }
+
+    /**
+     * Converter for an exist attribute whose default value has changed.
+     * @author Paul Ferraro
+     */
+    public class DefaultValueAttributeConverter extends DefaultAttributeConverter {
+
+        private final AttributeDefinition attribute;
+
+        public DefaultValueAttributeConverter(AttributeDefinition attribute) {
+            this.attribute = attribute;
+        }
+
+        @Override
+        protected void convertAttribute(PathAddress address, String name, ModelNode value, TransformationContext context) {
+            if (!value.isDefined()) {
+                value.set(this.attribute.getDefaultValue());
+            }
+        }
     }
 
     /**

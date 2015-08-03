@@ -64,18 +64,6 @@ public class CapabilityId {
         return context;
     }
 
-    /**
-     * Gets whether a capability with this id can satisfy a requirement represented by another id.
-     *
-     * @param other the other id. Cannot be {@code null}
-     * @return {@code true} if this id has the same name as the other id, and if this id's context
-     *           {@link org.jboss.as.controller.capability.registry.CapabilityContext#canSatisfyRequirements(CapabilityContext) can satisfy requirements}
-     *           for the other id's context
-     */
-    public boolean canSatisfyRequirements(CapabilityId other) {
-        return name.equals(other.name) && context.canSatisfyRequirements(other.getContext());
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

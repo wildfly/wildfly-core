@@ -133,8 +133,7 @@ public class StartServersHandler implements OperationStepHandler {
                 }
             } else if (info != null){
                 // Reconnect the server using the current authKey
-                final byte[] authKey = info.getAuthKey();
-                serverInventory.reconnectServer(serverName, domainModel, authKey, info.isRunning(), info.isStopping());
+                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping());
             }
         }
     }

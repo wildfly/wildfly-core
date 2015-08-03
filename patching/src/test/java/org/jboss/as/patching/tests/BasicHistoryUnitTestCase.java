@@ -259,7 +259,7 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
         // Apply CP2
         apply(cp2);
 
-        InstalledIdentity identity = loadInstallationManager();
+        InstalledIdentity identity = loadInstallationManager().getDefaultIdentity();
         PatchStepAssertions.assertModule("base-CP2", identity.getLayer("base"), "org.jboss.test", "main");
         PatchStepAssertions.assertModule("base-CP2", identity.getLayer("base"), "org.jboss.test.two", "main");
 
@@ -272,19 +272,19 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
         // Apply CP2
         apply(cp3);
 
-        identity = loadInstallationManager();
+        identity = loadInstallationManager().getDefaultIdentity();
         PatchStepAssertions.assertModule("base-CP3", identity.getLayer("base"), "org.jboss.test", "main");
         PatchStepAssertions.assertModule("base-CP3", identity.getLayer("base"), "org.jboss.test.two", "main");
 
         rollback(cp3);
 
-        identity = loadInstallationManager();
+        identity = loadInstallationManager().getDefaultIdentity();
         PatchStepAssertions.assertModule("base-CP2", identity.getLayer("base"), "org.jboss.test", "main");
         PatchStepAssertions.assertModule("base-CP2", identity.getLayer("base"), "org.jboss.test.two", "main");
 
         rollback(cp2);
 
-        identity = loadInstallationManager();
+        identity = loadInstallationManager().getDefaultIdentity();
         PatchStepAssertions.assertModule("base-CP1", identity.getLayer("base"), "org.jboss.test", "main");
 
         rollback(cp1);
@@ -338,7 +338,7 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
         // Apply CP4
         apply(cp4);
 
-        InstalledIdentity identity = loadInstallationManager();
+        InstalledIdentity identity = loadInstallationManager().getDefaultIdentity();
         PatchStepAssertions.assertModule("base-CP2", identity.getLayer("base"), "org.jboss.test", "main");
         PatchStepAssertions.assertModule("base-CP2", identity.getLayer("base"), "org.jboss.test.four", "main");
 
@@ -357,7 +357,7 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
         // Apply CP5
         apply(cp5);
 
-        identity = loadInstallationManager();
+        identity = loadInstallationManager().getDefaultIdentity();
         PatchStepAssertions.assertModule("base-CP3", identity.getLayer("base"), "org.jboss.test", "main");
         PatchStepAssertions.assertModule("base-CP3", identity.getLayer("base"), "org.jboss.test.four", "main");
         PatchStepAssertions.assertModule("layer-1-CP2", identity.getLayer("layer-1"), "org.jboss.test.two", "main");

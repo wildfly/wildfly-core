@@ -69,6 +69,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 
 import javax.security.auth.Subject;
 
@@ -121,6 +122,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private final ProcessType processType;
     private final RunningMode runningMode;
     private final Environment callEnvironment;
+    private final ConfigurationChangesCollector configurationChangesCollector = ConfigurationChangesCollector.INSTANCE;
     // We only respect interruption on the way in; once we complete all steps
     // and begin
     // returning, any calls that can throw InterruptedException are converted to
@@ -144,6 +146,8 @@ abstract class AbstractOperationContext implements OperationContext {
     Caller caller;
     /** Whether operation execution has begun; i.e. whether completeStep() has been called */
     private boolean executing;
+    /** First response node provided to addStep  */
+    ModelNode initialResponse;
 
     /** Operations that were added by the controller, before execution started */
     private final List<ModelNode> controllerOperations = new ArrayList<ModelNode>(2);
@@ -315,6 +319,9 @@ abstract class AbstractOperationContext implements OperationContext {
 
         if (!executing && stage == Stage.MODEL) {
             recordControllerOperation(operation);
+            if (initialResponse == null) {
+                initialResponse = response;
+            }
         }
     }
 
@@ -502,6 +509,7 @@ abstract class AbstractOperationContext implements OperationContext {
      * Log an audit record of this operation.
      */
     void logAuditRecord() {
+        trackConfigurationChange();
         if (!auditLogged) {
             try {
                 AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
@@ -535,7 +543,7 @@ abstract class AbstractOperationContext implements OperationContext {
         }
         Set<T> principals = subject.getPrincipals(clazz);
         assert principals.size() <= 1;
-        if (principals.size() == 0) {
+        if (principals.isEmpty()) {
             return null;
         }
         return principals.iterator().next();
@@ -547,6 +555,24 @@ abstract class AbstractOperationContext implements OperationContext {
      */
     private void recordControllerOperation(ModelNode operation) {
         controllerOperations.add(operation.clone()); // clone so we don't log op nodes mutated during execution
+    }
+
+    void trackConfigurationChange() {
+        if (!isBooting() && !isReadOnly() && configurationChangesCollector.trackAllowed()) {
+            try {
+                AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
+                Caller currentCaller = getCaller();
+                Subject subject = SecurityActions.getSubject(currentCaller);
+                configurationChangesCollector.addConfigurationChanges(new ConfigurationChange(resultAction,
+                        currentCaller == null ? null : currentCaller.getName(),
+                        accessContext == null ? null : accessContext.getDomainUuid(),
+                        accessContext == null ? null : accessContext.getAccessMechanism(),
+                        getSubjectInetAddress(subject),
+                        controllerOperations));
+            } catch (Exception e) {
+                ControllerLogger.MGMT_OP_LOGGER.failedToUpdateAuditLog(e);
+            }
+        }
     }
 
     abstract Resource getModel();
@@ -1258,18 +1284,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 handleResult();
 
                 if (currentStage != null && currentStage != Stage.DONE) {
-                    // This is a failure because the next step failed to call
-                    // completeStep().
-                    // Either an exception occurred beforehand, or the
-                    // implementer screwed up.
-                    // If an exception occurred, then this will have no effect.
-                    // If the implementer screwed up, then we're essentially
-                    // fixing the context state and treating
-                    // the overall operation as a failure.
                     currentStage = Stage.DONE;
-                    if (!hasFailed()) {
-                        response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationHandlerFailedToComplete());
-                    }
                     response.get(OUTCOME).set(cancelled ? CANCELLED : FAILED);
                     response.get(ROLLED_BACK).set(true);
                     resultAction = getFailedResultAction(null);

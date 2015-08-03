@@ -61,9 +61,4 @@ class DeploymentScannerRemove extends AbstractRemoveStepHandler {
             throw new RuntimeException(e);
         }
     }
-
-    @Override
-    protected boolean requireNoChildResources() {
-        return true;
-    }
 }

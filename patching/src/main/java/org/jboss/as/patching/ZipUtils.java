@@ -66,7 +66,7 @@ public class ZipUtils {
             throw new RuntimeException("Failed creating patch file " + zipFile, e); // Only used for generation and tests
         }
 
-        System.out.println("\nPrepared " + zipFile.getName() + " at " + zipFile.getAbsolutePath());
+        //System.out.println("\nPrepared " + zipFile.getName() + " at " + zipFile.getAbsolutePath());
     }
 
     private static void addDirectoryToZip(File dir, String dirName, ZipOutputStream zos) throws IOException {

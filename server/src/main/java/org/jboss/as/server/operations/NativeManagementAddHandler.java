@@ -28,6 +28,7 @@ import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURI
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_DOMAIN_CAPABILITY_NAME;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
+import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -85,7 +86,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
     static void installNativeManagementConnector(final OperationContext context, final ModelNode model, final ServiceName endpointName, final ServiceTarget serviceTarget) throws OperationFailedException {
 
         final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
-        ServiceName socketBindingServiceName = SocketBinding.JBOSS_BINDING_NAME.append(bindingName);
+        ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
 
         ServiceName securityDomain = null;
         String securityRealm = null;

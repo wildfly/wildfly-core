@@ -22,6 +22,7 @@ package org.jboss.as.host.controller;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Base64;
 import static org.hamcrest.CoreMatchers.is;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,12 +32,10 @@ import org.junit.Test;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2013 Red Hat, inc.
  */
 public class ServerInventoryImplTestCase {
- private static final String HEX_DIGITS = "0123456789abcdef";
     @Test
-    public void testRemoveNullChar() throws UnsupportedEncodingException {
+    public void testEncodingAndDecoding() throws UnsupportedEncodingException {
         byte[] array = new byte[]{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x00, 0x57, 0x6f, 0x72, 0x6c, 0x64};
-        byte[] expected = new byte[]{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x01, 0x57, 0x6f, 0x72, 0x6c, 0x64};
-        ServerInventoryImpl.removeNullChar(array);       
-        Assert.assertThat(Arrays.equals(array, expected), is(true));
+        byte[] expected = new byte[]{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x00, 0x57, 0x6f, 0x72, 0x6c, 0x64};
+        Assert.assertThat(Arrays.equals(Base64.getDecoder().decode(Base64.getEncoder().encode(array)), expected), is(true));
     }
 }

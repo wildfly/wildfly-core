@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -45,6 +46,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
@@ -81,6 +83,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NotificationEntry> notificationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "notifications"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, AttributeAccess> attributesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "attributes"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, Empty> orderedChildUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "orderedChildTypes"));
+
+    private final Set<Capability>  capabilities = new CopyOnWriteArraySet<>();
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
@@ -182,6 +186,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         resourceDefinition.registerOperations(resourceRegistration);
         resourceDefinition.registerNotifications(resourceRegistration);
         resourceDefinition.registerChildren(resourceRegistration);
+        resourceDefinition.registerCapabilities(resourceRegistration);
         if (constraintUtilizationRegistry != null) {
             PathAddress childAddress = getPathAddress().append(address);
             List<AccessConstraintDefinition> constraintDefinitions = resourceDefinition.getAccessConstraints();
@@ -449,6 +454,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    @Override
+    public void registerCapability(Capability capability){
+        capabilities.add(capability);
+    }
+
     NodeSubregistry getOrCreateSubregistry(final String key) {
         for (;;) {
             final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
@@ -638,6 +648,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             throw alreadyRegistered("Ordered child", type);
         }
 
+    }
+
+    @Override
+    public Set<Capability> getCapabilities() {
+        return Collections.unmodifiableSet(capabilities);
     }
 
     private static class Empty {

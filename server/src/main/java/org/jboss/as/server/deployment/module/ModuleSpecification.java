@@ -87,6 +87,11 @@ public class ModuleSpecification extends SimpleAttachable {
     private boolean subDeploymentModulesIsolated;
 
     /**
+     * Flag that is set to true if exclusions should be cascaded to sub deployments
+     */
+    private boolean exclusionsCascadedToSubDeployments;
+
+    /**
      * Flag that indicates that this module should never be visible to other sub deployments
      */
     private boolean privateModule;
@@ -229,6 +234,14 @@ public class ModuleSpecification extends SimpleAttachable {
 
     public void setSubDeploymentModulesIsolated(final boolean subDeploymentModulesIsolated) {
         this.subDeploymentModulesIsolated = subDeploymentModulesIsolated;
+    }
+
+    public boolean isExclusionsCascadedToSubDeployments() {
+        return exclusionsCascadedToSubDeployments;
+    }
+
+    public void setExclusionsCascadedToSubDeployments(boolean exclusionsCascadedToSubDeployments) {
+        this.exclusionsCascadedToSubDeployments = exclusionsCascadedToSubDeployments;
     }
 
     public boolean isPrivateModule() {

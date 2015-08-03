@@ -280,7 +280,14 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, operation, environmentReader));
+            PathAddress handlerAddress = SyslogAuditLogHandlerResourceDefinition.getAffectedHandlerAddress(context);
+            try {
+                Resource handleResource = context.readResourceFromRoot(handlerAddress);
+                String name = Util.getNameFromAddress(handlerAddress);
+                auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, name, handleResource, environmentReader));
+            } catch (Resource.NoSuchResourceException ignored) {
+                // WFCORE-810 handler resource has been removed in this same op, so we do nothing
+            }
         }
 
         @Override
@@ -334,7 +341,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, operation, environmentReader));
+            auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, environmentReader));
         }
 
         @Override
@@ -370,7 +377,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, operation, environmentReader));
+            auditLogger.getUpdater().updateHandler(SyslogAuditLogHandlerResourceDefinition.createHandler(pathManager, context, environmentReader));
         }
 
         @Override

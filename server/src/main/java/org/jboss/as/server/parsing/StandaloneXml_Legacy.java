@@ -92,7 +92,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
-    private AuditLogXml auditLogDelegate = new AuditLogXml(false);
+    private AuditLogXml auditLogDelegate;
 
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
@@ -101,6 +101,7 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     StandaloneXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
         super(new ServerSocketBindingsXml());
         accessControlXml = AccessControlXml.newInstance(namespace);
+        auditLogDelegate = AuditLogXml.newInstance(namespace, false);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
         this.namespace = namespace;

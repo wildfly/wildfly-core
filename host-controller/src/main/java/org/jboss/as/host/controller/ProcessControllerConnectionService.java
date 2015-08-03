@@ -27,6 +27,7 @@ import static java.security.AccessController.doPrivileged;
 import javax.net.SocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -39,7 +40,6 @@ import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.process.protocol.ProtocolClient;
 import org.jboss.as.protocol.StreamUtils;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -57,7 +57,7 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
     static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "process-controller-connection");
 
     private final HostControllerEnvironment environment;
-    private final byte[] authCode;
+    private final String authCode;
     private volatile ProcessControllerClient client;
     private volatile ServerInventory serverInventory;
 
@@ -65,7 +65,7 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
     private static final int THREAD_POOL_CORE_SIZE = 1;
     private static final int THREAD_POOL_MAX_SIZE = 4;
 
-    ProcessControllerConnectionService(final HostControllerEnvironment environment, final byte[] authCode) {
+    ProcessControllerConnectionService(final HostControllerEnvironment environment, final String authCode) {
         this.environment = environment;
         this.authCode = authCode;
     }
@@ -79,7 +79,11 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
     public synchronized void start(StartContext context) throws StartException {
         final ProcessControllerClient client;
         try {
-            final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("ProcessControllerConnection-thread"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+            final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+                public JBossThreadFactory run() {
+                    return new JBossThreadFactory(new ThreadGroup("ProcessControllerConnection-thread"), Boolean.FALSE, null, "%G - %t", null, null);
+                }
+            });
             final ThreadPoolExecutor executorService = new ThreadPoolExecutor(THREAD_POOL_CORE_SIZE, THREAD_POOL_MAX_SIZE, 30L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE), threadFactory);
 
             final ProtocolClient.Configuration configuration = new ProtocolClient.Configuration();

@@ -36,6 +36,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -370,6 +371,12 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     void unregisterNotification(String notificationType);
 
     /**
+     * Registers passed capability on resource
+     * @param capability a capability to register
+     */
+    void registerCapability(Capability capability);
+
+    /**
      * A factory for creating a new, root model node registration.
      */
     class Factory {
@@ -438,6 +445,11 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                 @Override
                 public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
                     //  no-op
+                }
+
+                @Override
+                public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+                    // no-op
                 }
 
                 @Override

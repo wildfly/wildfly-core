@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.PatchingException;
+import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.LayerType;
 import org.jboss.as.patching.runner.PatchUtils;
 
@@ -19,7 +19,6 @@ import org.jboss.as.patching.runner.PatchUtils;
 abstract class InstallationModificationImpl extends MutableTargetImpl implements InstallationManager.InstallationModification {
 
     private final String name;
-    private String version;
     private final InstallationState installationState;
     private final List<String> allPatches;
     private final AtomicBoolean done = new AtomicBoolean();
@@ -27,9 +26,8 @@ abstract class InstallationModificationImpl extends MutableTargetImpl implements
     protected InstallationModificationImpl(final PatchableTarget.TargetInfo identity, final String name,
                                            final String version, final List<String> allPatches,
                                            final InstallationState installationState) {
-        super(identity);
+        super(identity, version);
         this.name = name;
-        this.version = version;
         this.installationState = installationState;
         this.allPatches = new ArrayList<String>(allPatches);
     }
@@ -66,16 +64,6 @@ abstract class InstallationModificationImpl extends MutableTargetImpl implements
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getVersion() {
-        return version;
-    }
-
-    @Override
-    public void setResultingVersion(String version) {
-        this.version = version;
     }
 
     @Override

@@ -27,10 +27,12 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -40,6 +42,11 @@ import org.jboss.dmr.ModelType;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class SocketBindingResourceDefinition extends AbstractSocketBindingResourceDefinition {
+
+    static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
+    static final RuntimeCapability<Void> SOCKET_BINDING_CAPABILITY =
+            RuntimeCapability.Builder.of(SOCKET_BINDING_CAPABILITY_NAME, true, SocketBinding.class)
+                    .build(); // TODO require interface capability
 
     public static final SocketBindingResourceDefinition INSTANCE = new SocketBindingResourceDefinition();
 

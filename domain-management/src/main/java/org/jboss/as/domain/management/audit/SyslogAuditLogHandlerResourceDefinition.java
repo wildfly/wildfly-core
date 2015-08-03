@@ -153,27 +153,32 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         resourceRegistration.registerSubModel(new SyslogAuditLogProtocolResourceDefinition.Tls(auditLogger, pathManager, environmentReader));
     }
 
-    static PathAddress getAffectedHandlerAddress(ModelNode operation){
-        PathAddress pathAddress = PathAddress.pathAddress(operation.require(OP_ADDR));
-        if (pathAddress.getLastElement().getKey().equals(SYSLOG_HANDLER)){
-            return pathAddress;
-        }
-        PathAddress handlerAddress = PathAddress.EMPTY_ADDRESS;
-        final PathAddress opAddress = PathAddress.pathAddress(operation.require(OP_ADDR));
-        for (PathElement element : opAddress) {
-            handlerAddress = handlerAddress.append(element);
+    static PathAddress getAffectedHandlerAddress(OperationContext context){
+        final PathAddress opAddress = context.getCurrentAddress();
+        int lastElement = opAddress.size() - 1;
+        for (int i = lastElement; i >-0; i--) {
+            PathElement element = opAddress.getElement(i);
             if (element.getKey().equals(SYSLOG_HANDLER)) {
-                break;
+                return i == lastElement ? opAddress : opAddress.subAddress(0, i + 1);
             }
         }
-        return handlerAddress;
+        return PathAddress.EMPTY_ADDRESS;
     }
 
     static SyslogAuditLogHandler createHandler(final PathManagerService pathManager,
-                                                         final OperationContext context, final ModelNode operation, final EnvironmentNameReader environmentReader) throws OperationFailedException {
-        final PathAddress pathAddress = getAffectedHandlerAddress(operation);
+                                               final OperationContext context,
+                                               final EnvironmentNameReader environmentReader) throws OperationFailedException {
+        final PathAddress pathAddress = getAffectedHandlerAddress(context);
         final String name = Util.getNameFromAddress(pathAddress);
         final Resource handlerResource = context.readResourceFromRoot(pathAddress);
+        return createHandler(pathManager, context, name, handlerResource, environmentReader);
+    }
+
+    static SyslogAuditLogHandler createHandler(final PathManagerService pathManager,
+                                               final OperationContext context,
+                                               final String name,
+                                               final Resource handlerResource,
+                                               final EnvironmentNameReader environmentReader) throws OperationFailedException {
         final ModelNode handlerModel = handlerResource.getModel();
         final String formatterName = FORMATTER.resolveModelAttribute(context, handlerModel).asString();
         final int maxFailureCount = MAX_FAILURE_COUNT.resolveModelAttribute(context, handlerModel).asInt();
@@ -309,7 +314,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
-            auditLogger.getUpdater().addHandler(createHandler(pathManager, context, operation, environmentReader));
+            auditLogger.getUpdater().addHandler(createHandler(pathManager, context, environmentReader));
         }
         @Override
         protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
@@ -350,7 +355,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
                 addr = addr.subAddress(0, addr.size() - 1);
                 auditLogger.updateSyslogHandlerReconnectTimeout(Util.getNameFromAddress(addr), resolvedValue.asInt());
             } else {
-                auditLogger.getUpdater().updateHandler(createHandler(pathManager, context, operation, environmentReader));
+                auditLogger.getUpdater().updateHandler(createHandler(pathManager, context, environmentReader));
             }
             return false;
         }

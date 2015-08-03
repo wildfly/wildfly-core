@@ -60,6 +60,14 @@ public class HashUtils {
         }
     }
 
+    public static byte[] hashBytes(byte[] bytes) throws IOException {
+        synchronized (DIGEST) {
+            DIGEST.reset();
+            DIGEST.update(bytes);
+            return DIGEST.digest();
+        }
+    }
+
     private static void updateDigest(MessageDigest digest, File file) throws IOException {
         if (file.isDirectory()) {
             File[] childList = file.listFiles();

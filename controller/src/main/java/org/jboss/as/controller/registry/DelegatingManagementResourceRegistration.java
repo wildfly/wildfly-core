@@ -36,6 +36,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 
@@ -328,6 +329,16 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     @Override
     public boolean isOrderedChildResource() {
         return getDelegate().isOrderedChildResource();
+    }
+
+    @Override
+    public void registerCapability(Capability capability) {
+        getDelegate().registerCapability(capability);
+    }
+
+    @Override
+    public Set<Capability> getCapabilities() {
+        return getDelegate().getCapabilities();
     }
 
     private ManagementResourceRegistration getDelegate() {

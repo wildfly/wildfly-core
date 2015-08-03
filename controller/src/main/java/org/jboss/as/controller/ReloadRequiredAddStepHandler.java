@@ -62,6 +62,10 @@ public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
         super(capabilities, attributes);
     }
 
+    public ReloadRequiredAddStepHandler(Parameters parameters) {
+        super(parameters);
+    }
+
     @Override
     protected boolean requiresRuntime(OperationContext context) {
         return !context.isBooting() && super.requiresRuntime(context);

@@ -1,13 +1,20 @@
 package org.jboss.as.patching.installation;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.ConcurrentModificationException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.as.patching.DirectoryStructure;
+import org.jboss.as.patching.Constants;
+import org.jboss.as.patching.IoUtils;
+import org.jboss.as.patching.PatchingException;
+import org.jboss.as.patching.logging.PatchLogger;
+import org.jboss.as.version.ProductConfig;
 
 /**
  * The installation manager.
@@ -16,11 +23,11 @@ import org.jboss.as.patching.DirectoryStructure;
  */
 public class InstallationManagerImpl extends InstallationManager {
 
-    // The basic concurrency contract is copy on write
-    private volatile InstalledIdentity installedIdentity;
-    // TODO track this state a better way
-    private final AtomicBoolean writable = new AtomicBoolean(true);
     private final InstalledImage installedImage;
+    private InstalledIdentity defaultIdentity;
+
+    private List<File> moduleRoots;
+    private List<File> bundleRoots;
 
     /**
      * This field is set to true when a patch is applied/rolled back at runtime.
@@ -31,172 +38,165 @@ public class InstallationManagerImpl extends InstallationManager {
      */
     private static final AtomicBoolean restartRequired = new AtomicBoolean(false);
 
-    public InstallationManagerImpl(InstalledIdentity installedIdentity) {
-        this.installedIdentity = installedIdentity;
-        this.installedImage = installedIdentity.getInstalledImage();
+    public InstallationManagerImpl(InstalledImage installedImage, final List<File> moduleRoots, final List<File> bundlesRoots, final ProductConfig productConfig)
+            throws IOException {
+        this.installedImage = installedImage;
+
+        this.moduleRoots = moduleRoots;
+        this.bundleRoots = bundlesRoots;
+
+        defaultIdentity = LayersFactory.load(installedImage, productConfig, moduleRoots, bundleRoots);
+    }
+
+    /**
+     * This method returns the installed identity with the requested name and version.
+     * If the product name is null, the default identity will be returned.
+     *
+     * If the product name was recognized and the requested version was not null,
+     * the version comparison will take place. If the version of the currently installed product
+     * doesn't match the requested one, the exception will be thrown.
+     * If the requested version is null, the currently installed identity with the requested name
+     * will be returned.
+     *
+     * If the product name was not recognized among the registered ones, a new installed identity
+     * with the requested name will be created and returned. (This is because the patching system
+     * is not aware of how many and what the patching streams there are expected).
+     *
+     * @param productName
+     * @param productVersion
+     * @return
+     * @throws PatchingException
+     */
+    @Override
+    public InstalledIdentity getInstalledIdentity(String productName, String productVersion) throws PatchingException {
+        final String defaultIdentityName = defaultIdentity.getIdentity().getName();
+        if(productName == null) {
+            productName = defaultIdentityName;
+        }
+
+        final File productConf = new File(installedImage.getInstallationMetadata(), productName + Constants.DOT_CONF);
+        final String recordedProductVersion;
+        if(!productConf.exists()) {
+            recordedProductVersion = null;
+        } else {
+            final Properties props = loadProductConf(productConf);
+            recordedProductVersion = props.getProperty(Constants.CURRENT_VERSION);
+        }
+
+        if(defaultIdentityName.equals(productName)) {
+            if(recordedProductVersion != null && !recordedProductVersion.equals(defaultIdentity.getIdentity().getVersion())) {
+                // this means the patching history indicates that the current version is different from the one specified in the server's version module,
+                // which could happen in case:
+                // - the last applied CP didn't include the new version module or
+                // - the version module version included in the last CP didn't match the version specified in the CP's metadata, or
+                // - the version module was updated from a one-off, or
+                // - the patching history was edited somehow
+                // In any case, here I decided to rely on the patching history.
+                defaultIdentity = loadIdentity(productName, recordedProductVersion);
+            }
+            if(productVersion != null && !defaultIdentity.getIdentity().getVersion().equals(productVersion)) {
+                throw new PatchingException(PatchLogger.ROOT_LOGGER.productVersionDidNotMatchInstalled(
+                        productName, productVersion, defaultIdentity.getIdentity().getVersion()));
+            }
+            return defaultIdentity;
+        }
+
+        if(recordedProductVersion != null && !Constants.UNKNOWN.equals(recordedProductVersion)) {
+            if(productVersion != null) {
+                if (!productVersion.equals(recordedProductVersion)) {
+                    throw new PatchingException(PatchLogger.ROOT_LOGGER.productVersionDidNotMatchInstalled(productName, productVersion, recordedProductVersion));
+                }
+            } else {
+                productVersion = recordedProductVersion;
+            }
+        }
+
+        return loadIdentity(productName, productVersion);
+    }
+
+    private InstalledIdentity loadIdentity(String productName, String productVersion) throws PatchingException {
+        try {
+            return LayersFactory.load(installedImage,
+                    new ProductConfig(productName, productVersion == null ? Constants.UNKNOWN : productVersion, null),
+                    moduleRoots, bundleRoots);
+        } catch (IOException e) {
+            throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(productName), e);
+        }
+    }
+
+    private Properties loadProductConf(File productConf) throws PatchingException {
+        final Properties props = new Properties();
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(productConf);
+            props.load(fis);
+        } catch(IOException e) {
+            throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(productConf.getAbsolutePath()), e);
+        } finally {
+            if(fis != null) {
+                IoUtils.safeClose(fis);
+            }
+        }
+        return props;
     }
 
     @Override
-    public List<String> getAllInstalledPatches() {
-        return installedIdentity.getAllInstalledPatches();
+    public InstalledIdentity getDefaultIdentity() {
+        return defaultIdentity;
     }
 
+    /**
+     * This method will return a list of installed identities for which
+     * the corresponding .conf file exists under .installation directory.
+     * The list will also include the default identity even if the .conf
+     * file has not been created for it.
+     */
     @Override
-    public Identity getIdentity() {
-        return installedIdentity.getIdentity();
-    }
+    public List<InstalledIdentity> getInstalledIdentities() throws PatchingException {
 
-    @Override
-    public List<String> getLayerNames() {
-        return installedIdentity.getLayerNames();
-    }
+        List<InstalledIdentity> installedIdentities;
 
-    @Override
-    public Layer getLayer(String layerName) {
-        return installedIdentity.getLayer(layerName);
-    }
+        final File metadataDir = installedImage.getInstallationMetadata();
+        if(!metadataDir.exists()) {
+            installedIdentities = Collections.singletonList(defaultIdentity);
+        } else {
+            final String defaultConf = defaultIdentity.getIdentity().getName() + Constants.DOT_CONF;
+            final File[] identityConfs = metadataDir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.isFile() &&
+                            pathname.getName().endsWith(Constants.DOT_CONF) &&
+                            !pathname.getName().equals(defaultConf);
+                }
+            });
+            if(identityConfs == null || identityConfs.length == 0) {
+                installedIdentities = Collections.singletonList(defaultIdentity);
+            } else {
+                installedIdentities = new ArrayList<InstalledIdentity>(identityConfs.length + 1);
+                installedIdentities.add(defaultIdentity);
+                for(File conf : identityConfs) {
+                    final Properties props = loadProductConf(conf);
+                    String productName = conf.getName();
+                    productName = productName.substring(0, productName.length() - Constants.DOT_CONF.length());
+                    final String productVersion = props.getProperty(Constants.CURRENT_VERSION);
 
-    @Override
-    public List<Layer> getLayers() {
-        return installedIdentity.getLayers();
-    }
-
-    @Override
-    public Collection<String> getAddOnNames() {
-        return installedIdentity.getAddOnNames();
-    }
-
-    @Override
-    public AddOn getAddOn(String addOnName) {
-        return installedIdentity.getAddOn(addOnName);
-    }
-
-    @Override
-    public Collection<AddOn> getAddOns() {
-        return installedIdentity.getAddOns();
+                    InstalledIdentity identity;
+                    try {
+                        identity = LayersFactory.load(installedImage, new ProductConfig(productName, productVersion, null), moduleRoots, bundleRoots);
+                    } catch (IOException e) {
+                        throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(productName), e);
+                    }
+                    installedIdentities.add(identity);
+                }
+            }
+        }
+        return installedIdentities;
     }
 
     @Override
     public InstalledImage getInstalledImage() {
         return installedImage;
     }
-
-    @Override
-    public InstallationModification modifyInstallation(final ModificationCompletionCallback callback) {
-        if (! writable.compareAndSet(true, false)) {
-            // This has to be guarded by the OperationContext.lock
-            throw new ConcurrentModificationException();
-        }
-        try {
-            // Load the state
-            final InstalledIdentity installedIdentity = this.installedIdentity;
-            final Identity identity = installedIdentity.getIdentity();
-            final PatchableTarget.TargetInfo identityInfo = identity.loadTargetInfo();
-            final InstallationModificationImpl.InstallationState state = load(installedIdentity);
-
-            return new InstallationModificationImpl(identityInfo, identity.getName(), identity.getVersion(), installedIdentity.getAllInstalledPatches(), state) {
-
-                @Override
-                public InstalledIdentity getUnmodifiedInstallationState() {
-                    return installedIdentity;
-                }
-
-                @Override
-                public void complete() {
-                    try {
-                        // Update the state
-                        InstallationManagerImpl.this.installedIdentity = updateState(identity.getName(), this, internalComplete());
-                        writable.set(true);
-                    } catch (Exception e) {
-                        cancel();
-                        throw new RuntimeException(e);
-                    }
-                    if (callback != null) {
-                        callback.completed();
-                    }
-                }
-
-                @Override
-                public void cancel() {
-                    try {
-                        if (callback != null) {
-                            callback.canceled();
-                        }
-                    } finally {
-                        writable.set(true);
-                    }
-                }
-            };
-        } catch (Exception e) {
-            writable.set(true);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Load the installation state based on the identity
-     *
-     * @param installedIdentity the installed identity
-     * @return the installation state
-     * @throws IOException
-     */
-    protected static InstallationModificationImpl.InstallationState load(final InstalledIdentity installedIdentity) throws IOException {
-        final InstallationModificationImpl.InstallationState state = new InstallationModificationImpl.InstallationState();
-        for (final Layer layer : installedIdentity.getLayers()) {
-            state.putLayer(layer);
-        }
-        for (final AddOn addOn : installedIdentity.getAddOns()) {
-            state.putAddOn(addOn);
-        }
-        return state;
-    }
-
-    /**
-     * Update the installed identity using the modified state from the modification.
-     *
-     * @param name the identity name
-     * @param modification the modification
-     * @param state the installation state
-     * @return the installed identity
-     */
-    protected InstalledIdentity updateState(final String name, final InstallationModificationImpl modification, final InstallationModificationImpl.InstallationState state) {
-        final PatchableTarget.TargetInfo identityInfo = modification.getModifiedState();
-        final Identity identity = new Identity() {
-            @Override
-            public String getVersion() {
-                return modification.getVersion();
-            }
-
-            @Override
-            public String getName() {
-                return name;
-            }
-
-            @Override
-            public TargetInfo loadTargetInfo() throws IOException {
-                return identityInfo;
-            }
-
-            @Override
-            public DirectoryStructure getDirectoryStructure() {
-                return modification.getDirectoryStructure();
-            }
-        };
-
-        final InstalledIdentityImpl installedIdentity = new InstalledIdentityImpl(identity, modification.getAllPatches(), installedImage);
-        for (final Map.Entry<String, MutableTargetImpl> entry : state.getLayers().entrySet()) {
-            final String layerName = entry.getKey();
-            final MutableTargetImpl target = entry.getValue();
-            installedIdentity.putLayer(layerName, new LayerInfo(layerName, target.getModifiedState(), target.getDirectoryStructure()));
-        }
-        for (final Map.Entry<String, MutableTargetImpl> entry : state.getAddOns().entrySet()) {
-            final String addOnName = entry.getKey();
-            final MutableTargetImpl target = entry.getValue();
-            installedIdentity.putAddOn(addOnName, new LayerInfo(addOnName, target.getModifiedState(), target.getDirectoryStructure()));
-        }
-        return installedIdentity;
-    }
-
 
     public boolean requiresRestart() {
         return restartRequired.get();

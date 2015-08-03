@@ -22,16 +22,14 @@
 
 package org.jboss.as.server.services.net;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
 
 import java.net.InetAddress;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -50,21 +48,19 @@ import org.jboss.msc.service.ServiceName;
  */
 public final class BindingMetricHandlers {
 
-    private static final ServiceName SOCKET_BINDING = SocketBinding.JBOSS_BINDING_NAME;
-
     abstract static class AbstractBindingMetricsHandler implements OperationStepHandler {
 
         /** {@inheritDoc} */
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-            final PathElement element = address.getLastElement();
 
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                     final ModelNode result = context.getResult();
-                    final ServiceController<?> controller = context.getServiceRegistry(false).getRequiredService(SOCKET_BINDING.append(element.getValue()));
+                    final String name = context.getCurrentAddressValue();
+                    ServiceName svcName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(name, SocketBinding.class);
+                    final ServiceController<?> controller = context.getServiceRegistry(false).getRequiredService(svcName);
                     if(controller != null && controller.getState() == ServiceController.State.UP) {
                         final SocketBinding binding = SocketBinding.class.cast(controller.getValue());
                         AbstractBindingMetricsHandler.this.execute(operation, binding, result);

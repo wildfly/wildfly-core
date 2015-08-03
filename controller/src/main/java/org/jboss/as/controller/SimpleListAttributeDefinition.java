@@ -91,6 +91,16 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     }
 
     @Override
+    protected CapabilityReferenceRecorder getReferenceRecorder() {
+        return valueType.getReferenceRecorder();
+    }
+
+    @Override
+    public boolean hasCapabilityRequirements() {
+        return valueType.hasCapabilityRequirements();
+    }
+
+    @Override
     protected void addValueTypeDescription(final ModelNode node, final ResourceBundle bundle) {
         addValueTypeDescription(node);
     }

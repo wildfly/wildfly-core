@@ -103,6 +103,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
     static final AttributeDefinition PATCH_ID = SimpleAttributeDefinitionBuilder.create(Constants.PATCH_ID, ModelType.STRING)
             .build();
 
+    static final AttributeDefinition PATCH_ID_OPTIONAL = SimpleAttributeDefinitionBuilder.create(Constants.PATCH_ID, ModelType.STRING, true)
+            .build();
+
     static final AttributeDefinition RESET_CONFIGURATION = SimpleAttributeDefinitionBuilder.create(Constants.RESET_CONFIGURATION, ModelType.BOOLEAN)
             .setAllowNull(false)
             .build();
@@ -135,14 +138,14 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .addParameter(PRESERVE)
             .build();
 
-    static final OperationDefinition SHOW_HISTORY = new SimpleOperationDefinitionBuilder("show-history", getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    static final OperationDefinition SHOW_HISTORY = new SimpleOperationDefinitionBuilder(Constants.SHOW_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .build();
 
-    static final OperationDefinition AGEOUT_HISTORY = new SimpleOperationDefinitionBuilder("ageout-history", getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    static final OperationDefinition AGEOUT_HISTORY = new SimpleOperationDefinitionBuilder(Constants.AGEOUT_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .build();
 
-    static final OperationDefinition PATCH_INFO = new SimpleOperationDefinitionBuilder("patch-info", getResourceDescriptionResolver(PatchResourceDefinition.NAME))
-            .addParameter(PATCH_ID)
+    static final OperationDefinition PATCH_INFO = new SimpleOperationDefinitionBuilder(Constants.PATCH_INFO, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+            .addParameter(PATCH_ID_OPTIONAL)
             .addParameter(VERBOSE)
             .setReplyType(ModelType.OBJECT)
             .setReplyParameters(
@@ -173,7 +176,54 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration registry) {
+
         super.registerAttributes(registry);
+        registerPatchingAttributes(registry);
+
+        final StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.patch-stream", RESOURCE_NAME, PatchResourceDefinition.class.getClassLoader());
+        registry.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("patch-stream"), resolver) {
+
+            @Override
+            public void registerAttributes(final ManagementResourceRegistration resource) {
+                super.registerAttributes(resource);
+                registerPatchingAttributes(resource);
+            }
+
+            @Override
+            public void registerOperations(ManagementResourceRegistration registry) {
+                PatchResourceDefinition.this.registerPatchingOperations(registry, false);
+            }
+
+            @Override
+            public List<AccessConstraintDefinition> getAccessConstraints() {
+                return sensitivity;
+            }
+        });
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration registry) {
+        super.registerOperations(registry);
+        registerPatchingOperations(registry, true);
+    }
+
+    @Override
+    public List<AccessConstraintDefinition> getAccessConstraints() {
+        return sensitivity;
+    }
+
+    protected void registerPatchingOperations(ManagementResourceRegistration registry, boolean patchOp) {
+        registry.registerOperationHandler(ROLLBACK, LocalPatchRollbackHandler.INSTANCE);
+        registry.registerOperationHandler(ROLLBACK_LAST, LocalPatchRollbackLastHandler.INSTANCE);
+        if(patchOp) {
+            registry.registerOperationHandler(PATCH, LocalPatchOperationStepHandler.INSTANCE);
+        }
+        registry.registerOperationHandler(SHOW_HISTORY, LocalShowHistoryHandler.INSTANCE);
+        registry.registerOperationHandler(AGEOUT_HISTORY, LocalAgeoutHistoryHandler.INSTANCE);
+        registry.registerOperationHandler(PATCH_INFO, PatchInfoHandler.INSTANCE);
+    }
+
+    protected void registerPatchingAttributes(ManagementResourceRegistration registry) {
 
         registry.registerReadOnlyAttribute(VERSION, new PatchAttributeReadHandler() {
             @Override
@@ -208,7 +258,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                         try {
                             result.set(layer.loadTargetInfo().getCumulativePatchID());
                         } catch (IOException e) {
-                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(layer.getName()), e);
                         }
                     }
                 });
@@ -221,21 +271,16 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                                 result.add(id);
                             }
                         } catch (IOException e) {
-                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(layer.getName()), e);
                         }
                     }
                 });
-
-                // HACK -- workaround WFCORE-17
-                resource.setRuntimeOnly(true);
-
             }
 
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return sensitivity;
             }
-
         });
 
         resolver = new StandardResourceDescriptionResolver("patching.addon", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
@@ -248,7 +293,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                         try {
                             result.set(addon.loadTargetInfo().getCumulativePatchID());
                         } catch (IOException e) {
-                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(addon.getName()), e);
                         }
                     }
                 });
@@ -261,41 +306,17 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                                 result.add(id);
                             }
                         } catch (IOException e) {
-                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadIdentity(), e);
+                            throw new OperationFailedException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(addon.getName()), e);
                         }
                     }
                 });
-
-                // HACK -- workaround WFCORE-17
-                resource.setRuntimeOnly(true);
             }
 
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return sensitivity;
             }
-
         });
-
-        // HACK -- workaround WFCORE-17
-        registry.setRuntimeOnly(true);
-    }
-
-    @Override
-    public void registerOperations(ManagementResourceRegistration registry) {
-        super.registerOperations(registry);
-
-        registry.registerOperationHandler(ROLLBACK, LocalPatchRollbackHandler.INSTANCE);
-        registry.registerOperationHandler(ROLLBACK_LAST, LocalPatchRollbackLastHandler.INSTANCE);
-        registry.registerOperationHandler(PATCH, LocalPatchOperationStepHandler.INSTANCE);
-        registry.registerOperationHandler(SHOW_HISTORY, LocalShowHistoryHandler.INSTANCE);
-        registry.registerOperationHandler(AGEOUT_HISTORY, LocalAgeoutHistoryHandler.INSTANCE);
-        registry.registerOperationHandler(PATCH_INFO, PatchInfoHandler.INSTANCE);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return sensitivity;
     }
 }
 

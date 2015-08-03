@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2010, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,30 +20,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.deployment.scanner;
+package org.jboss.as.server.deployment;
 
-import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.OperationContext;
+import org.jboss.msc.service.ServiceBuilder;
 
 /**
- * Handles the addition of the deployment scanning subsystem.
- *
- * @author Emanuel Muckenhuber
+ * Encapsulates a dependency of a {@link DeploymentUnitPhaseService}.
+ * @author Paul Ferraro
  */
-public class DeploymentScannerSubsystemRemove extends AbstractRemoveStepHandler {
- static final DeploymentScannerSubsystemRemove INSTANCE = new DeploymentScannerSubsystemRemove();
+public interface DeploymentUnitPhaseDependency {
 
-    private DeploymentScannerSubsystemRemove() {
-        //
-    }
-
-    @Override
-    protected boolean requireNoChildResources() {
-        return true;
-    }
-
-    @Override
-    protected boolean requiresRuntime(OperationContext context) {
-        return false;
-    }
+    /**
+     * Registers this dependency with a DeploymentUnitPhaseService builder.
+     * @param builder a DeploymentUnitPhaseService builder
+     */
+    void register(ServiceBuilder<?> builder);
 }

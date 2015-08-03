@@ -43,6 +43,7 @@ import org.jboss.dmr.Property;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
+//todo consider removing this class or moving it to test harness for transformers
 public class LegacyResourceDefinition implements ResourceDefinition {
     private Map<String, AttributeAccess> attributes = new HashMap<String, AttributeAccess>();
     private List<ResourceDefinition> children = new LinkedList<ResourceDefinition>();
@@ -112,6 +113,11 @@ public class LegacyResourceDefinition implements ResourceDefinition {
 
     @Override
     public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
+        // no-op
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
         // no-op
     }
 

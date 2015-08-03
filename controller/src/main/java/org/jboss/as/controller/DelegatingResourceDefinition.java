@@ -57,6 +57,11 @@ public class DelegatingResourceDefinition implements ResourceDefinition {
     }
 
     @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        delegate.registerCapabilities(resourceRegistration);
+    }
+
+    @Override
     public PathElement getPathElement() {
         return delegate.getPathElement();
     }

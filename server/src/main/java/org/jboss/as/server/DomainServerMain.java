@@ -28,10 +28,12 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.jboss.as.network.NetworkUtils;
 
 import org.jboss.as.process.ExitCodes;
+import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
 import org.jboss.as.server.mgmt.domain.HostControllerClient;
@@ -92,9 +94,9 @@ public final class DomainServerMain {
         );
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
 
-        final byte[] authKey = new byte[16];
+        final byte[] asAuthBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
         try {
-            StreamUtils.readFully(initialInput, authKey);
+            StreamUtils.readFully(initialInput, asAuthBytes);
         } catch (IOException e) {
             e.printStackTrace();
             SystemExiter.exit(ExitCodes.FAILED);
@@ -134,10 +136,10 @@ public final class DomainServerMain {
                 final String hostName = StreamUtils.readUTFZBytes(initialInput);
                 final int port = StreamUtils.readInt(initialInput);
                 final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
-                final byte[] asAuthKey = new byte[16];
-                StreamUtils.readFully(initialInput, asAuthKey);
+                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                StreamUtils.readFully(initialInput, authBytes);
+                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
                 URI hostControllerUri = new URI(scheme, null, NetworkUtils.formatPossibleIpv6Address(hostName), port, null, null, null);
-
                 // Get the host-controller server client
                 final ServiceContainer container = containerFuture.get();
                 if (!container.isShutdown()) {
@@ -145,7 +147,7 @@ public final class DomainServerMain {
                     final HostControllerClient client = getRequiredService(container,
                             HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                     // Reconnect to the host-controller
-                    client.reconnect(hostControllerUri, asAuthKey, managementSubsystemEndpoint);
+                    client.reconnect(hostControllerUri, authKey, managementSubsystemEndpoint);
                 }
 
             } catch (InterruptedIOException e) {

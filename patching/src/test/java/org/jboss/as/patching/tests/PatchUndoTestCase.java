@@ -75,7 +75,7 @@ public class PatchUndoTestCase extends AbstractPatchingTest {
             Assert.fail("should have failed");
         } catch (PatchingException e) {
             Assert.assertFalse(builder.hasFile("test", "content"));
-            final InstalledIdentity identity = loadInstallationManager();
+            final InstalledIdentity identity = loadInstallationManager().getDefaultIdentity();
             final PatchableTarget base = identity.getLayer("base");
             Assert.assertFalse(base.getDirectoryStructure().getModulePatchDirectory("base-patch-001").exists());
             Assert.assertFalse(identity.getInstalledImage().getPatchHistoryDir("oo1").exists());
@@ -108,7 +108,7 @@ public class PatchUndoTestCase extends AbstractPatchingTest {
         } catch (PatchingException e) {
             Assert.assertFalse(builder.hasFile("test", "content"));
             Assert.assertFalse(builder.hasFile("wrong-content"));
-            final InstalledIdentity identity = loadInstallationManager();
+            final InstalledIdentity identity = loadInstallationManager().getDefaultIdentity();
             final PatchableTarget base = identity.getLayer("base");
             Assert.assertFalse(base.getDirectoryStructure().getModulePatchDirectory("base-patch-002").exists());
             Assert.assertFalse(identity.getInstalledImage().getPatchHistoryDir("oo2").exists());

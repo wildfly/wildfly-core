@@ -24,6 +24,7 @@ package org.jboss.as.controller.remote;
 import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
+import java.security.PrivilegedAction;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -42,7 +43,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 /**
  * Service used to create operation handlers per incoming channel
@@ -90,7 +90,11 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
         responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutor.getValue());
 
         final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);
-        final ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null, doPrivileged(GetAccessControlContextAction.getInstance()));
+        final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
+            public JBossThreadFactory run() {
+                return new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null);
+            }
+        });
         ThreadPoolExecutor executor = new ThreadPoolExecutor(POOL_CORE_SIZE, POOL_MAX_SIZE,
                 60L, TimeUnit.SECONDS, workQueue,
                 threadFactory);

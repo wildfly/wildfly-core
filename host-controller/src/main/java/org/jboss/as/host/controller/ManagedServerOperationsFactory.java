@@ -50,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_MEMORY_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JSON_FORMATTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
@@ -122,6 +123,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.management.access.SensitivityResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
 import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
+import org.jboss.as.domain.management.audit.InMemoryAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.JsonAuditLogFormatterResourceDefinition;
 import org.jboss.as.domain.management.audit.PeriodicRotatingFileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.SizeRotatingFileAuditLogHandlerResourceDefinition;
@@ -477,6 +479,12 @@ public final class ManagedServerOperationsFactory {
                 for (Property formatterProp : auditLogModel.get(JSON_FORMATTER).asPropertyList()) {
                     final PathAddress formatterAddress = auditLogAddr.append(PathElement.pathElement(JSON_FORMATTER, formatterProp.getName()));
                     updates.add(JsonAuditLogFormatterResourceDefinition.createServerAddOperation(formatterAddress, formatterProp.getValue()));
+                }
+            }
+            if (auditLogModel.get(IN_MEMORY_HANDLER).isDefined()){
+                for (Property fileProp : auditLogModel.get(IN_MEMORY_HANDLER).asPropertyList()){
+                    final PathAddress fileHandlerAddress = auditLogAddr.append(PathElement.pathElement(IN_MEMORY_HANDLER, fileProp.getName()));
+                    updates.add(InMemoryAuditLogHandlerResourceDefinition.createServerAddOperation(fileHandlerAddress, fileProp.getValue()));
                 }
             }
             if (auditLogModel.get(FILE_HANDLER).isDefined()){

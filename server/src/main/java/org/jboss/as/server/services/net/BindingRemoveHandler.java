@@ -21,14 +21,12 @@
  */
 package org.jboss.as.server.services.net;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
 
 import java.net.UnknownHostException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -52,23 +50,21 @@ public class BindingRemoveHandler extends SocketBindingRemoveHandler {
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
-        PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        String name = address.getLastElement().getValue();
-        ServiceName svcName = SocketBinding.JBOSS_BINDING_NAME.append(name);
+        String name = context.getCurrentAddressValue();
+        ServiceName svcName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(name);
         ServiceRegistry registry = context.getServiceRegistry(true);
         ServiceController<?> controller = registry.getService(svcName);
         ServiceController.Substate substate = controller == null ? null : controller.getSubstate();
         if (!context.isResourceServiceRestartAllowed() || (substate != null && substate.getState() == ServiceController.State.UP && substate.isRestState())) {
             context.reloadRequired();
         } else {
-            context.removeService(SocketBinding.JBOSS_BINDING_NAME.append(name));
+            context.removeService(svcName);
         }
     }
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        String name = address.getLastElement().getValue();
-        ServiceName svcName = SocketBinding.JBOSS_BINDING_NAME.append(name);
+        String name = context.getCurrentAddressValue();
+        ServiceName svcName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(name);
         ServiceRegistry registry = context.getServiceRegistry(true);
         ServiceController<?> controller = registry.getService(svcName);
         if (controller != null) {

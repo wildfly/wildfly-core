@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,7 +62,7 @@ public final class ProcessControllerClient implements Closeable {
         this.connection = connection;
     }
 
-    public static ProcessControllerClient connect(final ProtocolClient.Configuration configuration, final byte[] authCode, final ProcessMessageHandler messageHandler) throws IOException {
+    public static ProcessControllerClient connect(final ProtocolClient.Configuration configuration, final String authCode, final ProcessMessageHandler messageHandler) throws IOException {
         if (configuration == null) {
             throw ProcessLogger.ROOT_LOGGER.nullVar("configuration");
         }
@@ -110,11 +111,12 @@ public final class ProcessControllerClient implements Closeable {
                         final Map<String, ProcessInfo> inventory = new HashMap<String, ProcessInfo>();
                         for (int i = 0; i < cnt; i++) {
                             final String processName = readUTFZBytes(dataStream);
-                            final byte[] processAuthCode = new byte[16];
-                            readFully(dataStream, processAuthCode);
+                            final byte[] processAuthBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+                            readFully(dataStream, processAuthBytes);
                             final boolean processRunning = StreamUtils.readBoolean(dataStream);
                             final boolean processStopping = StreamUtils.readBoolean(dataStream);
-                            inventory.put(processName, new ProcessInfo(processName, processAuthCode, processRunning, processStopping));
+                            final String processAuthKey = new String(processAuthBytes, Charset.forName("US-ASCII"));
+                            inventory.put(processName, new ProcessInfo(processName, processAuthKey, processRunning, processStopping));
                         }
                         dataStream.close();
                         ProcessLogger.CLIENT_LOGGER.tracef("Received process_inventory");
@@ -160,7 +162,7 @@ public final class ProcessControllerClient implements Closeable {
             try {
                 os.write(Protocol.AUTH);
                 os.write(1);
-                os.write(authCode);
+                os.write(authCode.getBytes(Charset.forName("US-ASCII")));
                 final ProcessControllerClient processControllerClient = new ProcessControllerClient(connection);
                 connection.attach(processControllerClient);
                 ProcessLogger.CLIENT_LOGGER.trace("Sent initial greeting message");
@@ -192,7 +194,7 @@ public final class ProcessControllerClient implements Closeable {
         }
     }
 
-    public void addProcess(String processName, byte[] authKey, String[] cmd, String workingDir, Map<String, String> env) throws IOException {
+    public void addProcess(String processName, String authKey, String[] cmd, String workingDir, Map<String, String> env) throws IOException {
         if (processName == null) {
             throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
         }
@@ -211,14 +213,15 @@ public final class ProcessControllerClient implements Closeable {
         if (cmd.length < 1) {
             throw ProcessLogger.ROOT_LOGGER.invalidCommandLen();
         }
-        if (authKey.length != 16) {
+        // this is Base64 encoded, and padded up to 24 bytes
+        if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
             throw ProcessLogger.ROOT_LOGGER.invalidAuthKeyLen();
         }
         final OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.ADD_PROCESS);
             writeUTFZBytes(os, processName);
-            os.write(authKey);
+            os.write(authKey.getBytes(Charset.forName("US-ASCII")));
             writeInt(os, cmd.length);
             for (String c : cmd) {
                 writeUTFZBytes(os, c);
@@ -292,7 +295,7 @@ public final class ProcessControllerClient implements Closeable {
         }
     }
 
-    public void reconnectProcess(final String processName, final URI managementURI, final boolean managementSubsystemEndpoint, final byte[] authKey) throws IOException {
+    public void reconnectProcess(final String processName, final URI managementURI, final boolean managementSubsystemEndpoint, final String authKey) throws IOException {
         if (processName == null){
             throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
         }
@@ -304,7 +307,7 @@ public final class ProcessControllerClient implements Closeable {
             writeUTFZBytes(os, managementURI.getHost());
             writeInt(os, managementURI.getPort());
             writeBoolean(os, managementSubsystemEndpoint);
-            os.write(authKey);
+            os.write(authKey.getBytes(Charset.forName("US-ASCII")));
             os.close();
         } finally {
             safeClose(os);
