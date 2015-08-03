@@ -46,7 +46,7 @@ import java.util.Collection;
 class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
     RequestControllerSubsystemAdd(Collection<AttributeDefinition> attributeDefinitions) {
-        super(attributeDefinitions);
+        super(RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY, attributeDefinitions);
     }
 
     /**
