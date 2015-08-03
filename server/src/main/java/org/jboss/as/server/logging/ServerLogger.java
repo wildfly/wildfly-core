@@ -1160,4 +1160,10 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 232, value = "Could not get module info for module name: %s")
     OperationFailedException couldNotGetModuleInfo(String moduleName, @Cause Throwable cause);
+
+    @Message(id = 233, value = "Undeployed \"%s\" (runtime-name: \"%s\")")
+    String deploymentUndeployedNotification(String managementName, String deploymentUnitName);
+
+    @Message(id = 234, value = "Deployed \"%s\" (runtime-name : \"%s\")")
+    String deploymentDeployedNotification(String managementName, String deploymentUnitName);
 }
