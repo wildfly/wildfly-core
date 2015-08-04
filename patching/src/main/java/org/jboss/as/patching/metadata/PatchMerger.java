@@ -38,6 +38,7 @@ import org.jboss.as.patching.ZipUtils;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.Patch.PatchType;
 import org.jboss.as.patching.runner.PatchUtils;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  *
@@ -45,9 +46,9 @@ import org.jboss.as.patching.runner.PatchUtils;
  */
 public class PatchMerger {
 
-    private static final String DIRECTORY_PREFIX = "wildfly-patch-";
+    private static final String DIRECTORY_PREFIX = "tmp-";
     public static final String PATCH_XML_SUFFIX = "-patch.xml";
-    private static final File TEMP_DIR = new File(SecurityActions.getSystemProperty("java.io.tmpdir"));
+    private static final File TEMP_DIR = new File(WildFlySecurityManager.getPropertyPrivileged("java.io.tmpdir", null));
 
     public static File merge(File patch1, File patch2, File merged) throws PatchingException {
 
@@ -494,7 +495,7 @@ public class PatchMerger {
         }
     }
 
-    private static void ls(final File f) {
+/*    private static void ls(final File f) {
         System.out.println(f.getAbsolutePath());
         for(File c : f.listFiles()) {
             ls(c, "  ");
@@ -509,4 +510,4 @@ public class PatchMerger {
             }
         }
     }
-}
+*/}
