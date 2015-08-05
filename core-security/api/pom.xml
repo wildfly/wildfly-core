@@ -35,7 +35,6 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-security-api</artifactId>
 
     <name>WildFly: Core Security API</name>

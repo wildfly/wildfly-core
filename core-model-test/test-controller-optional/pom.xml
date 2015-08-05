@@ -38,10 +38,8 @@
 			the classpath when setting up the legacy controller classloaders, and want to be able to choose
 			which one to use. 
 		-->
-    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-model-test-controller-optional</artifactId>
     <name>WildFly: Core Model Test Controller Optional</name>
-    <version>2.0.0.Beta1-SNAPSHOT</version>
 
     <dependencies>
     </dependencies>
