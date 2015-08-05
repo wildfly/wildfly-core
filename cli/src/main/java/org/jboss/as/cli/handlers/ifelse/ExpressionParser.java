@@ -138,6 +138,8 @@ public class ExpressionParser {
                     } else {
                         --depthCount;
                     }
+                } else if (input.charAt(endIndex) == '"') { // traverse over string operands surrounded by quotes
+                    endIndex = traverseStringInQuotes(endIndex);
                 }
             }
             throw new IllegalStateException("Failed to locate closing ')' for '(' at " + pos + " in '" + input + "'");
@@ -179,6 +181,26 @@ public class ExpressionParser {
         }
 
         return operand;
+    }
+
+    /**
+     * Traverses over string surrounded by quotation marks.
+     *
+     * @param index index of opening quote
+     * @return index of closing quote
+     */
+    private int traverseStringInQuotes(int index) {
+        if (input.charAt(index) == '"') {
+            while (++index < input.length()) {
+                if (input.charAt(index) == '\\') {
+                    index++;
+                } else if (input.charAt(index) == '"') {
+                    return index;
+                }
+            }
+            throw new IllegalStateException("The closing '\"' is missing.");
+        }
+        return index;
     }
 
     protected ComparisonOperation tryComparison() {
