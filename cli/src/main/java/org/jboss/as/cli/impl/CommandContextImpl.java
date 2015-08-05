@@ -492,7 +492,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new EchoDMRHandler(), "echo-dmr");
         cmdRegistry.registerHandler(new HelpHandler(cmdRegistry), "help", "h");
         cmdRegistry.registerHandler(new HistoryHandler(), "history");
-        cmdRegistry.registerHandler(new LsHandler(), "ls");
+        cmdRegistry.registerHandler(new LsHandler(this), "ls");
         cmdRegistry.registerHandler(new ASModuleHandler(this), "module");
         cmdRegistry.registerHandler(new PrintWorkingNodeHandler(), "pwd", "pwn");
         cmdRegistry.registerHandler(new QuitHandler(), "quit", "q", "exit");
@@ -763,6 +763,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         } catch(CommandLineException e) {
             throw e;
         } catch(Throwable t) {
+            if(log.isDebugEnabled()) {
+                log.debug("Failed to handle '" + line + "'", t);
+            }
             throw new CommandLineException("Failed to handle '" + line + "'", t);
         } finally {
             // so that getArgumentsString() doesn't return this line
