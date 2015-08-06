@@ -33,7 +33,6 @@
         <version>2.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-logging</artifactId>
 
     <name>WildFly: Logging Subsystem</name>

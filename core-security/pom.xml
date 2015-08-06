@@ -33,7 +33,6 @@
     </parent>
 
     <artifactId>wildfly-core-security-parent</artifactId>
-    <version>2.0.0.Beta1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>WildFly: Core Security parent</name>
