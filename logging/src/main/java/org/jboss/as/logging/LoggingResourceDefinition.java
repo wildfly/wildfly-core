@@ -31,11 +31,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -202,7 +205,14 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-            final List<File> logFiles = findFiles(pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath(), model);
+            final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+            List<File> logFiles;
+            try {
+                logFiles = findFiles(logDir, model);
+            } catch (IOException e) {
+                logFiles = Collections.emptyList();
+                LoggingLogger.ROOT_LOGGER.errorProcessingLogDirectory(logDir);
+            }
             final SimpleDateFormat dateFormat = new SimpleDateFormat(LogFileResourceDefinition.ISO_8601_FORMAT);
             final ModelNode result = context.getResult().setEmptyList();
             for (File logFile : logFiles) {
@@ -245,7 +255,12 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
                 throw LoggingLogger.ROOT_LOGGER.logFileNotFound(fileName, ServerEnvironment.SERVER_LOG_DIR);
             }
             final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-            final List<File> logFiles = findFiles(pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath(), model);
+            final List<File> logFiles;
+            try {
+                logFiles = findFiles(pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath(), model);
+            } catch (IOException e) {
+                throw LoggingLogger.ROOT_LOGGER.failedToReadLogFile(e, fileName);
+            }
             // User must have permissions to read the file
             if (!path.canRead() || !logFiles.contains(path)) {
                 throw LoggingLogger.ROOT_LOGGER.readNotAllowed(fileName);
@@ -314,14 +329,16 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
         }
     }
 
-    private static List<File> findFiles(final String defaultLogDir, final ModelNode model) {
-        final List<File> logFiles = new ArrayList<>(LoggingResource.findFiles(defaultLogDir, model));
+    private static List<File> findFiles(final String defaultLogDir, final ModelNode model) throws IOException {
+        final Set<Path> files = LoggingResource.findFiles(defaultLogDir, model, false);
         // Also need to include logging profile log files
         if (model.hasDefined(CommonAttributes.LOGGING_PROFILE)) {
             for (Property property : model.get(CommonAttributes.LOGGING_PROFILE).asPropertyList()) {
-                logFiles.addAll(LoggingResource.findFiles(defaultLogDir, property.getValue()));
+                files.addAll(LoggingResource.findFiles(defaultLogDir, property.getValue(), false));
             }
         }
-        return logFiles;
+        return files.stream()
+                .map(Path::toFile)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

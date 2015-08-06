@@ -86,7 +86,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         List<ModelNode> resources = SubsystemOperations.readResult(result).asList();
         assertFalse("No Resources were found: " + result, resources.isEmpty());
 
-        final int currentSize = resources.size();
+        int expectedSize = resources.size();
 
         // Add a new file not in the jboss.server.log.dir directory
         final File logFile = new File(LoggingTestEnvironment.get().getLogDir(), "fh.log");
@@ -98,7 +98,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         // Re-read the log-file resource, the size should be the same
         result = executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address));
         resources = SubsystemOperations.readResult(result).asList();
-        assertEquals("Log file " + logFile.getAbsolutePath() + " should not be a resource", currentSize, resources.size());
+        assertEquals("Log file " + logFile.getAbsolutePath() + " should not be a resource", expectedSize, resources.size());
 
         // Change the file path of the file handler which should make it a log-file resource
         op = SubsystemOperations.createWriteAttributeOperation(fhAddress, "file", createFileValue("jboss.server.log.dir", "fh-2.log"));
@@ -106,7 +106,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         // Should be an additional resource
         result = executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address));
         resources = SubsystemOperations.readResult(result).asList();
-        assertEquals("Additional log-file resource failed to dynamically get added", currentSize + 1, resources.size());
+        assertEquals("Additional log-file resource failed to dynamically get added", ++expectedSize, resources.size());
 
         // Test the read-log-file on the
         final ModelNode simpleLogAddress = SUBSYSTEM_ADDRESS.append("log-file", "simple.log").toModelNode();
@@ -117,6 +117,15 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         final ModelNode profileAddress = SUBSYSTEM_ADDRESS.append("logging-profile", "testProfile").append("log-file", "profile-simple.log").toModelNode();
         op = SubsystemOperations.createOperation("read-log-file", profileAddress);
         testReadLogFile(kernelServices, op, getLogger("testProfile"));
+
+        // Test file in subdirectory
+        final ModelNode subFhAddress = createFileHandlerAddress("sub-fh").toModelNode();
+        op = SubsystemOperations.createAddOperation(subFhAddress);
+        op.get("file").set(createFileValue("jboss.server.log.dir", "subdir" + File.separator + "sub-fh.log"));
+        executeOperation(kernelServices, op);
+        result = executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address));
+        resources = SubsystemOperations.readResult(result).asList();
+        assertEquals("Log file " + logFile.getAbsolutePath() + " should not be a resource", ++expectedSize, resources.size());
 
     }
 
