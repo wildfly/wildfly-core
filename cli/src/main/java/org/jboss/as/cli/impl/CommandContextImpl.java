@@ -1081,6 +1081,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
         }
 
+        if (console == null) {
+            // fail because the user might not be able to provide input
+            printLine("The certificate cannot be accepted in non-interactive mode.");
+            return false;
+        }
+
         for (;;) {
             String response;
             if (trustManager.isModifyTrustStore()) {
