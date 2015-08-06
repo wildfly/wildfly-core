@@ -387,10 +387,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (client == null && !terminate) {
-                            printLine("You are disconnected at the moment. Type 'connect' to connect to the server or" +
-                                    " 'help' for the list of supported commands.");
-                        }
                         if (!terminate && interact)
                             console.setPrompt(getPrompt());
                     }
