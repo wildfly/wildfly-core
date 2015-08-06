@@ -27,9 +27,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED_ORIGINS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_DATE;
@@ -40,11 +42,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertThat;
 import static org.productivity.java.syslog4j.impl.message.pci.PCISyslogMessage.USER_ID;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -66,6 +70,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTestBase {
 
+    private static final int MAX_HISTORY_SIZE = 4;
+
     private static final PathAddress ALLOWED_ORIGINS_ADDRESS = PathAddress.pathAddress()
             .append(CORE_SERVICE, MANAGEMENT)
             .append(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
@@ -79,13 +85,15 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
     public void setConfigurationChanges() throws Exception {
         ModelControllerClient client = getModelControllerClient();
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(ADDRESS));
-        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(3);
+        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
         client.execute(add);
         createConfigurationChanges(client);
     }
 
     public void createConfigurationChanges(ModelControllerClient client) throws Exception {
-        ModelNode setAllowedOrigins = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "http://www.wildfly.org");
+        ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", ALLOWED_ORIGINS_ADDRESS);
+        setAllowedOrigins.get(NAME).set(ALLOWED_ORIGINS);
+        setAllowedOrigins.get(VALUE).set( "http://www.wildfly.org");
         client.execute(setAllowedOrigins);
         ModelNode setSystemProperty = Util.createAddOperation(SYSTEM_PROPERTY_ADDRESS);
         setSystemProperty.get(VALUE).set("changeConfig");
@@ -94,6 +102,15 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
         client.execute(unsetAllowedOrigins);
         ModelNode unsetSystemProperty = Util.createRemoveOperation(SYSTEM_PROPERTY_ADDRESS);
         client.execute(unsetSystemProperty);
+        //read
+        client.execute(Util.getReadAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS));
+        //invalid operation
+        client.execute(Util.getUndefineAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute"));
+        //invalid operation
+        client.execute(Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute", "123456"));
+        //write operation, failed
+        ModelNode setAllowedOriginsFails = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "123456");//wrong type, expected is LIST, op list-add
+        client.execute(setAllowedOriginsFails);
     }
 
     @After
@@ -107,7 +124,7 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
     public void testConfigurationChanges() throws Exception {
         final ModelNode listConfigurationChanges = Util.createOperation(ConfigurationChangeResourceDefinition.OPERATION_NAME, ADDRESS);
         List<ModelNode> changes = getManagementClient().executeForResult(listConfigurationChanges).asList();
-        assertThat(changes.size(), is(3));
+        assertThat(changes.size(), is(MAX_HISTORY_SIZE));
         for(ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));
@@ -115,20 +132,28 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
             assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
-            assertThat(change.get(OUTCOME).asString(), is(SUCCESS));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
+
         ModelNode currentChange = changes.get(0);
         ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        assertThat(currentChangeOp.get(OP).asString(), is(WRITE_ATTRIBUTE_OPERATION));
+        assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ALLOWED_ORIGINS_ADDRESS.toModelNode().asString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(FAILED));
+        currentChange = changes.get(1);
+        currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(REMOVE));
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(SYSTEM_PROPERTY_ADDRESS.toString()));
-        currentChange = changes.get(1);
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
+        currentChange = changes.get(2);
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(UNDEFINE_ATTRIBUTE_OPERATION));
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ALLOWED_ORIGINS_ADDRESS.toModelNode().asString()));
-        currentChange = changes.get(2);
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
+        currentChange = changes.get(3);
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(ADD));
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(SYSTEM_PROPERTY_ADDRESS.toModelNode().asString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
     }
 }
