@@ -113,16 +113,18 @@ class FilePersistenceUtils {
         return tempFileName;
     }
 
-    static void createTempFileWithAttributes(Path tempFilePath, File fileName) throws IOException {
+    static Path createTempFileWithAttributes(Path tempFilePath, File fileName) throws IOException {
         Path exisitingFilePath = fileName.toPath();
         List<FileAttribute> attributes = new ArrayList<>(2);
         attributes.addAll(getPosixAttributes(exisitingFilePath));
         attributes.addAll(getAclAttributes(exisitingFilePath));
-        if (attributes.isEmpty()) {
-            Files.createFile(tempFilePath);
-        } else {
-            Files.createFile(tempFilePath, attributes.toArray(new FileAttribute<?>[attributes.size()]));
+        if (!attributes.isEmpty()) {
+            try {
+                return Files.createFile(tempFilePath, attributes.toArray(new FileAttribute<?>[attributes.size()]));
+            } catch (UnsupportedOperationException ex) {
+            }
         }
+        return Files.createFile(tempFilePath);
     }
 
     private static List<FileAttribute<Set<PosixFilePermission>>> getPosixAttributes(Path file) throws IOException {
