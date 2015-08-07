@@ -553,11 +553,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
-        // Embedded server/host, if we are running in a modular environment
-        AtomicReference<EmbeddedServerLaunch> embeddedServerRef = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
-        cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerRef), "reload");
-        cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerRef), "shutdown");
-
+        final AtomicReference<EmbeddedServerLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerLaunch), "reload");
+        cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerLaunch), "shutdown");
         registerExtraHandlers();
 
         extLoader = new ExtensionsLoader(cmdRegistry, this);

@@ -58,9 +58,10 @@ public class ReloadHandler extends BaseOperationCommand {
     private final ArgumentWithValue useCurrentDomainConfig;
     private final ArgumentWithValue useCurrentHostConfig;
     private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
+
     private PerNodeOperationAccess hostReloadPermission;
 
-    public ReloadHandler(CommandContext ctx, AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
+    public ReloadHandler(CommandContext ctx, final AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
         super(ctx, "reload", true);
 
         this.embeddedServerRef = embeddedServerRef;
@@ -136,7 +137,8 @@ public class ReloadHandler extends BaseOperationCommand {
         if(client == null) {
             throw new CommandLineException("Connection is not available.");
         }
-        if (embeddedServerRef.get() != null) {
+
+        if (embeddedServerRef != null && embeddedServerRef.get() != null) {
             doHandleEmbedded(ctx, client);
             return;
         }

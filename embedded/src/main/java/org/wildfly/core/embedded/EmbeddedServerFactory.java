@@ -85,8 +85,9 @@ public class EmbeddedServerFactory {
      *                       the server's modular classlaoder
      * @return the server. Will not be {@code null}
      */
+
     public static StandaloneServer create(String jbossHomePath, String modulePath, String... systemPackages) {
-        return create(jbossHomePath, modulePath, systemPackages, null);
+       return create(jbossHomePath, modulePath, systemPackages, null);
     }
 
     /**
@@ -115,6 +116,10 @@ public class EmbeddedServerFactory {
             modulePath = jbossHomeDir.getAbsolutePath() + File.separator + "modules";
 
         return create(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
+    }
+
+    public static EmbeddedServerReference createStandalone(String jbossHomePath, String modulePath, String[] systemPackages, String[] cmdargs) {
+        return (EmbeddedServerReference) create(jbossHomePath, modulePath, systemPackages, cmdargs);
     }
 
     /**
@@ -170,7 +175,6 @@ public class EmbeddedServerFactory {
         } catch (final NoSuchMethodException nsme) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedServerFactoryClass.getName());
         }
-
         // Create the server
         Object standaloneServerImpl;
         try {
@@ -183,7 +187,70 @@ public class EmbeddedServerFactory {
         } catch (final IllegalAccessException iae) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(iae, createServerMethod);
         }
-        return new StandaloneServerIndirection(standaloneServerClass, standaloneServerImpl);
+        StandaloneServer server = new EmbeddedServerReference(standaloneServerClass, standaloneServerImpl);
+        return server;
+    }
+
+    public static EmbeddedServerReference createStandalone(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
+        return (EmbeddedServerReference) create(moduleLoader, jbossHomeDir, cmdargs);
+    }
+
+    /**
+     * Create an embedded host controller with an already established module loader.
+     *
+     * @param moduleLoader the module loader. Cannot be {@code null}
+     * @param jbossHomeDir the location of the root of server installation. Cannot be {@code null} or empty.
+     * @param cmdargs      any additional arguments to pass to the embedded server (e.g. -b=192.168.100.10)
+     * @return the running host controller Will not be {@code null}
+     */
+    public static EmbeddedServerReference createHostController(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
+
+        setupVfsModule(moduleLoader);
+        setupLoggingSystem(moduleLoader);
+
+        // Embedded Server wants this, too. Seems redundant, but supply it.
+        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir.getAbsolutePath());
+
+        // Load the Embedded Server Module
+        final Module embeddedModule;
+        try {
+            embeddedModule = moduleLoader.loadModule(ModuleIdentifier.create(MODULE_ID_EMBEDDED));
+        } catch (final ModuleLoadException mle) {
+            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_EMBEDDED, moduleLoader);
+        }
+
+        // Load the Embedded Server Factory via the modular environment
+        final ModuleClassLoader embeddedModuleCL = embeddedModule.getClassLoader();
+        final Class<?> embeddedHostControllerFactoryClass;
+        final Class<?> hostControllerClass;
+        try {
+            embeddedHostControllerFactoryClass = embeddedModuleCL.loadClass(EmbeddedHostControllerFactory.class.getName());
+            hostControllerClass = embeddedModuleCL.loadClass(HostController.class.getName());
+        } catch (final ClassNotFoundException cnfe) {
+            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedHostControllerFactory.class.getName());
+        }
+
+        // Get a handle to the method which will create the server
+        final Method createServerMethod;
+        try {
+            createServerMethod = embeddedHostControllerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class);
+        } catch (final NoSuchMethodException nsme) {
+            throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedHostControllerFactoryClass.getName());
+        }
+
+        // Create the server
+        Object hostControllerImpl;
+        try {
+            Properties sysprops = WildFlySecurityManager.getSystemPropertiesPrivileged();
+            Map<String, String> sysenv = WildFlySecurityManager.getSystemEnvironmentPrivileged();
+            String[] args = cmdargs != null ? cmdargs : new String[0];
+            hostControllerImpl = createServerMethod.invoke(null, jbossHomeDir, moduleLoader, sysprops, sysenv, args);
+        } catch (final InvocationTargetException ite) {
+            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(ite.getCause(), createServerMethod);
+        } catch (final IllegalAccessException iae) {
+            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(iae, createServerMethod);
+        }
+        return new EmbeddedServerReference(hostControllerClass, hostControllerImpl);
     }
 
     private static String trimPathToModulesDir(String modulePath) {
