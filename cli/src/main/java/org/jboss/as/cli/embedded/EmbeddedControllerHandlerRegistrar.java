@@ -83,12 +83,15 @@ public class EmbeddedControllerHandlerRegistrar {
         modular = obj != null;
     }
 
-    public static AtomicReference<EmbeddedServerLaunch> registerEmbeddedCommands(CommandRegistry commandRegistry, CommandContext ctx) throws CommandLineException {
+    public static final AtomicReference<EmbeddedServerLaunch> registerEmbeddedCommands(CommandRegistry commandRegistry, CommandContext ctx) throws CommandLineException {
         AtomicReference<EmbeddedServerLaunch> serverReference = new AtomicReference<>();
         if (hasModules) {
             commandRegistry.registerHandler(EmbedServerHandler.create(serverReference, ctx, modular), "embed-server");
             commandRegistry.registerHandler(new StopEmbeddedServerHandler(serverReference), "stop-embedded-server");
+            commandRegistry.registerHandler(EmbedHostControllerHandler.create(serverReference, ctx, modular), "embed-host-controller");
+            commandRegistry.registerHandler(new StopEmbeddedHostControllerHandler(serverReference), "stop-embedded-host-controller");
         }
         return serverReference;
     }
+
 }

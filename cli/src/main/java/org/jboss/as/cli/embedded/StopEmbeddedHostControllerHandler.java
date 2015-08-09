@@ -29,44 +29,44 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 
 /**
- * Handler for the "stop-embedded-server" command.
+ * Handler for the "stop-embedded-host-controller" command.
  *
- * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ * @author Ken Wills (c) 2015 Red Hat Inc.
  */
-class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
+class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
 
-    private final AtomicReference<EmbeddedServerLaunch> serverReference;
+    private final AtomicReference<EmbeddedServerLaunch> hostControllerReference;
 
 
-    StopEmbeddedServerHandler(final AtomicReference<EmbeddedServerLaunch> serverReference) {
-        super("stop-embedded-server", false);
-        assert serverReference != null;
-        this.serverReference = serverReference;
+    StopEmbeddedHostControllerHandler(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
+        super("stop-embedded-host-controller", false);
+        assert hostControllerReference != null;
+        this.hostControllerReference = hostControllerReference;
     }
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        return serverReference.get() != null;
+        return hostControllerReference.get() != null;
     }
 
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
-        EmbeddedServerLaunch serverLaunch = serverReference.get();
-        if (serverLaunch != null) {
+        EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
+        if (hostControllerLaunch != null) {
             ctx.disconnectController();
         }
     }
 
-    static void cleanup(final AtomicReference<EmbeddedServerLaunch> serverReference) {
-        EmbeddedServerLaunch serverLaunch = serverReference.get();
-        if (serverLaunch != null) {
+    static void cleanup(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
+        EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
+        if (hostControllerLaunch != null) {
             try {
-                serverLaunch.stop();
+                hostControllerLaunch.getHostController().stop();
             } finally {
                 try {
-                    serverLaunch.getEnvironmentRestorer().restoreEnvironment();
+                    hostControllerLaunch.getEnvironmentRestorer().restoreEnvironment();
                 } finally {
-                    serverReference.compareAndSet(serverLaunch, null);
+                    hostControllerReference.compareAndSet(hostControllerLaunch, null);
                 }
             }
         }

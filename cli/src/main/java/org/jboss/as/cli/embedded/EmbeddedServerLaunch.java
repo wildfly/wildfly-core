@@ -22,7 +22,8 @@
 
 package org.jboss.as.cli.embedded;
 
-import org.jboss.as.controller.client.ModelControllerClient;
+import org.wildfly.core.embedded.EmbeddedServerReference;
+import org.wildfly.core.embedded.HostController;
 import org.wildfly.core.embedded.StandaloneServer;
 
 /**
@@ -30,13 +31,13 @@ import org.wildfly.core.embedded.StandaloneServer;
  *
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
-public final class EmbeddedServerLaunch {
 
-    private final StandaloneServer server;
+public class EmbeddedServerLaunch {
 
+    private final EmbeddedServerReference server;
     private final EnvironmentRestorer restorer;
 
-    EmbeddedServerLaunch(StandaloneServer server, EnvironmentRestorer restorer) {
+   EmbeddedServerLaunch(EmbeddedServerReference server, EnvironmentRestorer restorer) {
         this.server = server;
         this.restorer = restorer;
     }
@@ -45,11 +46,23 @@ public final class EmbeddedServerLaunch {
         return restorer;
     }
 
-    StandaloneServer getServer() {
-        return server;
+    public StandaloneServer getServer() {
+        return server.getStandaloneServer();
     }
 
-    public ModelControllerClient getModelControllerClient() {
-        return server.getModelControllerClient();
+    public void stop() {
+        if (server == null)
+            return;
+        server.stop();
+    }
+
+    public void start() {
+        if (server == null)
+            return;
+        server.start();
+    }
+
+    public HostController getHostController() {
+        return server.getHostController();
     }
 }

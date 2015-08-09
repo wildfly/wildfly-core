@@ -43,12 +43,12 @@ import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
-import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.wildfly.core.embedded.EmbeddedServerFactory;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
@@ -56,58 +56,54 @@ import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.core.embedded.EmbeddedServerFactory;
 import org.wildfly.core.embedded.EmbeddedServerReference;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
- * Handler for the "embed-server" command.
+ * Handler for the "embed-host-controller" command.
  *
- * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ * @author Ken Wills <kwills@redhat.com> (c) 2015 Red Hat Inc.
  */
-class EmbedServerHandler extends CommandHandlerWithHelp {
+class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
     private static final String ECHO = "echo";
     private static final String DISCARD_STDOUT = "discard";
 
-    private final AtomicReference<EmbeddedServerLaunch> serverReference;
+    private final AtomicReference<EmbeddedServerLaunch> hostControllerReference;
     private ArgumentWithValue jbossHome;
     private ArgumentWithValue stdOutHandling;
-    private ArgumentWithValue adminOnly;
-    private ArgumentWithValue serverConfig;
+    private ArgumentWithValue domainConfig;
+    private ArgumentWithValue hostConfig;
     private ArgumentWithValue dashC;
-    private ArgumentWithoutValue emptyConfig;
-    private ArgumentWithoutValue removeExisting;
     private ArgumentWithValue timeout;
 
-    static EmbedServerHandler create(final AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx, boolean modular) {
-        EmbedServerHandler result = new EmbedServerHandler(serverReference);
+    static EmbedHostControllerHandler create(final AtomicReference<EmbeddedServerLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
+        EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         if (!modular) {
             result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
         }
         result.stdOutHandling = new ArgumentWithValue(result, new SimpleTabCompleter(new String[]{ECHO, DISCARD_STDOUT}), "--std-out");
-        result.serverConfig = new ArgumentWithValue(result, "--server-config");
+        result.domainConfig = new ArgumentWithValue(result, "--domain-config");
+        result.hostConfig = new ArgumentWithValue(result, "--host-config");
         result.dashC = new ArgumentWithValue(result, "-c");
-        result.dashC.addCantAppearAfter(result.serverConfig);
-        result.serverConfig.addCantAppearAfter(result.dashC);
-        result.adminOnly = new ArgumentWithValue(result, SimpleTabCompleter.BOOLEAN, "--admin-only");
-        result.emptyConfig = new ArgumentWithoutValue(result, "--empty-config");
-        result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
-        result.removeExisting.addRequiredPreceding(result.emptyConfig);
+        result.dashC.addCantAppearAfter(result.domainConfig);
+        result.domainConfig.addCantAppearAfter(result.dashC);
         result.timeout = new ArgumentWithValue(result, "--timeout");
 
         return result;
     }
 
-    private EmbedServerHandler(final AtomicReference<EmbeddedServerLaunch> serverReference) {
-        super("embed-server", false);
-        assert serverReference != null;
-        this.serverReference = serverReference;
+    private EmbedHostControllerHandler(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
+        super("embed-host-controller", false);
+        assert hostControllerReference != null;
+        this.hostControllerReference = hostControllerReference;
     }
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        return ctx.getModelControllerClient() == null;
+       return ctx.getModelControllerClient() == null;
     }
 
     @Override
@@ -123,17 +119,12 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
         final File jbossHome = getJBossHome(parsedCmd);
-        String xml = serverConfig.getValue(parsedCmd);
-        if (xml == null) {
-            xml = dashC.getValue(parsedCmd);
+        String domainXml = domainConfig.getValue(parsedCmd);
+        if (domainXml == null) {
+            domainXml = dashC.getValue(parsedCmd);
         }
-        boolean adminOnlySetting = true;
-        String adminProp = adminOnly.getValue(parsedCmd);
-        if (adminProp != null && "false".equalsIgnoreCase(adminProp)) {
-            adminOnlySetting = false;
-        }
-        boolean startEmpty = emptyConfig.isPresent(parsedCmd);
-        boolean removeConfig = startEmpty && removeExisting.isPresent(parsedCmd);
+
+        String hostXml = hostConfig.getValue(parsedCmd);
 
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
@@ -175,44 +166,49 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             LogContext.setLogContextSelector(contextSelector);
 
             List<String> cmdsList = new ArrayList<>();
-            if (xml != null && xml.trim().length() > 0) {
-                cmdsList.add("--server-config=" + xml.trim());
+            if (domainXml != null && domainXml.trim().length() > 0) {
+                cmdsList.add(CommandLineConstants.DOMAIN_CONFIG);
+                cmdsList.add(domainXml.trim());
             }
-            if (adminOnlySetting) {
-                cmdsList.add("--admin-only");
-            }
-            if (startEmpty) {
-                cmdsList.add("--internal-empty-config");
-                if (removeConfig) {
-                    cmdsList.add("--internal-remove-config");
-                }
+
+            if (hostXml != null && hostXml.trim().length() > 0) {
+                cmdsList.add(CommandLineConstants.HOST_CONFIG);
+                cmdsList.add(hostXml.trim());
             }
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference server;
-            if (this.jbossHome == null) {
-                // Modular environment
-                server = EmbeddedServerFactory.createStandalone(ModuleLoader.forClass(getClass()), jbossHome, cmds);
-            } else {
-                server = EmbeddedServerFactory.createStandalone(jbossHome.getAbsolutePath(), null, null, cmds);
-            }
-            server.start();
-            serverReference.set(new EmbeddedServerLaunch(server, restorer));
-            ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);
+            EmbeddedServerReference hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            hostController.start();
+            hostControllerReference.set(new EmbeddedServerLaunch(hostController, restorer));
+
+            ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
-                // Poll for server state. Alternative would be to get ControlledProcessStateService
-                // and do reflection stuff to read the state and register for change notifications
                 long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
+
+                String localName = "master";
                 String status = "starting";
+
+                // read out the host controller name
+                final ModelNode getNameOp = new ModelNode();
+                getNameOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                getNameOp.get(ClientConstants.NAME).set(Util.LOCAL_HOST_NAME);
+
                 final ModelNode getStateOp = new ModelNode();
                 getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                getStateOp.get(ClientConstants.NAME).set("server-state");
+                ModelNode address = getStateOp.get(ModelDescriptionConstants.ADDRESS);
+                address.add(ClientConstants.HOST, localName);
+                getStateOp.get(ClientConstants.NAME).set(ModelDescriptionConstants.HOST_STATE);
                 do {
                     try {
-                        final ModelNode response = mcc.execute(getStateOp);
-                        if (Util.isSuccess(response)) {
-                            status = response.get(ClientConstants.RESULT).asString();
+                        final ModelNode nameResponse = mcc.execute(getNameOp);
+                        if (Util.isSuccess(nameResponse)) {
+                            localName = nameResponse.get(ClientConstants.RESULT).asString();
+                            address.set(ClientConstants.HOST, localName);
+                            final ModelNode stateResponse = mcc.execute(getStateOp);
+                            if (Util.isSuccess(stateResponse)) {
+                                status = stateResponse.get(ClientConstants.RESULT).asString();
+                            }
                         }
                     } catch (Exception e) {
                         // ignore and try again
@@ -233,29 +229,24 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 if ("starting".equals(status)) {
                     assert bootTimeout != null; // we'll assume the loop didn't run for decades
                     // Stop server and restore environment
-                    StopEmbeddedServerHandler.cleanup(serverReference);
-                    throw new CommandLineException("Embedded server did not exit 'starting' status within " +
+                    StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
+                    throw new CommandLineException("Embedded host controller did not exit 'starting' status within " +
                             TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
                 }
-
             }
             // Expose the client to the rest of the CLI last so nothing can be done with
             // it until we're ready
             ctx.bindClient(mcc);
-
             // Stop the server on any disconnect event
             ctx.addEventListener(new CliEventListener() {
                 @Override
                 public void cliEvent(CliEvent event, CommandContext ctx) {
                     if (event == CliEvent.DISCONNECTED) {
-                        StopEmbeddedServerHandler.cleanup(serverReference);
+                        StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
                     }
                 }
             });
-
             ok = true;
-        } catch (Exception e) {
-            throw new CommandLineException("Cannot start embedded server", e);
         } finally {
             if (!ok) {
                 ctx.disconnectController();
@@ -267,7 +258,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     }
 
     private void configureLogContext(LogContext embeddedLogContext, File jbossHome, CommandContext ctx) {
-        File standaloneDir =  new File(jbossHome, "standalone");
+        File standaloneDir =  new File(jbossHome, "domain");
         File configDir =  new File(standaloneDir, "configuration");
         File logDir =  new File(standaloneDir, "log");
         File bootLog = new File(logDir, "boot.log");
@@ -281,7 +272,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 fis = new FileInputStream(loggingProperties);
                 new PropertyConfigurator(embeddedLogContext).configure(fis);
             } catch (IOException e) {
-                ctx.printLine("Unable to configure embedded server logging from " + loggingProperties);
+                ctx.printLine("Unable to configure embedded host controller logging from " + loggingProperties);
             } finally {
                 StreamUtils.safeClose(fis);
             }
@@ -306,7 +297,6 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     }
 
     private static File validateJBossHome(String jbossHome, String source) throws CommandLineException {
-
         File f = new File(jbossHome);
         if (!f.exists()) {
             throw new CommandLineException(String.format("File %s specified by %s does not exist", jbossHome, source));
