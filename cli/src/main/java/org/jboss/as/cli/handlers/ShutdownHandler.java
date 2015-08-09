@@ -53,7 +53,7 @@ public class ShutdownHandler extends BaseOperationCommand {
     private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
     private PerNodeOperationAccess hostShutdownPermission;
 
-    public ShutdownHandler(CommandContext ctx, AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
+    public ShutdownHandler(CommandContext ctx, final AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
         super(ctx, "shutdown", true);
 
         this.embeddedServerRef = embeddedServerRef;
@@ -87,7 +87,7 @@ public class ShutdownHandler extends BaseOperationCommand {
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        return super.isAvailable(ctx) && (embeddedServerRef == null || embeddedServerRef.get() == null);
+        return super.isAvailable(ctx) && ((embeddedServerRef == null || embeddedServerRef.get() == null));
     }
 
     /* (non-Javadoc)
@@ -99,6 +99,12 @@ public class ShutdownHandler extends BaseOperationCommand {
         if(client == null) {
             throw new CommandLineException("Connection is now available.");
         }
+
+        if (embeddedServerRef != null && embeddedServerRef.get() != null){
+                embeddedServerRef.get().stop();
+            return;
+        }
+
         if(!(client instanceof CLIModelControllerClient)) {
             throw new CommandLineException("Unsupported ModelControllerClient implementation " + client.getClass().getName());
         }

@@ -20,49 +20,51 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.host.controller;
+package org.wildfly.core.embedded;
 
 import java.util.concurrent.CountDownLatch;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.host.controller.HostControllerEnvironment;
+import org.jboss.as.host.controller.HostControllerService;
+import org.jboss.as.host.controller.HostRunningModeControl;
+import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.msc.service.ServiceContainer;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
- * Bootstrap of the HostController process.
+ * Bootstrap of the Embedded HostController process.
  *
- * @author Emanuel Muckenhuber
- * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
- * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author Ken Wills (c) 2015 Red Hat Inc.
  */
-public class HostControllerBootstrap {
+public class EmbeddedHostControllerBootstrap {
 
     private final ShutdownHook shutdownHook;
     private final ServiceContainer serviceContainer;
     private final HostControllerEnvironment environment;
     private final String authCode;
+    private FutureServiceContainer futureContainer;
 
-    public HostControllerBootstrap(final HostControllerEnvironment environment, final String authCode) {
+    public EmbeddedHostControllerBootstrap(FutureServiceContainer futureContainer, final HostControllerEnvironment environment, final String authCode) {
         this.environment = environment;
         this.authCode = authCode;
         this.shutdownHook = new ShutdownHook();
         this.serviceContainer = shutdownHook.register();
+        this.futureContainer = futureContainer;
     }
 
-    /**
-     * Start the host controller services.
-     *
-     * @throws Exception
-     */
-    public void bootstrap() throws Exception {
+    public FutureServiceContainer bootstrap() throws Exception {
         final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
         ServiceTarget target = serviceContainer.subTarget();
-        ControlledProcessStateService.addService(target, processState);
-        final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, false);
+
+        final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
+        final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, true, futureContainer);
         target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
+        return futureContainer;
     }
 
     private static class ShutdownHook extends Thread {

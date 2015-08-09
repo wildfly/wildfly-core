@@ -120,7 +120,7 @@ public final class Main {
     private Main() {
     }
 
-    private static HostControllerBootstrap create(String[] args, final String authCode) {
+    public static HostControllerBootstrap create(String[] args, final String authCode) {
         Main main = new Main();
         return main.boot(args, authCode);
     }
@@ -187,7 +187,7 @@ public final class Main {
         CommandLineArgumentUsageImpl.printUsage(STDOUT);
     }
 
-    private static HostControllerEnvironment determineEnvironment(String[] args, long startTime) {
+    public static HostControllerEnvironment determineEnvironment(String[] args, long startTime) {
         Integer pmPort = null;
         InetAddress pmAddress = null;
         final PCSocketConfig pcSocketConfig = new PCSocketConfig();
@@ -203,6 +203,7 @@ public final class Main {
         Map<String, String> hostSystemProperties = getHostSystemProperties();
         ProductConfig productConfig;
         String modulePath = null;
+
         // Note the java.security.manager shouldn't be set, but we'll check to ensure the security manager gets enabled
         boolean securityManagerEnabled = System.getSecurityManager() != null || hostSystemProperties.containsKey("java.security.manager");
 
