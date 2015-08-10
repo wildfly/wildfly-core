@@ -30,23 +30,23 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
  * @author <a href="mailto:alr@jboss.org">Andrew Lee Rubinger</a>
  * @author Thomas.Diesler@jboss.com
  */
-final class StandaloneServerIndirection implements StandaloneServer {
+public final class EmbeddedServerReference implements StandaloneServer, HostController {
 
-    private final Object standaloneServer;
+    private final Object server;
     private final Method methodStart;
     private final Method methodStop;
     private final Method methodGetModelControllerClient;
 
-    StandaloneServerIndirection(Class<?> standaloneServerClass, Object standaloneServerImpl) {
-        this.standaloneServer = standaloneServerImpl;
+    EmbeddedServerReference(Class<?> serverClass, Object serverImpl) {
+        this.server = serverImpl;
 
         // Get a handle on the {@link StandaloneServer} methods
         try {
-            methodStart = standaloneServerClass.getMethod("start");
-            methodStop = standaloneServerClass.getMethod("stop");
-            methodGetModelControllerClient = standaloneServerClass.getMethod("getModelControllerClient");
+            methodStart = serverClass.getMethod("start");
+            methodStop = serverClass.getMethod("stop");
+            methodGetModelControllerClient = serverClass.getMethod("getModelControllerClient");
         } catch (final NoSuchMethodException nsme) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, nsme.getMessage(), standaloneServerClass.getName());
+            throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, nsme.getMessage(), serverClass.getName());
         }
     }
 
@@ -62,12 +62,22 @@ final class StandaloneServerIndirection implements StandaloneServer {
 
     @Override
     public ModelControllerClient getModelControllerClient()  {
-        return (ModelControllerClient) invokeOnServer(methodGetModelControllerClient);
+        ModelControllerClient client = (ModelControllerClient) invokeOnServer(methodGetModelControllerClient);
+        return client;
+    }
+
+    public StandaloneServer getStandaloneServer() {
+        return (StandaloneServer) server;
+    }
+
+    @Override
+    public HostController getHostController() {
+        return (HostController) server;
     }
 
     private Object invokeOnServer(final Method method, Object... args) {
         try {
-            return method.invoke(standaloneServer, args);
+            return method.invoke(server, args);
         } catch (RuntimeException rte) {
             throw rte;
         } catch (Exception ex) {

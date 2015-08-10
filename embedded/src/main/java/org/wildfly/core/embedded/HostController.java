@@ -19,25 +19,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.wildfly.core.embedded;
 
-package org.jboss.as.patching.metadata;
-
-import static java.lang.System.getProperty;
-import static java.lang.System.getSecurityManager;
-import static java.security.AccessController.doPrivileged;
-
-import org.wildfly.security.manager.action.ReadPropertyAction;
+import org.jboss.as.controller.client.ModelControllerClient;
 
 /**
+ * The embedded host controller interface.
  *
- * @author Alexey Loubyansky
+ * @author Ken Wills <kwills@redhat.com>
+ *
  */
-class SecurityActions {
+public interface HostController {
 
-    private SecurityActions() {
-    }
+    HostController getHostController();
 
-    static String getSystemProperty(final String key) {
-        return getSecurityManager() == null ? getProperty(key) : doPrivileged(new ReadPropertyAction(key));
-    }
+    ModelControllerClient getModelControllerClient();
+
+    void start() throws ServerStartException;
+
+    void stop();
 }

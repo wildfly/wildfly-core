@@ -58,9 +58,10 @@ public class ReloadHandler extends BaseOperationCommand {
     private final ArgumentWithValue useCurrentDomainConfig;
     private final ArgumentWithValue useCurrentHostConfig;
     private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
+
     private PerNodeOperationAccess hostReloadPermission;
 
-    public ReloadHandler(CommandContext ctx, AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
+    public ReloadHandler(CommandContext ctx, final AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
         super(ctx, "reload", true);
 
         this.embeddedServerRef = embeddedServerRef;
@@ -136,7 +137,8 @@ public class ReloadHandler extends BaseOperationCommand {
         if(client == null) {
             throw new CommandLineException("Connection is not available.");
         }
-        if (embeddedServerRef.get() != null) {
+
+        if (embeddedServerRef != null && embeddedServerRef.get() != null) {
             doHandleEmbedded(ctx, client);
             return;
         }
@@ -184,8 +186,19 @@ public class ReloadHandler extends BaseOperationCommand {
         final long start = System.currentTimeMillis();
         final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000;
         final ModelNode getStateOp = new ModelNode();
+        if(ctx.isDomainMode()) {
+            final ParsedCommandLine args = ctx.getParsedCommandLine();
+            final String hostName = host.getValue(args);
+            getStateOp.get(Util.ADDRESS).add(Util.HOST, hostName);
+        }
+
         getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        getStateOp.get(ClientConstants.NAME).set("server-state");
+
+        if(ctx.isDomainMode()){
+            getStateOp.get(ClientConstants.NAME).set("host-state");
+        }else {
+            getStateOp.get(ClientConstants.NAME).set("server-state");
+        }
 
         while (true) {
             String serverState = null;

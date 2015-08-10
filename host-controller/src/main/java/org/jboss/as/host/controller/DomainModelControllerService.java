@@ -64,8 +64,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
@@ -89,6 +90,7 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -158,6 +160,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -220,7 +223,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                                             final HostRunningModeControl runningModeControl,
                                                             final ControlledProcessState processState,
                                                             final BootstrapListener bootstrapListener,
-                                                            final PathManagerService pathManager){
+                                                            final PathManagerService pathManager,
+                                                            final boolean isEmbedded){
         final ConcurrentMap<String, ProxyController> hostProxies = new ConcurrentHashMap<String, ProxyController>();
         final Map<String, ProxyController> serverProxies = new ConcurrentHashMap<String, ProxyController>();
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
@@ -231,15 +235,19 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
-        final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
-        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        ProcessType processType = ProcessType.HOST_CONTROLLER;
+        if (isEmbedded) {
+            processType = ProcessType.EMBEDDED_HOST_CONTROLLER;
+        }
+        final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded);
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -265,8 +273,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ExtensionRegistry hostExtensionRegistry,
                                          final ExtensionRegistry extensionRegistry,
                                          final ManagedAuditLogger auditLogger,
-                                         final DelegatingConfigurableAuthorizer authorizer) {
-        super(ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
+                                         final DelegatingConfigurableAuthorizer authorizer,
+                                         final boolean isEmbedded) {
+        super(isEmbedded ? ProcessType.EMBEDDED_HOST_CONTROLLER : ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
                 rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
@@ -662,7 +671,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         ok = true;
                     }
 
-                    if (ok) {
+                    if (ok && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
                         InternalExecutor executor = new InternalExecutor();
                         ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                                 new MasterDomainControllerOperationHandlerService(this, executor, executor, environment.getDomainTempDir(), this),
@@ -696,7 +705,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             }
 
-            if (ok) {
+            if (ok && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
                 // Install the server > host operation handler
                 ServerToHostOperationHandlerFactoryService.install(serviceTarget, ServerInventoryService.SERVICE_NAME,
                         getExecutorServiceInjector().getValue(), new InternalExecutor(), this, expressionResolver, environment.getDomainTempDir());
@@ -751,8 +760,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
                     hostControllerInfo.getNativeManagementInterface(), hostControllerInfo.getNativeManagementPort(), REMOTE.toString());
         }
-        return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
-                hostControllerInfo.getHttpManagementInterface(), hostControllerInfo.getHttpManagementPort(), HTTP_REMOTING.toString());
+        if (processType == ProcessType.EMBEDDED_HOST_CONTROLLER) {
+            return getPlaceHolderInventory();
+        }
+         return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
+             hostControllerInfo.getHttpManagementInterface(), hostControllerInfo.getHttpManagementPort(), HTTP_REMOTING.toString());
     }
 
     private void installDiscoveryService(final ServiceTarget serviceTarget, List<DiscoveryOption> discoveryOptions) {
@@ -827,6 +839,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     }
 
     private void establishServerInventory(Future<ServerInventory> future) {
+        DelegatingServerInventory dse = new DelegatingServerInventory();
         synchronized (serverInventoryLock) {
             try {
                 serverInventory = getFuture(future);
@@ -942,6 +955,22 @@ public class DomainModelControllerService extends AbstractControllerService impl
         private static final long SERVER_INVENTORY_TIMEOUT = 10000;
 
         private synchronized ServerInventory getServerInventory() {
+            if (processType == ProcessType.EMBEDDED_HOST_CONTROLLER) {
+                return getServerInventory(true);
+            }
+            return getServerInventory(false);
+        }
+
+        private synchronized ServerInventory getServerInventory(boolean placeHolder) {
+
+            try {
+                if (placeHolder) {
+                    return getPlaceHolderInventory().get();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
             ServerInventory result = null;
             synchronized (serverInventoryLock) {
                 if (serverInventoryLock.get()) {
@@ -1226,4 +1255,198 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
     }
+
+    private class FutureServerInventory extends AsyncFutureTask<ServerInventory>{
+
+        public FutureServerInventory() {
+            super(null);
+        }
+
+        private void setInventory(ServerInventory inventory) {
+            super.setResult(inventory);
+        }
+
+        private void setFailure(final Throwable t) {
+            super.setFailed(t);
+        }
+    }
+
+    // this is a placeholder object used in certain cases where the live inventory is not available
+    // e.g. offline embedded mode
+    private FutureServerInventory getPlaceHolderInventory() {
+
+        FutureServerInventory future = new FutureServerInventory();
+        ServerInventory inventory = new ServerInventory() {
+            @Override
+            public String getServerProcessName(String serverName) {
+                return ManagedServer.getServerProcessName(serverName);
+            }
+
+            @Override
+            public String getProcessServerName(String processName) {
+                return ManagedServer.getServerName(processName);
+            }
+
+            @Override
+            public Map<String, ProcessInfo> determineRunningProcesses() {
+                return Collections.emptyMap();
+            }
+
+            @Override
+            public Map<String, ProcessInfo> determineRunningProcesses(boolean serversOnly) {
+                return Collections.emptyMap();
+            }
+
+            @Override
+            public ServerStatus determineServerStatus(String serverName) {
+                return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public ServerStatus startServer(String serverName, ModelNode domainModel) {
+                return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking) {
+                return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel) {
+                return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking) {
+                return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public ServerStatus stopServer(String serverName, int gracefulTimeout) {
+                return ServerStatus.STARTED;
+            }
+
+            @Override
+            public ServerStatus stopServer(String serverName, int gracefulTimeout, boolean blocking) {
+                return ServerStatus.STARTED;
+            }
+
+            @Override
+            public void stopServers(int gracefulTimeout) {
+
+            }
+
+            @Override
+            public void stopServers(int gracefulTimeout, boolean blockUntilStopped) {
+
+            }
+
+            @Override
+            public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
+            }
+
+            @Override
+            public ServerStatus reloadServer(String serverName, boolean blocking) {
+                return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public void destroyServer(String serverName) {
+
+            }
+
+            @Override
+            public void killServer(String serverName) {
+
+            }
+
+            @Override
+            public CallbackHandler getServerCallbackHandler() {
+                CallbackHandler callback = new CallbackHandler() {
+                    @Override
+                    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+                    }
+                };
+                return callback;
+            }
+
+            @Override
+            public ProxyController serverCommunicationRegistered(String serverProcessName, ManagementChannelHandler channelHandler) {
+                ProxyController proxy = new ProxyController() {
+                    @Override
+                    public PathAddress getProxyNodeAddress() {
+                        return null;
+                    }
+
+                    @Override
+                    public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments) {
+                    }
+                };
+                return proxy;
+            }
+
+            @Override
+            public boolean serverReconnected(String serverProcessName, ManagementChannelHandler channelHandler) {
+                return true;
+            }
+
+            @Override
+            public void serverStarted(String serverProcessName) {
+
+            }
+
+            @Override
+            public void serverStartFailed(String serverProcessName) {
+            }
+
+            @Override
+            public void serverProcessStopped(String serverProcessName) {
+            }
+
+            @Override
+            public void connectionFinished() {
+            }
+
+            @Override
+            public void serverProcessAdded(String processName) {
+            }
+
+            @Override
+            public void serverProcessStarted(String processName) {
+            }
+
+            @Override
+            public void serverProcessRemoved(String processName) {
+            }
+
+            @Override
+            public void operationFailed(String processName, ProcessMessageHandler.OperationType type) {
+            }
+
+            @Override
+            public void processInventory(Map<String, ProcessInfo> processInfos) {
+            }
+
+            @Override
+            public void awaitServersState(Collection<String> serverNames, boolean started) {
+            }
+
+            @Override
+            public void suspendServer(String serverName) {
+            }
+
+            @Override
+            public void resumeServer(String serverName) {
+            }
+
+            @Override
+            public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
+                return false;
+            }
+        };
+        future.setInventory(inventory);
+        return future;
+    }
+
 }

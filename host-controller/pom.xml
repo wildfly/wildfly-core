@@ -29,10 +29,9 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>2.0.0.Beta1-SNAPSHOT</version>
+        <version>2.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-host-controller</artifactId>
 
     <name>WildFly: Host Controller</name>
@@ -57,10 +56,6 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-protocol</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-patching</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>

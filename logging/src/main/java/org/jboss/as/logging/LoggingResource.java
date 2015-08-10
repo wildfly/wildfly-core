@@ -24,14 +24,22 @@ package org.jboss.as.logging;
 
 import static org.jboss.as.logging.LogFileResourceDefinition.LOG_FILE;
 
-import java.io.File;
-import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -144,12 +152,15 @@ public class LoggingResource implements Resource {
     @Override
     public Set<String> getChildrenNames(final String childType) {
         if (LOG_FILE.equals(childType)) {
-            final Set<String> result = new LinkedHashSet<>();
-            for (File file : findFiles(pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath(),
-                    Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE))) {
-                result.add(file.getName());
+            final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+            try {
+                return findFiles(logDir, Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE), true)
+                        .stream()
+                        .map(Path::toString)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+            } catch (IOException e) {
+                LoggingLogger.ROOT_LOGGER.errorProcessingLogDirectory(logDir);
             }
-            return result;
         }
         return delegate.getChildrenNames(childType);
     }
@@ -220,25 +231,73 @@ public class LoggingResource implements Resource {
 
 
     /**
-     * Finds all the files in the {@code jboss.server.log.dir} that are defined on a known file handler.
+     * Finds all the files in the {@code jboss.server.log.dir} that are defined on a known file handler. Files in
+     * subdirectories are also returned.
      *
-     * @param model the model to read
+     * @param logDir the log directory to look fr files
+     * @param model the model used to resolve the file handlers
+     * @param relativize {@code true} to return a set of paths relative to the log directory
      *
-     * @return a list of files or an empty list if no files were found
+     * @return a list of paths or an empty list if no files were found
      */
-    static List<File> findFiles(final String logDir, final ModelNode model) {
+    static Set<Path> findFiles(final String logDir, final ModelNode model, final boolean relativize) throws IOException {
         if (logDir == null) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
-        final File[] logFiles = new File(logDir).listFiles(AllowedFilesFilter.create(model));
-        final List<File> result;
-        if (logFiles == null) {
-            result = Collections.emptyList();
-        } else {
-            result = Arrays.asList(logFiles);
-            Collections.sort(result);
+        // Get the list of valid file names
+        final Collection<String> validFileNames = findValidFileNames(model);
+        final Set<Path> logFiles = new TreeSet<>();
+        final Path dir = Paths.get(logDir);
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            boolean first = true;
+            @Override
+            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                if (first || relativize) {
+                    first = false;
+                    return FileVisitResult.CONTINUE;
+                }
+                return FileVisitResult.SKIP_SUBTREE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                final Path relativeFile = dir.relativize(file);
+                final String resourceName = relativeFile.toString();
+                // Check each valid file name, rotated files will just start with the name
+                for (String name : validFileNames) {
+                    if (Files.isReadable(file) && (resourceName.equals(name) || resourceName.startsWith(name))) {
+                        if (relativize) {
+                            logFiles.add(relativeFile);
+                        } else {
+                            logFiles.add(file);
+                        }
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return logFiles;
+    }
+
+    private static Collection<String> findValidFileNames(final ModelNode model) {
+        final Collection<String> names = new ArrayList<>();
+        // Get all the file names from the model
+        for (Property resource : model.asPropertyList()) {
+            final String name = resource.getName();
+            if (FILE_RESOURCE_NAMES.contains(name)) {
+                for (Property handlerResource : resource.getValue().asPropertyList()) {
+                    final ModelNode handlerModel = handlerResource.getValue();
+                    // This should always exist, but better to be safe
+                    if (handlerModel.hasDefined(CommonAttributes.FILE.getName())) {
+                        final ModelNode fileModel = handlerModel.get(CommonAttributes.FILE.getName());
+                        if (fileModel.hasDefined(PathResourceDefinition.PATH.getName())) {
+                            names.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
+                        }
+                    }
+                }
+            }
         }
-        return result;
+        return names;
     }
 
     private static class FileHandlerResourceFilter implements ResourceFilter {
@@ -249,54 +308,6 @@ public class LoggingResource implements Resource {
         public boolean accepts(final PathAddress address, final Resource resource) {
             final PathElement last = address.getLastElement();
             return last == null || FILE_RESOURCE_NAMES.contains(last.getKey());
-        }
-    }
-
-    private static class AllowedFilesFilter implements FileFilter {
-
-        private final List<String> allowedNames;
-
-        private AllowedFilesFilter(final List<String> allowedNames) {
-            this.allowedNames = allowedNames;
-        }
-
-        static AllowedFilesFilter create(final ModelNode subsystemModel) {
-            final List<String> allowedNames = new ArrayList<String>();
-            findFileNames(subsystemModel, allowedNames);
-            return new AllowedFilesFilter(allowedNames);
-        }
-
-        private static void findFileNames(final ModelNode model, final List<String> names) {
-            // Get all the file names from the model
-            for (Property resource : model.asPropertyList()) {
-                final String name = resource.getName();
-                if (FILE_RESOURCE_NAMES.contains(name)) {
-                    for (Property handlerResource : resource.getValue().asPropertyList()) {
-                        final ModelNode handlerModel = handlerResource.getValue();
-                        // This should always exist, but better to be safe
-                        if (handlerModel.hasDefined(CommonAttributes.FILE.getName())) {
-                            final ModelNode fileModel = handlerModel.get(CommonAttributes.FILE.getName());
-                            if (fileModel.hasDefined(PathResourceDefinition.PATH.getName())) {
-                                names.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public boolean accept(final File pathname) {
-            if (pathname.canRead()) {
-                final String name = pathname.getName();
-                // Let's do a best guess on the file
-                for (String allowedName : allowedNames) {
-                    if (name.equals(allowedName) || name.startsWith(allowedName)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
         }
     }
 }

@@ -35,6 +35,7 @@ import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -43,6 +44,8 @@ import org.jboss.dmr.ModelType;
  * @author Stuart Douglas
  */
 class RequestControllerRootDefinition extends PersistentResourceDefinition {
+
+    static final String REQUEST_CONTROLLER_CAPABILITY_NAME = "org.wildfly.request-controller";
 
     public static final SimpleAttributeDefinition MAX_REQUESTS = SimpleAttributeDefinitionBuilder.create(Constants.MAX_REQUESTS, ModelType.INT, true)
             .setAllowExpression(true)
@@ -58,6 +61,10 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
             .setStorageRuntime()
             .build();
     public static final RequestControllerRootDefinition INSTANCE = new RequestControllerRootDefinition(true);
+
+    static final RuntimeCapability<Void> REQUEST_CONTROLLER_CAPABILITY =
+            RuntimeCapability.Builder.of(REQUEST_CONTROLLER_CAPABILITY_NAME, false, RequestController.class)
+                    .build();
 
     private final boolean registerRuntimeOnly;
 
@@ -95,5 +102,10 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
         if(registerRuntimeOnly) {
             resourceRegistration.registerMetric(ACTIVE_REQUESTS, new ActiveRequestsReadHandler());
         }
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(REQUEST_CONTROLLER_CAPABILITY);
     }
 }

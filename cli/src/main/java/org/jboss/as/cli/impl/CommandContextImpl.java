@@ -387,10 +387,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (client == null && !terminate) {
-                            printLine("You are disconnected at the moment. Type 'connect' to connect to the server or" +
-                                    " 'help' for the list of supported commands.");
-                        }
                         if (!terminate && interact)
                             console.setPrompt(getPrompt());
                     }
@@ -434,6 +430,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             settings.inputStream(consoleInput);
         }
         settings.outputStream(cliPrintStream);
+
+        settings.enableExport(false);
 
         settings.disableHistory(!config.isHistoryEnabled());
         settings.historyFile(new File(config.getHistoryFileDir(), config.getHistoryFileName()));
@@ -490,7 +488,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new EchoDMRHandler(), "echo-dmr");
         cmdRegistry.registerHandler(new HelpHandler(cmdRegistry), "help", "h");
         cmdRegistry.registerHandler(new HistoryHandler(), "history");
-        cmdRegistry.registerHandler(new LsHandler(), "ls");
+        cmdRegistry.registerHandler(new LsHandler(this), "ls");
         cmdRegistry.registerHandler(new ASModuleHandler(this), "module");
         cmdRegistry.registerHandler(new PrintWorkingNodeHandler(), "pwd", "pwn");
         cmdRegistry.registerHandler(new QuitHandler(), "quit", "q", "exit");
@@ -555,11 +553,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
-        // Embedded server/host, if we are running in a modular environment
-        AtomicReference<EmbeddedServerLaunch> embeddedServerRef = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
-        cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerRef), "reload");
-        cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerRef), "shutdown");
-
+        final AtomicReference<EmbeddedServerLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerLaunch), "reload");
+        cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerLaunch), "shutdown");
         registerExtraHandlers();
 
         extLoader = new ExtensionsLoader(cmdRegistry, this);
@@ -761,6 +757,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         } catch(CommandLineException e) {
             throw e;
         } catch(Throwable t) {
+            if(log.isDebugEnabled()) {
+                log.debug("Failed to handle '" + line + "'", t);
+            }
             throw new CommandLineException("Failed to handle '" + line + "'", t);
         } finally {
             // so that getArgumentsString() doesn't return this line

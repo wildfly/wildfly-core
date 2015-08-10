@@ -832,12 +832,16 @@ public interface LoggingLogger extends BasicLogger {
     IllegalStateException extensionNotInitialized();
 
     /**
-     * Creates an exception indicating a failure to read the log file
+     * Creates an exception indicating a failure to read the log file.
+     * <p>
+     * Thrown as a {@link RuntimeException} because the operation did not fail. The cause is likely a failure to read
+     * the file at an OS level.
+     * </p>
      *
      * @param cause the cause of the error
      * @param name  the name of the file that was not found
      *
-     * @return an {@link OperationFailedException} for the error
+     * @return an {@link RuntimeException} for the error
      */
     @Message(id = 79, value = "Failed to read the log file '%s'")
     RuntimeException failedToReadLogFile(@Cause Throwable cause, String name);
@@ -908,4 +912,8 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 86, value = "Could not determine deployment name from the address %s.")
     IllegalArgumentException deploymentNameNotFound(PathAddress address);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 87, value = "Failed to process logging directory %s. Log files cannot be listed.")
+    void errorProcessingLogDirectory(String logDir);
 }

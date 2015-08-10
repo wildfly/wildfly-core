@@ -290,7 +290,7 @@ abstract class AbstractOperationContext implements OperationContext {
         if (stage.compareTo(currentStage) < 0) {
             throw ControllerLogger.ROOT_LOGGER.stageAlreadyComplete(stage);
         }
-        if (stage == Stage.DOMAIN && processType != ProcessType.HOST_CONTROLLER) {
+        if (stage == Stage.DOMAIN && !(processType == ProcessType.HOST_CONTROLLER || processType == ProcessType.EMBEDDED_HOST_CONTROLLER)) {
             throw ControllerLogger.ROOT_LOGGER.invalidStage(stage, processType);
         }
         if (stage == Stage.DONE) {
@@ -1072,7 +1072,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public final ModelNode getServerResults() {
-        if (processType != ProcessType.HOST_CONTROLLER) {
+        if (! (processType == ProcessType.HOST_CONTROLLER || processType == ProcessType.EMBEDDED_HOST_CONTROLLER)) {
             throw ControllerLogger.ROOT_LOGGER.serverResultsAccessNotAllowed(ProcessType.HOST_CONTROLLER, processType);
         }
         return activeStep.response.get(SERVER_GROUPS);

@@ -42,6 +42,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.BootstrapListener;
@@ -74,7 +75,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
     public static final ServiceName HC_SERVICE_NAME = ServiceName.JBOSS.append("host", "controller");
     public static final ServiceName HC_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("executor");
-    public static final ServiceName HC_SCHEDULED_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("scheduled","executor");
+    public static final ServiceName HC_SCHEDULED_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("scheduled", "executor");
 
     private final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
         public JBossThreadFactory run() {
@@ -85,23 +86,31 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final HostRunningModeControl runningModeControl;
     private final ControlledProcessState processState;
     private final String authCode;
+    private ProcessType processType = ProcessType.HOST_CONTROLLER;
     private volatile FutureServiceContainer futureContainer;
     private volatile long startTime;
 
-    HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
-                          final String authCode, final ControlledProcessState processState) {
+    public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
+                          final String authCode, final ControlledProcessState processState, boolean embedded, FutureServiceContainer futureContainer) {
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.authCode = authCode;
         this.processState = processState;
         this.startTime = environment.getStartTime();
+        this.futureContainer = futureContainer;
+        if (embedded) {
+            this.processType = ProcessType.EMBEDDED_HOST_CONTROLLER;
+        }
+    }
+
+    public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
+                                 final String authCode, final ControlledProcessState processState, boolean embedded) {
+        this(environment, runningModeControl, authCode, processState, embedded, new FutureServiceContainer());
     }
 
     @Override
     public void start(StartContext context) throws StartException {
-
         processState.setStarting();
-
         final ProductConfig config = environment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
@@ -128,8 +137,8 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         }
         final ServiceTarget serviceTarget = context.getChildTarget();
         final ServiceController<?> myController = context.getController();
+
         final ServiceContainer serviceContainer = myController.getServiceContainer();
-        futureContainer = new FutureServiceContainer();
 
         long startTime = this.startTime;
         if (startTime == -1) {
@@ -138,25 +147,31 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
             this.startTime = -1;
         }
 
-        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer,  prettyVersion + " (Host Controller)");
+        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)");
         bootstrapListener.getStabilityMonitor().addController(myController);
 
         // The first default services are registered before the bootstrap operations are executed.
 
         // Install the process controller client
-        final ProcessControllerConnectionService processControllerClient = new ProcessControllerConnectionService(environment, authCode);
-        serviceTarget.addService(ProcessControllerConnectionService.SERVICE_NAME, processControllerClient).install();
+        // if this is running embedded, then processcontroller is a noop, this can be extended later.
+        if (processType == ProcessType.EMBEDDED_HOST_CONTROLLER) {
+            final ProcessControllerConnectionServiceNoop processControllerClient = new ProcessControllerConnectionServiceNoop(environment, authCode);
+            serviceTarget.addService(ProcessControllerConnectionServiceNoop.SERVICE_NAME, processControllerClient).install();
+        } else {
+            final ProcessControllerConnectionService processControllerClient = new ProcessControllerConnectionService(environment, authCode);
+            serviceTarget.addService(ProcessControllerConnectionService.SERVICE_NAME, processControllerClient).install();
+        }
 
         // Executor Services
         final HostControllerExecutorService executorService = new HostControllerExecutorService(threadFactory);
         serviceTarget.addService(HC_EXECUTOR_SERVICE_NAME, executorService)
                 .addAliases(ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
                 .install();
+
         final HostControllerScheduledExecutorService scheduledExecutorService = new HostControllerScheduledExecutorService(threadFactory);
         serviceTarget.addService(HC_SCHEDULED_EXECUTOR_SERVICE_NAME, scheduledExecutorService)
                 .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, scheduledExecutorService.executorInjector)
                 .install();
-
         // Install required path services. (Only install those identified as required)
         HostPathManagerService hostPathManagerService = new HostPathManagerService();
         HostPathManagerService.addService(serviceTarget, hostPathManagerService, environment);
@@ -168,7 +183,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         serviceTarget.addService(Services.JBOSS_PRODUCT_CONFIG_SERVICE, new ValueService<ProductConfig>(productConfigValue))
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
-        DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState, bootstrapListener, hostPathManagerService);
+        DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState, bootstrapListener, hostPathManagerService, processType == ProcessType.EMBEDDED_HOST_CONTROLLER);
         ContentCleanerService.addServiceOnHostController(serviceTarget, DomainModelControllerService.SERVICE_NAME, HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
     }
 

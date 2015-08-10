@@ -36,6 +36,7 @@ import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -89,7 +90,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return true;
+        return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override
@@ -209,7 +210,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
             RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, options);
         }
-
     }
 
     static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {

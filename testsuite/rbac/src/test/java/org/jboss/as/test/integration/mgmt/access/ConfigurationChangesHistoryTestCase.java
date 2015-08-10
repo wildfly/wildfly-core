@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOG_BOOT;
@@ -62,11 +63,11 @@ import static org.jboss.as.test.integration.management.rbac.RbacUtil.MAINTAINER_
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.OPERATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.SUPERUSER_USER;
-import static org.jboss.as.test.integration.mgmt.access.AbstractManagementInterfaceRbacTestCase.getManagementClient;
 import static org.junit.Assert.assertThat;
 import static org.productivity.java.syslog4j.impl.message.pci.PCISyslogMessage.USER_ID;
 
 import java.util.List;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -92,6 +93,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @ServerSetup({StandardUsersSetupTask.class})
 public class ConfigurationChangesHistoryTestCase extends AbstractManagementInterfaceRbacTestCase {
 
+    private static final int MAX_HISTORY_SIZE = 5;
+
     private static final PathAddress ALLOWED_ORIGINS_ADDRESS = PathAddress.pathAddress()
             .append(CORE_SERVICE, MANAGEMENT)
             .append(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
@@ -115,14 +118,25 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
     public void createConfigurationChanges() throws Exception {
         ManagementInterface client = getClientForUser(SUPERUSER_USER);
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(ADDRESS));
-        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(4);
+        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
         client.execute(add);
         ModelNode configureSensitivity = Util.getWriteAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_ADDRESSABLE, true);
         client.execute(configureSensitivity);
-        ModelNode setAllowedOrigins = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "http://www.wildfly.org");
+        ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", ALLOWED_ORIGINS_ADDRESS);
+        setAllowedOrigins.get(NAME).set(ALLOWED_ORIGINS);
+        setAllowedOrigins.get(VALUE).set( "http://www.wildfly.org");
         client.execute(setAllowedOrigins);
         ModelNode disableLogBoot = Util.getWriteAttributeOperation(AUDIT_LOG_ADDRESS, LOG_BOOT, false);
         client.execute(disableLogBoot);
+        //read
+        client.execute(Util.getReadAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS));
+        //invalid operation
+        client.execute(Util.getUndefineAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute"));
+        //invalid operation
+        client.execute(Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute", "123456"));
+        //write operation, failed
+        ModelNode setAllowedOriginsFails = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "123456");//wrong type, expected is LIST, op list-add
+        client.execute(setAllowedOriginsFails);
         ModelNode setSystemProperty = Util.createAddOperation(SYSTEM_PROPERTY_ADDRESS);
         setSystemProperty.get(VALUE).set("changeConfig");
         client.execute(setSystemProperty);
@@ -197,7 +211,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
         ModelNode response = client.execute(readConfigChanges);
         assertThat(response.asString(), response.get(OUTCOME).asString(), is(SUCCESS));
         List<ModelNode> changes = response.get(RESULT).asList();
-        assertThat(changes.size(), is(4));
+        assertThat(changes.size(), is(MAX_HISTORY_SIZE));
         for (ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));
@@ -205,10 +219,10 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
             assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
-            assertThat(change.get(OUTCOME).asString(), is(SUCCESS));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
         ModelNode currentChange = changes.get(0);
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(REMOVE));
         if (authorized || auditAuthorized) {
@@ -217,6 +231,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
             assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
         }
         currentChange = changes.get(1);
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(WRITE_ATTRIBUTE_OPERATION));
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(AUDIT_LOG_ADDRESS.toModelNode().asString()));
@@ -227,6 +242,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
             assertThat(currentChangeOp.hasDefined(VALUE), is(false));
         }
         currentChange = changes.get(2);
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(UNDEFINE_ATTRIBUTE_OPERATION));
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ALLOWED_ORIGINS_ADDRESS.toModelNode().asString()));
@@ -236,6 +252,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
             assertThat(currentChangeOp.get(NAME).isDefined(), is(false));
         }
         currentChange = changes.get(3);
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(ADD));
         if (authorized || auditAuthorized) {
@@ -249,6 +266,14 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
         } else {
             assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
             assertThat(currentChangeOp.asString(), currentChangeOp.hasDefined(NAME), is(false));
+        }
+        currentChange = changes.get(4);
+        assertThat(currentChange.get(OUTCOME).asString(), is(FAILED));
+        currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        if (authorized) {
+            assertThat(currentChangeOp.get(NAME).asString(), is(ALLOWED_ORIGINS));
+        } else {
+            assertThat(currentChangeOp.get(NAME).isDefined(), is(false));
         }
     }
 }

@@ -59,7 +59,8 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  */
 public class RequestController implements Service<RequestController>, ServerActivity {
 
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "global-request-controller");
+    @Deprecated
+    public static final ServiceName SERVICE_NAME = RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY.getCapabilityServiceName();
 
     private static final AtomicIntegerFieldUpdater<RequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(RequestController.class, "activeRequestCount");
     private static final AtomicReferenceFieldUpdater<RequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, ServerActivityCallback.class, "listener");
