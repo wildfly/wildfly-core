@@ -23,7 +23,9 @@
 package org.jboss.as.controller;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -69,6 +71,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected AttributeParser parser;
     protected String attributeGroup;
     protected CapabilityReferenceRecorder referenceRecorder;
+    protected Map<String, ModelNode> arbitraryDescriptors = null;
 
     /**
      * Creates a builder for an attribute with the give name and type. Equivalent to
@@ -137,6 +140,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
             this.allowedValues = basisAllowedValues.toArray(new ModelNode[basisAllowedValues.size()]);
         }
         this.attributeGroup = basis.getAttributeGroup();
+        if(!basis.getArbitraryDescriptors().isEmpty()) {
+            this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors().size());
+            this.arbitraryDescriptors.putAll(basis.getArbitraryDescriptors());
+        }
     }
 
     /**
@@ -299,6 +306,24 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
             this.alternatives = newAlternatives;
         }
         return (BUILDER) this;
+    }
+
+    /**
+     * Adds {@link AttributeDefinition#getArbitraryDescriptors() arbitrary descriptor}.
+     * @param arbitraryDescriptor the arbitrary descriptor name.
+     * @param value the value of the arbitrary descriptor.
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER addArbitraryDescriptor(String arbitraryDescriptor, ModelNode value) {
+        if (this.arbitraryDescriptors == null) {
+            this.arbitraryDescriptors = new HashMap<>();
+        }
+        arbitraryDescriptors.put(arbitraryDescriptor, value);
+        return (BUILDER) this;
+    }
+
+    public Map<String, ModelNode> getArbitraryDescriptors() {
+        return arbitraryDescriptors;
     }
 
     /**

@@ -25,8 +25,10 @@ package org.jboss.as.controller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -85,6 +87,7 @@ public abstract class AttributeDefinition {
     private final AttributeParser parser;
     private final String attributeGroup;
     protected final CapabilityReferenceRecorder referenceRecorder;
+    private final Map<String, ModelNode> arbitraryDescriptors = new HashMap<>();
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Expected to be a common use case; no one-offs.
@@ -100,7 +103,8 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
+                wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -113,7 +117,7 @@ public abstract class AttributeDefinition {
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, wrapFlags(flags));
+                nilSignificant, parser, null, null, null, null, wrapFlags(flags));
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
@@ -168,7 +172,7 @@ public abstract class AttributeDefinition {
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
+                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -200,6 +204,9 @@ public abstract class AttributeDefinition {
         this.attributeGroup = attributeGroup;
         this.allowedValues = allowedValues;
         this.referenceRecorder = referenceRecorder;
+        if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
+            this.arbitraryDescriptors.putAll(arbitraryDescriptors);
+        }
     }
 
     /**
@@ -376,6 +383,10 @@ public abstract class AttributeDefinition {
             return Collections.emptyList();
         }
         return Arrays.asList(this.allowedValues);
+    }
+
+    public Map<String, ModelNode> getArbitraryDescriptors() {
+        return Collections.unmodifiableMap(arbitraryDescriptors);
     }
 
     /**
@@ -786,7 +797,7 @@ public abstract class AttributeDefinition {
         final ModelNode result = new ModelNode();
         result.get(ModelDescriptionConstants.TYPE).set(type);
         result.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
-        if (attributeGroup != null) {
+        if (attributeGroup != null && !forOperation) {
             result.get(ModelDescriptionConstants.ATTRIBUTE_GROUP).set(attributeGroup);
         }
         result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(isAllowExpression());
@@ -849,7 +860,10 @@ public abstract class AttributeDefinition {
             }
         }
         addAllowedValuesToDescription(result, validator);
-
+        arbitraryDescriptors.entrySet().stream().forEach((arbitraryDescriptor) -> {
+            assert !result.hasDefined(arbitraryDescriptor.getKey()); //You can't override an arbitrary descriptor set through other properties.
+            result.get(arbitraryDescriptor.getKey()).set(arbitraryDescriptor.getValue());
+        });
         return result;
     }
 

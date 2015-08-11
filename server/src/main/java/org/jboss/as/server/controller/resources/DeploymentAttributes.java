@@ -22,6 +22,7 @@
 package org.jboss.as.server.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WEB_URL;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ import org.jboss.as.server.deployment.AbstractDeploymentUnitService;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
 
 /**
  *
@@ -275,6 +277,7 @@ public class DeploymentAttributes {
     //Upload deployment url definitions
     public static final AttributeDefinition URL_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_URL)
             .setAllowNull(false)
+            .addArbitraryDescriptor(WEB_URL, new ModelNode(true))
             .build();
     public static final OperationDefinition UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
             .setParameters(URL_NOT_NULL)

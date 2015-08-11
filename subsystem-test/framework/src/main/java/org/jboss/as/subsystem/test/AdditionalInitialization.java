@@ -1,6 +1,7 @@
 package org.jboss.as.subsystem.test;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.PathAddress;
@@ -14,7 +15,10 @@ import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.model.test.ModelTestModelDescriptionValidator.AttributeOrParameterArbitraryDescriptorValidator;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -105,10 +109,41 @@ public class AdditionalInitialization extends AdditionalParsers {
         };
     }
 
+    public static final AttributeOrParameterArbitraryDescriptorValidator ARBITRARY_DESCRIPTOR_VALIDATOR = (ModelType currentType, ModelNode currentNode, String descriptor) -> null;
+
     /**
-     * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability RuntimeCapability<Void>}
-     * for each of the given capability names. They will be registered against {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
-     * and with the root resource and no specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
+     * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization} with arbitrary descriptors, making it
+     * possible for subsystems under test to require them.
+     *
+     * @param address
+     * @param operations list of operations the arbitrary descriptors will be used.
+     * @param arbitraryDescriptors the arbitrary descriptors; key is the name of the descriptor, value is its value.
+     * @return the additional initialization
+     */
+    public static AdditionalInitialization withArbitraryDescriptors(final ModelNode address, final List<String> operations, final Map<String, String> arbitraryDescriptors) {
+        return new AdditionalInitialization() {
+            @Override
+            protected ValidationConfiguration getModelValidationConfiguration() {
+                ValidationConfiguration config = super.getModelValidationConfiguration();
+                arbitraryDescriptors.entrySet().stream().map((arbitraryDescriptor) -> {
+                    config.registerAttributeArbitraryDescriptor(address, arbitraryDescriptor.getKey(), arbitraryDescriptor.getValue(), ARBITRARY_DESCRIPTOR_VALIDATOR);
+                    return arbitraryDescriptor;
+                }).forEach((arbitraryDescriptor) -> {
+                    operations.stream().forEach((operation) -> {
+                        config.registerArbitraryDescriptorForOperation(address, operation, arbitraryDescriptor.getValue(), ARBITRARY_DESCRIPTOR_VALIDATOR);
+                    });
+                });
+                return config;
+            }
+        };
+    }
+
+    /**
+     * Simple utility method to register a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability RuntimeCapability<Void>} for each of the given
+     * capability names. They will be registered against
+     * {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL} and with the root resource and no
+     * specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
      *
      * @param capabilityRegistry registry to use
      * @param capabilities names of the capabilities.

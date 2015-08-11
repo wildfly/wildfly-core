@@ -30,10 +30,8 @@ import java.util.ResourceBundle;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.dmr.ModelNode;
@@ -201,7 +199,10 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                                            final Locale locale) {
         for (AttributeDefinition valueType : valueTypes) {
             // get the value type description of the attribute
-            final ModelNode valueTypeDesc = getValueTypeDescription(valueType, false);
+            final ModelNode valueTypeDesc = valueType.getNoTextDescription(false);
+            if(valueTypeDesc.has(ModelDescriptionConstants.ATTRIBUTE_GROUP)) {
+                valueTypeDesc.remove(ModelDescriptionConstants.ATTRIBUTE_GROUP);
+            }
             final String p;
             boolean prefixUnusable = prefix == null || prefix.isEmpty() ;
             boolean suffixUnusable = suffix == null || suffix.isEmpty() ;
@@ -221,6 +222,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             } else {
                 valueTypeDesc.get(ModelDescriptionConstants.DESCRIPTION).set(valueType.getAttributeTextDescription(bundle, p));
             }
+
             // set it as one of our value types, and return the value
             final ModelNode childType = node.get(ModelDescriptionConstants.VALUE_TYPE, valueType.getName()).set(valueTypeDesc);
             // if it is of type OBJECT itself (add its nested descriptions)
@@ -240,68 +242,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                 ObjectListAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, false, resolver, locale);
             }
         }
-    }
-
-    private ModelNode getValueTypeDescription(final AttributeDefinition valueType, final boolean forOperation) {
-        final ModelNode result = new ModelNode();
-        result.get(ModelDescriptionConstants.TYPE).set(valueType.getType());
-        result.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
-        result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(valueType.isAllowExpression());
-        if (forOperation) {
-            result.get(ModelDescriptionConstants.REQUIRED).set(!valueType.isAllowNull());
-        }
-        result.get(ModelDescriptionConstants.NILLABLE).set(valueType.isAllowNull());
-        final ModelNode defaultValue = valueType.getDefaultValue();
-        if (!forOperation && defaultValue != null && defaultValue.isDefined()) {
-            result.get(ModelDescriptionConstants.DEFAULT).set(defaultValue);
-        }
-        MeasurementUnit measurementUnit = valueType.getMeasurementUnit();
-        if (measurementUnit != null && measurementUnit != MeasurementUnit.NONE) {
-            result.get(ModelDescriptionConstants.UNIT).set(measurementUnit.getName());
-        }
-        final String[] alternatives = valueType.getAlternatives();
-        if (alternatives != null) {
-            for (final String alternative : alternatives) {
-                result.get(ModelDescriptionConstants.ALTERNATIVES).add(alternative);
-            }
-        }
-        final String[] requires = valueType.getRequires();
-        if (requires != null) {
-            for (final String required : requires) {
-                result.get(ModelDescriptionConstants.REQUIRES).add(required);
-            }
-        }
-        final ParameterValidator validator = valueType.getValidator();
-        if (validator instanceof MinMaxValidator) {
-            MinMaxValidator minMax = (MinMaxValidator) validator;
-            Long min = minMax.getMin();
-            if (min != null) {
-                switch (valueType.getType()) {
-                    case STRING:
-                    case LIST:
-                    case OBJECT:
-                    case BYTES:
-                        result.get(ModelDescriptionConstants.MIN_LENGTH).set(min);
-                        break;
-                    default:
-                        result.get(ModelDescriptionConstants.MIN).set(min);
-                }
-            }
-            Long max = minMax.getMax();
-            if (max != null) {
-                switch (valueType.getType()) {
-                    case STRING:
-                    case LIST:
-                    case OBJECT:
-                    case BYTES:
-                        result.get(ModelDescriptionConstants.MAX_LENGTH).set(max);
-                        break;
-                    default:
-                        result.get(ModelDescriptionConstants.MAX).set(max);
-                }
-            }
-        }
-        return result;
     }
 
     @Override
