@@ -3346,4 +3346,10 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 401, value = "Couldn't build the report")
     RuntimeException failedToBuildReport(@Cause Throwable t);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 402, value = "Legacy extension '%s' is not supported on servers running this version. The extension " +
+            "is only supported for use by hosts running a previous release in a mixed-version managed domain. To " +
+            "correct this problem remove the following subsystems if they are present: %s and then remove the extension")
+    void unsupportedLegacyExtensionAdminOnly(String extensionName, List<String> subsystems);
 }

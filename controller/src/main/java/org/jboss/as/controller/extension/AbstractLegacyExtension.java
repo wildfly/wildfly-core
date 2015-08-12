@@ -26,10 +26,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -60,7 +61,9 @@ public abstract class AbstractLegacyExtension implements Extension {
             ControllerLogger.MGMT_OP_LOGGER.ignoringUnsupportedLegacyExtension(subsystemNames, extensionName);
             return;
         } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
-            throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+            if (context.getRunningMode() != RunningMode.ADMIN_ONLY) {
+                throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+            } // else initializeParsers will log a WARN
         }
 
         Set<ManagementResourceRegistration> subsystemRoots = initializeLegacyModel(context);
@@ -78,7 +81,12 @@ public abstract class AbstractLegacyExtension implements Extension {
             // to legacy servers to work
             return;
         } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
-            throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+            if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+                // WFCORE-833 Just log a WARN
+                ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtensionAdminOnly(extensionName, subsystemNames);
+            } else {
+                throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+            }
         }
 
         initializeLegacyParsers(context);
