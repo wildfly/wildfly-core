@@ -1242,8 +1242,8 @@ class ModelControllerImpl implements ModelController {
          * @return a map whose keys are missing capabilities and whose values are the names of other capabilities
          *         that require that capability. Will not return {@code null} but may be empty
          */
-        CapabilityValidation validateCapabilityRegistry() {
-            if (!published) {
+        CapabilityValidation validateCapabilityRegistry(boolean forceCheck) {
+            if (!published || forceCheck) {
                 return capabilityRegistry.resolveCapabilities(getRootResource());
             } else {
                 // we're unmodified so nothing to validate

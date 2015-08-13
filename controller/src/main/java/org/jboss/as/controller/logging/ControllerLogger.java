@@ -3346,4 +3346,9 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 401, value = "Couldn't build the report")
     RuntimeException failedToBuildReport(@Cause Throwable t);
+
+    @Message(id = 402, value = "Subsystems %s provided by legacy extension '%s' are not supported on servers running this version. " +
+            "Both the subsystem and the extension must be removed or migrated before the server will function.")
+    @LogMessage(level = ERROR)
+    void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
 }
