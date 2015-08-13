@@ -43,6 +43,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.operations.MultistepUtil;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
@@ -246,8 +247,13 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
         }
 
         @Override
-        protected OperationStepHandler getOperationStepHandler(String operationName, PathAddress address, ModelNode operation, OperationEntry operationEntry) {
-            return wrapHandler(hostName, operationName, address, operationEntry);
+        protected MultistepUtil.OperationHandlerResolver getOperationHandlerResolver() {
+            return new MultistepUtil.OperationHandlerResolver() {
+                @Override
+                public OperationStepHandler getOperationStepHandler(String operationName, PathAddress address, ModelNode operation, OperationEntry operationEntry) {
+                    return wrapHandler(hostName, operationName, address, operationEntry);
+                }
+            };
         }
     }
 
