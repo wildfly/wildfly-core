@@ -210,6 +210,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final AccessMechanism accessMechanism;
     private final ActiveOperationResource activeOperationResource;
     private final BooleanHolder done = new BooleanHolder();
+    private final boolean capabilitiesAlreadyBroken;
 
     private volatile ExecutionStatus executionStatus = ExecutionStatus.EXECUTING;
 
@@ -243,6 +244,12 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
         this.accessMechanism = accessMechanism;
+        if(runningMode == RunningMode.ADMIN_ONLY) {
+            ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry(true);
+            this.capabilitiesAlreadyBroken = !validation.isValid();
+        } else {
+            this.capabilitiesAlreadyBroken = false;
+        }
     }
 
     public InputStream getAttachmentStream(final int index) {
@@ -267,8 +274,11 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private boolean validateCapabilities() {
         // Validate that all required capabilities are available and fail any steps that broke this
-        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry();
+        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false);
         boolean ok = validation.isValid();
+        final boolean adminOnly = this.getRunningMode() == RunningMode.ADMIN_ONLY;
+        //if we are in admin only mode and everything is already broken then we don't care about failures
+        final boolean ignoreFailures = adminOnly && (capabilitiesAlreadyBroken || isBooting());
         if (!ok) {
 
             boolean failureRecorded = false;
@@ -300,9 +310,11 @@ final class OperationContextImpl extends AbstractOperationContext {
                         }
                     }
                     String msgString = msg.toString();
-                    guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    if(!ignoreFailures) {
+                        guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    }
                     failureRecorded = true;
-                    if (isBooting()) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
+                    if (isBooting() || ignoreFailures) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
                         ControllerLogger.ROOT_LOGGER.error(guilty.address.toCLIStyleString() + " -- " + msgString);
                     }
                 } else {
@@ -339,7 +351,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
                         ? null
                         : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
-                StringBuilder bootMsg = isBooting()
+                StringBuilder bootMsg = isBooting() || ignoreFailures
                         ? new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString()))
                         : null;
                 for (CapabilityId id : entry.getValue()) {
@@ -354,7 +366,9 @@ final class OperationContextImpl extends AbstractOperationContext {
                     }
                 }
                 if (msg != null) {
-                    response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    if(!ignoreFailures) {
+                        response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    }
                     failureRecorded = true;
                 }
                 if (bootMsg != null) {
@@ -373,8 +387,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                             String depConName = reg.getDependentContext().getName();
                             // only overwrite reponse failure-description if there isn't one
                             if (!response.hasDefined(FAILURE_DESCRIPTION)) {
-                                response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
-                                        reg.getDependentName(), depConName, depConName));
+                                if(!(adminOnly && isBooting())) {
+                                    response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
+                                            reg.getDependentName(), depConName, depConName));
+                                }
                                 failureRecorded = true;
                             }
                             if (isBooting()) {
@@ -398,10 +414,16 @@ final class OperationContextImpl extends AbstractOperationContext {
 
             // If we didn't record a failure on any response, put one on the initial response
             if (!failureRecorded && unexplainedProblem != null && !initialResponse.hasDefined(FAILURE_DESCRIPTION)) {
-                initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
+
+                if(!ignoreFailures) {
+                    initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
+                }
+                if(isBooting() || ignoreFailures) {
+                    ControllerLogger.ROOT_LOGGER.error(unexplainedProblem);
+                }
             }
         }
-        return ok;
+        return ok || ignoreFailures;
 
     }
 
