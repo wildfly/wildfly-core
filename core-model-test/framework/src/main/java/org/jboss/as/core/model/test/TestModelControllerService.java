@@ -41,8 +41,8 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -167,6 +167,14 @@ class TestModelControllerService extends ModelTestModelControllerService {
     }
 
     @Override
+    protected void initCoreModel(ManagementModel managementModel, Resource modelControllerResource) {
+        super.initCoreModel(managementModel, modelControllerResource);
+        if (modelInitializer != null) {
+            modelInitializer.populateModel(managementModel);
+        }
+    }
+
+    @Override
     protected void initCoreModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
         //See server HttpManagementAddHandler
         System.setProperty("jboss.as.test.disable.runtime", "1");
@@ -178,9 +186,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
         } else if (type == TestModelType.DOMAIN){
             initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
-        }
-        if (modelInitializer != null) {
-            modelInitializer.populateModel(rootResource);
         }
     }
 

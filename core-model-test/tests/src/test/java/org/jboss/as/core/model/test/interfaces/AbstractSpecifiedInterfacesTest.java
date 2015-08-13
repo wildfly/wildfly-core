@@ -24,6 +24,7 @@ package org.jboss.as.core.model.test.interfaces;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
+import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.junit.Assert;
@@ -45,6 +46,7 @@ public abstract class AbstractSpecifiedInterfacesTest extends AbstractCoreModelT
     public void testInterfaces() throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder()
             .setXmlResource(getXmlResource())
+            .setModelInitializer(getModelInitializer(), null)
             .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
 
@@ -53,6 +55,7 @@ public abstract class AbstractSpecifiedInterfacesTest extends AbstractCoreModelT
 
         kernelServices = createKernelServicesBuilder()
                 .setXml(marshalled)
+                .setModelInitializer(getModelInitializer(), null)
                 .build();
             Assert.assertTrue(kernelServices.isSuccessfulBoot());
     }
@@ -62,4 +65,8 @@ public abstract class AbstractSpecifiedInterfacesTest extends AbstractCoreModelT
     }
 
     protected abstract String getXmlResource();
+
+    protected ModelInitializer getModelInitializer() {
+        return ModelInitializer.NO_OP;
+    }
 }

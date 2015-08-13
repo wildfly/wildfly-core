@@ -31,9 +31,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
  *
  * @author Brian Stansberry
  */
-public final class HostCapabilityContext implements CapabilityContext {
+class HostCapabilityContext implements CapabilityContext {
 
-    public static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
+    static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
 
     @Override
     public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {

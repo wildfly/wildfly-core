@@ -38,6 +38,7 @@ import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -49,6 +50,8 @@ import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
+import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
@@ -77,6 +80,10 @@ import org.jboss.dmr.ModelType;
  */
 public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
+    static final String SERVER_CONFIG_CAPABILITY_NAME = "org.wildfly.domain.server-config";
+    public static final RuntimeCapability SERVER_CONFIG_CAPABILITY = RuntimeCapability.Builder.of(SERVER_CONFIG_CAPABILITY_NAME, true)
+            .build();
+
     public static final AttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING).setResourceOnly().build();
 
     public static final SimpleAttributeDefinition AUTO_START = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.AUTO_START, ModelType.BOOLEAN, true)
@@ -88,6 +95,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .setDefaultValue(new ModelNode(false)).build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, true)
+            .setCapabilityReference(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_CONFIG_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE, ModelType.STRING, true)
@@ -104,6 +112,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final SimpleAttributeDefinition GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.GROUP, ModelType.STRING)
+            .setCapabilityReference(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY_NAME, SERVER_CONFIG_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ServerStatusHandler.ATTRIBUTE_NAME, ModelType.STRING)
@@ -197,6 +206,11 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_CONFIG));
         // Server jvm
         resourceRegistration.registerSubModel(JvmResourceDefinition.SERVER);
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SERVER_CONFIG_CAPABILITY);
     }
 
     public static void registerServerLifecycleOperations(final ManagementResourceRegistration resourceRegistration, final ServerInventory serverInventory) {

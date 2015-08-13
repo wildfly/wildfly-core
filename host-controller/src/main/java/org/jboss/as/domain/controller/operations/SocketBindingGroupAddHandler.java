@@ -18,6 +18,8 @@
  */
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition.INCLUDES;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHandler;
@@ -35,6 +37,7 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
     public static final SocketBindingGroupAddHandler INSTANCE = new SocketBindingGroupAddHandler();
 
     private SocketBindingGroupAddHandler() {
+        super(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     /**
@@ -47,4 +50,9 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
         DomainModelReferenceValidator.addValidationStep(context, operation);
     }
 
+    @Override
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.recordCapabilitiesAndRequirements(context, operation, resource);
+        INCLUDES.addCapabilityRequirements(context, resource.getModel().get(INCLUDES.getName()));
+    }
 }

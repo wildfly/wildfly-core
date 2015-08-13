@@ -32,6 +32,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -42,6 +43,7 @@ import org.jboss.as.domain.controller.operations.DomainReferenceValidationWriteA
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.ServerGroupAddHandler;
 import org.jboss.as.domain.controller.operations.ServerGroupRemoveHandler;
+import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentReplaceHandler;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
 import org.jboss.as.repository.ContentRepository;
@@ -60,15 +62,21 @@ import org.jboss.dmr.ModelType;
  */
 public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
+    public static final String SERVER_GROUP_CAPABILITY_NAME = "org.wildfly.domain.server-group";
+    public static final RuntimeCapability SERVER_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SERVER_GROUP_CAPABILITY_NAME, true)
+            .build();
+
     public static final PathElement PATH = PathElement.pathElement(SERVER_GROUP);
 
     public static final SimpleAttributeDefinition PROFILE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PROFILE, ModelType.STRING)
             .setValidator(new StringLengthValidator(1))
+            .setCapabilityReference(ProfileResourceDefinition.PROFILE_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, false)
             .setXmlName(Attribute.REF.getLocalName())
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
+            .setCapabilityReference(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE, ModelType.STRING, true)
@@ -135,6 +143,11 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(DomainDeploymentResourceDefinition.createForServerGroup(fileRepository, contentRepository));
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_GROUP));
         resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, null, null));
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SERVER_GROUP_CAPABILITY);
     }
 
     public static OperationStepHandler createReferenceValidationHandler() {

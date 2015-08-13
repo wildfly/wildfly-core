@@ -22,7 +22,6 @@
 
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
@@ -31,7 +30,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -59,9 +57,10 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Handler validating that all known model references are present.
+ * Handler validating that all known model references are present, that "including" resources don't involve
+ * cycles, and that including resources don't involve children that override the included resources.
  *
- * This should probably be replaced with model reference validation at the end of the Stage.MODEL.
+ * The model reference part of this is slowly being replaced with capability-based model reference validation..
  *
  * @author Emanuel Muckenhuber
  * @author Kabir Khan
@@ -103,78 +102,85 @@ public class DomainModelReferenceValidator implements OperationStepHandler {
 
     public void validate(final OperationContext context) throws OperationFailedException {
 
-        final Set<String> serverGroups = new HashSet<>();
+//        final Set<String> serverGroups = new HashSet<>();
         final Set<String> interfaces = new HashSet<String>();
 
         final Resource domain = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
         final Set<String> missingProfiles = new HashSet<>();
         final Set<String> missingSocketBindingGroups = new HashSet<>();
-        final Set<String> allProfiles = checkProfileIncludes(domain, missingProfiles);
-        final Set<String> allSocketBindingGroups = checkSocketBindingGroupIncludes(domain, missingSocketBindingGroups);
+        checkProfileIncludes(domain, missingProfiles);
+        checkSocketBindingGroupIncludes(domain, missingSocketBindingGroups);
         final String hostName = determineHostName(domain);
         if (hostName != null) {
             // The testsuite does not always setup the model properly
             final Resource host = domain.getChild(PathElement.pathElement(HOST, hostName));
             for (final Resource.ResourceEntry serverConfig : host.getChildren(SERVER_CONFIG)) {
                 final ModelNode model = serverConfig.getModel();
-                final String group = model.require(GROUP).asString();
-                if (!serverGroups.contains(group)) {
-                    serverGroups.add(group);
-                }
+//                final String group = model.require(GROUP).asString();
+//                if (!serverGroups.contains(group)) {
+//                    serverGroups.add(group);
+//                }
                 if (model.hasDefined(SOCKET_BINDING_DEFAULT_INTERFACE)) {
                     String defaultInterface = model.get(SOCKET_BINDING_DEFAULT_INTERFACE).asString();
                     if (!interfaces.contains(defaultInterface)) {
                         interfaces.add(defaultInterface);
                     }
                 }
-                processSocketBindingGroup(model, allSocketBindingGroups, missingSocketBindingGroups);
+                // BES 2015/08/07 We use capability/requirement validation for this
+                //processSocketBindingGroup(model, allSocketBindingGroups, missingSocketBindingGroups);
             }
         }
 
         // process referenced server-groups
-        for (final Resource.ResourceEntry serverGroup : domain.getChildren(SERVER_GROUP)) {
-            final ModelNode model = serverGroup.getModel();
-            final String profile = model.require(PROFILE).asString();
-            if (!allProfiles.contains(profile)) {
-                missingProfiles.add(profile);
-            }
-            // Process the socket-binding-group
-            processSocketBindingGroup(model, allSocketBindingGroups, missingSocketBindingGroups);
-
-            serverGroups.remove(serverGroup.getName()); // The server-group is present
-        }
+        // BES 2015/08/07 We use capability/requirement validation for this
+//        for (final Resource.ResourceEntry serverGroup : domain.getChildren(SERVER_GROUP)) {
+//            final ModelNode model = serverGroup.getModel();
+//            final String profile = model.require(PROFILE).asString();
+//            if (!allProfiles.contains(profile)) {
+//                missingProfiles.add(profile);
+//            }
+//            // Process the socket-binding-group
+//
+//            processSocketBindingGroup(model, allSocketBindingGroups, missingSocketBindingGroups);
+//
+//            serverGroups.remove(serverGroup.getName()); // The server-group is present
+//        }
 
         // process referenced interfaces
         for (final Resource.ResourceEntry iface : domain.getChildren(INTERFACE)) {
             interfaces.remove(iface.getName());
         }
         // If we are missing a server group
-        if (!serverGroups.isEmpty()) {
-            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
-        }
+        // BES 2015/08/07 We use capability/requirement validation for this
+//        if (!serverGroups.isEmpty()) {
+//            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SERVER_GROUP, serverGroups);
+//        }
         // We are missing a profile
-        if (!missingProfiles.isEmpty()) {
-            throw HostControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
-        }
+        // BES 2015/06/19 We use capability/requirement validation for this
+//        if (!missingProfiles.isEmpty()) {
+//            throw HostControllerLogger.ROOT_LOGGER.missingReferences(PROFILE, missingProfiles);
+//        }
         // Process socket-binding groups
-        if (!missingSocketBindingGroups.isEmpty()) {
-            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
-        }
+        // BES 2015/08/07 We use capability/requirement validation for this
+//        if (!missingSocketBindingGroups.isEmpty()) {
+//            throw HostControllerLogger.ROOT_LOGGER.missingReferences(SOCKET_BINDING_GROUP, missingSocketBindingGroups);
+//        }
+
         //We are missing an interface
         if (!interfaces.isEmpty()) {
             throw HostControllerLogger.ROOT_LOGGER.missingReferences(INTERFACE, interfaces);
         }
 
     }
-
-    private void processSocketBindingGroup(final ModelNode model, final Set<String> socketBindings, final Set<String> missingSocketBindings) {
-        if (model.hasDefined(SOCKET_BINDING_GROUP)) {
-            final String socketBinding = model.require(SOCKET_BINDING_GROUP).asString();
-            if (!socketBindings.contains(socketBinding)) {
-                missingSocketBindings.add(socketBinding);
-            }
-        }
-    }
+    // BES 2015/08/07 We use capability/requirement validation for this
+//    private void processSocketBindingGroup(final ModelNode model, final Set<String> socketBindings, final Set<String> missingSocketBindings) {
+//        if (model.hasDefined(SOCKET_BINDING_GROUP)) {
+//            final String socketBinding = model.require(SOCKET_BINDING_GROUP).asString();
+//            if (!socketBindings.contains(socketBinding)) {
+//                missingSocketBindings.add(socketBinding);
+//            }
+//        }
+//    }
 
     private String determineHostName(final Resource domain) {
         // This could use a better way to determine the local host name

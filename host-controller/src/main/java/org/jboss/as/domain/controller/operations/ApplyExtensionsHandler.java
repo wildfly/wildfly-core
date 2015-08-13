@@ -26,12 +26,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,6 +47,8 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResource;
@@ -68,6 +73,14 @@ import org.jboss.modules.ModuleLoadException;
 public class ApplyExtensionsHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "resolve-subsystems";
+    private static final ModelNode APPLY_EXTENSIONS = new ModelNode();
+
+    static {
+        APPLY_EXTENSIONS.get(OP).set(ApplyExtensionsHandler.OPERATION_NAME);
+        APPLY_EXTENSIONS.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
+        APPLY_EXTENSIONS.get(OP_ADDR).setEmptyList();
+        APPLY_EXTENSIONS.protect();
+    }
 
     private final Set<String> appliedExtensions = new HashSet<String>();
     private final ExtensionRegistry extensionRegistry;
@@ -79,6 +92,17 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
         .setPrivateEntry()
         .build();
 
+    public static Operation getOperation(List<ModelNode> extensions) {
+        final List<ModelNode> bootOperations = new ArrayList<ModelNode>();
+        for (final ModelNode extension : extensions) {
+            final ModelNode e = new ModelNode();
+            e.get("domain-resource-address").add(EXTENSION, extension.asString());
+            bootOperations.add(e);
+        }
+        final ModelNode operation = APPLY_EXTENSIONS.clone();
+        operation.get(DOMAIN_MODEL).set(bootOperations);
+        return OperationBuilder.create(operation).build();
+    }
 
     public ApplyExtensionsHandler(ExtensionRegistry extensionRegistry, LocalHostControllerInfo localHostInfo, final IgnoredDomainResourceRegistry ignoredResourceRegistry) {
         this.extensionRegistry = extensionRegistry;

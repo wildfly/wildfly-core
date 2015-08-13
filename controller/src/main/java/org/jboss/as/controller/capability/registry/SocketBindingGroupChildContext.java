@@ -35,22 +35,27 @@ import java.util.Set;
  *
  * @see SocketBindingGroupsCapabilityContext
  */
-public class SocketBindingGroupChildContext extends IncludingResourceCapabilityContext {
+class SocketBindingGroupChildContext extends IncludingResourceCapabilityContext {
 
-    public static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> SBG_KEY =
+    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> SBG_KEY =
             CapabilityResolutionContext.AttachmentKey.create(Map.class);
 
-    public SocketBindingGroupChildContext(String value) {
+    SocketBindingGroupChildContext(String value) {
         super(SBG_KEY, SOCKET_BINDING_GROUP, value);
     }
 
     @Override
     public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
         CapabilityContext dependentContext = dependent.getContext();
-        boolean result = !(dependentContext instanceof SocketBindingGroupChildContext) || equals(dependentContext);
-        if (!result) {
-            Set<CapabilityContext> includers = getIncludingContexts(context);
-            result = includers.contains(dependentContext);
+        boolean result;
+        if (dependentContext instanceof SocketBindingGroupChildContext) {
+            result = equals(dependentContext);
+            if (!result) {
+                Set<CapabilityContext> includers = getIncludingContexts(context);
+                result = includers.contains(dependentContext);
+            }
+        } else {
+            result = !(dependentContext instanceof ProfilesCapabilityContext) && !(dependentContext instanceof ServerGroupsCapabilityContext);
         }
         return result;
     }

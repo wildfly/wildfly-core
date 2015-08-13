@@ -22,37 +22,25 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-
-import java.util.Map;
-import java.util.Set;
-
 /**
- * {@link CapabilityContext} for the children of a Host Controller {@code profile} resource.
- * Note this does not include the profile capability itself.
+ * {@link CapabilityContext} specifically used for the {@code org.wildfly.domain.socket-binding-group} capability.
+ * <p>
+ * <strong>NOTE:</strong> This context is not used for child resources (subsystems) in the 'socket-binding-group'
+ * part of the Host Controller resource tree.
  *
  * @author Brian Stansberry
  *
- * @see ProfilesCapabilityContext
+ * @see SocketBindingGroupChildContext
  */
-class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
+class SocketBindingGroupsCapabilityContext implements CapabilityContext {
 
-    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> PROFILE_KEY =
-            CapabilityResolutionContext.AttachmentKey.create(Map.class);
-
-    ProfileChildCapabilityContext(String value) {
-        super(PROFILE_KEY, PROFILE, value);
-    }
+    static final SocketBindingGroupsCapabilityContext INSTANCE = new SocketBindingGroupsCapabilityContext();
 
     @Override
     public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext dependentContext = dependent.getContext();
-        boolean result = equals(dependentContext);
-        if (!result && dependentContext instanceof ProfileChildCapabilityContext) {
-            Set<CapabilityContext> includers = getIncludingContexts(context);
-            result = includers.contains(dependentContext);
-        }
-        return result;
+        CapabilityContext depCtx = dependent.getContext();
+        return (depCtx instanceof SocketBindingGroupsCapabilityContext || depCtx instanceof ServerGroupsCapabilityContext
+                || depCtx instanceof ServerConfigCapabilityContext);
     }
 
     @Override
@@ -61,7 +49,7 @@ class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
     }
 
     @Override
-    protected CapabilityContext createIncludedContext(String name) {
-        return new ProfileChildCapabilityContext(name);
+    public String getName() {
+        return "socket-binding-groups";
     }
 }

@@ -22,11 +22,10 @@
 
 package org.jboss.as.domain.controller.operations;
 
-import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -34,29 +33,23 @@ import org.jboss.dmr.ModelNode;
 /**
  * @author Emanuel Muckenhuber
  */
-public class ServerGroupAddHandler implements OperationStepHandler {
+public class ServerGroupAddHandler extends AbstractAddStepHandler {
 
     public static OperationStepHandler INSTANCE = new ServerGroupAddHandler();
 
     ServerGroupAddHandler() {
-        //
+        super(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY, ServerGroupResourceDefinition.ADD_ATTRIBUTES);
     }
 
-    @Deprecated
-    public ServerGroupAddHandler(boolean master) {
-        //
-    }
-
-    /** {@inheritDoc */
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-
-        final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
-        final ModelNode model = resource.getModel();
-
-        for (AttributeDefinition attr : ServerGroupResourceDefinition.ADD_ATTRIBUTES) {
-            attr.validateAndSet(operation, model);
-        }
+    @Override
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         DomainModelReferenceValidator.addValidationStep(context, operation);
+        super.populateModel(context, operation, resource);
+    }
+
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        return false;
     }
 
 }
