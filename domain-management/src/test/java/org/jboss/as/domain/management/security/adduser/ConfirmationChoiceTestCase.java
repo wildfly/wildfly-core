@@ -22,7 +22,6 @@
 
 package org.jboss.as.domain.management.security.adduser;
 
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test the confirmation state

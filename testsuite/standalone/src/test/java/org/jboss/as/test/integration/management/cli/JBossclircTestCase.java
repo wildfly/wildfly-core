@@ -51,7 +51,7 @@ public class JBossclircTestCase extends CliScriptTestBase {
     private static final String JBOSS_CLI_RC_PROP = "jboss.cli.rc";
     private static final String VAR_NAME = "test_var_name";
     private static final String VAR_VALUE = "test_var_value";
-    
+
     private static final File TMP_JBOSS_CLI_RC;
     static {
         TMP_JBOSS_CLI_RC = new File(new File(TestSuiteEnvironment.getTmpDir()), ".tmp-jbossclirc");
@@ -75,22 +75,22 @@ public class JBossclircTestCase extends CliScriptTestBase {
             }
         }
     }
-    
+
     @AfterClass
     public static void cleanUp() {
         ensureRemoved(TMP_JBOSS_CLI_RC);
     }
-    
+
     @Before
     public void beforeTest() {
         TestSuiteEnvironment.setSystemProperty(JBOSS_CLI_RC_PROP, TMP_JBOSS_CLI_RC.getAbsolutePath());
     }
-    
+
     @After
     public void afterTest() {
         TestSuiteEnvironment.clearSystemProperty(JBOSS_CLI_RC_PROP);
     }
-    
+
     @Test
     public void testAPI() throws Exception {
         CommandContext ctx = null;
@@ -110,7 +110,7 @@ public class JBossclircTestCase extends CliScriptTestBase {
                 Collections.singletonMap(JBOSS_CLI_RC_PROP, TMP_JBOSS_CLI_RC.getAbsolutePath())));
         assertTrue(getLastCommandOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
     }
-    
+
     protected static void ensureRemoved(File f) {
         if(f.exists()) {
             if(!f.delete()) {

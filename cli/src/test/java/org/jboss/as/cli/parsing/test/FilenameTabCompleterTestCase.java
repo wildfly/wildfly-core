@@ -40,20 +40,19 @@ import org.junit.Test;
 
 /**
  * @author Alexey Loubyansky
- *
  */
 public class FilenameTabCompleterTestCase {
 
     private CommandContext ctx;
     private FileSystemPathArgument arg;
     private DefaultCallbackHandler parsedCmd;
-    
+
     @Before
     public void setup() throws CliInitializationException {
         ctx = CommandContextFactory.getInstance().newCommandContext();
         final DefaultFilenameTabCompleter completer = new DefaultFilenameTabCompleter(ctx);
 
-        final CommandHandlerWithArguments cmd = new CommandHandlerWithArguments(){
+        final CommandHandlerWithArguments cmd = new CommandHandlerWithArguments() {
 
             @Override
             public boolean isAvailable(CommandContext ctx) {
@@ -70,13 +69,14 @@ public class FilenameTabCompleterTestCase {
             @Override
             public void handle(CommandContext ctx) throws CommandLineException {
                 // TODO Auto-generated method stub
-                
-            }};
-        
+
+            }
+        };
+
         arg = new FileSystemPathArgument(cmd, completer, 0, "arg");
         parsedCmd = new DefaultCallbackHandler();
     }
-    
+
     @After
     public void tearDown() {
         ctx.terminateSession();
@@ -84,7 +84,7 @@ public class FilenameTabCompleterTestCase {
         arg = null;
         parsedCmd = null;
     }
-    
+
     @Test
     public void testTranslateGetValue() throws Exception {
         parsedCmd.parse(null, "cmd ~" + File.separator, ctx);

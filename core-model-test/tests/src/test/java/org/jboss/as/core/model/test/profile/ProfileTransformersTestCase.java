@@ -23,7 +23,6 @@ package org.jboss.as.core.model.test.profile;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
 import java.util.List;
 

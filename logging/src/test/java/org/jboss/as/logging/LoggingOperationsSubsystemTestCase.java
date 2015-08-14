@@ -25,14 +25,12 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
@@ -41,7 +39,6 @@ import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 import org.junit.After;

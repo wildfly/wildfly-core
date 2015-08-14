@@ -24,7 +24,6 @@
 
 package org.jboss.as.domain.management.security.util;
 
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -44,7 +44,11 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 import javax.inject.Inject;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

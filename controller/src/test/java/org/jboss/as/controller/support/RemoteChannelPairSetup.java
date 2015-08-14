@@ -31,11 +31,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.ProtocolChannelClient;
-import org.jboss.as.protocol.mgmt.ManagementChannelReceiver;
-import org.jboss.as.protocol.mgmt.ManagementMessageHandler;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.remoting3.Channel;
-import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
 import org.jboss.remoting3.security.PasswordClientCallbackHandler;
@@ -51,11 +48,11 @@ import org.xnio.OptionMap;
  */
 public class RemoteChannelPairSetup {
 
-    final static String ENDPOINT_NAME = "endpoint";
-    final static String URI_SCHEME = "test123";
-    final static String TEST_CHANNEL = "Test-Channel";
-    final static int PORT = 32123;
-    final static int EXECUTOR_MAX_THREADS = 20;
+    static final String ENDPOINT_NAME = "endpoint";
+    static final String URI_SCHEME = "test123";
+    static final String TEST_CHANNEL = "Test-Channel";
+    static final int PORT = 32123;
+    static final int EXECUTOR_MAX_THREADS = 20;
     private static final long EXECUTOR_KEEP_ALIVE_TIME = 60000;
 
     ChannelServer channelServer;

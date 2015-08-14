@@ -21,10 +21,6 @@
 */
 package org.jboss.as.core.model.test.socketbindinggroups;
 
-import java.io.IOException;
-
-import javax.xml.stream.XMLStreamException;
-
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
