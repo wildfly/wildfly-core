@@ -61,7 +61,7 @@ class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
         EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
         if (hostControllerLaunch != null) {
             try {
-                hostControllerLaunch.getHostController().stop();
+                hostControllerLaunch.stop();
             } finally {
                 try {
                     hostControllerLaunch.getEnvironmentRestorer().restoreEnvironment();
