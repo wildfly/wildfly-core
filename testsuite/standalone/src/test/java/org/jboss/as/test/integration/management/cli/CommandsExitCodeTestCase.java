@@ -25,15 +25,18 @@ package org.jboss.as.test.integration.management.cli;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+
+import java.io.IOException;
 
 /**
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class CommandsExitCodeTestCase extends CliScriptTestBase {
+public class CommandsExitCodeTestCase {
 
     private static final String PROP_NAME = "cli-arg-test";
     private static final String SET_PROP_COMMAND = "/system-property=" + PROP_NAME + ":add(value=set)";
@@ -46,10 +49,19 @@ public class CommandsExitCodeTestCase extends CliScriptTestBase {
      * @throws Exception
      */
     @Test
-    public void testSuccess() {
-        int exitCode = execute(SET_PROP_COMMAND, true);
+    public void testSuccess() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument(SET_PROP_COMMAND);
+        cli.executeNonInteractive();
+        int exitCode = cli.getProcessExitValue();
         if (exitCode == 0) {
-            execute(REMOVE_PROP_COMMAND, true);
+            cli = new CliProcessWrapper()
+                    .addCliArgument("--connect")
+                    .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                    .addCliArgument(REMOVE_PROP_COMMAND);
+            cli.executeNonInteractive();
         }
         assertEquals(0, exitCode);
     }
@@ -60,8 +72,13 @@ public class CommandsExitCodeTestCase extends CliScriptTestBase {
      * @throws Exception
      */
     @Test
-    public void testFailure() {
-        assertFailure(GET_PROP_COMMAND);
+    public void testFailure() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument(GET_PROP_COMMAND);
+        cli.executeNonInteractive();
+        assertTrue(cli.getProcessExitValue() != 0);
     }
 
     /**
@@ -70,14 +87,27 @@ public class CommandsExitCodeTestCase extends CliScriptTestBase {
      * @throws Exception
      */
     @Test
-    public void testValidCommandAfterInvalidCommand() {
-        int exitCode = execute('\"' + GET_PROP_COMMAND + ',' + SET_PROP_COMMAND + '\"', false);
+    public void testValidCommandAfterInvalidCommand() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument('\"' + GET_PROP_COMMAND + ',' + SET_PROP_COMMAND + '\"');
+        cli.executeNonInteractive();
+        int exitCode = cli.getProcessExitValue();
         if (exitCode == 0) {
-            execute(REMOVE_PROP_COMMAND, true);
+            cli = new CliProcessWrapper()
+                    .addCliArgument("--connect")
+                    .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                    .addCliArgument(REMOVE_PROP_COMMAND);
+            cli.executeNonInteractive();
         } else {
-            assertFailure(GET_PROP_COMMAND);
-        }
-        assertTrue(exitCode != 0);
+            cli = new CliProcessWrapper()
+                    .addCliArgument("--connect")
+                    .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                    .addCliArgument(GET_PROP_COMMAND);
+            cli.executeNonInteractive();
+            assertTrue(cli.getProcessExitValue() != 0);        }
+        assertTrue("Output: '" + cli.getOutput() + "'", exitCode != 0);
     }
 
     /**
@@ -86,10 +116,27 @@ public class CommandsExitCodeTestCase extends CliScriptTestBase {
      * @throws Exception
      */
     @Test
-    public void testValidCommandBeforeInvalidCommand() {
-        int exitCode = execute(SET_PROP_COMMAND + ",bad-wrong-illegal", false);
-        assertSuccess(GET_PROP_COMMAND);
-        execute(REMOVE_PROP_COMMAND, true);
-        assertTrue(exitCode != 0);
+    public void testValidCommandBeforeInvalidCommand() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument(SET_PROP_COMMAND + ",bad-wrong-illegal");
+        cli.executeNonInteractive();
+        int exitCode = cli.getProcessExitValue();
+
+        cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument(GET_PROP_COMMAND);
+        cli.executeNonInteractive();
+        assertTrue(cli.getProcessExitValue() == 0);
+
+        cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument(REMOVE_PROP_COMMAND);
+        cli.executeNonInteractive();
+
+        assertTrue("Output: '" + cli.getOutput() + "'", exitCode != 0);
     }
 }
