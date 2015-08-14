@@ -76,16 +76,13 @@ public class ReadChildrenTypesHandler implements OperationStepHandler {
             PathAddress relativeAddr = PathAddress.pathAddress(child);
             ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
             boolean isSingletonResource = childReg == null || !child.isWildcard();
-            if (aliases || (isSingletonResource || !childReg.isAlias())) {
-                if(singletons && isSingletonResource)  {
-                    if (child.isWildcard()) {
-                        children.add(child.getKey());
-                    } else {
-                        children.add(child.getKey() + '=' + child.getValue());
-                    }
-                } else {
-                    children.add(child.getKey());
-                }
+            if (childReg.isAlias() && !aliases) {
+                continue;
+            }
+            if(singletons && isSingletonResource)  {
+                children.add(child.getKey() + '=' + child.getValue());
+            } else {
+                children.add(child.getKey());
             }
         }
         final ModelNode result = context.getResult();

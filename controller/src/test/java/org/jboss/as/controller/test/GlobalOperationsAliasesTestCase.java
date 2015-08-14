@@ -84,9 +84,10 @@ import org.junit.Test;
  */
 public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTestCase {
 
+    ManagementResourceRegistration rootRegistration;
     @Override
     protected void initModel(ManagementModel managementModel) {
-        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
+        rootRegistration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
@@ -302,7 +303,6 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
     @Test
     public void testReadChildrenTypes() throws Exception {
         ModelNode operation = createOperation(READ_CHILDREN_TYPES_OPERATION, "profile", "profileA");
-
         ModelNode result = executeForResult(operation);
         assertNotNull(result);
         assertEquals(ModelType.LIST, result.getType());
@@ -346,6 +346,21 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         assertEquals(ModelType.LIST, result.getType());
         assertEquals(1, result.asList().size());
         assertEquals("type1", result.asList().get(0).asString());
+
+        operation = createOperation(READ_CHILDREN_TYPES_OPERATION, "profile", "profileD", "subsystem", "subsystem3");
+        result = executeForResult(operation);
+        assertNotNull(result);
+        assertEquals(ModelType.LIST, result.getType());
+        assertEquals(1, result.asList().size());
+        assertEquals("service", result.asList().get(0).asString());
+
+        operation = createOperation(READ_CHILDREN_TYPES_OPERATION, "profile", "profileD", "subsystem", "subsystem3");
+        operation.get(ModelDescriptionConstants.INCLUDE_ALIASES).set(true);
+        result = executeForResult(operation);
+        assertNotNull(result);
+        assertEquals(2, result.asList().size());
+        stringList = modelNodeListToStringList(result.asList());
+        assertTrue(Arrays.asList("service", "alias").containsAll(stringList));
     }
 
     @Test
