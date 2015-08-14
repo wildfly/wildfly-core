@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.operations;
 
+import java.util.EnumSet;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -29,6 +31,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
@@ -53,9 +56,9 @@ public abstract class ServerProcessHandlers implements OperationStepHandler {
             .setRuntimeOnly()
             .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
             .build();
+    final ServerInventory serverInventory;
 
-    protected final ServerInventory serverInventory;
-    public ServerProcessHandlers(ServerInventory serverInventory) {
+    ServerProcessHandlers(ServerInventory serverInventory) {
         this.serverInventory = serverInventory;
     }
 
@@ -68,11 +71,13 @@ public abstract class ServerProcessHandlers implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                // WFLY-2189 trigger a write-runtime authz check
-                context.getServiceRegistry(true);
-
-                doExecute(serverName);
-                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                context.completeStep(new OperationContext.ResultHandler() {
+                    @Override
+                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        doExecute(serverName);
+                    }
+                });
             }
         }, OperationContext.Stage.RUNTIME);
     }
