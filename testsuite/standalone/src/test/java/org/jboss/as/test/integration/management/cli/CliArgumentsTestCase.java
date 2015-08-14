@@ -39,14 +39,15 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class CliArgumentsTestCase extends CliScriptTestBase {
+public class CliArgumentsTestCase {
 
     private static final String tempDir = TestSuiteEnvironment.getTmpDir();
 
     @Test
     public void testVersionArgument() throws Exception {
-        execute(false, "--version");
-        final String result = getLastCommandOutput();
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--version");
+        final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
         assertTrue(result, result.contains("JBoss AS release"));
@@ -60,8 +61,9 @@ public class CliArgumentsTestCase extends CliScriptTestBase {
 
     @Test
     public void testVersionAsCommandArgument() throws Exception {
-        execute(false, "--command=version");
-        final String result = getLastCommandOutput();
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--command=version");
+        final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
         assertTrue(result, result.contains("JBoss AS release"));
@@ -82,8 +84,9 @@ public class CliArgumentsTestCase extends CliScriptTestBase {
         FileUtils.writeStringToFile(cliScriptFile, "version" + TestSuiteEnvironment.getSystemProperty("line.separator"));
 
         // pass it to CLI
-        execute(false, "--file=" + cliScriptFile.getAbsolutePath());
-        final String result = getLastCommandOutput();
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--file=" + cliScriptFile.getAbsolutePath());
+        final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
         assertTrue(result, result.contains("JBoss AS release"));
@@ -99,9 +102,12 @@ public class CliArgumentsTestCase extends CliScriptTestBase {
 
     @Test
     public void testConnectArgument() throws Exception {
-        execute(false, "--commands=connect,version,ls");
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--commands=connect,version,ls")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()));
 
-        final String result = getLastCommandOutput();
+        final String result = cli.executeNonInteractive();
+
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
         assertTrue(result, result.contains("JBoss AS release"));
@@ -117,8 +123,14 @@ public class CliArgumentsTestCase extends CliScriptTestBase {
     }
 
     @Test
-    public void testWrongControler() throws Exception {
-        int exitCode = execute(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort() - 1, true, "quit", true);
+    public void testWrongController() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort() - 1))
+                .addCliArgument("quit");
+        cli.executeNonInteractive();
+
+        int exitCode = cli.getProcessExitValue();
         assertTrue(exitCode != 0);
     }
 }

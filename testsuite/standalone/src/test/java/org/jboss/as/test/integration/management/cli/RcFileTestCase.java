@@ -30,7 +30,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
@@ -46,7 +45,7 @@ import org.junit.Test;
  * @author Alexey Loubyansky
  *
  */
-public class JBossclircTestCase extends CliScriptTestBase {
+public class RcFileTestCase {
 
     private static final String JBOSS_CLI_RC_PROP = "jboss.cli.rc";
     private static final String VAR_NAME = "test_var_name";
@@ -71,7 +70,9 @@ public class JBossclircTestCase extends CliScriptTestBase {
             if(writer != null) {
                 try {
                     writer.close();
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                    // ignore
+                }
             }
         }
     }
@@ -106,9 +107,13 @@ public class JBossclircTestCase extends CliScriptTestBase {
 
     @Test
     public void testScript() throws Exception {
-        assertEquals(0, execute(false, "echo $" + VAR_NAME, false,
-                Collections.singletonMap(JBOSS_CLI_RC_PROP, TMP_JBOSS_CLI_RC.getAbsolutePath())));
-        assertTrue(getLastCommandOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("echo $" + VAR_NAME)
+                .addJavaOption( "-D" + JBOSS_CLI_RC_PROP + "=" + TMP_JBOSS_CLI_RC.getAbsolutePath());
+        cli.executeNonInteractive();
+
+        assertEquals("CLI Errors: '" + cli.getOutput() + "'", 0, cli.getProcessExitValue());
+        assertTrue(cli.getOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
     }
 
     protected static void ensureRemoved(File f) {
