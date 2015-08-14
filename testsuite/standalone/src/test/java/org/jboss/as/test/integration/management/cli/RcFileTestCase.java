@@ -30,7 +30,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
@@ -71,7 +70,9 @@ public class RcFileTestCase {
             if(writer != null) {
                 try {
                     writer.close();
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                    // ignore
+                }
             }
         }
     }

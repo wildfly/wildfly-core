@@ -22,16 +22,15 @@
 
 package org.jboss.as.test.integration.management.cli;
 
-import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.WildflyTestRunner;
 
 @RunWith(WildflyTestRunner.class)
 public class CtrlCTestCase {
