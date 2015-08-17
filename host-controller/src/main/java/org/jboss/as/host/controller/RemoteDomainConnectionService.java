@@ -23,7 +23,6 @@
 package org.jboss.as.host.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_MODEL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
@@ -40,7 +39,6 @@ import java.io.DataInput;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +62,6 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
-import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -80,7 +77,6 @@ import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
-import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
 import org.jboss.as.domain.controller.operations.FetchMissingConfigurationHandler;
 import org.jboss.as.domain.controller.operations.SyncDomainModelOperationHandler;
 import org.jboss.as.domain.controller.operations.SyncServerGroupOperationHandler;
@@ -140,15 +136,15 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private static final String CONNECTION_TIMEOUT_PROPERTY = "jboss.host.domain.connection.timeout";
     private static final int CONNECTION_TIMEOUT = getSystemProperty(CONNECTION_TIMEOUT_PROPERTY, CONNECTION_TIMEOUT_DEFAULT);
 
-    private static final ModelNode APPLY_EXTENSIONS = new ModelNode();
+    //private static final ModelNode APPLY_EXTENSIONS = new ModelNode();
     private static final ModelNode APPLY_DOMAIN_MODEL = new ModelNode();
     private static final Operation GRAB_DOMAIN_RESOURCE;
 
     static {
-        APPLY_EXTENSIONS.get(OP).set(ApplyExtensionsHandler.OPERATION_NAME);
-        APPLY_EXTENSIONS.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
-        APPLY_EXTENSIONS.get(OP_ADDR).setEmptyList();
-        APPLY_EXTENSIONS.protect();
+//        APPLY_EXTENSIONS.get(OP).set(ApplyExtensionsHandler.OPERATION_NAME);
+//        APPLY_EXTENSIONS.get(OPERATION_HEADERS, "execute-for-coordinator").set(true);
+//        APPLY_EXTENSIONS.get(OP_ADDR).setEmptyList();
+//        APPLY_EXTENSIONS.protect();
 
         APPLY_DOMAIN_MODEL.get(OP).set(ModelDescriptionConstants.APPLY_REMOTE_DOMAIN_MODEL);
         //FIXME this makes the op work after boot (i.e. slave connects to restarted master), but does not make the slave resync the servers
@@ -192,8 +188,9 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
     private volatile RemoteDomainConnection connection;
 
-    private RemoteDomainConnectionService(final ModelController controller, final ExtensionRegistry extensionRegistry,
-                                          final LocalHostControllerInfo localHostControllerInfo, final ProductConfig productConfig,
+    private RemoteDomainConnectionService(final ModelController controller,
+                                          final ExtensionRegistry extensionRegistry,
+                                          final LocalHostControllerInfo localHostControllerInfo,
                                           final RemoteFileRepository remoteFileRepository,
                                           final ContentRepository contentRepository,
                                           final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
@@ -205,7 +202,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                           final Map<String, ProxyController> serverProxies){
         this.controller = controller;
         this.extensionRegistry = extensionRegistry;
-        this.productConfig = productConfig;
+        this.productConfig = hostControllerEnvironment.getProductConfig();
         this.localHostInfo = localHostControllerInfo;
         this.remoteFileRepository = remoteFileRepository;
         this.contentRepository = contentRepository;
@@ -220,19 +217,22 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         this.serverProxies = serverProxies;
     }
 
-    public static Future<MasterDomainControllerClient> install(final ServiceTarget serviceTarget, final ModelController controller, final ExtensionRegistry extensionRegistry,
-                                                               final LocalHostControllerInfo localHostControllerInfo, final ProductConfig productConfig,
-                                                               final String securityRealm, final RemoteFileRepository remoteFileRepository,
-                                                               final ContentRepository contentRepository,
-                                                               final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
-                                                               final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
-                                                               final DomainController domainController,
-                                                               final HostControllerEnvironment hostControllerEnvironment,
-                                                               final ExecutorService executor,
-                                                               final RunningMode currentRunningMode,
-                                                               final Map<String, ProxyController> serverProxies) {
+    static Future<MasterDomainControllerClient> install(final ServiceTarget serviceTarget,
+                                                        final ModelController controller,
+                                                        final ExtensionRegistry extensionRegistry,
+                                                        final LocalHostControllerInfo localHostControllerInfo,
+                                                        final String securityRealm,
+                                                        final RemoteFileRepository remoteFileRepository,
+                                                        final ContentRepository contentRepository,
+                                                        final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
+                                                        final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
+                                                        final DomainController domainController,
+                                                        final HostControllerEnvironment hostControllerEnvironment,
+                                                        final ExecutorService executor,
+                                                        final RunningMode currentRunningMode,
+                                                        final Map<String, ProxyController> serverProxies) {
         RemoteDomainConnectionService service = new RemoteDomainConnectionService(controller, extensionRegistry, localHostControllerInfo,
-                productConfig, remoteFileRepository, contentRepository,
+                remoteFileRepository, contentRepository,
                 ignoredDomainResourceRegistry, operationExecutor, domainController,
                 hostControllerEnvironment, executor, currentRunningMode, serverProxies);
         ServiceBuilder<MasterDomainControllerClient> builder = serviceTarget.addService(MasterDomainControllerClient.SERVICE_NAME, service)
@@ -531,15 +531,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
      */
     private ModelNode resolveSubsystems(final List<ModelNode> extensions) {
 
-        final List<ModelNode> bootOperations = new ArrayList<ModelNode>();
-        for (final ModelNode extension : extensions) {
-            final ModelNode e = new ModelNode();
-            e.get("domain-resource-address").add(EXTENSION, extension.asString());
-            bootOperations.add(e);
-        }
-        final ModelNode operation = APPLY_EXTENSIONS.clone();
-        operation.get(DOMAIN_MODEL).set(bootOperations);
-        final ModelNode result = controller.execute(operation, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT, OperationAttachments.EMPTY);
+        HostControllerLogger.ROOT_LOGGER.debug("Applying extensions provided by master");
+        final ModelNode result = operationExecutor.installSlaveExtensions(extensions);
         if (!SUCCESS.equals(result.get(OUTCOME).asString())) {
             throw HostControllerLogger.ROOT_LOGGER.failedToAddExtensions(result.get(FAILURE_DESCRIPTION));
         }
@@ -558,6 +551,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
      */
     private boolean applyRemoteDomainModel(final List<ModelNode> bootOperations, final HostInfo hostInfo) {
         try {
+            HostControllerLogger.ROOT_LOGGER.debug("Applying domain level boot operations provided by master");
             SyncModelParameters parameters =
                     new SyncModelParameters(domainController, ignoredDomainResourceRegistry,
                             hostControllerEnvironment, extensionRegistry, operationExecutor, true, serverProxies, remoteFileRepository, contentRepository);

@@ -22,8 +22,19 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
 import java.util.Collections;
 import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 
 /**
  * Context in which a {@link org.jboss.as.controller.capability.AbstractCapability capability} is available.
@@ -108,4 +119,52 @@ public interface CapabilityContext {
             return getClass().getSimpleName() + "{global}";
         }
     };
+
+    /** Factory for creating a {@code CapabilityContext} */
+    class Factory {
+        /**
+         * Create a {@code CapabilityContext} appropriate for the given process type and address
+         *
+         * @param processType the type of process in which the {@code CapabilityContext} exists
+         * @param address the address with which the {@code CapabilityContext} is associated
+         */
+        public static CapabilityContext create(ProcessType processType, PathAddress address) {
+            CapabilityContext context = CapabilityContext.GLOBAL;
+            PathElement pe = processType.isServer() || address.size() == 0 ? null : address.getElement(0);
+            if (pe != null) {
+                String type = pe.getKey();
+                switch (type) {
+                    case PROFILE: {
+                        context = address.size() == 1 ? ProfilesCapabilityContext.INSTANCE : new ProfileChildCapabilityContext(pe.getValue());
+                        break;
+                    }
+                    case SOCKET_BINDING_GROUP: {
+                        context = address.size() == 1 ? SocketBindingGroupsCapabilityContext.INSTANCE : new SocketBindingGroupChildContext(pe.getValue());
+                        break;
+                    }
+                    case HOST: {
+                        if (address.size() >= 2) {
+                            PathElement hostElement = address.getElement(1);
+                            final String hostType = hostElement.getKey();
+                            switch (hostType) {
+                                case SUBSYSTEM:
+                                case SOCKET_BINDING_GROUP:
+                                    context = HostCapabilityContext.INSTANCE;
+                                    break;
+                                case SERVER_CONFIG:
+                                    context = ServerConfigCapabilityContext.INSTANCE;
+                            }
+                        }
+                        break;
+                    }
+                    case SERVER_GROUP :  {
+                        context = ServerGroupsCapabilityContext.INSTANCE;
+                        break;
+                    }
+                }
+            }
+            return context;
+
+        }
+    }
 }

@@ -26,7 +26,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 

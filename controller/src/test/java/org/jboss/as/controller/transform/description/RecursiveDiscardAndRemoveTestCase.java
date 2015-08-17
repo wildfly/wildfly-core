@@ -261,7 +261,7 @@ public class RecursiveDiscardAndRemoveTestCase {
         Assert.assertNull(transformed.getFailureDescription());
     }
 
-    private static final ModelNode success() {
+    private static ModelNode success() {
         final ModelNode result = new ModelNode();
         result.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
         result.get(ModelDescriptionConstants.RESULT);

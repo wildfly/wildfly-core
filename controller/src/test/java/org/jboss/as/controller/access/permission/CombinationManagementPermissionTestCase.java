@@ -31,7 +31,6 @@ import java.security.Permission;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.CombinationPolicy;
-import org.jboss.as.controller.access.constraint.Constraint;
 import org.junit.Test;
 
 /**
@@ -101,6 +100,13 @@ public class CombinationManagementPermissionTestCase {
             if (id != that.id) return false;
 
             return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+            result = 31 * result + id;
+            return result;
         }
     }
 }

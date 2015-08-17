@@ -30,7 +30,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
@@ -46,12 +45,12 @@ import org.junit.Test;
  * @author Alexey Loubyansky
  *
  */
-public class JBossclircTestCase extends CliScriptTestBase {
+public class RcFileTestCase {
 
     private static final String JBOSS_CLI_RC_PROP = "jboss.cli.rc";
     private static final String VAR_NAME = "test_var_name";
     private static final String VAR_VALUE = "test_var_value";
-    
+
     private static final File TMP_JBOSS_CLI_RC;
     static {
         TMP_JBOSS_CLI_RC = new File(new File(TestSuiteEnvironment.getTmpDir()), ".tmp-jbossclirc");
@@ -71,26 +70,28 @@ public class JBossclircTestCase extends CliScriptTestBase {
             if(writer != null) {
                 try {
                     writer.close();
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                    // ignore
+                }
             }
         }
     }
-    
+
     @AfterClass
     public static void cleanUp() {
         ensureRemoved(TMP_JBOSS_CLI_RC);
     }
-    
+
     @Before
     public void beforeTest() {
         TestSuiteEnvironment.setSystemProperty(JBOSS_CLI_RC_PROP, TMP_JBOSS_CLI_RC.getAbsolutePath());
     }
-    
+
     @After
     public void afterTest() {
         TestSuiteEnvironment.clearSystemProperty(JBOSS_CLI_RC_PROP);
     }
-    
+
     @Test
     public void testAPI() throws Exception {
         CommandContext ctx = null;
@@ -106,11 +107,15 @@ public class JBossclircTestCase extends CliScriptTestBase {
 
     @Test
     public void testScript() throws Exception {
-        assertEquals(0, execute(false, "echo $" + VAR_NAME, false,
-                Collections.singletonMap(JBOSS_CLI_RC_PROP, TMP_JBOSS_CLI_RC.getAbsolutePath())));
-        assertTrue(getLastCommandOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("echo $" + VAR_NAME)
+                .addJavaOption( "-D" + JBOSS_CLI_RC_PROP + "=" + TMP_JBOSS_CLI_RC.getAbsolutePath());
+        cli.executeNonInteractive();
+
+        assertEquals("CLI Errors: '" + cli.getOutput() + "'", 0, cli.getProcessExitValue());
+        assertTrue(cli.getOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
     }
-    
+
     protected static void ensureRemoved(File f) {
         if(f.exists()) {
             if(!f.delete()) {

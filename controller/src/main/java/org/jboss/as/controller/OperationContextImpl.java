@@ -38,15 +38,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -83,13 +80,10 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
-import org.jboss.as.controller.capability.registry.HostCapabilityContext;
-import org.jboss.as.controller.capability.registry.ProfileChildCapabilityContext;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
-import org.jboss.as.controller.capability.registry.SocketBindingGroupChildContext;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -210,11 +204,14 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final AccessMechanism accessMechanism;
     private final ActiveOperationResource activeOperationResource;
     private final BooleanHolder done = new BooleanHolder();
+    private final boolean capabilitiesAlreadyBroken;
+    private final boolean partialModel;
 
     private volatile ExecutionStatus executionStatus = ExecutionStatus.EXECUTING;
 
 
-    OperationContextImpl(final Integer operationId, final String operationName, final ModelNode operationAddress,
+    OperationContextImpl(final Integer operationId,
+                         final String operationName, final ModelNode operationAddress,
                          final ModelControllerImpl modelController, final ProcessType processType,
                          final RunningMode runningMode, final EnumSet<ContextFlag> contextFlags,
                          final OperationMessageHandler messageHandler, final OperationAttachments attachments,
@@ -225,7 +222,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final AccessMechanism accessMechanism,
                          final NotificationSupport notificationSupport,
                          final boolean skipModelValidation,
-                         final OperationStepHandler extraValidationStepHandler) {
+                         final OperationStepHandler extraValidationStepHandler,
+                         final boolean partialModel) {
         super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
                 modelController, skipModelValidation, extraValidationStepHandler);
         this.operationId = operationId;
@@ -243,6 +241,14 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
         this.accessMechanism = accessMechanism;
+        this.partialModel = partialModel;
+        if(runningMode == RunningMode.ADMIN_ONLY) {
+            boolean hostXmlOnly = booting && !processType.isServer() && partialModel;
+            ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry(true, hostXmlOnly);
+            this.capabilitiesAlreadyBroken = !validation.isValid();
+        } else {
+            this.capabilitiesAlreadyBroken = false;
+        }
     }
 
     public InputStream getAttachmentStream(final int index) {
@@ -267,8 +273,12 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private boolean validateCapabilities() {
         // Validate that all required capabilities are available and fail any steps that broke this
-        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry();
+        boolean hostXmlOnly = isBooting() && !getProcessType().isServer() && partialModel;
+        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false, hostXmlOnly);
         boolean ok = validation.isValid();
+        final boolean adminOnly = this.getRunningMode() == RunningMode.ADMIN_ONLY;
+        //if we are in admin only mode and everything is already broken then we don't care about failures
+        final boolean ignoreFailures = adminOnly && (capabilitiesAlreadyBroken || isBooting());
         if (!ok) {
 
             boolean failureRecorded = false;
@@ -300,9 +310,11 @@ final class OperationContextImpl extends AbstractOperationContext {
                         }
                     }
                     String msgString = msg.toString();
-                    guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    if(!ignoreFailures) {
+                        guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    }
                     failureRecorded = true;
-                    if (isBooting()) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
+                    if (isBooting() || ignoreFailures) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
                         ControllerLogger.ROOT_LOGGER.error(guilty.address.toCLIStyleString() + " -- " + msgString);
                     }
                 } else {
@@ -339,7 +351,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
                         ? null
                         : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
-                StringBuilder bootMsg = isBooting()
+                StringBuilder bootMsg = isBooting() || ignoreFailures
                         ? new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString()))
                         : null;
                 for (CapabilityId id : entry.getValue()) {
@@ -354,7 +366,9 @@ final class OperationContextImpl extends AbstractOperationContext {
                     }
                 }
                 if (msg != null) {
-                    response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    if(!ignoreFailures) {
+                        response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    }
                     failureRecorded = true;
                 }
                 if (bootMsg != null) {
@@ -373,8 +387,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                             String depConName = reg.getDependentContext().getName();
                             // only overwrite reponse failure-description if there isn't one
                             if (!response.hasDefined(FAILURE_DESCRIPTION)) {
-                                response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
-                                        reg.getDependentName(), depConName, depConName));
+                                if(!(adminOnly && isBooting())) {
+                                    response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
+                                            reg.getDependentName(), depConName, depConName));
+                                }
                                 failureRecorded = true;
                             }
                             if (isBooting()) {
@@ -398,10 +414,16 @@ final class OperationContextImpl extends AbstractOperationContext {
 
             // If we didn't record a failure on any response, put one on the initial response
             if (!failureRecorded && unexplainedProblem != null && !initialResponse.hasDefined(FAILURE_DESCRIPTION)) {
-                initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
+
+                if(!ignoreFailures) {
+                    initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
+                }
+                if(isBooting() || ignoreFailures) {
+                    ControllerLogger.ROOT_LOGGER.error(unexplainedProblem);
+                }
             }
         }
-        return ok;
+        return ok || ignoreFailures;
 
     }
 
@@ -1806,34 +1828,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private CapabilityContext createCapabilityContext(Step step) {
-        CapabilityContext context = CapabilityContext.GLOBAL;
-        PathElement pe = getProcessType().isServer() || step.address.size() == 0 ? null : step.address.getElement(0);
-        if (pe != null) {
-            String type = pe.getKey();
-            switch (type) {
-                case PROFILE: {
-                    context = step.address.size() == 1 ? context : new ProfileChildCapabilityContext(pe.getValue());
-                    break;
-                }
-                case SOCKET_BINDING_GROUP: {
-                    context = step.address.size() == 1 ? context : new SocketBindingGroupChildContext(pe.getValue());
-                    break;
-                }
-                case HOST: {
-                    if (step.address.size() >= 2) {
-                        PathElement hostElement = step.address.getElement(1);
-                        final String hostType = hostElement.getKey();
-                        switch (hostType) {
-                            case SUBSYSTEM:
-                            case SOCKET_BINDING_GROUP:
-                                context = HostCapabilityContext.INSTANCE;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        return context;
+        return CapabilityContext.Factory.create(getProcessType(), step.address);
     }
 
     class ContextServiceTarget implements ServiceTarget {

@@ -187,7 +187,7 @@ public class InMemoryAuditReportTestCase extends AbstractManagementInterfaceRbac
             ModelNode currentChange = changes.get(0);
             ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
             assertThat(currentChangeOp.get(OP).asString(), is(WRITE_ATTRIBUTE_OPERATION));
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(IN_MEMORY_HANDLER_ADDR.toModelNode().asString()));            
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(IN_MEMORY_HANDLER_ADDR.toModelNode().asString()));
             currentChange = changes.get(1);
             currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
             assertThat(currentChangeOp.get(OP).asString(), is(REMOVE));

@@ -66,9 +66,7 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
-import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
 import org.jboss.as.domain.controller.operations.HostProcessReloadHandler;
-import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
 import org.jboss.as.host.controller.DirectoryGrouping;
@@ -88,6 +86,7 @@ import org.jboss.as.host.controller.operations.HostShutdownHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceAddHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceRemoveHandler;
 import org.jboss.as.host.controller.operations.HostXmlMarshallingHandler;
+import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.host.controller.operations.IsMasterHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
@@ -333,7 +332,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
 
         DomainServerLifecycleHandlers.initializeServerInventory(serverInventory);
-        DomainSocketBindingGroupRemoveHandler.INSTANCE.initializeServerInventory(serverInventory);
 
         ValidateOperationHandler validateOperationHandler = hostControllerInfo.isMasterDomainController() ? ValidateOperationHandler.INSTANCE : ValidateOperationHandler.SLAVE_HC_INSTANCE;
         hostRegistration.registerOperationHandler(ValidateOperationHandler.DEFINITION_PRIVATE, validateOperationHandler);

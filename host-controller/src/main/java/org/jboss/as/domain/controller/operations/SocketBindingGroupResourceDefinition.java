@@ -29,6 +29,7 @@ import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PrimitiveListAttributeDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -43,6 +44,10 @@ import org.jboss.dmr.ModelType;
  * @author Kabir Khan
  */
 public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingGroupResourceDefinition {
+
+    public static final String SOCKET_BINDING_GROUP_CAPABILITY_NAME = "org.wildfly.domain.socket-binding-group";
+    public static final RuntimeCapability SOCKET_BINDING_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
+            .build();
 
     public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
 
@@ -72,6 +77,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
                     }
                 }
             })
+            .setCapabilityReference(SOCKET_BINDING_GROUP_CAPABILITY_NAME, SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
             .build();
 
     private SocketBindingGroupResourceDefinition() {
@@ -89,6 +95,11 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
         resourceRegistration.registerSubModel(SocketBindingResourceDefinition.INSTANCE);
         resourceRegistration.registerSubModel(RemoteDestinationOutboundSocketBindingResourceDefinition.INSTANCE);
         resourceRegistration.registerSubModel(LocalDestinationOutboundSocketBindingResourceDefinition.INSTANCE);
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     public static OperationStepHandler createReferenceValidationHandler() {

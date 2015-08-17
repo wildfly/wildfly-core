@@ -22,7 +22,7 @@
 
 package org.jboss.as.patching.runner;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.jboss.as.patching.HashUtils.bytesToHexString;
 import static org.jboss.as.patching.HashUtils.hashFile;
 import static org.jboss.as.patching.IoUtils.mkdir;

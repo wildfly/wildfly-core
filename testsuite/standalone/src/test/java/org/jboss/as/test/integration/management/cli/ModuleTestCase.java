@@ -132,27 +132,27 @@ public class ModuleTestCase extends AbstractCliTestBase {
     }
 
     private File getModulePath() {
-   		String modulePath = TestSuiteEnvironment.getSystemProperty("module.path", null);
-   		if (modulePath == null) {
-   			String jbossHome = TestSuiteEnvironment.getSystemProperty("jboss.dist", null);
-   			if (jbossHome == null) {
-   				throw new IllegalStateException(
-   						"Neither -Dmodule.path nor -Djboss.home were set");
-   			}
-   			modulePath = jbossHome + File.separatorChar + "modules";
-   		} else {
-   			modulePath = modulePath.split(File.pathSeparator)[0];
-   		}
-   		File moduleDir = new File(modulePath);
-   		if (!moduleDir.exists()) {
-   			throw new IllegalStateException(
-   					"Determined module path does not exist");
-   		}
-   		if (!moduleDir.isDirectory()) {
-   			throw new IllegalStateException(
-   					"Determined module path is not a dir");
-   		}
-   		return moduleDir;
-   	}
+        String modulePath = TestSuiteEnvironment.getSystemProperty("module.path", null);
+        if (modulePath == null) {
+            String jbossHome = TestSuiteEnvironment.getSystemProperty("jboss.dist", null);
+            if (jbossHome == null) {
+                throw new IllegalStateException(
+                        "Neither -Dmodule.path nor -Djboss.home were set");
+            }
+            modulePath = jbossHome + File.separatorChar + "modules";
+        } else {
+            modulePath = modulePath.split(File.pathSeparator)[0];
+        }
+        File moduleDir = new File(modulePath);
+        if (!moduleDir.exists()) {
+            throw new IllegalStateException(
+                    "Determined module path does not exist");
+        }
+        if (!moduleDir.isDirectory()) {
+            throw new IllegalStateException(
+                    "Determined module path is not a dir");
+        }
+        return moduleDir;
+    }
 
 }

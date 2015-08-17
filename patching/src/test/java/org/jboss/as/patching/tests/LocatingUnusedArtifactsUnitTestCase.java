@@ -84,7 +84,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .addFileWithRandomContent(standaloneHash, FILE_ONE)
                 .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-        ;
+
         // Apply CP1
         apply(cp1);
 
@@ -115,7 +115,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .addFileWithRandomContent(standaloneHash, FILE_ONE)
                 .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-        ;
+
         // Apply CP1
         apply(cp1);
 
@@ -128,7 +128,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .updateFileWithRandomContent(standaloneHash, null, FILE_ONE)
                 .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-        ;
+
         // Apply oneOff1
         apply(oneOff1);
 
@@ -326,7 +326,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .addFileWithRandomContent(standaloneHash, FILE_ONE)
                 .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-        ;
+
         // Apply oneOff1
         apply(oneOff1);
 
@@ -338,7 +338,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .updateFileWithRandomContent(Arrays.copyOf(standaloneHash, standaloneHash.length), standaloneHash, FILE_ONE)
                 .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-        ;
+
         // Apply CP1
         apply(cp1);
 
@@ -350,7 +350,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .updateFileWithRandomContent(standaloneHash, null, FILE_ONE)
                 .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-        ;
+
         // Apply oneOff1
         apply(oneOff2);
     }

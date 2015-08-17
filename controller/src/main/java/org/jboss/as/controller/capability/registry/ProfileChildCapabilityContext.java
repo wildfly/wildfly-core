@@ -35,12 +35,12 @@ import java.util.Set;
  *
  * @see ProfilesCapabilityContext
  */
-public class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
+class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
 
     private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> PROFILE_KEY =
             CapabilityResolutionContext.AttachmentKey.create(Map.class);
 
-    public ProfileChildCapabilityContext(String value) {
+    ProfileChildCapabilityContext(String value) {
         super(PROFILE_KEY, PROFILE, value);
     }
 

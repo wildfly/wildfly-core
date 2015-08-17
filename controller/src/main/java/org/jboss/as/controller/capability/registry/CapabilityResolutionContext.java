@@ -110,8 +110,8 @@ public abstract class CapabilityResolutionContext {
      *
      * @param <T> the attachment value type
      */
-    @SuppressWarnings("UnusedDeclaration")
     public static final class AttachmentKey<T> {
+
         private final Class<T> valueClass;
 
         /**

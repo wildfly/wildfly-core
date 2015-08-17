@@ -43,23 +43,28 @@ public abstract class AbstractSocketBindingGroupTest extends AbstractCoreModelTe
 
     @Test
     public void testSocketBindingGroups() throws Exception {
-        KernelServices kernelServices = createKernelServicesBuilder()
-                .setXmlResource(getXmlResource())
+        KernelServices kernelServices = createKernelServices();
+
+        String marshalled = kernelServices.getPersistedSubsystemXml();
+        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), getXmlResource()), marshalled);
+
+        kernelServices = createKernelServicesBuilder()
+                .setXml(marshalled)
                 .build();
             Assert.assertTrue(kernelServices.isSuccessfulBoot());
+    }
 
-            String marshalled = kernelServices.getPersistedSubsystemXml();
-            ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), getXmlResource()), marshalled);
-
-            kernelServices = createKernelServicesBuilder()
-                    .setXml(marshalled)
-                    .build();
-                Assert.assertTrue(kernelServices.isSuccessfulBoot());
-        }
-
-        KernelServicesBuilder createKernelServicesBuilder() {
-            return createKernelServicesBuilder(type);
+    KernelServicesBuilder createKernelServicesBuilder() {
+        return createKernelServicesBuilder(type);
     }
 
     protected abstract String getXmlResource();
+
+    protected KernelServices createKernelServices() throws Exception {
+        KernelServices kernelServices = createKernelServicesBuilder()
+                .setXmlResource(getXmlResource())
+                .build();
+        Assert.assertTrue(kernelServices.isSuccessfulBoot());
+        return kernelServices;
+    }
 }

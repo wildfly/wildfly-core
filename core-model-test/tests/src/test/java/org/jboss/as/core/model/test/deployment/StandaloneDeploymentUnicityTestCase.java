@@ -52,7 +52,8 @@ public class StandaloneDeploymentUnicityTestCase extends AbstractCoreModelTest {
     }
 
     @Test
-    public void testIncorrectDeployments() throws Exception {try { createKernelServicesBuilder(TestModelType.STANDALONE)
+    public void testIncorrectDeployments() throws Exception {
+        try { createKernelServicesBuilder(TestModelType.STANDALONE)
             .setXmlResource("standalone_duplicate.xml")
             .createContentRepositoryContent("12345678901234567890")
             .build();

@@ -22,7 +22,9 @@
 package org.jboss.as.core.model.test.paths;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
+import org.jboss.as.core.model.test.util.ServerConfigInitializers;
 
 /**
  *
@@ -42,6 +44,11 @@ public class HostSpecifiedPathsTestCase extends AbstractSpecifiedPathsTestCase {
     @Override
     protected PathAddress getPathsParent() {
         return PathAddress.EMPTY_ADDRESS;
+    }
+
+    @Override
+    protected ModelInitializer getModelInitalizer() {
+        return ServerConfigInitializers.XML_MODEL_INITIALIZER;
     }
 
 }

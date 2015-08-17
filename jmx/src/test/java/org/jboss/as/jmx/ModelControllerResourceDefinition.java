@@ -30,7 +30,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYP
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 

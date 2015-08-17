@@ -69,10 +69,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.audit.AuditLogger;

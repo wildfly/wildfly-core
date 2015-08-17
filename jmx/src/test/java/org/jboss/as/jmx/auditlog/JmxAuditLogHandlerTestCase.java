@@ -98,8 +98,8 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
     volatile File logDir;
     volatile MBeanServer server;
 
-    private final static String ANY_PLACEHOLDER = "$$$ ANY $$$ ANY $$$";
-    private final static ObjectName OBJECT_NAME;
+    private static final String ANY_PLACEHOLDER = "$$$ ANY $$$ ANY $$$";
+    private static final ObjectName OBJECT_NAME;
     static {
         try {
             OBJECT_NAME = new ObjectName("test:name=bean");

@@ -423,6 +423,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public RunningMode getRunningMode() {
+            return runningModeControl.getRunningMode();
+        }
+
+        @Override
         public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader) {
             assert subsystemName != null : "subsystemName is null";
             assert namespaceUri != null : "namespaceUri is null";

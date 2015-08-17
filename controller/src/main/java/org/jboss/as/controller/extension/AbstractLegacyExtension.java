@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -60,7 +61,12 @@ public abstract class AbstractLegacyExtension implements Extension {
             ControllerLogger.MGMT_OP_LOGGER.ignoringUnsupportedLegacyExtension(subsystemNames, extensionName);
             return;
         } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
-            throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+            if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+                //log a message, but fall through and register the model
+                ControllerLogger.MGMT_OP_LOGGER.removeUnsupportedLegacyExtension(subsystemNames, extensionName);
+            } else {
+                throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+            }
         }
 
         Set<ManagementResourceRegistration> subsystemRoots = initializeLegacyModel(context);
@@ -77,7 +83,7 @@ public abstract class AbstractLegacyExtension implements Extension {
             // Do nothing. This allows the extension=cmp:add op that's really targeted
             // to legacy servers to work
             return;
-        } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
+        } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER && context.getRunningMode() != RunningMode.ADMIN_ONLY) {
             throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
         }
 

@@ -30,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.http.HttpStatus;
 import org.jboss.as.controller.client.helpers.Operations;

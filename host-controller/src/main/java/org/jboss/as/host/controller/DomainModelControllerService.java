@@ -117,6 +117,7 @@ import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
 import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
@@ -571,9 +572,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
             ServerInventoryCallbackService.install(serviceTarget);
 
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
-            // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
+
+            // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
             ModelNode addHostOp = hostBootOps.remove(0);
+            HostControllerLogger.ROOT_LOGGER.debug("Invoking the initial add-host op");
             //Disable model validation here since it will will fail
             ok = boot(Collections.singletonList(addHostOp), true, true);
 
@@ -582,11 +585,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             //Pass in a custom mutable root resource registration provider for the remaining host model ops boot
             //This will be used to make sure that any extensions added in parallel get registered in the host model
-            ok = ok && boot(hostBootOps, true, new MutableRootResourceRegistrationProvider() {
-                public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
-                    return hostModelRegistration;
-                }
-            });
+            if (ok) {
+                HostControllerLogger.ROOT_LOGGER.debug("Invoking remaining host.xml ops");
+                ok = boot(hostBootOps, true, true, new MutableRootResourceRegistrationProvider() {
+                    public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
+                        return hostModelRegistration;
+                    }
+                });
+            }
 
             final RunningMode currentRunningMode = runningModeControl.getRunningMode();
 
@@ -664,7 +670,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     // parse the domain.xml and load the steps
                     // TODO look at having LocalDomainControllerAdd do this, using Stage.IMMEDIATE for the steps
                     ConfigurationPersister domainPersister = hostControllerConfigurationPersister.getDomainPersister();
-                    ok = boot(domainPersister.load(), false);
+                    List<ModelNode> domainBootOps = domainPersister.load();
+                    HostControllerLogger.ROOT_LOGGER.debug("Invoking domain.xml ops");
+                    ok = boot(domainBootOps, false);
 
                     if (!ok && runningModeControl.getRunningMode().equals(RunningMode.ADMIN_ONLY)) {
                         ROOT_LOGGER.reportAdminOnlyDomainXmlFailure();
@@ -791,7 +799,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 getValue(),
                 extensionRegistry,
                 hostControllerInfo,
-                environment.getProductConfig(),
                 hostControllerInfo.getRemoteDomainControllerSecurityRealm(),
                 remoteFileRepository,
                 contentRepository,
@@ -1208,6 +1215,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public ModelNode execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control,
                 OperationStepHandler step) {
             return internalExecute(operation, handler, control, step).getResponseNode();
+        }
+
+        @Override
+        public ModelNode installSlaveExtensions(List<ModelNode> extensions) {
+            Operation operation = ApplyExtensionsHandler.getOperation(extensions);
+            OperationStepHandler stepHandler = modelNodeRegistration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ApplyExtensionsHandler.OPERATION_NAME);
+            return internalExecute(operation, OperationMessageHandler.logging, OperationTransactionControl.COMMIT, stepHandler, false, true).getResponseNode();
         }
 
         @Override

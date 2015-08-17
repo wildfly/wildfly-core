@@ -310,23 +310,55 @@ public abstract class AbstractControllerService implements Service<ModelControll
         finishBoot();
     }
 
+    /**
+     * Boot with the given operations, performing full model and capability registry validation.
+     *
+     * @param bootOperations the operations. Cannot be {@code null}
+     * @param rollbackOnRuntimeFailure {@code true} if the boot should fail if operations fail in the runtime stage
+     * @return {@code true} if boot was successful
+     * @throws ConfigurationPersistenceException
+     */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
         return boot(bootOperations, rollbackOnRuntimeFailure, false, ModelControllerImpl.getMutableRootResourceRegistrationProvider());
     }
 
+    /**
+     * Boot with the given operations, optionally disabling model and capability registry validation.
+     *
+     * @param bootOperations the operations. Cannot be {@code null}
+     * @param rollbackOnRuntimeFailure {@code true} if the boot should fail if operations fail in the runtime stage
+     * @param skipModelValidation {@code true} if model and capability validation should be skipped.
+     * @return {@code true} if boot was successful
+     * @throws ConfigurationPersistenceException
+     */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure, boolean skipModelValidation) throws ConfigurationPersistenceException {
         return boot(bootOperations, rollbackOnRuntimeFailure, skipModelValidation, ModelControllerImpl.getMutableRootResourceRegistrationProvider());
     }
 
+    /**
+     * @deprecated internal use only  only for use by legacy test controllers
+     */
+    @Deprecated
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure,
             MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
         return boot(bootOperations, rollbackOnRuntimeFailure, false, parallelBootRootResourceRegistrationProvider);
     }
 
+    /**
+     * Boot, optionally disabling model and capability registry validation, using the given provider for the root
+     * {@link ManagementResourceRegistration}.
+     *
+     * @param bootOperations the operations. Cannot be {@code null}
+     * @param rollbackOnRuntimeFailure {@code true} if the boot should fail if operations fail in the runtime stage
+     * @param skipModelValidation {@code true} if model and capability validation should be skipped.
+     * @param parallelBootRootResourceRegistrationProvider provider of the root resource registration
+     * @return {@code true} if boot was successful
+     * @throws ConfigurationPersistenceException
+     */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure, boolean skipModelValidation,
-            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
+                           MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
         return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
-                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation);
+                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation, skipModelValidation);
     }
 
     /** @deprecated internal use only  only for use by legacy test controllers */
@@ -334,7 +366,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected ModelNode internalExecute(final ModelNode operation, final OperationMessageHandler handler,
                                         final ModelController.OperationTransactionControl control,
                                         final OperationAttachments attachments, final OperationStepHandler prepareStep) {
-        OperationResponse or = controller.internalExecute(operation, handler, control, attachments, prepareStep, false);
+        OperationResponse or = controller.internalExecute(operation, handler, control, attachments, prepareStep, false, false);
         ModelNode result = or.getResponseNode();
         try {
             or.close();
@@ -346,12 +378,17 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
-        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false);
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, false);
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
                                                 final OperationStepHandler prepareStep, final boolean attemptLock) {
-        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock);
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock, false);
+    }
+
+    protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
+                                                final OperationStepHandler prepareStep, final boolean attemptLock, final boolean partialModel) {
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock, partialModel);
     }
 
     /**

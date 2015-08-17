@@ -209,7 +209,7 @@ class ModelControllerImpl implements ModelController {
      */
     @Override
     public ModelNode execute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationAttachments attachments) {
-        OperationResponse or = internalExecute(operation, handler, control, attachments, prepareStep, false);
+        OperationResponse or = internalExecute(operation, handler, control, attachments, prepareStep, false, false);
         ModelNode result = or.getResponseNode();
         try {
             or.close();
@@ -222,7 +222,7 @@ class ModelControllerImpl implements ModelController {
 
     @Override
     public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
-        return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false);
+        return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, false);
     }
 
     private AbstractOperationContext getDelegateContext(final int operationId) {
@@ -310,10 +310,11 @@ class ModelControllerImpl implements ModelController {
      * @param attachments the operation attachments
      * @param prepareStep the prepare step to be executed before any other steps
      * @param attemptLock set to {@code true} to try to obtain the controller lock
+     * @param partialModel {@code true} if the model will only be partially complete after this operation
      * @return the result of the operation
      */
     protected OperationResponse internalExecute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control,
-        final OperationAttachments attachments, final OperationStepHandler prepareStep, final boolean attemptLock) {
+                                                final OperationAttachments attachments, final OperationStepHandler prepareStep, final boolean attemptLock, boolean partialModel) {
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -375,7 +376,7 @@ class ModelControllerImpl implements ModelController {
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
                     bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessMechanism, notificationSupport,
-                    false, extraValidationStepHandler);
+                    false, extraValidationStepHandler, partialModel);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
@@ -433,7 +434,8 @@ class ModelControllerImpl implements ModelController {
     }
 
     boolean boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
-              final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider, boolean skipModelValidation) {
+                 final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider,
+                 final boolean skipModelValidation, final boolean partialModel) {
 
         final Integer operationID = random.nextInt();
 
@@ -445,14 +447,14 @@ class ModelControllerImpl implements ModelController {
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler);
+                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
         BootOperations bootOperations = organizeBootOperations(bootList, operationID, parallelBootRootResourceRegistrationProvider);
         OperationContext.ResultAction resultAction = bootOperations.invalid ? OperationContext.ResultAction.ROLLBACK : OperationContext.ResultAction.KEEP;
         if (bootOperations.initialOps.size() > 0) {
-            // Run the steps up to the last ExtensionAddHandlerß
+            // Run the steps up to the last ExtensionAddHandler
             for (ParsedBootOp initialOp : bootOperations.initialOps) {
                 context.addBootStep(initialOp);
             }
@@ -464,7 +466,7 @@ class ModelControllerImpl implements ModelController {
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true,
-                            extraValidationStepHandler);
+                            extraValidationStepHandler, partialModel);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -494,7 +496,7 @@ class ModelControllerImpl implements ModelController {
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                                 bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false,
-                                extraValidationStepHandler);
+                                extraValidationStepHandler, partialModel);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
             }
@@ -1237,14 +1239,16 @@ class ModelControllerImpl implements ModelController {
          * Compares the registered requirements to the registered capabilities, returning any missing
          * or inconsistent requirements.
          *
-         * Cannot be called while other threads may be adding or removing capabilities
+         * @param forceCheck  {@code true} if a full validation should be performed regardless of whether
+         *                    any changes have occurred since the last check
+         * @param hostXmlOnly {@code true} if a Host Controller boot is occurring and only host model data is present
          *
          * @return a map whose keys are missing capabilities and whose values are the names of other capabilities
          *         that require that capability. Will not return {@code null} but may be empty
          */
-        CapabilityValidation validateCapabilityRegistry() {
-            if (!published) {
-                return capabilityRegistry.resolveCapabilities(getRootResource());
+        CapabilityValidation validateCapabilityRegistry(boolean forceCheck, boolean hostXmlOnly) {
+            if (!published || forceCheck) {
+                return capabilityRegistry.resolveCapabilities(getRootResource(), hostXmlOnly);
             } else {
                 // we're unmodified so nothing to validate
                 return CapabilityValidation.OK;
@@ -1467,7 +1471,8 @@ class ModelControllerImpl implements ModelController {
 
         }
 
-        synchronized CapabilityValidation resolveCapabilities(Resource rootResource) {
+        synchronized CapabilityValidation resolveCapabilities(Resource rootResource, boolean hostXmlOnly) {
+
             resolutionContext.setRootResource(rootResource);
 
             Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = new HashMap<>();
@@ -1486,6 +1491,14 @@ class ModelControllerImpl implements ModelController {
                     SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, dependentName, !forServer);
                     if (satisfactory == null) {
                         // Missing
+                        if (hostXmlOnly && dependentName.startsWith("org.wildfly.domain.server-config.")
+                                && (req.getRequiredName().startsWith("org.wildfly.domain.server-group.")
+                                || req.getRequiredName().startsWith("org.wildfly.domain.socket-binding-group."))) {
+                            // HACK. We can't resolve these now as we have no domain model at this part of boot
+                            // We can resolve them when the domain model ops run, so wait to validate then
+                            ControllerLogger.MGMT_OP_LOGGER.tracef("Ignoring that dependent %s cannot resolve required capability %s as the 'hostXmlOnly' param is set", dependentId, req.getRequiredName());
+                            continue;
+                        }
                         CapabilityId basicId = new CapabilityId(req.getRequiredName(), dependentContext);
                         Set<RuntimeRequirementRegistration> set = missing.get(basicId);
                         if (set == null) {

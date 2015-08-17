@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -88,6 +89,35 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     @Override
     protected void addOperationParameterValueTypeDescription(final ModelNode node, final String operationName, final ResourceDescriptionResolver resolver, final Locale locale, final ResourceBundle bundle) {
         addValueTypeDescription(node);
+    }
+
+    @Override
+    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, attributeValue, false);
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, attributeValue, true);
+    }
+
+    private void handleCapabilityRequirements(OperationContext context, ModelNode attributeValue, boolean remove) {
+        if (referenceRecorder != null && attributeValue.isDefined()) {
+            List<ModelNode> valueList = attributeValue.asList();
+            String[] attributeValues = new String[valueList.size()];
+            int position = 0;
+            for (ModelNode current : valueList) {
+                if (!current.isDefined() || current.getType().equals(ModelType.EXPRESSION)) {
+                    return;
+                }
+                attributeValues[position++] = current.asString();
+            }
+            if (remove) {
+                referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValues);
+            } else {
+                referenceRecorder.addCapabilityRequirements(context, getName(), attributeValues);
+            }
+        }
     }
 
     public static class Builder extends ListAttributeDefinition.Builder<Builder, PrimitiveListAttributeDefinition> {

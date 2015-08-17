@@ -119,22 +119,22 @@ import org.xnio.OptionMap;
 public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
     private static final String LEGACY_DOMAIN = "jboss.resolved";
-    private final static ObjectName LEGACY_ROOT_NAME = ModelControllerMBeanHelper.createRootObjectName(LEGACY_DOMAIN);
-    private final static ObjectName LEGACY_INTERFACE_NAME = createObjectName(LEGACY_DOMAIN + ":interface=test-interface");
-    private final static ObjectName LEGACY_SOCKET_BINDING_GROUP_NAME = createObjectName(LEGACY_DOMAIN + ":socket-binding-group=test-socket-binding-group");
-    private final static ObjectName LEGACY_SERVER_SOCKET_BINDING_NAME = createObjectName(LEGACY_DOMAIN + ":socket-binding-group=test-socket-binding-group,socket-binding=server");
-    private final static ObjectName LEGACY_SERVER_SOCKET_BINDING_NAME_2 = createObjectName(LEGACY_DOMAIN + ":socket-binding=server,socket-binding-group=test-socket-binding-group");
-    private final static ObjectName LEGACY_SUBSYSTEM_NAME = createObjectName(LEGACY_DOMAIN + ":subsystem=jmx");
-    private final static ObjectName LEGACY_BAD_NAME = createObjectName(LEGACY_DOMAIN + ":type=bad");
+    private static final ObjectName LEGACY_ROOT_NAME = ModelControllerMBeanHelper.createRootObjectName(LEGACY_DOMAIN);
+    private static final ObjectName LEGACY_INTERFACE_NAME = createObjectName(LEGACY_DOMAIN + ":interface=test-interface");
+    private static final ObjectName LEGACY_SOCKET_BINDING_GROUP_NAME = createObjectName(LEGACY_DOMAIN + ":socket-binding-group=test-socket-binding-group");
+    private static final ObjectName LEGACY_SERVER_SOCKET_BINDING_NAME = createObjectName(LEGACY_DOMAIN + ":socket-binding-group=test-socket-binding-group,socket-binding=server");
+    private static final ObjectName LEGACY_SERVER_SOCKET_BINDING_NAME_2 = createObjectName(LEGACY_DOMAIN + ":socket-binding=server,socket-binding-group=test-socket-binding-group");
+    private static final ObjectName LEGACY_SUBSYSTEM_NAME = createObjectName(LEGACY_DOMAIN + ":subsystem=jmx");
+    private static final ObjectName LEGACY_BAD_NAME = createObjectName(LEGACY_DOMAIN + ":type=bad");
 
     private static final String EXPR_DOMAIN = "jboss.as.expr";
-    private final static ObjectName EXPR_ROOT_NAME = ModelControllerMBeanHelper.createRootObjectName(EXPR_DOMAIN);
-    private final static ObjectName EXPR_INTERFACE_NAME = createObjectName(EXPR_DOMAIN + ":interface=test-interface");
-    private final static ObjectName EXPR_SOCKET_BINDING_GROUP_NAME = createObjectName(EXPR_DOMAIN + ":socket-binding-group=test-socket-binding-group");
-    private final static ObjectName EXPR_SERVER_SOCKET_BINDING_NAME = createObjectName(EXPR_DOMAIN + ":socket-binding-group=test-socket-binding-group,socket-binding=server");
-    private final static ObjectName EXPR_SERVER_SOCKET_BINDING_NAME_2 = createObjectName(EXPR_DOMAIN + ":socket-binding=server,socket-binding-group=test-socket-binding-group");
-    private final static ObjectName EXPR_SUBSYSTEM_NAME = createObjectName(EXPR_DOMAIN + ":subsystem=jmx");
-    private final static ObjectName EXPR_BAD_NAME = createObjectName(LEGACY_DOMAIN + ":type=bad");
+    private static final ObjectName EXPR_ROOT_NAME = ModelControllerMBeanHelper.createRootObjectName(EXPR_DOMAIN);
+    private static final ObjectName EXPR_INTERFACE_NAME = createObjectName(EXPR_DOMAIN + ":interface=test-interface");
+    private static final ObjectName EXPR_SOCKET_BINDING_GROUP_NAME = createObjectName(EXPR_DOMAIN + ":socket-binding-group=test-socket-binding-group");
+    private static final ObjectName EXPR_SERVER_SOCKET_BINDING_NAME = createObjectName(EXPR_DOMAIN + ":socket-binding-group=test-socket-binding-group,socket-binding=server");
+    private static final ObjectName EXPR_SERVER_SOCKET_BINDING_NAME_2 = createObjectName(EXPR_DOMAIN + ":socket-binding=server,socket-binding-group=test-socket-binding-group");
+    private static final ObjectName EXPR_SUBSYSTEM_NAME = createObjectName(EXPR_DOMAIN + ":subsystem=jmx");
+    private static final ObjectName EXPR_BAD_NAME = createObjectName(LEGACY_DOMAIN + ":type=bad");
 
     private JMXConnector jmxConnector;
 

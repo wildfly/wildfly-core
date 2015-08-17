@@ -56,6 +56,7 @@ public abstract class AbstractSpecifiedPathsTestCase extends AbstractCoreModelTe
     public void testPaths() throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder()
             .setXmlResource(getXmlResource())
+            .setModelInitializer(getModelInitalizer(), null)
             .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
 
@@ -64,6 +65,7 @@ public abstract class AbstractSpecifiedPathsTestCase extends AbstractCoreModelTe
 
         kernelServices = createKernelServicesBuilder()
                 .setXml(marshalled)
+                .setModelInitializer(getModelInitalizer(), null)
                 .build();
             Assert.assertTrue(kernelServices.isSuccessfulBoot());
     }
@@ -136,5 +138,9 @@ public abstract class AbstractSpecifiedPathsTestCase extends AbstractCoreModelTe
                 //Default is no-op
             }
         };
+    }
+
+    protected ModelInitializer getModelInitalizer() {
+        return ModelInitializer.NO_OP;
     }
 }

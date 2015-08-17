@@ -82,9 +82,9 @@ public class ManagementModel extends JPanel {
      */
     public ManagementModelNode findNode(String address) {
         ManagementModelNode root = (ManagementModelNode)tree.getModel().getRoot();
-        Enumeration<ManagementModelNode> allNodes = root.depthFirstEnumeration();
+        Enumeration<javax.swing.tree.TreeNode> allNodes = root.depthFirstEnumeration();
         while (allNodes.hasMoreElements()) {
-            ManagementModelNode node = allNodes.nextElement();
+            ManagementModelNode node = (ManagementModelNode)allNodes.nextElement();
             if (node.addressPath().equals(address)) return node;
         }
 
