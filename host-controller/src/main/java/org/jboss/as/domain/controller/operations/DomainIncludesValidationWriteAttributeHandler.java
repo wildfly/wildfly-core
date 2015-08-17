@@ -30,13 +30,13 @@ import org.jboss.as.domain.controller.operations.coordination.ServerOperationRes
 import org.jboss.dmr.ModelNode;
 
 /**
- * Write attribute handler to trigger validation when something in the domain model involving references has changed
+ * Write attribute handler to trigger validation when something in the domain model involving includes has changed
  *
  * @author Kabir Khan
  */
-public class DomainReferenceValidationWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
+public class DomainIncludesValidationWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    public DomainReferenceValidationWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
+    public DomainIncludesValidationWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
         super(attributeDefinitions);
     }
 
@@ -49,7 +49,7 @@ public class DomainReferenceValidationWriteAttributeHandler extends ModelOnlyWri
             ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
         }
 
-        DomainModelReferenceValidator.addValidationStep(context, operation);
+        DomainModelIncludesValidator.addValidationStep(context, operation);
     }
 
 }

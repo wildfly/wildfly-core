@@ -67,7 +67,6 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -93,10 +92,10 @@ import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeRemotingManagementResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
+import org.jboss.as.server.operations.InstallationReportHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ProcessTypeHandler;
-import org.jboss.as.server.operations.InstallationReportHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessReloadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
@@ -108,6 +107,7 @@ import org.jboss.as.server.operations.ServerSuspendHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.SetServerGroupHostHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.NetworkInterfaceRuntimeHandler;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
@@ -445,7 +445,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManager));
 
         // Interfaces
-        ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceDefinition(
+        ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceResourceDefinition(
                 SpecifiedInterfaceAddHandler.INSTANCE,
                 SpecifiedInterfaceRemoveHandler.INSTANCE,
                 true,

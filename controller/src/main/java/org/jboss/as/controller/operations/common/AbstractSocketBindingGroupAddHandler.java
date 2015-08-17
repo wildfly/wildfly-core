@@ -43,6 +43,7 @@ public abstract class AbstractSocketBindingGroupAddHandler extends AbstractAddSt
      * Create the AbstractSocketBindingGroupAddHandler
      */
     protected AbstractSocketBindingGroupAddHandler() {
+        super(AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     /**

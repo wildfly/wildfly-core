@@ -49,6 +49,9 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class AbstractSocketBindingResourceDefinition extends SimpleResourceDefinition {
 
+
+    public static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
+
     // Common attributes
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SOCKET_BINDING);
@@ -58,8 +61,11 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
             .setValidator(new StringLengthValidator(1)).build();
 
     public static final SimpleAttributeDefinition INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INTERFACE, ModelType.STRING, true)
-            .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setCapabilityReference("org.wildfly.network.interface", SOCKET_BINDING_CAPABILITY_NAME, true)
+            .build();
 
     public static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, true)
             .setAllowExpression(true)

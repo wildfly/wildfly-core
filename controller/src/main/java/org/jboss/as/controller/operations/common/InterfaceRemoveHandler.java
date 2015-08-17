@@ -32,6 +32,7 @@ public class InterfaceRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final String OPERATION_NAME = REMOVE;
 
+    @Deprecated
     public static final InterfaceRemoveHandler INSTANCE = new InterfaceRemoveHandler();
 
     /**

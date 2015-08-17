@@ -34,8 +34,8 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.core.model.test.ModelInitializer;
-import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 
 /**
@@ -52,7 +52,7 @@ public final class ServerConfigInitializers {
     private static final String TEST_OTHER_SERVER_GROUP_CAPABILITY = ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY.getDynamicName("other-server-group");
     private static final PathAddress TEST_OTHER_SERVER_GROUP_ADDRESS = PathAddress.pathAddress(SERVER_GROUP, "other-server-group");
 
-    private static final String TEST_FULL_HA_SOCKETS_CAPABILITY = SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY.getDynamicName("full-ha-sockets");
+    private static final String TEST_FULL_HA_SOCKETS_CAPABILITY = AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY.getDynamicName("full-ha-sockets");
     private static final PathAddress TEST_FULL_HA_SOCKETS_ADDRESS = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "full-ha-sockets");
     private static final CapabilityContext TEST_SBG_CONTEXT = CapabilityContext.Factory.create(ProcessType.HOST_CONTROLLER, TEST_FULL_HA_SOCKETS_ADDRESS);
 

@@ -34,10 +34,10 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.core.model.test.LegacyKernelServicesInitializer;
 import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.ModelWriteSanitizer;
-import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.dmr.ModelNode;
@@ -52,7 +52,7 @@ public class StandardServerGroupInitializers {
     private static final PathAddress TEST_PROFILE_ADDRESS = PathAddress.pathAddress(PROFILE, "test");
     private static final CapabilityContext TEST_PROFILE_CONTEXT = CapabilityContext.Factory.create(ProcessType.HOST_CONTROLLER, TEST_PROFILE_ADDRESS);
 
-    private static final String TEST_SBG_CAPABILITY = SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY.getDynamicName("test-sockets");
+    private static final String TEST_SBG_CAPABILITY = AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY.getDynamicName("test-sockets");
     private static final PathAddress TEST_SBG_ADDRESS = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "test-sockets");
     private static final CapabilityContext TEST_SBG_CONTEXT = CapabilityContext.Factory.create(ProcessType.HOST_CONTROLLER, TEST_SBG_ADDRESS);
 

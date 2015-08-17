@@ -24,11 +24,8 @@ package org.jboss.as.domain.controller.operations;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
-import org.jboss.dmr.ModelNode;
 
 /**
  * @author Emanuel Muckenhuber
@@ -39,12 +36,6 @@ public class ServerGroupAddHandler extends AbstractAddStepHandler {
 
     ServerGroupAddHandler() {
         super(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY, ServerGroupResourceDefinition.ADD_ATTRIBUTES);
-    }
-
-    @Override
-    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
-        DomainModelReferenceValidator.addValidationStep(context, operation);
-        super.populateModel(context, operation, resource);
     }
 
     @Override

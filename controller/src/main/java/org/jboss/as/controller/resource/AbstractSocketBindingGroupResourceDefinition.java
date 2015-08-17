@@ -35,6 +35,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -53,6 +54,10 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class AbstractSocketBindingGroupResourceDefinition extends SimpleResourceDefinition {
 
+    public static final String SOCKET_BINDING_GROUP_CAPABILITY_NAME = "org.wildfly.domain.socket-binding-group";
+    public static final RuntimeCapability SOCKET_BINDING_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
+            .build();
+
     // Common attributes
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SOCKET_BINDING_GROUP);
@@ -62,10 +67,11 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
             .setValidator(new StringLengthValidator(1)).build();
 
     public static final SimpleAttributeDefinition DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEFAULT_INTERFACE, ModelType.STRING, false)
-            .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
-
-
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setCapabilityReference("org.wildfly.network.interface", SOCKET_BINDING_GROUP_CAPABILITY)
+            .build();
 
     private final List<AccessConstraintDefinition> accessConstraints;
 
@@ -119,4 +125,8 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
 
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SOCKET_BINDING_GROUP_CAPABILITY);
+    }
 }
