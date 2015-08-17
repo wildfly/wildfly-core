@@ -64,8 +64,7 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
         final String realmName= model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
-        // TODO WFCORE-714 - Associate the Elytron domains with the Remoting connectors.
-        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, null, realmName, null, tmpDirPath);
+        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, realmName, null, tmpDirPath);
 
         final ServiceTarget target = context.getServiceTarget();
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();

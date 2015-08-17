@@ -161,7 +161,6 @@ public enum Attribute {
     SEARCH_DN("search-dn"),
     SECURE_INTERFACE("secure-interface"),
     SECURE_PORT("secure-port"),
-    SECURITY_DOMAIN("security-domain"),
     SECURITY_REALM("security-realm"),
     SERVER_NAME("server-name"),
     SHA1("sha1"),

@@ -53,9 +53,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private volatile int httpManagementPort;
     private volatile String httpManagementSecureInterface;
     private volatile int httpManagementSecurePort;
-    private volatile String nativeManagementSecurityDomain;
     private volatile String nativeManagementSecurityRealm;
-    private volatile String httpManagementSecurityDomain;
     private volatile String httpManagementSecurityRealm;
     private volatile AdminOnlyDomainConfigPolicy adminOnlyDomainConfigPolicy = AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG;
     private volatile List<String> allowedOrigins = new ArrayList<String>();
@@ -97,11 +95,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     }
 
     @Override
-    public String getNativeManagementSecurityDomain() {
-        return nativeManagementSecurityDomain;
-    }
-
-    @Override
     public String getNativeManagementSecurityRealm() {
         return nativeManagementSecurityRealm;
     }
@@ -124,11 +117,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     @Override
     public int getHttpManagementSecurePort() {
         return httpManagementSecurePort;
-    }
-
-    @Override
-    public String getHttpManagementSecurityDomain() {
-        return httpManagementSecurityDomain;
     }
 
     @Override
@@ -185,10 +173,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         this.nativeManagementPort = nativeManagementPort;
     }
 
-    void setNativeManagementSecurityDomain(String nativeManagementSecurityDomain) {
-        this.nativeManagementSecurityDomain = nativeManagementSecurityDomain;
-    }
-
     void setNativeManagementSecurityRealm(String nativeManagementSecurityRealm) {
         this.nativeManagementSecurityRealm = nativeManagementSecurityRealm;
     }
@@ -207,10 +191,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     void setHttpManagementSecurePort(int httpManagementSecurePort) {
         this.httpManagementSecurePort = httpManagementSecurePort;
-    }
-
-    void setHttpManagementSecurityDomain(String httpManagementSecurityDomain) {
-        this.httpManagementSecurityDomain = httpManagementSecurityDomain;
     }
 
     void setHttpManagementSecurityRealm(String httpManagementSecurityRealm) {

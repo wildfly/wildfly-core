@@ -515,18 +515,6 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         public Collection<String> getAllowedOrigins() {
             return Collections.EMPTY_LIST;
         }
-
-        @Override
-        public String getNativeManagementSecurityDomain() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
-        @Override
-        public String getHttpManagementSecurityDomain() {
-            // TODO Auto-generated method stub
-            return null;
-        }
     }
 
     private static class ServerInventoryMock implements ServerInventory {

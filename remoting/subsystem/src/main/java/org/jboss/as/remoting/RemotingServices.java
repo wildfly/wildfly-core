@@ -34,7 +34,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
-import org.wildfly.security.auth.server.SecurityDomain;
 import org.xnio.OptionMap;
 
 /**
@@ -121,7 +120,6 @@ public class RemotingServices {
 
     public static void installSecurityServices(ServiceTarget serviceTarget,
                                                final String connectorName,
-                                               final ServiceName domainName,
                                                final String realmName,
                                                final ServiceName serverCallbackServiceName,
                                                final ServiceName tmpDirService) {
@@ -129,9 +127,7 @@ public class RemotingServices {
 
         final RealmSecurityProviderService rsps = new RealmSecurityProviderService();
         ServiceBuilder<?> builder = serviceTarget.addService(securityProviderName, rsps);
-        if (domainName != null) {
-            builder.addDependency(domainName, SecurityDomain.class, rsps.getSecurityDomainInjectedValue());
-        } else if (realmName != null) {
+        if (realmName != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, rsps.getSecurityRealmInjectedValue(), realmName, false);
         }
         if (serverCallbackServiceName != null) {
