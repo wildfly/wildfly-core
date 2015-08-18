@@ -77,11 +77,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         this.knownContexts = forServer ? null : new HashSet<>();
         this.publishedFullRegistry = parent;
         readOnlyRegistry = createReadOnlyRegistry();
-        if (parent==null){
+        /*if (parent==null){*/
             publishedCombinedRegistry = readOnlyRegistry;
-        }else{
+        /*}else{
             publishedCombinedRegistry = new CombinedImmutableCapabilityRegistry(this);
-        }
+        }*/
     }
 
     /**
@@ -90,7 +90,36 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      * @return writable registry
      */
     CapabilityRegistry createShadowCopy() {
-        return new CapabilityRegistry(forServer, this);
+        CapabilityRegistry result = new CapabilityRegistry(forServer, this);
+        copyCapabilities(capabilities, result.capabilities);
+        possibleCapabilities.entrySet().stream().forEach(entry -> {
+            result.possibleCapabilities.put(entry.getKey(), new CapabilityRegistration(entry.getValue()));
+        });
+        copyRequirements(requirements, result.requirements);
+        copyRequirements(runtimeOnlyRequirements, result.runtimeOnlyRequirements);
+        if (!forServer) {
+            result.knownContexts.addAll(this.knownContexts);
+        }
+        return result;
+    }
+
+    private static void copyCapabilities(final Map<CapabilityId, RuntimeCapabilityRegistration> source,
+                                         final Map<CapabilityId, RuntimeCapabilityRegistration> dest) {
+        for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : source.entrySet()) {
+            dest.put(entry.getKey(), new RuntimeCapabilityRegistration(entry.getValue()));
+        }
+    }
+
+    private static void copyRequirements(Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> source,
+                                         Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> dest) {
+        for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : source.entrySet()) {
+            Map<String, RuntimeRequirementRegistration> mapCopy = new HashMap<>();
+            for (Map.Entry<String, RuntimeRequirementRegistration> innerEntry : entry.getValue().entrySet()) {
+                mapCopy.put(innerEntry.getKey(), new RuntimeRequirementRegistration(innerEntry.getValue()));
+            }
+            dest.put(entry.getKey(), mapCopy);
+        }
+
     }
 
 
@@ -142,36 +171,44 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      * @throws java.lang.IllegalArgumentException if no matching capability is currently
      *                                            {@link #registerCapability(RuntimeCapabilityRegistration) registered} for either {@code required} or {@code dependent}
      */
-    @Override
+/*    @Override
     public boolean registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement) {
         if (hasCapability(requirement.getRequiredName(), requirement.getDependentName(), requirement.getDependentContext())) {
+            //findSatisfactoryCapability(req.getRequiredName(), dependentContext, dependentName, !forServer);
             registerRequirement(requirement);
             return true;
         }
         return false;
-    }
+    }*/
 
-    private void registerRequirement(RuntimeRequirementRegistration requirement) {
-        CapabilityId dependentId = requirement.getDependentId();
-        if (!capabilities.containsKey(dependentId)) {
-            throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
-                    dependentId.getContext().getName());
-        }
-        Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap =
-                requirement.isRuntimeOnly() ? runtimeOnlyRequirements : requirements;
+    @Override
+           public synchronized void registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement) {
+               registerRequirement(requirement);
+           }
 
-        Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(dependentId);
-        if (dependents == null) {
-            dependents = new HashMap<>();
-            requirementMap.put(dependentId, dependents);
-        }
-        RuntimeRequirementRegistration existing = dependents.get(requirement.getRequiredName());
-        if (existing == null) {
-            dependents.put(requirement.getRequiredName(), requirement);
-        } else {
-            existing.addRegistrationPoint(requirement.getOldestRegistrationPoint());
-        }
-    }
+           private void registerRequirement(RuntimeRequirementRegistration requirement) {
+               CapabilityId dependentId = requirement.getDependentId();
+               if (!capabilities.containsKey(dependentId)) {
+                   throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
+                           dependentId.getContext().getName());
+               }
+               Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap =
+                       requirement.isRuntimeOnly() ? runtimeOnlyRequirements : requirements;
+
+               Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(dependentId);
+               if (dependents == null) {
+                   dependents = new HashMap<>();
+                   requirementMap.put(dependentId, dependents);
+               }
+               RuntimeRequirementRegistration existing = dependents.get(requirement.getRequiredName());
+               if (existing == null) {
+                   dependents.put(requirement.getRequiredName(), requirement);
+               } else {
+                   existing.addRegistrationPoint(requirement.getOldestRegistrationPoint());
+               }
+           }
+
+
 
     /**
      * Remove a previously registered requirement for a capability.
@@ -344,10 +381,16 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
 
         CapabilityRegistry published = publishedFullRegistry;
-
+        published.capabilities.clear();
         published.capabilities.putAll(capabilities);
+
+        published.possibleCapabilities.clear();
         published.possibleCapabilities.putAll(possibleCapabilities);
+
+        published.requirements.clear();
         published.requirements.putAll(requirements);
+
+        published.runtimeOnlyRequirements.clear();
         published.runtimeOnlyRequirements.putAll(runtimeOnlyRequirements);
     }
 
@@ -372,72 +415,6 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 forServer,
                 knownContexts != null ? Collections.unmodifiableSet(knownContexts) : null,
                 resolutionContext);
-    }
-
-    private class CombinedImmutableCapabilityRegistry implements ImmutableCapabilityRegistry {
-
-        private final ImmutableCapabilityRegistry current;
-        private final ImmutableCapabilityRegistry published;
-
-        CombinedImmutableCapabilityRegistry(CapabilityRegistry registry) {
-            this.current = registry.readOnlyRegistry;
-            this.published = registry.publishedFullRegistry.readOnlyRegistry;
-        }
-
-        @Override
-        public boolean hasCapability(String capabilityName, String dependentName, CapabilityContext context) {
-            boolean result = current.hasCapability(capabilityName, dependentName, context);
-            if (!result) {
-                result = published.hasCapability(capabilityName, dependentName, context);
-            }
-            return result;
-        }
-
-        @Override
-        public <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType) {
-            T result = current.getCapabilityRuntimeAPI(capabilityName, context, apiType);
-            if (result == null) {
-                result = published.getCapabilityRuntimeAPI(capabilityName, context, apiType);
-            }
-            return result;
-
-        }
-
-        @Override
-        public Set<RegistrationPoint> getPossibleProviderPoints(CapabilityId capabilityId) {
-            Set<RegistrationPoint> result = current.getPossibleProviderPoints(capabilityId);
-            if (result == null) {
-                result = published.getPossibleProviderPoints(capabilityId);
-            }
-            return result;
-        }
-
-        @Override
-        public Set<CapabilityRegistration> getCapabilities() {
-            Set<CapabilityRegistration> result = current.getCapabilities();
-            if (result == null) {
-                result = published.getCapabilities();
-            }
-            return result;
-        }
-
-        @Override
-        public Set<CapabilityRegistration> getPossibleCapabilities() {
-            Set<CapabilityRegistration> result = current.getPossibleCapabilities();
-            if (result == null) {
-                result = published.getPossibleCapabilities();
-            }
-            return result;
-        }
-
-        @Override
-        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
-            ServiceName result = current.getCapabilityServiceName(capabilityName, context, serviceType);
-            if (result == null) {
-                result = published.getCapabilityServiceName(capabilityName, context, serviceType);
-            }
-            return result;
-        }
     }
 
     synchronized CapabilityValidation resolveCapabilities(Resource rootResource, boolean hostXmlOnly) {

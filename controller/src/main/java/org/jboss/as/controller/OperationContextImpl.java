@@ -1423,7 +1423,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         ensureLocalCapabilityRegistry();
         RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
-        if (registry.registerAdditionalCapabilityRequirement(registration)) {
+        CapabilityContext context = registration.getDependentContext();
+        if (registry.hasCapability(required, dependent, context)) {
+            registry.registerAdditionalCapabilityRequirement(registration);
             recordRequirement(registration, step);
             return true;
         }

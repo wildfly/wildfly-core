@@ -50,7 +50,7 @@ public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
      * @throws java.lang.IllegalArgumentException if no matching capability is currently
      *                                            {@link #registerCapability(RuntimeCapabilityRegistration) registered} for either {@code required} or {@code dependent}
      */
-    boolean registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement);
+    void registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement);
 
     /**
      * Remove a previously registered requirement for a capability.

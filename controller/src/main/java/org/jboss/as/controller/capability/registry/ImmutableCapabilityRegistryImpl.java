@@ -50,7 +50,7 @@ public class ImmutableCapabilityRegistryImpl implements ImmutableCapabilityRegis
 
     @Override
     public synchronized boolean hasCapability(String capabilityName, String dependentName, CapabilityContext capabilityContext) {
-        return findSatisfactoryCapability(capabilityName, capabilityContext, dependentName, false) != null;
+        return findSatisfactoryCapability(capabilityName, capabilityContext, dependentName, !forServer) != null;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class ImmutableCapabilityRegistryImpl implements ImmutableCapabilityRegis
 
 
     private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
-        CapabilityId satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, null, false);
+        SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, null, false);
         if (satisfactoryCapability == null) {
             if (forServer) {
                 throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
@@ -95,16 +95,16 @@ public class ImmutableCapabilityRegistryImpl implements ImmutableCapabilityRegis
                 throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
             }
         }
-        return capabilities.get(satisfactoryCapability);
+        return capabilities.get(satisfactoryCapability.singleCapability);
     }
 
-    private CapabilityId findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
-                                                    String dependentName, boolean requireConsistency) {
+    private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
+                                                              String dependentName, boolean requireConsistency) {
 
         // Check for a simple match
         CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
         if (capabilities.containsKey(requestedId)) {
-            return requestedId;
+            return new SatisfactoryCapability(requestedId);
         }
 
         if (!forServer) {
@@ -118,7 +118,7 @@ public class ImmutableCapabilityRegistryImpl implements ImmutableCapabilityRegis
                 CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
                 if (capabilities.containsKey(satisfiesId) && satisfies.canSatisfyRequirement(requestedId, dependentName, resolutionContext)) {
                     if (!requireConsistency || !satisfies.requiresConsistencyCheck()) {
-                        return satisfiesId;
+                        return new SatisfactoryCapability(satisfiesId);
                     } else {
                         if (multiple == null) {
                             multiple = new HashSet<>();
@@ -129,13 +129,24 @@ public class ImmutableCapabilityRegistryImpl implements ImmutableCapabilityRegis
                 }
             }
             if (multiple != null) {
-                //todo this is tricky area
-                throw new RuntimeException("not sure how to handle multiple satisfactions");
-                //return new SatisfactoryCapability(multiple);
+                return new SatisfactoryCapability(multiple);
             }
         }
         return null;
     }
 
+    private static class SatisfactoryCapability {
+        private final CapabilityId singleCapability;
+        private final Set<CapabilityContext> multipleCapabilities;
 
+        SatisfactoryCapability(CapabilityId singleCapability) {
+            this.singleCapability = singleCapability;
+            this.multipleCapabilities = null;
+        }
+
+        SatisfactoryCapability(Set<CapabilityContext> multipleCapabilities) {
+            this.singleCapability = null;
+            this.multipleCapabilities = multipleCapabilities;
+        }
+    }
 }
