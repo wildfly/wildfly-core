@@ -62,6 +62,7 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -256,6 +257,7 @@ public class ModelParserUtils {
 
     private static ModelNode loadServerModel(final ServiceContainer serviceContainer, final File file, final PathManagerService pathManagerService) throws Exception {
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        final CapabilityRegistry capabilityRegistry = new CapabilityRegistry(true);
         final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
         final StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), null, extensionRegistry);
         final XmlConfigurationPersister persister = new XmlConfigurationPersister(file, rootElement, parser, parser);
@@ -273,7 +275,7 @@ public class ModelParserUtils {
             public void setup(ModelControllerService modelControllerService, Resource resource, ManagementResourceRegistration rootRegistration, DelegatingConfigurableAuthorizer authorizer) {
                 ServerRootResourceDefinition def = new ServerRootResourceDefinition(new MockContentRepository(), persister, null, null, null, null, extensionRegistry, false, pathManagerService, null, authorizer,
                         AuditLogger.NO_OP_LOGGER, modelControllerService.getRootResourceRegProvider(),
-                        modelControllerService.getBootErrorCollector());
+                        modelControllerService.getBootErrorCollector(), capabilityRegistry);
                 def.registerAttributes(rootRegistration);
                 def.registerOperations(rootRegistration);
                 def.registerChildren(rootRegistration);
@@ -445,7 +447,8 @@ public class ModelParserUtils {
 
         ModelControllerService(final ProcessType processType, final Setup registration, final ModelNode model) {
             super(processType, new RunningModeControl(RunningMode.ADMIN_ONLY), new NullConfigurationPersister(), new ControlledProcessState(true),
-                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(), null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(), null, ExpressionResolver.TEST_RESOLVER,
+                    AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(true));
             this.model = model;
             this.registration = registration;
         }

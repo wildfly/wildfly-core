@@ -160,4 +160,9 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
     }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(HTTP_MANAGEMENT_CAPABILITY);
+    }
 }

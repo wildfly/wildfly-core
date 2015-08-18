@@ -123,6 +123,11 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
         return accessConstraints;
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(JMX_CAPABILITY);
+    }
+
     private static class ShowModelAliasWriteHandler implements OperationStepHandler {
         static final ShowModelAliasWriteHandler INSTANCE = new ShowModelAliasWriteHandler();
 

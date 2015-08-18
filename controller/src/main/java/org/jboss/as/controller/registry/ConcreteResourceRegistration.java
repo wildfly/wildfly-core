@@ -47,6 +47,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
@@ -77,6 +78,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private final AtomicBoolean runtimeOnly = new AtomicBoolean();
     private final boolean ordered;
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
+    private final CapabilityRegistry capabilityRegistry;
 
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NodeSubregistry> childrenUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "children"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, OperationEntry> operationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "operations"));
@@ -88,9 +90,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                 final boolean runtimeOnly, final boolean ordered) {
+                                 final boolean runtimeOnly, final boolean ordered, CapabilityRegistry capabilityRegistry) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
+        //assert capabilityRegistry != null : "capabilityRegistry is required!";
+        this.capabilityRegistry = capabilityRegistry;
         childrenUpdater.clear(this);
         operationsUpdater.clear(this);
         attributesUpdater.clear(this);
@@ -457,6 +461,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     public void registerCapability(Capability capability){
         capabilities.add(capability);
+        if (capabilityRegistry != null) {
+            capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+        }
     }
 
     NodeSubregistry getOrCreateSubregistry(final String key) {
@@ -467,7 +474,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                 return subregistry;
             } else {
                 checkPermission();
-                final NodeSubregistry newRegistry = new NodeSubregistry(key, this, constraintUtilizationRegistry);
+                final NodeSubregistry newRegistry = new NodeSubregistry(key, this, constraintUtilizationRegistry, capabilityRegistry);
                 final NodeSubregistry appearing = childrenUpdater.putAtomic(this, key, newRegistry, snapshot);
                 if (appearing == null) {
                     return newRegistry;

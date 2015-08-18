@@ -85,6 +85,7 @@ public class ModelDescriptionConstants {
     public static final String CANCELLED = "cancelled";
     public static final String CAPABILITIES = " capabilities";
     public static final String CAPABILITY_REFERENCE = "capability-reference";
+    public static final String CAPABILITY_REGISTRY = "capability-registry";
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
     public static final String CLASSIFICATION = "classification";

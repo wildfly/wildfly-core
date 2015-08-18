@@ -101,6 +101,11 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
                 .build();
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(REMOTING_ENDPOINT_CAPABILITY);
+    }
+
     private static class ThreadWriteAttributeHandler extends RestartParentWriteAttributeHandler {
 
         ThreadWriteAttributeHandler(AttributeDefinition definition) {

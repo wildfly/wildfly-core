@@ -22,6 +22,14 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+
 /**
  * Encapsulates the registration information for a requirement for a capability.
  *
@@ -29,6 +37,7 @@ package org.jboss.as.controller.capability.registry;
  */
 public class RequirementRegistration {
 
+    protected final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
     private final String requiredName;
     private final CapabilityId dependentId;
 
@@ -39,6 +48,30 @@ public class RequirementRegistration {
     protected RequirementRegistration(String requiredName, CapabilityId dependentId) {
         this.requiredName = requiredName;
         this.dependentId = dependentId;
+    }
+
+    /**
+     * Creates a new requirement registration.
+     *
+     * @param requiredName      the name of the required capability
+     * @param dependentName     the name of the capability that requires {@code requiredName}
+     * @param dependentContext  context in which the dependent capability exists
+     * @param registrationPoint point in the configuration model that triggered the requirement
+     */
+    protected RequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
+                                      RegistrationPoint registrationPoint) {
+        this(requiredName, dependentName, dependentContext);
+        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
+    }
+
+    /**
+     * Copy constructor.
+     *
+     * @param toCopy the registration to copy.
+     */
+    public RequirementRegistration(RuntimeRequirementRegistration toCopy) {
+        this(toCopy.getRequiredName(), toCopy.getDependentId());
+        this.registrationPoints.putAll(toCopy.registrationPoints);
     }
 
     public String getRequiredName() {
@@ -59,8 +92,8 @@ public class RequirementRegistration {
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !getClass().isAssignableFrom(o.getClass())) return false;
+        if (this == o) { return true; }
+        if (o == null || !getClass().isAssignableFrom(o.getClass())) { return false; }
 
         RequirementRegistration that = (RequirementRegistration) o;
 
@@ -74,5 +107,45 @@ public class RequirementRegistration {
         int result = requiredName.hashCode();
         result = 31 * result + dependentId.hashCode();
         return result;
+    }
+
+    /**
+     * Gets the registration point that been associated with the registration for the longest period.
+     *
+     * @return the initial registration point, or {@code null} if there are no longer any registration points
+     */
+    public synchronized RegistrationPoint getOldestRegistrationPoint() {
+        return registrationPoints.size() == 0 ? null : registrationPoints.values().iterator().next();
+    }
+
+    /**
+     * Get all registration points associated with this registration.
+     *
+     * @return all registration points. Will not be {@code null} but may be empty
+     */
+    public synchronized Set<RegistrationPoint> getRegistrationPoints() {
+        return Collections.unmodifiableSet(new HashSet<>(registrationPoints.values()));
+    }
+
+    public synchronized boolean addRegistrationPoint(RegistrationPoint toAdd) {
+        PathAddress addedAddress = toAdd.getAddress();
+        if (registrationPoints.containsKey(addedAddress)) {
+            return false;
+        }
+        registrationPoints.put(addedAddress, toAdd);
+        return true;
+    }
+
+    public synchronized boolean removeRegistrationPoint(RegistrationPoint toAdd) {
+        PathAddress addedAddress = toAdd.getAddress();
+        if (!registrationPoints.containsKey(addedAddress)) {
+            return false;
+        }
+        registrationPoints.remove(addedAddress);
+        return true;
+    }
+
+    public synchronized int getRegistrationPointCount() {
+        return registrationPoints.size();
     }
 }

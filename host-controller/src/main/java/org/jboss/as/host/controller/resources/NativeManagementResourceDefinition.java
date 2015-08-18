@@ -118,4 +118,9 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
     }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_CAPABILITY);
+    }
 }
