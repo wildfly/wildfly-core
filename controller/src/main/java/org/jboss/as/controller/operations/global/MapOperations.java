@@ -155,7 +155,9 @@ public class MapOperations {
         void updateModel(final OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException {
             String key = KEY.resolveModelAttribute(context, model).asString();
             attribute.remove(key);
+            if(attribute.asList().isEmpty()){
+                attribute.clear();
+            }
         }
     }
-
 }
