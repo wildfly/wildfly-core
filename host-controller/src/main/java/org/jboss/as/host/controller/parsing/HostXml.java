@@ -75,8 +75,11 @@ public class HostXml extends CommonXml {
             case 3:
                 new HostXml_Legacy(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
-            default:
+            case 4:
                 new HostXml_4(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                break;
+            default:
+                new HostXml_5(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
         }
     }
@@ -84,7 +87,7 @@ public class HostXml extends CommonXml {
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new HostXml_4(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
+        new HostXml_5(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
     }
 
 }
