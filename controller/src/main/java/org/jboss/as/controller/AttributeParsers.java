@@ -81,9 +81,13 @@ public interface AttributeParsers {
                 if (!reader.getLocalName().equals(wrapper)) {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(wrapper));
                 } else {
-                    reader.nextTag();
+                    // allow empty properties list
+                    if (reader.nextTag() == XMLStreamConstants.END_ELEMENT) {
+                        return;
+                    }
                 }
             }
+
             do {
                 if (elementName.equals(reader.getLocalName())) {
                     property.parse(reader, operation);
