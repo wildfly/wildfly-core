@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:remoting:3.0">
+<subsystem xmlns="urn:jboss:domain:remoting:3.1">
     <endpoint
         worker="default-remoting"
         send-buffer-size="8191"

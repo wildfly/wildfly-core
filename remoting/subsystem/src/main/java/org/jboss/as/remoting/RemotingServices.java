@@ -23,6 +23,9 @@ package org.jboss.as.remoting;
 
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.OperationContext;
@@ -170,5 +173,16 @@ public class RemotingServices {
         final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
         context.removeService(serverServiceName(connectorName));
         context.removeService(securityProviderName);
+    }
+
+    static Set<ServiceName> createConnectionServiceNames(final String groupName, final int connectionCount) {
+        final Set<ServiceName> serviceNames = new HashSet<>();
+        for (int i = 1; i <= connectionCount; i++) {
+            final String connectionName = new StringBuilder(groupName).append(i).toString();
+            final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME
+                    .append(connectionName);
+            serviceNames.add(serviceName);
+        }
+        return serviceNames;
     }
 }

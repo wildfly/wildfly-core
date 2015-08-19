@@ -41,6 +41,7 @@ interface CommonAttributes {
     String NO_PLAIN_TEXT = "no-plain-text";
     String OUTBOUND_CONNECTION = "outbound-connection";
     String OUTBOUND_SOCKET_BINDING_REF = "outbound-socket-binding-ref";
+    String OUTBOUND_SOCKET_BINDING_REFS = "outbound-socket-binding-refs";
     String PASS_CREDENTIALS = "pass-credentials";
     String POLICY = "policy";
     String PROPERTIES = "properties";
@@ -48,6 +49,7 @@ interface CommonAttributes {
     String PROTOCOL = "protocol";
     String QOP = "qop";
     String REMOTE_OUTBOUND_CONNECTION = "remote-outbound-connection";
+    String REMOTE_OUTBOUND_CONNECTION_GROUP = "remote-outbound-connection-group";
     String REUSE_SESSION= "reuse-session";
     String SASL = "sasl";
     String SASL_POLICY = "sasl-policy";

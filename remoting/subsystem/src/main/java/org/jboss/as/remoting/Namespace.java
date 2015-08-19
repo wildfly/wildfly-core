@@ -39,12 +39,13 @@ public enum Namespace {
     REMOTING_1_2("urn:jboss:domain:remoting:1.2"),
     REMOTING_2_0("urn:jboss:domain:remoting:2.0"),
     REMOTING_3_0("urn:jboss:domain:remoting:3.0"),
+    REMOTING_3_1("urn:jboss:domain:remoting:3.1")
     ;
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = REMOTING_3_0;
+    public static final Namespace CURRENT = REMOTING_3_1;
 
     private final String name;
 

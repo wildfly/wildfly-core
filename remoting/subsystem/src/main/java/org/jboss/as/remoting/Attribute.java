@@ -34,6 +34,7 @@ public enum Attribute {
     CONNECTOR_REF(CommonAttributes.CONNECTOR_REF),
     NAME(CommonAttributes.NAME),
     OUTBOUND_SOCKET_BINDING_REF(CommonAttributes.OUTBOUND_SOCKET_BINDING_REF),
+    OUTBOUND_SOCKET_BINDING_REFS(CommonAttributes.OUTBOUND_SOCKET_BINDING_REFS),
     PROTOCOL(CommonAttributes.PROTOCOL),
     SASL_PROTOCOL(CommonAttributes.SASL_PROTOCOL),
     SECURITY_REALM(CommonAttributes.SECURITY_REALM),
