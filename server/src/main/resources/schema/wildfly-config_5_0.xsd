@@ -2023,7 +2023,31 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    
+
+    <xs:complexType name="http-management-interfaceType">
+        <xs:complexContent>
+            <xs:extension base="management-interfaceType">
+                <xs:sequence>
+                    <xs:element name="http-upgrade" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                HTTP Upgrade configuration on the management interface.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Is HTTP Upgrade to 'remote' enabled.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <xs:complexType name="host-native-management-interfaceType">
         <xs:annotation>
@@ -2083,12 +2107,11 @@
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="management-interfaceType">
+            <xs:extension base="http-management-interfaceType">
                 <xs:sequence>
                     <xs:element name="socket" type="host-http-management-socketType"/>
                 </xs:sequence>
                 <xs:attribute name="console-enabled" type="xs:boolean" use="optional" default="true"/>
-                <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="false"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -2221,7 +2244,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="management-interfaceType">
+            <xs:extension base="http-management-interfaceType">
                 <xs:annotation>
                     <xs:documentation>
                         Configuration of the socket to use for the HTTP/HTTPS management interface is a choice
@@ -2243,7 +2266,6 @@
                     <xs:element name="socket-binding" type="http-management-socket-binding-refType"/>
                 </xs:choice>
                 <xs:attribute name="console-enabled" type="xs:boolean" use="optional" default="true"/>
-                <xs:attribute name="http-upgrade-enabled" type="xs:boolean" use="optional" default="false"/>
                 <xs:attribute name="allowed-origins" type="urlListType" use="optional" >
                     <xs:annotation>
                         <xs:documentation>

@@ -120,7 +120,9 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     static void installHttpManagementServices(final HostControllerEnvironment environment, final LocalHostControllerInfo hostControllerInfo, final OperationContext context,
                                               final ModelNode model) throws OperationFailedException {
 
-        boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
+        boolean httpUpgrade = model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)
+                && HttpManagementResourceDefinition.ENABLED.resolveModelAttribute(context,
+                        model.require(ModelDescriptionConstants.HTTP_UPGRADE)).asBoolean();
         boolean onDemand = context.isBooting();
         OptionMap options = createConnectorOptions(context, model);
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);

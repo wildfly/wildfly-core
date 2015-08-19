@@ -30,6 +30,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -93,9 +94,12 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setDefaultValue(new ModelNode(true))
             .build();
 
-    public static final SimpleAttributeDefinition HTTP_UPGRADE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelType.BOOLEAN, true)
-            .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
+    public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
+            .build();
+
+    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED)
             .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
@@ -120,7 +124,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {
-            SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
+            SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
     };
 
     public static final HttpManagementResourceDefinition INSTANCE = new HttpManagementResourceDefinition();

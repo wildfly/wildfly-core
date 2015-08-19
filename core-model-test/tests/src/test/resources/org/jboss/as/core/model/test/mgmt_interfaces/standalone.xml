@@ -14,7 +14,8 @@
             <native-interface security-realm="ManagementRealm" sasl-protocol="myProtocol" server-name="myServer">
                 <socket-binding native="management-native"/>
             </native-interface>
-            <http-interface security-realm="ManagementRealm" http-upgrade-enabled="true" sasl-protocol="myProtocol" server-name="myServer" allowed-origins="http://www.example.com http://localhost">
+            <http-interface security-realm="ManagementRealm" sasl-protocol="myProtocol" server-name="myServer" allowed-origins="http://www.example.com http://localhost">
+                <http-upgrade enabled="true" />
                 <socket-binding http="management-http"/>
             </http-interface>
         </management-interfaces>

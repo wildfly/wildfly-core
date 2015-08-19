@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
@@ -107,6 +108,7 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         this.namespace = namespace;
     }
 
+    @Override
     public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
             throws XMLStreamException {
 
@@ -704,7 +706,8 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case HTTP_UPGRADE_ENABLED: {
-                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     default:
@@ -740,7 +743,8 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case HTTP_UPGRADE_ENABLED: {
-                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     case ALLOWED_ORIGINS: {
@@ -1132,6 +1136,7 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
+    @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
         throw new UnsupportedOperationException();

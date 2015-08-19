@@ -30,6 +30,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -62,6 +63,7 @@ import org.jboss.dmr.ModelType;
 public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
+
     public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
 
@@ -105,11 +107,13 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
                 .setDefaultValue(new ModelNode(true))
                 .build();
 
-    public static final SimpleAttributeDefinition HTTP_UPGRADE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelType.BOOLEAN, true)
-                    .setAllowExpression(true)
-                    .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
-                    .setDefaultValue(new ModelNode(false))
-                    .build();
+    public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
+                .setAllowExpression(true)
+                .setDefaultValue(new ModelNode(false))
+                .build();
+
+    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED)
+                .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
@@ -133,7 +137,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE, SECURITY_REALM,
-                                                                                                 CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+                                                                                                 CONSOLE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
     private final List<AccessConstraintDefinition> accessConstraints;
 
