@@ -44,7 +44,6 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_INSTALLATION_DATE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_LAST_UPDATE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PROJECT_TYPE;
-import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.REPORT_VERSION;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 
 import java.io.File;
@@ -142,7 +141,6 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
 
         ProcessEnvironment environment = installation.getEnvironment();
         ModelNode product = new ModelNode().setEmptyObject();
-        product.get(REPORT_VERSION).set("1.0");
         product.get(HOSTNAME).set(installation.getHostName());
         product.get(INSTANCE_ID).set(environment.getInstanceUuid().toString());
         PathAddress organizationAddress = PathAddress.EMPTY_ADDRESS;
