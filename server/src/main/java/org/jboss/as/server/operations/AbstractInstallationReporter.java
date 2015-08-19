@@ -53,8 +53,6 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.OperationContext;
@@ -309,17 +307,6 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         }
 
         public String getInstallationDate() {
-            if (Files.exists(installationDir)) {
-                BasicFileAttributeView view = Files.getFileAttributeView(installationDir, BasicFileAttributeView.class);
-                try {
-                    BasicFileAttributes attributes = view.readAttributes();
-                    if(attributes.creationTime().toMillis() > 0) {
-                        return attributes.creationTime().toString();
-                    }
-                } catch (IOException ex) {
-                    return "";
-                }
-            }
             return "";
         }
 
