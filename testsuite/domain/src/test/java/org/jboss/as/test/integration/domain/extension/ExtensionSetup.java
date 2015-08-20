@@ -142,6 +142,13 @@ public class ExtensionSetup {
         support.addTestModule(ProfileIncludesExtension.MODULE_NAME, moduleXml, content);
     }
 
+    public static void initializeTestAliasReadResourceAddressExtension(final DomainTestSupport support) throws IOException {
+        final InputStream moduleXml = getModuleXml("test-read-resource-description-alias-address-module.xml");
+        StreamExporter exporter = createResourceRoot(TestAliasReadResourceDescriptionAddressExtension.class, EmptySubsystemParser.class.getPackage());
+        Map<String, StreamExporter> content = Collections.singletonMap("test-alias-read-resource-description-address.jar", exporter);
+        support.addTestModule(TestAliasReadResourceDescriptionAddressExtension.MODULE_NAME, moduleXml, content);
+    }
+
     static StreamExporter createResourceRoot(Class<? extends Extension> extension, Package... additionalPackages) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addPackage(extension.getPackage());
