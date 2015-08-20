@@ -51,6 +51,10 @@ public class AliasStepHandler implements OperationStepHandler {
         String op = operation.require(OP).asString();
         PathAddress addr = context.getCurrentAddress();
 
+        //Store the original address. This is something we probably want to keep doing,
+        //see the attachment javadoc for a description of the current HACK
+        context.attach(AliasAttachments.ALIAS_ORIGINAL_ADDRESS, addr);
+
         PathAddress mapped = aliasEntry.convertToTargetAddress(addr);
 
         OperationStepHandler targetHandler = context.getRootResourceRegistration().getOperationHandler(mapped, op);

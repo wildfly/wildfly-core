@@ -56,6 +56,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.registry.AliasAttachments;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -627,17 +628,21 @@ public class GlobalOperationHandlers {
         private final ModelNode operation;
         private final ModelNode result;
         private final OperationStepHandler handler; // handler bypassing further wildcard resolution
+        private final boolean checkAlias;
 
-        RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final OperationStepHandler delegate) {
+        RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final boolean checkAlias, final OperationStepHandler delegate) {
             this.operation = operation;
             this.result = result;
+            this.checkAlias = checkAlias;
             this.handler = delegate;
         }
 
         @Override
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            execute(address, PathAddress.EMPTY_ADDRESS, context);
+            //HACK -  see the comment on the attachment key
+            final PathAddress aliasAddr = checkAlias ? context.detach(AliasAttachments.ALIAS_ORIGINAL_ADDRESS) : null;
+            execute(aliasAddr == null ? address : aliasAddr, PathAddress.EMPTY_ADDRESS, context);
         }
 
         void execute(final PathAddress address, PathAddress base, final OperationContext context) {
