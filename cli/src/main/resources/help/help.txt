@@ -6,6 +6,7 @@ Usage:
                      [--command=command_or_operation]
                      [--user=username --password=password]
                      [--no-local-auth]
+                     [--no-security-prompts]
                      [--timeout=timeout]
 
  --help (-h)     - prints (this) basic description of the command line utility.
@@ -65,6 +66,12 @@ Usage:
  --no-local-auth - disable the local authentication mechanism which allows the CLI
                    to demonstrate that it is being executed locally to the server 
                    being managed through an exchange of tokens using the filesystem.                   
+
+ --no-security-prompts - disable prompts for security related input (username,
+                         password, acceptance of unrecognized certificates) in
+                   non-interactive mode. In case the argument is preset and an
+                   input is required to proceed, the CLI process will terminate
+                   abruptly with an error.
 
  --timeout       - specifies how many milliseconds to wait for a given command
                    to return. The value provided must be a positive integer.
