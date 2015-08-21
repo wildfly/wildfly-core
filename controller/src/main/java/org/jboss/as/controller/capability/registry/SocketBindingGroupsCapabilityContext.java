@@ -37,10 +37,10 @@ class SocketBindingGroupsCapabilityContext implements CapabilityContext {
     static final SocketBindingGroupsCapabilityContext INSTANCE = new SocketBindingGroupsCapabilityContext();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext depCtx = dependent.getContext();
-        return (depCtx instanceof SocketBindingGroupsCapabilityContext || depCtx instanceof ServerGroupsCapabilityContext
-                || depCtx instanceof ServerConfigCapabilityContext);
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
+        return dependentContext instanceof SocketBindingGroupsCapabilityContext
+                || dependentContext instanceof ServerGroupsCapabilityContext
+                || dependentContext instanceof ServerConfigCapabilityContext;
     }
 
     @Override

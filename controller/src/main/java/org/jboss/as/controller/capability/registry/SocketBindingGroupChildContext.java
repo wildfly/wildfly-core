@@ -45,8 +45,7 @@ class SocketBindingGroupChildContext extends IncludingResourceCapabilityContext 
     }
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext dependentContext = dependent.getContext();
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
         boolean result;
         if (dependentContext instanceof SocketBindingGroupChildContext) {
             result = equals(dependentContext);

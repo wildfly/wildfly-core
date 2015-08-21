@@ -54,14 +54,12 @@ public interface CapabilityContext {
 
     /**
      * Gets whether a given capability associated with this context can satisfy the given requirement.
-     * @param dependent id of the dependent capability. Cannot be {@code null}
-     * @param required name of the capability associated with this capability context. May be {@code null} if the
-     *                 dependent name is not known.
      * @param context resolution context in use for this resolution run
      *
      * @return {@code true} if the requirement can be satisfied from this context; {@code false} otherwise
      */
-    boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context);
+    boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext,
+                                  CapabilityResolutionContext context);
 
     /**
      * Gets whether a consistency check must be performed when other capabilities depend on capabilities
@@ -100,7 +98,7 @@ public interface CapabilityContext {
          * @return {@code true}, always
          */
         @Override
-        public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
+        public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
             return true;
         }
 

@@ -123,7 +123,9 @@ abstract class AbstractCapabilityResolutionTestCase {
     protected static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability, String requirement) {
 
         ModelNode op = Util.createEmptyOperation(CAPABILITY, pathAddress);
-        op.get(CAPABILITY).set(capability);
+        if (capability != null) {
+            op.get(CAPABILITY).set(capability);
+        }
         if (requirement != null) {
             op.get(REQUIREMENT).set(requirement);
         }
@@ -242,11 +244,13 @@ abstract class AbstractCapabilityResolutionTestCase {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-            String capName = operation.require(CAPABILITY).asString();
-            RuntimeCapability.Builder rcb = RuntimeCapability.Builder.of(capName);
+            String capName = operation.hasDefined(CAPABILITY) ? operation.require(CAPABILITY).asString() : null;
+            RuntimeCapability.Builder rcb = capName == null ? null : RuntimeCapability.Builder.of(capName);
             if (operation.hasDefined(REQUIREMENT)) {
                 final String reqName = operation.get(REQUIREMENT).asString();
-                rcb.addRequirements(reqName);
+                if (capName != null) {
+                    rcb.addRequirements(reqName);
+                }
                 context.addStep(new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -256,7 +260,9 @@ abstract class AbstractCapabilityResolutionTestCase {
             }  else {
                 context.getResult().set(true);
             }
-            context.registerCapability(rcb.build(), null);
+            if (capName != null) {
+                context.registerCapability(rcb.build(), null);
+            }
         }
     }
 

@@ -1243,8 +1243,7 @@ class ModelControllerImpl implements ModelController {
          *                    any changes have occurred since the last check
          * @param hostXmlOnly {@code true} if a Host Controller boot is occurring and only host model data is present
          *
-         * @return a map whose keys are missing capabilities and whose values are the names of other capabilities
-         *         that require that capability. Will not return {@code null} but may be empty
+         * @return a validation result object. Will not return {@code null}
          */
         CapabilityValidation validateCapabilityRegistry(boolean forceCheck, boolean hostXmlOnly) {
             if (!published || forceCheck) {
@@ -1406,8 +1405,8 @@ class ModelControllerImpl implements ModelController {
         }
 
         @Override
-        public synchronized boolean hasCapability(String capabilityName, String dependentName, CapabilityContext capabilityContext) {
-            return findSatisfactoryCapability(capabilityName, capabilityContext, dependentName, false) != null;
+        public synchronized boolean hasCapability(String capabilityName, CapabilityContext capabilityContext) {
+            return findSatisfactoryCapability(capabilityName, capabilityContext, false) != null;
         }
 
         @Override
@@ -1430,7 +1429,7 @@ class ModelControllerImpl implements ModelController {
         private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
             // Here we can't know the dependent name. So this can only be called when resolution is complete.
             assert resolutionContext.resolutionComplete;
-            SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, null, false);
+            SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, false);
             if (satisfactoryCapability == null) {
                 if (forServer) {
                     throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
@@ -1488,7 +1487,7 @@ class ModelControllerImpl implements ModelController {
                 CapabilityContext dependentContext = dependentId.getContext();
                 Set<CapabilityContext> consistentSet = consistentSets == null ? null : consistentSets.get(dependentContext);
                 for (RuntimeRequirementRegistration req : entry.getValue().values()) {
-                    SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, dependentName, !forServer);
+                    SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, !forServer);
                     if (satisfactory == null) {
                         // Missing
                         if (hostXmlOnly && dependentName.startsWith("org.wildfly.domain.server-config.")
@@ -1556,11 +1555,11 @@ class ModelControllerImpl implements ModelController {
             }
         }
 
-        private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
-                                                                  String dependentName, boolean requireConsistency) {
+        private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext dependentContext,
+                                                                  boolean requireConsistency) {
 
             // Check for a simple match
-            CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
+            CapabilityId requestedId = new CapabilityId(capabilityName, dependentContext);
             if (capabilities.containsKey(requestedId)) {
                 return new SatisfactoryCapability(requestedId);
             }
@@ -1569,12 +1568,12 @@ class ModelControllerImpl implements ModelController {
                 // Try other contexts that satisfy the requested one
                 Set<CapabilityContext> multiple = null;
                 for (CapabilityContext satisfies : knownContexts) {
-                    if (satisfies.equals(capabilityContext)) {
+                    if (satisfies.equals(dependentContext)) {
                         // We already know this one doesn't exist
                         continue;
                     }
                     CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
-                    if (capabilities.containsKey(satisfiesId) && satisfies.canSatisfyRequirement(requestedId, dependentName, resolutionContext)) {
+                    if (capabilities.containsKey(satisfiesId) && satisfies.canSatisfyRequirement(capabilityName, dependentContext, resolutionContext)) {
                         if (!requireConsistency || !satisfies.requiresConsistencyCheck()) {
                             return new SatisfactoryCapability(satisfiesId);
                         } else {
@@ -1661,14 +1660,26 @@ class ModelControllerImpl implements ModelController {
                     ? Collections.emptySet() : inconsistentRequirements;
         }
 
+        /**
+         *  @return a map whose keys are missing capabilities and whose values are the requirement registrations
+         *          from other capabilities that require that capability. Will not return {@code null}
+         */
         Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {
             return missingRequirements;
         }
 
+        /**
+         *
+         * @return requirement registrations that cannot be consistently resolved. Will nto return {@code null}
+         */
         Set<RuntimeRequirementRegistration> getInconsistentRequirements() {
             return inconsistentRequirements;
         }
 
+        /**
+         * @return the resolution context used to perform the resolution. May be {@code null} if no resolution
+         *         problems occurred
+         */
         CapabilityResolutionContext getCapabilityResolutionContext() {
             return resolutionContext;
         }

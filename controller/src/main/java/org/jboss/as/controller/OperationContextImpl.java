@@ -430,9 +430,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     private Step findCapabilityRemovalStep(CapabilityId missingRequirement, boolean ignoreContext, CapabilityResolutionContext resolutionContext) {
         Step result = removedCapabilities.get(missingRequirement);
         if (result == null && !ignoreContext) {
+            String missingName = missingRequirement.getName();
             for (Map.Entry<CapabilityId, Step> entry : removedCapabilities.entrySet()) {
                 CapabilityId removedId = entry.getKey();
-                if (removedId.getContext().canSatisfyRequirement(missingRequirement, removedId.getName(), resolutionContext)) {
+                if (missingName.equals(removedId.getName())
+                        && removedId.getContext().canSatisfyRequirement(missingRequirement.getName(), missingRequirement.getContext(), resolutionContext)) {
                     result = entry.getValue();
                     break;
                 }
@@ -1422,9 +1424,15 @@ final class OperationContextImpl extends AbstractOperationContext {
         assertCapabilitiesAvailable(currentStage);
         ensureLocalCapabilityRegistry();
         RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
+        if (dependent == null) {
+            // WFCORE-900 we're currently forgiving of this, but only for runtime-only requirements
+            assert runtimeOnly;
+            CapabilityContext context = createCapabilityContext(step);
+            return registry.hasCapability(required, context);
+        }
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
         CapabilityContext context = registration.getDependentContext();
-        if (registry.hasCapability(required, dependent, context)) {
+        if (registry.hasCapability(required, context)) {
             registry.registerAdditionalCapabilityRequirement(registration);
             recordRequirement(registration, step);
             return true;
