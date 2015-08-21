@@ -60,6 +60,7 @@ import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.registry.WildcardReadResourceDescriptionAddressHack;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -627,17 +628,20 @@ public class GlobalOperationHandlers {
         private final ModelNode operation;
         private final ModelNode result;
         private final OperationStepHandler handler; // handler bypassing further wildcard resolution
+        private final boolean checkAlias;
 
-        RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final OperationStepHandler delegate) {
+        RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final boolean checkAlias, final OperationStepHandler delegate) {
             this.operation = operation;
             this.result = result;
+            this.checkAlias = checkAlias;
             this.handler = delegate;
         }
 
         @Override
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            execute(address, PathAddress.EMPTY_ADDRESS, context);
+            final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
+            execute(aliasAddr == null ? address : aliasAddr, PathAddress.EMPTY_ADDRESS, context);
         }
 
         void execute(final PathAddress address, PathAddress base, final OperationContext context) {
