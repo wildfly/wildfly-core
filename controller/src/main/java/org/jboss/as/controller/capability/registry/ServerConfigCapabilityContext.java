@@ -34,8 +34,8 @@ class ServerConfigCapabilityContext implements CapabilityContext {
     static final ServerConfigCapabilityContext INSTANCE = new ServerConfigCapabilityContext();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        return dependent.getContext() instanceof ServerConfigCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
+        return dependentContext instanceof ServerConfigCapabilityContext;
     }
 
     @Override

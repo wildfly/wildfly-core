@@ -261,4 +261,13 @@ public class SocketCapabilityResolutionUnitTestCase extends AbstractCapabilityRe
         assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
     }
 
+    @Test
+    public void testWFCORE900() {
+        ModelNode op = getCompositeOperation(getCapabilityOperation(SOCKET_A_1, "cap_a"), getCapabilityOperation(GLOBAL_A, null, "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        // NOTE: IT IS FINE TO CHANGE THESE ASSERTIONS IF WFCORE-900 SUPPORT IS RESCINDED!
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-2", RESULT).asBoolean());
+    }
+
 }
