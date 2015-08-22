@@ -628,12 +628,10 @@ public class GlobalOperationHandlers {
         private final ModelNode operation;
         private final ModelNode result;
         private final OperationStepHandler handler; // handler bypassing further wildcard resolution
-        private final boolean checkAlias;
 
-        RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final boolean checkAlias, final OperationStepHandler delegate) {
+        RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final OperationStepHandler delegate) {
             this.operation = operation;
             this.result = result;
-            this.checkAlias = checkAlias;
             this.handler = delegate;
         }
 
