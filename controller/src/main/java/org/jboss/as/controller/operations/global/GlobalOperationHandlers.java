@@ -640,7 +640,7 @@ public class GlobalOperationHandlers {
         @Override
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
+            final PathAddress aliasAddr = checkAlias ? WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation) : null;
             execute(aliasAddr == null ? address : aliasAddr, PathAddress.EMPTY_ADDRESS, context);
         }
 
