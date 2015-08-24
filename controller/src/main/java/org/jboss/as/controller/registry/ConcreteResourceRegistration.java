@@ -290,6 +290,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
+        assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         final String attributeName = definition.getName();
@@ -303,6 +304,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
+        assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         final String attributeName = definition.getName();
@@ -343,12 +345,29 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
+        assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
         AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
         if (attributesUpdater.putIfAbsent(this, definition.getName(), aa) != null) {
             throw alreadyRegistered("attribute", definition.getName());
         }
         registerAttributeAccessConstraints(definition);
+    }
+
+    private boolean assertMetricValues(AttributeDefinition definition) {
+        if (definition.isAllowNull() && definition.getUndefinedMetricValue() != null) {
+            assert false : "Nillable metric has an undefined metric value for '" + definition.getName() + "'";
+        }
+        // BES 2015/08/28 The WFCORE-831 spec does not require this assertion. The requirement is that read-attribute
+        // not return undefined, but AttributeDefinition.getUndefinedMetricValue() is not the only way to achieve this.
+        // The read-attribute handler can simply always work.
+//        if (!definition.isAllowNull() && definition.getUndefinedMetricValue() == null) {
+//            assert false : "Non-nillable metric does not have an undefined metric value for '" + definition.getName() + "'";
+//        }
+        if (definition.getDefaultValue() != null) {
+            assert false : "Metrics cannot have a default value for '" + definition.getName() + "'";
+        }
+        return true;
     }
 
     private void registerAttributeAccessConstraints(AttributeDefinition ad) {
