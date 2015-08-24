@@ -78,7 +78,7 @@ public class CommandsExitCodeTestCase {
                 .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort()))
                 .addCliArgument(GET_PROP_COMMAND);
         cli.executeNonInteractive();
-        assertTrue(cli.getProcessExitValue() != 0);
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getProcessExitValue() != 0);
     }
 
     /**

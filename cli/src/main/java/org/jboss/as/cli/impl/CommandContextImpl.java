@@ -184,6 +184,21 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private static final Logger log = Logger.getLogger(CommandContext.class);
 
+    /**
+     * State Tracking
+     *
+     * Interact             - Interactive UI
+     *
+     * Silent               - Only send input. No output.
+     * Output Only          - Only send output. Don't echo input or use prompts.
+     * Error On Interact    - If non-interactive mode requests user interaction, throw an error.
+     */
+    private boolean INTERACT          = false;
+
+    private boolean SILENT            = false;
+    private boolean OUTPUT_ONLY       = false;
+    private boolean ERROR_ON_INTERACT = false;
+
     /** the cli configuration */
     private final CliConfig config;
     private final ControllerAddressResolver addressResolver;
@@ -252,9 +267,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     /** whether to resolve system properties passed in as values of operation parameters*/
     private boolean resolveParameterValues;
 
-    /** whether to write messages to the terminal output */
-    private boolean silent;
-
     private Map<String, String> variables;
 
     private CliShutdownHook.Handler shutdownHook;
@@ -275,10 +287,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
 
-
-    // If the CLI is not in interact mode, act like there is no console.
-    private boolean interact = false;
-
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -298,7 +306,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         config = CliConfigImpl.load(this);
         addressResolver = ControllerAddressResolver.newInstance(config, null);
         resolveParameterValues = config.isResolveParameterValues();
-        silent = config.isSilent();
+        SILENT = config.isSilent();
+        OUTPUT_ONLY = config.isOutputOnly();
+        ERROR_ON_INTERACT = config.isErrorOnInteract();
         username = null;
         password = null;
         disableLocalAuth = false;
@@ -325,8 +335,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.disableLocalAuth = configuration.isDisableLocalAuth();
         this.clientBindAddress = configuration.getClientBindAddress();
 
+        SILENT = config.isSilent();
+        OUTPUT_ONLY = config.isOutputOnly();
+        ERROR_ON_INTERACT = config.isErrorOnInteract();
+
         resolveParameterValues = config.isResolveParameterValues();
-        silent = config.isSilent();
+
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
         initStdIO();
         try {
@@ -367,7 +381,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         Settings settings = createSettings(consoleInput);
         this.console = Console.Factory.getConsole(this, settings);
         console.setCallback(initCallback());
-        console.start();
     }
 
     private ConsoleCallback initCallback() {
@@ -387,8 +400,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (!terminate && interact)
+                        // Non-interactive handles prompts differently
+                        if (INTERACT && !terminate) {
                             console.setPrompt(getPrompt());
+                        }else{
+                            // Clear the prompt for non-interactive so it does not re-appear automatically.
+                            console.setPrompt("");
+                            // non-interactive mode fails on any command failure
+                            if(getExitCode() != 0){
+                                terminateSession();
+                            }
+                        }
                     }
                     return 0;
 
@@ -831,7 +853,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return;
         }
 
-        if(!silent) {
+        if(!SILENT) {
             if (console != null) {
                 console.print(message);
                 console.printNewLine();
@@ -855,9 +877,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     private String readLine(String prompt, boolean password) throws CommandLineException {
+        // Only fail an interact if we're not in interactive.
+        if(!INTERACT && ERROR_ON_INTERACT){
+            throw new CommandLineException("Invalid Usage. Prompt attempted in non-interactive mode. Please check commands or change CLI mode.");
+        }
 
         if (console == null) {
             initBasicConsole(null);
+        }
+
+        if(!console.running()){
+            console.start();
         }
 
         if (password) {
@@ -886,7 +916,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return;
         }
 
-        if(!silent) {
+        if(!SILENT) {
             if (console != null) {
                 console.printColumns(col);
             } else { // non interactive mode
@@ -1259,13 +1289,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandHistory getHistory() {
-        if( !interact ){
-            return null;
-        }
-
         if(console == null) {
             try {
                 initBasicConsole(null);
+                console.start();
             } catch (CliInitializationException e) {
                 throw new IllegalStateException("Failed to initialize console.", e);
             }
@@ -1390,8 +1417,55 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     @Override
+    public void pushToInput(String line) {
+        if(cmdCompleter == null) {
+            throw new IllegalStateException("The console hasn't been initialized at construction time.");
+        }
+
+        if(!console.running()) {
+            console.start();
+        }
+
+        // Create prompt before the command is pushed, for pretty output
+        if(!OUTPUT_ONLY) {
+            console.setPrompt(getPrompt());
+        }else{
+            console.setPrompt("", (char) 0x00);
+        }
+
+        // Wait till the console is ready, then push the line
+        boolean pushed = false;
+        while(!pushed){
+            try{
+                if(console.isWaitingWithoutBackgroundProcess()){
+                    console.pushToInput(line + System.lineSeparator());
+                    pushed = true;
+                }
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // While the console is processing, and still running, don't return
+        while(console.running() && !console.isWaitingWithoutBackgroundProcess()){
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Clear the prompt, so it doesn't show up in the output if this is the last command
+        if(!OUTPUT_ONLY) {
+            console.setPrompt("");
+        }
+    }
+
+    @Override
     public void interact() {
-        interact = true;
+        INTERACT = true;
+
         if(cmdCompleter == null) {
             throw new IllegalStateException("The console hasn't been initialized at construction time.");
         }
@@ -1399,6 +1473,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if (this.client == null) {
             printLine("You are disconnected at the moment. Type 'connect' to connect to the server or"
                     + " 'help' for the list of supported commands.");
+        }
+
+        if(!console.running()) {
+            console.start();
         }
 
         console.setPrompt(getPrompt());
@@ -1410,6 +1488,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 e.printStackTrace();
             }
         }
+
+        INTERACT = false;
     }
 
     @Override
@@ -1452,23 +1532,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public boolean isSilent() {
-        return this.silent;
+        return SILENT;
     }
 
     @Override
     public void setSilent(boolean silent) {
-        this.silent = silent;
+        SILENT = silent;
     }
 
     @Override
     public int getTerminalWidth() {
-        if( !interact ){
-            return 0;
-        }
-
         if(console == null) {
             try {
-                this.initBasicConsole(null);
+                initBasicConsole(null);
+                console.start();
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 80;
@@ -1479,13 +1556,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public int getTerminalHeight() {
-        if( !interact ){
-            return 0;
-        }
-
         if(console == null) {
             try {
-                this.initBasicConsole(null);
+                initBasicConsole(null);
+                console.start();
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 24;

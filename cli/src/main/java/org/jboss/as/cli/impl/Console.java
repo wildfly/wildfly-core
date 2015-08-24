@@ -49,6 +49,10 @@ public interface Console {
 
     void addCompleter(CommandLineCompleter completer);
 
+    void pushToInput(String line);
+
+    boolean isWaitingWithoutBackgroundProcess();
+
     boolean isUseHistory();
 
     CommandHistory getHistory();
@@ -146,6 +150,16 @@ public interface Console {
                                 co.doAppendSeparator(false);
                         }
                     });
+                }
+
+                @Override
+                public void pushToInput(String line){
+                    console.pushToInputStream(line);
+                }
+
+                @Override
+                public boolean isWaitingWithoutBackgroundProcess(){
+                    return console.isWaitingWithoutBackgroundProcess();
                 }
 
                 @Override
@@ -359,6 +373,7 @@ public interface Console {
 
                             } finally {
                                 console.setConsoleCallback(existingCallback);
+                                console.setPrompt(existingPrompt);
                                 interrupt = false;
                             }
 

@@ -112,8 +112,8 @@ public class RcFileTestCase {
                 .addJavaOption( "-D" + JBOSS_CLI_RC_PROP + "=" + TMP_JBOSS_CLI_RC.getAbsolutePath());
         cli.executeNonInteractive();
 
-        assertEquals("CLI Errors: '" + cli.getOutput() + "'", 0, cli.getProcessExitValue());
-        assertTrue(cli.getOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
+        assertEquals("CLI Output: '" + cli.getOutput() + "'", 0, cli.getProcessExitValue());
+        assertTrue("CLI Output: '" + cli.getOutput() + "'", cli.getOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
     }
 
     protected static void ensureRemoved(File f) {

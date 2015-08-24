@@ -331,6 +331,15 @@ public interface CommandContext {
     void handleSafe(String line);
 
     /**
+     * Comprehensive command handler. Existing handle and handleSafe methods only enable access
+     * to CLI specific functionality. pushToInput instead pushes the commands through the internal console
+     * enabling additional functionality controlled by a base library AESH.
+     *
+     * @param line  command or operation to handle
+     */
+    void pushToInput(String line);
+
+    /**
      * This method will start an interactive session.
      * It requires an initialized at the construction time console.
      */
