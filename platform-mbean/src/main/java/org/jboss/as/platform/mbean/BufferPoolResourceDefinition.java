@@ -45,16 +45,16 @@ import org.jboss.dmr.ModelType;
 class BufferPoolResourceDefinition extends SimpleResourceDefinition {
 
 
-    private static AttributeDefinition MEMORY_USED_NAME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.MEMORY_USED_NAME, ModelType.LONG, false)
+    private static AttributeDefinition MEMORY_USED_NAME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.MEMORY_USED_NAME, ModelType.LONG, true)
             .setStorageRuntime()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
-    private static AttributeDefinition TOTAL_CAPACITY = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_CAPACITY, ModelType.LONG, false)
+    private static AttributeDefinition TOTAL_CAPACITY = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_CAPACITY, ModelType.LONG, true)
             .setStorageRuntime()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
 
-    private static AttributeDefinition COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COUNT, ModelType.LONG, false)
+    private static AttributeDefinition COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COUNT, ModelType.LONG, true)
             .setStorageRuntime()
             .build();
 

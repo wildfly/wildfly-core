@@ -44,12 +44,12 @@ import org.jboss.dmr.ModelType;
 class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
 
 
-    private static SimpleAttributeDefinition AVAILABLE_PROCESSORS = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.AVAILABLE_PROCESSORS, ModelType.INT, false)
+    private static SimpleAttributeDefinition AVAILABLE_PROCESSORS = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.AVAILABLE_PROCESSORS, ModelType.INT, true)
             .setStorageRuntime()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
-    private static SimpleAttributeDefinition SYSTEM_LOAD_AVERAGE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SYSTEM_LOAD_AVERAGE, ModelType.DOUBLE, false)
+    private static SimpleAttributeDefinition SYSTEM_LOAD_AVERAGE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SYSTEM_LOAD_AVERAGE, ModelType.DOUBLE, true)
             .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
             .setStorageRuntime()
             .build();

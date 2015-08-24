@@ -45,7 +45,7 @@ import org.jboss.dmr.ModelType;
 class MemoryResourceDefinition extends SimpleResourceDefinition {
 
     //metrics
-    private static SimpleAttributeDefinition OBJECT_PENDING_FINALIZATION_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.OBJECT_PENDING_FINALIZATION_COUNT, ModelType.INT, false)
+    private static SimpleAttributeDefinition OBJECT_PENDING_FINALIZATION_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.OBJECT_PENDING_FINALIZATION_COUNT, ModelType.INT, true)
             .setStorageRuntime()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
@@ -59,7 +59,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_MAX
     )
             .setStorageRuntime()
-            .setAllowNull(false)
+            .setAllowNull(true)
             .build();
 
     private static SimpleAttributeDefinition NON_HEAP_MEMORY_USAGE = new ObjectTypeAttributeDefinition.Builder(
@@ -69,7 +69,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_COMMITTED,
             PlatformMBeanConstants.MEMORY_MAX)
             .setStorageRuntime()
-            .setAllowNull(false)
+            .setAllowNull(true)
             .build();
 
     private static AttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VERBOSE, ModelType.BOOLEAN, false)
