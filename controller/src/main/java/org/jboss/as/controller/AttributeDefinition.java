@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -120,52 +121,6 @@ public abstract class AttributeDefinition {
                 nilSignificant, parser, null, null, null, null, wrapFlags(flags));
     }
 
-    private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
-                                                    boolean validateNull, boolean allowExpression, ModelType type) {
-        NillableOrExpressionParameterValidator result = null;
-        if (toWrap == null) {
-            if (type == ModelType.STRING) {
-                toWrap = new StringLengthValidator(1, Integer.MAX_VALUE, allowNull, allowExpression);
-            } else {
-                toWrap = new ModelTypeValidator(type);
-            }
-        } else if (toWrap instanceof NillableOrExpressionParameterValidator) {
-            // Avoid re-wrapping
-            NillableOrExpressionParameterValidator current = (NillableOrExpressionParameterValidator) toWrap;
-            if (allowExpression == current.isAllowExpression() &&
-                    (!validateNull && current.getAllowNull() == null
-                        || allowNull == current.getAllowNull())) {
-                result = current;
-            } else {
-                toWrap = current.getDelegate();
-            }
-        }
-        if (result == null) {
-            Boolean nullCheck = validateNull ? allowNull : null;
-            result = new NillableOrExpressionParameterValidator(toWrap, nullCheck, allowExpression);
-        }
-
-        return result;
-    }
-
-    private static List<AccessConstraintDefinition> wrapConstraints(AccessConstraintDefinition[] accessConstraints) {
-        if (accessConstraints == null) {
-            return Collections.<AccessConstraintDefinition>emptyList();
-        } else {
-            return Collections.unmodifiableList(Arrays.asList(accessConstraints));
-        }
-    }
-
-    private static EnumSet<AttributeAccess.Flag> wrapFlags(AttributeAccess.Flag[] flags) {
-        if (flags == null || flags.length == 0) {
-            return EnumSet.noneOf(AttributeAccess.Flag.class);
-        } else if (flags.length == 1) {
-            return EnumSet.of(flags[0]);
-        } else {
-            return EnumSet.of(flags[0], flags);
-        }
-    }
-
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
                                 final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
@@ -206,6 +161,52 @@ public abstract class AttributeDefinition {
         this.referenceRecorder = referenceRecorder;
         if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
             this.arbitraryDescriptors.putAll(arbitraryDescriptors);
+        }
+    }
+
+    private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
+                                                    boolean validateNull, boolean allowExpression, ModelType type) {
+        NillableOrExpressionParameterValidator result = null;
+        if (toWrap == null) {
+            if (type == ModelType.STRING) {
+                toWrap = new StringLengthValidator(1, Integer.MAX_VALUE, allowNull, allowExpression);
+            } else {
+                toWrap = new ModelTypeValidator(type);
+            }
+        } else if (toWrap instanceof NillableOrExpressionParameterValidator) {
+            // Avoid re-wrapping
+            NillableOrExpressionParameterValidator current = (NillableOrExpressionParameterValidator) toWrap;
+            if (allowExpression == current.isAllowExpression() &&
+                    (!validateNull && current.getAllowNull() == null
+                            || allowNull == current.getAllowNull())) {
+                result = current;
+            } else {
+                toWrap = current.getDelegate();
+            }
+        }
+        if (result == null) {
+            Boolean nullCheck = validateNull ? allowNull : null;
+            result = new NillableOrExpressionParameterValidator(toWrap, nullCheck, allowExpression);
+        }
+
+        return result;
+    }
+
+    private static List<AccessConstraintDefinition> wrapConstraints(AccessConstraintDefinition[] accessConstraints) {
+        if (accessConstraints == null) {
+            return Collections.<AccessConstraintDefinition>emptyList();
+        } else {
+            return Collections.unmodifiableList(Arrays.asList(accessConstraints));
+        }
+    }
+
+    private static EnumSet<AttributeAccess.Flag> wrapFlags(AttributeAccess.Flag[] flags) {
+        if (flags == null || flags.length == 0) {
+            return EnumSet.noneOf(AttributeAccess.Flag.class);
+        } else if (flags.length == 1) {
+            return EnumSet.of(flags[0]);
+        } else {
+            return EnumSet.of(flags[0], flags);
         }
     }
 
