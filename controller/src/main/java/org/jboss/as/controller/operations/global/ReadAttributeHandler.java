@@ -175,6 +175,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
+            if (attributeAccess.getAccessType() == AttributeAccess.AccessType.METRIC
+                    && !context.getResult().isDefined()) {
+                ModelNode undefinedMetricValue = attributeAccess.getAttributeDefinition().getUndefinedMetricValue();
+                if (undefinedMetricValue != null) {
+                    context.getResult().set(undefinedMetricValue);
+                }
+            }
             if (useEnhancedSyntax) {
                 ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
                 context.getResult().set(resolved);
