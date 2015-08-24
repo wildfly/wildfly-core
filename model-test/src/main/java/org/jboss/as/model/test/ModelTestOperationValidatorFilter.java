@@ -46,13 +46,23 @@ public class ModelTestOperationValidatorFilter implements Serializable {
     private final List<OperationEntry> entries;
 
     private ModelTestOperationValidatorFilter(List<OperationEntry> entries) {
-        this.entries = entries;
+        this.entries = createStandardEntries(entries);
         validateNone = false;
     }
 
     private ModelTestOperationValidatorFilter(boolean validateNone) {
         this.validateNone = validateNone;
-        entries = null;
+        entries = validateNone ? null : createStandardEntries(null);
+    }
+
+    private static List<OperationEntry> createStandardEntries(List<OperationEntry> provided) {
+        if (provided == null) {
+            provided = new ArrayList<>();
+        }
+        // Don't check the private internal op that deregisters itself before we get a chance to validate it
+        OperationEntry oe = new OperationEntry(PathAddress.EMPTY_ADDRESS, "boottime-controller-initializer-step", Action.NOCHECK, null);
+        provided.add(oe);
+        return provided;
     }
 
     public static ModelTestOperationValidatorFilter createValidateNone() {
@@ -82,19 +92,13 @@ public class ModelTestOperationValidatorFilter implements Serializable {
         String name = op.get(OP).asString();
 
         for (OperationEntry entry : entries) {
-            if (nameMatch(name, entry)) {
-                if (entry.address.size() == address.size()) {
-                    for (int i = 0 ; i < address.size() ; i++) {
-                        if (pathElementMatch(address.getElement(i), entry.address.getElement(i))) {
-                            if (entry.action == Action.NOCHECK) {
-                                return null;
-                            } else if (entry.action == Action.RESOLVE){
-                                op = op.resolve();
-                            } else if (entry.operationFixer != null){
-                                op = entry.operationFixer.fixOperation(op);
-                            }
-                        }
-                    }
+            if (nameMatch(name, entry) && addressMatch(address, entry)) {
+                if (entry.action == Action.NOCHECK) {
+                    return null;
+                } else if (entry.action == Action.RESOLVE){
+                    op = op.resolve();
+                } else if (entry.operationFixer != null){
+                    op = entry.operationFixer.fixOperation(op);
                 }
             }
         }
@@ -106,6 +110,19 @@ public class ModelTestOperationValidatorFilter implements Serializable {
             return true;
         }
         return opName.equals(entry.name);
+    }
+
+    private boolean addressMatch(PathAddress opAddr, OperationEntry entry) {
+        boolean match = entry.address.size() == opAddr.size();
+        if (match) {
+            for (int i = 0; i < opAddr.size(); i++) {
+                if (!pathElementMatch(opAddr.getElement(i), entry.address.getElement(i))) {
+                    match = false;
+                    break;
+                }
+            }
+        }
+        return match;
     }
 
     private boolean pathElementMatch(PathElement element, PathElement operationEntryElement) {

@@ -26,6 +26,7 @@ package org.jboss.as.remoting;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -42,6 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -87,6 +89,26 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
         return DEFAULT_ADDITIONAL_INITIALIZATION;
     }
 
+    @Override
+    protected void compare(ModelNode node1, ModelNode node2) {
+        // First, clean up io stuff parser adds when the old remoting version is used
+        cleanIO(node1);
+        //cleanIO(node2);
+        super.compare(node1, node2);
+    }
+
+    private void cleanIO(ModelNode node) {
+        if (node.has(EXTENSION, "org.wildfly.extension.io")) {
+            node.get(EXTENSION).remove("org.wildfly.extension.io");
+            if (node.get(EXTENSION).asInt() == 0) {
+                node.get(EXTENSION).set(new ModelNode());
+            }
+        }
+        if (node.hasDefined(SUBSYSTEM, "io")) {
+            node.get(SUBSYSTEM).remove("io");
+        }
+    }
+
     @Test
     public void testSubsystemWithThreadParameters() throws Exception {
         standardSubsystemTest("remoting-with-threads.xml", null, true, HC_ADDITIONAL_INITIALIZATION);
@@ -122,7 +144,8 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testSubsystem12WithConnector() throws Exception {
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(true))
                 .setSubsystemXmlResource("remoting12-with-connector.xml").build();
 
         ServiceName connectorServiceName = RemotingServices.serverServiceName("test-connector");
@@ -137,12 +160,15 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
         // the following 2 attributes are new in remoting 1.2 NS
         assertEquals("myProto", connector.require(CommonAttributes.SASL_PROTOCOL).asString());
         assertEquals("myServer", connector.require(CommonAttributes.SERVER_NAME).asString());
+
+        // Validate the io subsystem was added
+        assertTrue(model.require(SUBSYSTEM).hasDefined("io"));
     }
 
     @Test
     public void testSubsystemWithConnectorProperties() throws Exception {
 
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(false))
                 .setSubsystemXmlResource("remoting-with-connector.xml")
                 .build();
 
@@ -174,7 +200,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testSubsystemWithConnectorPropertyChange() throws Exception {
 
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(false))
                 .setSubsystemXmlResource("remoting-with-connector.xml")
                 .build();
 
@@ -218,7 +244,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testSubsystemWithBadConnectorProperty() throws Exception {
 
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(true))
                 .setSubsystemXmlResource("remoting-with-bad-connector-property.xml")
                 .build();
 
@@ -245,7 +271,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
      */
     @Test
     public void testOutboundConnections() throws Exception {
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(false))
                 .setSubsystemXmlResource("remoting-with-outbound-connections.xml")
                 .build();
 
@@ -282,7 +308,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
         super.compareXml(configId, original, marshalled, true);
     }
 
-    private AdditionalInitialization createRuntimeAdditionalInitialization() {
+    private AdditionalInitialization createRuntimeAdditionalInitialization(final boolean legacyParser) {
         return new AdditionalInitialization() {
             @Override
             protected void setupController(ControllerInitializer controllerInitializer) {
@@ -295,19 +321,29 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
             protected void addExtraServices(ServiceTarget target) {
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
-                target.addService(IOServices.WORKER.append("default"), new WorkerService(OptionMap.builder().set(Options.WORKER_IO_THREADS, 2).getMap()))
-                        .setInitialMode(ServiceController.Mode.ACTIVE)
-                        .install();
+                if (!legacyParser) {
+                    target.addService(IOServices.WORKER.append("default"), new WorkerService(OptionMap.builder().set(Options.WORKER_IO_THREADS, 2).getMap()))
+                            .setInitialMode(ServiceController.Mode.ACTIVE)
+                            .install();
+                }
             }
 
             @Override
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
                 super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+
                 Map<String, Class> capabilities = new HashMap<>();
                 capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
-                        RemotingEndpointResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
-                capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
                         "default-remoting"), XnioWorker.class);
+
+                if (legacyParser) {
+                    // Deal with the fact that legacy parsers will add the io extension/subsystem
+                    RemotingSubsystemTestUtil.registerIOExtension(extensionRegistry, rootRegistration);
+                } else {
+                    capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+                            RemotingEndpointResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
+                }
+
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);
             }
         };
@@ -366,4 +402,5 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
             return newObject;
         }
     }
+
 }
