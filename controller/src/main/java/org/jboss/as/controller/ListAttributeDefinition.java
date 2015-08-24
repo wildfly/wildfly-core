@@ -54,14 +54,14 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     @SuppressWarnings("deprecation")
     public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
         this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null,
-                null, null, null, true, (AttributeAccess.Flag[]) null);
+                null, null, null, true, null, (AttributeAccess.Flag[]) null);
     }
 
     @Deprecated
     @SuppressWarnings("deprecation")
     public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator,
                                    final AttributeAccess.Flag... flags) {
-        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null, null, null, null, true, flags);
+        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null, null, null, null, true, null, flags);
     }
 
     private ListAttributeDefinition(final String name, final String xmlName, final boolean allowNull, final boolean allowExpressions,
@@ -72,10 +72,11 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
                                       final Boolean niSignificant,
                                       final AttributeParser parser,
                                       final boolean allowDuplicates,
+                                      final ModelNode undefinedMetricValue,
                                       final AttributeAccess.Flag... flags) {
         super(name, xmlName, null, ModelType.LIST, allowNull, allowExpressions, null, null,
                 new ListValidator(elementValidator, allowNull, minSize, maxSize, allowDuplicates), allowNull, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecated, accessConstraints, niSignificant, parser, flags);
+                attributeMarshaller, resourceOnly, deprecated, accessConstraints, niSignificant, parser, undefinedMetricValue, flags);
         this.elementValidator = elementValidator;
     }
 

@@ -85,6 +85,7 @@ public abstract class AttributeDefinition {
     private final Boolean nilSignificant;
     private final AttributeParser parser;
     private final String attributeGroup;
+    private final ModelNode undefinedMetricValue;
     protected final CapabilityReferenceRecorder referenceRecorder;
 
     // NOTE: Standards for creating a constructor variant are:
@@ -101,7 +102,8 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(),
+                toCopy.getUndefinedMetricValue(), wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -109,12 +111,12 @@ public abstract class AttributeDefinition {
                                   final ParameterCorrector valueCorrector, final ParameterValidator validator,
                                   boolean validateNull, final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                   boolean resourceOnly, DeprecationData deprecationData, final AccessConstraintDefinition[] accessConstraints,
-                                  Boolean nilSignificant, AttributeParser parser, final AttributeAccess.Flag... flags) {
+                                  Boolean nilSignificant, AttributeParser parser, final ModelNode undefinedMetricValue, final AttributeAccess.Flag... flags) {
 
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, wrapFlags(flags));
+                nilSignificant, parser, null, null, null, undefinedMetricValue, wrapFlags(flags));
     }
 
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -123,7 +125,7 @@ public abstract class AttributeDefinition {
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
+                                ModelNode[] allowedValues, final ModelNode undefinedMetricValue, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -154,6 +156,11 @@ public abstract class AttributeDefinition {
         this.nilSignificant = nilSignificant;
         this.attributeGroup = attributeGroup;
         this.allowedValues = allowedValues;
+        this.undefinedMetricValue = new ModelNode();
+        if (undefinedMetricValue != null) {
+            this.undefinedMetricValue.set(undefinedMetricValue);
+        }
+        this.undefinedMetricValue.protect();
         this.referenceRecorder = referenceRecorder;
     }
 
@@ -1061,6 +1068,15 @@ public abstract class AttributeDefinition {
 
     public AttributeParser getParser() {
         return parser;
+    }
+
+    /**
+     * Gets the undefined metric value to use for the attribute if a value cannot be provided.
+     *
+     * @return the undefined metric value, or {@code null} if no undefined metric value was provided
+     */
+    public ModelNode getUndefinedMetricValue() {
+        return undefinedMetricValue.isDefined() ? undefinedMetricValue : null;
     }
 
     /**

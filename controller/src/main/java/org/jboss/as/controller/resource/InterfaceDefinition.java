@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -240,7 +241,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
                 true, false, MeasurementUnit.NONE,
                 (ParameterCorrector) null, createNestedParamValidator(), true,
                 new String[]{ModelDescriptionConstants.ANY_ADDRESS}, (String[]) null, (AttributeMarshaller) null,
-                false, null, null, (Boolean) null, null,
+                false, null, null, (Boolean) null, null, null,
                 AttributeAccess.Flag.RESTART_ALL_SERVICES) {
 
             @Override
