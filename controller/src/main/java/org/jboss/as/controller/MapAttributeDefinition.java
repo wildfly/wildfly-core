@@ -26,9 +26,11 @@ package org.jboss.as.controller;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.MapValidator;
@@ -55,7 +57,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
     @SuppressWarnings("deprecation")
     public MapAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
         super(name, name, null, ModelType.OBJECT, allowNull, false, null, null, new MapValidator(elementValidator, allowNull, 0, Integer.MAX_VALUE), false,
-                null, null, null, false, null, null, null, null);
+                null, null, null, false, null, null, null, null, null);
         this.elementValidator = elementValidator;
     }
 
