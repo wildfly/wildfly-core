@@ -35,9 +35,8 @@ class ProfilesCapabilityContext implements CapabilityContext {
     public static final ProfilesCapabilityContext INSTANCE = new ProfilesCapabilityContext();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext depCtx = dependent.getContext();
-        return depCtx instanceof ProfilesCapabilityContext || depCtx instanceof ServerGroupsCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
+        return dependentContext instanceof ProfilesCapabilityContext || dependentContext instanceof ServerGroupsCapabilityContext;
     }
 
     @Override

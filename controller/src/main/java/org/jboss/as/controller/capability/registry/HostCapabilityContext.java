@@ -36,8 +36,7 @@ class HostCapabilityContext implements CapabilityContext {
     static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext dependentContext = dependent.getContext();
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
         return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
     }
 

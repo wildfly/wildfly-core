@@ -39,10 +39,25 @@ public interface RuntimeCapabilityRegistry extends CapabilityRegistry<RuntimeCap
      * @param <T> the java type that exposes the API
      * @return the runtime API. Will not return {@code null}
      *
+     * @throws java.lang.IllegalStateException if no capability with the given name is available in the given context
      * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
      * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
      */
     <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType);
 
+    /**
+     * Gets the name of the service provided by the capability, if there is one.
+     *
+     * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @param context the context in which to resolve the capability. Cannot be {@code null}
+     * @param serviceType the type of the value provided by the service. May be {@code null} if the caller is
+     *                    unconcerned about checking that its understanding of the service type provided by the
+     *                    capability is correct
+     * @return the service name. Will not return {@code null}
+     *
+     * @throws java.lang.IllegalStateException if no capability with the given name is available in the given context
+     * @throws java.lang.IllegalArgumentException if the capability does not provide a service, or if {@code serviceType}
+     *             is not {@code null} and the type of the service the capability provides is not assignable from it
+     */
     ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType);
 }

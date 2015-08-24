@@ -32,9 +32,8 @@ class ServerGroupsCapabilityContext implements CapabilityContext {
     static final ServerGroupsCapabilityContext INSTANCE = new ServerGroupsCapabilityContext();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext depCtx = dependent.getContext();
-        return depCtx instanceof ServerConfigCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
+        return dependentContext instanceof ServerConfigCapabilityContext;
     }
 
     @Override

@@ -45,8 +45,7 @@ class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
     }
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext dependentContext = dependent.getContext();
+    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
         boolean result = equals(dependentContext);
         if (!result && dependentContext instanceof ProfileChildCapabilityContext) {
             Set<CapabilityContext> includers = getIncludingContexts(context);
