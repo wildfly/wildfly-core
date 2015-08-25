@@ -26,14 +26,15 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
@@ -142,7 +143,7 @@ class RollbackPatchXml_1_0 extends PatchXmlUtils implements XMLStreamConstants, 
         // Get started ...
         writer.writeStartDocument();
         writer.writeStartElement(Element.PATCH.name);
-        writer.writeDefaultNamespace(PatchXml.Namespace.ROLLBACK_1_1.getNamespace());
+        writer.writeDefaultNamespace(PatchXml.Namespace.ROLLBACK_1_2.getNamespace());
 
         writePatch(writer, rollbackPatch);
         writeInstallation(writer, rollbackPatch.getIdentityState());
