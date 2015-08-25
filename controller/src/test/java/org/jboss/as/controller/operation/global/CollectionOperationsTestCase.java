@@ -27,6 +27,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -58,6 +59,10 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
             .setAllowNull(true)
             .setStorageRuntime()
             .build();
+
+    private static final StringListAttributeDefinition WRONG_ATTRIBUTE_NAME = new StringListAttributeDefinition.Builder("attribute.with.wrong.name")
+                .setAllowNull(true)
+                .build();
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
 
     private static ModelNode runtimeListAttributeValue = new ModelNode();
@@ -84,10 +89,12 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
                         LIST_ATTRIBUTE.validateAndSet(operation, model);
                         MAP_ATTRIBUTE.validateAndSet(operation, model);
+                        WRONG_ATTRIBUTE_NAME.validateAndSet(operation, model);
                     }
 
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .addReadWriteAttribute(WRONG_ATTRIBUTE_NAME, null ,new ModelOnlyWriteAttributeHandler(WRONG_ATTRIBUTE_NAME))
                 .addReadWriteAttribute(LIST_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -293,6 +300,26 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
         op.get("name").set(LIST_ATTRIBUTE.getName());
         op.get("value").set("one");*/
         executeCheckForFailure(op); //duplicates not allowed
+    }
+
+
+    @Test
+    public void testListForWrongAttributeNameOperations() throws OperationFailedException {
+        executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
+
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(WRONG_ATTRIBUTE_NAME.getName());
+        op.get("value").set("value1");
+        executeCheckNoFailure(op);
+
+        //add second value
+        op.get("value").set("value2");
+        executeCheckNoFailure(op);
+
+        op = createOperation("list-get", TEST_ADDRESS);
+        op.get("name").set(WRONG_ATTRIBUTE_NAME.getName());
+        op.get("index").set(0);
+        Assert.assertEquals("value1", executeForResult(op).asString());
 
     }
 }

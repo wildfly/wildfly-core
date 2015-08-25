@@ -74,7 +74,7 @@ public class WriteAttributeHandler implements OperationStepHandler {
         if (registry == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
         }
-        final boolean useEnhancedSyntax = containsEnhancedSyntax(nameModel.asString());
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(nameModel.asString(), registry);
         final String attributeName;
         final String attributeExpression;
         if (useEnhancedSyntax){
