@@ -178,7 +178,13 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            EmbeddedServerReference hostController;
+            if (this.jbossHome == null) {
+                // Modular environment
+                hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            } else {
+                hostController = EmbeddedServerFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
+            }
             hostController.start();
             hostControllerReference.set(new EmbeddedServerLaunch(hostController, restorer));
 
