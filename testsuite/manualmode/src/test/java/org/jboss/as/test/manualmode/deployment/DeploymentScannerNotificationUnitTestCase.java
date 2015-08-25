@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.jboss.as.test.manualmode.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
@@ -25,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -34,10 +34,10 @@ import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
-import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
@@ -55,10 +55,9 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCase {
+public class DeploymentScannerNotificationUnitTestCase extends AbstractDeploymentUnitTestCase {
 
     private static final PathAddress DEPLOYMENT_ONE = PathAddress.pathAddress(DEPLOYMENT, "deployment-one.jar");
-    private static final PathAddress DEPLOYMENT_TWO = PathAddress.pathAddress(DEPLOYMENT, "deployment-two.jar");
 
     @Inject
     private ServerController container;
@@ -91,13 +90,10 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
             try {
 
                 final File deploymentOne = new File(deployDir, "deployment-one.jar");
-                final File deploymentTwo = new File(deployDir, "deployment-two.jar");
-
                 createDeployment(deploymentOne, "org.jboss.modules");
-                createDeployment(deploymentTwo, "non.existing.dependency");
 
                 // Add a new de
-                addDeploymentScanner(0);
+                addDeploymentScanner(1000);
                 try {
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
@@ -106,51 +102,34 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     }
                     Assert.assertTrue(exists(DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
-                    Assert.assertTrue(exists(DEPLOYMENT_TWO));
-                    Assert.assertEquals("FAILED", deploymentState(DEPLOYMENT_TWO));
-
                     final Path oneDeployed = deployDir.toPath().resolve("deployment-one.jar.deployed");
-                    final Path twoFailed =  deployDir.toPath().resolve("deployment-two.jar.failed");
-
-                    // Restart ...
-                    container.stop();
-                    container.start();
-
-                    // Wait until started ...
+                    final Path oneUndeployed = deployDir.toPath().resolve("deployment-one.jar.undeployed");
+                    Assert.assertTrue(Files.deleteIfExists(oneDeployed));
                     timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
-                    while (!isRunning() && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(200);
+                    while (!Files.exists(oneUndeployed) && System.currentTimeMillis() < timeout) {
+                        Thread.sleep(10);
                     }
+                    Assert.assertFalse(Files.exists(oneDeployed));
+                    Assert.assertTrue(Files.exists(oneUndeployed));
+                    Assert.assertTrue(Files.exists(deployDir.toPath().resolve("deployment-one.jar")));
+                    Assert.assertFalse(exists(DEPLOYMENT_ONE));
 
-                    Assert.assertTrue(Files.exists(oneDeployed));
-                    Assert.assertTrue(Files.exists(twoFailed));
-
-                    Assert.assertTrue(exists(DEPLOYMENT_ONE));
-                    Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
-
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
-                    while (exists(DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(200);
-                    }
-                    Assert.assertFalse(exists(DEPLOYMENT_TWO));
                     ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
                     ModelNode result = executeOperation(disableScanner);
                     assertEquals("Unexpected outcome of disabling the test deployment scanner: " + disableScanner, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
 
-                    final ModelNode undeployOp = Util.getEmptyOperation(DeploymentUndeployHandler.OPERATION_NAME, DEPLOYMENT_ONE.toModelNode());
-                    result = executeOperation(undeployOp);
-                    assertEquals("Unexpected outcome of undeploying deployment one: " + undeployOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
+                    deploy(deploymentOne);
                     Assert.assertTrue(exists(DEPLOYMENT_ONE));
-                    Assert.assertEquals("STOPPED", deploymentState(DEPLOYMENT_ONE));
-
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
-
-                    while ( Files.exists(oneDeployed) && System.currentTimeMillis() < timeout) {
+                    Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    while (!Files.exists(oneDeployed) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(10);
                     }
-                    Assert.assertFalse(Files.exists(oneDeployed));
+                    Assert.assertTrue(Files.exists(oneDeployed));
+                    Assert.assertFalse(Files.exists(oneUndeployed));
                 } finally {
                     removeDeploymentScanner();
+                    undeploy("deployment-one.jar");
                 }
 
             } finally {
@@ -161,6 +140,16 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         }
     }
 
+    protected void undeploy(String deployment) throws Exception {
+        ServerDeploymentHelper helper = new ServerDeploymentHelper(client);
+        helper.undeploy(deployment);
+    }
+    protected void deploy(File deployment) throws Exception {
+        ServerDeploymentHelper helper = new ServerDeploymentHelper(client);
+        try (InputStream in = Files.newInputStream(deployment.toPath())) {
+            helper.deploy(deployment.getName(), in);
+        }
+    }
 
     @Override
     protected ModelNode executeOperation(ModelNode op) throws IOException {
