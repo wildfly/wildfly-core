@@ -149,24 +149,27 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
 
     private void doExecuteInternal(OperationContext context, ModelNode operation) throws OperationFailedException {
         validator.validate(operation);
+        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         String attributeName = GlobalOperationAttributes.NAME.resolveModelAttribute(context, operation).asString();
         final boolean defaults = GlobalOperationAttributes.INCLUDE_DEFAULTS.resolveModelAttribute(context,operation).asBoolean();
-        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
-        String attributeExpression = attributeName;
+        boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
+        final String fullAttributeName = attributeName;
         if (useEnhancedSyntax){
             attributeName = extractAttributeName(attributeName);
         }
-
-        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
-        final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
-
+        AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        if (attributeAccess == null && useEnhancedSyntax) {
+            attributeName = fullAttributeName;
+            useEnhancedSyntax = false;
+            attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        }
         if (attributeAccess == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
         }
         assert attributeAccess.getAttributeDefinition() != null;
 
         if (attributeAccess.getReadHandler() == null) {
-            resolveAttribute(context, attributeAccess.getAttributeDefinition(), attributeExpression, defaults, useEnhancedSyntax);
+            resolveAttribute(context, attributeAccess.getAttributeDefinition(), fullAttributeName, defaults, useEnhancedSyntax);
         } else {
             OperationStepHandler handler = attributeAccess.getReadHandler();
             ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(handler.getClass());
@@ -176,7 +179,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
             if (useEnhancedSyntax) {
-                ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
+                ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(fullAttributeName.substring(attributeName.length()), context.getResult());
                 context.getResult().set(resolved);
             }
         }

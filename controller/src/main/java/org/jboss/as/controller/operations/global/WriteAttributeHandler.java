@@ -74,8 +74,8 @@ public class WriteAttributeHandler implements OperationStepHandler {
         if (registry == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(address));
         }
-        final boolean useEnhancedSyntax = containsEnhancedSyntax(nameModel.asString());
-        final String attributeName;
+        boolean useEnhancedSyntax = containsEnhancedSyntax(nameModel.asString());
+        String attributeName;
         final String attributeExpression;
         if (useEnhancedSyntax){
             attributeExpression = nameModel.asString();
@@ -85,9 +85,12 @@ public class WriteAttributeHandler implements OperationStepHandler {
             attributeExpression = attributeName;
         }
 
-
-
-        final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        if (attributeAccess == null && useEnhancedSyntax) {
+            useEnhancedSyntax = false;
+            attributeName = nameModel.asString();
+            attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        }
         if (attributeAccess == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
         } else if (attributeAccess.getAccessType() != AttributeAccess.AccessType.READ_WRITE) {
@@ -140,11 +143,15 @@ public class WriteAttributeHandler implements OperationStepHandler {
                 // 1st OSH is to read the old value
                 context.addStep(oldValue, readAttributeOperation, readAttributeHandler, currentStage);
 
+                final String attrName = attributeName;
+                final AttributeAccess attrAccess = attributeAccess;
+                final boolean enhancedSyntax = useEnhancedSyntax;
+
                 // 2nd OSH is to write the value
                 context.addStep(new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        doExecuteInternal(context, operation, attributeAccess, attributeName, oldValue.get(RESULT), useEnhancedSyntax, attributeExpression);
+                        doExecuteInternal(context, operation, attrAccess, attrName, oldValue.get(RESULT), enhancedSyntax, attributeExpression);
                     }
                 }, currentStage);
 
@@ -155,7 +162,7 @@ public class WriteAttributeHandler implements OperationStepHandler {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         // aggregate data from the 2 read-attribute operations
-                        emitAttributeValueWrittenNotification(context, address, attributeName, oldValue.get(RESULT), newValue.get(RESULT));
+                        emitAttributeValueWrittenNotification(context, address, attrName, oldValue.get(RESULT), newValue.get(RESULT));
                     }
                 }, currentStage);
             }
