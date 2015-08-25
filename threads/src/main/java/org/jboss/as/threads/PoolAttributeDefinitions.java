@@ -78,11 +78,11 @@ public interface PoolAttributeDefinitions {
 
     // Metrics
 
-    AttributeDefinition CURRENT_THREAD_COUNT = new SimpleAttributeDefinition(CommonAttributes.CURRENT_THREAD_COUNT, ModelType.INT, false);
-    AttributeDefinition LARGEST_THREAD_COUNT = new SimpleAttributeDefinition(CommonAttributes.LARGEST_THREAD_COUNT, ModelType.INT, false);
-    AttributeDefinition REJECTED_COUNT = new SimpleAttributeDefinition(CommonAttributes.REJECTED_COUNT, ModelType.INT, false);
-    AttributeDefinition ACTIVE_COUNT = new SimpleAttributeDefinition(CommonAttributes.ACTIVE_COUNT, ModelType.INT, false);
-    AttributeDefinition COMPLETED_TASK_COUNT = new SimpleAttributeDefinition(CommonAttributes.COMPLETED_TASK_COUNT, ModelType.INT, false);
-    AttributeDefinition TASK_COUNT = new SimpleAttributeDefinition(CommonAttributes.TASK_COUNT, ModelType.INT, false);
-    AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinition(CommonAttributes.QUEUE_SIZE, ModelType.INT, false);
+    AttributeDefinition CURRENT_THREAD_COUNT = new SimpleAttributeDefinition(CommonAttributes.CURRENT_THREAD_COUNT, ModelType.INT, true);
+    AttributeDefinition LARGEST_THREAD_COUNT = new SimpleAttributeDefinition(CommonAttributes.LARGEST_THREAD_COUNT, ModelType.INT, true);
+    AttributeDefinition REJECTED_COUNT = new SimpleAttributeDefinition(CommonAttributes.REJECTED_COUNT, ModelType.INT, true);
+    AttributeDefinition ACTIVE_COUNT = new SimpleAttributeDefinition(CommonAttributes.ACTIVE_COUNT, ModelType.INT, true);
+    AttributeDefinition COMPLETED_TASK_COUNT = new SimpleAttributeDefinition(CommonAttributes.COMPLETED_TASK_COUNT, ModelType.INT, true);
+    AttributeDefinition TASK_COUNT = new SimpleAttributeDefinition(CommonAttributes.TASK_COUNT, ModelType.INT, true);
+    AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinition(CommonAttributes.QUEUE_SIZE, ModelType.INT, true);
 }
