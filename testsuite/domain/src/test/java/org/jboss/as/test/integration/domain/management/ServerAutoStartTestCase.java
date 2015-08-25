@@ -23,10 +23,13 @@ package org.jboss.as.test.integration.domain.management;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_START;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_SERVERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.waitUntilState;
@@ -34,10 +37,13 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestUti
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.jboss.as.controller.PathAddress;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.host.controller.operations.ServerStopHandler;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.dmr.ModelNode;
@@ -215,6 +221,8 @@ public class ServerAutoStartTestCase {
         waitUntilState(client, "master", "main-one", "STARTED");
         waitUntilState(client, "master", "main-two", "STARTED");
         waitUntilState(client, "master", "other-one", "STARTED");
+        //WFCORE-905
+        executeFailingBatch(client);
     }
 
     private void assertAutoStartStatus(final ModelControllerClient client, ModelNode address, boolean autostart) throws IOException {
@@ -255,5 +263,18 @@ public class ServerAutoStartTestCase {
             operation.get(OP_ADDR).add(SERVER_GROUP, groupName);
         }
         validateResponse(client.execute(operation));
+    }
+
+    private void executeFailingBatch(final ModelControllerClient client) throws IOException {
+        ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        ModelNode steps = composite.get(STEPS).setEmptyList();
+
+        ModelNode stopServerOne = Util.createOperation(ServerStopHandler.OPERATION_NAME, PathAddress.pathAddress(mainOne));
+        stopServerOne.get(BLOCKING).set(true);
+        steps.add(stopServerOne);
+
+        ModelNode removeServerOne = Util.createRemoveOperation(PathAddress.pathAddress(mainOne));
+        steps.add(removeServerOne);
+        validateResponse(client.execute(composite));
     }
 }
