@@ -44,6 +44,7 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
         this.vaultReader = vaultReader;
     }
 
+    @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         ModelNode model = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel();
         final String deploymentUnitName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
@@ -53,7 +54,7 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
         PathAddress address = PathAddress.pathAddress(opAddr);
         final String managementName = address.getLastElement().getValue();
 
-        DeploymentHandlerUtil.undeploy(context, managementName, deploymentUnitName, vaultReader);
+        DeploymentHandlerUtil.undeploy(context, operation, managementName, deploymentUnitName, vaultReader);
         DeploymentUtils.disableAttribute(model);
     }
 }
