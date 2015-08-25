@@ -137,6 +137,7 @@ class ManagementXml_Legacy extends ManagementXml {
         this.delegate = delegate;
     }
 
+    @Override
     public void parseManagement(final XMLExtendedStreamReader reader, final ModelNode address,
             final List<ModelNode> list, boolean requireNativeInterface) throws XMLStreamException {
         switch (namespace) {
@@ -1475,20 +1476,17 @@ class ManagementXml_Legacy extends ManagementXml {
                         throw unexpectedElement(reader);
                     }
 
+                    // We know Version 1.7 and onwards and 3.0 and onwards will not result in calls to this method.
                     switch (namespace) {
+                        case DOMAIN_1_3:
+                        case DOMAIN_1_4:
+                        case DOMAIN_1_5:
                         case DOMAIN_2_0:
                             parseLocalAuthentication_1_3(reader, realmAddress, list);
                             break;
-                        default:
-                            switch (namespace.getMajorVersion()) {
-                                case 1:
-                                    // 1.3 up to but not including 2.0.
-                                    parseLocalAuthentication_1_3(reader, realmAddress, list);
-                                    break;
-                                default:
-                                    parseLocalAuthentication_2_1(reader, realmAddress, list);
-                                    break;
-                            }
+                        default: // Becomes Versions 1.6 then 2.1 and onwards.
+                            parseLocalAuthentication_1_6_and_2_1(reader, realmAddress, list);
+                            break;
                     }
 
                     localFound = true;
@@ -1579,7 +1577,7 @@ class ManagementXml_Legacy extends ManagementXml {
                     if (localFound) {
                         throw unexpectedElement(reader);
                     }
-                    parseLocalAuthentication_2_1(reader, realmAddress, list);
+                    parseLocalAuthentication_1_6_and_2_1(reader, realmAddress, list);
                     localFound = true;
                     break;
                 }
@@ -2112,7 +2110,7 @@ class ManagementXml_Legacy extends ManagementXml {
         requireNoContent(reader);
     }
 
-    private void parseLocalAuthentication_2_1(final XMLExtendedStreamReader reader,
+    private void parseLocalAuthentication_1_6_and_2_1(final XMLExtendedStreamReader reader,
             final ModelNode realmAddress, final List<ModelNode> list) throws XMLStreamException {
         ModelNode addr = realmAddress.clone().add(AUTHENTICATION, LOCAL);
         ModelNode local = Util.getEmptyOperation(ADD, addr);
@@ -3296,6 +3294,7 @@ class ManagementXml_Legacy extends ManagementXml {
         requireNoContent(reader);
     }
 
+    @Override
     public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
             throws XMLStreamException {
         throw new UnsupportedOperationException();
