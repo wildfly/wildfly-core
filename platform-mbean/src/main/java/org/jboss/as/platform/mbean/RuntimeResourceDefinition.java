@@ -46,7 +46,7 @@ import org.jboss.dmr.ModelType;
 class RuntimeResourceDefinition extends SimpleResourceDefinition {
 
 
-    private static AttributeDefinition UPTIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.UPTIME, ModelType.LONG, false)
+    private static AttributeDefinition UPTIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.UPTIME, ModelType.LONG, true)
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
             .build();

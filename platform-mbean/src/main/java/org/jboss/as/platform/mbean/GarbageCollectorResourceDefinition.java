@@ -44,11 +44,11 @@ import org.jboss.dmr.ModelType;
  */
 class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
     //metrics
-    private static SimpleAttributeDefinition COLLECTION_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_COUNT, ModelType.LONG, false)
+    private static SimpleAttributeDefinition COLLECTION_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_COUNT, ModelType.LONG, true)
             .setStorageRuntime()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
-    private static SimpleAttributeDefinition COLLECTION_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_TIME, ModelType.LONG, false)
+    private static SimpleAttributeDefinition COLLECTION_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_TIME, ModelType.LONG, true)
             .setStorageRuntime()
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .build();

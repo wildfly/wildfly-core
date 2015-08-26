@@ -527,7 +527,7 @@ public class ExtensionRegistry {
 
         @Override
         public boolean isRuntimeOnlyRegistrationValid() {
-            return processType.isServer() && runningModeControl.getRunningMode() != RunningMode.ADMIN_ONLY;
+            return processType.isServer();
         }
 
         @Override

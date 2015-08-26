@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -84,6 +85,7 @@ public abstract class AttributeDefinition {
     private final Boolean nilSignificant;
     private final AttributeParser parser;
     private final String attributeGroup;
+    private final ModelNode undefinedMetricValue;
     protected final CapabilityReferenceRecorder referenceRecorder;
 
     // NOTE: Standards for creating a constructor variant are:
@@ -100,7 +102,8 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(),
+                toCopy.getUndefinedMetricValue(), wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -108,58 +111,12 @@ public abstract class AttributeDefinition {
                                   final ParameterCorrector valueCorrector, final ParameterValidator validator,
                                   boolean validateNull, final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                   boolean resourceOnly, DeprecationData deprecationData, final AccessConstraintDefinition[] accessConstraints,
-                                  Boolean nilSignificant, AttributeParser parser, final AttributeAccess.Flag... flags) {
+                                  Boolean nilSignificant, AttributeParser parser, final ModelNode undefinedMetricValue, final AttributeAccess.Flag... flags) {
 
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, wrapFlags(flags));
-    }
-
-    private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
-                                                    boolean validateNull, boolean allowExpression, ModelType type) {
-        NillableOrExpressionParameterValidator result = null;
-        if (toWrap == null) {
-            if (type == ModelType.STRING) {
-                toWrap = new StringLengthValidator(1, Integer.MAX_VALUE, allowNull, allowExpression);
-            } else {
-                toWrap = new ModelTypeValidator(type);
-            }
-        } else if (toWrap instanceof NillableOrExpressionParameterValidator) {
-            // Avoid re-wrapping
-            NillableOrExpressionParameterValidator current = (NillableOrExpressionParameterValidator) toWrap;
-            if (allowExpression == current.isAllowExpression() &&
-                    (!validateNull && current.getAllowNull() == null
-                        || allowNull == current.getAllowNull())) {
-                result = current;
-            } else {
-                toWrap = current.getDelegate();
-            }
-        }
-        if (result == null) {
-            Boolean nullCheck = validateNull ? allowNull : null;
-            result = new NillableOrExpressionParameterValidator(toWrap, nullCheck, allowExpression);
-        }
-
-        return result;
-    }
-
-    private static List<AccessConstraintDefinition> wrapConstraints(AccessConstraintDefinition[] accessConstraints) {
-        if (accessConstraints == null) {
-            return Collections.<AccessConstraintDefinition>emptyList();
-        } else {
-            return Collections.unmodifiableList(Arrays.asList(accessConstraints));
-        }
-    }
-
-    private static EnumSet<AttributeAccess.Flag> wrapFlags(AttributeAccess.Flag[] flags) {
-        if (flags == null || flags.length == 0) {
-            return EnumSet.noneOf(AttributeAccess.Flag.class);
-        } else if (flags.length == 1) {
-            return EnumSet.of(flags[0]);
-        } else {
-            return EnumSet.of(flags[0], flags);
-        }
+                nilSignificant, parser, null, null, null, undefinedMetricValue, wrapFlags(flags));
     }
 
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -168,7 +125,7 @@ public abstract class AttributeDefinition {
                                 final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
+                                ModelNode[] allowedValues, final ModelNode undefinedMetricValue, final EnumSet<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -199,7 +156,58 @@ public abstract class AttributeDefinition {
         this.nilSignificant = nilSignificant;
         this.attributeGroup = attributeGroup;
         this.allowedValues = allowedValues;
+        this.undefinedMetricValue = new ModelNode();
+        if (undefinedMetricValue != null) {
+            this.undefinedMetricValue.set(undefinedMetricValue);
+        }
+        this.undefinedMetricValue.protect();
         this.referenceRecorder = referenceRecorder;
+    }
+
+    private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
+                                                    boolean validateNull, boolean allowExpression, ModelType type) {
+        NillableOrExpressionParameterValidator result = null;
+        if (toWrap == null) {
+            if (type == ModelType.STRING) {
+                toWrap = new StringLengthValidator(1, Integer.MAX_VALUE, allowNull, allowExpression);
+            } else {
+                toWrap = new ModelTypeValidator(type);
+            }
+        } else if (toWrap instanceof NillableOrExpressionParameterValidator) {
+            // Avoid re-wrapping
+            NillableOrExpressionParameterValidator current = (NillableOrExpressionParameterValidator) toWrap;
+            if (allowExpression == current.isAllowExpression() &&
+                    (!validateNull && current.getAllowNull() == null
+                            || allowNull == current.getAllowNull())) {
+                result = current;
+            } else {
+                toWrap = current.getDelegate();
+            }
+        }
+        if (result == null) {
+            Boolean nullCheck = validateNull ? allowNull : null;
+            result = new NillableOrExpressionParameterValidator(toWrap, nullCheck, allowExpression);
+        }
+
+        return result;
+    }
+
+    private static List<AccessConstraintDefinition> wrapConstraints(AccessConstraintDefinition[] accessConstraints) {
+        if (accessConstraints == null) {
+            return Collections.<AccessConstraintDefinition>emptyList();
+        } else {
+            return Collections.unmodifiableList(Arrays.asList(accessConstraints));
+        }
+    }
+
+    private static EnumSet<AttributeAccess.Flag> wrapFlags(AttributeAccess.Flag[] flags) {
+        if (flags == null || flags.length == 0) {
+            return EnumSet.noneOf(AttributeAccess.Flag.class);
+        } else if (flags.length == 1) {
+            return EnumSet.of(flags[0]);
+        } else {
+            return EnumSet.of(flags[0], flags);
+        }
     }
 
     /**
@@ -1060,6 +1068,15 @@ public abstract class AttributeDefinition {
 
     public AttributeParser getParser() {
         return parser;
+    }
+
+    /**
+     * Gets the undefined metric value to use for the attribute if a value cannot be provided.
+     *
+     * @return the undefined metric value, or {@code null} if no undefined metric value was provided
+     */
+    public ModelNode getUndefinedMetricValue() {
+        return undefinedMetricValue.isDefined() ? undefinedMetricValue : null;
     }
 
     /**

@@ -43,11 +43,12 @@ import org.jboss.dmr.ModelType;
  * @author Tomaz Cerar (c) 2013 Red Hat Inc.
  */
 class MemoryManagerResourceDefinition extends SimpleResourceDefinition {
-    private static SimpleAttributeDefinition VALID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VALID, ModelType.BOOLEAN, false)
+    private static SimpleAttributeDefinition VALID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VALID, ModelType.BOOLEAN, true)
             .setStorageRuntime()
             .build();
     private static AttributeDefinition MEMORY_POOL_NAMES = new StringListAttributeDefinition.Builder(PlatformMBeanConstants.MEMORY_POOL_NAMES)
             .setStorageRuntime()
+            .setAllowNull(true)
             .build();
 
 
