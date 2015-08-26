@@ -751,7 +751,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }
             } else {
                 // Die!
-                ROOT_LOGGER.unsuccessfulBoot();
+                String failed = ROOT_LOGGER.unsuccessfulBoot();
+                ROOT_LOGGER.fatal(failed);
+                bootstrapListener.bootFailure(failed);
                 SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
             }
         }

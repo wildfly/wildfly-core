@@ -83,7 +83,11 @@ public final class BootstrapListener {
         }
     }
 
-    protected void done(final long bootstrapTime, final StabilityStatistics statistics) {
+    public void bootFailure(String message) {
+        futureContainer.failed(new Exception(message));
+    }
+
+    private void done(final long bootstrapTime, final StabilityStatistics statistics) {
         futureContainer.done(serviceContainer);
         if (serviceContainer.isShutdown()) {
             // Do not print boot statistics because server

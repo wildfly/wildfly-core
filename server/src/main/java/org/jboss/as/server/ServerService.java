@@ -377,7 +377,9 @@ public final class ServerService extends AbstractControllerService {
             bootstrapListener.printBootStatistics();
         } else {
             // Die!
-            ServerLogger.ROOT_LOGGER.unsuccessfulBoot();
+            String message = ServerLogger.ROOT_LOGGER.unsuccessfulBoot();
+            ServerLogger.ROOT_LOGGER.fatal(message);
+            bootstrapListener.bootFailure(message);
             SystemExiter.exit(1);
         }
     }

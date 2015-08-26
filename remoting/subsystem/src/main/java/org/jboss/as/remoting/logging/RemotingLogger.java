@@ -124,4 +124,9 @@ public interface RemotingLogger extends BasicLogger {
 
     @Message(id = 23, value = "Only one of '%s' configuration or '%s' configuration is allowed")
     String workerThreadsEndpointConfigurationChoiceRequired(String workerThreads, String endpoint);
+
+    @LogMessage(level = INFO)
+    @Message(id = 24, value = "The remoting subsystem is present but no io subsystem was found. An io subsystem " +
+            "was not required when remoting schema '%s' was current but now is, so a default subsystem is being added.")
+    void addingIOSubsystem(String legacyNS);
 }
