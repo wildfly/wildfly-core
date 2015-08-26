@@ -100,7 +100,7 @@ if [ "$JBOSS_MODE" = "standalone" ]; then
 	if [ -z "$JBOSS_CONFIG" ]; then
 		JBOSS_CONFIG=standalone.xml
 	fi
-	JBOSS_MARKERFILE="$JBOSS_HOME/standalone/tmp/wildfly-startup-marker"
+	JBOSS_MARKERFILE="$JBOSS_HOME/standalone/tmp/startup-marker"
 else
 	JBOSS_SCRIPT="$JBOSS_HOME/bin/domain.sh"
 	if [ -z "$JBOSS_DOMAIN_CONFIG" ]; then
@@ -109,7 +109,7 @@ else
 	if [ -z "$JBOSS_HOST_CONFIG" ]; then
 		JBOSS_HOST_CONFIG=host.xml
 	fi
-	JBOSS_MARKERFILE="$JBOSS_HOME/domain/tmp/wildfly-startup-marker"
+	JBOSS_MARKERFILE="$JBOSS_HOME/domain/tmp/startup-marker"
 fi
 
 # Check startup file

@@ -44,7 +44,7 @@ import org.jboss.msc.service.StabilityStatistics;
  */
 public final class BootstrapListener {
 
-    public static final String MARKER_FILE = "wildfly-startup-marker";
+    public static final String MARKER_FILE = "startup-marker";
 
     private final StabilityMonitor monitor = new StabilityMonitor();
     private final ServiceContainer serviceContainer;
