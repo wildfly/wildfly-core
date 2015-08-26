@@ -59,6 +59,7 @@ import org.eclipse.aether.impl.MetadataGeneratorFactory;
 import org.eclipse.aether.impl.VersionRangeResolver;
 import org.eclipse.aether.impl.VersionResolver;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.Proxy;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -87,6 +88,9 @@ class MavenUtil {
 
     private final RepositorySystem REPOSITORY_SYSTEM;
     private final List<RemoteRepository> remoteRepositories;
+
+    private static final String PROXY_HOST = "proxyHost";
+    private static final String PROXY_PORT = "proxyPort";
 
     private static String mavenRepository;
 
@@ -204,20 +208,59 @@ class MavenUtil {
         return urls;
     }
 
+    private static Integer getProxyPort() {
+        String port = System.getProperty(PROXY_PORT);
+        if (port != null && !port.isEmpty()) {
+            try {
+                Integer intPort = Integer.parseInt(port);
+                return intPort;
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     private static List<RemoteRepository> createRemoteRepositories(boolean useEapRepository) {
+        // prepare proxy
+        String proxyHost = System.getProperty(PROXY_HOST);
+        Integer proxyPort = getProxyPort();
+        Proxy httpProxy = null;
+        Proxy httpsProxy = null;
+        if (proxyHost != null && proxyPort != null && !proxyHost.isEmpty()) {
+            httpProxy = new Proxy(Proxy.TYPE_HTTP, proxyHost, proxyPort);
+            httpsProxy = new Proxy(Proxy.TYPE_HTTPS, proxyHost, proxyPort);
+        }
+
         String remoteReposFromSysProp = System.getProperty(ChildFirstClassLoaderBuilder.MAVEN_REPOSITORY_URLS);
         List<RemoteRepository> remoteRepositories = new ArrayList<RemoteRepository>();
         if (remoteReposFromSysProp == null || remoteReposFromSysProp.trim().length() == 0 || remoteReposFromSysProp.startsWith("${")) {
             if (useEapRepository) {
-                remoteRepositories.add(new RemoteRepository.Builder("product-repository", "default", "https://maven.repository.redhat.com/nexus/content/groups/product-techpreview/").build());
+                RemoteRepository.Builder repository = new RemoteRepository.Builder("product-repository", "default", "https://maven.repository.redhat.com/nexus/content/groups/product-techpreview/");
+                if (httpsProxy != null) {
+                    repository.setProxy(httpsProxy);
+                }
+                remoteRepositories.add(repository.build());
             }
             //always add jboss developer repository
-            remoteRepositories.add(new RemoteRepository.Builder("jboss-developer", "default", "http://repository.jboss.org/nexus/content/groups/developer/").build());
+            RemoteRepository.Builder repository = new RemoteRepository.Builder("jboss-developer", "default", "http://repository.jboss.org/nexus/content/groups/developer/");
+            if (httpProxy != null) {
+                repository.setProxy(httpProxy);
+            }
+            remoteRepositories.add(repository.build());
         } else {
             int i = 0;
             for (String repoUrl : remoteReposFromSysProp.split(",")) {
                 //remoteRepositories.add(new RemoteRepository("repo" + i, "default", repoUrl.trim()));
-                remoteRepositories.add(new RemoteRepository.Builder("repo" + i, "default", repoUrl.trim()).build());
+                repoUrl = repoUrl.trim();
+                RemoteRepository.Builder repository = new RemoteRepository.Builder("repo" + i, "default", repoUrl);
+                if (repoUrl.startsWith("https:") && httpsProxy != null) {
+                    repository.setProxy(httpsProxy);
+                }
+                if (repoUrl.startsWith("http:") && httpProxy != null) {
+                    repository.setProxy(httpProxy);
+                }
+                remoteRepositories.add(repository.build());
                 i++;
             }
         }
