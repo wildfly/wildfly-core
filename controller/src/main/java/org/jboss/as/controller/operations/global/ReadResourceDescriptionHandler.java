@@ -401,7 +401,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
         // Format wildcard queries as list
         final ModelNode result = context.getResult().setEmptyList();
         context.addStep(new ModelNode(), GlobalOperationHandlers.AbstractMultiTargetHandler.FAKE_OPERATION.clone(),
-            new GlobalOperationHandlers.RegistrationAddressResolver(operation, result, true,
+            new GlobalOperationHandlers.RegistrationAddressResolver(operation, result,
                 new OperationStepHandler() {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
