@@ -99,6 +99,7 @@ import org.jboss.dmr.Property;
 public class ServerOperationResolver {
 
     public static final AttachmentKey<Set<ModelNode>> DONT_PROPAGATE_TO_SERVERS_ATTACHMENT = AttachmentKey.create(Set.class);
+    private static final AttachmentKey<ModelNode> DOMAIN_MODEL_ATTACHMENT = AttachmentKey.create(ModelNode.class);
 
     private enum DomainKey {
 
@@ -234,7 +235,7 @@ public class ServerOperationResolver {
             return Collections.emptyMap();
         }
 
-        final ModelNode domain = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
+        final ModelNode domain = getDomainModel(context);
         final ModelNode host = domain.get(HOST, localHostName);
         if (address.size() == 0) {
             return resolveDomainRootOperation(operation, domain, host);
@@ -285,6 +286,15 @@ public class ServerOperationResolver {
                     throw DomainControllerLogger.HOST_CONTROLLER_LOGGER.unexpectedInitialPathKey(address.getElement(0).getKey());
             }
         }
+    }
+
+    private static ModelNode getDomainModel(OperationContext context) {
+        ModelNode model = context.getAttachment(DOMAIN_MODEL_ATTACHMENT);
+        if (model == null) {
+            model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
+            context.attach(DOMAIN_MODEL_ATTACHMENT, model);
+        }
+        return model;
     }
 
 
