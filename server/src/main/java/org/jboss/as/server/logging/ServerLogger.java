@@ -916,9 +916,6 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 163, value = "Cannot merge resource root for a different file. This: %s mergee: %s")
     IllegalArgumentException cannotMergeResourceRoot(VirtualFile file, VirtualFile mergee);
 
-    @Message(id = 164, value = "Failed to create temp file provider")
-    RuntimeException failedToCreateTempFileProvider(@Cause IOException cause);
-
     @Message(id = 165, value = "Resource is too large to be a valid class file")
     IOException resourceTooLarge();
 

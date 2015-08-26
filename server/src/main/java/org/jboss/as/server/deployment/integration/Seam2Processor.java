@@ -40,7 +40,6 @@ import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -61,6 +60,7 @@ import org.jboss.vfs.VirtualFile;
 /**
  * Recognize Seam deployments and add org.jboss.seam.int module to it.
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class Seam2Processor implements DeploymentUnitProcessor {
 
@@ -101,7 +101,7 @@ public class Seam2Processor implements DeploymentUnitProcessor {
 
                 File file = new File(url.toURI());
                 VirtualFile vf = VFS.getChild(file.toURI());
-                final Closeable mountHandle = VFS.mountZip(file, vf, TempFileProviderService.provider());
+                final Closeable mountHandle = VFS.mountZip(file, vf);
                 Service<Closeable> mountHandleService = new Service<Closeable>() {
                     public void start(StartContext startContext) throws StartException {
                     }

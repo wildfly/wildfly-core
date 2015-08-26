@@ -41,9 +41,6 @@ import java.util.Set;
 
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
-import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -60,6 +57,7 @@ import org.jboss.vfs.VirtualFile;
  * these later processors
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitProcessor {
 
@@ -128,11 +126,11 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
                             }
                             Collections.reverse(createParents);
                             for (VirtualFile file : createParents) {
-                                Closeable closable = VFS.mountTemp(file, TempFileProviderService.provider());
+                                Closeable closable = VFS.mountTemp(file);
                                 deploymentUnit.addToAttachmentList(MOUNTED_FILES, closable);
                             }
                             Closeable handle = VFS.mountReal(content.getPhysicalFile(), mountPoint);
-                            MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content.getPhysicalFile(), mountPoint, TempFileProviderService.provider());
+                            MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content.getPhysicalFile(), mountPoint);
                             deploymentUnit.addToAttachmentList(MOUNTED_FILES, mounted);
                             mounts.put(path, mounted);
                         } else {

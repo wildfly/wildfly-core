@@ -48,7 +48,6 @@ import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -65,6 +64,7 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 /**
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseResult> {
 
@@ -755,9 +755,9 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                         MountedDeploymentOverlay overlay = overlays.get(path);
                         Closeable closable = null;
                         if(overlay != null) {
-                            overlay.remountAsZip(false);
+                            overlay.remountAsZip();
                         } else if(child.isFile()) {
-                            closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                            closable = VFS.mountZip(child, child);
                         }
                         final MountHandle mountHandle = new MountHandle(closable);
                         final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);

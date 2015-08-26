@@ -33,7 +33,6 @@ import org.jboss.as.cli.util.StrictSizeTable;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.MountHandle;
 
@@ -43,6 +42,7 @@ import org.jboss.vfs.MountHandle;
  * for these handlers.
  *
  * @author Alexey Loubyansky
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public abstract class DeploymentHandler extends BatchModeCommandHandler {
 
@@ -117,8 +117,8 @@ public abstract class DeploymentHandler extends BatchModeCommandHandler {
         return request;
     }
 
-    protected MountHandle extractArchive(File archive, TempFileProvider tempFileProvider) throws IOException {
-        return ((MountHandle)VFS.mountZipExpanded(archive, VFS.getChild("cli"), tempFileProvider));
+    protected MountHandle extractArchive(File archive) throws IOException {
+        return ((MountHandle)VFS.mountZipExpanded(archive, VFS.getChild("cli")));
     }
 
     protected String activateNewBatch(CommandContext ctx) {

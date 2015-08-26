@@ -67,6 +67,7 @@ import org.jboss.vfs.VirtualFile;
  *
  * @author Stuart Douglas
  * @author Ales Justin
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ManifestClassPathProcessor implements DeploymentUnitProcessor {
 
@@ -269,9 +270,9 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             MountedDeploymentOverlay overlay = overlays.get(relativeName);
             Closeable closable = null;
             if(overlay != null) {
-                overlay.remountAsZip(false);
+                overlay.remountAsZip();
             } else if(file.isFile()) {
-                closable = VFS.mountZip(file, file, TempFileProviderService.provider());
+                closable = VFS.mountZip(file, file);
             }
             final MountHandle mountHandle = new MountHandle(closable);
             final ResourceRoot resourceRoot = new ResourceRoot(file, mountHandle);

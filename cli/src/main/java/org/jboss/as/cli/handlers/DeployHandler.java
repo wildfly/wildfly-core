@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -55,12 +54,12 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
-import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.MountHandle;
 
 /**
  *
  * @author Alexey Loubyansky
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeployHandler extends DeploymentHandler {
 
@@ -548,11 +547,9 @@ public class DeployHandler extends DeploymentHandler {
                         " can't be used in combination with a CLI archive.");
             }
 
-            TempFileProvider tempFileProvider;
             MountHandle root;
             try {
-                tempFileProvider = TempFileProvider.create("cli", Executors.newSingleThreadScheduledExecutor(), true);
-                root = extractArchive(f, tempFileProvider);
+                root = extractArchive(f);
             } catch (IOException e) {
                 throw new OperationFormatException("Unable to extract archive '" + f.getAbsolutePath() + "' to temporary location");
             }
@@ -600,9 +597,7 @@ public class DeployHandler extends DeploymentHandler {
                 // reset current dir in context
                 ctx.setCurrentDir(currentDir);
                 discardBatch(ctx, holdbackBatch);
-
                 Utils.safeClose(root);
-                Utils.safeClose(tempFileProvider);
             }
         }
 
