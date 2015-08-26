@@ -3351,4 +3351,8 @@ public interface ControllerLogger extends BasicLogger {
             "Both the subsystem and the extension must be removed or migrated before the server will function.")
     @LogMessage(level = ERROR)
     void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
+    void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
 }

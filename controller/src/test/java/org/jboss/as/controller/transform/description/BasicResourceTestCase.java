@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.util.Collections;
+import java.util.NoSuchElementException;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
@@ -248,10 +249,10 @@ public class BasicResourceTestCase {
         node.get(ModelDescriptionConstants.OP).set("add");
         node.get(ModelDescriptionConstants.OP_ADDR).set(address);
 
-        final OperationTransformer.TransformedOperation op = transformOperation(node);
+        final OperationTransformer.TransformedOperation op = transformOperation(ModelVersion.create(1), node);
         Assert.assertNotNull(op);
 
-        final Resource resource = transformResource();
+        final Resource resource = transformResource(ModelVersion.create(1));
 
         Assert.assertNotNull(resource);
         final Resource toto = resource.getChild(PATH);
@@ -286,11 +287,23 @@ public class BasicResourceTestCase {
         node.get(ModelDescriptionConstants.OP_ADDR).set(address);
         node.get("test").set("${one:two}");
 
-        OperationTransformer.TransformedOperation op = transformOperation(node);
+        OperationTransformer.TransformedOperation op = transformOperation(ModelVersion.create(1), node);
         Assert.assertTrue(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 1), node);
+        Assert.assertTrue(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 5), node);
+        Assert.assertTrue(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
 
         node.get("test").set("concrete");
-        op = transformOperation(node);
+        op = transformOperation(ModelVersion.create(1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 5), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 1), node);
         Assert.assertFalse(op.rejectOperation(success()));
     }
 
@@ -306,11 +319,23 @@ public class BasicResourceTestCase {
         node.get("name").set("test");
         node.get("value").set("${one:two}");
 
-        OperationTransformer.TransformedOperation op = transformOperation(node);
+        OperationTransformer.TransformedOperation op = transformOperation(ModelVersion.create(1), node);
         Assert.assertTrue(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 1), node);
+        Assert.assertTrue(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 5), node);
+        Assert.assertTrue(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
 
         node.get("value").set("test");
-        op = transformOperation(node);
+        op = transformOperation(ModelVersion.create(1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 5), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 1), node);
         Assert.assertFalse(op.rejectOperation(success()));
     }
 
@@ -326,17 +351,30 @@ public class BasicResourceTestCase {
         node.get(ModelDescriptionConstants.OP_ADDR).set(address);
         node.get("test-config").set("${one:two}");
 
-        OperationTransformer.TransformedOperation op = transformOperation(node);
-        Assert.assertTrue(op.rejectOperation(success()));
+        validateAliasTransformation(node.clone(), ModelVersion.create(1));
+        validateAliasTransformation(node.clone(), ModelVersion.create(1, 0, 1));
+        validateAliasTransformation(node.clone(), ModelVersion.create(1, 0, 5));
 
-        final PathAddress transformed = PathAddress.pathAddress(op.getTransformedOperation().require(OP_ADDR));
-        Assert.assertEquals(transformed.getLastElement().getKey(), "test");
-        Assert.assertEquals(transformed.getLastElement().getValue(), "configuration");
-
-        node.get("test-config").set("concrete");
-        op = transformOperation(node);
+        OperationTransformer.TransformedOperation op = transformOperation(ModelVersion.create(1, 1),  node.clone());
         Assert.assertFalse(op.rejectOperation(success()));
 
+        node.get("test-config").set("concrete");
+        op = transformOperation(ModelVersion.create(1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 0, 5), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+        op = transformOperation(ModelVersion.create(1, 1), node);
+        Assert.assertFalse(op.rejectOperation(success()));
+    }
+
+    private void validateAliasTransformation(final ModelNode node, final ModelVersion version) throws OperationFailedException, NoSuchElementException {
+        OperationTransformer.TransformedOperation op = transformOperation(version,  node);
+        Assert.assertTrue(op.rejectOperation(success()));
+        PathAddress transformed = PathAddress.pathAddress(op.getTransformedOperation().require(OP_ADDR));
+        Assert.assertEquals(transformed.getLastElement().getKey(), "test");
+        Assert.assertEquals(transformed.getLastElement().getValue(), "configuration");
     }
 
     @Test
@@ -350,12 +388,20 @@ public class BasicResourceTestCase {
         operation.get(ModelDescriptionConstants.OP_ADDR).set(address);
         operation.get("test").set("${one:two}");
 
-        OperationTransformer.TransformedOperation op = transformOperation(operation);
-        final ModelNode transformed = op.getTransformedOperation();
+        validateOperationOverride(operation, ModelVersion.create(1));
+        validateOperationOverride(operation, ModelVersion.create(1, 0, 1));
+        validateOperationOverride(operation, ModelVersion.create(1, 0, 5));
+
+        OperationTransformer.TransformedOperation op = transformOperation(ModelVersion.create(1, 1), operation);
+        Assert.assertFalse(op.rejectOperation(success())); // inherited
+    }
+
+    private void validateOperationOverride(final ModelNode operation, final ModelVersion version) throws IllegalArgumentException, OperationFailedException {
+        OperationTransformer.TransformedOperation op = transformOperation(version, operation);
+        ModelNode transformed = op.getTransformedOperation();
         Assert.assertTrue(transformed.get("operation-test").asBoolean()); // explicit
         Assert.assertTrue(transformed.get("othertest").asBoolean()); // inherited
         Assert.assertTrue(op.rejectOperation(success())); // inherited
-
     }
 
     @Test
@@ -369,7 +415,13 @@ public class BasicResourceTestCase {
         operation.get(ModelDescriptionConstants.OP_ADDR).set(address);
         operation.get("test").set("a");
 
-        OperationTransformer.TransformedOperation op = transformOperation(operation);
+        validateCompositeOperationTransformation(operation, ModelVersion.create(1));
+        validateCompositeOperationTransformation(operation, ModelVersion.create(1, 0 , 1));
+        validateCompositeOperationTransformation(operation, ModelVersion.create(1, 0 , 5));
+    }
+
+    private void validateCompositeOperationTransformation(final ModelNode operation, final ModelVersion version) throws OperationFailedException {
+        OperationTransformer.TransformedOperation op = transformOperation(version, operation);
         final ModelNode transformed = op.getTransformedOperation();
         System.out.println(transformed);
         Assert.assertEquals(COMPOSITE, transformed.get(OP).asString());
@@ -402,7 +454,17 @@ public class BasicResourceTestCase {
         operation.get(ModelDescriptionConstants.OP_ADDR).set(address);
         operation.get("param").set("test");
 
-        OperationTransformer.TransformedOperation op = transformOperation(operation);
+        validateRenamedOperation(operation, ModelVersion.create(1));
+        validateRenamedOperation(operation, ModelVersion.create(1, 0, 1));
+        validateRenamedOperation(operation, ModelVersion.create(1, 0, 5));
+
+        OperationTransformer.TransformedOperation op = transformOperation(ModelVersion.create(1, 1), operation);
+        final ModelNode notTransformed = op.getTransformedOperation();
+        Assert.assertEquals("rename-operation", notTransformed.get(OP).asString());
+    }
+
+    private void validateRenamedOperation(final ModelNode operation, final ModelVersion version) throws IllegalArgumentException, OperationFailedException {
+        OperationTransformer.TransformedOperation op = transformOperation(version, operation);
         final ModelNode transformed = op.getTransformedOperation();
         Assert.assertEquals("new-name-op", transformed.get(OP).asString());
         Assert.assertEquals("test", transformed.get("param").asString());
@@ -417,31 +479,61 @@ public class BasicResourceTestCase {
 
         final ModelNode opKeep = Util.createAddOperation(subsystem.append("dynamic", "keep"));
         opKeep.get("attribute").set("keep");
-        OperationTransformer.TransformedOperation txKeep = transformOperation(opKeep);
+        OperationTransformer.TransformedOperation txKeep = transformOperation(ModelVersion.create(1), opKeep.clone());
         Assert.assertFalse(txKeep.rejectOperation(success()));
         Assert.assertNotNull(txKeep.getTransformedOperation());
         Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        txKeep = transformOperation(ModelVersion.create(1, 0, 1), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        txKeep = transformOperation(ModelVersion.create(1, 0, 5), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        txKeep = transformOperation(ModelVersion.create(1, 1), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("keep", txKeep.getTransformedOperation().get("attribute").asString());
 
         final ModelNode opDiscard = Util.createAddOperation(subsystem.append("dynamic", "discard"));
-        OperationTransformer.TransformedOperation txDiscard = transformOperation(opDiscard);
+        OperationTransformer.TransformedOperation txDiscard = transformOperation(ModelVersion.create(1), opDiscard.clone());
         Assert.assertFalse(txDiscard.rejectOperation(success()));
         Assert.assertNull(txDiscard.getTransformedOperation());
+        txDiscard = transformOperation(ModelVersion.create(1, 0, 1), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNull(txDiscard.getTransformedOperation());
+        txDiscard = transformOperation(ModelVersion.create(1, 0, 5), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNull(txDiscard.getTransformedOperation());
+        txDiscard = transformOperation(ModelVersion.create(1, 1), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNotNull(txDiscard.getTransformedOperation());
 
         final ModelNode opReject = Util.createAddOperation(subsystem.append("dynamic", "reject"));
-        OperationTransformer.TransformedOperation txReject = transformOperation(opReject);
+        OperationTransformer.TransformedOperation txReject = transformOperation(ModelVersion.create(1), opReject.clone());
         Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+        txReject = transformOperation(ModelVersion.create(1, 0, 1), opReject.clone());
+        Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+        txReject = transformOperation(ModelVersion.create(1, 0, 5), opReject.clone());
+        Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+        txReject = transformOperation(ModelVersion.create(1, 1), opReject.clone());
+        Assert.assertFalse(txReject.rejectOperation(success()));
         Assert.assertNotNull(txReject.getTransformedOperation());
     }
 
 
-    private Resource transformResource() throws OperationFailedException {
-        final TransformationTarget target = create(registry, ModelVersion.create(1));
+    private Resource transformResource(final ModelVersion version) throws OperationFailedException {
+        final TransformationTarget target = create(registry, version);
         final ResourceTransformationContext context = createContext(target);
         return getTransfomers(target).transformResource(context, resourceRoot);
     }
 
-    private OperationTransformer.TransformedOperation transformOperation(final ModelNode operation) throws OperationFailedException {
-        final TransformationTarget target = create(registry, ModelVersion.create(1));
+    private OperationTransformer.TransformedOperation transformOperation(final ModelVersion version, final ModelNode operation) throws OperationFailedException {
+        final TransformationTarget target = create(registry, version);
         final TransformationContext context = createContext(target);
         return getTransfomers(target).transformOperation(context, operation);
     }

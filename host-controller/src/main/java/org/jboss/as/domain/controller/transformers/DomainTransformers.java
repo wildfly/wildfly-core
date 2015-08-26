@@ -25,14 +25,6 @@ package org.jboss.as.domain.controller.transformers;
 import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.transform.ResourceTransformationContext;
-import org.jboss.as.controller.transform.ResourceTransformer;
-import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
@@ -55,8 +47,6 @@ public class DomainTransformers {
     /** Dummy version for ignored subsystems. */
     static final ModelVersion IGNORED_SUBSYSTEMS = ModelVersion.create(-1);
 
-    private static final PathElement JSF_EXTENSION = PathElement.pathElement(ModelDescriptionConstants.EXTENSION, "org.jboss.as.jsf");
-
     // EAP 6.2.0
     static final ModelVersion VERSION_1_5 = ModelVersion.create(1, 5, 0);
     // EAP 6.3.0
@@ -67,6 +57,8 @@ public class DomainTransformers {
     static final ModelVersion VERSION_2_0 = ModelVersion.create(2, 0, 0);
     //WF 8.1.0.Final
     static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1, 0);
+    //Current
+    static final ModelVersion CURRENT = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
     /**
      * Initialize the domain registry.
@@ -79,16 +71,14 @@ public class DomainTransformers {
 
 
     private static void initializeChainedDomainRegistry(TransformerRegistry registry) {
-        ModelVersion currentVersion = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
-
         //The chains for transforming will be as follows
-        //For JBoss EAP: 3.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
+        //For JBoss EAP: 4.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerRootTransformers(registry);
-        registerChainedManagementTransformers(registry, currentVersion);
-        registerChainedServerGroupTransformers(registry, currentVersion);
-        registerProfileTransformers(registry, currentVersion);
-        registerSocketBindingGroupTransformers(registry, currentVersion);
+        registerChainedManagementTransformers(registry, CURRENT);
+        registerChainedServerGroupTransformers(registry, CURRENT);
+        registerProfileTransformers(registry, CURRENT);
+        registerSocketBindingGroupTransformers(registry, CURRENT);
     }
 
     private static void registerRootTransformers(TransformerRegistry registry) {
@@ -137,31 +127,6 @@ public class DomainTransformers {
         for (Map.Entry<ModelVersion, TransformationDescription> entry : builder.build(versions).entrySet()) {
             TransformersSubRegistration domain = registry.getDomainRegistration(entry.getKey());
             TransformationDescription.Tools.register(entry.getValue(), domain);
-        }
-    }
-
-    /**
-     * Special resource transformer automatically ignoring all subsystems registered by an extension.
-     */
-    private static class IgnoreExtensionResourceTransformer implements ResourceTransformer {
-
-        private final String[] subsystems;
-
-        private IgnoreExtensionResourceTransformer(String... subsystems) {
-            this.subsystems = subsystems;
-        }
-
-        @Override
-        public void transformResource(final ResourceTransformationContext context, final PathAddress address, final Resource resource) throws OperationFailedException {
-            // we just ignore this resource  - so don't add it: context.addTransformedResource(...)
-
-            final TransformationTarget target = context.getTarget();
-
-            if(subsystems != null) {
-                for(final String name : subsystems) {
-                    target.addSubsystemVersion(name, IGNORED_SUBSYSTEMS);
-                }
-            }
         }
     }
 }
