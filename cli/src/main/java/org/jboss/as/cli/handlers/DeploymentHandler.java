@@ -21,9 +21,16 @@
  */
 package org.jboss.as.cli.handlers;
 
+import java.io.Closeable;
+import java.io.InputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -33,9 +40,6 @@ import org.jboss.as.cli.util.StrictSizeTable;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.MountHandle;
-
 
 /**
  * Base class for deploy and undeploy handlers containing common code
@@ -46,7 +50,17 @@ import org.jboss.vfs.MountHandle;
  */
 public abstract class DeploymentHandler extends BatchModeCommandHandler {
 
+    private static final String JBOSS_TMP_DIR_PROPERTY = "jboss.server.temp.dir";
+    private static final String JVM_TMP_DIR_PROPERTY = "java.io.tmpdir";
+    private static final File CLI_TMP_DIR;
     static final String CLI_ARCHIVE_SUFFIX = ".cli";
+
+    static {
+        String configTmpDir = System.getProperty(JBOSS_TMP_DIR_PROPERTY);
+        if (configTmpDir == null) { configTmpDir = System.getProperty(JVM_TMP_DIR_PROPERTY); }
+        CLI_TMP_DIR = new File(configTmpDir);
+        CLI_TMP_DIR.mkdirs();
+    }
 
     public DeploymentHandler(CommandContext ctx, String command, boolean connectionRequired) {
         super(ctx, command, connectionRequired);
@@ -117,8 +131,60 @@ public abstract class DeploymentHandler extends BatchModeCommandHandler {
         return request;
     }
 
-    protected MountHandle extractArchive(File archive) throws IOException {
-        return ((MountHandle)VFS.mountZipExpanded(archive, VFS.getChild("cli")));
+    static File extractArchive(final File cliArchive) throws IOException {
+        final ZipInputStream zis = new ZipInputStream(new FileInputStream(cliArchive));
+        ZipEntry entry;
+        File newFile;
+        final File targetDir = new File(CLI_TMP_DIR, cliArchive.getName() + System.currentTimeMillis());
+        try {
+            while ((entry = zis.getNextEntry()) != null) {
+                String fileName = entry.getName();
+                // create directory structure
+                newFile = new File(targetDir + File.separator + fileName);
+                new File(newFile.getParent()).mkdirs();
+                // extract zip
+                if (!entry.isDirectory()) {
+                    // extract zip entry to the disk
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(newFile);
+                        copy(zis, fos);
+                    } finally {
+                        safeClose(fos);
+                    }
+                }
+            }
+        } finally {
+            safeClose(zis);
+        }
+        return targetDir;
+    }
+
+    private static void copy(final InputStream is, final OutputStream os) throws IOException {
+        final byte[] buffer = new byte[1024];
+        int len;
+        while ((len = is.read(buffer)) > 0) {
+            os.write(buffer, 0, len);
+        }
+    }
+
+    private static void safeClose(final Closeable closeable) {
+        if (closeable != null) try { closeable.close(); } catch (final Throwable ignored) {}
+    }
+
+    static boolean delete(final File file) {
+        if (file == null) return true;
+        if (!file.exists()) return true;
+        if (file.isDirectory()) {
+            for (final File child : file.listFiles()) {
+                if (child.isDirectory()) {
+                    delete(child);
+                } else {
+                    child.delete();
+                }
+            }
+        }
+        return file.delete();
     }
 
     protected String activateNewBatch(CommandContext ctx) {

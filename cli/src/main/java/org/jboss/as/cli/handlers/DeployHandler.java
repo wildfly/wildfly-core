@@ -54,7 +54,6 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
-import org.jboss.vfs.MountHandle;
 
 /**
  *
@@ -547,15 +546,15 @@ public class DeployHandler extends DeploymentHandler {
                         " can't be used in combination with a CLI archive.");
             }
 
-            MountHandle root;
+            File extractedArchiveDir;
             try {
-                root = extractArchive(f);
+                extractedArchiveDir = extractArchive(f);
             } catch (IOException e) {
                 throw new OperationFormatException("Unable to extract archive '" + f.getAbsolutePath() + "' to temporary location");
             }
 
             final File currentDir = ctx.getCurrentDir();
-            ctx.setCurrentDir(root.getMountSource());
+            ctx.setCurrentDir(extractedArchiveDir);
             String holdbackBatch = activateNewBatch(ctx);
 
             try {
@@ -597,7 +596,7 @@ public class DeployHandler extends DeploymentHandler {
                 // reset current dir in context
                 ctx.setCurrentDir(currentDir);
                 discardBatch(ctx, holdbackBatch);
-                Utils.safeClose(root);
+                delete(extractedArchiveDir);
             }
         }
 
