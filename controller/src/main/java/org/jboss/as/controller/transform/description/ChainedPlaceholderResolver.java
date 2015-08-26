@@ -94,9 +94,8 @@ class ChainedPlaceholderResolver implements PlaceholderResolver {
             final PathElement element = iterator.next();
             final String key = element.getKey();
             SubRegistry registry = subRegistries.get(key);
-            OperationTransformerEntry entry = null;
             if (registry != null) {
-                entry = registry.resolveTransformer(iterator, element.getValue(), operationName);
+                OperationTransformerEntry entry = registry.resolveTransformer(iterator, element.getValue(), operationName);
                 if (entry != null) {
                     return entry;
                 }
@@ -146,7 +145,6 @@ class ChainedPlaceholderResolver implements PlaceholderResolver {
                 }
             }
             list.add(PathAddressTransformer.DEFAULT);
-            return;
         } else {
             list.add(description.getPathAddressTransformer());
         }

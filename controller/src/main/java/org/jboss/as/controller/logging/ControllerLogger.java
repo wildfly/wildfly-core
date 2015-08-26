@@ -3358,4 +3358,8 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 404, value = "Unexpected exception during execution: %s")
     String unexpectedOperationExecutionFailureDescription(RuntimeException e);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
+    void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
 }
