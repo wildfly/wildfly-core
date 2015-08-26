@@ -1403,7 +1403,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         console.setPrompt(getPrompt());
 
-        while(!isTerminated()){
+        while(!isTerminated() && console.running()){
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
