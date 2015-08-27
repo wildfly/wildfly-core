@@ -140,20 +140,6 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, OperationEntry.EntryType entryType) {
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType, flags, null)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
-    }
-
-    @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
         if (operationsUpdater.putIfAbsent(this, definition.getName(), new OperationEntry(handler, definition.getDescriptionProvider(),
                 inherited, definition.getEntryType(), definition.getFlags(), definition.getAccessConstraints())) != null) {

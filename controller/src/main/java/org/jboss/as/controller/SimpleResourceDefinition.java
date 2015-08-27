@@ -361,11 +361,26 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     @SuppressWarnings("deprecation")
     protected void registerAddOperation(final ManagementResourceRegistration registration, final OperationStepHandler handler, OperationEntry.Flag... flags) {
         if (handler instanceof DescriptionProvider) {
-            registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, (DescriptionProvider) handler, getFlagsSet(flags));
+            registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.ADD,
+                                (DescriptionProvider) handler, OperationEntry.EntryType.PUBLIC,flags)
+                               , handler);
+
         } else {
-            registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler,
-                    new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild), getFlagsSet(flags));
+            registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.ADD,
+                    new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild),
+                    OperationEntry.EntryType.PUBLIC,
+                    flags)
+                    , handler);
         }
+    }
+
+    private OperationDefinition getOperationDefinition(String operationName, DescriptionProvider descriptionProvider, OperationEntry.EntryType entryType, OperationEntry.Flag... flags){
+        return new SimpleOperationDefinitionBuilder(operationName, descriptionResolver)
+                .withFlags(flags)
+                .setEntryType(entryType)
+                .setDescriptionProvider(descriptionProvider)
+                .build();
+
     }
 
     /**
@@ -379,16 +394,19 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      */
     protected void registerAddOperation(final ManagementResourceRegistration registration, final AbstractAddStepHandler handler,
                                         OperationEntry.Flag... flags) {
-        registration.registerOperationHandler(ModelDescriptionConstants.ADD, handler, new DefaultResourceAddDescriptionProvider(registration, descriptionResolver), getFlagsSet(flags));
+        registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.ADD,
+                new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild), OperationEntry.EntryType.PUBLIC, flags)
+                , handler);
     }
 
     @Deprecated
     @SuppressWarnings("deprecation")
     protected void registerRemoveOperation(final ManagementResourceRegistration registration, final OperationStepHandler handler,
                                            OperationEntry.Flag... flags) {
-
         if (handler instanceof DescriptionProvider) {
-            registration.registerOperationHandler(ModelDescriptionConstants.REMOVE, handler, (DescriptionProvider) handler, getFlagsSet(flags));
+            registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.REMOVE,
+                                            (DescriptionProvider) handler, OperationEntry.EntryType.PUBLIC,flags)
+                                           , handler);
         } else {
             OperationDefinition opDef = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, descriptionResolver)
                     .withFlags(flags)

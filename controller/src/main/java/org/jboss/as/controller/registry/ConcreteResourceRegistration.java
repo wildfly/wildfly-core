@@ -51,7 +51,6 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 
 @SuppressWarnings("deprecation")
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
@@ -275,22 +274,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             if (entry.getValue().isInherited() && !providers.containsKey(entry.getKey())) {
                 providers.put(entry.getKey(), entry.getValue());
             }
-        }
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, EntryType entryType) {
-        checkPermission();
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        checkPermission();
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType, flags, null)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
         }
     }
 

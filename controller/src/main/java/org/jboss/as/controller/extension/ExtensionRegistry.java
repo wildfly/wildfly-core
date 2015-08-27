@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -904,41 +903,6 @@ public class ExtensionRegistry {
         public void unregisterOverrideModel(String name) {
             deployments.unregisterOverrideModel(name);
             subdeployments.unregisterOverrideModel(name);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags) {
-            deployments.registerOperationHandler(operationName, handler, descriptionProvider, flags);
-            subdeployments.registerOperationHandler(operationName, handler, descriptionProvider, flags);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited) {
-            deployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited);
-            subdeployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType) {
-            deployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType);
-            subdeployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-            deployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType, flags);
-            subdeployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType, flags);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags) {
-            deployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited, flags);
-            subdeployments.registerOperationHandler(operationName, handler, descriptionProvider, inherited, flags);
         }
 
         @Override
