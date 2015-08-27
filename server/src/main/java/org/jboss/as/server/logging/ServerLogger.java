@@ -1160,4 +1160,8 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 232, value = "Could not get module info for module name: %s")
     OperationFailedException couldNotGetModuleInfo(String moduleName, @Cause Throwable cause);
+
+    @Message(id = 233, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

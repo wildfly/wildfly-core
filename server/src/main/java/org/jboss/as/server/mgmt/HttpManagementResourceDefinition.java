@@ -31,7 +31,10 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -48,6 +51,7 @@ import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
 import org.jboss.as.server.operations.HttpManagementRemoveHandler;
@@ -94,6 +98,11 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .setDefaultValue(new ModelNode(true))
             .build();
 
+    public static final SimpleAttributeDefinition HTTP_UPGRADE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelType.BOOLEAN, true)
+            .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
+            .setDeprecated(ModelVersion.create(5), true)
+            .build();
+
     public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
@@ -124,7 +133,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {
-            SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
+            SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
     };
 
     public static final HttpManagementResourceDefinition INSTANCE = new HttpManagementResourceDefinition();
@@ -144,7 +153,12 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         OperationStepHandler writeAttributeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTE_DEFINITIONS);
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, writeAttributeHandler);
+            if (attr.equals(HTTP_UPGRADE_ENABLED)) {
+                HttpUpgradeAttributeHandler handler = new HttpUpgradeAttributeHandler();
+                resourceRegistration.registerReadWriteAttribute(attr, handler, handler);
+            } else {
+                resourceRegistration.registerReadWriteAttribute(attr, null, writeAttributeHandler);
+            }
         }
     }
 
@@ -152,4 +166,29 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
     }
+
+    private class HttpUpgradeAttributeHandler implements OperationStepHandler {
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ModelNode submodel = resource.getModel();
+            final ModelNode httpUpgrade = submodel.get(ModelDescriptionConstants.HTTP_UPGRADE);
+
+            String operationName = operation.require(ModelDescriptionConstants.OP).asString();
+            assert ModelDescriptionConstants.HTTP_UPGRADE_ENABLED.equals(operation.require(ModelDescriptionConstants.NAME).asString());
+            switch (operationName) {
+                case ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION:
+                    context.getResult().set(ENABLED.resolveModelAttribute(context, httpUpgrade));
+                    break;
+                case ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION:
+                    httpUpgrade.get(ModelDescriptionConstants.ENABLED).set(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
+                    context.reloadRequired();
+                    break;
+            }
+
+        }
+
+    }
+
 }

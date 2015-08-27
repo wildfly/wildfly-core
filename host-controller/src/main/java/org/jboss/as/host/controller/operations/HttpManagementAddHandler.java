@@ -86,13 +86,30 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+        if (operation.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED)) {
+            boolean httpUpgradeEnabled = operation.remove(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED).asBoolean();
+            ModelNode httpUpgrade = operation.get(ModelDescriptionConstants.HTTP_UPGRADE);
+            if (httpUpgrade.hasDefined(ModelDescriptionConstants.ENABLED)) {
+                boolean httpUpgradeDotEnabled = httpUpgrade.require(ModelDescriptionConstants.ENABLED).asBoolean();
+                if (httpUpgradeEnabled != httpUpgradeDotEnabled) {
+                    throw ROOT_LOGGER.deprecatedAndCurrentParameterMismatch(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelDescriptionConstants.ENABLED);
+                }
+            } else {
+                httpUpgrade.set(ModelDescriptionConstants.ENABLED, httpUpgradeEnabled);
+            }
+        }
+
+        super.populateModel(operation, model);
+    }
+
+    @Override
     protected boolean requiresRuntime(OperationContext context) {
         return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-
         populateHostControllerInfo(hostControllerInfo, context, model);
         // DomainModelControllerService requires this service
         installHttpManagementServices(environment, hostControllerInfo, context, model);
@@ -126,7 +143,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         boolean onDemand = context.isBooting();
         OptionMap options = createConnectorOptions(context, model);
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
-        RunningMode runningMode = context.getRunningMode();
         ServiceTarget serviceTarget = context.getServiceTarget();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
         int port = hostControllerInfo.getHttpManagementPort();
