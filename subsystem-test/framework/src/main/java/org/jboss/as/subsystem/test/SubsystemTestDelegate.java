@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -86,7 +85,6 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
@@ -1071,32 +1069,6 @@ final class SubsystemTestDelegate {
 
         @Override
         public void unregisterOverrideModel(String name) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, EnumSet<Flag> flags) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EnumSet<Flag> flags) {
-        }
-
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType, EnumSet<Flag> flags) {
         }
 
         @Override

@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelType;
@@ -51,6 +52,7 @@ public class SimpleOperationDefinitionBuilder {
     protected DeprecationData deprecationData = null;
     protected AttributeDefinition[] replyParameters = new AttributeDefinition[0];
     protected AccessConstraintDefinition[] accessConstraints;
+    private DescriptionProvider descriptionProvider;
 
     public SimpleOperationDefinitionBuilder(String name, ResourceDescriptionResolver resolver) {
         this.name = name;
@@ -66,7 +68,7 @@ public class SimpleOperationDefinitionBuilder {
     }
 
     protected SimpleOperationDefinition internalBuild(ResourceDescriptionResolver resolver, ResourceDescriptionResolver attributeResolver) {
-        return new SimpleOperationDefinition(name, resolver, attributeResolver, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
+        return new SimpleOperationDefinition(name, resolver, attributeResolver, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints, descriptionProvider);
     }
 
     protected static EnumSet<OperationEntry.Flag> getFlagsSet(OperationEntry.Flag... vararg) {
@@ -189,6 +191,11 @@ public class SimpleOperationDefinitionBuilder {
             accessConstraints = Arrays.copyOf(accessConstraints, accessConstraints.length + 1);
             accessConstraints[accessConstraints.length - 1] = accessConstraint;
         }
+        return this;
+    }
+
+    SimpleOperationDefinitionBuilder setDescriptionProvider(DescriptionProvider provider){
+        this.descriptionProvider = provider;
         return this;
     }
 }

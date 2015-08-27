@@ -79,12 +79,12 @@ public class SimpleOperationDefinition extends OperationDefinition {
                                      final DeprecationData deprecationData,
                                      final AttributeDefinition[] replyParameters,
                                      final AttributeDefinition... parameters) {
-        super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters);
+        super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, null);
         this.resolver = resolver;
         this.attributeResolver = attributeResolver;
     }
 
-    protected SimpleOperationDefinition(final String name,
+    SimpleOperationDefinition(final String name,
             final ResourceDescriptionResolver resolver,
             final ResourceDescriptionResolver attributeResolver,
             final OperationEntry.EntryType entryType,
@@ -95,8 +95,9 @@ public class SimpleOperationDefinition extends OperationDefinition {
             final DeprecationData deprecationData,
             final AttributeDefinition[] replyParameters,
             final AttributeDefinition[] parameters,
-            final AccessConstraintDefinition[] accessConstraints) {
-        super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
+            final AccessConstraintDefinition[] accessConstraints,
+            final DescriptionProvider descriptionProvider) {
+        super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, descriptionProvider, accessConstraints);
         this.resolver = resolver;
         this.attributeResolver = attributeResolver;
     }
@@ -106,6 +107,9 @@ public class SimpleOperationDefinition extends OperationDefinition {
     public DescriptionProvider getDescriptionProvider() {
         if (entryType == EntryType.PRIVATE) {
             return PRIVATE_PROVIDER;
+        }
+        if (descriptionProvider !=null){
+            return descriptionProvider;
         }
         return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
     }

@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller.registry;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -214,31 +213,6 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     @Override
     public void unregisterOverrideModel(String name) {
         getDelegate().unregisterOverrideModel(name);
-    }
-
-    @Override
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags) {
-        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, flags);
-    }
-
-    @Override
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited) {
-        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited);
-    }
-
-    @Override
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType) {
-        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType);
-    }
-
-    @Override
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags) {
-        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited, flags);
-    }
-
-    @Override
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        getDelegate().registerOperationHandler(operationName, handler, descriptionProvider, inherited, entryType, flags);
     }
 
     @Override

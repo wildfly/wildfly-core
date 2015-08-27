@@ -23,7 +23,6 @@
 package org.jboss.as.controller.registry;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -44,8 +43,6 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
-import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -136,26 +133,6 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         parent.getParent().unregisterSubModel(pe);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    @SuppressWarnings("deprecation")
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags) {
-        registerOperationHandler(operationName, handler, descriptionProvider, false, EntryType.PUBLIC, flags);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    @SuppressWarnings("deprecation")
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited) {
-        registerOperationHandler(operationName, handler, descriptionProvider, inherited, EntryType.PUBLIC);
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<Flag> flags) {
-        registerOperationHandler(operationName, handler, descriptionProvider, inherited, EntryType.PUBLIC, flags);
-    }
-
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler){
         registerOperationHandler(definition, handler, false);
@@ -163,16 +140,6 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     @Override
     public abstract void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler,boolean inherited);
-
-    /** {@inheritDoc} */
-    @Override
-    @SuppressWarnings("deprecation")
-    public abstract void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType);
-
-    /** {@inheritDoc} */
-    @Override
-    @SuppressWarnings("deprecation")
-    public abstract void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType, EnumSet<OperationEntry.Flag> flags);
 
     /** {@inheritDoc} */
     @Override
