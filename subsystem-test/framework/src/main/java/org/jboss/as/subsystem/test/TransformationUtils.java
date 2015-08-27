@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.transform;
+package org.jboss.as.subsystem.test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,6 +134,10 @@ class TransformationUtils {
             throw ControllerLogger.ROOT_LOGGER.modelFieldsNotKnown(allFields, startAddress.append(fullPath));
         }
         return res;
+    }
+
+    public static Resource modelToResource(final ImmutableManagementResourceRegistration reg, final ModelNode model, boolean includeUndefined) {
+        return TransformationUtils.modelToResource(PathAddress.EMPTY_ADDRESS, reg, model, includeUndefined);
     }
 
 }
