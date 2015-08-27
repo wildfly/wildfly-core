@@ -665,9 +665,9 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             throws XMLStreamException {
 
         boolean deploymentWritten = false;
-        for (Property property : modelNode.asPropertyList()) {
+        for (String deploymentName : modelNode.keys()) {
 
-            final ModelNode deployment = property.getValue();
+            final ModelNode deployment = modelNode.get(deploymentName);
             if (!deployment.isDefined()) {
                 continue;
             }
@@ -678,7 +678,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             }
 
             writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-            WriteUtils.writeAttribute(writer, Attribute.NAME, property.getName());
+            WriteUtils.writeAttribute(writer, Attribute.NAME, deploymentName);
             DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
             DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
             final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
