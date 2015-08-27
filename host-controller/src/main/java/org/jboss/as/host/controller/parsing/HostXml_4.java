@@ -240,8 +240,9 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
         if (modelNode.hasDefined(JVM)) {
             writer.writeStartElement(Element.JVMS.getLocalName());
-            for (final Property jvm : modelNode.get(JVM).asPropertyList()) {
-                JvmXml.writeJVMElement(writer, jvm.getName(), jvm.getValue());
+            ModelNode jvms = modelNode.get(JVM);
+            for (final String jvm : jvms.keys()) {
+                JvmXml.writeJVMElement(writer, jvm, jvms.get(jvm));
             }
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);
@@ -1368,9 +1369,9 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void writeIgnoredResources(XMLExtendedStreamWriter writer, ModelNode ignoredTypes) throws XMLStreamException {
-        for (Property property : ignoredTypes.asPropertyList()) {
+        for (String ignoredName : ignoredTypes.keys()) {
 
-            ModelNode ignored = property.getValue();
+            ModelNode ignored = ignoredTypes.get(ignoredName);
 
             ModelNode names = ignored.hasDefined(NAMES) ? ignored.get(NAMES) : null;
             boolean hasNames = names != null && names.asInt() > 0;
@@ -1380,7 +1381,7 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
                 writer.writeEmptyElement(Element.IGNORED_RESOURCE.getLocalName());
             }
 
-            writer.writeAttribute(Attribute.TYPE.getLocalName(), property.getName());
+            writer.writeAttribute(Attribute.TYPE.getLocalName(), ignoredName);
             IgnoredDomainTypeResourceDefinition.WILDCARD.marshallAsAttribute(ignored, writer);
 
             if (hasNames) {
@@ -1431,22 +1432,22 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void writeDiscoveryOptionProperties(XMLExtendedStreamWriter writer, ModelNode discoveryOptionProperties) throws XMLStreamException {
-        for (Property property : discoveryOptionProperties.asPropertyList()) {
+        for (String property : discoveryOptionProperties.keys()) {
             writer.writeStartElement(Element.PROPERTY.getLocalName());
-            WriteUtils.writeAttribute(writer, Attribute.NAME, property.getName());
-            WriteUtils.writeAttribute(writer, Attribute.VALUE, property.getValue().asString());
+            WriteUtils.writeAttribute(writer, Attribute.NAME, property);
+            WriteUtils.writeAttribute(writer, Attribute.VALUE, discoveryOptionProperties.get(property).asString());
             writer.writeEndElement();
         }
     }
 
     private void writeServers(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
 
-        for (Property prop : modelNode.asPropertyList()) {
-            final ModelNode server = prop.getValue();
+        for (String serverName : modelNode.keys()) {
+            final ModelNode server = modelNode.get(serverName);
 
             writer.writeStartElement(Element.SERVER.getLocalName());
 
-            WriteUtils.writeAttribute(writer, Attribute.NAME, prop.getName());
+            WriteUtils.writeAttribute(writer, Attribute.NAME, serverName);
             ServerConfigResourceDefinition.GROUP.marshallAsAttribute(server, writer);
             ServerConfigResourceDefinition.AUTO_START.marshallAsAttribute(server, writer);
             ServerConfigResourceDefinition.UPDATE_AUTO_START_WITH_SERVER_STATUS.marshallAsAttribute(server, writer);
