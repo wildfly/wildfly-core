@@ -72,6 +72,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected String attributeGroup;
     protected CapabilityReferenceRecorder referenceRecorder;
     protected Map<String, ModelNode> arbitraryDescriptors = null;
+    private ModelNode undefinedMetricValue;
 
     /**
      * Creates a builder for an attribute with the give name and type. Equivalent to
@@ -686,6 +687,19 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return (BUILDER)this;
     }
 
+    /**
+     * Sets a {@link AttributeDefinition#getUndefinedMetricValue()  default value} to use for the
+     * metric if no runtime value is available (e.g. we are a server running in admin-only mode).
+     *
+     * @param undefinedMetricValue the default value, or {@code null} if no default should be used
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setUndefinedMetricValue(ModelNode undefinedMetricValue) {
+        this.undefinedMetricValue = (undefinedMetricValue == null || !undefinedMetricValue.isDefined()) ? null : undefinedMetricValue;
+        return (BUILDER) this;
+    }
+
+
     public String getName() {
         return name;
     }
@@ -766,6 +780,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return nullSignificant;
     }
 
+    public ModelNode getUndefinedMetricValue() {
+        return undefinedMetricValue;
+    }
+
     /**
      * @deprecated Use {@link #getNullSignificant()}.
      */
@@ -812,4 +830,5 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         System.arraycopy(toCopy, 0, result, 0, toCopy.length);
         return result;
     }
+
 }

@@ -29,6 +29,7 @@ import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -61,10 +62,11 @@ public abstract class ThreadPoolMetricsHandler extends AbstractRuntimeOnlyHandle
     @Override
     protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
         final String attributeName = operation.require(ModelDescriptionConstants.NAME).asString();
-        ServiceController<?> serviceController = getService(context, operation);
-        final Service<?> service = serviceController.getService();
-
-        setResult(context, attributeName, service);
+        if (context.getRunningMode() == RunningMode.NORMAL) {
+            ServiceController<?> serviceController = getService(context, operation);
+            final Service<?> service = serviceController.getService();
+            setResult(context, attributeName, service);
+        }
 
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }

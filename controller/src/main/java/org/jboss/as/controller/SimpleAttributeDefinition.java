@@ -27,7 +27,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -61,10 +60,8 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
      */
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull) {
-        super(name, name, null, type, allowNull, false, (MeasurementUnit) null,
-                (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
-                (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
-                (Boolean) null, (AttributeParser) null);
+        super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
+                null, false, null, null, null, null, null);
     }
 
     /**
@@ -76,10 +73,8 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param flags any flags to indicate special characteristics of the attribute
      */
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final AttributeAccess.Flag... flags) {
-        super(name, name, null, type, allowNull, false, (MeasurementUnit) null,
-                (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
-                (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
-                (Boolean) null, (AttributeParser) null, flags);
+        super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
+                null, false, null, null, null, null, flags);
     }
 
     /**
@@ -91,10 +86,8 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param measurementUnit a measurement unit for the attribute's value. Can be {@code null}
      */
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final MeasurementUnit measurementUnit) {
-        super(name, name, null, type, allowNull, false, measurementUnit,
-                (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
-                (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
-                (Boolean) null, (AttributeParser) null);
+        super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
+                null, false, null, null, null, null, null);
     }
 
     /**
@@ -108,10 +101,8 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull,
                                      final MeasurementUnit measurementUnit, final AttributeAccess.Flag... flags) {
-        super(name, name, null, type, allowNull, false, measurementUnit,
-                (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
-                (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
-                (Boolean) null, (AttributeParser) null, flags);
+        super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
+                null, false, null, null, null, null, flags);
     }
 
     /**
@@ -123,10 +114,8 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
      */
     public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type, final boolean allowNull) {
-        super(name, name, defaultValue, type, allowNull, false, (MeasurementUnit) null,
-                (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
-                (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
-                (Boolean) null, (AttributeParser) null);
+        super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
+                null, false, null, null, null, null, null);
     }
 
     /**
@@ -140,10 +129,8 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type,
                                      final boolean allowNull, final AttributeAccess.Flag... flags) {
-        super(name, name, defaultValue, type, allowNull, false, (MeasurementUnit) null,
-                (ParameterCorrector) null, (ParameterValidator) null, true, (String[]) null, (String[]) null,
-                (AttributeMarshaller) null, false, (DeprecationData) null, (AccessConstraintDefinition[]) null,
-                (Boolean) null, (AttributeParser) null, flags);
+        super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
+                null, false, null, null, null, null, flags);
     }
 
     protected SimpleAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends SimpleAttributeDefinition> builder) {

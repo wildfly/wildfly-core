@@ -30,6 +30,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -91,6 +92,12 @@ public class TestUtils {
         SimpleAttributeDefinitionBuilder attribute = SimpleAttributeDefinitionBuilder.create(name, type).setStorageRuntime();
         if(groupName != null && ! groupName.isEmpty()) {
             attribute.setAttributeGroup(groupName);
+        }
+        if (type == ModelType.INT) {
+            attribute.setUndefinedMetricValue(new ModelNode(-1));
+        }
+        if (type == ModelType.STRING) {
+            attribute.setAllowNull(true);
         }
         return attribute.build();
     }
