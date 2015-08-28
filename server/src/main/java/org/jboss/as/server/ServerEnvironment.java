@@ -387,7 +387,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             modulesDir = null;
             serverConfigurationDir = null;
             serverConfigurationFile = null;
-            controllerTempDir = null;
+            controllerTempDir = serverTempDir;
             domainBaseDir = null;
             domainConfigurationDir = null;
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
