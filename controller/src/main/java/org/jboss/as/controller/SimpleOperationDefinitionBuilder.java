@@ -40,8 +40,8 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
 public class SimpleOperationDefinitionBuilder {
-    private ResourceDescriptionResolver resolver;
-    private ResourceDescriptionResolver attributeResolver;
+    ResourceDescriptionResolver resolver;
+    ResourceDescriptionResolver attributeResolver;
     protected String name;
     protected OperationEntry.EntryType entryType = OperationEntry.EntryType.PUBLIC;
     protected EnumSet<OperationEntry.Flag> flags = EnumSet.noneOf(OperationEntry.Flag.class);
@@ -52,7 +52,7 @@ public class SimpleOperationDefinitionBuilder {
     protected DeprecationData deprecationData = null;
     protected AttributeDefinition[] replyParameters = new AttributeDefinition[0];
     protected AccessConstraintDefinition[] accessConstraints;
-    private DescriptionProvider descriptionProvider;
+    DescriptionProvider descriptionProvider;
 
     public SimpleOperationDefinitionBuilder(String name, ResourceDescriptionResolver resolver) {
         this.name = name;
@@ -68,7 +68,7 @@ public class SimpleOperationDefinitionBuilder {
     }
 
     protected SimpleOperationDefinition internalBuild(ResourceDescriptionResolver resolver, ResourceDescriptionResolver attributeResolver) {
-        return new SimpleOperationDefinition(name, resolver, attributeResolver, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints, descriptionProvider);
+        return new SimpleOperationDefinition(this);
     }
 
     protected static EnumSet<OperationEntry.Flag> getFlagsSet(OperationEntry.Flag... vararg) {
