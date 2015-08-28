@@ -89,6 +89,8 @@ class MavenUtil {
     private final RepositorySystem REPOSITORY_SYSTEM;
     private final List<RemoteRepository> remoteRepositories;
 
+    private static final String PROXY_HTTP_PREFIX = "http.";
+    private static final String PROXY_HTTPS_PREFIX = "https.";
     private static final String PROXY_HOST = "proxyHost";
     private static final String PROXY_PORT = "proxyPort";
 
@@ -208,8 +210,8 @@ class MavenUtil {
         return urls;
     }
 
-    private static Integer getProxyPort() {
-        String port = System.getProperty(PROXY_PORT);
+    private static Integer getProxyPort(String systemProperty) {
+        String port = System.getProperty(systemProperty);
         if (port != null && !port.isEmpty()) {
             try {
                 Integer intPort = Integer.parseInt(port);
@@ -223,13 +225,17 @@ class MavenUtil {
 
     private static List<RemoteRepository> createRemoteRepositories(boolean useEapRepository) {
         // prepare proxy
-        String proxyHost = System.getProperty(PROXY_HOST);
-        Integer proxyPort = getProxyPort();
+        String httpProxyHost = System.getProperty(String.format("%s%s", PROXY_HTTP_PREFIX, PROXY_HOST));
+        String httpsProxyHost = System.getProperty(String.format("%s%s", PROXY_HTTPS_PREFIX, PROXY_HOST));
+        Integer httpProxyPort = getProxyPort(String.format("%s%s", PROXY_HTTP_PREFIX, PROXY_PORT));
+        Integer httpsProxyPort = getProxyPort(String.format("%s%s", PROXY_HTTPS_PREFIX, PROXY_PORT));
         Proxy httpProxy = null;
         Proxy httpsProxy = null;
-        if (proxyHost != null && proxyPort != null && !proxyHost.isEmpty()) {
-            httpProxy = new Proxy(Proxy.TYPE_HTTP, proxyHost, proxyPort);
-            httpsProxy = new Proxy(Proxy.TYPE_HTTPS, proxyHost, proxyPort);
+        if (httpProxyHost != null && httpProxyPort != null && !httpProxyHost.isEmpty()) {
+            httpProxy = new Proxy(Proxy.TYPE_HTTP, httpProxyHost, httpProxyPort);
+        }
+        if (httpsProxyHost != null && httpsProxyPort != null && !httpsProxyHost.isEmpty()) {
+            httpsProxy = new Proxy(Proxy.TYPE_HTTPS, httpsProxyHost, httpsProxyPort);
         }
 
         String remoteReposFromSysProp = System.getProperty(ChildFirstClassLoaderBuilder.MAVEN_REPOSITORY_URLS);
