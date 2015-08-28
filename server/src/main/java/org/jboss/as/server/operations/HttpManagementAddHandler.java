@@ -132,8 +132,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         ServiceName socketBindingServiceName = null;
         ServiceName secureSocketBindingServiceName = null;
 
-        final List<String> allowedOrigins = ALLOWED_ORIGINS.unwrap(context, model);
-
         // Socket-binding reference based config
         final ModelNode socketBindingNode = SOCKET_BINDING.resolveModelAttribute(context, model);
         if (socketBindingNode.isDefined()) {
@@ -158,11 +156,14 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSecureSocket(secureSocketBindingServiceName.getSimpleName());
         }
 
-        String securityRealm = null;
+        final List<String> allowedOrigins = ALLOWED_ORIGINS.unwrap(context, model);
+
+        final String securityRealm;
         final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
         if (realmNode.isDefined()) {
             securityRealm = realmNode.asString();
         } else {
+            securityRealm = null;
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
         boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();

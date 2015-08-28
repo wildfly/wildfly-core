@@ -22,12 +22,14 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.ALLOWED_ORIGINS;
+import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
-import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 import io.undertow.server.ListenerRegistry;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -129,9 +131,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         hostControllerInfo.setHttpManagementSecureInterface(secureAddress.isDefined() ? secureAddress.asString() : null);
         final ModelNode securePortNode = HttpManagementResourceDefinition.HTTPS_PORT.resolveModelAttribute(context, model);
         hostControllerInfo.setHttpManagementSecurePort(securePortNode.isDefined() ? securePortNode.asInt() : -1);
-        final ModelNode realmNode = HttpManagementResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, model);
-        hostControllerInfo.setHttpManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
-        hostControllerInfo.setAllowedOrigins(HttpManagementResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model));
     }
 
     static void installHttpManagementServices(final HostControllerEnvironment environment, final LocalHostControllerInfo hostControllerInfo, final OperationContext context,
@@ -148,10 +147,19 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         int port = hostControllerInfo.getHttpManagementPort();
         String secureInterfaceName = hostControllerInfo.getHttpManagementSecureInterface();
         int securePort = hostControllerInfo.getHttpManagementSecurePort();
-        String securityRealm = hostControllerInfo.getHttpManagementSecurityRealm();
-        Collection<String> allowedOrigins = hostControllerInfo.getAllowedOrigins();
 
         ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
+
+        final List<String> allowedOrigins = ALLOWED_ORIGINS.unwrap(context, model);
+
+        final String securityRealm;
+        final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
+        if (realmNode.isDefined()) {
+            securityRealm = realmNode.asString();
+        } else {
+            securityRealm = null;
+            ROOT_LOGGER.noSecurityRealmDefined();
+        }
 
         boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
         ConsoleMode consoleMode;
@@ -183,8 +191,6 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
-        } else {
-            ROOT_LOGGER.noSecurityRealmDefined();
         }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)

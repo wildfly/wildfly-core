@@ -85,11 +85,12 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
         ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
 
-        String securityRealm = null;
+        final String securityRealm;
         final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
         if (realmNode.isDefined()) {
             securityRealm = realmNode.asString();
         } else {
+            securityRealm = null;
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 

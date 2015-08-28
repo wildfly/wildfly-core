@@ -22,8 +22,10 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.SECURITY_REALM;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
-import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -73,26 +75,30 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(false), onDemand);
 
         OptionMap options = createConnectorOptions(context, model);
-        installNativeManagementServices(serviceTarget, hostControllerInfo, options);
+        installNativeManagementServices(context, model, serviceTarget, hostControllerInfo, options);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
         hostControllerInfo.setNativeManagementInterface(NativeManagementResourceDefinition.INTERFACE.resolveModelAttribute(context, model).asString());
         final ModelNode portNode = NativeManagementResourceDefinition.NATIVE_PORT.resolveModelAttribute(context, model);
         hostControllerInfo.setNativeManagementPort(portNode.isDefined() ? portNode.asInt() : -1);
-        final ModelNode realmNode = NativeManagementResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, model);
-        hostControllerInfo.setNativeManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
     }
 
-    public static void installNativeManagementServices(final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo, final OptionMap options) {
-
-        String nativeSecurityRealm = hostControllerInfo.getNativeManagementSecurityRealm();
-
+    public static void installNativeManagementServices(final OperationContext context, final ModelNode model, final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo, final OptionMap options) throws OperationFailedException {
         final ServiceName nativeManagementInterfaceBinding =
                 NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
 
+        final String securityRealm;
+        final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
+        if (realmNode.isDefined()) {
+            securityRealm = realmNode.asString();
+        } else {
+            securityRealm = null;
+            ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
+        }
+
         ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), nativeSecurityRealm, options);
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options);
     }
 
     private static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {

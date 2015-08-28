@@ -45,7 +45,6 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -108,54 +107,57 @@ import org.jboss.msc.service.ServiceTarget;
  */
 public abstract class AbstractOperationTestCase {
     static final LocalHostControllerInfo HOST_INFO = new LocalHostControllerInfo() {
+        @Override
         public String getLocalHostName() {
             return "localhost";
         }
 
+        @Override
         public boolean isMasterDomainController() {
             return false;
         }
 
+        @Override
         public String getNativeManagementInterface() {
             return null;
         }
 
+        @Override
         public int getNativeManagementPort() {
             return 0;
         }
 
-        public String getNativeManagementSecurityRealm() {
-            return null;
-        }
-
+        @Override
         public String getHttpManagementInterface() {
             return null;
         }
 
+        @Override
         public int getHttpManagementPort() {
             return 0;
         }
 
+        @Override
         public String getHttpManagementSecureInterface() {
             return null;
         }
 
+        @Override
         public int getHttpManagementSecurePort() {
             return 0;
         }
 
-        public String getHttpManagementSecurityRealm() {
-            return null;
-        }
-
+        @Override
         public String getRemoteDomainControllerUsername() {
             return null;
         }
 
+        @Override
         public List<DiscoveryOption> getRemoteDomainControllerDiscoveryOptions() {
             return null;
         }
 
+        @Override
         public ControlledProcessState.State getProcessState() {
             return null;
         }
@@ -163,11 +165,6 @@ public abstract class AbstractOperationTestCase {
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return false;
-        }
-
-        @Override
-        public Collection<String> getAllowedOrigins() {
-            return Collections.EMPTY_LIST;
         }
     };
 
@@ -229,6 +226,7 @@ public abstract class AbstractOperationTestCase {
             return addedSteps;
         }
 
+        @Override
         public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
             if (stage == Stage.RUNTIME) {
                 fail("Should not have added step");
@@ -240,9 +238,11 @@ public abstract class AbstractOperationTestCase {
             addStep(new ModelNode().setEmptyObject(), step, stage, addFirst);
         }
 
+        @Override
         public void addStep(ModelNode operation, OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
             addStep(operation, step, stage, false);
         }
+        @Override
         public void addStep(ModelNode operation, OperationStepHandler step, OperationContext.Stage stage, boolean addFirst) throws IllegalArgumentException {
             final PathAddress opAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
             if (!expectedSteps.contains(opAddress) && failOnUnexpected) {
@@ -277,6 +277,7 @@ public abstract class AbstractOperationTestCase {
             addStep(operation, step, stage);
         }
 
+        @Override
         public void addStep(ModelNode response, ModelNode operation, OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
             fail("Should not have added step");
         }
@@ -294,18 +295,22 @@ public abstract class AbstractOperationTestCase {
             return operationAddress.getLastElement().getValue();
         }
 
+        @Override
         public InputStream getAttachmentStream(int index) {
             return null;
         }
 
+        @Override
         public int getAttachmentStreamCount() {
             return 0;
         }
 
+        @Override
         public ModelNode getResult() {
             return result;
         }
 
+        @Override
         public boolean hasResult() {
             return false;
         }
@@ -325,26 +330,32 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public void completeStep(OperationContext.RollbackHandler rollbackHandler) {
             stepCompleted();
         }
 
+        @Override
         public void completeStep(ResultHandler resultHandler) {
             stepCompleted();
         }
 
+        @Override
         public void stepCompleted() {
 
         }
 
+        @Override
         public ModelNode getFailureDescription() {
             return null;
         }
 
+        @Override
         public boolean hasFailureDescription() {
             return false;
         }
 
+        @Override
         public ModelNode getResponseHeaders() {
             return null;
         }
@@ -359,25 +370,31 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public boolean isBooting() {
             return booting;
         }
 
+        @Override
         public boolean isRollbackOnly() {
             return false;
         }
 
+        @Override
         public void setRollbackOnly() {
         }
 
+        @Override
         public boolean isRollbackOnRuntimeFailure() {
             return false;
         }
 
+        @Override
         public boolean isResourceServiceRestartAllowed() {
             return false;
         }
 
+        @Override
         public void reloadRequired() {
         }
 
@@ -385,22 +402,28 @@ public abstract class AbstractOperationTestCase {
             return false;
         }
 
+        @Override
         public void restartRequired() {
         }
 
+        @Override
         public void revertReloadRequired() {
         }
 
+        @Override
         public void revertRestartRequired() {
         }
 
+        @Override
         public void runtimeUpdateSkipped() {
         }
 
+        @Override
         public ImmutableManagementResourceRegistration getResourceRegistration() {
             return getResourceRegistrationForUpdate();
         }
 
+        @Override
         public ManagementResourceRegistration getResourceRegistrationForUpdate() {
             return RESOURCE_REGISTRATION;
         }
@@ -410,17 +433,21 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public ServiceRegistry getServiceRegistry(boolean modify) throws UnsupportedOperationException {
             return null;
         }
 
+        @Override
         public ServiceController<?> removeService(ServiceName name) throws UnsupportedOperationException {
             return null;
         }
 
+        @Override
         public void removeService(ServiceController<?> controller) throws UnsupportedOperationException {
         }
 
+        @Override
         public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
             return null;
         }
@@ -433,15 +460,18 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public void acquireControllerLock() {
         }
 
+        @Override
         public Resource createResource(PathAddress relativeAddress) {
             final Resource toAdd = Resource.Factory.create();
             addResource(relativeAddress, toAdd);
             return toAdd;
         }
 
+        @Override
         public void addResource(PathAddress relativeAddress, Resource toAdd) {
             Resource model = root;
             final Iterator<PathElement> i = operationAddress.append(relativeAddress).iterator();
@@ -473,10 +503,12 @@ public abstract class AbstractOperationTestCase {
             }
         }
 
+        @Override
         public void addResource(PathAddress address, int index, Resource toAdd) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Resource readResource(PathAddress address) {
             return readResource(address, true);
         }
@@ -503,10 +535,12 @@ public abstract class AbstractOperationTestCase {
             return resource;
         }
 
+        @Override
         public Resource readResourceForUpdate(PathAddress address) {
             return readResource(address);
         }
 
+        @Override
         public Resource removeResource(PathAddress address) throws UnsupportedOperationException {
             return null;
         }
@@ -515,37 +549,46 @@ public abstract class AbstractOperationTestCase {
             return root;
         }
 
+        @Override
         public Resource getOriginalRootResource() {
             return root;
         }
 
+        @Override
         public boolean isModelAffected() {
             return false;
         }
 
+        @Override
         public boolean isResourceRegistryAffected() {
             return false;
         }
 
+        @Override
         public boolean isRuntimeAffected() {
             return false;
         }
 
+        @Override
         public OperationContext.Stage getCurrentStage() {
             return null;
         }
 
+        @Override
         public void report(MessageSeverity severity, String message) {
         }
 
+        @Override
         public boolean markResourceRestarted(PathAddress resource, Object owner) {
             return false;
         }
 
+        @Override
         public boolean revertResourceRestarted(PathAddress resource, Object owner) {
             return false;
         }
 
+        @Override
         public ModelNode resolveExpressions(ModelNode node) {
             return node.resolve();
         }
@@ -784,6 +827,7 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public ManagementResourceRegistration getSubModel(PathAddress address) {
             return this;
         }
@@ -797,10 +841,12 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition) {
             return null;
         }
 
+        @Override
         public void unregisterSubModel(PathElement address) {
         }
 
@@ -823,22 +869,27 @@ public abstract class AbstractOperationTestCase {
         public void unregisterOverrideModel(String name) {
         }
 
+        @Override
         public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags) {
 
         }
 
+        @Override
         public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited) {
 
         }
 
+        @Override
         public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType) {
 
         }
 
+        @Override
         public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags) {
 
         }
 
+        @Override
         public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
 
         }
@@ -863,6 +914,7 @@ public abstract class AbstractOperationTestCase {
 
         }
 
+        @Override
         public void registerReadWriteAttribute(AttributeDefinition definition, OperationStepHandler readHandler, OperationStepHandler writeHandler) {
 
         }
@@ -871,10 +923,12 @@ public abstract class AbstractOperationTestCase {
 
         }
 
+        @Override
         public void registerReadOnlyAttribute(AttributeDefinition definition, OperationStepHandler readHandler) {
 
         }
 
+        @Override
         public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
 
         }
@@ -909,10 +963,12 @@ public abstract class AbstractOperationTestCase {
             return Collections.emptySet();
         }
 
+        @Override
         public void registerProxyController(PathElement address, ProxyController proxyController) {
 
         }
 
+        @Override
         public void unregisterProxyController(PathElement address) {
 
         }
@@ -922,10 +978,12 @@ public abstract class AbstractOperationTestCase {
             return PathAddress.EMPTY_ADDRESS;
         }
 
+        @Override
         public boolean isRuntimeOnly() {
             return false;
         }
 
+        @Override
         public boolean isRemote() {
             return false;
         }
@@ -935,42 +993,52 @@ public abstract class AbstractOperationTestCase {
             return Collections.emptySet();
         }
 
+        @Override
         public OperationStepHandler getOperationHandler(PathAddress address, String operationName) {
             return NoopOperationStepHandler.WITHOUT_RESULT;
         }
 
+        @Override
         public DescriptionProvider getOperationDescription(PathAddress address, String operationName) {
             return null;
         }
 
+        @Override
         public Set<OperationEntry.Flag> getOperationFlags(PathAddress address, String operationName) {
             return null;
         }
 
+        @Override
         public OperationEntry getOperationEntry(PathAddress address, String operationName) {
             return null;
         }
 
+        @Override
         public Set<String> getAttributeNames(PathAddress address) {
             return Collections.emptySet();
         }
 
+        @Override
         public AttributeAccess getAttributeAccess(PathAddress address, String attributeName) {
             return null;
         }
 
+        @Override
         public Set<String> getChildNames(PathAddress address) {
             return null;
         }
 
+        @Override
         public Set<PathElement> getChildAddresses(PathAddress address) {
             return null;
         }
 
+        @Override
         public DescriptionProvider getModelDescription(PathAddress address) {
             return null;
         }
 
+        @Override
         public Map<String, OperationEntry> getOperationDescriptions(PathAddress address, boolean inherited) {
             return null;
         }
@@ -985,13 +1053,16 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public ProxyController getProxyController(PathAddress address) {
             if (address.getLastElement().getKey().equals(SERVER) && !address.getLastElement().getValue().equals("server-two")) {
                 return new ProxyController() {
+                    @Override
                     public PathAddress getProxyNodeAddress() {
                         return null;
                     }
 
+                    @Override
                     public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments) {
                     }
                 };
@@ -999,6 +1070,7 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
         public Set<ProxyController> getProxyControllers(PathAddress address) {
             return null;
         }
