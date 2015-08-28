@@ -118,7 +118,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
-import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
+import org.jboss.as.domain.controller.operations.DomainModelIncludesValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -552,7 +552,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     if (addr.size() > 0 && addr.getLastElement().getKey().equals(SUBSYSTEM)) {
                         //For subsystem adds in domain mode we need to check that the new subsystem does not break the rule
                         //that when profile includes are used, we don't allow overriding subsystems.
-                        DomainModelReferenceValidator.addValidationStep(context, operation);
+                        DomainModelIncludesValidator.addValidationStep(context, operation);
                     }
                 }
             }
@@ -703,7 +703,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 final ModelNode result = internalExecute(OperationBuilder.create(validate).build(), OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        DomainModelReferenceValidator.validateAtBoot(context, operation);
+                        DomainModelIncludesValidator.validateAtBoot(context, operation);
                     }
                 }).getResponseNode();
 

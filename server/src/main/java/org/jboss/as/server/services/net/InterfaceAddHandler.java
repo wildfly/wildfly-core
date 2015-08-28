@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,32 +20,35 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.domain.controller.operations;
+package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
- * @author Emanuel Muckenhuber
+ * TODO remove this once we can get the superclass out of the controller module to a place
+ * where the NetworkInterface class is visible.
+ *
+ * @author Brian Stansberry
  */
-public class ProfileAddHandler extends AbstractAddStepHandler {
+public class InterfaceAddHandler extends org.jboss.as.controller.operations.common.InterfaceAddHandler {
 
-    public static final ProfileAddHandler INSTANCE = new ProfileAddHandler();
+    public static final InterfaceAddHandler NAMED_INSTANCE = new InterfaceAddHandler(false);
 
-    ProfileAddHandler() {
-        super(ProfileResourceDefinition.PROFILE_CAPABILITY, ProfileResourceDefinition.ATTRIBUTES);
+    /**
+     * Create the InterfaceAddHandler
+     *
+     * @param specified
+     */
+    protected InterfaceAddHandler(boolean specified) {
+        super(specified);
     }
 
-    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
-        DomainModelIncludesValidator.addValidationStep(context, operation);
-        super.populateModel(context, operation, resource);
-    }
-
-    protected boolean requiresRuntime(OperationContext context) {
-        return false;
+    @Override
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.recordCapabilitiesAndRequirements(context, operation, resource);
+        context.registerCapability(InterfaceResourceDefinition.INTERFACE_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue()), null);
     }
 }

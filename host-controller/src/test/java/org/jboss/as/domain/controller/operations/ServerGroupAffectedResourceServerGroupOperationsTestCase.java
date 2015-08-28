@@ -248,7 +248,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(VALUE).set(profileName);
 
         try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -327,7 +327,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         operation.get(VALUE).set(socketBindingGroupName);
 
         try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {

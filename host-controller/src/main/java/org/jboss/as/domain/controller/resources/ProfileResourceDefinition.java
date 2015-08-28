@@ -40,7 +40,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.domain.controller.operations.DomainReferenceValidationWriteAttributeHandler;
+import org.jboss.as.domain.controller.operations.DomainIncludesValidationWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
 import org.jboss.as.domain.controller.operations.ProfileAddHandler;
 import org.jboss.as.domain.controller.operations.ProfileCloneHandler;
@@ -101,7 +101,7 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(INCLUDES, null, createReferenceValidationHandler());
+        resourceRegistration.registerReadWriteAttribute(INCLUDES, null, createIncludesValidationHandler());
     }
 
     @Override
@@ -110,7 +110,7 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
     }
 
 
-    public static OperationStepHandler createReferenceValidationHandler() {
-        return new DomainReferenceValidationWriteAttributeHandler(INCLUDES);
+    public static OperationStepHandler createIncludesValidationHandler() {
+        return new DomainIncludesValidationWriteAttributeHandler(INCLUDES);
     }
 }

@@ -79,7 +79,7 @@ public class ControllerInitializer {
     /**
      * Sets the controller being created. Internal use only.
      *
-     * @param service the controller being created.
+     * @param testControllerAccessor the controller being created.
      */
     void setTestModelControllerAccessor(TestControllerAccessor testControllerAccessor) {
         this.testControllerAccessor = testControllerAccessor;
