@@ -168,6 +168,16 @@ public class CLIWrapper {
         return true;
     }
 
+     /**
+     * Sends command line to CLI.
+     *
+     * @param line specifies the command line.
+     * @throws org.jboss.as.cli.CommandLineException
+     */
+    public void sendLineForValidation(String line) throws CommandLineException  {
+        consoleOut.reset();
+        ctx.handle(line);
+    }
     /**
      * Sends command line to CLI.
      *

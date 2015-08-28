@@ -170,6 +170,7 @@ public class ModelDescriptionConstants {
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
+    public static final String FILESYSTEM_PATH = "filesystem-path";
     public static final String FILTER = "filter";
     //public final static String FILTER_CONJUNCT = "conjunct";
     public static final String FILTERED_ATTRIBUTES = "filtered-attributes";
@@ -512,6 +513,7 @@ public class ModelDescriptionConstants {
     public static final String VAULT_EXPRESSION = "vault-expression";
     public static final String VAULT_OPTION = "vault-option";
     public static final String VAULT_OPTIONS = "vault-options";
+    public static final String WEB_URL = "web-url";
     public static final String WHERE = "where";
     public static final String WILDCARD = "wildcard";
     public static final String WRITE = "write";
