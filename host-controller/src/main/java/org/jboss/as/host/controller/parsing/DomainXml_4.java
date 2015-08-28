@@ -181,8 +181,9 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
 
         if (modelNode.hasDefined(PROFILE)) {
             writer.writeStartElement(Element.PROFILES.getLocalName());
-            for (final Property profile : modelNode.get(PROFILE).asPropertyList()) {
-                writeProfile(writer, profile.getName(), profile.getValue(), context);
+            ModelNode profiles = modelNode.get(PROFILE);
+            for (final String profile : profiles.keys()) {
+                writeProfile(writer, profile, profiles.get(profile), context);
             }
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);
@@ -193,8 +194,9 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
         if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
             writer.writeStartElement(Element.SOCKET_BINDING_GROUPS.getLocalName());
-            for (final Property property : modelNode.get(SOCKET_BINDING_GROUP).asPropertyList()) {
-                writeSocketBindingGroup(writer, property.getValue(), false);
+            ModelNode sbgs = modelNode.get(SOCKET_BINDING_GROUP);
+            for (final String sbg : sbgs.keys()) {
+                writeSocketBindingGroup(writer, sbgs.get(sbg), false);
             }
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);
@@ -209,8 +211,9 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
         if (modelNode.hasDefined(SERVER_GROUP)) {
             writer.writeStartElement(Element.SERVER_GROUPS.getLocalName());
-            for (final Property property : modelNode.get(SERVER_GROUP).asPropertyList()) {
-                writeServerGroup(writer, property.getName(), property.getValue());
+            ModelNode sgs = modelNode.get(SERVER_GROUP);
+            for (final String sg : sgs.keys()) {
+                writeServerGroup(writer, sg, sgs.get(sg));
             }
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);
