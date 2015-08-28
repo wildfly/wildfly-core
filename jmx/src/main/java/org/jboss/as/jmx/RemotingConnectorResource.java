@@ -102,4 +102,9 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
         };
         resourceRegistration.registerReadWriteAttribute(USE_MANAGEMENT_ENDPOINT, null, writeHandler);
     }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(REMOTE_JMX_CAPABILITY);
+    }
 }

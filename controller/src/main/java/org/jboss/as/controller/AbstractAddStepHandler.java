@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -273,6 +274,11 @@ public class AbstractAddStepHandler implements OperationStepHandler {
             } else {
                 context.registerCapability(capability, null);
             }
+        }
+
+        //just here until we fix the registration across whole server
+        if (context.getResourceRegistration().getCapabilities().size() != capabilities.size()){
+            ControllerLogger.ROOT_LOGGER.warnf("Number of possible capabilities registered on resource and number of runtime capabilities don't match for path: %s", context.getCurrentAddress());
         }
         ModelNode model = resource.getModel();
         for (AttributeDefinition ad : attributes) {

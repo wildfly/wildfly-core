@@ -464,6 +464,11 @@ abstract class AbstractOperationContext implements OperationContext {
     abstract ConfigurationPersister.PersistenceResource createPersistenceResource() throws ConfigurationPersistenceException;
 
     /**
+     * publish any changes to capability registery
+     */
+    abstract void publishCapabilityRegistry();
+
+    /**
      * Notification that the operation is not going to proceed to normal completion.
      */
     abstract void operationRollingBack();
@@ -706,6 +711,9 @@ abstract class AbstractOperationContext implements OperationContext {
                 } else {
                     persistenceResource.commit();
                 }
+            }
+            if (resultAction != ResultAction.ROLLBACK) {
+                publishCapabilityRegistry();
             }
         } catch (Throwable t) {
             toThrow = t;
