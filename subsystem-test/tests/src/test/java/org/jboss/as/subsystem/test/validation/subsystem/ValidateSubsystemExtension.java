@@ -14,8 +14,8 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -62,20 +62,19 @@ public class ValidateSubsystemExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
-        SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
+        SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(
                 PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME),
-                new NonResolvingResourceDescriptionResolver());
+                new NonResolvingResourceDescriptionResolver())
+        );
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(subsystemResource);
         //We always need to add an 'add' operation
-        registration.registerOperationHandler(ADD,
-                new AbstractAddStepHandler(){
+        registration.registerOperationHandler(new SimpleOperationDefinition(ADD, NonResolvingResourceDescriptionResolver.INSTANCE){
                     @Override
-                    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-
+                    public DescriptionProvider getDescriptionProvider() {
+                        return addDescriptionProvider;
                     }
                 },
-                addDescriptionProvider,
-                false);
+                new AbstractAddStepHandler());
 
         //We always need to add a 'describe' operation
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);

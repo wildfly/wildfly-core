@@ -43,6 +43,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
 public abstract class OperationDefinition {
+
     protected final String name;
     protected final OperationEntry.EntryType entryType;
     protected final EnumSet<OperationEntry.Flag> flags;
@@ -53,8 +54,29 @@ public abstract class OperationDefinition {
     protected final DeprecationData deprecationData;
     protected final AttributeDefinition[] replyParameters;
     protected final List<AccessConstraintDefinition> accessConstraints;
+    protected final DescriptionProvider descriptionProvider;
 
+    protected OperationDefinition(SimpleOperationDefinitionBuilder builder) {
+        this.name = builder.name;
+        this.entryType = builder.entryType;
+        this.flags = builder.flags;
+        this.parameters = builder.parameters;
+        this.replyType = builder.replyType;
+        this.replyValueType = builder.replyValueType;
+        this.replyAllowNull = builder.replyAllowNull;
+        this.deprecationData = builder.deprecationData;
+        this.replyParameters = builder.replyParameters;
+        if (builder.accessConstraints == null) {
+            this.accessConstraints = Collections.<AccessConstraintDefinition>emptyList();
+        } else {
+            this.accessConstraints = Collections.unmodifiableList(Arrays.asList(builder.accessConstraints));
+        }
+        this.descriptionProvider = builder.descriptionProvider;
 
+    }
+
+    /** @deprecated use {@link #OperationDefinition(SimpleOperationDefinitionBuilder)}*/
+    @Deprecated
     protected OperationDefinition(String name,
                                OperationEntry.EntryType entryType,
                                EnumSet<OperationEntry.Flag> flags,
@@ -80,6 +102,7 @@ public abstract class OperationDefinition {
         } else {
             this.accessConstraints = Collections.unmodifiableList(Arrays.asList(accessConstraints));
         }
+        this.descriptionProvider = null;
     }
 
     public String getName() {

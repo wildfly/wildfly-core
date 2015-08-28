@@ -23,7 +23,6 @@
 package org.jboss.as.controller.registry;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -149,80 +148,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
      */
     void unregisterOverrideModel(final String name);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param flags operational modifier flags for this operation (e.g. read-only)
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @param entryType the operation entry type
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType);
-
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @param flags operational modifier flags for this operation (e.g. read-only)
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @param entryType the operation entry type
-     * @param flags operational modifier flags for this operation (e.g. read-only)
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags);
 
     /**
      * Register an operation handler for this resource.
