@@ -527,7 +527,13 @@ public class ExtensionRegistry {
 
         @Override
         public boolean isRuntimeOnlyRegistrationValid() {
-            return processType.isServer();
+            if (processType.isServer()) {
+                return true;
+            }
+            if (processType == ProcessType.HOST_CONTROLLER && extensionRegistryType == ExtensionRegistryType.HOST) {
+                return true;
+            }
+            return false;
         }
 
         @Override
