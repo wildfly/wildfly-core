@@ -53,6 +53,7 @@ public abstract class OperationDefinition {
     protected final DeprecationData deprecationData;
     protected final AttributeDefinition[] replyParameters;
     protected final List<AccessConstraintDefinition> accessConstraints;
+    protected final DescriptionProvider descriptionProvider;
 
 
     protected OperationDefinition(String name,
@@ -64,6 +65,7 @@ public abstract class OperationDefinition {
                                final DeprecationData deprecationData,
                                AttributeDefinition[] replyParameters,
                                AttributeDefinition[] parameters,
+                               final DescriptionProvider descriptionProvider,
                                AccessConstraintDefinition... accessConstraints
     ) {
         this.name = name;
@@ -80,6 +82,7 @@ public abstract class OperationDefinition {
         } else {
             this.accessConstraints = Collections.unmodifiableList(Arrays.asList(accessConstraints));
         }
+        this.descriptionProvider = descriptionProvider;
     }
 
     public String getName() {
