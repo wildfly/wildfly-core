@@ -184,7 +184,6 @@ public enum Phase {
     }
 
     // STRUCTURE
-    public static final int STRUCTURE_EXPLODED_MOUNT                    = 0x0100;
     public static final int STRUCTURE_MOUNT                             = 0x0200;
     public static final int STRUCTURE_DEPLOYMENT_OVERLAY                = 0x0280;
     public static final int STRUCTURE_MANIFEST                          = 0x0300;

@@ -24,6 +24,7 @@ package org.jboss.as.server.deployment.module;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Locale;
 
 import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -34,7 +35,6 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
-import org.jboss.as.server.deployment.MountExplodedMarker;
 import org.jboss.as.server.deployment.MountType;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
@@ -43,8 +43,15 @@ import org.jboss.vfs.VirtualFile;
  * Deployment processor responsible for mounting and attaching the resource root for this deployment.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
+
+    static final String EAR_EXTENSION = ".ear";
+    static final String RAR_EXTENSION = ".rar";
+    static final String SAR_EXTENSION = ".sar";
+    static final String WAR_EXTENSION = ".war";
+    static final String WAB_EXTENSION = ".wab";
 
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
@@ -56,7 +63,6 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
             throw ServerLogger.ROOT_LOGGER.noDeploymentRepositoryAvailable();
         }
 
-        final String deploymentName = deploymentUnit.getName();
         final VirtualFile deploymentContents = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
 
         // internal deployments do not have any contents, so there is nothing to mount
@@ -65,13 +71,13 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
 
         final VirtualFile deploymentRoot;
         final MountHandle mountHandle;
+        final String deploymentName = deploymentUnit.getName().toLowerCase(Locale.ENGLISH);
         if (deploymentContents.isDirectory()) {
             // use the contents directly
             deploymentRoot = deploymentContents;
             // nothing was mounted
             mountHandle = null;
             ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
-
         } else {
             // The mount point we will use for the repository file
             deploymentRoot = VFS.getChild("content/" + deploymentName);
@@ -79,9 +85,8 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
             boolean failed = false;
             Closeable handle = null;
             try {
-                final boolean mountExploded = MountExplodedMarker.isMountExploded(deploymentUnit);
                 final MountType type;
-                if(mountExploded) {
+                if (explode(deploymentName)) {
                     type = MountType.EXPANDED;
                 } else if (deploymentName.endsWith(".xml")) {
                     type = MountType.REAL;
@@ -103,6 +108,15 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
         ModuleRootMarker.mark(resourceRoot);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, resourceRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());
+    }
+
+    private boolean explode(final String depName) {
+        if (depName.endsWith(EAR_EXTENSION)) return true;
+        if (depName.endsWith(RAR_EXTENSION)) return true;
+        if (depName.endsWith(SAR_EXTENSION)) return true;
+        if (depName.endsWith(WAR_EXTENSION)) return true;
+        if (depName.endsWith(WAB_EXTENSION)) return true;
+        return false;
     }
 
     public void undeploy(DeploymentUnit context) {

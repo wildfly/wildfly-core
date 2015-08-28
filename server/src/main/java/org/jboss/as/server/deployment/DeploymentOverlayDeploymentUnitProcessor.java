@@ -83,8 +83,6 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
         if (overlayEntries == null) {
             return;
         }
-        //exploded is true if this is a zip deployment that has been mounted exploded
-        final boolean exploded = MountExplodedMarker.isMountExploded(deploymentUnit) && !ExplodedDeploymentMarker.isExplodedDeployment(deploymentUnit);
         final Set<String> paths = new HashSet<String>();
 
         for (final Map.Entry<String, byte[]> entry : overlayEntries.entrySet()) {
@@ -98,47 +96,28 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
 
                     paths.add(path);
                     VirtualFile content = contentRepository.getContent(entry.getValue());
-                    if (exploded) {
-                        VirtualFile parent = mountPoint.getParent();
-                        while (!parent.exists()) {
-                            parent = parent.getParent();
+                    VirtualFile parent = mountPoint.getParent();
+                    List<VirtualFile> createParents = new ArrayList<>();
+                    while (!parent.exists()) {
+                        createParents.add(parent);
+                        parent = parent.getParent();
+                    }
+                    //we need to check if the parent is a directory
+                    //if it is a file we assume it is an archive that is yet to be mounted and we add it to the deferred list
+                    if(parent.isDirectory()) {
+                        Collections.reverse(createParents);
+                        for (VirtualFile file : createParents) {
+                            Closeable closable = VFS.mountTemp(file);
+                            deploymentUnit.addToAttachmentList(MOUNTED_FILES, closable);
                         }
-                        //we need to check if the parent is a directory
-                        //if it is a file we assume it is an archive that is yet to be mounted and we add it to the deferred list
-                        if(parent.isDirectory()) {
-                            handleExplodedEntryWithDirParent(deploymentUnit, content, mountPoint, mounts, path);
-                        } else {
-                            handleEntryWithFileParent(deferred, entry, path, parent);
-                        }
+                        Closeable handle = VFS.mountReal(content.getPhysicalFile(), mountPoint);
+                        MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content.getPhysicalFile(), mountPoint);
+                        deploymentUnit.addToAttachmentList(MOUNTED_FILES, mounted);
+                        mounts.put(path, mounted);
                     } else {
-                        VirtualFile parent = mountPoint.getParent();
-                        List<VirtualFile> createParents = new ArrayList<>();
-                        while (!parent.exists()) {
-                            createParents.add(parent);
-                            parent = parent.getParent();
-                        }
-                        //we need to check if the parent is a directory
-                        //if it is a file we assume it is an archive that is yet to be mounted and we add it to the deferred list
-                        if(parent.isDirectory()) {
-                            if (isExplodedSubUnitOverlay(deploymentUnit, mountPoint, path)) {// like: war/*.html
-                                copyFile(content.getPhysicalFile(), mountPoint.getPhysicalFile());
-                                continue;
-                            }
-                            Collections.reverse(createParents);
-                            for (VirtualFile file : createParents) {
-                                Closeable closable = VFS.mountTemp(file);
-                                deploymentUnit.addToAttachmentList(MOUNTED_FILES, closable);
-                            }
-                            Closeable handle = VFS.mountReal(content.getPhysicalFile(), mountPoint);
-                            MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content.getPhysicalFile(), mountPoint);
-                            deploymentUnit.addToAttachmentList(MOUNTED_FILES, mounted);
-                            mounts.put(path, mounted);
-                        } else {
-                            //we have an overlay that is targeted at a file, most likely a zip file that is yet to be mounted by a structure processor
-                            //we take note of these overlays and try and mount them at the end of the STRUCTURE phase
-                            handleEntryWithFileParent(deferred, entry, path, parent);
-                        }
-
+                        //we have an overlay that is targeted at a file, most likely a zip file that is yet to be mounted by a structure processor
+                        //we take note of these overlays and try and mount them at the end of the STRUCTURE phase
+                        handleEntryWithFileParent(deferred, entry, path, parent);
                     }
                 }
             } catch (IOException e) {
