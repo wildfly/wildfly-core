@@ -41,7 +41,7 @@ public class RequirementRegistration {
     private final String requiredName;
     private final CapabilityId dependentId;
 
-    public RequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext) {
+    public RequirementRegistration(String requiredName, String dependentName, CapabilityScope dependentContext) {
         this(requiredName, new CapabilityId(dependentName, dependentContext));
     }
 
@@ -58,7 +58,7 @@ public class RequirementRegistration {
      * @param dependentContext  context in which the dependent capability exists
      * @param registrationPoint point in the configuration model that triggered the requirement
      */
-    protected RequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
+    protected RequirementRegistration(String requiredName, String dependentName, CapabilityScope dependentContext,
                                       RegistrationPoint registrationPoint) {
         this(requiredName, dependentName, dependentContext);
         this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
@@ -82,8 +82,8 @@ public class RequirementRegistration {
         return dependentId.getName();
     }
 
-    public CapabilityContext getDependentContext() {
-        return dependentId.getContext();
+    public CapabilityScope getDependentContext() {
+        return dependentId.getScope();
     }
 
     public CapabilityId getDependentId() {

@@ -28,28 +28,28 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * {@link CapabilityContext} for the children of a Host Controller {@code profile} resource.
+ * {@link CapabilityScope} for the children of a Host Controller {@code profile} resource.
  * Note this does not include the profile capability itself.
  *
  * @author Brian Stansberry
  *
- * @see ProfilesCapabilityContext
+ * @see ProfilesCapabilityScope
  */
-class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
+class ProfileChildCapabilityScope extends IncludingResourceCapabilityScope {
 
-    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> PROFILE_KEY =
+    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityScope>>> PROFILE_KEY =
             CapabilityResolutionContext.AttachmentKey.create(Map.class);
 
-    ProfileChildCapabilityContext(String value) {
+    ProfileChildCapabilityScope(String value) {
         super(PROFILE_KEY, PROFILE, value);
     }
 
     @Override
-    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
-        boolean result = equals(dependentContext);
-        if (!result && dependentContext instanceof ProfileChildCapabilityContext) {
-            Set<CapabilityContext> includers = getIncludingContexts(context);
-            result = includers.contains(dependentContext);
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        boolean result = equals(dependentScope);
+        if (!result && dependentScope instanceof ProfileChildCapabilityScope) {
+            Set<CapabilityScope> includers = getIncludingScopes(context);
+            result = includers.contains(dependentScope);
         }
         return result;
     }
@@ -60,7 +60,7 @@ class ProfileChildCapabilityContext extends IncludingResourceCapabilityContext {
     }
 
     @Override
-    protected CapabilityContext createIncludedContext(String name) {
-        return new ProfileChildCapabilityContext(name);
+    protected CapabilityScope createIncludedContext(String name) {
+        return new ProfileChildCapabilityScope(name);
     }
 }

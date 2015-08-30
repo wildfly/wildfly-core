@@ -28,33 +28,33 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * {@link CapabilityContext} for the children of a Host Controller {@code socket-binding-group} resource.
+ * {@link CapabilityScope} for the children of a Host Controller {@code socket-binding-group} resource.
  * Note this does not include the socket binding group capability itself.
  *
  * @author Brian Stansberry
  *
- * @see SocketBindingGroupsCapabilityContext
+ * @see SocketBindingGroupsCapabilityScope
  */
-class SocketBindingGroupChildContext extends IncludingResourceCapabilityContext {
+class SocketBindingGroupChildScope extends IncludingResourceCapabilityScope {
 
-    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> SBG_KEY =
+    private static final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityScope>>> SBG_KEY =
             CapabilityResolutionContext.AttachmentKey.create(Map.class);
 
-    SocketBindingGroupChildContext(String value) {
+    SocketBindingGroupChildScope(String value) {
         super(SBG_KEY, SOCKET_BINDING_GROUP, value);
     }
 
     @Override
-    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
         boolean result;
-        if (dependentContext instanceof SocketBindingGroupChildContext) {
-            result = equals(dependentContext);
+        if (dependentScope instanceof SocketBindingGroupChildScope) {
+            result = equals(dependentScope);
             if (!result) {
-                Set<CapabilityContext> includers = getIncludingContexts(context);
-                result = includers.contains(dependentContext);
+                Set<CapabilityScope> includers = getIncludingScopes(context);
+                result = includers.contains(dependentScope);
             }
         } else {
-            result = !(dependentContext instanceof ProfilesCapabilityContext) && !(dependentContext instanceof ServerGroupsCapabilityContext);
+            result = !(dependentScope instanceof ProfilesCapabilityScope) && !(dependentScope instanceof ServerGroupsCapabilityScope);
         }
         return result;
     }
@@ -65,7 +65,7 @@ class SocketBindingGroupChildContext extends IncludingResourceCapabilityContext 
     }
 
     @Override
-    protected CapabilityContext createIncludedContext(String name) {
-        return new SocketBindingGroupChildContext(name);
+    protected CapabilityScope createIncludedContext(String name) {
+        return new SocketBindingGroupChildScope(name);
     }
 }

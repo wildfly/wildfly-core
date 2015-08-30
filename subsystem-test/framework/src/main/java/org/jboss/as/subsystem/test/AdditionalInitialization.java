@@ -8,7 +8,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -142,7 +142,7 @@ public class AdditionalInitialization extends AdditionalParsers {
      * Simple utility method to register a
      * {@link org.jboss.as.controller.capability.RuntimeCapability RuntimeCapability<Void>} for each of the given
      * capability names. They will be registered against
-     * {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL} and with the root resource and no
+     * {@link CapabilityScope#GLOBAL} and with the root resource and no
      * specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
      *
      * @param capabilityRegistry registry to use
@@ -151,7 +151,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     public static void registerCapabilities(RuntimeCapabilityRegistry capabilityRegistry, String... capabilities) {
         for (final String capabilityName : capabilities) {
             RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(capabilityName).build();
-            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
                     new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         }
@@ -160,7 +160,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     /**
      * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability} with the
      * specified {@link org.jboss.as.controller.capability.RuntimeCapability#getRuntimeAPI() runtime API}
-     * for each of the given capability names. They will be registered against {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * for each of the given capability names. They will be registered against {@link CapabilityScope#GLOBAL}
      * and with the root resource and no specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
      *
      * @param capabilityRegistry registry to use
@@ -170,7 +170,7 @@ public class AdditionalInitialization extends AdditionalParsers {
         for (Map.Entry<String, Object> entry : capabilities.entrySet()) {
             final String capabilityName = entry.getKey();
             RuntimeCapability<?> capability = createCapability(capabilityName, entry.getValue());
-            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
                     new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         }
@@ -179,7 +179,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     /**
      * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability} with the
      * specified service type for each of the given capability names. They will be registered against
-     * {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * {@link CapabilityScope#GLOBAL}
      * and with the root resource and no specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
      *
      * @param capabilityRegistry registry to use
@@ -189,7 +189,7 @@ public class AdditionalInitialization extends AdditionalParsers {
         for (Map.Entry<String, Class> entry : capabilities.entrySet()) {
             final String capabilityName = entry.getKey();
             RuntimeCapability<?> capability = RuntimeCapability.Builder.of(capabilityName, entry.getValue()).build();
-            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
                     new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         }
@@ -198,7 +198,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     /**
      * Simple utility method to register a single {@link org.jboss.as.controller.capability.RuntimeCapability} with the
      * specified service type for the given capability name. It will be registered against
-     * {@link org.jboss.as.controller.capability.registry.CapabilityContext#GLOBAL}
+     * {@link CapabilityScope#GLOBAL}
      * and with the root resource and no specific attribute as its {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
      *
      * @param capabilityRegistry registry to use
@@ -207,7 +207,7 @@ public class AdditionalInitialization extends AdditionalParsers {
      */
     public static void registerServiceCapability(RuntimeCapabilityRegistry capabilityRegistry, String name, Class serviceType) {
         RuntimeCapability<?> capability = RuntimeCapability.Builder.of(name, serviceType).build();
-        capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+        capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
                 new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
     }
 

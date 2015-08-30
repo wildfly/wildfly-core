@@ -22,20 +22,25 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-
 /**
- * {@link CapabilityContext} used for capabilities scoped to a Host Controller {@code server-config} resource.
+ * {@link CapabilityScope} specifically used for the {@code org.wildfly.domain.socket-binding-group} capability.
+ * <p>
+ * <strong>NOTE:</strong> This context is not used for child resources (subsystems) in the 'socket-binding-group'
+ * part of the Host Controller resource tree.
  *
  * @author Brian Stansberry
+ *
+ * @see SocketBindingGroupChildScope
  */
-class ServerConfigCapabilityContext implements CapabilityContext {
+class SocketBindingGroupsCapabilityScope implements CapabilityScope {
 
-    static final ServerConfigCapabilityContext INSTANCE = new ServerConfigCapabilityContext();
+    static final SocketBindingGroupsCapabilityScope INSTANCE = new SocketBindingGroupsCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
-        return dependentContext instanceof ServerConfigCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope instanceof SocketBindingGroupsCapabilityScope
+                || dependentScope instanceof ServerGroupsCapabilityScope
+                || dependentScope instanceof ServerConfigCapabilityScope;
     }
 
     @Override
@@ -45,6 +50,6 @@ class ServerConfigCapabilityContext implements CapabilityContext {
 
     @Override
     public String getName() {
-        return ModelDescriptionConstants.SERVER_CONFIG;
+        return "socket-binding-groups";
     }
 }

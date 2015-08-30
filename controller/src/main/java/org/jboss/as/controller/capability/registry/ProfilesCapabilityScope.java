@@ -23,24 +23,20 @@
 package org.jboss.as.controller.capability.registry;
 
 /**
- * {@link CapabilityContext} specifically used for the {@code org.wildfly.domain.socket-binding-group} capability.
+ * {@link CapabilityScope} specifically used for the {@code org.wildfly.domain.profile} capability.
  * <p>
- * <strong>NOTE:</strong> This context is not used for child resources (subsystems) in the 'socket-binding-group'
+ * <strong>NOTE:</strong> This context is not used for child resources (subsystems) in the 'profile'
  * part of the Host Controller resource tree.
  *
  * @author Brian Stansberry
- *
- * @see SocketBindingGroupChildContext
  */
-class SocketBindingGroupsCapabilityContext implements CapabilityContext {
+class ProfilesCapabilityScope implements CapabilityScope {
 
-    static final SocketBindingGroupsCapabilityContext INSTANCE = new SocketBindingGroupsCapabilityContext();
+    public static final ProfilesCapabilityScope INSTANCE = new ProfilesCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
-        return dependentContext instanceof SocketBindingGroupsCapabilityContext
-                || dependentContext instanceof ServerGroupsCapabilityContext
-                || dependentContext instanceof ServerConfigCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope instanceof ProfilesCapabilityScope || dependentScope instanceof ServerGroupsCapabilityScope;
     }
 
     @Override
@@ -50,6 +46,6 @@ class SocketBindingGroupsCapabilityContext implements CapabilityContext {
 
     @Override
     public String getName() {
-        return "socket-binding-groups";
+        return "profiles";
     }
 }

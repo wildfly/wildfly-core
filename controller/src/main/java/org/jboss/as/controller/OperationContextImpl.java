@@ -77,7 +77,7 @@ import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -299,7 +299,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     if (ignoreContext) {
                         msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapability(required.getName()));
                     } else {
-                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getContext().getName()));
+                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getScope().getName()));
                     }
                     for (RuntimeRequirementRegistration reg : entry.getValue()) {
                         RegistrationPoint rp = reg.getOldestRegistrationPoint();
@@ -357,7 +357,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 for (CapabilityId id : entry.getValue()) {
                     String formattedCapability = ignoreContext
                             ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
-                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getContext().getName());
+                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
                     if (msg != null) {
                         msg = msg.append('\n').append(formattedCapability);
                     }
@@ -434,7 +434,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             for (Map.Entry<CapabilityId, Step> entry : removedCapabilities.entrySet()) {
                 CapabilityId removedId = entry.getKey();
                 if (missingName.equals(removedId.getName())
-                        && removedId.getContext().canSatisfyRequirement(missingRequirement.getName(), missingRequirement.getContext(), resolutionContext)) {
+                        && removedId.getScope().canSatisfyRequirement(missingRequirement.getName(), missingRequirement.getScope(), resolutionContext)) {
                     result = entry.getValue();
                     break;
                 }
@@ -1431,11 +1431,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (dependent == null) {
             // WFCORE-900 we're currently forgiving of this, but only for runtime-only requirements
             assert runtimeOnly;
-            CapabilityContext context = createCapabilityContext(step);
+            CapabilityScope context = createCapabilityContext(step);
             return registry.hasCapability(required, context);
         }
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
-        CapabilityContext context = registration.getDependentContext();
+        CapabilityScope context = registration.getDependentContext();
         if (registry.hasCapability(required, context)) {
             registry.registerAdditionalCapabilityRequirement(registration);
             recordRequirement(registration, step);
@@ -1484,7 +1484,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context, step.address);
         if (capReg != null) {
             RuntimeCapability capability = capReg.getCapability();
@@ -1495,7 +1495,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private void removeRequirement(String required, CapabilityContext context, Step step) {
+    private void removeRequirement(String required, CapabilityScope context, Step step) {
         CapabilityId id = new CapabilityId(required, context);
         Set<Step> dependents = addedRequirements.get(id);
         if (dependents != null) {
@@ -1519,7 +1519,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType, Step step) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, context, apiType);
     }
 
@@ -1536,7 +1536,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, Step step) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         try {
             return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, context, serviceType);
         } catch (IllegalStateException ignored) {
@@ -1827,19 +1827,19 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private RuntimeRequirementRegistration createRequirementRegistration(String required, String dependent,
                                                                          boolean runtimeOnly, Step step, String attribute) {
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeRequirementRegistration(required, dependent, context, rp, runtimeOnly);
     }
 
     private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability capability, Step step, String attribute) {
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeCapabilityRegistration(capability, context, rp);
     }
 
-    private CapabilityContext createCapabilityContext(Step step) {
-        return CapabilityContext.Factory.create(getProcessType(), step.address);
+    private CapabilityScope createCapabilityContext(Step step) {
+        return CapabilityScope.Factory.create(getProcessType(), step.address);
     }
 
     class ContextServiceTarget implements ServiceTarget {
@@ -2557,7 +2557,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) throws NoSuchCapabilityException {
             try {
-                return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityContext.GLOBAL, apiType);
+                return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityScope.GLOBAL, apiType);
             } catch (IllegalStateException e) {
                 throw new NoSuchCapabilityException(capabilityName);
             }

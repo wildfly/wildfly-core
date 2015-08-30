@@ -38,12 +38,12 @@ public class RuntimeRequirementRegistration extends RequirementRegistration {
      *
      * @param requiredName      the name of the required capability
      * @param dependentName     the name of the capability that requires {@code requiredName}
-     * @param dependentContext  context in which the dependent capability exists
+     * @param dependentScope    scope in which the dependent capability exists
      * @param registrationPoint point in the configuration model that triggered the requirement
      */
-    public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
+    public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityScope dependentScope,
                                           RegistrationPoint registrationPoint) {
-        this(requiredName, dependentName, dependentContext, registrationPoint, false);
+        this(requiredName, dependentName, dependentScope, registrationPoint, false);
     }
 
     /**
@@ -51,16 +51,16 @@ public class RuntimeRequirementRegistration extends RequirementRegistration {
      *
      * @param requiredName      the name of the required capability
      * @param dependentName     the name of the capability that requires {@code requiredName}
-     * @param dependentContext  context in which the dependent capability exists
+     * @param dependentScope    scope in which the dependent capability exists
      * @param registrationPoint point in the configuration model that triggered the requirement
      * @param runtimeOnly       {@code true} if and only if the requirement is optional and runtime-only
      *                          (i.e. not mandated by the persistent configuration), and
      *                          therefore should not result in a configuration validation failure
      *                          if it is not satisfied
      */
-    public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityContext dependentContext,
+    public RuntimeRequirementRegistration(String requiredName, String dependentName, CapabilityScope dependentScope,
                                           RegistrationPoint registrationPoint, boolean runtimeOnly) {
-        super(requiredName, dependentName, dependentContext, registrationPoint);
+        super(requiredName, dependentName, dependentScope, registrationPoint);
         this.runtimeOnly = runtimeOnly;
     }
 

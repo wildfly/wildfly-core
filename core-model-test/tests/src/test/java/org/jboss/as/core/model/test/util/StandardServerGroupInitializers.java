@@ -29,7 +29,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -50,11 +50,11 @@ public class StandardServerGroupInitializers {
 
     private static final String TEST_PROFILE_CAPABILITY = ProfileResourceDefinition.PROFILE_CAPABILITY.getDynamicName("test");
     private static final PathAddress TEST_PROFILE_ADDRESS = PathAddress.pathAddress(PROFILE, "test");
-    private static final CapabilityContext TEST_PROFILE_CONTEXT = CapabilityContext.Factory.create(ProcessType.HOST_CONTROLLER, TEST_PROFILE_ADDRESS);
+    private static final CapabilityScope TEST_PROFILE_CONTEXT = CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER, TEST_PROFILE_ADDRESS);
 
     private static final String TEST_SBG_CAPABILITY = AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY.getDynamicName("test-sockets");
     private static final PathAddress TEST_SBG_ADDRESS = PathAddress.pathAddress(SOCKET_BINDING_GROUP, "test-sockets");
-    private static final CapabilityContext TEST_SBG_CONTEXT = CapabilityContext.Factory.create(ProcessType.HOST_CONTROLLER, TEST_SBG_ADDRESS);
+    private static final CapabilityScope TEST_SBG_CONTEXT = CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER, TEST_SBG_ADDRESS);
 
     public static final ModelInitializer XML_MODEL_INITIALIZER = new ModelInitializer() {
 
