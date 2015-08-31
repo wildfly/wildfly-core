@@ -105,6 +105,16 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
+    public int getMaxOccurs() {
+        return resourceDefinition.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return resourceDefinition.getMinOccurs();
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         checkPermission();
         return runtimeOnly.get();

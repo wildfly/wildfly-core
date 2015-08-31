@@ -791,6 +791,16 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public int getMaxOccurs() {
+            return deployments.getMaxOccurs();
+        }
+
+        @Override
+        public int getMinOccurs() {
+            return deployments.getMinOccurs();
+        }
+
+        @Override
         public boolean isRuntimeOnly() {
             return deployments.isRuntimeOnly();
         }

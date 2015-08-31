@@ -92,6 +92,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    public int getMaxOccurs() {
+        return 1;
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return 1;
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         checkPermission();
         return true;
