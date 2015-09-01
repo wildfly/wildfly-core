@@ -61,7 +61,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull) {
         super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
-                null, false, null, null, null, null, null);
+                null, false, null, null, null, null);
     }
 
     /**
@@ -87,7 +87,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final MeasurementUnit measurementUnit) {
         super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
-                null, false, null, null, null, null, null);
+                null, false, null, null, null, null);
     }
 
     /**
@@ -115,7 +115,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type, final boolean allowNull) {
         super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
-                null, false, null, null, null, null, null);
+                null, false, null, null, null, null);
     }
 
     /**
