@@ -35,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
@@ -56,12 +57,15 @@ public class RemoteProxyController implements ProxyController {
     private final PathAddress pathAddress;
     private final ProxyOperationAddressTranslator addressTranslator;
     private final TransactionalProtocolClient client;
+    private final ModelVersion targetKernelVersion;
 
     private RemoteProxyController(final TransactionalProtocolClient client, final PathAddress pathAddress,
-                                  final ProxyOperationAddressTranslator addressTranslator) {
+                                  final ProxyOperationAddressTranslator addressTranslator,
+                                  final ModelVersion targetKernelVersion) {
         this.client = client;
         this.pathAddress = pathAddress;
         this.addressTranslator = addressTranslator;
+        this.targetKernelVersion = targetKernelVersion;
     }
 
     /**
@@ -70,10 +74,13 @@ public class RemoteProxyController implements ProxyController {
      * @param client the transactional protocol client
      * @param pathAddress the path address
      * @param addressTranslator the address translator
+     * @param targetKernelVersion the {@link ModelVersion} of the kernel management API exposed by the proxied process
      * @return the proxy controller
      */
-    public static RemoteProxyController create(final TransactionalProtocolClient client, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
-        return new RemoteProxyController(client, pathAddress, addressTranslator);
+    public static RemoteProxyController create(final TransactionalProtocolClient client, final PathAddress pathAddress,
+                                               final ProxyOperationAddressTranslator addressTranslator,
+                                               final ModelVersion targetKernelVersion) {
+        return new RemoteProxyController(client, pathAddress, addressTranslator, targetKernelVersion);
     }
 
     /**
@@ -83,11 +90,14 @@ public class RemoteProxyController implements ProxyController {
      * @param pathAddress the address within the model of the created proxy controller
      * @param addressTranslator the translator to use translating the address for the remote proxy
      * @return the proxy controller
+     *
+     * @deprecated only present for test case use
      */
+    @Deprecated
     public static RemoteProxyController create(final ManagementChannelHandler channelAssociation, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
         final TransactionalProtocolClient client = TransactionalProtocolHandlers.createClient(channelAssociation);
         // the remote proxy
-        return create(client, pathAddress, addressTranslator);
+        return create(client, pathAddress, addressTranslator, ModelVersion.CURRENT);
     }
 
     /**
@@ -208,6 +218,11 @@ public class RemoteProxyController implements ProxyController {
             // Notify the proxy control that the operation failed
             control.operationFailed(result);
         }
+    }
+
+    @Override
+    public ModelVersion getKernelModelVersion() {
+        return targetKernelVersion;
     }
 
     /**
