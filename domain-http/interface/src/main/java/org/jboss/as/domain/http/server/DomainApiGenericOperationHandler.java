@@ -36,6 +36,9 @@ import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Deque;
 import java.util.Iterator;
 
@@ -82,6 +85,7 @@ class DomainApiGenericOperationHandler implements HttpHandler {
             Common.UNSUPPORTED_MEDIA_TYPE.handleRequest(exchange);
             return;
         }
+
         // Parse the form data
         final FormData data = parser.parseBlocking();
         final OperationParameter.Builder operationParameterBuilder = new OperationParameter.Builder(false);
@@ -90,17 +94,23 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         final FormData.FormValue op = data.getFirst(OPERATION);
         final ModelNode operation;
         try {
-            if (Common.APPLICATION_DMR_ENCODED.equals(op.getHeaders().getFirst(Headers.CONTENT_TYPE))) {
-                operation = ModelNode.fromBase64(new ByteArrayInputStream(op.getValue().getBytes()));
+            String type = op.getHeaders().getFirst(Headers.CONTENT_TYPE);
+            if (Common.APPLICATION_DMR_ENCODED.equals(type)) {
+                try (InputStream stream = convertToStream(op)) {
+                    operation = ModelNode.fromBase64(stream);
+                }
                 operationParameterBuilder.encode(true);
             } else {
-                operation = ModelNode.fromJSONString(op.getValue());
+                try (InputStream stream = convertToStream(op)) {
+                    operation = ModelNode.fromJSONStream(stream);
+                }
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             ROOT_LOGGER.errorf("Unable to construct ModelNode '%s'", e.getMessage());
             Common.sendError(exchange, false, e.getLocalizedMessage());
             return;
         }
+
 
         // Process the input streams
         final OperationBuilder builder = OperationBuilder.create(operation, true);
@@ -154,6 +164,14 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         }
 
         callback.sendResponse(response);
+    }
+
+    private InputStream convertToStream(FormData.FormValue op) throws IOException {
+        if (op.isFile()) {
+            return Files.newInputStream(op.getFile().toPath());
+        } else {
+            return new ByteArrayInputStream(op.getValue().getBytes());
+        }
     }
 
     static final String RELOAD = "reload";
