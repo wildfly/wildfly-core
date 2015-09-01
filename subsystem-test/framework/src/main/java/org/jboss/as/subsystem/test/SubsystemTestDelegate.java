@@ -45,8 +45,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
-
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -89,6 +89,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
+import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
 import org.jboss.as.model.test.EAPRepositoryReachableUtil;
 import org.jboss.as.model.test.ModelFixer;
@@ -666,10 +667,13 @@ final class SubsystemTestDelegate {
             AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
                     testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
             SubsystemTestDelegate.this.kernelServices.add(kernelServices);
-
             validateDescriptionProviders(additionalInit, kernelServices);
             ImmutableManagementResourceRegistration subsystemReg = kernelServices.getRootRegistration().getSubModel(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName)));
             ModelTestUtils.validateModelDescriptions(PathAddress.EMPTY_ADDRESS, subsystemReg);
+
+            if (!legacyControllerInitializers.isEmpty()) { //only load transformers if we are testing legacy controllers
+                loadTransformers(kernelServices.getExtensionRegistry());
+            }
 
             for (Map.Entry<ModelVersion, LegacyKernelServiceInitializerImpl> entry : legacyControllerInitializers.entrySet()) {
                 LegacyKernelServiceInitializerImpl legacyInitializer = entry.getValue();
@@ -695,6 +699,18 @@ final class SubsystemTestDelegate {
 
             return kernelServices;
         }
+
+        private void loadTransformers(final ExtensionRegistry extensionRegistry) {
+            ModelVersion version = extensionRegistry.getSubsystemInfo(getMainSubsystemName()).getManagementInterfaceVersion();
+            for (ExtensionTransformerRegistration registration : ServiceLoader.load(ExtensionTransformerRegistration.class)) {
+                if (registration.getSubsystemName().equals(getMainSubsystemName())) {
+                    registration.registerTransformers(extensionRegistry.getTransformerRegistry()
+                            .createSubsystemTransformerRegistration(getMainSubsystemName(), version));
+                }
+
+            }
+        }
+
 
         @Override
         public List<ModelNode> parse(String subsystemXml) throws XMLStreamException {
