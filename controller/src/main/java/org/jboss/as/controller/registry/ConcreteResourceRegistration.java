@@ -48,6 +48,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
@@ -460,7 +461,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public void registerCapability(Capability capability){
+    public void registerCapability(RuntimeCapability capability){
         capabilities.add(capability);
         if (capabilityRegistry != null) {
             capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
