@@ -36,10 +36,14 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.GlobalTransformerRegistry;
 import org.jboss.as.controller.registry.OperationTransformerRegistry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 
 /**
  * Global transformers registry.
@@ -68,6 +72,56 @@ public final class TransformerRegistry {
         domain.createChildRegistry(PathAddress.pathAddress(PROFILE), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
         domain.createChildRegistry(PathAddress.pathAddress(HOST), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
         domain.createChildRegistry(PathAddress.pathAddress(HOST, SERVER), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
+    }
+
+    public void loadAndRegisterTransformers(String name, ModelVersion subsystemVersion, String extensionModuleName) {
+        try {
+            SubsystemTransformerRegistration transformerRegistration = new SubsystemTransformerRegistrationImpl(name, subsystemVersion);
+            if (Module.getCallerModule() != null) { //only register when running in modular environment, testsuite does its own loading
+                for (ExtensionTransformerRegistration registration : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(extensionModuleName), ExtensionTransformerRegistration.class)) {
+                    if (registration.getSubsystemName().equals(name)) { //to prevent registering transformers for different subsystems
+                        registration.registerTransformers(transformerRegistration);
+                    }
+                }
+            }
+        } catch (ModuleLoadException e) {
+            throw ControllerLogger.ROOT_LOGGER.couldNotLoadModuleForTransformers(extensionModuleName, e);
+        }
+    }
+
+    public SubsystemTransformerRegistration createSubsystemTransformerRegistration(String name, ModelVersion currentVersion){
+        return new SubsystemTransformerRegistrationImpl(name, currentVersion);
+    }
+
+    private class SubsystemTransformerRegistrationImpl implements SubsystemTransformerRegistration{
+        private final String name;
+        private final ModelVersion currentVersion;
+
+
+        public SubsystemTransformerRegistrationImpl(String name, ModelVersion currentVersion) {
+            this.name = name;
+            this.currentVersion = currentVersion;
+        }
+
+        @Override
+        public TransformersSubRegistration registerModelTransformers(final ModelVersionRange range, final ResourceTransformer subsystemTransformer) {
+            return registerSubsystemTransformers(name, range, subsystemTransformer);
+        }
+
+        @Override
+        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
+            return registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, placeholder);
+        }
+
+        @Override
+        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
+            return registerSubsystemTransformers(name, version, combinedTransformer);
+        }
+
+        @Override
+        public ModelVersion getCurrentSubsystemVersion() {
+            return currentVersion;
+        }
     }
 
     /**

@@ -3437,9 +3437,9 @@ public interface ControllerLogger extends BasicLogger {
      * A message indicating the {@code value} parameter is invalid and must have a minimum bytes length, represented by the
      * {@code length} parameter.
      *
-     * @param value the invalid value.
-     * @param name the name of the parameter.
-     * @param length the minimum length.
+     * @param str the invalid value.
+     * @param parameterName the name of the parameter.
+     * @param min the minimum length.
      *
      * @return the message.
      */
@@ -3449,4 +3449,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 421, value = "Exploded deployment is not supported by some servers")
     String explodedDeploymentNotSupported();
+
+    @Message(id = 422, value = "Could not load module '%s' for transformers")
+    RuntimeException couldNotLoadModuleForTransformers(String name, @Cause ModuleLoadException e);
 }

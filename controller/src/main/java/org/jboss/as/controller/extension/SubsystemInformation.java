@@ -24,6 +24,8 @@ package org.jboss.as.controller.extension;
 
 import java.util.List;
 
+import org.jboss.as.controller.ModelVersion;
+
 /**
 * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
 */
@@ -56,4 +58,19 @@ public interface SubsystemInformation {
      * @return the micro interface version, or {@code null} if the subsystem does not have a versioned interface
      */
     Integer getManagementInterfaceMicroVersion();
+
+
+    /**
+     * Gets full version of the subsystem
+     * @return full {@link ModelVersion}
+     */
+    default ModelVersion getManagementInterfaceVersion(){
+        return ModelVersion.create(getManagementInterfaceMajorVersion() != null ? getManagementInterfaceMajorVersion() : 0,
+                getManagementInterfaceMinorVersion() != null ? getManagementInterfaceMinorVersion() : 0,
+                getManagementInterfaceMicroVersion() != null ? getManagementInterfaceMicroVersion() : 0
+        );
+    }
+
+
+    boolean isDeprecated();
 }
