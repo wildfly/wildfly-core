@@ -1,10 +1,16 @@
 package org.jboss.as.controller;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,18 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
 /**
  * A representation of a resource as needed by the XML parser.
@@ -311,15 +310,16 @@ public final class PersistentResourceXMLDescription {
         }
 
         if (wildcard) {
-            for (Property p : model.asPropertyList()) {
+            for (String name : model.keys()) {
+                ModelNode subModel = model.get(name);
                 if (useValueAsElementName) {
-                    writeStartElement(writer, namespaceURI, p.getName());
+                    writeStartElement(writer, namespaceURI, name);
                 } else {
                     writeStartElement(writer, namespaceURI, xmlElementName);
-                    writer.writeAttribute(NAME, p.getName());
+                    writer.writeAttribute(NAME, name);
                 }
-                persistAttributes(writer, p.getValue(), false);
-                persistChildren(writer, p.getValue());
+                persistAttributes(writer, subModel, false);
+                persistChildren(writer, subModel);
                 writer.writeEndElement();
             }
         } else {
