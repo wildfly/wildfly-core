@@ -65,6 +65,7 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MIME;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.AbstractContentBody;
@@ -186,6 +187,7 @@ public class HttpGenericOperationUnitTestCase {
      */
     private ModelNode executePost(final ContentBody operation, final boolean encoded, final List<ContentBody> streams) throws IOException {
         final HttpPost post = new HttpPost(uri);
+        post.setHeader("X-Management-Client-Name", "test-client");
         final MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create().addPart("operation", operation);
         for (ContentBody stream : streams) {
             entityBuilder.addPart("input-streams", stream);
@@ -198,7 +200,7 @@ public class HttpGenericOperationUnitTestCase {
         if (encoded) {
             return new DMRContentEncodedBody(operation);
         } else {
-            return new StringBody(operation.toJSONString(true));
+            return new StringBody(operation.toJSONString(true), ContentType.APPLICATION_JSON);
         }
     }
 
