@@ -317,30 +317,31 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             propCompleter = factory.createCompleter(ctx, address);
         }
         if (propCompleter == null) {
-            final ModelNode typeNode = prop.getValue().get(Util.TYPE);
+            ModelNode attrDescr = prop.getValue();
+            final ModelNode typeNode = attrDescr.get(Util.TYPE);
             if (typeNode.isDefined() && ModelType.BOOLEAN.equals(typeNode.asType())) {
                 return SimpleTabCompleter.BOOLEAN;
             }
-            if (prop.getValue().get(Util.FILESYSTEM_PATH).asBoolean()) {
+            if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
                 return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
             }
-            if (prop.getValue().has(Util.VALUE_TYPE)) {
-                final ModelNode valueTypeNode = prop.getValue().get(Util.VALUE_TYPE);
+            if (attrDescr.has(Util.VALUE_TYPE)) {
+                final ModelNode valueTypeNode = attrDescr.get(Util.VALUE_TYPE);
                 try {
                     // the logic is: if value-type is set to a specific type
                     // (i.e. doesn't describe a custom structure)
                     // then if allowed is specified, use it.
                     // it might be broken but so far this is not looking clear to me
                     valueTypeNode.asType();
-                    if (prop.getValue().has(Util.ALLOWED)) {
+                    if (attrDescr.has(Util.ALLOWED)) {
                         return getAllowedCompleter(prop);
                     }
                 } catch (IllegalArgumentException e) {
                     // TODO this means value-type describes a custom structure
-                    return new ValueTypeCompleter(prop.getValue());
+                    return new ValueTypeCompleter(attrDescr);
                 }
             }
-            if (prop.getValue().has(Util.ALLOWED)) {
+            if (attrDescr.has(Util.ALLOWED)) {
                 return getAllowedCompleter(prop);
             }
         }
