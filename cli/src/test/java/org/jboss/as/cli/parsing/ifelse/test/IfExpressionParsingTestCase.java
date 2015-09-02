@@ -33,6 +33,7 @@ import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.GT;
 import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.LT;
 import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.NGT;
 import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.NLT;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -124,7 +125,7 @@ public class IfExpressionParsingTestCase {
 
         operand = operands.get(1);
         assertOperation(operand, AND, 2);
-        assertComparison(((Operation)operand).getOperands().get(0), NGT, "g", "h");
+        assertComparison(((Operation) operand).getOperands().get(0), NGT, "g", "h");
         assertComparison(((Operation)operand).getOperands().get(1), EQ, "i", "j");
 
         operand = operands.get(2);
@@ -151,6 +152,49 @@ public class IfExpressionParsingTestCase {
         assertComparison(operands.get(0), EQ, "a", "b");
         assertComparison(operands.get(1), EQ, "c", "d");
         assertComparison(operands.get(2), EQ, "e", "f");
+    }
+
+    @Test
+    public void testParenthesesInString() throws Exception {
+        parser.reset();
+        Operation op = parser.parseExpression("(a == \"ab)cd\") && b==\"ef(gh\" && c==\"(\"");
+        assertOperation(op, AND, 3);
+        final List<Operand> operands = op.getOperands();
+        assertComparison(operands.get(0), EQ, "a", "ab)cd");
+        assertComparison(operands.get(1), EQ, "b", "ef(gh");
+        assertComparison(operands.get(2), EQ, "c", "(");
+    }
+
+    @Test
+    public void testEscapedQuotesInString() throws Exception {
+        parser.reset();
+        Operation op = parser.parseExpression("(a == \"ab\\\")cd\") && b==\"\\\"\"");
+        assertOperation(op, AND, 2);
+        final List<Operand> operands = op.getOperands();
+        assertComparison(operands.get(0), EQ, "a", "ab\")cd");
+        assertComparison(operands.get(1), EQ, "b", "\"");
+    }
+
+    @Test
+    public void testMissingEndQuote() throws Exception {
+        parser.reset();
+        try {
+            parser.parseExpression("(a == \"abcd)");
+            fail("Parser accepted missing end quite.");
+        } catch (Throwable e) {
+            assertTrue(e instanceof IllegalStateException);
+        }
+    }
+
+    @Test
+    public void testEndQuoteEscaped() throws Exception {
+        parser.reset();
+        try {
+            parser.parseExpression("(a == \"abcd\\\")");
+            fail("Parser accepted missing end quite.");
+        } catch (Throwable e) {
+            assertTrue(e instanceof IllegalStateException);
+        }
     }
 
     protected void assertOperation(Operand operand, String opName, int operandsTotal) {
