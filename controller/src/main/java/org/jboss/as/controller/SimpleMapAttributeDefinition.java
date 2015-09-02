@@ -37,7 +37,6 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
 
 /**
  * {@link MapAttributeDefinition} for maps with keys of {@link ModelType#STRING}.
@@ -87,10 +86,10 @@ public class SimpleMapAttributeDefinition extends MapAttributeDefinition {
 
         private void marshalToElement(ModelNode resourceModel, XMLStreamWriter writer) throws XMLStreamException {
             if (!resourceModel.isDefined()) { return; }
-            for (Property property : resourceModel.asPropertyList()) {
+            for (String name : resourceModel.keys()) {
                 writer.writeStartElement(PROPERTY.getLocalName());
-                writer.writeAttribute(NAME.getLocalName(), property.getName());
-                writer.writeCharacters(property.getValue().asString());
+                writer.writeAttribute(NAME.getLocalName(), name);
+                writer.writeCharacters(resourceModel.get(name).asString());
                 writer.writeEndElement();
             }
         }
