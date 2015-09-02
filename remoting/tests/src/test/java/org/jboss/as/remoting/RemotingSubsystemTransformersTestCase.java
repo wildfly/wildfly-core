@@ -50,7 +50,6 @@ import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -63,9 +62,13 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
     }
 
     @Test
-    @Ignore
     public void testTransformersEAP620() throws Exception {
         testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_2_0);
+    }
+
+    @Test
+    public void testTransformersEAP630() throws Exception {
+        testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_3_0);
     }
 
     private void testTransformers_1_3_0(ModelTestControllerVersion controllerVersion) throws Exception {
@@ -78,7 +81,32 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
                 .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion())
                 .skipReverseControllerCheck();
-                //.configureReverseControllerCheck(createAdditionalInitialization(), null);
+        //.configureReverseControllerCheck(createAdditionalInitialization(), null);
+        KernelServices mainServices = builder.build();
+        assertTrue(mainServices.isSuccessfulBoot());
+        KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
+        assertNotNull(legacyServices);
+        assertTrue(legacyServices.isSuccessfulBoot());
+
+        checkSubsystemModelTransformation(mainServices, oldVersion, null, false);
+        checkRejectOutboundConnectionProtocolNotRemote(mainServices, oldVersion, CommonAttributes.REMOTE_OUTBOUND_CONNECTION, "remote-conn1");
+        checkRejectHttpConnector(mainServices, oldVersion);
+        checkRejectEndpointConfiguration(mainServices, oldVersion);
+    }
+
+    @Test
+    public void testTransformersEAP640() throws Exception {
+        KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION)
+                .setSubsystemXmlResource("remoting-with-expressions-and-good-legacy-protocol.xml");
+        ModelVersion oldVersion = ModelVersion.create(1, 4, 0);
+
+
+        ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_6_4_0;
+        // Add legacy subsystems
+        builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
+                .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion())
+                .skipReverseControllerCheck();
+        //.configureReverseControllerCheck(createAdditionalInitialization(), null);
         KernelServices mainServices = builder.build();
         assertTrue(mainServices.isSuccessfulBoot());
         KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
