@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment;
 
+import java.io.File;
+
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -33,19 +35,19 @@ import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * The top-level service corresponding to a deployment unit.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final InjectedValue<DeploymentMountProvider> serverDeploymentRepositoryInjector = new InjectedValue<DeploymentMountProvider>();
     private final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<PathManager>();
-    private final InjectedValue<VirtualFile> contentsInjector = new InjectedValue<VirtualFile>();
     private final String name;
     private final String managementName;
+    final InjectedValue<File> contentsInjector = new InjectedValue<File>();
     private final DeploymentUnit parent;
     private final DeploymentOverlayIndex deploymentOverlays;
 
@@ -104,7 +106,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         return pathManagerInjector;
     }
 
-    InjectedValue<VirtualFile> getContentsInjector() {
+    InjectedValue<File> getContentsInjector() {
         return contentsInjector;
     }
 

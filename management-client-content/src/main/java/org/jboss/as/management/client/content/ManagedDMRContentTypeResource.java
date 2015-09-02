@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HAS
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,7 +51,6 @@ import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * {@link Resource} implementation for the root resource of a tree of resources that store managed DMR content
@@ -282,13 +283,13 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
     }
 
     private void loadContent(byte[] initialHash) {
-        VirtualFile vf = contentRepository.getContent(initialHash);
-        if (vf == null) {
+        File f = contentRepository.getContent(initialHash);
+        if (f == null) {
             throw ManagedDMRContentLogger.ROOT_LOGGER.noContentFoundWithHash(HashUtil.bytesToHexString(initialHash));
         }
         InputStream is = null;
         try {
-            is = vf.openStream();
+            is = new FileInputStream(f);
             ModelNode node = ModelNode.fromStream(is);
             if (node.isDefined()) {
                 for (Property prop : node.asPropertyList()) {

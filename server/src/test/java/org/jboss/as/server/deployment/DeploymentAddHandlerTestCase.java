@@ -21,6 +21,7 @@
  */
 package org.jboss.as.server.deployment;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -31,7 +32,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
-import org.jboss.vfs.VirtualFile;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -90,7 +90,7 @@ public class DeploymentAddHandlerTestCase {
         }
 
         @Override
-        public VirtualFile getContent(byte[] hash) {
+        public File getContent(byte[] hash) {
             return null;
         }
 

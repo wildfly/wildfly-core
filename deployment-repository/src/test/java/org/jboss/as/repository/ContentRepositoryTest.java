@@ -39,8 +39,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import org.jboss.vfs.VirtualFile;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -135,8 +133,8 @@ public class ContentRepositoryTest {
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(result), is(expResult));
-            VirtualFile content = repository.getContent(result);
-            String contentHtml = readFileContent(content.getPhysicalFile());
+            File content = repository.getContent(result);
+            String contentHtml = readFileContent(content);
             String expectedContentHtml = readFileContent(new File(this.getClass().getClassLoader().getResource("overlay.xhtml").toURI()));
             assertThat(contentHtml, is(expectedContentHtml));
         }
@@ -185,7 +183,7 @@ public class ContentRepositoryTest {
         assertFalse(expectedContent + " should have been deleted", Files.exists(expectedContent));
         assertFalse(parent.toAbsolutePath() + " should have been deleted", Files.exists(parent));
         assertFalse(grandparent + " should have been deleted", Files.exists(grandparent));
-        VirtualFile content = repository.getContent(result);
+        File content = repository.getContent(result);
         assertFalse(content.exists());
     }
 
@@ -286,7 +284,7 @@ public class ContentRepositoryTest {
         assertFalse(parent.toAbsolutePath() + " should have been deleted", Files.exists(parent));
         assertTrue(other + " should not have been deleted", Files.exists(other));
         assertTrue(grandparent + " should not have been deleted", Files.exists(grandparent));
-        VirtualFile content = repository.getContent(result);
+        File content = repository.getContent(result);
         assertFalse(content.exists());
     }
 

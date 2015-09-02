@@ -39,10 +39,10 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class RemoteFileRepositoryService implements CompositeContentRepository, Service<CompositeContentRepository> {
 
@@ -93,7 +93,7 @@ public class RemoteFileRepositoryService implements CompositeContentRepository, 
     }
 
     @Override
-    public VirtualFile getContent(byte[] hash) {
+    public File getContent(byte[] hash) {
         return contentRepository.getContent(hash);
     }
 

@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,7 +89,7 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
                     VirtualFile mountPoint = deploymentRoot.getRoot().getChild(path);
 
                     paths.add(path);
-                    VirtualFile content = contentRepository.getContent(entry.getValue());
+                    File content = contentRepository.getContent(entry.getValue());
                     VirtualFile parent = mountPoint.getParent();
                     List<VirtualFile> createParents = new ArrayList<>();
                     while (!parent.exists()) {
@@ -103,8 +104,8 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
                             Closeable closable = VFS.mountTemp(file);
                             deploymentUnit.addToAttachmentList(MOUNTED_FILES, closable);
                         }
-                        Closeable handle = VFS.mountReal(content.getPhysicalFile(), mountPoint);
-                        MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content.getPhysicalFile(), mountPoint);
+                        Closeable handle = VFS.mountReal(content, mountPoint);
+                        MountedDeploymentOverlay mounted = new MountedDeploymentOverlay(handle, content, mountPoint);
                         deploymentUnit.addToAttachmentList(MOUNTED_FILES, mounted);
                         mounts.put(path, mounted);
                     } else {

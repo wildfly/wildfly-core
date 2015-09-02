@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment;
 
+import java.io.File;
 import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
@@ -48,10 +49,10 @@ import org.jboss.jandex.Index;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 @SuppressWarnings("deprecation")
 public final class Attachments {
@@ -90,7 +91,7 @@ public final class Attachments {
     /**
      * The deployment contents
      */
-    public static final AttachmentKey<VirtualFile> DEPLOYMENT_CONTENTS = AttachmentKey.create(VirtualFile.class);
+    public static final AttachmentKey<File> DEPLOYMENT_CONTENTS = AttachmentKey.create(File.class);
 
     /**
      * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for

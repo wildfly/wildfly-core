@@ -96,8 +96,6 @@ import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -835,7 +833,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         private final Set<String> expectedContent = new HashSet<>();
 
         //Rollout plans need actual content
-        private volatile VirtualFile vf;
+        private volatile File f;
 
         private final Map<String, ContentReference> addedContentReferences = new HashMap<>();
         private final Map<String, ContentReference> fetchedFiles = new HashMap<>();
@@ -862,9 +860,9 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         }
 
         @Override
-        public VirtualFile getContent(byte[] hash) {
+        public File getContent(byte[] hash) {
             if (hash[0] == 1) {
-                return vf;
+                return f;
 
             }
             return null;
@@ -912,7 +910,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             File tempDir = new File(systemTmpDir, "test" + System.currentTimeMillis());
             tempDir.mkdir();
             File file = new File(tempDir, "content");
-            this.vf = VFS.getChild(file.toURI());
+            this.f = file;
 
             try (final PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file)));){
                 dmr.writeString(out, true);
@@ -920,9 +918,10 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         }
 
         void deleteVirtualFileAndParent() {
-            if (vf != null) {
-                vf.delete();
-                vf.getParent().delete();
+            if (f != null) {
+                final File parent = f.getParentFile();
+                f.delete();
+                parent.delete();
             }
         }
     }

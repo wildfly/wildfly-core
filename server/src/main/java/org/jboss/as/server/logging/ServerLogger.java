@@ -1023,7 +1023,7 @@ public interface ServerLogger extends BasicLogger {
     OperationFailedException noSuchDeploymentOverlayContent(String hash);
 
     @Message(id = 200, value = "Failed to read file %s")
-    OperationFailedException failedToLoadFile(VirtualFile file, @Cause IOException e);
+    OperationFailedException failedToLoadFile(File file, @Cause IOException e);
 
     @Message(id = 201, value = "Cannot have more than one of %s")
     OperationFailedException cannotHaveMoreThanOneManagedContentItem(Set<String> managedAttributes);

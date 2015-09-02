@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment.module;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
@@ -63,7 +64,8 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
             throw ServerLogger.ROOT_LOGGER.noDeploymentRepositoryAvailable();
         }
 
-        final VirtualFile deploymentContents = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
+        final File deploymentContentsFile = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
+        final VirtualFile deploymentContents = VFS.getChild(deploymentContentsFile.toURI());
 
         // internal deployments do not have any contents, so there is nothing to mount
         if (deploymentContents == null)

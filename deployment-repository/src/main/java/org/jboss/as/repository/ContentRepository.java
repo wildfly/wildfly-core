@@ -51,13 +51,12 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * Repository for deployment content and other managed content.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface ContentRepository {
 
@@ -101,7 +100,7 @@ public interface ContentRepository {
      *
      * @return the content as a virtual file
      */
-    VirtualFile getContent(byte[] hash);
+    File getContent(byte[] hash);
 
     /**
      * Gets whether content with the given hash is stored in the repository.
@@ -253,11 +252,11 @@ public interface ContentRepository {
             }
 
             @Override
-            public VirtualFile getContent(byte[] hash) {
+            public File getContent(byte[] hash) {
                 if (hash == null) {
                     throw DeploymentRepositoryLogger.ROOT_LOGGER.nullVar("hash");
                 }
-                return VFS.getChild(getDeploymentContentFile(hash, true).toUri());
+                return getDeploymentContentFile(hash, true).toFile();
             }
 
             @Override
