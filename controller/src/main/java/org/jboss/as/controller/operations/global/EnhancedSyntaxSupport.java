@@ -22,7 +22,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -35,8 +37,9 @@ class EnhancedSyntaxSupport {
     static final Pattern BRACKETS_PATTERN = Pattern.compile("(.*)\\[(-?\\d+)\\]");
     static final Pattern EXTRACT_NAME_PATTERN = Pattern.compile("^(.*?)[\\.\\[].*");
 
-    static boolean containsEnhancedSyntax(String attributeName) {
-        return ENHANCED_SYNTAX_PATTERN.matcher(attributeName).matches();
+    static boolean containsEnhancedSyntax(String attributeName, ImmutableManagementResourceRegistration registry) {
+        return registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName) == null
+                && ENHANCED_SYNTAX_PATTERN.matcher(attributeName).matches();
     }
 
     static String extractAttributeName(String expression) {

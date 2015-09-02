@@ -32,6 +32,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -69,7 +70,8 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
         ModelNode operationModel = new ModelNode();
         populateModel(operation, operationModel);
         String attributeName = NAME.resolveModelAttribute(context, operationModel).asString();
-        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
+        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName, registry);
         String attributeExpression = attributeName;
         if (useEnhancedSyntax) {
             attributeName = extractAttributeName(attributeName);

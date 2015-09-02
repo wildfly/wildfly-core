@@ -151,13 +151,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         validator.validate(operation);
         String attributeName = GlobalOperationAttributes.NAME.resolveModelAttribute(context, operation).asString();
         final boolean defaults = GlobalOperationAttributes.INCLUDE_DEFAULTS.resolveModelAttribute(context,operation).asBoolean();
-        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
+        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName, registry);
         String attributeExpression = attributeName;
         if (useEnhancedSyntax){
             attributeName = extractAttributeName(attributeName);
         }
 
-        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
 
         if (attributeAccess == null) {
