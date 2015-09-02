@@ -86,6 +86,7 @@ public class RemotingExtension implements Extension {
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
+    private static final ModelVersion VERSION_1_4 = ModelVersion.create(1, 4, 0);
     private static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1);
 
     private static final String IO_EXTENSION_MODULE = "org.wildfly.extension.io";
@@ -132,22 +133,26 @@ public class RemotingExtension implements Extension {
         // Current 3.0.0 to 2.1.0
         buildTransformers_2_1(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_2_1));
 
+        // Current 3.0.0 to 2.1.0
+        buildTransformers_1_4(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_4));
+
         //2.1.0 to 1.3.0
-        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_3)); //todo we need to add 1.4 version
+        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_1_4, VERSION_1_3));
 
-        //1.3.0 to 1.2.0 (do nothing)
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_2_1});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4, VERSION_2_1});
     }
 
-    private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
+    private void buildTransformers_1_4(ResourceTransformationDescriptionBuilder builder) {
         builder.rejectChildResource(HttpConnectorResource.PATH);
-
         endpointTransform(builder);
-
         builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(Protocol.REMOTE.toString())), RemoteOutboundConnectionResourceDefinition.PROTOCOL)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL);
+    }
+
+    private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
+        //Nothing (the 1.3 changes are handled by the 2.1 transformer)
     }
 
     private void buildTransformers_2_1(ResourceTransformationDescriptionBuilder builder) {
