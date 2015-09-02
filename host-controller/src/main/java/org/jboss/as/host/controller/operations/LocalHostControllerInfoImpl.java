@@ -53,10 +53,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private volatile int httpManagementPort;
     private volatile String httpManagementSecureInterface;
     private volatile int httpManagementSecurePort;
-    private volatile String nativeManagementSecurityRealm;
-    private volatile String httpManagementSecurityRealm;
     private volatile AdminOnlyDomainConfigPolicy adminOnlyDomainConfigPolicy = AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG;
-    private volatile List<String> allowedOrigins = new ArrayList<String>();
 
     /** Constructor solely for test cases */
     public LocalHostControllerInfoImpl(final ControlledProcessState processState, final String localHostName) {
@@ -71,6 +68,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         this.localHostName = null;
     }
 
+    @Override
     public String getLocalHostName() {
         return hostEnvironment == null ? localHostName : hostEnvironment.getHostControllerName();
     }
@@ -80,6 +78,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         return processState.getState();
     }
 
+    @Override
     public boolean isMasterDomainController() {
         return master;
     }
@@ -92,11 +91,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     @Override
     public int getNativeManagementPort() {
         return nativeManagementPort;
-    }
-
-    @Override
-    public String getNativeManagementSecurityRealm() {
-        return nativeManagementSecurityRealm;
     }
 
     @Override
@@ -120,27 +114,12 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     }
 
     @Override
-    public String getHttpManagementSecurityRealm() {
-        return httpManagementSecurityRealm;
-    }
-
-    @Override
     public String getRemoteDomainControllerUsername() {
         return remoteDCUser;
     }
 
     public String getRemoteDomainControllerSecurityRealm() {
         return remoteSecurityRealm;
-    }
-
-    @Override
-    public List<String> getAllowedOrigins() {
-        return allowedOrigins;
-    }
-
-    void setAllowedOrigins(List<String> allowedOrigins) {
-        this.allowedOrigins.clear();
-        this.allowedOrigins.addAll(allowedOrigins);
     }
 
     @Override
@@ -173,10 +152,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         this.nativeManagementPort = nativeManagementPort;
     }
 
-    void setNativeManagementSecurityRealm(String nativeManagementSecurityRealm) {
-        this.nativeManagementSecurityRealm = nativeManagementSecurityRealm;
-    }
-
     void setHttpManagementInterface(String httpManagementInterface) {
         this.httpManagementInterface = httpManagementInterface;
     }
@@ -191,10 +166,6 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     void setHttpManagementSecurePort(int httpManagementSecurePort) {
         this.httpManagementSecurePort = httpManagementSecurePort;
-    }
-
-    void setHttpManagementSecurityRealm(String httpManagementSecurityRealm) {
-        this.httpManagementSecurityRealm = httpManagementSecurityRealm;
     }
 
     void setRemoteDomainControllerUsername(String userName) {

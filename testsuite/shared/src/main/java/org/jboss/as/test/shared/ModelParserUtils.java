@@ -34,8 +34,6 @@ import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -222,10 +220,12 @@ public class ModelParserUtils {
         if (existingController != null) {
             final CountDownLatch latch = new CountDownLatch(1);
             existingController.addListener(new AbstractServiceListener<Object>() {
+                @Override
                 public void listenerAdded(ServiceController<?> serviceController) {
                     serviceController.setMode(ServiceController.Mode.REMOVE);
                 }
 
+                @Override
                 public void transition(ServiceController<?> serviceController, ServiceController.Transition transition) {
                     if (transition.equals(ServiceController.Transition.REMOVING_to_REMOVED)) {
                         latch.countDown();
@@ -308,6 +308,7 @@ public class ModelParserUtils {
         final ModelNode model = new ModelNode();
 
         final ModelController controller = createController(serviceContainer, ProcessType.HOST_CONTROLLER, model, new Setup() {
+            @Override
             public void setup(ModelControllerService modelControllerService, Resource resource, ManagementResourceRegistration root, DelegatingConfigurableAuthorizer authorizer) {
 
                 final Resource host = Resource.Factory.create();
@@ -412,6 +413,7 @@ public class ModelParserUtils {
         final List<ModelNode> ops = persister.load();
         final ModelNode model = new ModelNode();
         final ModelController controller = createController(serviceContainer, ProcessType.HOST_CONTROLLER, model, new Setup() {
+            @Override
             public void setup(ModelControllerService modelControllerService, Resource resource, ManagementResourceRegistration rootRegistration, DelegatingConfigurableAuthorizer authorizer) {
                 DomainRootDefinition def = new DomainRootDefinition(null, null, persister, new MockContentRepository(), new MockFileRepository(), true, null, extensionRegistry, null,
                         MOCK_PATH_MANAGER, authorizer, null, modelControllerService.getRootResourceRegProvider());
@@ -478,6 +480,7 @@ public class ModelParserUtils {
             registration.setup(this, rootResource, rootRegistration, authorizer);
 
             rootRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder("capture-model", new NonResolvingResourceDescriptionResolver()).build(), new OperationStepHandler() {
+                @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                     model.set(Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)));
                 }
@@ -614,11 +617,6 @@ public class ModelParserUtils {
         }
 
         @Override
-        public String getNativeManagementSecurityRealm() {
-            return null;
-        }
-
-        @Override
         public int getNativeManagementPort() {
             return 0;
         }
@@ -630,11 +628,6 @@ public class ModelParserUtils {
 
         @Override
         public String getLocalHostName() {
-            return null;
-        }
-
-        @Override
-        public String getHttpManagementSecurityRealm() {
             return null;
         }
 
@@ -661,11 +654,6 @@ public class ModelParserUtils {
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return false;
-        }
-
-        @Override
-        public Collection<String> getAllowedOrigins() {
-            return Collections.EMPTY_LIST;
         }
     };
 }

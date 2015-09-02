@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -477,11 +476,6 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public String getNativeManagementSecurityRealm() {
-            return null;
-        }
-
-        @Override
         public String getHttpManagementInterface() {
             return null;
         }
@@ -502,11 +496,6 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public String getHttpManagementSecurityRealm() {
-            return null;
-        }
-
-        @Override
         public String getRemoteDomainControllerUsername() {
             return null;
         }
@@ -524,11 +513,6 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return true;
-        }
-
-        @Override
-        public Collection<String> getAllowedOrigins() {
-            return Collections.EMPTY_LIST;
         }
     }
 
@@ -743,22 +727,27 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             }
         }
 
+        @Override
         public void reloadRequired() {
             reloadRequired = true;
         }
 
+        @Override
         public boolean isReloadRequired() {
             return reloadRequired;
         }
 
+        @Override
         public void revertReloadRequired() {
             reloadRequired = false;
         }
 
+        @Override
         public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
             nextHandlers.add(step);
         }
 
+        @Override
         public void addStep(ModelNode operation, OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
             if (operation.get(OP).asString().equals("verify-running-server")) {
                 return;

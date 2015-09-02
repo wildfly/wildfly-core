@@ -52,10 +52,11 @@ public class NativeRemotingManagementResourceDefinition extends SimpleResourceDe
     private final List<AccessConstraintDefinition> accessConstraints;
 
     private NativeRemotingManagementResourceDefinition() {
-        super(RESOURCE_PATH,
-                ServerDescriptions.getResourceDescriptionResolver("core.management.native-remoting-interface"),
-                NativeRemotingManagementAddHandler.INSTANCE, NativeRemotingManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+        super(new Parameters(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("core.management.native-remoting-interface"))
+            .setAddHandler(NativeRemotingManagementAddHandler.INSTANCE)
+            .setRemoveHandler(NativeRemotingManagementRemoveHandler.INSTANCE)
+            .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
         setDeprecated(ModelVersion.create(1, 7));
     }

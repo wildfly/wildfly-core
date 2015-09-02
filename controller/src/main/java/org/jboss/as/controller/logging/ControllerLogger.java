@@ -3351,4 +3351,8 @@ public interface ControllerLogger extends BasicLogger {
             "Both the subsystem and the extension must be removed or migrated before the server will function.")
     @LogMessage(level = ERROR)
     void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
+
+    @Message(id = 403, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

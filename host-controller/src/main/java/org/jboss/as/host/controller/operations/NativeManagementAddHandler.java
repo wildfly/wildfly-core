@@ -22,22 +22,21 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
-import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
+import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 
@@ -45,16 +44,14 @@ import org.xnio.OptionMap.Builder;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class NativeManagementAddHandler extends AbstractAddStepHandler {
+public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandler {
 
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
-
     private final LocalHostControllerInfoImpl hostControllerInfo;
 
-
     public NativeManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo) {
-        super(NATIVE_MANAGEMENT_CAPABILITY, ATTRIBUTE_DEFINITIONS);
+        super(ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
     }
 
@@ -64,46 +61,38 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-
+    protected void installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
+
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
         final boolean onDemand = context.isBooting();
         NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(false), onDemand);
 
-        OptionMap options = createConnectorOptions(context, model);
-        installNativeManagementServices(serviceTarget, hostControllerInfo, options);
+        OptionMap options = createConnectorOptions(commonPolicy);
+
+        final ServiceName nativeManagementInterfaceBinding = NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
+
+        final String securityRealm = commonPolicy.getSecurityRealm();
+        if (securityRealm == null) {
+            ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
+        }
+
+        ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
         hostControllerInfo.setNativeManagementInterface(NativeManagementResourceDefinition.INTERFACE.resolveModelAttribute(context, model).asString());
         final ModelNode portNode = NativeManagementResourceDefinition.NATIVE_PORT.resolveModelAttribute(context, model);
         hostControllerInfo.setNativeManagementPort(portNode.isDefined() ? portNode.asInt() : -1);
-        final ModelNode realmNode = NativeManagementResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, model);
-        hostControllerInfo.setNativeManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
     }
 
-    public static void installNativeManagementServices(final ServiceTarget serviceTarget, final LocalHostControllerInfo hostControllerInfo, final OptionMap options) {
-
-        String nativeSecurityRealm = hostControllerInfo.getNativeManagementSecurityRealm();
-
-        final ServiceName nativeManagementInterfaceBinding =
-                NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
-
-        ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), nativeSecurityRealm, options);
-    }
-
-    private static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {
+    private static OptionMap createConnectorOptions(final NativeInterfaceCommonPolicy commonPolicy) throws OperationFailedException {
         Builder builder = OptionMap.builder();
 
         builder.addAll(NativeManagementServices.CONNECTION_OPTIONS);
-        builder.set(RemotingOptions.SASL_PROTOCOL, NativeManagementResourceDefinition.SASL_PROTOCOL.resolveModelAttribute(context, model).asString());
-        ModelNode serverName = NativeManagementResourceDefinition.SERVER_NAME.resolveModelAttribute(context, model);
-        if (serverName.isDefined()) {
-            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
-        }
+        builder.addAll(commonPolicy.getConnectorOptions());
 
         return builder.getMap();
     }

@@ -377,22 +377,26 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         // Central Management
         ResourceDefinition nativeManagement = new NativeManagementResourceDefinition(hostControllerInfo);
-        ResourceDefinition httpManagement = new HttpManagementResourceDefinition(hostControllerInfo, environment);
+        ResourceDefinition httpManagement = HttpManagementResourceDefinition.create(hostControllerInfo, environment);
 
         // audit log environment reader
         final EnvironmentNameReader environmentNameReader = new EnvironmentNameReader() {
+            @Override
             public boolean isServer() {
                 return false;
             }
 
+            @Override
             public String getServerName() {
                 return null;
             }
 
+            @Override
             public String getHostName() {
                 return environment.getHostControllerName();
             }
 
+            @Override
             public String getProductName() {
                 if (environment.getProductConfig() != null && environment.getProductConfig().getProductName() != null) {
                     return environment.getProductConfig().getProductName();

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,31 +20,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.host.controller.operations;
+package org.jboss.as.controller.management;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
-import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 
 /**
- * {@code OperationStepHandler} for changing attributes on the native management interface.
+ * An extension of {@link ReloadRequiredWriteAttributeHandler} that takes into account that management interfaces run in all
+ * modes.
  *
- * @author Emanuel Muckenhuber
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class NativeManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
+class ManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
-    public static final OperationStepHandler INSTANCE = new NativeManagementWriteAttributeHandler();
-
-    public NativeManagementWriteAttributeHandler() {
-        super(NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+    ManagementWriteAttributeHandler(AttributeDefinition[] attributes) {
+        super(attributes);
     }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        // running mode doesn't matter, as native management is enabled even in ADMIN_ONLY
+        // Management interfaces run in all modes including ADMIN_ONLY
         return !context.isBooting();
-
     }
 
 }
