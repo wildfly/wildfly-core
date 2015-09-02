@@ -31,6 +31,7 @@ import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
@@ -48,6 +49,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setCapabilityReference("org.wildfly.network.interface", NATIVE_MANAGEMENT_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)
@@ -67,6 +69,11 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     @Override
     protected AttributeDefinition[] getAttributeDefinitions() {
         return ATTRIBUTE_DEFINITIONS;
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_CAPABILITY);
     }
 
 }

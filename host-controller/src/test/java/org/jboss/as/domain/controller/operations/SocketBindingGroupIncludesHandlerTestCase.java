@@ -97,7 +97,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         ModelNode list = new ModelNode().add("binding-two");
         ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
         MockOperationContext operationContext = getOperationContext(addr);
-        SocketBindingGroupResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        SocketBindingGroupResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         operationContext.executeNextStep();
     }
 
@@ -108,7 +108,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 //        ModelNode list = new ModelNode().add("bad-SocketBindingGroup");
 //        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
 //        MockOperationContext operationContext = getOperationContext(addr);
-//        SocketBindingGroupResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+//        SocketBindingGroupResourceDefinition.createRestartRequiredHandler().execute(operationContext, op);
 //        operationContext.executeNextStep();
 //    }
 
@@ -118,7 +118,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         ModelNode list = new ModelNode().add("binding-four");
         ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
         MockOperationContext operationContext = getOperationContextWithIncludes(addr);
-        SocketBindingGroupResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        SocketBindingGroupResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         operationContext.executeNextStep();
     }
 
@@ -162,7 +162,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
                 SocketBindingGroup4.registerChild(PathElement.pathElement(SUBSYSTEM, "b"), subsystemB);
             }
         });
-        SocketBindingGroupResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        SocketBindingGroupResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         operationContext.executeNextStep();
     }
 
@@ -187,7 +187,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
                     SocketBindingGroup4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), subsystemB);
                 }
             });
-            SocketBindingGroupResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+            SocketBindingGroupResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -224,7 +224,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
                     group5.registerChild(PathElement.pathElement(SOCKET_BINDING, "x"), bindingC);
                 }
             });
-            ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -259,7 +259,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
                     //binding-five is empty
                 }
             });
-            ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -353,7 +353,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         }
 
         public void addStep(OperationStepHandler step, Stage stage) throws IllegalArgumentException {
-            if (step instanceof DomainModelReferenceValidator) {
+            if (step instanceof DomainModelIncludesValidator) {
                 nextStep = step;
             }
         }

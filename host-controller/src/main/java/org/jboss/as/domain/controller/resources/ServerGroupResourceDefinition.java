@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -38,12 +40,13 @@ import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.operations.DomainReferenceValidationWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.ServerGroupAddHandler;
 import org.jboss.as.domain.controller.operations.ServerGroupRemoveHandler;
-import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
+import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentReplaceHandler;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
 import org.jboss.as.repository.ContentRepository;
@@ -76,7 +79,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, false)
             .setXmlName(Attribute.REF.getLocalName())
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME, true)
+            .setCapabilityReference(AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE, ModelType.STRING, true)
@@ -118,7 +121,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler referenceValidationHandler = createReferenceValidationHandler();
+        OperationStepHandler referenceValidationHandler = createRestartRequiredHandler();
         for (AttributeDefinition attr : ServerGroupResourceDefinition.ADD_ATTRIBUTES) {
             if (attr.getName().equals(MANAGEMENT_SUBSYSTEM_ENDPOINT.getName())) {
                 resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_SUBSYSTEM_ENDPOINT, null);
@@ -150,7 +153,27 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerCapability(SERVER_GROUP_CAPABILITY);
     }
 
-    public static OperationStepHandler createReferenceValidationHandler() {
-        return new DomainReferenceValidationWriteAttributeHandler(PROFILE, SOCKET_BINDING_GROUP);
+    public static OperationStepHandler createRestartRequiredHandler() {
+        return ServerRestartRequiredWriteAttributeHandler.INSTANCE;
+    }
+
+    private static class ServerRestartRequiredWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
+
+        public static OperationStepHandler INSTANCE = new ServerRestartRequiredWriteAttributeHandler();
+
+        private ServerRestartRequiredWriteAttributeHandler() {
+            super(PROFILE, SOCKET_BINDING_GROUP);
+        }
+
+
+        @Override
+        protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                                        ModelNode currentValue, Resource resource) throws OperationFailedException {
+            if (newValue.equals(currentValue)) {
+                //Set an attachment to avoid propagation to the servers, we don't want them to go into restart-required if nothing changed
+                ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
+            }
+        }
+
     }
 }

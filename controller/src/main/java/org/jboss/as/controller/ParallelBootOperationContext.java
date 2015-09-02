@@ -324,6 +324,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    void publishCapabilityRegistry() {
+        //we don't publish anything
+    }
+
+    @Override
     void operationRollingBack() {
         // BES 2015/06/30 hmm. telling the primary context to discarding the management model
         // here will screw up other parallel contexts that are still running. but if we don't,

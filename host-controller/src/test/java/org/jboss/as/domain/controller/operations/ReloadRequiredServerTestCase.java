@@ -84,7 +84,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("profile-two");
 
         try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -118,7 +118,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("profile-one");
 
         try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -160,7 +160,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 //        operation.get(VALUE).set("does-not-exist");
 //
 //        try {
-//            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+//            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
 //        } catch (RuntimeException e) {
 //            final Throwable t = e.getCause();
 //            if (t instanceof OperationFailedException) {

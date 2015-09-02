@@ -41,7 +41,6 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.OS;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_COMMUNITY_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PROJECT_TYPE;
-import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.REPORT_VERSION;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.SUMMARY;
 import static org.junit.Assert.assertThat;
@@ -77,8 +76,6 @@ public class ProductInfoUnitTestCase extends ContainerResourceMgmtTestBase {
         assertThat(result.get(0).getName(), is(SUMMARY));
         final ModelNode report = result.get(0).getValue();
         assertThat(report.isDefined(), is(true));
-        assertThat(report.hasDefined(REPORT_VERSION), is(true));
-        assertThat(report.get(REPORT_VERSION).asString(), is("1.0"));
         assertThat(report.hasDefined(NODE_NAME), is(false));
         assertThat(report.hasDefined(HOSTNAME), is(true));
         assertThat(report.hasDefined(HOSTNAME), is(true));

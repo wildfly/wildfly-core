@@ -102,6 +102,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    void publishCapabilityRegistry() {
+        //do noting
+    }
+
+    @Override
     void operationRollingBack() {
         // don't need to do anything
     }

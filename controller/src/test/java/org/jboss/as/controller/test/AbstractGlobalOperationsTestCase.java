@@ -315,8 +315,13 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
             return;
         }
         assertTrue(result.require(CHILDREN).require(SUBSYSTEM).require(MODEL_DESCRIPTION).isDefined());
-        assertEquals(6, result.require(CHILDREN).require(SUBSYSTEM).require(MODEL_DESCRIPTION).keys().size());
+        assertEquals(getExpectedNumberProfiles(), result.require(CHILDREN).require(SUBSYSTEM).require(MODEL_DESCRIPTION).keys().size());
         checkSubsystem1Description(result.require(CHILDREN).require(SUBSYSTEM).require(MODEL_DESCRIPTION).require("subsystem1"), recursive, operations, notifications);
+    }
+
+    protected int getExpectedNumberProfiles() {
+        //Some tests might add more, if so they should override this method
+        return 6;
     }
 
     protected void checkSubsystem1Description(ModelNode result, boolean recursive, boolean operations, boolean notifications) {

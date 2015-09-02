@@ -37,9 +37,9 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 
 /**
- * Context in which a {@link org.jboss.as.controller.capability.AbstractCapability capability} is available.
+ * Scope in which a {@link org.jboss.as.controller.capability.AbstractCapability capability} is available.
  * <p>
- * The {@link #GLOBAL} context can be used for most cases. A Host Controller will use a different implementation
+ * The {@link #GLOBAL} scope can be used for most cases. A Host Controller will use a different implementation
  * of this interface for capabilities that are limited to some subset of the domain-wide model, e.g. a single
  * profile.
  * </p>
@@ -50,57 +50,58 @@ import org.jboss.as.controller.ProcessType;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public interface CapabilityContext {
+public interface CapabilityScope {
 
     /**
-     * Gets whether a given capability associated with this context can satisfy the given requirement.
-     * @param dependent id of the dependent capability. Cannot be {@code null}
-     * @param required name of the capability associated with this capability context. May be {@code null} if the
-     *                 dependent name is not known.
+     * Gets whether a given capability associated with this scope can satisfy the given requirement.
+     *
+     * @param requiredName the name of the required capability
+     * @param dependentScope the scope of the dependent capability
      * @param context resolution context in use for this resolution run
      *
-     * @return {@code true} if the requirement can be satisfied from this context; {@code false} otherwise
+     * @return {@code true} if the requirement can be satisfied from this scope; {@code false} otherwise
      */
-    boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context);
+    boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope,
+                                  CapabilityResolutionContext context);
 
     /**
      * Gets whether a consistency check must be performed when other capabilities depend on capabilities
-     * in this context. A consistency check is necessary if different capabilities in the dependent context
-     * can potentially require capabilities in different other contexts, but all such capabilities must be
-     * available in at least one context.
+     * in this scope. A consistency check is necessary if different capabilities in the dependent scope
+     * can potentially require capabilities in different other scopes, but all such capabilities must be
+     * available in at least one scope.
      * @return {@code true} if a consistency check is required
      */
     boolean requiresConsistencyCheck();
 
     /**
-     * Gets a descriptive name of the context
+     * Gets a descriptive name of the scope
      * @return the name. Will not return {@code null}
      */
     String getName();
 
     /**
-     * Gets any contexts that logically include this one, i.e. where this context can satisfy
-     * requirements as if it were the including context.
+     * Gets any scope that logically include this one, i.e. where this scope can satisfy
+     * requirements as if it were the including scope.
      *
      * @param context resolution context in use for this resolution run
-     * @return the including contexts. Will not be {@code null} but may be empty.
+     * @return the including scopes. Will not be {@code null} but may be empty.
      */
-    default Set<CapabilityContext> getIncludingContexts(CapabilityResolutionContext context) {
+    default Set<CapabilityScope> getIncludingScopes(CapabilityResolutionContext context) {
         return Collections.emptySet();
     }
 
     /**
-     * A {@code CapabilityContext} that can satisfy any dependent context. Meant for capabilities that are present
-     * regardless of any context, or for convenience use in cases where there is only one context.
+     * A {@code CapabilityScope} that can satisfy any dependent scope. Meant for capabilities that are present
+     * regardless of any scope, or for convenience use in cases where there is only one scope.
      */
-    CapabilityContext GLOBAL = new CapabilityContext() {
+    CapabilityScope GLOBAL = new CapabilityScope() {
 
         /**
          * Always returns {@code true}
          * @return {@code true}, always
          */
         @Override
-        public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
+        public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
             return true;
         }
 
@@ -120,26 +121,26 @@ public interface CapabilityContext {
         }
     };
 
-    /** Factory for creating a {@code CapabilityContext} */
+    /** Factory for creating a {@code CapabilityScope} */
     class Factory {
         /**
-         * Create a {@code CapabilityContext} appropriate for the given process type and address
+         * Create a {@code CapabilityScope} appropriate for the given process type and address
          *
-         * @param processType the type of process in which the {@code CapabilityContext} exists
-         * @param address the address with which the {@code CapabilityContext} is associated
+         * @param processType the type of process in which the {@code CapabilityScope} exists
+         * @param address the address with which the {@code CapabilityScope} is associated
          */
-        public static CapabilityContext create(ProcessType processType, PathAddress address) {
-            CapabilityContext context = CapabilityContext.GLOBAL;
+        public static CapabilityScope create(ProcessType processType, PathAddress address) {
+            CapabilityScope context = CapabilityScope.GLOBAL;
             PathElement pe = processType.isServer() || address.size() == 0 ? null : address.getElement(0);
             if (pe != null) {
                 String type = pe.getKey();
                 switch (type) {
                     case PROFILE: {
-                        context = address.size() == 1 ? ProfilesCapabilityContext.INSTANCE : new ProfileChildCapabilityContext(pe.getValue());
+                        context = address.size() == 1 ? ProfilesCapabilityScope.INSTANCE : new ProfileChildCapabilityScope(pe.getValue());
                         break;
                     }
                     case SOCKET_BINDING_GROUP: {
-                        context = address.size() == 1 ? SocketBindingGroupsCapabilityContext.INSTANCE : new SocketBindingGroupChildContext(pe.getValue());
+                        context = address.size() == 1 ? SocketBindingGroupsCapabilityScope.INSTANCE : new SocketBindingGroupChildScope(pe.getValue());
                         break;
                     }
                     case HOST: {
@@ -149,16 +150,16 @@ public interface CapabilityContext {
                             switch (hostType) {
                                 case SUBSYSTEM:
                                 case SOCKET_BINDING_GROUP:
-                                    context = HostCapabilityContext.INSTANCE;
+                                    context = HostCapabilityScope.INSTANCE;
                                     break;
                                 case SERVER_CONFIG:
-                                    context = ServerConfigCapabilityContext.INSTANCE;
+                                    context = ServerConfigCapabilityScope.INSTANCE;
                             }
                         }
                         break;
                     }
                     case SERVER_GROUP :  {
-                        context = ServerGroupsCapabilityContext.INSTANCE;
+                        context = ServerGroupsCapabilityScope.INSTANCE;
                         break;
                     }
                 }

@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -86,11 +85,9 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
-import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
 import org.jboss.as.model.test.EAPRepositoryReachableUtil;
 import org.jboss.as.model.test.ModelFixer;
@@ -529,7 +526,7 @@ final class SubsystemTestDelegate {
 
     private ResourceDefinition getResourceDefinition(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
         //Look for the file in the org.jboss.as.subsystem.test package - this is where we used to store them before the split
-        ResourceDefinition rd = TransformerRegistry.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
+        ResourceDefinition rd = TransformationUtils.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
 
         if (rd == null) {
             //This is the 'new' post-split way. First check for a cached .dmr file. This which also allows people
@@ -539,7 +536,7 @@ final class SubsystemTestDelegate {
                 generateLegacySubsystemResourceRegistrationDmr(kernelServices, modelVersion);
             }
             System.out.println("Using legacy resource definition dmr: " + file);
-            rd = TransformerRegistry.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
+            rd = TransformationUtils.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
         }
         return rd;
     }
@@ -1071,32 +1068,6 @@ final class SubsystemTestDelegate {
 
         @Override
         public void unregisterOverrideModel(String name) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, EnumSet<Flag> flags) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EnumSet<Flag> flags) {
-        }
-
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType, EnumSet<Flag> flags) {
         }
 
         @Override

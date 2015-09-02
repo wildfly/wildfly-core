@@ -46,15 +46,15 @@ import static java.lang.reflect.Modifier.STATIC;
  * <p/>
  * The ClassReflectionIndex is only available during the deployment.
  *
- * @param <T> the type being indexed
+ * @param <?> the type being indexed
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class ClassReflectionIndex<T> {
+public final class ClassReflectionIndex {
     private final DeploymentReflectionIndex deploymentReflectionIndex;
-    private final Class<T> indexedClass;
+    private final Class<?> indexedClass;
     private final Map<String, Field> fields;
-    private final Map<ParamList, Constructor<T>> constructors;
-    private final Map<ParamNameList, Constructor<T>> constructorsByTypeName;
+    private final Map<ParamList, Constructor<?>> constructors;
+    private final Map<ParamNameList, Constructor<?>> constructorsByTypeName;
     private final Map<String, Map<ParamList, Map<Class<?>, Method>>> methods;
     private final Map<String, Map<ParamNameList, Map<String, Method>>> methodsByTypeName;
 
@@ -65,7 +65,7 @@ public final class ClassReflectionIndex<T> {
     private volatile Set<Method> classMethods;
 
     @SuppressWarnings({"unchecked"})
-    ClassReflectionIndex(final Class<T> indexedClass, final DeploymentReflectionIndex deploymentReflectionIndex) {
+    ClassReflectionIndex(final Class<?> indexedClass, final DeploymentReflectionIndex deploymentReflectionIndex) {
         this.deploymentReflectionIndex = deploymentReflectionIndex;
         this.indexedClass = indexedClass;
         // -- fields --
@@ -89,10 +89,10 @@ public final class ClassReflectionIndex<T> {
         this.methods = methods;
         this.methodsByTypeName = methodsByTypeName;
         // -- constructors --
-        final Constructor<T>[] declaredConstructors = (Constructor<T>[]) indexedClass.getDeclaredConstructors();
-        final Map<ParamNameList, Constructor<T>> constructorsByTypeName = new HashMap<ParamNameList, Constructor<T>>();
-        final Map<ParamList, Constructor<T>> constructors = new HashMap<ParamList, Constructor<T>>();
-        for (Constructor<T> constructor : declaredConstructors) {
+        final Constructor<?>[] declaredConstructors = (Constructor<?>[]) indexedClass.getDeclaredConstructors();
+        final Map<ParamNameList, Constructor<?>> constructorsByTypeName = new HashMap<ParamNameList, Constructor<?>>();
+        final Map<ParamList, Constructor<?>> constructors = new HashMap<ParamList, Constructor<?>>();
+        for (Constructor<?> constructor : declaredConstructors) {
             constructor.setAccessible(true);
             Class<?>[] parameterTypes = constructor.getParameterTypes();
             constructors.put(createParamList(parameterTypes), constructor);
@@ -166,7 +166,7 @@ public final class ClassReflectionIndex<T> {
      *
      * @return the class
      */
-    public Class<T> getIndexedClass() {
+    public Class<?> getIndexedClass() {
         return indexedClass;
     }
 
@@ -357,7 +357,7 @@ public final class ClassReflectionIndex<T> {
      *
      * @return the constructors
      */
-    public Collection<Constructor<T>> getConstructors() {
+    public Collection<Constructor<?>> getConstructors() {
         return Collections.unmodifiableCollection(constructors.values());
     }
 
@@ -367,7 +367,7 @@ public final class ClassReflectionIndex<T> {
      * @param paramTypes the constructor argument types
      * @return the constructor, or {@code null} of no such constructor exists
      */
-    public Constructor<T> getConstructor(Class<?>... paramTypes) {
+    public Constructor<?> getConstructor(Class<?>... paramTypes) {
         return constructors.get(createParamList(paramTypes));
     }
 
@@ -377,7 +377,7 @@ public final class ClassReflectionIndex<T> {
      * @param paramTypeNames the constructor argument type names
      * @return the constructor, or {@code null} of no such constructor exists
      */
-    public Constructor<T> getConstructor(String... paramTypeNames) {
+    public Constructor<?> getConstructor(String... paramTypeNames) {
         return constructorsByTypeName.get(createParamNameList(paramTypeNames));
     }
 
@@ -417,7 +417,7 @@ public final class ClassReflectionIndex<T> {
             if (! defaultMethodsByInterface.containsKey(i)) {
                 Set<Method> set = methodSet();
                 defaultMethodsByInterface.put(i, set);
-                final ClassReflectionIndex<?> interfaceIndex = deploymentReflectionIndex.getClassIndex(i);
+                final ClassReflectionIndex interfaceIndex = deploymentReflectionIndex.getClassIndex(i);
                 for (Method method : interfaceIndex.getMethods()) {
                     final MethodIdentifier identifier = MethodIdentifier.getIdentifierForMethod(method);
                     if ((method.getModifiers() & (STATIC | PUBLIC | ABSTRACT)) == PUBLIC && ! classContains(componentClass, identifier) && foundMethods.add(identifier)) {

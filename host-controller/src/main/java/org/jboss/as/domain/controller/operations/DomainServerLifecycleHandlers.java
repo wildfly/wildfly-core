@@ -196,14 +196,14 @@ public class DomainServerLifecycleHandlers {
                         final Set<String> waitForServers = new HashSet<String>();
                         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
                         for (String server : getServersForGroup(model, group)) {
-                            serverInventory.stopServer(server, timeout > 0 ? timeout * 1000 : timeout);
+                            serverInventory.stopServer(server, timeout);
                             waitForServers.add(server);
                         }
                         if (blocking) {
                             serverInventory.awaitServersState(waitForServers, false);
                         }
                     } else {
-                        serverInventory.stopServers(timeout > 0 ? timeout * 1000 : timeout, blocking);
+                        serverInventory.stopServers(timeout, blocking);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }

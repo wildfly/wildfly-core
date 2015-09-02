@@ -62,6 +62,7 @@ if [ "$JBOSS_MODE" = "standalone" ]; then
 	if [ -z "$JBOSS_CONFIG" ]; then
 		JBOSS_CONFIG=standalone.xml
 	fi
+	JBOSS_MARKERFILE=$JBOSS_HOME/standalone/tmp/startup-marker
 else
 	JBOSS_SCRIPT=$JBOSS_HOME/bin/domain.sh
 	if [ -z "$JBOSS_DOMAIN_CONFIG" ]; then
@@ -70,9 +71,11 @@ else
 	if [ -z "$JBOSS_HOST_CONFIG" ]; then
 		JBOSS_HOST_CONFIG=host.xml
 	fi
+	JBOSS_MARKERFILE=$JBOSS_HOME/domain/tmp/startup-marker
 fi
 
 prog='wildfly'
+currenttime=$(date +%s%N | cut -b1-13)
 
 start() {
 	echo -n "Starting $prog: "
@@ -118,14 +121,23 @@ start() {
 
 	until [ $count -gt $STARTUP_WAIT ]
 	do
-		grep 'WFLYSRV0025:' $JBOSS_CONSOLE_LOG > /dev/null
-		if [ $? -eq 0 ] ; then
-			launched=true
-			break
-		fi
 		sleep 1
 		let count=$count+1;
+		if [ -f $JBOSS_MARKERFILE ]; then
+			markerfiletimestamp=$(grep -o '[0-9]*' $JBOSS_MARKERFILE) > /dev/null
+			if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
+				grep -i 'success:' $JBOSS_MARKERFILE > /dev/null
+				if [ $? -eq 0 ] ; then
+					launched=true
+					break
+				fi
+			fi
+		fi
 	done
+
+	if [ "$launched" = "false" ] ; then
+		echo "$prog started with errors, please see server log for details"
+	fi
 
 	touch $JBOSS_LOCKFILE
 	success

@@ -147,7 +147,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
             this.startTime = -1;
         }
 
-        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)");
+        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)", environment.getDomainTempDir());
         bootstrapListener.getStabilityMonitor().addController(myController);
 
         // The first default services are registered before the bootstrap operations are executed.
@@ -192,6 +192,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         String prettyVersion = environment.getProductConfig().getPrettyVersionString();
         processState.setStopping();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
+        BootstrapListener.deleteStartupMarker(environment.getDomainTempDir());
     }
 
     @Override

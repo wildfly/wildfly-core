@@ -22,22 +22,22 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+
 /**
- * {@link CapabilityContext} specifically used for the {@code org.wildfly.domain.profile} capability.
- * <p>
- * <strong>NOTE:</strong> This context is not used for child resources (subsystems) in the 'profile'
- * part of the Host Controller resource tree.
+ * {@link CapabilityScope} for capabilities whose use is restricted to
+ * the Host Controller in which they are installed; e.g. they cannot be
+ * resolved by requirers in a domain level context.
  *
  * @author Brian Stansberry
  */
-class ProfilesCapabilityContext implements CapabilityContext {
+class HostCapabilityScope implements CapabilityScope {
 
-    public static final ProfilesCapabilityContext INSTANCE = new ProfilesCapabilityContext();
+    static final HostCapabilityScope INSTANCE = new HostCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext depCtx = dependent.getContext();
-        return depCtx instanceof ProfilesCapabilityContext || depCtx instanceof ServerGroupsCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope == CapabilityScope.GLOBAL || dependentScope instanceof HostCapabilityScope;
     }
 
     @Override
@@ -47,6 +47,21 @@ class ProfilesCapabilityContext implements CapabilityContext {
 
     @Override
     public String getName() {
-        return "profiles";
+        return HOST;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o || !(o == null || getClass() != o.getClass());
     }
 }

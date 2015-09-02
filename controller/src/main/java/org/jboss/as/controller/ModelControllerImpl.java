@@ -53,11 +53,9 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,15 +70,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
-import org.jboss.as.controller.capability.registry.CapabilityId;
-import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
-import org.jboss.as.controller.capability.registry.DelegatingRuntimeCapabilityRegistry;
-import org.jboss.as.controller.capability.registry.RegistrationPoint;
-import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
-import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -103,7 +93,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
@@ -161,14 +150,17 @@ class ModelControllerImpl implements ModelController {
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
-                        final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler) {
+                        final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler,
+                        final CapabilityRegistry capabilityRegistry) {
         assert serviceRegistry != null;
         this.serviceRegistry = serviceRegistry;
         assert serviceTarget != null;
         this.serviceTarget = serviceTarget;
         assert rootRegistration != null;
-        ManagementModelImpl mmi = new ManagementModelImpl(rootRegistration, Resource.Factory.create(),
-                new CapabilityRegistryImpl(processType.isServer()));
+
+        assert capabilityRegistry != null;
+        ManagementModelImpl mmi = new ManagementModelImpl(rootRegistration, Resource.Factory.create(), capabilityRegistry);
+        //ModelControllerImpl.this.managementModel.set(mmi);
         mmi.publish();
         assert stateMonitor != null;
         this.stateMonitor = stateMonitor;
@@ -791,6 +783,12 @@ class ModelControllerImpl implements ModelController {
         };
     }
 
+    void publishCapabilityRegistry(final ManagementModelImpl model){
+        if (model.capabilityRegistry.isModified()){
+            model.capabilityRegistry.publish();
+        }
+    }
+
     void discardModel(final ManagementModelImpl model) {
         model.discard();
     }
@@ -1076,16 +1074,16 @@ class ModelControllerImpl implements ModelController {
         // The root Resource we expose
         private final Resource delegatingResource;
         // The capability registry
-        private final CapabilityRegistryImpl capabilityRegistry;
-        // The capability registry we expose
-        private final RuntimeCapabilityRegistry delegatingCapabilityRegistry;
+        private final CapabilityRegistry capabilityRegistry;
+
         private volatile boolean published;
 
         ManagementModelImpl(final ManagementResourceRegistration resourceRegistration,
                             final Resource rootResource,
-                            final CapabilityRegistryImpl capabilityRegistry) {
+                            final CapabilityRegistry capabilityRegistry) {
             this.resourceRegistration = resourceRegistration;
             this.rootResource = rootResource;
+            assert capabilityRegistry != null;
             this.capabilityRegistry = capabilityRegistry;
             // What we expose depends on the state of our 'published' field. If 'true' we've been published
             // to the ModelController, and from then on callers should get whatever the MC has as current.
@@ -1118,18 +1116,6 @@ class ModelControllerImpl implements ModelController {
                     return result;
                 }
             });
-            this.delegatingCapabilityRegistry = new DelegatingRuntimeCapabilityRegistry(new DelegatingRuntimeCapabilityRegistry.CapabilityRegistryDelegateProvider() {
-                @Override
-                public RuntimeCapabilityRegistry getDelegateCapabilityRegistry() {
-                    RuntimeCapabilityRegistry result;
-                    if (published) {
-                        result = ModelControllerImpl.this.managementModel.get().capabilityRegistry;
-                    } else {
-                        result = capabilityRegistry;
-                    }
-                    return result;
-                }
-            });
         }
 
         @Override
@@ -1144,7 +1130,7 @@ class ModelControllerImpl implements ModelController {
 
         @Override
         public RuntimeCapabilityRegistry getCapabilityRegistry() {
-            return delegatingCapabilityRegistry;
+            return capabilityRegistry;
         }
 
         /**
@@ -1190,7 +1176,7 @@ class ModelControllerImpl implements ModelController {
         ManagementModelImpl cloneRootResource() {
             ManagementResourceRegistration mrr;
             Resource currentResource;
-            CapabilityRegistryImpl currentCaps;
+            CapabilityRegistry currentCaps;
             if (published) {
                 // This is the first clone since this was published. Use the current stuff as the basis
                 // to ensure that the clone is based on the latest even if we are not the latest.
@@ -1211,30 +1197,6 @@ class ModelControllerImpl implements ModelController {
             return result;
         }
 
-        ManagementModelImpl cloneCapabilityRegistry() {
-            ManagementResourceRegistration mrr;
-            Resource currentResource;
-            CapabilityRegistryImpl currentCaps;
-            if (published) {
-                // This is the first clone since this was published. Use the current stuff as the basis
-                // to ensure that the clone is based on the latest even if we are not the latest.
-                ManagementModelImpl currentPublished = ModelControllerImpl.this.managementModel.get();
-                mrr = currentPublished.resourceRegistration;
-                currentResource = currentPublished.rootResource;
-                currentCaps = currentPublished.capabilityRegistry;
-            } else {
-                // We've already been cloned, which means the thread calling this has the controller lock
-                // and our stuff hasn't been superceded by another thread. So use our stuff
-                mrr = resourceRegistration;
-                currentResource = rootResource;
-                currentCaps = capabilityRegistry;
-            }
-            CapabilityRegistryImpl clone = currentCaps.copy();
-            ManagementModelImpl result = new ManagementModelImpl(mrr, currentResource, clone);
-            ControllerLogger.MGMT_OP_LOGGER.tracef("cloned to %s to create %s and %s", currentCaps, clone, result);
-            return result;
-        }
-
         /**
          * Compares the registered requirements to the registered capabilities, returning any missing
          * or inconsistent requirements.
@@ -1243,22 +1205,20 @@ class ModelControllerImpl implements ModelController {
          *                    any changes have occurred since the last check
          * @param hostXmlOnly {@code true} if a Host Controller boot is occurring and only host model data is present
          *
-         * @return a map whose keys are missing capabilities and whose values are the names of other capabilities
-         *         that require that capability. Will not return {@code null} but may be empty
+         * @return a validation result object. Will not return {@code null}
          */
-        CapabilityValidation validateCapabilityRegistry(boolean forceCheck, boolean hostXmlOnly) {
-            if (!published || forceCheck) {
+      CapabilityRegistry.CapabilityValidation validateCapabilityRegistry(boolean forceCheck, boolean hostXmlOnly) {
+          if (!published || capabilityRegistry.isModified() || forceCheck) {
                 return capabilityRegistry.resolveCapabilities(getRootResource(), hostXmlOnly);
             } else {
                 // we're unmodified so nothing to validate
-                return CapabilityValidation.OK;
+                return CapabilityRegistry.CapabilityValidation.OK;
             }
         }
-
         private void publish() {
             ModelControllerImpl.this.managementModel.set(this);
-            ControllerLogger.MGMT_OP_LOGGER.tracef("published %s", this);
             published = true;
+            ControllerLogger.MGMT_OP_LOGGER.tracef("published %s", this);
         }
 
         private void discard() {
@@ -1266,415 +1226,9 @@ class ModelControllerImpl implements ModelController {
             // without actually publishing. The result is calls against this object
             // will now see the value of ModelControllerImpl.this.managementModel.get,
             // which will be
-            ControllerLogger.MGMT_OP_LOGGER.tracef("discarded %s", this);
             published = true;
-        }
-    }
-
-    /** Capability registry implementation. */
-    static class CapabilityRegistryImpl implements RuntimeCapabilityRegistry {
-
-        private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
-        private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
-        private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
-        private final boolean forServer;
-        private final Set<CapabilityContext> knownContexts;
-        private final ResolutionContextImpl resolutionContext = new ResolutionContextImpl();
-
-        CapabilityRegistryImpl(boolean forServer) {
-            this.forServer =  forServer;
-            this.knownContexts = forServer ? null : new HashSet<>();
-        }
-
-        @Override
-        public synchronized void registerCapability(RuntimeCapabilityRegistration capabilityRegistration) {
-
-            CapabilityId capabilityId = capabilityRegistration.getCapabilityId();
-            RegistrationPoint rp = capabilityRegistration.getOldestRegistrationPoint();
-            RuntimeCapabilityRegistration currentRegistration = capabilities.get(capabilityId);
-            if (currentRegistration != null) {
-                // The actual capability must be the same, and we must not already have a registration
-                // from this resource
-                if (!Objects.equals(capabilityRegistration.getCapability(), currentRegistration.getCapability())
-                        || !currentRegistration.addRegistrationPoint(rp)) {
-                    throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
-                            capabilityId.getContext().getName());
-                }
-                // else it was ok, and we just recorded the additional registration point
-            } else {
-                capabilities.put(capabilityId, capabilityRegistration);
-            }
-
-            // Add any hard requirements
-            for (String req : capabilityRegistration.getCapability().getRequirements()) {
-                registerRequirement(new RuntimeRequirementRegistration(req, capabilityId.getName(),
-                        capabilityId.getContext(), rp));
-            }
-
-            if (!forServer) {
-                CapabilityContext capContext = capabilityId.getContext();
-                knownContexts.add(capContext);
-            }
-        }
-
-        @Override
-        public synchronized void registerAdditionalCapabilityRequirement(RuntimeRequirementRegistration requirement) {
-            registerRequirement(requirement);
-        }
-
-        private void registerRequirement(RuntimeRequirementRegistration requirement) {
-            CapabilityId dependentId = requirement.getDependentId();
-            if (!capabilities.containsKey(dependentId)) {
-                throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
-                        dependentId.getContext().getName());
-            }
-            Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap =
-                    requirement.isRuntimeOnly() ? runtimeOnlyRequirements : requirements;
-
-            Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(dependentId);
-            if (dependents == null) {
-                dependents = new HashMap<>();
-                requirementMap.put(dependentId, dependents);
-            }
-            RuntimeRequirementRegistration existing = dependents.get(requirement.getRequiredName());
-            if (existing == null) {
-                dependents.put(requirement.getRequiredName(), requirement);
-            } else {
-                existing.addRegistrationPoint(requirement.getOldestRegistrationPoint());
-            }
-        }
-
-        @Override
-        public synchronized void removeCapabilityRequirement(RuntimeRequirementRegistration requirementRegistration) {
-            // We don't know if this got registered as an runtime-only requirement or a hard one
-            // so clean it from both maps
-            removeRequirement(requirementRegistration, false);
-            removeRequirement(requirementRegistration, true);
-        }
-
-        @Override
-        public synchronized RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context,
-                                                                           PathAddress registrationPoint) {
-            CapabilityId capabilityId = new CapabilityId(capabilityName, context);
-            RuntimeCapabilityRegistration removed = null;
-            RuntimeCapabilityRegistration candidate = capabilities.get(capabilityId);
-            if (candidate != null) {
-                RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
-                if (candidate.removeRegistrationPoint(rp)) {
-                    if (candidate.getRegistrationPointCount() == 0) {
-                        removed = capabilities.remove(capabilityId);
-                        requirements.remove(capabilityId);
-                        runtimeOnlyRequirements.remove(capabilityId);
-                    } else {
-                        // There are still registration points for this capability.
-                        // So just remove the requirements for this registration point
-                        Map<String, RuntimeRequirementRegistration> candidateRequirements = requirements.get(capabilityId);
-                        if (candidateRequirements != null) {
-                            // Iterate over array to avoid ConcurrentModificationException
-                            for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), false);
-                            }
-                        }
-                        candidateRequirements = runtimeOnlyRequirements.get(capabilityId);
-                        if (candidateRequirements != null) {
-                            // Iterate over array to avoid ConcurrentModificationException
-                            for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), true);
-                            }
-                        }
-                    }
-                }
-            }
-            return removed;
-        }
-
-        private synchronized void removeRequirement(RuntimeRequirementRegistration requirementRegistration, boolean optional) {
-            Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap = optional ? runtimeOnlyRequirements : requirements;
-            Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(requirementRegistration.getDependentId());
-            if (dependents != null) {
-                RuntimeRequirementRegistration rrr = dependents.get(requirementRegistration.getRequiredName());
-                if (rrr != null) {
-                    rrr.removeRegistrationPoint(requirementRegistration.getOldestRegistrationPoint());
-                    if (rrr.getRegistrationPointCount() == 0) {
-                        dependents.remove(requirementRegistration.getRequiredName());
-                    }
-                    if (dependents.size() == 0) {
-                        requirementMap.remove(requirementRegistration.getDependentId());
-                    }
-                }
-            }
-        }
-
-        @Override
-        public synchronized boolean hasCapability(String capabilityName, String dependentName, CapabilityContext capabilityContext) {
-            return findSatisfactoryCapability(capabilityName, capabilityContext, dependentName, false) != null;
-        }
-
-        @Override
-        public synchronized  <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext capabilityContext, Class<T> apiType) {
-            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, capabilityContext);
-            Object api = reg.getCapability().getRuntimeAPI();
-            if (api == null) {
-                throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
-            }
-            return apiType.cast(api);
-        }
-
-        @Override
-        public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
-            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
-            RuntimeCapability<?> cap = reg.getCapability();
-            return cap.getCapabilityServiceName(serviceType);
-        }
-
-        private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
-            // Here we can't know the dependent name. So this can only be called when resolution is complete.
-            assert resolutionContext.resolutionComplete;
-            SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, null, false);
-            if (satisfactoryCapability == null) {
-                if (forServer) {
-                    throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
-                } else {
-                    throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
-                }
-            }
-            return capabilities.get(satisfactoryCapability.singleCapability);
-        }
-
-        synchronized CapabilityRegistryImpl copy() {
-            CapabilityRegistryImpl result = new CapabilityRegistryImpl(forServer);
-            copyCapabilities(capabilities, result.capabilities);
-            copyRequirements(requirements, result.requirements);
-            copyRequirements(runtimeOnlyRequirements, result.runtimeOnlyRequirements);
-            if (!forServer) {
-                result.knownContexts.addAll(this.knownContexts);
-            }
-            return result;
-        }
-
-        private static void copyCapabilities(final Map<CapabilityId, RuntimeCapabilityRegistration> source,
-                                             final Map<CapabilityId, RuntimeCapabilityRegistration> dest) {
-            for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : source.entrySet()) {
-                dest.put(entry.getKey(), new RuntimeCapabilityRegistration(entry.getValue()));
-            }
-        }
-
-        private static void copyRequirements(Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> source,
-                                             Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> dest) {
-            for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : source.entrySet()) {
-                Map<String, RuntimeRequirementRegistration> mapCopy = new HashMap<>();
-                for (Map.Entry<String, RuntimeRequirementRegistration> innerEntry : entry.getValue().entrySet()) {
-                    mapCopy.put(innerEntry.getKey(), new RuntimeRequirementRegistration(innerEntry.getValue()));
-                }
-                dest.put(entry.getKey(), mapCopy);
-            }
-
-        }
-
-        synchronized CapabilityValidation resolveCapabilities(Resource rootResource, boolean hostXmlOnly) {
-
-            resolutionContext.setRootResource(rootResource);
-
-            Map<CapabilityId, Set<RuntimeRequirementRegistration>> missing = new HashMap<>();
-
-            // Vars for tracking inconsistent contexts
-            boolean isInconsistent = false;
-            Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency = null;
-            Map<CapabilityContext, Set<CapabilityContext>> consistentSets = null;
-
-            for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
-                CapabilityId dependentId = entry.getKey();
-                String dependentName = dependentId.getName();
-                CapabilityContext dependentContext = dependentId.getContext();
-                Set<CapabilityContext> consistentSet = consistentSets == null ? null : consistentSets.get(dependentContext);
-                for (RuntimeRequirementRegistration req : entry.getValue().values()) {
-                    SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, dependentName, !forServer);
-                    if (satisfactory == null) {
-                        // Missing
-                        if (hostXmlOnly && dependentName.startsWith("org.wildfly.domain.server-config.")
-                                && (req.getRequiredName().startsWith("org.wildfly.domain.server-group.")
-                                || req.getRequiredName().startsWith("org.wildfly.domain.socket-binding-group."))) {
-                            // HACK. We can't resolve these now as we have no domain model at this part of boot
-                            // We can resolve them when the domain model ops run, so wait to validate then
-                            ControllerLogger.MGMT_OP_LOGGER.tracef("Ignoring that dependent %s cannot resolve required capability %s as the 'hostXmlOnly' param is set", dependentId, req.getRequiredName());
-                            continue;
-                        }
-                        CapabilityId basicId = new CapabilityId(req.getRequiredName(), dependentContext);
-                        Set<RuntimeRequirementRegistration> set = missing.get(basicId);
-                        if (set == null) {
-                            set = new HashSet<>();
-                            missing.put(basicId, set);
-                        }
-                        set.add(req);
-                    } else if (satisfactory.multipleCapabilities != null) {
-                        // This requirement is one that needs tracking to ensure that all similar ones for this
-                        // dependent context can be resolved against at least one context
-                        if (requiresConsistency == null) {
-                            requiresConsistency = new HashMap<>();
-                            consistentSets = new HashMap<>();
-                        }
-
-                        CapabilityContext reqDependent = req.getDependentContext();
-                        recordConsistentSets(requiresConsistency, consistentSets, reqDependent, consistentSet, req, satisfactory, reqDependent);
-                        isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
-
-                        // Record for any contexts that include this one
-                        for (CapabilityContext including : dependentContext.getIncludingContexts(resolutionContext)) {
-                            consistentSet = consistentSets.get(including);
-                            recordConsistentSets(requiresConsistency, consistentSets,including, consistentSet, req, satisfactory, reqDependent);
-                            isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
-                        }
-                    } // else simple capability match
-                }
-            }
-
-            // We've finished resolution
-            resolutionContext.resolutionComplete = true;
-
-            if (isInconsistent) {
-                // This is the exception case. Figure out the details of the problems
-                return new CapabilityValidation(missing, findInconsistent(requiresConsistency, consistentSets), resolutionContext);
-            } else if (!missing.isEmpty()) {
-                return new CapabilityValidation(missing, null, resolutionContext);
-            }
-
-            return CapabilityValidation.OK;
-        }
-
-        private void recordConsistentSets(Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency, Map<CapabilityContext, Set<CapabilityContext>> consistentSets, CapabilityContext dependentContext, Set<CapabilityContext> consistentSet, RuntimeRequirementRegistration req, SatisfactoryCapability satisfactory, CapabilityContext reqDependent) {
-            Set<RuntimeRequirementRegistration> requiresForDependent = requiresConsistency.get(reqDependent);
-            if (requiresForDependent == null) {
-                requiresForDependent = new HashSet<>();
-                requiresConsistency.put(reqDependent, requiresForDependent);
-            }
-            requiresForDependent.add(req);
-            if (consistentSet == null) {
-                consistentSet = new HashSet<>(satisfactory.multipleCapabilities); // copy okContexts so retainAll calls won't mutate it
-                consistentSets.put(dependentContext, consistentSet);
-            } else {
-                consistentSet.retainAll(satisfactory.multipleCapabilities);
-            }
-        }
-
-        private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext capabilityContext,
-                                                                  String dependentName, boolean requireConsistency) {
-
-            // Check for a simple match
-            CapabilityId requestedId = new CapabilityId(capabilityName, capabilityContext);
-            if (capabilities.containsKey(requestedId)) {
-                return new SatisfactoryCapability(requestedId);
-            }
-
-            if (!forServer) {
-                // Try other contexts that satisfy the requested one
-                Set<CapabilityContext> multiple = null;
-                for (CapabilityContext satisfies : knownContexts) {
-                    if (satisfies.equals(capabilityContext)) {
-                        // We already know this one doesn't exist
-                        continue;
-                    }
-                    CapabilityId satisfiesId = new CapabilityId(capabilityName, satisfies);
-                    if (capabilities.containsKey(satisfiesId) && satisfies.canSatisfyRequirement(requestedId, dependentName, resolutionContext)) {
-                        if (!requireConsistency || !satisfies.requiresConsistencyCheck()) {
-                            return new SatisfactoryCapability(satisfiesId);
-                        } else {
-                            if (multiple == null) {
-                                multiple = new HashSet<>();
-                            }
-                            multiple.add(satisfies);
-                            multiple.addAll(satisfies.getIncludingContexts(resolutionContext));
-                        }
-                    }
-                }
-                if (multiple != null) {
-                    return new SatisfactoryCapability(multiple);
-                }
-            }
-            return null;
-        }
-
-        private static Set<RuntimeRequirementRegistration> findInconsistent(Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency,
-                                                                                               Map<CapabilityContext, Set<CapabilityContext>> consistentSets) {
-            Set<RuntimeRequirementRegistration> result = new HashSet<>();
-            for (Map.Entry<CapabilityContext, Set<CapabilityContext>> entry : consistentSets.entrySet()) {
-                if (entry.getValue().isEmpty()) {
-                    // This one is a problem; see what all requirements are from the dependent context
-                    Set<RuntimeRequirementRegistration> contextDependents = requiresConsistency.get(entry.getKey());
-                    if (contextDependents != null) {
-                        result.addAll(contextDependents);
-                    }
-                }
-            }
-            return result;
-        }
-    }
-
-    private static class ResolutionContextImpl extends CapabilityResolutionContext {
-        private boolean resolutionComplete;
-        private Resource rootResource;
-
-        @Override
-        public Resource getResourceRoot() {
-            assert rootResource != null;
-            return rootResource;
-        }
-
-        void setRootResource(Resource rootResource) {
-            this.rootResource = rootResource;
-            reset();
-            this.resolutionComplete = false;
-        }
-    }
-
-    private static class SatisfactoryCapability {
-        private final CapabilityId singleCapability;
-        private final Set<CapabilityContext> multipleCapabilities;
-
-        SatisfactoryCapability(CapabilityId singleCapability) {
-            this.singleCapability = singleCapability;
-            this.multipleCapabilities = null;
-        }
-
-        SatisfactoryCapability(Set<CapabilityContext> multipleCapabilities) {
-            this.singleCapability = null;
-            this.multipleCapabilities = multipleCapabilities;
-        }
-    }
-
-    /**
-     *
-     */
-    static class CapabilityValidation {
-
-        private static final CapabilityValidation OK = new CapabilityValidation(null, null, null);
-        private final Map<CapabilityId, Set<RuntimeRequirementRegistration>> missingRequirements;
-        private final Set<RuntimeRequirementRegistration> inconsistentRequirements;
-        private final CapabilityResolutionContext resolutionContext;
-
-        private CapabilityValidation(Map<CapabilityId, Set<RuntimeRequirementRegistration>> missingRequirements,
-                                     Set<RuntimeRequirementRegistration> inconsistentRequirements,
-                                     CapabilityResolutionContext resolutionContext) {
-            this.resolutionContext = resolutionContext;
-            this.missingRequirements = missingRequirements == null
-                    ? Collections.<CapabilityId, Set<RuntimeRequirementRegistration>>emptyMap() : missingRequirements;
-            this.inconsistentRequirements = inconsistentRequirements == null
-                    ? Collections.emptySet() : inconsistentRequirements;
-        }
-
-        Map<CapabilityId, Set<RuntimeRequirementRegistration>> getMissingRequirements() {
-            return missingRequirements;
-        }
-
-        Set<RuntimeRequirementRegistration> getInconsistentRequirements() {
-            return inconsistentRequirements;
-        }
-
-        CapabilityResolutionContext getCapabilityResolutionContext() {
-            return resolutionContext;
-        }
-
-        boolean isValid() {
-            return missingRequirements.isEmpty() && inconsistentRequirements.isEmpty();
+            capabilityRegistry.rollback();
+            ControllerLogger.MGMT_OP_LOGGER.tracef("discarded %s", this);
         }
     }
 
@@ -1689,7 +1243,6 @@ class ModelControllerImpl implements ModelController {
             // TODO doing this here isn't so nice
             ModelNode header = simpleResponse.get(RESPONSE_HEADERS, ATTACHED_STREAMS);
             header.setEmptyList();
-            List<OperationResponse.StreamEntry> streams = new ArrayList<>();
             for (StreamEntry entry : inputStreams.values()) {
                 ModelNode streamNode = new ModelNode();
                 streamNode.get(UUID).set(entry.getUUID());

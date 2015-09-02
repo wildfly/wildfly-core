@@ -89,6 +89,8 @@ import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
+import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -118,7 +120,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
-import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
+import org.jboss.as.domain.controller.operations.DomainModelIncludesValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -208,6 +210,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private final PathManagerService pathManager;
     private final ExpressionResolver expressionResolver;
     private final DomainDelegatingResourceDefinition rootResourceDefinition;
+    private final CapabilityRegistry capabilityRegistry;
 
     // @GuardedBy(this)
     private Future<ServerInventory> inventoryFuture;
@@ -242,13 +245,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        CapabilityRegistry capabilityRegistry = new CapabilityRegistry(processType.isServer());
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded, capabilityRegistry);
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -275,9 +279,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ExtensionRegistry extensionRegistry,
                                          final ManagedAuditLogger auditLogger,
                                          final DelegatingConfigurableAuthorizer authorizer,
-                                         final boolean isEmbedded) {
+                                         final boolean isEmbedded,
+                                         final CapabilityRegistry capabilityRegistry) {
         super(isEmbedded ? ProcessType.EMBEDDED_HOST_CONTROLLER : ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
-                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer);
+                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, capabilityRegistry);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.processState = processState;
@@ -297,6 +302,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.pathManager = pathManager;
         this.expressionResolver = expressionResolver;
         this.rootResourceDefinition = rootResourceDefinition;
+        this.capabilityRegistry = capabilityRegistry;
     }
 
     private static ManagedAuditLogger createAuditLogger(HostControllerEnvironment environment) {
@@ -552,7 +558,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     if (addr.size() > 0 && addr.getLastElement().getKey().equals(SUBSYSTEM)) {
                         //For subsystem adds in domain mode we need to check that the new subsystem does not break the rule
                         //that when profile includes are used, we don't allow overriding subsystems.
-                        DomainModelReferenceValidator.addValidationStep(context, operation);
+                        DomainModelIncludesValidator.addValidationStep(context, operation);
                     }
                 }
             }
@@ -703,7 +709,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 final ModelNode result = internalExecute(OperationBuilder.create(validate).build(), OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        DomainModelReferenceValidator.validateAtBoot(context, operation);
+                        DomainModelIncludesValidator.validateAtBoot(context, operation);
                     }
                 }).getResponseNode();
 
@@ -751,7 +757,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }
             } else {
                 // Die!
-                ROOT_LOGGER.unsuccessfulBoot();
+                String failed = ROOT_LOGGER.unsuccessfulBoot();
+                ROOT_LOGGER.fatal(failed);
+                bootstrapListener.bootFailure(failed);
                 SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
             }
         }
@@ -1175,6 +1183,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
     @Override
     public ExtensionRegistry getExtensionRegistry() {
         return extensionRegistry;
+    }
+
+    @Override
+    public ImmutableCapabilityRegistry getCapabilityRegistry() {
+        return capabilityRegistry;
     }
 
     @Override

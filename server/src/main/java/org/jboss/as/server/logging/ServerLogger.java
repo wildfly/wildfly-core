@@ -366,9 +366,8 @@ public interface ServerLogger extends BasicLogger {
     void caughtExceptionDuringBoot(@Cause Exception e);
 
 
-    @LogMessage(level = Logger.Level.FATAL)
     @Message(id = 56, value = "Server boot has failed in an unrecoverable manner; exiting. See previous messages for details.")
-    void unsuccessfulBoot();
+    String unsuccessfulBoot();
 
     /**
      * Logs an error message indicating the content for a configured deployment was unavailable at boot but boot

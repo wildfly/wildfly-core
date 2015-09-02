@@ -61,7 +61,6 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.controller.DomainController;
@@ -99,6 +98,7 @@ import org.jboss.as.host.controller.resources.StoppedServerResource;
 import org.jboss.as.platform.mbean.PlatformMBeanResourceRegistrar;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
+import org.jboss.as.server.controller.resources.CapabilityRegistryResourceDefinition;
 import org.jboss.as.server.controller.resources.ModuleLoadingResourceDefinition;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
@@ -107,6 +107,7 @@ import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
@@ -414,6 +415,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         //host-environment
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));
         hostRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
+        hostRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(domainController.getCapabilityRegistry()));
 
         // discovery options
         ManagementResourceRegistration discoveryOptions = hostRegistration.registerSubModel(DiscoveryOptionsResourceDefinition.INSTANCE);
@@ -427,7 +429,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerSubModel(PathResourceDefinition.createResolvableSpecified(pathManager));
 
         //interface
-        ManagementResourceRegistration interfaces = hostRegistration.registerSubModel(new InterfaceDefinition(
+        ManagementResourceRegistration interfaces = hostRegistration.registerSubModel(new InterfaceResourceDefinition(
                 new HostSpecifiedInterfaceAddHandler(),
                 new HostSpecifiedInterfaceRemoveHandler(),
                 true,

@@ -23,18 +23,17 @@
 package org.jboss.as.controller.capability.registry;
 
 /**
- * {@link CapabilityContext} used for capabilities scoped to a Host Controller {@code server-config} resource.
+ * {@link CapabilityScope} used for capabilities scoped to a Host Controller {@code server-config} resource.
  *
  * @author Brian Stansberry
  */
-class ServerGroupsCapabilityContext implements CapabilityContext {
+class ServerGroupsCapabilityScope implements CapabilityScope {
 
-    static final ServerGroupsCapabilityContext INSTANCE = new ServerGroupsCapabilityContext();
+    static final ServerGroupsCapabilityScope INSTANCE = new ServerGroupsCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext depCtx = dependent.getContext();
-        return depCtx instanceof ServerConfigCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope instanceof ServerConfigCapabilityScope;
     }
 
     @Override

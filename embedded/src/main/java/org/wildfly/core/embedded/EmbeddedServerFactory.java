@@ -195,6 +195,21 @@ public class EmbeddedServerFactory {
         return (EmbeddedServerReference) create(moduleLoader, jbossHomeDir, cmdargs);
     }
 
+    public static EmbeddedServerReference createHostController(String jbossHomePath, String modulePath, String[] systemPackages, String[] cmdargs) {
+        if (jbossHomePath == null || jbossHomePath.isEmpty()) {
+            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
+        }
+        File jbossHomeDir = new File(jbossHomePath);
+        if (!jbossHomeDir.isDirectory()) {
+            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
+        }
+
+        if (modulePath == null)
+            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + "modules";
+
+        return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
+    }
+
     /**
      * Create an embedded host controller with an already established module loader.
      *

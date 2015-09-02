@@ -37,7 +37,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.resources.ServerConfigResource;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
@@ -99,8 +98,6 @@ public class ServerAddHandler extends AbstractAddStepHandler {
                 context.addResource(PathAddress.EMPTY_ADDRESS, PlaceholderResource.INSTANCE);
             }
         }, OperationContext.Stage.MODEL, true);
-
-        DomainModelReferenceValidator.addValidationStep(context, operation);
     }
 
     protected boolean requiresRuntime(OperationContext context) {

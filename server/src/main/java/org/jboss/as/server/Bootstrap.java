@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.xml.namespace.QName;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -81,6 +82,7 @@ public interface Bootstrap {
         private final ServerEnvironment serverEnvironment;
         private final RunningModeControl runningModeControl;
         private final ExtensionRegistry extensionRegistry;
+        private final CapabilityRegistry capabilityRegistry;
         private final ManagedAuditLogger auditLogger;
         private final DelegatingConfigurableAuthorizer authorizer;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
@@ -94,6 +96,7 @@ public interface Bootstrap {
             this.auditLogger = serverEnvironment.createAuditLogger();
             this.authorizer = new DelegatingConfigurableAuthorizer();
             this.extensionRegistry = new ExtensionRegistry(serverEnvironment.getLaunchType().getProcessType(), runningModeControl, this.auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
+            this.capabilityRegistry = new CapabilityRegistry(true);
             this.startTime = serverEnvironment.getStartTime();
         }
 
@@ -121,6 +124,15 @@ public interface Bootstrap {
          */
         public ExtensionRegistry getExtensionRegistry() {
             return extensionRegistry;
+        }
+
+        /**
+         * Get the capability registry.
+         *
+         * @return the capability registry. Will not be {@code null}
+         */
+        public CapabilityRegistry getCapabilityRegistry() {
+            return capabilityRegistry;
         }
 
         /**

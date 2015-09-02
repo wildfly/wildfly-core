@@ -25,11 +25,14 @@ package org.jboss.as.controller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -84,7 +87,9 @@ public abstract class AttributeDefinition {
     private final Boolean nilSignificant;
     private final AttributeParser parser;
     private final String attributeGroup;
+    private final ModelNode undefinedMetricValue;
     protected final CapabilityReferenceRecorder referenceRecorder;
+    private final Map<String, ModelNode> arbitraryDescriptors = new HashMap<>();
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Expected to be a common use case; no one-offs.
@@ -100,7 +105,8 @@ public abstract class AttributeDefinition {
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), wrapFlags(toCopy.getFlags()));
+                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
+                toCopy.getUndefinedMetricValue(), wrapFlags(toCopy.getFlags()));
     }
 
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -113,7 +119,57 @@ public abstract class AttributeDefinition {
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, wrapFlags(flags));
+                nilSignificant, parser, null, null, null, null, null, wrapFlags(flags));
+    }
+
+    private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
+                                final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
+                                final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
+                                final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
+                                boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
+                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
+                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final EnumSet<AttributeAccess.Flag> flags) {
+
+        this.name = name;
+        this.xmlName = xmlName == null ? name : xmlName;
+        this.type = type;
+        this.allowNull = allowNull;
+        this.allowExpression = allowExpression;
+        this.parser = parser != null ? parser : AttributeParser.SIMPLE;
+        if (defaultValue != null && defaultValue.isDefined()) {
+            this.defaultValue = defaultValue;
+            this.defaultValue.protect();
+        } else {
+            this.defaultValue = null;
+        }
+        this.measurementUnit = measurementUnit;
+        this.alternatives = alternatives;
+        this.requires = requires;
+        this.valueCorrector = valueCorrector;
+        this.validator = validator;
+        this.validateNull = validateNull;
+        this.flags = flags;
+        if (attributeMarshaller != null) {
+            this.attributeMarshaller = attributeMarshaller;
+        } else {
+            this.attributeMarshaller = new DefaultAttributeMarshaller();
+        }
+        this.resourceOnly = resourceOnly;
+        this.accessConstraints = accessConstraints;
+        this.deprecationData = deprecationData;
+        this.nilSignificant = nilSignificant;
+        this.attributeGroup = attributeGroup;
+        this.allowedValues = allowedValues;
+        if (undefinedMetricValue != null && undefinedMetricValue.isDefined()) {
+            this.undefinedMetricValue = undefinedMetricValue;
+            this.undefinedMetricValue.protect();
+        } else {
+            this.undefinedMetricValue = null;
+        }
+        this.referenceRecorder = referenceRecorder;
+        if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
+            this.arbitraryDescriptors.putAll(arbitraryDescriptors);
+        }
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
@@ -130,7 +186,7 @@ public abstract class AttributeDefinition {
             NillableOrExpressionParameterValidator current = (NillableOrExpressionParameterValidator) toWrap;
             if (allowExpression == current.isAllowExpression() &&
                     (!validateNull && current.getAllowNull() == null
-                        || allowNull == current.getAllowNull())) {
+                            || allowNull == current.getAllowNull())) {
                 result = current;
             } else {
                 toWrap = current.getDelegate();
@@ -160,46 +216,6 @@ public abstract class AttributeDefinition {
         } else {
             return EnumSet.of(flags[0], flags);
         }
-    }
-
-    private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                                final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
-                                final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-                                boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final EnumSet<AttributeAccess.Flag> flags) {
-
-        this.name = name;
-        this.xmlName = xmlName == null ? name : xmlName;
-        this.type = type;
-        this.allowNull = allowNull;
-        this.allowExpression = allowExpression;
-        this.parser = parser != null ? parser : AttributeParser.SIMPLE;
-        this.defaultValue = new ModelNode();
-        if (defaultValue != null) {
-            this.defaultValue.set(defaultValue);
-        }
-        this.defaultValue.protect();
-        this.measurementUnit = measurementUnit;
-        this.alternatives = alternatives;
-        this.requires = requires;
-        this.valueCorrector = valueCorrector;
-        this.validator = validator;
-        this.validateNull = validateNull;
-        this.flags = flags;
-        if (attributeMarshaller != null) {
-            this.attributeMarshaller = attributeMarshaller;
-        } else {
-            this.attributeMarshaller = new DefaultAttributeMarshaller();
-        }
-        this.resourceOnly = resourceOnly;
-        this.accessConstraints = accessConstraints;
-        this.deprecationData = deprecationData;
-        this.nilSignificant = nilSignificant;
-        this.attributeGroup = attributeGroup;
-        this.allowedValues = allowedValues;
-        this.referenceRecorder = referenceRecorder;
     }
 
     /**
@@ -284,7 +300,7 @@ public abstract class AttributeDefinition {
      * @return the default value, or {@code null} if no defined value was provided
      */
     public ModelNode getDefaultValue() {
-        return defaultValue.isDefined() ? defaultValue : null;
+        return defaultValue;
     }
 
     /**
@@ -376,6 +392,10 @@ public abstract class AttributeDefinition {
             return Collections.emptyList();
         }
         return Arrays.asList(this.allowedValues);
+    }
+
+    public Map<String, ModelNode> getArbitraryDescriptors() {
+        return Collections.unmodifiableMap(arbitraryDescriptors);
     }
 
     /**
@@ -554,7 +574,7 @@ public abstract class AttributeDefinition {
      */
     public ModelNode resolveValue(final ExpressionResolver resolver, final ModelNode value) throws OperationFailedException {
         final ModelNode node = value.clone();
-        if (!node.isDefined() && defaultValue.isDefined()) {
+        if (!node.isDefined() && defaultValue != null && defaultValue.isDefined()) {
             node.set(defaultValue);
         }
         final ModelNode resolved = resolver.resolveExpressions(node);
@@ -786,7 +806,7 @@ public abstract class AttributeDefinition {
         final ModelNode result = new ModelNode();
         result.get(ModelDescriptionConstants.TYPE).set(type);
         result.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
-        if (attributeGroup != null) {
+        if (attributeGroup != null && !forOperation) {
             result.get(ModelDescriptionConstants.ATTRIBUTE_GROUP).set(attributeGroup);
         }
         result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(isAllowExpression());
@@ -849,7 +869,10 @@ public abstract class AttributeDefinition {
             }
         }
         addAllowedValuesToDescription(result, validator);
-
+        arbitraryDescriptors.entrySet().stream().forEach((arbitraryDescriptor) -> {
+            assert !result.hasDefined(arbitraryDescriptor.getKey()); //You can't override an arbitrary descriptor set through other properties.
+            result.get(arbitraryDescriptor.getKey()).set(arbitraryDescriptor.getValue());
+        });
         return result;
     }
 
@@ -1013,7 +1036,7 @@ public abstract class AttributeDefinition {
             node = correctValue(node, node);
         }
 
-        if (!node.isDefined() && defaultValue.isDefined()) {
+        if (!node.isDefined() && defaultValue != null && defaultValue.isDefined()) {
             validator.validateParameter(name, defaultValue);
         } else {
             validator.validateParameter(name, node);
@@ -1060,6 +1083,15 @@ public abstract class AttributeDefinition {
 
     public AttributeParser getParser() {
         return parser;
+    }
+
+    /**
+     * Gets the undefined metric value to use for the attribute if a value cannot be provided.
+     *
+     * @return the undefined metric value, or {@code null} if no undefined metric value was provided
+     */
+    public ModelNode getUndefinedMetricValue() {
+        return undefinedMetricValue;
     }
 
     /**

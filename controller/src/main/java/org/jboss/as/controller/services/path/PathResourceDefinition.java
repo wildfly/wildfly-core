@@ -21,6 +21,8 @@
 */
 package org.jboss.as.controller.services.path;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
+
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -55,6 +57,7 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setValidator(new StringLengthValidator(1, false))
+                .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
                 .build();
 
     static final SimpleAttributeDefinition PATH_NAMED =

@@ -37,7 +37,6 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
     public static final SocketBindingGroupAddHandler INSTANCE = new SocketBindingGroupAddHandler();
 
     private SocketBindingGroupAddHandler() {
-        super(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     /**
@@ -47,7 +46,7 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.populateModel(context, operation, resource);
         SocketBindingGroupResourceDefinition.INCLUDES.validateAndSet(operation, resource.getModel());
-        DomainModelReferenceValidator.addValidationStep(context, operation);
+        DomainModelIncludesValidator.addValidationStep(context, operation);
     }
 
     @Override

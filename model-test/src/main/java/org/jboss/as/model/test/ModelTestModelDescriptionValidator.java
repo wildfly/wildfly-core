@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXPRESSIONS_ALLOWED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HEAD_COMMENT_ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_LENGTH;
@@ -62,6 +63,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNIT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WEB_URL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,6 +115,8 @@ public class ModelTestModelDescriptionValidator {
         validChildTypeKeys.put(MIN_OCCURS, SimpleIntDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(MAX_OCCURS, SimpleIntDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(ALLOWED, StringListValidator.INSTANCE);
+        validChildTypeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
+        validChildTypeKeys.put(WEB_URL, BooleanDescriptorValidator.INSTANCE);
         VALID_CHILD_TYPE_KEYS = Collections.unmodifiableMap(validChildTypeKeys);
 
 
@@ -126,6 +130,7 @@ public class ModelTestModelDescriptionValidator {
         //Arbitrary
         paramAndAttributeKeys.put(ALTERNATIVES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(ATTRIBUTE_GROUP, NullDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(REQUIRES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(MIN, NumericDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(MAX, NumericDescriptorValidator.INSTANCE);
@@ -137,6 +142,7 @@ public class ModelTestModelDescriptionValidator {
         paramAndAttributeKeys.put(EXPRESSIONS_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(CAPABILITY_REFERENCE, NullDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(WEB_URL, BooleanDescriptorValidator.INSTANCE);
 
         Map<String, AttributeOrParameterArbitraryDescriptorValidator> validAttributeKeys = new HashMap<String, AttributeOrParameterArbitraryDescriptorValidator>();
         validAttributeKeys.putAll(paramAndAttributeKeys);

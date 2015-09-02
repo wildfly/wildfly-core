@@ -22,11 +22,14 @@
 package org.jboss.as.controller.audit;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.dmr.ModelNode;
 
 /**
  *  All methods on this class should be called with {@link ManagedAuditLoggerImpl}'s lock taken.
@@ -129,6 +132,10 @@ abstract class AuditLogHandler {
     abstract void initialize();
     abstract void stop();
     abstract void writeLogItem(String formattedItem) throws IOException;
+
+    List<ModelNode> listLastEntries() {
+        return Collections.emptyList();
+    }
 
     interface FailureCountHandler {
         void success();

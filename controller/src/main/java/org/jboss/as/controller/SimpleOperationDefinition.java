@@ -48,26 +48,40 @@ public class SimpleOperationDefinition extends OperationDefinition {
     final ResourceDescriptionResolver resolver;
     final ResourceDescriptionResolver attributeResolver;
 
+    @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver) {
         this(name, resolver, EnumSet.noneOf(OperationEntry.Flag.class));
     }
 
+    @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, AttributeDefinition... parameters) {
         this(name, resolver, OperationEntry.EntryType.PUBLIC, EnumSet.noneOf(OperationEntry.Flag.class), parameters);
     }
 
+
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
+    @Deprecated
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, final EnumSet<OperationEntry.Flag> flags) {
         this(name, resolver, OperationEntry.EntryType.PUBLIC, flags, new AttributeDefinition[0]);
     }
 
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
         this(name, resolver, entryType, flags, new AttributeDefinition[0]);
     }
 
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags, AttributeDefinition... parameters) {
         this(name, resolver, resolver, entryType, flags, null, null, false, null, null, parameters);
     }
 
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     protected SimpleOperationDefinition(final String name,
                                      final ResourceDescriptionResolver resolver,
                                      final ResourceDescriptionResolver attributeResolver,
@@ -84,6 +98,9 @@ public class SimpleOperationDefinition extends OperationDefinition {
         this.attributeResolver = attributeResolver;
     }
 
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     protected SimpleOperationDefinition(final String name,
             final ResourceDescriptionResolver resolver,
             final ResourceDescriptionResolver attributeResolver,
@@ -101,11 +118,19 @@ public class SimpleOperationDefinition extends OperationDefinition {
         this.attributeResolver = attributeResolver;
     }
 
+    protected SimpleOperationDefinition(SimpleOperationDefinitionBuilder builder) {
+        super(builder);
+        this.resolver = builder.resolver;
+        this.attributeResolver = builder.attributeResolver;
+    }
 
     @Override
     public DescriptionProvider getDescriptionProvider() {
         if (entryType == EntryType.PRIVATE) {
             return PRIVATE_PROVIDER;
+        }
+        if (descriptionProvider !=null) {
+            return descriptionProvider;
         }
         return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
     }

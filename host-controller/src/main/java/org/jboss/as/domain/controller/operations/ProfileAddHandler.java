@@ -41,7 +41,7 @@ public class ProfileAddHandler extends AbstractAddStepHandler {
     }
 
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
-        DomainModelReferenceValidator.addValidationStep(context, operation);
+        DomainModelIncludesValidator.addValidationStep(context, operation);
         super.populateModel(context, operation, resource);
     }
 

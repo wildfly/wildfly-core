@@ -37,4 +37,8 @@ public class FutureServiceContainer extends AsyncFutureTask<ServiceContainer> {
     void done(final ServiceContainer container) {
         setResult(container);
     }
+
+    void failed(Throwable cause) {
+        setFailed(cause);
+    }
 }

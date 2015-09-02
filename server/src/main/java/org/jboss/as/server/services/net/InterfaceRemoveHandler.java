@@ -20,31 +20,34 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.capability.registry;
+package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.dmr.ModelNode;
 
 /**
- * {@link CapabilityContext} used for capabilities scoped to a Host Controller {@code server-config} resource.
+ * TODO remove this once we can get the superclass out of the controller module to a place
+ * where the NetworkInterface class is visible.
  *
  * @author Brian Stansberry
  */
-class ServerConfigCapabilityContext implements CapabilityContext {
+public class InterfaceRemoveHandler extends org.jboss.as.controller.operations.common.InterfaceRemoveHandler {
 
-    static final ServerConfigCapabilityContext INSTANCE = new ServerConfigCapabilityContext();
+    public static final InterfaceRemoveHandler INSTANCE = new InterfaceRemoveHandler();
 
-    @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        return dependent.getContext() instanceof ServerConfigCapabilityContext;
+    /**
+     * Create the InterfaceRemoveHandler
+     */
+    protected InterfaceRemoveHandler() {
     }
 
     @Override
-    public boolean requiresConsistencyCheck() {
-        return false;
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.recordCapabilitiesAndRequirements(context, operation, resource);
+        context.deregisterCapability(InterfaceResourceDefinition.INTERFACE_CAPABILITY.getDynamicName(context.getCurrentAddressValue()));
     }
 
-    @Override
-    public String getName() {
-        return ModelDescriptionConstants.SERVER_CONFIG;
-    }
+
 }

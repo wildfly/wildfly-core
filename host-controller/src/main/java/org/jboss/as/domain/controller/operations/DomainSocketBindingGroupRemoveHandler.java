@@ -22,6 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 
 /**
  * Handler for the socket-binding-group resource's remove operation.
@@ -39,7 +40,7 @@ public class DomainSocketBindingGroupRemoveHandler extends AbstractRemoveStepHan
      * Create the DomainSocketBindingGroupRemoveHandler
      */
     private DomainSocketBindingGroupRemoveHandler() {
-        super(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
+        super(AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     protected boolean requiresRuntime(OperationContext context) {

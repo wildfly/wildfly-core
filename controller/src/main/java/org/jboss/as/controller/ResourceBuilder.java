@@ -24,6 +24,7 @@
 
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
@@ -71,6 +72,10 @@ public interface ResourceBuilder {
     ResourceBuilder deprecated(ModelVersion since);
 
     ResourceBuilder setRuntime();
+
+    ResourceBuilder addCapability(Capability capability);
+
+    ResourceBuilder addCapabilities(Capability... capability);
 
     ResourceDefinition build();
 

@@ -22,23 +22,20 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 
 /**
- * {@link CapabilityContext} for capabilities whose use is restricted to
- * the Host Controller in which they are installed; e.g. they cannot be
- * resolved by requirers in a domain level context.
+ * {@link CapabilityScope} used for capabilities scoped to a Host Controller {@code server-config} resource.
  *
  * @author Brian Stansberry
  */
-class HostCapabilityContext implements CapabilityContext {
+class ServerConfigCapabilityScope implements CapabilityScope {
 
-    static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
+    static final ServerConfigCapabilityScope INSTANCE = new ServerConfigCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(CapabilityId dependent, String required, CapabilityResolutionContext context) {
-        CapabilityContext dependentContext = dependent.getContext();
-        return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope instanceof ServerConfigCapabilityScope;
     }
 
     @Override
@@ -48,21 +45,6 @@ class HostCapabilityContext implements CapabilityContext {
 
     @Override
     public String getName() {
-        return HOST;
-    }
-
-    @Override
-    public String toString() {
-        return getName();
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || !(o == null || getClass() != o.getClass());
+        return ModelDescriptionConstants.SERVER_CONFIG;
     }
 }

@@ -41,7 +41,6 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.OS;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_COMMUNITY_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PROJECT_TYPE;
-import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.REPORT_VERSION;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.SUMMARY;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
@@ -109,8 +108,6 @@ public class ProductInfoUnitTestCase {
             boolean isRunning = "master".equals(nodeName) || "master:main-one".equals(nodeName);
             if (isRunning) {
                 assertThat(report.get(ORGANIZATION).asString(), is("core-master"));
-                assertThat(report.hasDefined(REPORT_VERSION), is(true));
-                assertThat(report.get(REPORT_VERSION).asString(), is("1.0"));
                 assertThat(report.hasDefined(HOSTNAME), is(true));
                 assertThat(report.hasDefined(INSTANCE_ID), is(true));
                 assertThat(report.hasDefined(PRODUCT_COMMUNITY_IDENTIFIER), is(true));
@@ -148,8 +145,6 @@ public class ProductInfoUnitTestCase {
             assertThat(nodeName, anyOf(is("slave:main-three"), is("slave:main-four"), is("slave"), is("slave:reload-two"), is("slave:other-two")));
             boolean isRunning = "slave".equals(nodeName) || "slave:main-three".equals(nodeName) || "slave:other-two".equals(nodeName);
             if (isRunning) {
-                assertThat(report.hasDefined(REPORT_VERSION), is(true));
-                assertThat(report.get(REPORT_VERSION).asString(), is("1.0"));
                 assertThat(report.hasDefined(HOSTNAME), is(true));
                 assertThat(report.hasDefined(INSTANCE_ID), is(true));
                 assertThat(report.hasDefined(PRODUCT_COMMUNITY_IDENTIFIER), is(true));

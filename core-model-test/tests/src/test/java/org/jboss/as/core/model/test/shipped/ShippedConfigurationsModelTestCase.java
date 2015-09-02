@@ -27,7 +27,7 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -62,12 +62,12 @@ public class ShippedConfigurationsModelTestCase extends AbstractCoreModelTest {
 
                         RuntimeCapability<Void> capability =
                                 RuntimeCapability.Builder.of(ProfileResourceDefinition.PROFILE_CAPABILITY.getDynamicName("full")).build();
-                        RuntimeCapabilityRegistration reg = new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+                        RuntimeCapabilityRegistration reg = new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
                                 new RegistrationPoint(PathAddress.pathAddress(PROFILE, "full"), null));
                         cr.registerCapability(reg);
 
                         capability = RuntimeCapability.Builder.of(ProfileResourceDefinition.PROFILE_CAPABILITY.getDynamicName("full-ha")).build();
-                        reg = new RuntimeCapabilityRegistration(capability, CapabilityContext.GLOBAL,
+                        reg = new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
                                 new RegistrationPoint(PathAddress.pathAddress(PROFILE, "full-ha"), null));
                         cr.registerCapability(reg);
                     }
