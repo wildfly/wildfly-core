@@ -27,8 +27,10 @@ package org.jboss.as.cli.handlers.ifelse;
  */
 public class NotLesserThanOperation extends SameTypeOperation {
 
+    static final String SYMBOL = ">=";
+
     NotLesserThanOperation() {
-        super(ExpressionParser.NLT);
+        super(SYMBOL);
     }
 
     @Override

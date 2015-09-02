@@ -31,8 +31,11 @@ import org.jboss.dmr.ModelNode;
 * @author Alexey Loubyansky
 */
 class OrOperation extends BaseOperation {
+
+    static final String SYMBOL = "||";
+
     OrOperation() {
-        super("||", 2);
+        super(SYMBOL, 2);
     }
 
     @Override
@@ -47,5 +50,10 @@ class OrOperation extends BaseOperation {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean allowsMoreArguments() {
+        return true;
     }
 }

@@ -31,8 +31,11 @@ import org.jboss.dmr.ModelNode;
 * @author Alexey Loubyansky
 */
 class AndOperation extends BaseOperation {
+
+    static final String SYMBOL = "&&";
+
     AndOperation() {
-        super("&&", 4);
+        super(SYMBOL, 4);
     }
 
     @Override
@@ -46,6 +49,11 @@ class AndOperation extends BaseOperation {
                 return false;
             }
         }
+        return true;
+    }
+
+    @Override
+    public boolean allowsMoreArguments() {
         return true;
     }
 }
