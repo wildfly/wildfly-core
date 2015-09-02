@@ -22,21 +22,20 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+
 /**
- * {@link CapabilityContext} specifically used for the {@code org.wildfly.domain.profile} capability.
- * <p>
- * <strong>NOTE:</strong> This context is not used for child resources (subsystems) in the 'profile'
- * part of the Host Controller resource tree.
+ * {@link CapabilityScope} used for capabilities scoped to a Host Controller {@code server-config} resource.
  *
  * @author Brian Stansberry
  */
-class ProfilesCapabilityContext implements CapabilityContext {
+class ServerConfigCapabilityScope implements CapabilityScope {
 
-    public static final ProfilesCapabilityContext INSTANCE = new ProfilesCapabilityContext();
+    static final ServerConfigCapabilityScope INSTANCE = new ServerConfigCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
-        return dependentContext instanceof ProfilesCapabilityContext || dependentContext instanceof ServerGroupsCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope instanceof ServerConfigCapabilityScope;
     }
 
     @Override
@@ -46,6 +45,6 @@ class ProfilesCapabilityContext implements CapabilityContext {
 
     @Override
     public String getName() {
-        return "profiles";
+        return ModelDescriptionConstants.SERVER_CONFIG;
     }
 }

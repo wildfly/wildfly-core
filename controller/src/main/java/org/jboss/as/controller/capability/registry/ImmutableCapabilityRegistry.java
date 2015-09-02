@@ -38,14 +38,14 @@ public interface ImmutableCapabilityRegistry {
      * Gets whether a runtime capability with the given name is registered.
      *
      * @param capabilityName the name of the capability. Cannot be {@code null}
-     * @param context        the context in which to check for the capability
+     * @param scope        the scope in which to check for the capability
      * @return {@code true} if there is a capability with the given name registered
      */
-    boolean hasCapability(String capabilityName, CapabilityContext context);
+    boolean hasCapability(String capabilityName, CapabilityScope scope);
     /**
      * Gets the runtime API associated with a given capability, if there is one.
      * @param capabilityName the name of the capability. Cannot be {@code null}
-     * @param context the context in which to resolve the capability. Cannot be {@code null}
+     * @param scope the scope in which to resolve the capability. Cannot be {@code null}
      * @param apiType class of the java type that exposes the API. Cannot be {@code null}
      * @param <T> the java type that exposes the API
      * @return the runtime API. Will not return {@code null}
@@ -53,7 +53,7 @@ public interface ImmutableCapabilityRegistry {
      * @throws IllegalArgumentException if the capability does not provide a runtime API
      * @throws ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
      */
-    <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType);
+    <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityScope scope, Class<T> apiType);
 
     /**
      * Returns set of runtime capabilities registered in the registry
@@ -73,7 +73,7 @@ public interface ImmutableCapabilityRegistry {
      * Gets the name of the service provided by the capability, if there is one.
      *
      * @param capabilityName the name of the capability. Cannot be {@code null}
-     * @param context the context in which to resolve the capability. Cannot be {@code null}
+     * @param scope the scope in which to resolve the capability. Cannot be {@code null}
      * @param serviceType the type of the value provided by the service. May be {@code null} if the caller is
      *                    unconcerned about checking that its understanding of the service type provided by the
      *                    capability is correct
@@ -83,5 +83,5 @@ public interface ImmutableCapabilityRegistry {
      * @throws java.lang.IllegalArgumentException if the capability does not provide a service, or if {@code serviceType}
      *             is not {@code null} and the type of the service the capability provides is not assignable from it
      */
-    ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType);
+    ServiceName getCapabilityServiceName(String capabilityName, CapabilityScope scope, Class<?> serviceType);
 }

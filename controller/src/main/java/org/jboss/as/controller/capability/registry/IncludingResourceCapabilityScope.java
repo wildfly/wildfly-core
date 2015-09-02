@@ -34,18 +34,18 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Base class for {@link CapabilityContext} implementations that use {@code includes} attributes
+ * Base class for {@link CapabilityScope} implementations that use {@code includes} attributes
  * to indicate they include other resources of the same type.
  *
  * @author Brian Stansberry
  */
-abstract class IncludingResourceCapabilityContext implements CapabilityContext {
+abstract class IncludingResourceCapabilityScope implements CapabilityScope {
 
-    final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> attachmentKey;
+    final CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityScope>>> attachmentKey;
     final String type;
     final String value;
 
-    IncludingResourceCapabilityContext(CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityContext>>> attachmentKey, String type, String value) {
+    IncludingResourceCapabilityScope(CapabilityResolutionContext.AttachmentKey<Map<String, Set<CapabilityScope>>> attachmentKey, String type, String value) {
         this.attachmentKey = attachmentKey;
         this.type = type;
         this.value = value;
@@ -57,8 +57,8 @@ abstract class IncludingResourceCapabilityContext implements CapabilityContext {
     }
 
     @Override
-    public Set<CapabilityContext> getIncludingContexts(CapabilityResolutionContext context) {
-        Map<String, Set<CapabilityContext>> attached = context.getAttachment(attachmentKey);
+    public Set<CapabilityScope> getIncludingScopes(CapabilityResolutionContext context) {
+        Map<String, Set<CapabilityScope>> attached = context.getAttachment(attachmentKey);
         if (attached == null) {
             attached = new HashMap<>();
             Map<String, Set<String>> included = new HashMap<>();
@@ -76,7 +76,7 @@ abstract class IncludingResourceCapabilityContext implements CapabilityContext {
             context.attach(attachmentKey, attached);
         }
 
-        Set<CapabilityContext> result = attached.get(value);
+        Set<CapabilityScope> result = attached.get(value);
         return result == null ? Collections.emptySet() : result;
     }
 
@@ -90,7 +90,7 @@ abstract class IncludingResourceCapabilityContext implements CapabilityContext {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        IncludingResourceCapabilityContext that = (IncludingResourceCapabilityContext) o;
+        IncludingResourceCapabilityScope that = (IncludingResourceCapabilityScope) o;
 
         return type.equals(that.type) && value.equals(that.value);
     }
@@ -102,7 +102,7 @@ abstract class IncludingResourceCapabilityContext implements CapabilityContext {
         return result;
     }
 
-    protected abstract CapabilityContext createIncludedContext(String name);
+    protected abstract CapabilityScope createIncludedContext(String name);
 
     private static Set<String> getIncludes(Resource.ResourceEntry resource) {
         Set<String> result;
@@ -118,12 +118,12 @@ abstract class IncludingResourceCapabilityContext implements CapabilityContext {
         return result;
     }
 
-    private static void storeIncludes(CapabilityContext includedContext, String key,
-                               Map<String, Set<CapabilityContext>> attached,
+    private static void storeIncludes(CapabilityScope includedContext, String key,
+                               Map<String, Set<CapabilityScope>> attached,
                                Map<String, Set<String >> included) {
         for (String includer : included.get(key)) {
             if (!includedContext.getName().equals(includer)) { // guard against cycles
-                Set<CapabilityContext> includees = attached.get(includer);
+                Set<CapabilityScope> includees = attached.get(includer);
                 includees.add(includedContext);
                 // Continue up the chain
                 storeIncludes(includedContext, includer, attached, included);

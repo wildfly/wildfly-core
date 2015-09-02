@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityRegistration;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
@@ -58,7 +58,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
     private final boolean forServer;
-    private final Set<CapabilityContext> knownContexts;
+    private final Set<CapabilityScope> knownContexts;
     private final ResolutionContextImpl resolutionContext = new ResolutionContextImpl();
     private final Map<CapabilityId, CapabilityRegistration> possibleCapabilities = new ConcurrentHashMap<>();
 
@@ -141,7 +141,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 if (!Objects.equals(capabilityRegistration.getCapability(), currentRegistration.getCapability())
                         || !currentRegistration.addRegistrationPoint(rp)) {
                     throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
-                            capabilityId.getContext().getName());
+                            capabilityId.getScope().getName());
                 }
                 // else it was ok, and we just recorded the additional registration point
             } else {
@@ -151,11 +151,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             // Add any hard requirements
             for (String req : capabilityRegistration.getCapability().getRequirements()) {
                 registerRequirement(new RuntimeRequirementRegistration(req, capabilityId.getName(),
-                        capabilityId.getContext(), rp));
+                        capabilityId.getScope(), rp));
             }
 
             if (!forServer) {
-                CapabilityContext capContext = capabilityId.getContext();
+                CapabilityScope capContext = capabilityId.getScope();
                 knownContexts.add(capContext);
             }
             modified = true;
@@ -194,7 +194,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         CapabilityId dependentId = requirement.getDependentId();
         if (!capabilities.containsKey(dependentId)) {
             throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(dependentId.getName(),
-                    dependentId.getContext().getName());
+                    dependentId.getScope().getName());
         }
         Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap =
                 requirement.isRuntimeOnly() ? runtimeOnlyRequirements : requirements;
@@ -236,17 +236,17 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      * Remove a previously registered capability if all registration points for it have been removed.
      *
      * @param capabilityName    the name of the capability. Cannot be {@code null}
-     * @param context           the context in which the capability is registered. Cannot be {@code null}
+     * @param scope           the context in which the capability is registered. Cannot be {@code null}
      * @param registrationPoint the specific registration point that is being removed
      * @return the capability that was removed, or {@code null} if no matching capability was registered or other
      * registration points for the capability still exist
      */
     @Override
-    public RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context,
+    public RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityScope scope,
                                                           PathAddress registrationPoint) {
         writeLock.lock();
         try {
-            CapabilityId capabilityId = new CapabilityId(capabilityName, context);
+            CapabilityId capabilityId = new CapabilityId(capabilityName, scope);
             RuntimeCapabilityRegistration removed = null;
             RuntimeCapabilityRegistration candidate = capabilities.get(capabilityId);
             if (candidate != null) {
@@ -263,14 +263,14 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                         if (candidateRequirements != null) {
                             // Iterate over array to avoid ConcurrentModificationException
                             for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), false);
+                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, scope, rp), false);
                             }
                         }
                         candidateRequirements = runtimeOnlyRequirements.get(capabilityId);
                         if (candidateRequirements != null) {
                             // Iterate over array to avoid ConcurrentModificationException
                             for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, context, rp), true);
+                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, scope, rp), true);
                             }
                         }
                     }
@@ -315,9 +315,9 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      */
     @Override
     public void registerPossibleCapability(Capability capability, PathAddress registrationPoint) {
-        final CapabilityId capabilityId = new CapabilityId(capability.getName(), CapabilityContext.GLOBAL);
+        final CapabilityId capabilityId = new CapabilityId(capability.getName(), CapabilityScope.GLOBAL);
         RegistrationPoint point = new RegistrationPoint(registrationPoint, null);
-        CapabilityRegistration capabilityRegistration = new CapabilityRegistration<>(capability, CapabilityContext.GLOBAL, point);
+        CapabilityRegistration capabilityRegistration = new CapabilityRegistration<>(capability, CapabilityScope.GLOBAL, point);
         writeLock.lock();
         try {
             possibleCapabilities.computeIfPresent(capabilityId, (capabilityId1, currentRegistration) -> {
@@ -327,7 +327,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 if (!Objects.equals(capabilityRegistration.getCapability(), currentRegistration.getCapability())
                         || !currentRegistration.addRegistrationPoint(rp)) {
                     throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
-                            capabilityId.getContext().getName());
+                            capabilityId.getScope().getName());
                 }
                 return capabilityRegistration;
             });
@@ -349,7 +349,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      */
     @Override
     public CapabilityRegistration removePossibleCapability(Capability capability, PathAddress registrationPoint) {
-        CapabilityId capabilityId = new CapabilityId(capability.getName(), CapabilityContext.GLOBAL);
+        CapabilityId capabilityId = new CapabilityId(capability.getName(), CapabilityScope.GLOBAL);
         CapabilityRegistration removed = null;
         writeLock.lock();
         try {
@@ -378,22 +378,22 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     //ImmutableCapabilityRegistry methods
 
     @Override
-    public boolean hasCapability(String capabilityName, CapabilityContext context) {
+    public boolean hasCapability(String capabilityName, CapabilityScope scope) {
         readLock.lock();
         try {
-            return findSatisfactoryCapability(capabilityName, context, !forServer) != null;
+            return findSatisfactoryCapability(capabilityName, scope, !forServer) != null;
         } finally {
             readLock.unlock();
         }
     }
 
     @Override
-    public <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityContext context, Class<T> apiType) {
+    public <T> T getCapabilityRuntimeAPI(String capabilityName, CapabilityScope scope, Class<T> apiType) {
         // Here we can't know the dependent name. So this can only be called when resolution is complete.
         assert resolutionContext.resolutionComplete;
         readLock.lock();
         try {
-            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
+            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, scope);
             Object api = reg.getCapability().getRuntimeAPI();
             if (api == null) {
                 throw ControllerLogger.MGMT_OP_LOGGER.capabilityDoesNotExposeRuntimeAPI(capabilityName);
@@ -425,12 +425,12 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     }
 
     @Override
-    public ServiceName getCapabilityServiceName(String capabilityName, CapabilityContext context, Class<?> serviceType) {
+    public ServiceName getCapabilityServiceName(String capabilityName, CapabilityScope scope, Class<?> serviceType) {
         // Here we can't know the dependent name. So this can only be called when resolution is complete.
         assert resolutionContext.resolutionComplete;
         readLock.lock();
         try {
-            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, context);
+            RuntimeCapabilityRegistration reg = getCapabilityRegistration(capabilityName, scope);
             RuntimeCapability<?> cap = reg.getCapability();
             return cap.getCapabilityServiceName(serviceType);
         } finally {
@@ -544,14 +544,14 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
             // Vars for tracking inconsistent contexts
             boolean isInconsistent = false;
-            Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency = null;
-            Map<CapabilityContext, Set<CapabilityContext>> consistentSets = null;
+            Map<CapabilityScope, Set<RuntimeRequirementRegistration>> requiresConsistency = null;
+            Map<CapabilityScope, Set<CapabilityScope>> consistentSets = null;
 
             for (Map.Entry<CapabilityId, Map<String, RuntimeRequirementRegistration>> entry : requirements.entrySet()) {
                 CapabilityId dependentId = entry.getKey();
                 String dependentName = dependentId.getName();
-                CapabilityContext dependentContext = dependentId.getContext();
-                Set<CapabilityContext> consistentSet = consistentSets == null ? null : consistentSets.get(dependentContext);
+                CapabilityScope dependentContext = dependentId.getScope();
+                Set<CapabilityScope> consistentSet = consistentSets == null ? null : consistentSets.get(dependentContext);
                 for (RuntimeRequirementRegistration req : entry.getValue().values()) {
                     SatisfactoryCapability satisfactory = findSatisfactoryCapability(req.getRequiredName(), dependentContext, !forServer);
                     if (satisfactory == null) {
@@ -579,12 +579,12 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                             consistentSets = new HashMap<>();
                         }
 
-                        CapabilityContext reqDependent = req.getDependentContext();
+                        CapabilityScope reqDependent = req.getDependentContext();
                         recordConsistentSets(requiresConsistency, consistentSets, reqDependent, consistentSet, req, satisfactory, reqDependent);
                         isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
 
                         // Record for any contexts that include this one
-                        for (CapabilityContext including : dependentContext.getIncludingContexts(resolutionContext)) {
+                        for (CapabilityScope including : dependentContext.getIncludingScopes(resolutionContext)) {
                             consistentSet = consistentSets.get(including);
                             recordConsistentSets(requiresConsistency, consistentSets, including, consistentSet, req, satisfactory, reqDependent);
                             isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
@@ -609,7 +609,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
     }
 
-    private void recordConsistentSets(Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency, Map<CapabilityContext, Set<CapabilityContext>> consistentSets, CapabilityContext dependentContext, Set<CapabilityContext> consistentSet, RuntimeRequirementRegistration req, SatisfactoryCapability satisfactory, CapabilityContext reqDependent) {
+    private void recordConsistentSets(Map<CapabilityScope, Set<RuntimeRequirementRegistration>> requiresConsistency, Map<CapabilityScope, Set<CapabilityScope>> consistentSets, CapabilityScope dependentContext, Set<CapabilityScope> consistentSet, RuntimeRequirementRegistration req, SatisfactoryCapability satisfactory, CapabilityScope reqDependent) {
         Set<RuntimeRequirementRegistration> requiresForDependent = requiresConsistency.get(reqDependent);
         if (requiresForDependent == null) {
             requiresForDependent = new HashSet<>();
@@ -624,10 +624,10 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
     }
 
-    private static Set<RuntimeRequirementRegistration> findInconsistent(Map<CapabilityContext, Set<RuntimeRequirementRegistration>> requiresConsistency,
-                                                                        Map<CapabilityContext, Set<CapabilityContext>> consistentSets) {
+    private static Set<RuntimeRequirementRegistration> findInconsistent(Map<CapabilityScope, Set<RuntimeRequirementRegistration>> requiresConsistency,
+                                                                        Map<CapabilityScope, Set<CapabilityScope>> consistentSets) {
         Set<RuntimeRequirementRegistration> result = new HashSet<>();
-        for (Map.Entry<CapabilityContext, Set<CapabilityContext>> entry : consistentSets.entrySet()) {
+        for (Map.Entry<CapabilityScope, Set<CapabilityScope>> entry : consistentSets.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 // This one is a problem; see what all requirements are from the dependent context
                 Set<RuntimeRequirementRegistration> contextDependents = requiresConsistency.get(entry.getKey());
@@ -639,19 +639,19 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         return result;
     }
 
-    private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityContext capabilityContext) {
-        SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityContext, false);
+    private RuntimeCapabilityRegistration getCapabilityRegistration(String capabilityName, CapabilityScope capabilityScope) {
+        SatisfactoryCapability satisfactoryCapability = findSatisfactoryCapability(capabilityName, capabilityScope, false);
         if (satisfactoryCapability == null) {
             if (forServer) {
                 throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
             } else {
-                throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityContext.getName());
+                throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityScope.getName());
             }
         }
         return capabilities.get(satisfactoryCapability.singleCapability);
     }
 
-    private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityContext dependentContext,
+    private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityScope dependentContext,
                                                               boolean requireConsistency) {
 
         // Check for a simple match
@@ -662,8 +662,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
         if (!forServer) {
             // Try other contexts that satisfy the requested one
-            Set<CapabilityContext> multiple = null;
-            for (CapabilityContext satisfies : knownContexts) {
+            Set<CapabilityScope> multiple = null;
+            for (CapabilityScope satisfies : knownContexts) {
                 if (satisfies.equals(dependentContext)) {
                     // We already know this one doesn't exist
                     continue;
@@ -677,7 +677,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                             multiple = new HashSet<>();
                         }
                         multiple.add(satisfies);
-                        multiple.addAll(satisfies.getIncludingContexts(resolutionContext));
+                        multiple.addAll(satisfies.getIncludingScopes(resolutionContext));
                     }
                 }
             }
@@ -708,14 +708,14 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
     private static class SatisfactoryCapability {
         final CapabilityId singleCapability;
-        final Set<CapabilityContext> multipleCapabilities;
+        final Set<CapabilityScope> multipleCapabilities;
 
         SatisfactoryCapability(CapabilityId singleCapability) {
             this.singleCapability = singleCapability;
             this.multipleCapabilities = null;
         }
 
-        SatisfactoryCapability(Set<CapabilityContext> multipleCapabilities) {
+        SatisfactoryCapability(Set<CapabilityScope> multipleCapabilities) {
             this.singleCapability = null;
             this.multipleCapabilities = multipleCapabilities;
         }

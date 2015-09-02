@@ -44,13 +44,13 @@ public class CapabilityRegistration<C extends Capability> {
     private final C capability;
     private final CapabilityId id;
 
-    public CapabilityRegistration(C capability, CapabilityContext context) {
+    public CapabilityRegistration(C capability, CapabilityScope scope) {
         this.capability = capability;
-        this.id = new CapabilityId(capability.getName(), context);
+        this.id = new CapabilityId(capability.getName(), scope);
     }
 
-    public CapabilityRegistration(C capability, CapabilityContext context, RegistrationPoint registrationPoint) {
-        this(capability, context);
+    public CapabilityRegistration(C capability, CapabilityScope scope, RegistrationPoint registrationPoint) {
+        this(capability, scope);
         this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
     }
 
@@ -60,7 +60,7 @@ public class CapabilityRegistration<C extends Capability> {
      * @param toCopy the registration to copy. Cannot be {@code null}
      */
     public CapabilityRegistration(CapabilityRegistration<C> toCopy) {
-        this(toCopy.getCapability(), toCopy.getCapabilityContext());
+        this(toCopy.getCapability(), toCopy.getCapabilityScope());
         this.registrationPoints.putAll(toCopy.registrationPoints);
     }
 
@@ -73,12 +73,12 @@ public class CapabilityRegistration<C extends Capability> {
     }
 
     /**
-     * Gets the context in which the capability is registered.
+     * Gets the scope in which the capability is registered.
      *
-     * @return the capability context. Will not return {@code null}
+     * @return the capability scope. Will not return {@code null}
      */
-    public CapabilityContext getCapabilityContext() {
-        return id.getContext();
+    public CapabilityScope getCapabilityScope() {
+        return id.getScope();
     }
 
     public String getCapabilityName() {

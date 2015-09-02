@@ -25,19 +25,19 @@ package org.jboss.as.controller.capability.registry;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 
 /**
- * {@link CapabilityContext} for capabilities whose use is restricted to
+ * {@link CapabilityScope} for capabilities whose use is restricted to
  * the Host Controller in which they are installed; e.g. they cannot be
  * resolved by requirers in a domain level context.
  *
  * @author Brian Stansberry
  */
-class HostCapabilityContext implements CapabilityContext {
+class HostCapabilityScope implements CapabilityScope {
 
-    static final HostCapabilityContext INSTANCE = new HostCapabilityContext();
+    static final HostCapabilityScope INSTANCE = new HostCapabilityScope();
 
     @Override
-    public boolean canSatisfyRequirement(String requiredName, CapabilityContext dependentContext, CapabilityResolutionContext context) {
-        return dependentContext == CapabilityContext.GLOBAL || dependentContext instanceof HostCapabilityContext;
+    public boolean canSatisfyRequirement(String requiredName, CapabilityScope dependentScope, CapabilityResolutionContext context) {
+        return dependentScope == CapabilityScope.GLOBAL || dependentScope instanceof HostCapabilityScope;
     }
 
     @Override

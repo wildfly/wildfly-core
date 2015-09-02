@@ -67,10 +67,10 @@ public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
      * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
      * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
      * @param capabilityName    the name of the capability. Cannot be {@code null}
-     * @param context           the context in which the capability is registered. Cannot be {@code null}
+     * @param scope           the scope in which the capability is registered. Cannot be {@code null}
      * @param registrationPoint the specific registration point that is being removed
      * @return the capability that was removed, or {@code null} if no matching capability was registered or other
      * registration points for the capability still exist
      */
-    RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityContext context, PathAddress registrationPoint);
+    RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityScope scope, PathAddress registrationPoint);
 }

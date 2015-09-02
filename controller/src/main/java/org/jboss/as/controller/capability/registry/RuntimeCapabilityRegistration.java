@@ -33,7 +33,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
  */
 public class RuntimeCapabilityRegistration extends CapabilityRegistration<RuntimeCapability> {
 
-    public RuntimeCapabilityRegistration(RuntimeCapability capability, CapabilityContext context, RegistrationPoint registrationPoint) {
+    public RuntimeCapabilityRegistration(RuntimeCapability capability, CapabilityScope context, RegistrationPoint registrationPoint) {
         super(capability, context, registrationPoint);
     }
 

@@ -31,7 +31,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -89,7 +89,7 @@ public class ChildFirstClassLoaderKernelServicesFactory {
                         parent = PathAddress.EMPTY_ADDRESS;
                     }
                     PathAddress pa = parent.append(entry.getRelativeResourceAddress());
-                    CapabilityContext scope = CapabilityContext.Factory.create(ProcessType.HOST_CONTROLLER, pa);
+                    CapabilityScope scope = CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER, pa);
                     RuntimeCapabilityRegistry cr = managementModel.getCapabilityRegistry();
 
                     for (String capabilityName : entry.getCapabilities()) {
