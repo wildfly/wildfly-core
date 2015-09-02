@@ -110,7 +110,6 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
             }
         }, model);
 
-
     }
 
     private String asStringIfDefined(OperationContext context, AttributeDefinition attribute, ModelNode model) throws OperationFailedException {

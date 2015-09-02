@@ -79,6 +79,8 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL };
+
     private final List<AccessConstraintDefinition> accessConstraints;
 
     protected BaseNativeInterfaceResourceDefinition(Parameters parameters) {
@@ -103,4 +105,11 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
 
     protected abstract AttributeDefinition[] getAttributeDefinitions();
 
+    protected static AttributeDefinition[] combine(AttributeDefinition[] commonAttributes, AttributeDefinition... additionalAttributes) {
+        AttributeDefinition[] combined = new AttributeDefinition[commonAttributes.length + additionalAttributes.length];
+        System.arraycopy(commonAttributes, 0, combined, 0, commonAttributes.length);
+        System.arraycopy(additionalAttributes, 0, combined, commonAttributes.length, additionalAttributes.length);
+
+        return combined;
+    }
 }

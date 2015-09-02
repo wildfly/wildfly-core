@@ -56,7 +56,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, NATIVE_PORT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL };
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, INTERFACE, NATIVE_PORT);
 
     public NativeManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
         super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core","management","native-interface"))
