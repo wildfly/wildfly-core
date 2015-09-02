@@ -1252,4 +1252,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 168, value = "Socket binding group '%s' includes socket binding group '%s' and socket binding group '%s'. Both these socket binding groups define socket binding '%s', which is not supported")
     OperationFailedException socketBindingGroupIncludesSameSocketBinding(String socketBindingGroup, String include1, String include2, String child);
 
+    @Message(id = 169, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

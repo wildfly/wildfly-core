@@ -30,6 +30,11 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -45,6 +50,7 @@ import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.HttpManagementAddHandler;
@@ -62,6 +68,7 @@ import org.jboss.dmr.ModelType;
 public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     private static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
+
     public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
             .of(RUNTIME_CAPABILITY_NAME).build();
 
@@ -106,10 +113,17 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
                 .build();
 
     public static final SimpleAttributeDefinition HTTP_UPGRADE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelType.BOOLEAN, true)
-                    .setAllowExpression(true)
-                    .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
-                    .setDefaultValue(new ModelNode(false))
-                    .build();
+                .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
+                .setDeprecated(ModelVersion.create(5), true)
+                .build();
+
+    public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
+                .setAllowExpression(true)
+                .setDefaultValue(new ModelNode(false))
+                .build();
+
+    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED)
+                .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
@@ -133,7 +147,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE, SECURITY_REALM,
-                                                                                                 CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+                                                                                                 CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
     private final List<AccessConstraintDefinition> accessConstraints;
 
@@ -150,14 +164,42 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, HttpManagementWriteAttributeHandler.INSTANCE);
+            if (attr.equals(HTTP_UPGRADE_ENABLED)) {
+                HttpUpgradeAttributeHandler handler = new HttpUpgradeAttributeHandler();
+                resourceRegistration.registerReadWriteAttribute(attr, handler, handler);
+            } else {
+                resourceRegistration.registerReadWriteAttribute(attr, null, HttpManagementWriteAttributeHandler.INSTANCE);
+            }
         }
     }
 
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
+    }
+
+    private class HttpUpgradeAttributeHandler implements OperationStepHandler {
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ModelNode submodel = resource.getModel();
+            final ModelNode httpUpgrade = submodel.get(ModelDescriptionConstants.HTTP_UPGRADE);
+
+            String operationName = operation.require(ModelDescriptionConstants.OP).asString();
+            assert ModelDescriptionConstants.HTTP_UPGRADE_ENABLED.equals(operation.require(ModelDescriptionConstants.NAME).asString());
+            switch (operationName) {
+                case ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION:
+                    context.getResult().set(ENABLED.resolveModelAttribute(context, httpUpgrade));
+                    break;
+                case ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION:
+                    httpUpgrade.get(ModelDescriptionConstants.ENABLED).set(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
+                    context.reloadRequired();
+                    break;
+            }
+
+        }
+
     }
 }

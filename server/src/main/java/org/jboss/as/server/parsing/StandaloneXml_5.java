@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
@@ -126,6 +127,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         this.namespace = namespace;
     }
 
+    @Override
     public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
             throws XMLStreamException {
 
@@ -296,10 +298,6 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                         HttpManagementResourceDefinition.CONSOLE_ENABLED.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
-                    case HTTP_UPGRADE_ENABLED: {
-                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
-                        break;
-                    }
                     case ALLOWED_ORIGINS: {
                         for (String origin : reader.getListAttributeValue(i)) {
                             HttpManagementResourceDefinition.ALLOWED_ORIGINS.parseAndAddParameterElement(origin, addOp, reader);
@@ -341,17 +339,13 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseManagementInterface(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list) throws XMLStreamException {
+    private void parseNativeManagementInterface(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         final ModelNode operationAddress = address.clone();
-        operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
+        operationAddress.add(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
 
         // Handle attributes
-        if (http) {
-            parseHttpManagementInterfaceAttributes(reader, addOp);
-        } else {
-            parseNativeManagementInterfaceAttributes(reader, addOp);
-        }
+        parseNativeManagementInterfaceAttributes(reader, addOp);
 
         // Handle elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -361,11 +355,36 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                 case SOCKET:
                     throw ControllerLogger.ROOT_LOGGER.unsupportedElement(reader.getName(),reader.getLocation(), SOCKET_BINDING);
                 case SOCKET_BINDING:
-                    if (http) {
-                        parseHttpManagementSocketBinding(reader, addOp);
-                    } else {
-                        parseNativeManagementSocketBinding(reader, addOp);
-                    }
+                    parseNativeManagementSocketBinding(reader, addOp);
+                    break;
+                default:
+                    throw unexpectedElement(reader);
+            }
+        }
+
+        list.add(addOp);
+    }
+
+    private void parseHttpManagementInterface(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+        final ModelNode operationAddress = address.clone();
+        operationAddress.add(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
+        final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
+
+        // Handle attributes
+        parseHttpManagementInterfaceAttributes(reader, addOp);
+
+        // Handle elements
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case SOCKET:
+                    throw ControllerLogger.ROOT_LOGGER.unsupportedElement(reader.getName(),reader.getLocation(), SOCKET_BINDING);
+                case SOCKET_BINDING:
+                    parseHttpManagementSocketBinding(reader, addOp);
+                    break;
+                case HTTP_UPGRADE:
+                    parseHttpUpgrade(reader, addOp);
                     break;
                 default:
                     throw unexpectedElement(reader);
@@ -393,6 +412,31 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                     }
                     case HTTPS: {
                         HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+        requireNoContent(reader);
+    }
+
+    private void parseHttpUpgrade(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+        // Handle attributes
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case ENABLED: {
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     default:
@@ -581,6 +625,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
+    @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
 
@@ -734,11 +779,11 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case NATIVE_INTERFACE: {
-                    parseManagementInterface(reader, address, false, list);
+                    parseNativeManagementInterface(reader, address, list);
                     break;
                 }
                 case HTTP_INTERFACE: {
-                    parseManagementInterface(reader, address, true, list);
+                    parseHttpManagementInterface(reader, address, list);
                     break;
                 }
                 case NATIVE_REMOTING_INTERFACE: {
@@ -845,9 +890,14 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         if (!consoleEnabled) {
             HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
         }
-        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.marshallAsAttribute(protocol, writer);
+
         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getAttributeMarshaller().marshallAsAttribute(
                 HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
+
+        if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
+            writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
+            HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
+        }
 
         if (HttpManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)
                 || HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.isMarshallable(protocol)) {

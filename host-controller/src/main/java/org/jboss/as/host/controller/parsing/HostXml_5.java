@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
@@ -426,7 +427,8 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case HTTP_UPGRADE_ENABLED: {
-                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     case ALLOWED_ORIGINS: {
@@ -470,18 +472,14 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseManagementInterface(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list)  throws XMLStreamException {
+    private void parseNativeManagementInterface(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)  throws XMLStreamException {
 
         final ModelNode operationAddress = address.clone();
-        operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
+        operationAddress.add(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
 
         // Handle attributes
-        if (http) {
-            parseHttpManagementInterfaceAttributes(reader, addOp);
-        } else {
-            parseNativeManagementInterfaceAttributes(reader, addOp);
-        }
+        parseNativeManagementInterfaceAttributes(reader, addOp);
 
         // Handle elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -489,11 +487,35 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET:
-                    if (http) {
-                        parseHttpManagementSocket(reader, addOp);
-                    } else {
-                        parseNativeManagementSocket(reader, addOp);
-                    }
+                    parseNativeManagementSocket(reader, addOp);
+                    break;
+                default:
+                    throw unexpectedElement(reader);
+            }
+        }
+
+        list.add(addOp);
+    }
+
+    private void parseHttpManagementInterface(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)  throws XMLStreamException {
+
+        final ModelNode operationAddress = address.clone();
+        operationAddress.add(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
+        final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
+
+        // Handle attributes
+        parseHttpManagementInterfaceAttributes(reader, addOp);
+
+        // Handle elements
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case SOCKET:
+                    parseHttpManagementSocket(reader, addOp);
+                    break;
+                case HTTP_UPGRADE:
+                    parseHttpUpgrade(reader, addOp);
                     break;
                 default:
                     throw unexpectedElement(reader);
@@ -577,6 +599,31 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         if (!hasInterface) {
             throw missingRequired(reader, Collections.singleton(Attribute.INTERFACE.getLocalName()));
         }
+    }
+
+    private void parseHttpUpgrade(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+        // Handle attributes
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case ENABLED: {
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+        requireNoContent(reader);
     }
 
     private void setOrganization(final ModelNode address, final List<ModelNode> operationList, final String value) {
@@ -1521,12 +1568,12 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             switch (element) {
                 case NATIVE_INTERFACE: {
                     interfaceDefined = true;
-                    parseManagementInterface(reader, address, false, operationsList);
+                    parseNativeManagementInterface(reader, address, operationsList);
                     break;
                 }
                 case HTTP_INTERFACE: {
                     interfaceDefined = true;
-                    parseManagementInterface(reader, address, true, operationsList);
+                    parseHttpManagementInterface(reader, address, operationsList);
                     break;
                 }
                 default: {
@@ -1573,11 +1620,15 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
         HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getAttributeMarshaller().marshallAsAttribute(
                 HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
         HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
+
+        if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
+            writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
+            HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
+        }
 
         writer.writeEmptyElement(Element.SOCKET.getLocalName());
         HttpManagementResourceDefinition.INTERFACE.marshallAsAttribute(protocol, writer);

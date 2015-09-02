@@ -88,6 +88,25 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+        if (operation.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED)) {
+            boolean httpUpgradeEnabled = operation.remove(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED).asBoolean();
+            ModelNode httpUpgrade = operation.get(ModelDescriptionConstants.HTTP_UPGRADE);
+            if (httpUpgrade.hasDefined(ModelDescriptionConstants.ENABLED)) {
+                boolean httpUpgradeDotEnabled = httpUpgrade.require(ModelDescriptionConstants.ENABLED).asBoolean();
+                if (httpUpgradeEnabled != httpUpgradeDotEnabled) {
+                    throw ServerLogger.ROOT_LOGGER.deprecatedAndCurrentParameterMismatch(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelDescriptionConstants.ENABLED);
+                }
+            } else {
+                httpUpgrade.set(ModelDescriptionConstants.ENABLED, httpUpgradeEnabled);
+            }
+        }
+
+        super.populateModel(operation, model);
+    }
+
+
+    @Override
     protected boolean requiresRuntime(OperationContext context) {
         //TODO Gigantic HACK to disable the runtime part of this for the core model testing.
         //The core model testing currently uses RunningMode.ADMIN_ONLY, but in the real world
@@ -101,7 +120,9 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model)
             throws OperationFailedException {
 
-        boolean httpUpgrade = HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.resolveModelAttribute(context, model).asBoolean();
+        boolean httpUpgrade = model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)
+                && HttpManagementResourceDefinition.ENABLED.resolveModelAttribute(context,
+                        model.require(ModelDescriptionConstants.HTTP_UPGRADE)).asBoolean();
         installHttpManagementConnector(context, model, context.getServiceTarget(), httpUpgrade);
     }
 
