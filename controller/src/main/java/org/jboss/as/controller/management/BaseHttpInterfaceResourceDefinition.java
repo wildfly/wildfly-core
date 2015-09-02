@@ -113,6 +113,8 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM,  CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+
     private final List<AccessConstraintDefinition> accessConstraints;
 
     /**
@@ -171,4 +173,13 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         }
 
     }
+
+    protected static AttributeDefinition[] combine(AttributeDefinition[] commonAttributes, AttributeDefinition... additionalAttributes) {
+        AttributeDefinition[] combined = new AttributeDefinition[commonAttributes.length + additionalAttributes.length];
+        System.arraycopy(commonAttributes, 0, combined, 0, commonAttributes.length);
+        System.arraycopy(additionalAttributes, 0, combined, commonAttributes.length, additionalAttributes.length);
+
+        return combined;
+    }
+
 }

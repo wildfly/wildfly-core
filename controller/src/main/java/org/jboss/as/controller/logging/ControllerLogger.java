@@ -3346,4 +3346,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 401, value = "Couldn't build the report")
     RuntimeException failedToBuildReport(@Cause Throwable t);
+
+    @Message(id = 402, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 }

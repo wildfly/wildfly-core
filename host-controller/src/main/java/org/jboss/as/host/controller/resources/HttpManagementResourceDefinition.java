@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller.resources;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -71,16 +72,22 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setRequires(SECURITY_REALM.getName())
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE, SECURITY_REALM,
-                                                                                                 CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE);
 
-    public HttpManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo,
-                                             final HostControllerEnvironment environment) {
+    private HttpManagementResourceDefinition(OperationStepHandler add, OperationStepHandler remove) {
         super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"))
-            .setAddHandler(new HttpManagementAddHandler(hostControllerInfo, environment))
-            .setRemoveHandler(new HttpManagementRemoveHandler(hostControllerInfo, environment))
+            .setAddHandler(add)
+            .setRemoveHandler(remove)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
             .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
+    }
+
+    public static HttpManagementResourceDefinition create(final LocalHostControllerInfoImpl hostControllerInfo,
+            final HostControllerEnvironment environment) {
+        HttpManagementAddHandler add = new HttpManagementAddHandler(hostControllerInfo, environment);
+        HttpManagementRemoveHandler remove = new HttpManagementRemoveHandler(hostControllerInfo, add);
+
+        return new HttpManagementResourceDefinition(add, remove);
     }
 
     @Override

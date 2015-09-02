@@ -61,9 +61,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {
-            SECURITY_REALM, SOCKET_BINDING, SECURE_SOCKET_BINDING, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS
-    };
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, SOCKET_BINDING, SECURE_SOCKET_BINDING);
 
     public static final HttpManagementResourceDefinition INSTANCE = new HttpManagementResourceDefinition();
 

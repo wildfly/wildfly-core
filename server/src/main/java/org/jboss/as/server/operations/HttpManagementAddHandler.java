@@ -22,26 +22,21 @@
 
 package org.jboss.as.server.operations;
 
-import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.ALLOWED_ORIGINS;
-import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
-import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
-
 import io.undertow.server.ListenerRegistry;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.management.BaseHttpInterfaceAddStepHandler;
+import org.jboss.as.controller.management.HttpInterfaceCommonPolicy;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -67,10 +62,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.manager.WildFlySecurityManager;
-import org.xnio.OptionMap;
-import org.xnio.OptionMap.Builder;
 
 /**
  * A handler that activates the HTTP management API on a Server.
@@ -78,33 +70,13 @@ import org.xnio.OptionMap.Builder;
  * @author Jason T. Greene
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class HttpManagementAddHandler extends AbstractAddStepHandler {
+public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
-    public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
     public HttpManagementAddHandler() {
-        super(HTTP_MANAGEMENT_CAPABILITY, HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
-
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        if (operation.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED)) {
-            boolean httpUpgradeEnabled = operation.remove(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED).asBoolean();
-            ModelNode httpUpgrade = operation.get(ModelDescriptionConstants.HTTP_UPGRADE);
-            if (httpUpgrade.hasDefined(ModelDescriptionConstants.ENABLED)) {
-                boolean httpUpgradeDotEnabled = httpUpgrade.require(ModelDescriptionConstants.ENABLED).asBoolean();
-                if (httpUpgradeEnabled != httpUpgradeDotEnabled) {
-                    throw ServerLogger.ROOT_LOGGER.deprecatedAndCurrentParameterMismatch(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelDescriptionConstants.ENABLED);
-                }
-            } else {
-                httpUpgrade.set(ModelDescriptionConstants.ENABLED, httpUpgradeEnabled);
-            }
-        }
-
-        super.populateModel(operation, model);
-    }
-
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
@@ -117,17 +89,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model)
-            throws OperationFailedException {
-
-        boolean httpUpgrade = model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)
-                && HttpManagementResourceDefinition.ENABLED.resolveModelAttribute(context,
-                        model.require(ModelDescriptionConstants.HTTP_UPGRADE)).asBoolean();
-        installHttpManagementConnector(context, model, context.getServiceTarget(), httpUpgrade);
-    }
-
-    static void installHttpManagementConnector(final OperationContext context, final ModelNode model, final ServiceTarget serviceTarget,
-                                               final boolean httpUpgrade) throws OperationFailedException {
+    protected void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
+        final ServiceTarget serviceTarget = context.getServiceTarget();
 
         ServiceName socketBindingServiceName = null;
         ServiceName secureSocketBindingServiceName = null;
@@ -156,23 +119,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
             ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSecureSocket(secureSocketBindingServiceName.getSimpleName());
         }
 
-        final List<String> allowedOrigins = ALLOWED_ORIGINS.unwrap(context, model);
-
-        final String securityRealm;
-        final ModelNode realmNode = SECURITY_REALM.resolveModelAttribute(context, model);
-        if (realmNode.isDefined()) {
-            securityRealm = realmNode.asString();
-        } else {
-            securityRealm = null;
-            ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
-        }
-        boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        ConsoleMode consoleMode;
-        if (consoleEnabled){
-            consoleMode = context.getRunningMode() == RunningMode.ADMIN_ONLY ? ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE;
-        }else{
-            consoleMode = ConsoleMode.NO_CONSOLE;
-        }
+        ConsoleMode consoleMode = consoleMode(commonPolicy.isConsoleEnabled(), context.getRunningMode() == RunningMode.ADMIN_ONLY);
 
         // Track active requests
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
@@ -186,7 +133,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
-                .addInjection(undertowService.getAllowedOriginsInjector(), allowedOrigins);
+                .addInjection(undertowService.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
 
             if (socketBindingServiceName != null) {
                 undertowBuilder.addDependency(socketBindingServiceName, SocketBinding.class, undertowService.getSocketBindingInjector());
@@ -195,8 +142,11 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 undertowBuilder.addDependency(secureSocketBindingServiceName, SocketBinding.class, undertowService.getSecureSocketBindingInjector());
             }
 
+            String securityRealm = commonPolicy.getSecurityRealm();
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
+        } else {
+            ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
 
         undertowBuilder.install();
@@ -212,7 +162,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
 
-        if(httpUpgrade) {
+        if(commonPolicy.isHttpUpgradeEnabled()) {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
@@ -225,21 +175,13 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
-            OptionMap options = createConnectorOptions(context, model);
-            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, options);
+            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions());
         }
     }
 
-    private static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        Builder builder = OptionMap.builder();
-
-        builder.set(RemotingOptions.SASL_PROTOCOL, HttpManagementResourceDefinition.SASL_PROTOCOL.resolveModelAttribute(context, model).asString());
-        ModelNode serverName = HttpManagementResourceDefinition.SERVER_NAME.resolveModelAttribute(context, model);
-        if (serverName.isDefined()) {
-            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
-        }
-
-        return builder.getMap();
+    private ConsoleMode consoleMode(boolean consoleEnabled, boolean adminOnly) {
+        return consoleEnabled ? adminOnly ?  ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE : ConsoleMode.NO_CONSOLE;
     }
 
 }

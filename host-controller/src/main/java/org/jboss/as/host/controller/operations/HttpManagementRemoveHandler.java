@@ -28,7 +28,6 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -43,12 +42,12 @@ import org.jboss.dmr.ModelNode;
 public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
 
     private final LocalHostControllerInfoImpl hostControllerInfo;
-    private final HostControllerEnvironment environment;
+    private final HttpManagementAddHandler add;
 
-    public HttpManagementRemoveHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
+    public HttpManagementRemoveHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HttpManagementAddHandler add) {
         super(HTTP_MANAGEMENT_CAPABILITY);
         this.hostControllerInfo = hostControllerInfo;
-        this.environment = environment;
+        this.add = add;
     }
 
     @Override
@@ -69,8 +68,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
 
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        HttpManagementAddHandler.populateHostControllerInfo(hostControllerInfo, context, model);
-        HttpManagementAddHandler.installHttpManagementServices(environment, hostControllerInfo, context, model);
+        add.performRuntime(context, operation, model);
     }
 
     static void clearHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo) {
