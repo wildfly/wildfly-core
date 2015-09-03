@@ -33,11 +33,17 @@ public class ContentModification {
     private final ContentItem item;
     private final byte[] targetHash;
     private final ModificationType type;
+    private final ModificationCondition condition;
 
-    public ContentModification(ContentItem item, byte[] targetHash, ModificationType type) {
+    public ContentModification(ContentItem item, byte[] targetHash, ModificationType type, ModificationCondition condition) {
         this.item = item;
         this.targetHash = targetHash;
         this.type = type;
+        this.condition = condition;
+    }
+
+    public ContentModification(ContentItem item, byte[] targetHash, ModificationType type) {
+        this(item, targetHash, type, null);
     }
 
     public ContentModification(ContentItem item, ContentModification existing) {
@@ -60,4 +66,16 @@ public class ContentModification {
         return type;
     }
 
+    /**
+     * Condition which has to be satisfied for this modification to be applied
+     * to the target installation. If the condition is not satisfied,
+     * the modification will be skipped and the patch application process will
+     * proceed applying the remaining modifications in the patch.
+     *
+     * @return  modification condition or null if the modification does not depend
+     * on any condition
+     */
+    public ModificationCondition getCondition() {
+        return condition;
+    }
 }

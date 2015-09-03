@@ -109,7 +109,7 @@ class PatchingTaskDescription {
         final ContentItem backupItem = definition.getTarget().getItem();
         final ContentModification modification = definition.getTarget().getModification();
         final byte[] target = definition.getLatest().getTargetHash();
-        return new ContentModification(backupItem, target, modification.getType());
+        return new ContentModification(backupItem, target, modification.getType(), modification.getCondition());
     }
 
 }

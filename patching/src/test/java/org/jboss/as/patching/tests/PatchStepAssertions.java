@@ -36,6 +36,7 @@ import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.ContentType;
 import org.jboss.as.patching.metadata.MiscContentItem;
+import org.jboss.as.patching.metadata.ModificationCondition;
 import org.jboss.as.patching.metadata.ModificationType;
 import org.jboss.as.patching.metadata.ModuleItem;
 import org.jboss.as.patching.metadata.Patch;
@@ -179,6 +180,27 @@ abstract class PatchStepAssertions {
                 break;
             case MISC:
                 final File home = target.getDirectoryStructure().getInstalledImage().getJbossHome();
+                final ModificationCondition condition = modification.getCondition();
+                if(condition != null) {
+                    if(condition instanceof ModificationCondition.ExistsCondition) {
+                        final ContentItem requiredItem = ((ModificationCondition.ExistsCondition)condition).getContentItem();
+                        File requiredFile;
+                        switch(requiredItem.getContentType()) {
+                            case MISC:
+                                requiredFile = PatchContentLoader.getMiscPath(home, (MiscContentItem)requiredItem);
+                                break;
+                            case MODULE:
+                            case BUNDLE:
+                            default:
+                                throw new IllegalStateException("Unsupported content type");
+                        }
+                        if(!requiredFile.exists()) {
+                            final File file = PatchContentLoader.getMiscPath(home, (MiscContentItem)item);
+                            Assert.assertFalse(file.exists());
+                            return;
+                        }
+                    }
+                }
                 assertMisc(home, modification.getType(), (MiscContentItem) item);
                 break;
             default:
