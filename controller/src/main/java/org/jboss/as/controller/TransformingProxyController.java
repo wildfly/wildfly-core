@@ -77,7 +77,8 @@ public interface TransformingProxyController extends ProxyController {
         }
 
         public static TransformingProxyController create(final TransactionalProtocolClient client, final Transformers transformers, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
-            final RemoteProxyController proxy = RemoteProxyController.create(client, pathAddress, addressTranslator);
+            final ModelVersion targetKernelVersion = transformers.getTarget().getVersion();
+            final RemoteProxyController proxy = RemoteProxyController.create(client, pathAddress, addressTranslator, targetKernelVersion);
             final Transformers delegating = new Transformers() {
                 @Override
                 public TransformationTarget getTarget() {
@@ -164,6 +165,11 @@ public interface TransformingProxyController extends ProxyController {
         public void execute(final ModelNode operation, final OperationMessageHandler handler, final ProxyOperationControl control, final OperationAttachments attachments) {
             // Execute untransformed
             proxy.execute(operation, handler, control, attachments);
+        }
+
+        @Override
+        public ModelVersion getKernelModelVersion() {
+            return proxy.getKernelModelVersion();
         }
     }
 
