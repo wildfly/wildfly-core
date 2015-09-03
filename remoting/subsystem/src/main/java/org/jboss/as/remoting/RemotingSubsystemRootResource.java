@@ -75,7 +75,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME),
                 RemotingSubsystemAdd.INSTANCE,
-                new ReloadRequiredRemoveStepHandler(REMOTING_ENDPOINT_CAPABILITY),
+                new ReloadRequiredRemoveStepHandler(),
                 OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_ALL_SERVICES);
     }

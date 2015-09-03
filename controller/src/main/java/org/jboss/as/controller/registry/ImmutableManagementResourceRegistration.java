@@ -33,7 +33,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.security.ControllerPermission;
 
@@ -259,5 +259,5 @@ public interface ImmutableManagementResourceRegistration {
      *
      * @return Set of capabilities if any registered otherwise empty set
      */
-    Set<Capability> getCapabilities();
+    Set<RuntimeCapability> getCapabilities();
 }

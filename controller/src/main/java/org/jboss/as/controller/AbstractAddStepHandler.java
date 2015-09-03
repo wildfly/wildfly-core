@@ -22,7 +22,11 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,12 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
 
 /**
  * Base class for {@link OperationStepHandler} implementations that add managed resource.
@@ -267,8 +266,10 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}. Will
      *                 not be {@code null}
      */
-    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        for (RuntimeCapability capability : capabilities) {
+    protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, Resource resource) throws OperationFailedException {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+
+        for (RuntimeCapability capability : capabilitySet) {
             if (capability.isDynamicallyNamed()) {
                 context.registerCapability(capability.fromBaseCapability(context.getCurrentAddressValue()), null);
             } else {
@@ -276,10 +277,6 @@ public class AbstractAddStepHandler implements OperationStepHandler {
             }
         }
 
-        //just here until we fix the registration across whole server
-        if (context.getResourceRegistration().getCapabilities().size() != capabilities.size()){
-            ControllerLogger.ROOT_LOGGER.warnf("Number of possible capabilities registered on resource and number of runtime capabilities don't match for path: %s", context.getCurrentAddress());
-        }
         ModelNode model = resource.getModel();
         for (AttributeDefinition ad : attributes) {
             if (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements()) {
