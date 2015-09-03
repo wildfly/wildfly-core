@@ -35,8 +35,8 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -300,7 +300,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * Registers passed capability on resource
      * @param capability a capability to register
      */
-    void registerCapability(Capability capability);
+    void registerCapability(RuntimeCapability capability);
 
     /**
      * A factory for creating a new, root model node registration.

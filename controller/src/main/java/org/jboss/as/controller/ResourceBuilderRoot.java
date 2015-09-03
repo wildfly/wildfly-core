@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -241,7 +242,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
                     .setRemoveHandler(builder.removeHandler)
                     .setDeprecationData(builder.deprecationData)
                     .setRuntime(builder.isRuntime)
-                    .setCapabilities(builder.capabilities.toArray(new Capability[builder.capabilities.size()]))
+                    .setCapabilities(builder.capabilities.toArray(new RuntimeCapability[builder.capabilities.size()]))
 
             );
             this.builder = builder;

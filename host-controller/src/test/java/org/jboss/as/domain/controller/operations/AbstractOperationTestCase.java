@@ -844,7 +844,7 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public void registerCapability(Capability capability) {
+        public void registerCapability(RuntimeCapability capability) {
 
         }
 
