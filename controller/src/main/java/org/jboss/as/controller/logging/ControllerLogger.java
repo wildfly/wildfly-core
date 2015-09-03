@@ -3351,4 +3351,11 @@ public interface ControllerLogger extends BasicLogger {
             "Both the subsystem and the extension must be removed or migrated before the server will function.")
     @LogMessage(level = ERROR)
     void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
+
+    @Message(id = 403, value = "Unexpected exception during execution of the following operation(s): %s")
+    @LogMessage(level = ERROR)
+    void unexpectedOperationExecutionException(@Cause RuntimeException e, List<ModelNode> controllerOperations);
+
+    @Message(id = 404, value = "Unexpected exception during execution: %s")
+    String unexpectedOperationExecutionFailureDescription(RuntimeException e);
 }
