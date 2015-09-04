@@ -65,6 +65,15 @@ public interface ProxyController {
      */
     void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments);
 
+    /**
+     * Gets the {@link ModelVersion} of the kernel management API exposed by the proxied process.
+     *
+     * @return the model version. Will not be {@code null}
+     */
+    default ModelVersion getKernelModelVersion() {
+        return ModelVersion.CURRENT;
+    }
+
     interface ProxyOperationControl extends ModelController.OperationTransactionControl {
 
         /**
