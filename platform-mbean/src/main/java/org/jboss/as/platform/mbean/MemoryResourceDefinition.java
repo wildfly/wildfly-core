@@ -98,8 +98,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
 
 
     private MemoryResourceDefinition() {
-        super(MEMORY_PATH,
-                PlatformMBeanUtil.getResolver(MEMORY));
+        super(new Parameters(MEMORY_PATH, PlatformMBeanUtil.getResolver(MEMORY)).setRuntime());
     }
 
     @Override
@@ -114,9 +113,6 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, MemoryMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
     @Override

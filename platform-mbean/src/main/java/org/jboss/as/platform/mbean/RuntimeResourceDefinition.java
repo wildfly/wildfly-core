@@ -151,8 +151,8 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
     static final RuntimeResourceDefinition INSTANCE = new RuntimeResourceDefinition();
 
     private RuntimeResourceDefinition() {
-        super(RUNTIME_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.RUNTIME));
+        super(new Parameters(RUNTIME_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.RUNTIME)).setRuntime());
     }
 
     @Override
@@ -169,9 +169,6 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, RuntimeMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
     @Override

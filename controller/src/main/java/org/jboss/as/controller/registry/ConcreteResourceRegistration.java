@@ -90,7 +90,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                 final boolean runtimeOnly, final boolean ordered, CapabilityRegistry capabilityRegistry) {
+                                 final boolean ordered, CapabilityRegistry capabilityRegistry) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
@@ -100,7 +100,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         notificationsUpdater.clear(this);
         orderedChildUpdater.clear(this);
         this.resourceDefinition = definition;
-        this.runtimeOnly.set(runtimeOnly);
+        this.runtimeOnly.set(definition.isRuntime());
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
     }
@@ -169,7 +169,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
         }
-        if (isRuntimeOnly()) {
+        if (isRuntimeOnly() && !resourceDefinition.isRuntime()) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodel();
         }
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
@@ -180,7 +180,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final NodeSubregistry child = getOrCreateSubregistry(key);
         final boolean ordered = resourceDefinition.isOrderedChild();
         final ManagementResourceRegistration resourceRegistration =
-                child.register(address.getValue(), resourceDefinition, false, ordered);
+                child.register(address.getValue(), resourceDefinition, ordered);
         if (ordered) {
             AbstractResourceRegistration parentRegistration = child.getParent();
             parentRegistration.setOrderedChild(key);

@@ -86,8 +86,8 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
     static final OperatingSystemResourceDefinition INSTANCE = new OperatingSystemResourceDefinition();
 
     private OperatingSystemResourceDefinition() {
-        super(OPERATING_SYSTEM_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.OPERATING_SYSTEM));
+        super(new Parameters(OPERATING_SYSTEM_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.OPERATING_SYSTEM)).setRuntime());
     }
 
     @Override
@@ -102,9 +102,6 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, OperatingSystemMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
     @Override

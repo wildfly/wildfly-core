@@ -46,8 +46,8 @@ class CompilationResourceDefinition extends SimpleResourceDefinition {
     static final CompilationResourceDefinition INSTANCE = new CompilationResourceDefinition();
 
     private CompilationResourceDefinition() {
-        super(PlatformMBeanConstants.COMPILATION_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.COMPILATION));
+        super(new Parameters(PlatformMBeanConstants.COMPILATION_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.COMPILATION)).setRuntime());
     }
 
     @Override
@@ -62,9 +62,6 @@ class CompilationResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, CompilationMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
     @Override

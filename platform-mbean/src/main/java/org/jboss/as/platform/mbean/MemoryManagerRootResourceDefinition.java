@@ -33,17 +33,14 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 class MemoryManagerRootResourceDefinition extends SimpleResourceDefinition {
     static final MemoryManagerRootResourceDefinition INSTANCE = new MemoryManagerRootResourceDefinition();
     private MemoryManagerRootResourceDefinition() {
-        super(PlatformMBeanConstants.MEMORY_MANAGER_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.MEMORY_MANAGER));
+        super(new Parameters(PlatformMBeanConstants.MEMORY_MANAGER_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.MEMORY_MANAGER)).setRuntime());
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(MemoryManagerResourceDefinition.INSTANCE);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }
 
