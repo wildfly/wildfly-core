@@ -45,7 +45,6 @@ import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -67,7 +66,7 @@ public class DomainModelIncludesValidator implements OperationStepHandler {
     }
 
     public static void addValidationStep(OperationContext context, ModelNode operation) {
-        assert context.getProcessType() == ProcessType.HOST_CONTROLLER : "Not a host controller";
+        assert !context.getProcessType().isServer() : "Not a host controller";
         if (!context.isBooting()) {
             // This does not need to get executed on boot the domain controller service does that once booted
             // by calling validateAtBoot(). Otherwise we get issues with the testsuite, which only partially sets up the model
@@ -78,7 +77,7 @@ public class DomainModelIncludesValidator implements OperationStepHandler {
     }
 
     public static void validateAtBoot(OperationContext context, ModelNode operation) {
-        assert context.getProcessType() == ProcessType.HOST_CONTROLLER : "Not a host controller";
+        assert !context.getProcessType().isServer() : "Not a host controller";
         assert context.isBooting() : "Should only be called at boot";
         assert operation.require(OP).asString().equals("validate"); //Should only be called by the domain controller service
         //Only validate once
