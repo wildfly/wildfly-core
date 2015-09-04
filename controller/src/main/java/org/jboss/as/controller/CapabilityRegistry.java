@@ -28,15 +28,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityRegistration;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -408,7 +409,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     public Set<CapabilityRegistration> getCapabilities() {
         readLock.lock();
         try {
-            return Collections.unmodifiableSet(new HashSet<>(capabilities.values()));
+            return Collections.unmodifiableSet(new TreeSet<>(capabilities.values()));
         } finally {
             readLock.unlock();
         }
@@ -418,7 +419,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     public Set<CapabilityRegistration> getPossibleCapabilities() {
         readLock.lock();
         try {
-            return Collections.unmodifiableSet(new HashSet<>(possibleCapabilities.values()));
+            return Collections.unmodifiableSet(new TreeSet<>(possibleCapabilities.values()));
         } finally {
             readLock.unlock();
         }
