@@ -113,11 +113,7 @@ public class PeriodicRotatingFileAuditLogHandler extends AbstractFileAuditLogHan
         } catch (IOException e) {
             throw ControllerLogger.ROOT_LOGGER.couldNotBackUp(e, file.getAbsolutePath(), backup.getAbsolutePath());
         }
-        try {
-            file.createNewFile();
-        } catch (IOException e){
-            throw new RuntimeException(e);
-        }
+        createNewFile(file);
     }
 
     private void calcNextRollover(final long fromTime) {
