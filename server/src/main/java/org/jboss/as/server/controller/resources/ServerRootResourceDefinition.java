@@ -450,7 +450,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManager));
 
         //capability registry
-        resourceRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(capabilityRegistry));
+        // TODO enable once we have consensus on the API with the HAL team
+        //resourceRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(capabilityRegistry));
 
         // Interfaces
         ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceResourceDefinition(

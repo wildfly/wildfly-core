@@ -98,7 +98,6 @@ import org.jboss.as.host.controller.resources.StoppedServerResource;
 import org.jboss.as.platform.mbean.PlatformMBeanResourceRegistrar;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
-import org.jboss.as.server.controller.resources.CapabilityRegistryResourceDefinition;
 import org.jboss.as.server.controller.resources.ModuleLoadingResourceDefinition;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
@@ -411,7 +410,9 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         //host-environment
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));
         hostRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
-        hostRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(domainController.getCapabilityRegistry()));
+
+        // TODO enable once we have consensus on the API with the HAL team
+        //hostRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(domainController.getCapabilityRegistry()));
 
         // discovery options
         ManagementResourceRegistration discoveryOptions = hostRegistration.registerSubModel(DiscoveryOptionsResourceDefinition.INSTANCE);
