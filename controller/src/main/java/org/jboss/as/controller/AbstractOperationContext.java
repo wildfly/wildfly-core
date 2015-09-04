@@ -366,7 +366,9 @@ abstract class AbstractOperationContext implements OperationContext {
             } else {
                 report(MessageSeverity.INFO, ControllerLogger.ROOT_LOGGER.operationRollingBack());
             }
-            return resultAction;
+        } catch (RuntimeException e) {
+            handleUncaughtException(e);
+            ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionException(e, controllerOperations);
         } finally {
             // On failure close any attached response streams
             if (resultAction != ResultAction.KEEP && !isBooting()) {
@@ -386,6 +388,13 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
             }
         }
+
+
+        return resultAction;
+    }
+
+    /** Opportunity to do required cleanup after an exception propagated all the way to {@link #executeOperation()}.*/
+    void handleUncaughtException(RuntimeException e) {
     }
 
     @Override
@@ -599,7 +608,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
                 // No steps remain in this stage; give subclasses a chance to check status
                 // and approve moving to the next stage
-                if (!stageCompleted(currentStage)) {
+                if (!tryStageCompleted(currentStage)) {
                     // Can't continue
                     resultAction = ResultAction.ROLLBACK;
                     executeResultHandlerPhase(null);
@@ -661,6 +670,20 @@ abstract class AbstractOperationContext implements OperationContext {
 
         // All steps ran and canContinueProcessing returned true for the last one, so...
         executeDoneStage(primaryResponse);
+    }
+
+    private boolean tryStageCompleted(Stage currentStage) {
+        boolean result;
+        try {
+            result = stageCompleted(currentStage);
+        } catch (RuntimeException e) {
+            result = false;
+            if (!initialResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                initialResponse.get(FAILURE_DESCRIPTION).set(ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionFailureDescription(e));
+            }
+            ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionException(e, controllerOperations);
+        }
+        return result;
     }
 
     private void executeDoneStage(ModelNode primaryResponse) {

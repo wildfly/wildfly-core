@@ -270,4 +270,19 @@ public class SocketCapabilityResolutionUnitTestCase extends AbstractCapabilityRe
         assertTrue(response.toString(), response.get(RESULT, "step-2", RESULT).asBoolean());
     }
 
+    @Test
+    public void testWFCORE955() {
+        // First, establish a profile to s-b dep. This ensures we get into the consistent scope logic
+        // that's where the WFCORE-955 issue appeared
+        ModelNode op = getCompositeOperation(getCapabilityOperation(SOCKET_A_1, "cap_a"), getCapabilityOperation(SUBSYSTEM_A_1, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-2", RESULT).asBoolean());
+
+        // Then change the include of a different profile to something bogus
+        op = getParentIncludeOperation(SUBSYSTEM_B_1.getParent(), "bogus");
+        response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
+    }
+
 }

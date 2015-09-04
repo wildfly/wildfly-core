@@ -1090,6 +1090,19 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    void handleUncaughtException(RuntimeException e) {
+        try {
+            if (lockStep != null) {
+                releaseModelControllerLock();
+            }
+        } finally {
+            if (containerMonitorStep != null) {
+                resetContainerStateChanges();
+            }
+        }
+    }
+
+    @Override
     void releaseStepLocks(AbstractOperationContext.Step step) {
         boolean interrupted = false;
         try {
@@ -1122,15 +1135,12 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
 
             if (this.lockStep == step) {
-                modelController.releaseLock(operationId);
-                exclusiveStartTime = -1;
-                lockStep = null;
+                releaseModelControllerLock();
             }
         } finally {
             try {
                 if (this.containerMonitorStep == step) {
-                    modelController.logContainerStateChangesAndReset();
-                    containerMonitorStep = null;
+                    resetContainerStateChanges();
                 }
             } finally {
                 if (interrupted) {
@@ -1138,6 +1148,17 @@ final class OperationContextImpl extends AbstractOperationContext {
                 }
             }
         }
+    }
+
+    private void releaseModelControllerLock() {
+        modelController.releaseLock(operationId);
+        exclusiveStartTime = -1;
+        lockStep = null;
+    }
+
+    private void resetContainerStateChanges() {
+        modelController.logContainerStateChangesAndReset();
+        containerMonitorStep = null;
     }
 
     @Override
