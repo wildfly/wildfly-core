@@ -522,8 +522,22 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
                             Closeable closable = null;
                             if(overlay != null) {
                                 overlay.remountAsZip(false);
-                            } else if(child.isFile()) {
-                                closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                            } else {
+                                if(!child.exists()) {
+                                    // the reference does not exist
+                                    throw ServerLogger.ROOT_LOGGER.illegalResoureRootReference(child.getName());
+                                } else if(child.isFile()) {
+                                    try {
+                                        // check if the resource-root is within the deployment or not
+                                       if(child.getPathNameRelativeTo(deploymentRootFile) != null) {
+                                          closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                                       }
+                                    } catch(IllegalArgumentException err) {
+                                       throw ServerLogger.ROOT_LOGGER.illegalResoureRootReference(child.getName());
+                                    }
+                                }
+                                // the only thing left is either a directory or a jar/sar mounted already by EarStructureProcessor
+                                // not need to do any action
                             }
                             final MountHandle mountHandle = new MountHandle(closable);
                             ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
