@@ -7,17 +7,16 @@
 
 == Install WildFly
 
-    # mkdir /opt/wildfly
-    # tar xvzf wildfly-9.0.0.Final.tar.gz -C /opt
-    # ln -s /opt/wildfly-9.0.0.Final /opt/wildfly
+    # tar xvzf wildfly-9.0.1.Final.tar.gz -C /opt
+    # ln -s /opt/wildfly-9.0.1.Final /opt/wildfly
     # chown -R wildfly:wildfly /opt/wildfly
 
 == Configure systemd
 
     # mkdir /etc/wildfly
-    # cp wildfly.conf /etc/wildfly
-    # cp wildfly.service /etc/systemd/system
-    # cp launch.sh /opt/wildfly/bin
+    # cp wildfly.conf /etc/wildfly/
+    # cp wildfly.service /etc/systemd/system/
+    # cp launch.sh /opt/wildfly/bin/
     # chmod +x /opt/wildfly/bin/launch.sh
 
 == Start and enable
