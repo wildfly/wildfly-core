@@ -108,18 +108,14 @@ public class HTTPSManagementInterfaceTestCase {
 
     @BeforeClass
     public static void startAndSetupContainer() throws Exception {
-
-        LOGGER.info("*** starting server");
         controller.start();
 
         ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
         ManagementClient managementClient = controller.getClient();
 
-        LOGGER.info("*** will configure server now");
         serverSetup(managementClient);
         managementNativeRealmSetup.setup(client);
 
-        LOGGER.info("*** reloading server");
         // To apply new security realm settings for http interface reload of
         // server is required
         reloadServer();
@@ -199,8 +195,6 @@ public class HTTPSManagementInterfaceTestCase {
 
     @AfterClass
     public static void stopContainer() throws Exception {
-
-        LOGGER.info("*** reseting test configuration");
         ModelControllerClient client = getNativeModelControllerClient();
 
         resetHttpInterfaceConfiguration(client);
@@ -211,10 +205,7 @@ public class HTTPSManagementInterfaceTestCase {
         serverTearDown(client);
         managementNativeRealmSetup.tearDown(client);
 
-        LOGGER.info("*** stopping container");
         controller.stop();
-
-        //FileUtils.deleteDirectory(WORK_DIR);
     }
 
     private static HttpClient getHttpClient(File keystoreFile) {

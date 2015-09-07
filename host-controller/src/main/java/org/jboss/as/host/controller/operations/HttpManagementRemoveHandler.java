@@ -22,19 +22,16 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
-
-import java.util.Collections;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.remoting.RemotingHttpUpgradeService;
-import org.jboss.as.remoting.RemotingServices;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -44,43 +41,22 @@ import org.jboss.dmr.ModelNode;
  */
 public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
 
-    private final LocalHostControllerInfoImpl hostControllerInfo;
-    private final HostControllerEnvironment environment;
+    public static final HttpManagementRemoveHandler INSTANCE = new HttpManagementRemoveHandler();
 
-    public HttpManagementRemoveHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
+    public HttpManagementRemoveHandler() {
         super(HTTP_MANAGEMENT_CAPABILITY);
-        this.hostControllerInfo = hostControllerInfo;
-        this.environment = environment;
     }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
+        return false;
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME);
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME.append("requests"));
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME.append("shutdown"));
-
-        RemotingServices.removeConnectorServices(context, ManagementRemotingServices.HTTP_CONNECTOR);
-        context.removeService(RemotingHttpUpgradeService.UPGRADE_SERVICE_NAME.append(ManagementRemotingServices.HTTP_CONNECTOR));
-        clearHostControllerInfo(hostControllerInfo);
-    }
-
-    @Override
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        HttpManagementAddHandler.populateHostControllerInfo(hostControllerInfo, context, model);
-        HttpManagementAddHandler.installHttpManagementServices(environment, hostControllerInfo, context, model);
-    }
-
-    static void clearHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo) {
-        hostControllerInfo.setHttpManagementInterface(null);
-        hostControllerInfo.setHttpManagementPort(0);
-        hostControllerInfo.setHttpManagementSecureInterface(null);
-        hostControllerInfo.setHttpManagementSecurePort(0);
-        hostControllerInfo.setHttpManagementSecurityRealm(null);
-        hostControllerInfo.setAllowedOrigins(Collections.EMPTY_LIST);
+    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        PathAddress nativeAddress = context.getCurrentAddress().getParent().append(PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE));
+        ManagementRemotingServices.isManagementResourceRemoveable(context, nativeAddress);
+        super.performRemove(context, operation, model);
+        context.reloadRequired();
     }
 }

@@ -158,6 +158,23 @@ public class AdditionalInitialization extends AdditionalParsers {
     }
 
     /**
+     * Simple utility method to register a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability RuntimeCapability<?>} for each of the given
+     * capability. They will be registered against {@link CapabilityScope#GLOBAL} and with the root resource and no
+     * specific attribute as their {@link org.jboss.as.controller.capability.registry.RegistrationPoint}.
+     *
+     * @param capabilityRegistry registry to use
+     * @param capabilities the capabilities.
+     */
+    public static void registerCapabilities(RuntimeCapabilityRegistry capabilityRegistry, RuntimeCapability<?>... capabilities) {
+        for (final RuntimeCapability<?> capability : capabilities) {
+            capabilityRegistry.registerCapability(new RuntimeCapabilityRegistration(capability, CapabilityScope.GLOBAL,
+                    new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+        }
+    }
+
+    /**
      * Simple utility method to register a {@link org.jboss.as.controller.capability.RuntimeCapability} with the
      * specified {@link org.jboss.as.controller.capability.RuntimeCapability#getRuntimeAPI() runtime API}
      * for each of the given capability names. They will be registered against {@link CapabilityScope#GLOBAL}
