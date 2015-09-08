@@ -84,7 +84,7 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
         }
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
 
-        Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        final Resource resource = requiredReadWriteAccess ? context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS) : context.readResource(PathAddress.EMPTY_ADDRESS);
         final ModelNode model;
         if (useEnhancedSyntax){
             model = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression,resource.getModel());
@@ -97,7 +97,7 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
             ModelNode writeOperation = Util.createOperation(WriteAttributeHandler.DEFINITION, address);
             writeOperation.get(NAME.getName()).set(useEnhancedSyntax?attributeExpression:attributeName);
             writeOperation.get(ModelDescriptionConstants.VALUE).set(model);
-            context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL);
+            context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
         }
     }
 
