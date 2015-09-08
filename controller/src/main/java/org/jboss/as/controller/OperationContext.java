@@ -767,6 +767,7 @@ public interface OperationContext extends ExpressionResolver {
     Environment getCallEnvironment();
 
     /**
+     * deprecated use {@link #registerCapability(RuntimeCapability)}
      * Registers a capability with the system. Any {@link org.jboss.as.controller.capability.RuntimeCapability#getRequirements() requirements}
      * associated with the capability will be recorded as requirements.
      *
@@ -775,8 +776,21 @@ public interface OperationContext extends ExpressionResolver {
      *                  attribute was responsible
      *
      * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     * @deprecated use {@link #registerCapability(RuntimeCapability)}
      */
+    @Deprecated
     void registerCapability(RuntimeCapability capability, String attribute);
+
+
+    /**
+     * Registers a capability with the system. Any {@link org.jboss.as.controller.capability.RuntimeCapability#getRequirements() requirements}
+     * associated with the capability will be recorded as requirements.
+     *
+     * @param capability  the capability. Cannot be {@code null}
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void registerCapability(RuntimeCapability capability);
 
     /**
      * Registers an additional hard requirement a capability has beyond what it was aware of when {@code capability}
@@ -798,29 +812,6 @@ public interface OperationContext extends ExpressionResolver {
      *                                         or if {@code capability} is not registered
      */
     void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute);
-
-    /**
-     * <strong>Deprecated</strong>; use {@link #hasOptionalCapability(String, String, String)}
-     * <p>
-     * Differs from {@link #hasOptionalCapability(String, String, String)} in that once the caller declares an intent
-     * to use the {@code required}capability by invoking this method and getting a {@code true} response, thereafter
-     * the system treats that as a hard requirement. However, there is no valid use case for that behavior.
-     * </p>
-     *
-     * @param required the name of the required capability. Cannot be {@code null}
-     * @param dependent the name of the capability that requires the other capability. Cannot be {@code null}
-     * @param attribute the name of the attribute that triggered this requirement, or {@code null} if no single
-     *                  attribute was responsible
-     * @return {@code true} if the requested capability is present; {@code false} if not. If {@code true}, hereafter
-     *         {@code dependent}'s requirement for {@code required} will not be treated as optional.
-     *
-     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
-     *                                          complete set of capabilities is not known until the end of the model stage.
-     *
-     * @deprecated Will be moved in WildFly 10; use {@link #hasOptionalCapability(String, String, String)}
-     */
-    @Deprecated
-    boolean requestOptionalCapability(String required, String dependent, String attribute);
 
     /**
      * Checks whether one of a capability's optional and runtime-only requirements is present. Only for use in cases

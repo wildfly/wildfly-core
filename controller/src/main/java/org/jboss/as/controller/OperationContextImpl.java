@@ -1389,8 +1389,14 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    @Deprecated
     public void registerCapability(RuntimeCapability capability, String attribute) {
         registerCapability(capability, activeStep, attribute);
+    }
+
+    @Override
+    public void registerCapability(RuntimeCapability capability) {
+        registerCapability(capability, activeStep, null);
     }
 
     void registerCapability(RuntimeCapability capability, Step step, String attribute) {
@@ -1432,11 +1438,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         synchronized (dependents) {
             dependents.add(step);
         }
-    }
-
-    @Override
-    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
-        return requestOptionalCapability(required, dependent, false, activeStep, attribute);
     }
 
     @Override
