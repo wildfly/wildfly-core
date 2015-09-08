@@ -47,6 +47,7 @@ public class SimpleOperationDefinition extends OperationDefinition {
 
     final ResourceDescriptionResolver resolver;
     final ResourceDescriptionResolver attributeResolver;
+    private final boolean forceDefaultDescriptionProvider;
 
     @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver) {
@@ -96,6 +97,7 @@ public class SimpleOperationDefinition extends OperationDefinition {
         super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters);
         this.resolver = resolver;
         this.attributeResolver = attributeResolver;
+        this.forceDefaultDescriptionProvider = false;
     }
 
     /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
@@ -116,17 +118,19 @@ public class SimpleOperationDefinition extends OperationDefinition {
         super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
         this.resolver = resolver;
         this.attributeResolver = attributeResolver;
+        this.forceDefaultDescriptionProvider = false;
     }
 
     protected SimpleOperationDefinition(SimpleOperationDefinitionBuilder builder) {
         super(builder);
         this.resolver = builder.resolver;
         this.attributeResolver = builder.attributeResolver;
+        this.forceDefaultDescriptionProvider = builder.forceDefaultDescriptionProvider;
     }
 
     @Override
     public DescriptionProvider getDescriptionProvider() {
-        if (entryType == EntryType.PRIVATE) {
+        if (entryType == EntryType.PRIVATE && !forceDefaultDescriptionProvider) {
             return PRIVATE_PROVIDER;
         }
         if (descriptionProvider !=null) {
