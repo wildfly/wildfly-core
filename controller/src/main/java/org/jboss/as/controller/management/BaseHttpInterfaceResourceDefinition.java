@@ -24,6 +24,9 @@ package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.management.Capabilities.HTTP_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.HTTP_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
 
 import java.util.List;
 
@@ -60,12 +63,16 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResourceDefinition {
 
-    protected static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
-
-    public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder.of(RUNTIME_CAPABILITY_NAME)
+    public static final RuntimeCapability<Void> HTTP_MANAGEMENT_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(HTTP_MANAGEMENT_CAPABILITY)
         .build();
 
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
+
+    public static final SimpleAttributeDefinition HTTP_SERVER_AUTHENTICATION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_SERVER_AUTHENTICATION, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(HTTP_SERVER_AUTHENTICATION_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
@@ -89,7 +96,13 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setDefaultValue(new ModelNode(false))
         .build();
 
-    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED)
+    public static final SimpleAttributeDefinition SASL_SERVER_AUTHENTICATION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_SERVER_AUTHENTICATION, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(SASL_SERVER_AUTHENTICATION_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
+
+    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED, SASL_SERVER_AUTHENTICATION)
         .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
@@ -113,7 +126,8 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM,  CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_SERVER_AUTHENTICATION, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
+                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

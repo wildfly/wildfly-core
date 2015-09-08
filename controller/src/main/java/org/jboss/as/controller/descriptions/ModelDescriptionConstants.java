@@ -204,6 +204,7 @@ public class ModelDescriptionConstants {
     public static final String HOST_SCOPED_ROLE = "host-scoped-role";
     public static final String HOST_SCOPED_ROLES = "host-scoped-roles";
     public static final String HOST_STATE = "host-state";
+    public static final String HTTP_SERVER_AUTHENTICATION = "http-server-authentication";
     public static final String HTTP_UPGRADE = "http-upgrade";
     public static final String HTTP_UPGRADE_ENABLED = "http-upgrade-enabled";
     public static final String HTTP_INTERFACE = "http-interface";
@@ -431,6 +432,7 @@ public class ModelDescriptionConstants {
     public static final String RESTART_SERVERS = "restart-servers";
     public static final String RESUME_SERVERS = "resume-servers";
     public static final String RESUME = "resume";
+    public static final String SASL_SERVER_AUTHENTICATION = "sasl-server-authentication";
     public static final String SASL_PROTOCOL = "sasl-protocol";
     public static final String SELECT = "select";
     public static final String SERVER_LOGGER = "server-logger";

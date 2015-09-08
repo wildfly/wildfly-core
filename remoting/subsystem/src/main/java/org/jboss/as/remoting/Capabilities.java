@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2015, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,36 +20,14 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.management;
-
-import org.xnio.OptionMap;
+package org.jboss.as.remoting;
 
 /**
- * Policy information for the native mangement interface that is common across both standalone and domain mode.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface NativeInterfaceCommonPolicy {
+final class Capabilities {
 
-    /**
-     * Get the name of the SASL server authentication policy to use to secure the native interface.
-     *
-     * @return The name of the SASL server authentication policy to use to secure the native interface.
-     */
-    String getSaslServerAuthentication();
-
-    /**
-     * Get the name of the security realm to secure the HTTP interface, or {@code null} if one has not been defined.
-     *
-     * @return Get the name of the security realm to secure the HTTP interface.
-     */
-    String getSecurityRealm();
-
-    /**
-     * Get the connector options based on the current configuration.
-     *
-     * @return the connector options based on the current configuration.
-     */
-    OptionMap getConnectorOptions();
+    static final String SASL_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.sasl-server-authentication";
 
 }

@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.operations;
 
-import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_RUNTIME_CAPABILITY;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -44,7 +44,7 @@ public class NativeManagementRemoveHandler extends AbstractRemoveStepHandler {
     public static final NativeManagementRemoveHandler INSTANCE = new NativeManagementRemoveHandler();
 
     private NativeManagementRemoveHandler() {
-        super(NATIVE_MANAGEMENT_CAPABILITY);
+        super(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
     @Override

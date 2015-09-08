@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.management;
 
+import static org.jboss.as.controller.management.Capabilities.NATIVE_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
@@ -52,14 +54,13 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResourceDefinition {
 
-    protected static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.native-interface";
-
-    public static final RuntimeCapability<Void> NATIVE_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder
-        .of(RUNTIME_CAPABILITY_NAME).build();
+    public static final RuntimeCapability<Void> NATIVE_MANAGEMENT_RUNTIME_CAPABILITY = RuntimeCapability.Builder
+            .of(NATIVE_MANAGEMENT_CAPABILITY).build();
 
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
+        .setAlternatives(ModelDescriptionConstants.SASL_SERVER_AUTHENTICATION)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
@@ -67,19 +68,28 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
+        .setRequires(ModelDescriptionConstants.SECURITY_REALM)
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
     public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
+        .setRequires(ModelDescriptionConstants.SECURITY_REALM)
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL };
+    public static final SimpleAttributeDefinition SASL_SERVER_AUTHENTICATION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_SERVER_AUTHENTICATION, ModelType.STRING, true)
+        .setAlternatives(ModelDescriptionConstants.SECURITY_REALM)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(SASL_SERVER_AUTHENTICATION_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
+
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_SERVER_AUTHENTICATION };
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

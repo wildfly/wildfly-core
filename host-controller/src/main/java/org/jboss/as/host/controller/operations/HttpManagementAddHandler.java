@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import io.undertow.server.ListenerRegistry;
@@ -59,6 +60,8 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
 
 /**
  * A handler that activates the HTTP management API.
@@ -67,6 +70,8 @@ import org.jboss.msc.service.ServiceTarget;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
+
+    private static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-authentication";
 
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
@@ -118,11 +123,18 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
 
+        String httpServerAuthentication = commonPolicy.getHttpServerAuthentication();
         String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm != null) {
+        if (httpServerAuthentication != null) {
+            // TODO This is just temporary until the http-server-authentication is actually used for Undertow.
+            InjectedValue<SecurityDomainHttpConfiguration> httpServerAuthInjector = new InjectedValue<>();
+            builder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(HTTP_SERVER_AUTHENTICATION_CAPABILITY, httpServerAuthentication),
+                    SecurityDomainHttpConfiguration.class), SecurityDomainHttpConfiguration.class, httpServerAuthInjector);
+        } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
-            ROOT_LOGGER.noSecurityRealmDefined();
+            ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
@@ -142,7 +154,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         if (commonPolicy.isHttpUpgradeEnabled()) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-            ManagementRemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
+            ManagementRemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(), securityRealm, serverCallbackService, tmpDirPath);
 
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);
             final String httpConnectorName;

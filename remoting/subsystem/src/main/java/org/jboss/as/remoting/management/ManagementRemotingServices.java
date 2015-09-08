@@ -77,15 +77,17 @@ public final class ManagementRemotingServices extends RemotingServices {
      * @param securityRealm the security real name
      * @param options the remoting options
      */
-    public static void installDomainConnectorServices(final ServiceTarget serviceTarget,
+    public static void installDomainConnectorServices(final OperationContext context,
+                                                      final ServiceTarget serviceTarget,
                                                       final ServiceName endpointName,
                                                       final ServiceName networkInterfaceBinding,
                                                       final int port,
+                                                      final String saslServerAuthentication,
                                                       final String securityRealm,
                                                       final OptionMap options) {
         ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-        installSecurityServices(serviceTarget, MANAGEMENT_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
+        installSecurityServices(context, serviceTarget, MANAGEMENT_CONNECTOR, saslServerAuthentication, securityRealm, serverCallbackService, tmpDirPath);
         installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options);
     }
 

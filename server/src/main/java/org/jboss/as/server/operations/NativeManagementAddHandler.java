@@ -76,12 +76,13 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
 
         String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm == null) {
+        String saslServerAuthentication = commonPolicy.getSaslServerAuthentication();
+        if (saslServerAuthentication == null && securityRealm == null) {
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-        RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath);
+        RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, saslServerAuthentication, securityRealm, null, tmpDirPath);
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,

@@ -51,7 +51,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setXmlName(Attribute.HTTP.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition SECURE_SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_SOCKET_BINDING, ModelType.STRING, true)
@@ -59,7 +59,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
             .setRequires(SECURITY_REALM.getName())
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, SOCKET_BINDING, SECURE_SOCKET_BINDING);
@@ -81,7 +81,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
 
     @Override
     public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(HTTP_MANAGEMENT_CAPABILITY);
+        resourceRegistration.registerCapability(HTTP_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
 }

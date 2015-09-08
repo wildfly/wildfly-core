@@ -21,6 +21,8 @@
  */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
+import static org.jboss.as.remoting.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -33,7 +35,9 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.server.SecurityDomainSaslConfiguration;
 import org.xnio.OptionMap;
 
 /**
@@ -118,8 +122,10 @@ public class RemotingServices {
         installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap);
     }
 
-    public static void installSecurityServices(ServiceTarget serviceTarget,
+    public static void installSecurityServices(OperationContext context,
+                                               ServiceTarget serviceTarget,
                                                final String connectorName,
+                                               final String saslServerAuthentication,
                                                final String realmName,
                                                final ServiceName serverCallbackServiceName,
                                                final ServiceName tmpDirService) {
@@ -127,6 +133,13 @@ public class RemotingServices {
 
         final RealmSecurityProviderService rsps = new RealmSecurityProviderService();
         ServiceBuilder<?> builder = serviceTarget.addService(securityProviderName, rsps);
+        if (saslServerAuthentication != null) {
+            // TODO This is just temporary until the sasl-server-authentication is actually used for Remoting.
+            InjectedValue<SecurityDomainSaslConfiguration> saslServerAuthInjector = new InjectedValue<>();
+            builder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(SASL_SERVER_AUTHENTICATION_CAPABILITY, saslServerAuthentication),
+                    SecurityDomainSaslConfiguration.class), SecurityDomainSaslConfiguration.class, saslServerAuthInjector);
+        }
         if (realmName != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, rsps.getSecurityRealmInjectedValue(), realmName, false);
         }

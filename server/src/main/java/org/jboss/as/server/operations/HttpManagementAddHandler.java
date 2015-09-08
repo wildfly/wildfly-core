@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
@@ -62,6 +63,8 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -71,6 +74,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
+
+    private static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-authentication";
 
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
 
@@ -142,8 +147,15 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 undertowBuilder.addDependency(secureSocketBindingServiceName, SocketBinding.class, undertowService.getSecureSocketBindingInjector());
             }
 
-            String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm != null) {
+        String httpServerAuthentication = commonPolicy.getHttpServerAuthentication();
+        String securityRealm = commonPolicy.getSecurityRealm();
+        if (httpServerAuthentication != null) {
+            // TODO This is just temporary until the http-server-authentication is actually used for Undertow.
+            InjectedValue<SecurityDomainHttpConfiguration> httpServerAuthInjector = new InjectedValue<>();
+            undertowBuilder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(HTTP_SERVER_AUTHENTICATION_CAPABILITY, httpServerAuthentication),
+                    SecurityDomainHttpConfiguration.class), SecurityDomainHttpConfiguration.class, httpServerAuthInjector);
+        } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
         } else {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
@@ -166,7 +178,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-            RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, null, tmpDirPath);
+            RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(), securityRealm, null, tmpDirPath);
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
             if (socketBindingServiceName != null || (secureSocketBindingServiceName == null)) {

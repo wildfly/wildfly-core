@@ -204,7 +204,7 @@ public interface HostControllerLogger extends BasicLogger {
      */
     @LogMessage(level = Level.WARN)
     @Message(id = 13, value = "No security realm defined for http management service, all access will be unrestricted.")
-    void noSecurityRealmDefined();
+    void httpManagementInterfaceIsUnsecured();
 
     /**
      * Logs an error message indicating no server with the server name is available.
@@ -1254,7 +1254,7 @@ public interface HostControllerLogger extends BasicLogger {
     OperationFailedException socketBindingGroupIncludesSameSocketBinding(String socketBindingGroup, String include1, String include2, String child);
 
     @LogMessage(level = WARN)
-    @Message(id = 169, value = "No security realm defined for native management service; all access will be unrestricted.")
+    @Message(id = 169, value = "No security realm or sasl server authentication defined for native management service; all access will be unrestricted.")
     void nativeManagementInterfaceIsUnsecured();
 
 }

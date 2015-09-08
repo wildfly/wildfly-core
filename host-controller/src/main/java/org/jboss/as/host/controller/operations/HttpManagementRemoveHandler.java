@@ -22,7 +22,7 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_RUNTIME_CAPABILITY;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -45,7 +45,7 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     private final HttpManagementAddHandler add;
 
     public HttpManagementRemoveHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HttpManagementAddHandler add) {
-        super(HTTP_MANAGEMENT_CAPABILITY);
+        super(HTTP_MANAGEMENT_RUNTIME_CAPABILITY);
         this.hostControllerInfo = hostControllerInfo;
         this.add = add;
     }

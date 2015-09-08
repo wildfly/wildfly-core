@@ -23,7 +23,7 @@
 package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_RUNTIME_CAPABILITY;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ import org.xnio.OptionMap.Builder;
 public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHandler {
 
     protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(HTTP_MANAGEMENT_CAPABILITY, attributeDefinitions);
+        super(HTTP_MANAGEMENT_RUNTIME_CAPABILITY, attributeDefinitions);
     }
 
     @Override
@@ -68,10 +68,19 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
 
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        final String httpServerAuthentication = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.HTTP_SERVER_AUTHENTICATION, model);
         final String securityRealm = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SECURITY_REALM, model);
         final boolean consoleEnabled = BaseHttpInterfaceResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        final boolean httpUpgrade = model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)
-                && BaseHttpInterfaceResourceDefinition.ENABLED.resolveModelAttribute(context, model.require(ModelDescriptionConstants.HTTP_UPGRADE)).asBoolean();
+        final boolean httpUpgradeEnabled;
+        final String saslServerAuthentication;
+        if (model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)) {
+            ModelNode httpUpgrade = model.require(ModelDescriptionConstants.HTTP_UPGRADE);
+            httpUpgradeEnabled = BaseHttpInterfaceResourceDefinition.ENABLED.resolveModelAttribute(context, httpUpgrade).asBoolean();
+            saslServerAuthentication =  asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SASL_SERVER_AUTHENTICATION, httpUpgrade);
+        } else {
+            httpUpgradeEnabled = false;
+            saslServerAuthentication = null;
+        }
         final List<String> allowedOrigins = BaseHttpInterfaceResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model);
 
         String serverName = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SERVER_NAME, model);
@@ -85,8 +94,18 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
         installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override
+            public String getHttpServerAuthentication() {
+                return httpServerAuthentication;
+            }
+
+            @Override
+            public String getSaslServerAuthentication() {
+                return saslServerAuthentication;
+            }
+
+            @Override
             public boolean isHttpUpgradeEnabled() {
-                return httpUpgrade;
+                return httpUpgradeEnabled;
             }
 
             @Override

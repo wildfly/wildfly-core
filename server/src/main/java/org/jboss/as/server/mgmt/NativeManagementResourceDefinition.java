@@ -60,7 +60,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setAlternatives(ModelDescriptionConstants.INTERFACE)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, SOCKET_BINDING);
@@ -82,7 +82,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
 
     @Override
     public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_CAPABILITY);
+        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
 }

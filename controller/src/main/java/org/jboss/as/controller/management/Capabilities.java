@@ -22,34 +22,20 @@
 
 package org.jboss.as.controller.management;
 
-import org.xnio.OptionMap;
 
 /**
- * Policy information for the native mangement interface that is common across both standalone and domain mode.
+ * Class to hold capabilities provided by and required by resources within this package.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface NativeInterfaceCommonPolicy {
+final class Capabilities {
 
-    /**
-     * Get the name of the SASL server authentication policy to use to secure the native interface.
-     *
-     * @return The name of the SASL server authentication policy to use to secure the native interface.
-     */
-    String getSaslServerAuthentication();
+    static final String HTTP_MANAGEMENT_CAPABILITY = "org.wildfly.management.http-interface";
 
-    /**
-     * Get the name of the security realm to secure the HTTP interface, or {@code null} if one has not been defined.
-     *
-     * @return Get the name of the security realm to secure the HTTP interface.
-     */
-    String getSecurityRealm();
+    static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-authentication";
 
-    /**
-     * Get the connector options based on the current configuration.
-     *
-     * @return the connector options based on the current configuration.
-     */
-    OptionMap getConnectorOptions();
+    static final String NATIVE_MANAGEMENT_CAPABILITY = "org.wildfly.management.native-interface";
+
+    static final String SASL_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.sasl-server-authentication";
 
 }

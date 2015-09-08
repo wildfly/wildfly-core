@@ -74,12 +74,13 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         final ServiceName nativeManagementInterfaceBinding = NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
 
         final String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm == null) {
+        final String saslServerAuthentication = commonPolicy.getSaslServerAuthentication();
+        if (saslServerAuthentication == null && securityRealm == null) {
             ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
-        ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options);
+        ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), saslServerAuthentication, securityRealm, options);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {

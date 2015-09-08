@@ -22,7 +22,7 @@
 
 package org.jboss.as.controller.management;
 
-import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.NATIVE_MANAGEMENT_RUNTIME_CAPABILITY;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -41,11 +41,12 @@ import org.xnio.OptionMap.Builder;
 public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepHandler {
 
     protected BaseNativeInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(NATIVE_MANAGEMENT_CAPABILITY, attributeDefinitions);
+        super(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY, attributeDefinitions);
     }
 
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        final String saslServerAuthentication = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SASL_SERVER_AUTHENTICATION, model);
         final String securityRealm = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SECURITY_REALM, model);
 
         String serverName = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SERVER_NAME, model);
@@ -57,6 +58,11 @@ public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepH
         final OptionMap options = builder.getMap();
 
         installServices(context, new NativeInterfaceCommonPolicy() {
+
+            @Override
+            public String getSaslServerAuthentication() {
+                return saslServerAuthentication;
+            }
 
             @Override
             public String getSecurityRealm() {

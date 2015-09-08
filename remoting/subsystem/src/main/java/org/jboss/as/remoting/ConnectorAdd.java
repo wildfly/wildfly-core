@@ -51,6 +51,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         super(ConnectorResource.CONNECTOR_CAPABILITY); // TODO pass in the ADs and remove populateModel
     }
 
+    @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
         ConnectorResource.SOCKET_BINDING.validateAndSet(operation, model);
         ConnectorResource.AUTHENTICATION_PROVIDER.validateAndSet(operation, model);
@@ -59,6 +60,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         ConnectorCommon.SERVER_NAME.validateAndSet(operation, model);
     }
 
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String connectorName = address.getLastElement().getValue();
@@ -66,7 +68,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final String securityRealm = model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
-        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, securityRealm, null, tmpDirPath);
+        RemotingServices.installSecurityServices(context, context.getServiceTarget(), connectorName, null, securityRealm, null, tmpDirPath);
         launchServices(context, connectorName, fullModel);
     }
 

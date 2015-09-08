@@ -147,6 +147,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         System.setProperty("javax.management.builder.initial", PluggableMBeanServerBuilder.class.getName());
     }
 
+    @Override
     @After
     public void cleanup() throws Exception {
         super.cleanup();
@@ -1582,7 +1583,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "localhost", EndpointService.EndpointType.MANAGEMENT);
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
-            RemotingServices.installSecurityServices(target, "server", null, null, tmpDirPath);
+            RemotingServices.installSecurityServices(null, target, "server", null, null, null, tmpDirPath);
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY);
         }
 
@@ -1618,6 +1619,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             extension.initialize(extensionRegistry.getExtensionContext("additional", rootRegistration, ExtensionRegistryType.SLAVE));
         }
 
+        @Override
         String getExtraXml() {
             return "<subsystem xmlns=\"" + TestExtension.NAMESPACE + "\"/>";
         }

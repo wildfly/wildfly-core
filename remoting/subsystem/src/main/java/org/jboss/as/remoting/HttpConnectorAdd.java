@@ -64,7 +64,7 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
         final String realmName= model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
-        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, realmName, null, tmpDirPath);
+        RemotingServices.installSecurityServices(context, context.getServiceTarget(), connectorName, null, realmName, null, tmpDirPath);
 
         final ServiceTarget target = context.getServiceTarget();
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();
