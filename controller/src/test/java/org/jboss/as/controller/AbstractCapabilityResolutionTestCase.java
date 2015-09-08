@@ -72,6 +72,7 @@ abstract class AbstractCapabilityResolutionTestCase {
     protected static final PathElement SBG_B = PathElement.pathElement(SOCKET_BINDING_GROUP, "b");
     protected static final PathElement SBG_C = PathElement.pathElement(SOCKET_BINDING_GROUP, "c");
     protected static final PathElement SBG_D = PathElement.pathElement(SOCKET_BINDING_GROUP, "d");
+    protected static final PathElement SBG_F = PathElement.pathElement(SUBSYSTEM, "only-registered");
     protected static final PathAddress GLOBAL_A = PathAddress.pathAddress(PathElement.pathElement(GLOBAL, "a"));
     protected static final PathAddress SUBSYSTEM_A_1 = PathAddress.pathAddress(PROFILE_A, PathElement.pathElement(SUBSYSTEM, "1"));
     protected static final PathAddress SUBSYSTEM_A_2 = PathAddress.pathAddress(PROFILE_A, PathElement.pathElement(SUBSYSTEM, "2"));
@@ -116,6 +117,8 @@ abstract class AbstractCapabilityResolutionTestCase {
             }
         }
     }
+
+
 
     protected static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability) {
         return getCapabilityOperation(pathAddress, capability, null);
@@ -240,12 +243,24 @@ abstract class AbstractCapabilityResolutionTestCase {
 
             // Add capabilities for each of the profiles and sbgs
             RuntimeCapabilityRegistry capabilityRegistry = managementModel.getCapabilityRegistry();
-            capabilityRegistry.registerCapability(getCapabilityRegistration(PROFILE_A));
-            capabilityRegistry.registerCapability(getCapabilityRegistration(PROFILE_B));
-            capabilityRegistry.registerCapability(getCapabilityRegistration(SBG_A));
-            capabilityRegistry.registerCapability(getCapabilityRegistration(SBG_B));
-            capabilityRegistry.registerCapability(getCapabilityRegistration(SBG_C));
-            capabilityRegistry.registerCapability(getCapabilityRegistration(SBG_D));
+            registerCapability(capabilityRegistry, PROFILE_A);
+            registerCapability(capabilityRegistry, PROFILE_B);
+            registerCapability(capabilityRegistry, SBG_A);
+            registerCapability(capabilityRegistry, SBG_B);
+            registerCapability(capabilityRegistry, SBG_C);
+            registerCapability(capabilityRegistry, SBG_D);
+            registerCapability(capabilityRegistry, SBG_F, false);
+        }
+    }
+    private static void registerCapability(RuntimeCapabilityRegistry registry, PathElement element){
+         registerCapability(registry, element, true);
+    }
+
+    private static void registerCapability(RuntimeCapabilityRegistry registry, PathElement element, boolean registerRuntime){
+        RuntimeCapabilityRegistration registration = getCapabilityRegistration(element);
+        ((CapabilityRegistry)registry).registerPossibleCapability(registration.getCapability(), registration.getOldestRegistrationPoint().getAddress());
+        if (registerRuntime) {
+            registry.registerCapability(registration);
         }
     }
 
@@ -279,7 +294,7 @@ abstract class AbstractCapabilityResolutionTestCase {
                 context.getResult().set(true);
             }
             if (capName != null) {
-                context.registerCapability(rcb.build(), null);
+                context.registerCapability(rcb.build());
             }
         }
     }

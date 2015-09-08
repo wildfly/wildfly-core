@@ -25,12 +25,14 @@ package org.jboss.as.controller;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -437,6 +439,22 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         } finally {
             readLock.unlock();
         }
+    }
+
+    public Set<PathAddress> getPossibleProviderPoints(CapabilityId capabilityId){
+        Set<PathAddress> result = new LinkedHashSet<>();
+        readLock.lock();
+        try {
+            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL?capabilityId: new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL);
+            CapabilityRegistration<RuntimeCapability> reg =  possibleCapabilities.get(capabilityId);
+            if (reg!=null){
+                result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
+            }
+
+        } finally {
+            readLock.unlock();
+        }
+        return result;
     }
 
     //end ImmutableCapabilityRegistry methods
