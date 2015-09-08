@@ -349,15 +349,15 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+    public void registerCapability(RuntimeCapability capability) {
         // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
-        primaryContext.registerAdditionalCapabilityRequirement(required, dependent, activeStep, attribute);
+        primaryContext.registerCapability(capability, activeStep, null);
     }
 
     @Override
-    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
+    public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
         // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
-        return primaryContext.requestOptionalCapability(required, dependent, false, activeStep, attribute);
+        primaryContext.registerAdditionalCapabilityRequirement(required, dependent, activeStep, attribute);
     }
 
     @Override

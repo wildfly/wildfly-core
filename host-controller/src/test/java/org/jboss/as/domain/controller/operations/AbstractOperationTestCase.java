@@ -637,13 +637,13 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
-            // no-op;
+        public void registerCapability(RuntimeCapability capability) {
+            // no-op
         }
 
         @Override
-        public boolean requestOptionalCapability(String required, String dependent, String attribute) {
-            return false;
+        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+            // no-op;
         }
 
         @Override
