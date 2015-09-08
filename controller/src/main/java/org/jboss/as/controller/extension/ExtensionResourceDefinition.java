@@ -53,10 +53,11 @@ public class ExtensionResourceDefinition extends SimpleResourceDefinition {
 
     public ExtensionResourceDefinition(final ExtensionRegistry extensionRegistry, final boolean parallelBoot,
                                        final ExtensionRegistryType extensionRegistryType, final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
-        super(PathElement.pathElement(EXTENSION), ControllerResolver.getResolver(EXTENSION),
-                new ExtensionAddHandler(extensionRegistry, parallelBoot, extensionRegistryType, rootResourceRegistrationProvider),
-                new ExtensionRemoveHandler(extensionRegistry, extensionRegistryType, rootResourceRegistrationProvider),
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+        super(new Parameters(PathElement.pathElement(EXTENSION), ControllerResolver.getResolver(EXTENSION))
+                .setAddHandler(new ExtensionAddHandler(extensionRegistry, parallelBoot, extensionRegistryType, rootResourceRegistrationProvider))
+                .setRemoveHandler(new ExtensionRemoveHandler(extensionRegistry, extensionRegistryType, rootResourceRegistrationProvider))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.EXTENSIONS.wrapAsList();
     }
 

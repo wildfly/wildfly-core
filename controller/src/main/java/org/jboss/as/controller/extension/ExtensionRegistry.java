@@ -487,16 +487,21 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @Deprecated
+        @SuppressWarnings("deprecation")
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion) throws IllegalArgumentException, IllegalStateException {
             return registerSubsystem(name, majorVersion, minorVersion, 0);
         }
 
         @Override
+        @Deprecated
+        @SuppressWarnings("deprecation")
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion) {
             return registerSubsystem(name, majorVersion, minorVersion, microVersion, false);
         }
 
         @Override
+        @Deprecated
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated) {
             return registerSubsystem(name, ModelVersion.create(majorVersion, minorVersion, microVersion), deprecated);
         }
@@ -545,6 +550,7 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @Deprecated
         public boolean isRegisterTransformers() {
             return registerTransformers;
         }
@@ -707,6 +713,7 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @Deprecated
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
             modelsRegistered = true;
             checkHostCapable();

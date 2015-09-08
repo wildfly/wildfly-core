@@ -46,6 +46,7 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a> *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
+@SuppressWarnings("deprecation")
 class ServiceVerificationHelper extends AbstractServiceListener<Object> implements ServiceListener<Object>, OperationStepHandler {
     private final StabilityMonitor monitor = new StabilityMonitor();
 

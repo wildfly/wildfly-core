@@ -1708,7 +1708,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 147, value = "No child type %s")
     OperationFailedRuntimeException noChildType(String name);
 
-    /**
+    /*
      * A message indicating no handler for the step operation, represented by the {@code stepOpName} parameter, at
      * {@code address}.
      *

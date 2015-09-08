@@ -314,6 +314,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          *
          * @throws java.lang.IllegalArgumentException if {@code elementValidator} is {@code null}
          */
+        @SuppressWarnings("unchecked")
         public final BUILDER setElementValidator(ParameterValidator elementValidator) {
             if (elementValidator == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator");
@@ -377,6 +378,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          * @param allowNullElement whether undefined elements are valid
          * @return a builder that can be used to continue building the attribute definition
          */
+        @SuppressWarnings("unchecked")
         public BUILDER setAllowNullElement(boolean allowNullElement) {
             this.allowNullElement = allowNullElement;
             return (BUILDER) this;
@@ -387,6 +389,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          * @param allowDuplicates false if duplicates are not allowed
          * @return builder
          */
+        @SuppressWarnings("unchecked")
         public BUILDER setAllowDuplicates(boolean allowDuplicates) {
             this.allowDuplicates = allowDuplicates;
             return (BUILDER) this;
