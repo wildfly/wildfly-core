@@ -282,6 +282,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             } else {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
+                    case HTTP_SERVER_AUTHENTICATION: {
+                        HttpManagementResourceDefinition.HTTP_SERVER_AUTHENTICATION.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
                     case SASL_PROTOCOL: {
                         HttpManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
                         break;
@@ -320,6 +324,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             } else {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
+                    case SASL_SERVER_AUTHENTICATION: {
+                        NativeManagementResourceDefinition.SASL_SERVER_AUTHENTICATION.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
                     case SASL_PROTOCOL: {
                         NativeManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
                         break;
@@ -437,6 +445,11 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                     case ENABLED: {
                         ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
                         HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
+                        break;
+                    }
+                    case SASL_SERVER_AUTHENTICATION: {
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.SASL_SERVER_AUTHENTICATION.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     default:
@@ -864,6 +877,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
+        NativeManagementResourceDefinition.SASL_SERVER_AUTHENTICATION.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
@@ -882,6 +896,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
+        HttpManagementResourceDefinition.HTTP_SERVER_AUTHENTICATION.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
@@ -897,6 +912,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
             writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
             HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
+            HttpManagementResourceDefinition.SASL_SERVER_AUTHENTICATION.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
         }
 
         if (HttpManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)
