@@ -27,7 +27,7 @@ package org.jboss.as.controller.capability.registry;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class CapabilityId {
+public class CapabilityId implements Comparable<CapabilityId> {
 
     private final String name;
     private final CapabilityScope scope;
@@ -82,5 +82,14 @@ public class CapabilityId {
     @Override
     public String toString() {
         return scope.getName() + "/" + name;
+    }
+
+    @Override
+    public int compareTo(CapabilityId o) {
+        if (equals(o)) {
+            return 0;
+        }
+        int result = scope.getName().compareTo(o.scope.getName());
+        return result != 0 ? result : name.compareTo(o.name);
     }
 }
