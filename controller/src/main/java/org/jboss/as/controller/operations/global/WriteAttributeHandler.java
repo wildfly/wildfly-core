@@ -137,19 +137,10 @@ public class WriteAttributeHandler implements OperationStepHandler {
                 final ModelNode oldValue = new ModelNode();
                 final ModelNode newValue = new ModelNode();
 
-                // 1st OSH is to read the old value
-                context.addStep(oldValue, readAttributeOperation, readAttributeHandler, currentStage);
+                // We're going to add a bunch of steps, but we want them to execute right away
+                // so we use the 'addFirst=true' param to addStep. That means we add them
+                // in reverse order of how they will execute
 
-                // 2nd OSH is to write the value
-                context.addStep(new OperationStepHandler() {
-                    @Override
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        doExecuteInternal(context, operation, attributeAccess, attributeName, oldValue.get(RESULT), useEnhancedSyntax, attributeExpression);
-                    }
-                }, currentStage);
-
-                // 3rd OSH is to read the new value
-                context.addStep(newValue, readAttributeOperation, readAttributeHandler, currentStage);
                 // 4th OSH is to emit the notification
                 context.addStep(new OperationStepHandler() {
                     @Override
@@ -157,7 +148,21 @@ public class WriteAttributeHandler implements OperationStepHandler {
                         // aggregate data from the 2 read-attribute operations
                         emitAttributeValueWrittenNotification(context, address, attributeName, oldValue.get(RESULT), newValue.get(RESULT));
                     }
-                }, currentStage);
+                }, currentStage, true);
+
+                // 3rd OSH is to read the new value
+                context.addStep(newValue, readAttributeOperation, readAttributeHandler, currentStage, true);
+
+                // 2nd OSH is to write the value
+                context.addStep(new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        doExecuteInternal(context, operation, attributeAccess, attributeName, oldValue.get(RESULT), useEnhancedSyntax, attributeExpression);
+                    }
+                }, currentStage, true);
+
+                // 1st OSH is to read the old value
+                context.addStep(oldValue, readAttributeOperation, readAttributeHandler, currentStage, true);
             }
         }
     }
