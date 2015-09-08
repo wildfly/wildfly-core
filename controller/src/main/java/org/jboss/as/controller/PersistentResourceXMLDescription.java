@@ -53,6 +53,7 @@ public final class PersistentResourceXMLDescription {
     private final String namespaceURI;
     private final Set<String> attributeGroups;
     private final String forcedName;
+    private final boolean marshallDefaultValues;
 
 
     private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
@@ -101,6 +102,7 @@ public final class PersistentResourceXMLDescription {
         this.attributeParsers = builder.attributeParsers;
         this.attributeMarshallers = builder.attributeMarshallers;
         this.forcedName = builder.forcedName;
+        this.marshallDefaultValues = builder.marshallDefaultValues;
     }
 
     public PathElement getPathElement() {
@@ -318,7 +320,7 @@ public final class PersistentResourceXMLDescription {
                     writeStartElement(writer, namespaceURI, xmlElementName);
                     writer.writeAttribute(NAME, name);
                 }
-                persistAttributes(writer, subModel, false);
+                persistAttributes(writer, subModel);
                 persistChildren(writer, subModel);
                 writer.writeEndElement();
             }
@@ -332,7 +334,7 @@ public final class PersistentResourceXMLDescription {
                 writeStartElement(writer, namespaceURI, xmlElementName);
             }
 
-            persistAttributes(writer, model, true);
+            persistAttributes(writer, model);
             persistChildren(writer, model);
 
             // Do not attempt to write end element if the <subsystem/> has no elements!
@@ -346,7 +348,7 @@ public final class PersistentResourceXMLDescription {
         }
     }
 
-    private void persistAttributes(XMLExtendedStreamWriter writer, ModelNode model, boolean marshalDefault) throws XMLStreamException {
+    private void persistAttributes(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
         marshallAttributes(writer,model,attributesByGroup.get(null).values(), null);
         if (useElementsForGroups) {
             for (Map.Entry<String, LinkedHashMap<String, AttributeDefinition>> entry : attributesByGroup.entrySet()) {
@@ -374,7 +376,7 @@ public final class PersistentResourceXMLDescription {
                     }
                     started = true;
                 }
-                marshaller.marshall(ad, model, false, writer);
+                marshaller.marshall(ad, model, marshallDefaultValues, writer);
             }
 
         }
@@ -411,6 +413,7 @@ public final class PersistentResourceXMLDescription {
         protected final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
         protected boolean useElementsForGroups = true;
         protected String forcedName;
+        private boolean marshallDefaultValues = false;
 
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
             this.resourceDefinition = resourceDefinition;
@@ -502,6 +505,16 @@ public final class PersistentResourceXMLDescription {
          */
         public PersistentResourceXMLBuilder setUseElementsForGroups(boolean useElementsForGroups) {
             this.useElementsForGroups = useElementsForGroups;
+            return this;
+        }
+
+        /**
+         * If set to false, default attribute values won't be persisted
+         * @param marshallDefault weather default values should be persisted or not.
+         * @return builder
+         */
+        public PersistentResourceXMLBuilder setMarshallDefaultValues(boolean marshallDefault) {
+            this.marshallDefaultValues = marshallDefault;
             return this;
         }
 
