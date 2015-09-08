@@ -28,7 +28,9 @@ public interface KernelServices extends ModelTestKernelServices<KernelServices> 
      *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
      *                   ensure themselves that the relevant attachments get set.     * @return the transformed operation
      * @throws IllegalStateException if this is not the test's main model controller
+     * @deprecated use {@link #executeInMainAndGetTheTransformedOperation(ModelNode, ModelVersion)} instead.
      */
+    @Deprecated
     TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
                                             TransformerOperationAttachment attachment) throws OperationFailedException;
 
@@ -66,6 +68,20 @@ public interface KernelServices extends ModelTestKernelServices<KernelServices> 
      *
      * @param op the operation to execute
      * @return the attachment or {@code null} if there is none.
+     * @deprecated This never worked properly, use {@link #executeInMainAndGetTheTransformedOperation(ModelNode, ModelVersion)} instead
      */
+    @Deprecated
     TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op);
+
+    /**
+     * Execute an operation in the main controller, and get hold of the transformed operation. This
+     * is useful for testing cases when the transformer needs to check the current state of the model.
+     * Note that if the transformation ends up rejecting the operation, the main controller will not be rolled back
+     * to its previous state.
+     *
+     * @param op the operation to transform
+     * @param modelVersion
+     * @return the transformed operation
+     */
+    TransformedOperation executeInMainAndGetTheTransformedOperation(ModelNode op, ModelVersion modelVersion);
 }

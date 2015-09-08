@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.subsystem.test.transformers.subsystem;
+package org.jboss.as.subsystem.test.transformers.subsystem.simple;
 
 import java.lang.reflect.Method;
 import java.util.List;
