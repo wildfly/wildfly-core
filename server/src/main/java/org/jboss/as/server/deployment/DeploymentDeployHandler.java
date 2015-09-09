@@ -48,6 +48,7 @@ public class DeploymentDeployHandler implements OperationStepHandler {
         this.vaultReader = vaultReader;
     }
 
+    @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         ModelNode model = resource.getModel();
@@ -58,7 +59,7 @@ public class DeploymentDeployHandler implements OperationStepHandler {
         final String name = address.getLastElement().getValue();
         final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(CONTENT_ALL.resolveModelAttribute(context, model));
-        DeploymentHandlerUtil.deploy(context, runtimeName, name, vaultReader, contents);
+        DeploymentHandlerUtil.deploy(context, operation, runtimeName, name, vaultReader, contents);
         DeploymentUtils.enableAttribute(model);
     }
 }

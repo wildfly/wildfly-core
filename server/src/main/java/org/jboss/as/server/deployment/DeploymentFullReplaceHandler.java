@@ -168,7 +168,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
             DeploymentHandlerUtil.replace(context, deploymentModel, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
         } else if (wasDeployed) {
-            DeploymentHandlerUtil.undeploy(context, name, runtimeName, vaultReader);
+            DeploymentHandlerUtil.undeploy(context, operation, name, runtimeName, vaultReader);
         }
 
         context.completeStep(new OperationContext.ResultHandler() {
