@@ -189,11 +189,19 @@ class WorkerAdd extends AbstractAddStepHandler {
             }
         }
 
-        final WorkerService workerService = new WorkerService(builder.getMap());
+        OptionMap options = builder.getMap();
+        registerMax(context, name, options);
 
+        final WorkerService workerService = new WorkerService(options);
         ServiceName serviceName = IO_WORKER_RUNTIME_CAPABILITY.getCapabilityServiceName(name, XnioWorker.class);
         context.getServiceTarget().addService(serviceName, workerService)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
+    }
+
+    private void registerMax(OperationContext context, String name, OptionMap options) {
+        ServiceName serviceName = IORootDefinition.IO_MAX_THREADS_RUNTIME_CAPABILITY.getCapabilityServiceName();
+        MaxThreadTrackerService service = (MaxThreadTrackerService) context.getServiceRegistry(false).getRequiredService(serviceName).getService();
+        service.registerWorkerMax(name, options.get(Options.WORKER_TASK_MAX_THREADS));
     }
 }
