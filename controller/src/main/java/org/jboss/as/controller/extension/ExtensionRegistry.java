@@ -66,7 +66,6 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -1019,7 +1018,7 @@ public class ExtensionRegistry {
         }
 
         @Override
-        public Set<Capability> getCapabilities() {
+        public Set<RuntimeCapability> getCapabilities() {
             return deployments.getCapabilities();
         }
     }

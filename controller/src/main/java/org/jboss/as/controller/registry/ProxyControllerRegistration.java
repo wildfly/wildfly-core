@@ -41,7 +41,6 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
@@ -347,7 +346,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return Collections.emptySet();
     }
 

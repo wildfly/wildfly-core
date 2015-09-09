@@ -46,7 +46,6 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -86,7 +85,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, AttributeAccess> attributesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "attributes"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, Empty> orderedChildUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "orderedChildTypes"));
 
-    private final Set<Capability>  capabilities = new CopyOnWriteArraySet<>();
+    private final Set<RuntimeCapability>  capabilities = new CopyOnWriteArraySet<>();
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
@@ -660,7 +659,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return Collections.unmodifiableSet(capabilities);
     }
 

@@ -165,7 +165,9 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
      *                 is invoked before that method is. Will not be {@code null}
      */
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        for (RuntimeCapability capability : capabilities) {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+
+        for (RuntimeCapability capability : capabilitySet) {
             if (capability.isDynamicallyNamed()) {
                 context.deregisterCapability(capability.getDynamicName(context.getCurrentAddressValue()));
             } else {

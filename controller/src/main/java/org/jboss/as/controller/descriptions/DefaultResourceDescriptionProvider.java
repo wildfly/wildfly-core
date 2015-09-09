@@ -79,7 +79,7 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
         final ResourceBundle bundle = descriptionResolver.getResourceBundle(locale);
         result.get(DESCRIPTION).set(descriptionResolver.getResourceDescription(locale, bundle));
 
-        Set<Capability> capabilities = registration.getCapabilities();
+        Set<? extends Capability> capabilities = registration.getCapabilities();
         if (capabilities!=null&&!capabilities.isEmpty()){
             for (Capability capability: capabilities) {
                 ModelNode cap = result.get(ModelDescriptionConstants.CAPABILITIES).add();

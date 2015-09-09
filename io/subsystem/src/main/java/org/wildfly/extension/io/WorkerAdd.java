@@ -58,7 +58,7 @@ class WorkerAdd extends AbstractAddStepHandler {
     static final WorkerAdd INSTANCE = new WorkerAdd();
 
     private WorkerAdd() {
-        super(WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY, ATTRIBUTES);
+        super(ATTRIBUTES);
     }
 
     private static int getMaxDescriptorCount() {

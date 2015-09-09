@@ -67,7 +67,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -1087,7 +1086,7 @@ final class SubsystemTestDelegate {
         }
 
         @Override
-        public Set<Capability> getCapabilities() {
+        public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
         }
 
