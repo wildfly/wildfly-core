@@ -201,13 +201,12 @@ public class LoggingExtension implements Extension {
             final SimpleResourceDefinition deploymentSubsystem = new SimpleResourceDefinition(LoggingResourceDefinition.SUBSYSTEM_PATH, getResourceDescriptionResolver("deployment"));
             final ManagementResourceRegistration deployments = subsystem.registerDeploymentModel(deploymentSubsystem);
             final ManagementResourceRegistration configurationResource = deployments.registerSubModel(LoggingDeploymentResources.CONFIGURATION);
-            configurationResource.registerSubModel(LoggingDeploymentResources.HANDLER).setRuntimeOnly(true);
-            configurationResource.registerSubModel(LoggingDeploymentResources.LOGGER).setRuntimeOnly(true);
-            configurationResource.registerSubModel(LoggingDeploymentResources.FORMATTER).setRuntimeOnly(true);
-            configurationResource.registerSubModel(LoggingDeploymentResources.FILTER).setRuntimeOnly(true);
-            configurationResource.registerSubModel(LoggingDeploymentResources.POJO).setRuntimeOnly(true);
-            configurationResource.registerSubModel(LoggingDeploymentResources.ERROR_MANAGER).setRuntimeOnly(true);
-            configurationResource.setRuntimeOnly(true);
+            configurationResource.registerSubModel(LoggingDeploymentResources.HANDLER);
+            configurationResource.registerSubModel(LoggingDeploymentResources.LOGGER);
+            configurationResource.registerSubModel(LoggingDeploymentResources.FORMATTER);
+            configurationResource.registerSubModel(LoggingDeploymentResources.FILTER);
+            configurationResource.registerSubModel(LoggingDeploymentResources.POJO);
+            configurationResource.registerSubModel(LoggingDeploymentResources.ERROR_MANAGER);
         }
 
         subsystem.registerXMLElementWriter(LoggingSubsystemWriter.INSTANCE);
@@ -240,7 +239,7 @@ public class LoggingExtension implements Extension {
                     .setParentAttribute(CommonAttributes.FILE)
                     .build();
             final LogFileResourceDefinition logFileResourceDefinition = new LogFileResourceDefinition(pathManager);
-            registration.registerSubModel(logFileResourceDefinition).setRuntimeOnly(true);
+            registration.registerSubModel(logFileResourceDefinition);
         }
 
         final RootLoggerResourceDefinition rootLoggerResourceDefinition = new RootLoggerResourceDefinition(includeLegacyAttributes);

@@ -51,8 +51,8 @@ class ClassLoadingResourceDefinition extends SimpleResourceDefinition {
     static final ClassLoadingResourceDefinition INSTANCE = new ClassLoadingResourceDefinition();
 
     private ClassLoadingResourceDefinition() {
-        super(PlatformMBeanConstants.CLASS_LOADING_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.CLASS_LOADING));
+        super(new Parameters(PlatformMBeanConstants.CLASS_LOADING_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.CLASS_LOADING)).setRuntime());
     }
 
     @Override
@@ -66,9 +66,6 @@ class ClassLoadingResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : READ_WRITE_ATTRIBUTES) {
             registration.registerReadWriteAttribute(attribute, ClassLoadingMXBeanAttributeHandler.INSTANCE, ClassLoadingMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
 

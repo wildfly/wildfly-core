@@ -47,7 +47,6 @@ import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-@SuppressWarnings("deprecation")
 public class DelegatingManagementResourceRegistration implements ManagementResourceRegistration {
 
     /**
@@ -201,6 +200,7 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setRuntimeOnly(boolean runtimeOnly) {
         getDelegate().setRuntimeOnly(runtimeOnly);
     }

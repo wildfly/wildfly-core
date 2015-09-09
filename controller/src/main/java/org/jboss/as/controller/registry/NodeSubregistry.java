@@ -82,9 +82,9 @@ final class NodeSubregistry {
         return new HashSet<String>(snapshot.keySet());
     }
 
-    ManagementResourceRegistration register(final String elementValue, final ResourceDefinition provider, boolean runtimeOnly, boolean ordered) {
+    ManagementResourceRegistration register(final String elementValue, final ResourceDefinition provider, boolean ordered) {
         final AbstractResourceRegistration newRegistry =
-                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, runtimeOnly, ordered, capabilityRegistry);
+                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));

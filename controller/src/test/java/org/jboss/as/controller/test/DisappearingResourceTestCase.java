@@ -321,11 +321,9 @@ public class DisappearingResourceTestCase extends AbstractControllerTestBase {
         ManagementResourceRegistration subsystemRegistration = registration.registerSubModel(
                 new SimpleResourceDefinition(SUBSYSTEM_ELEMENT, new NonResolvingResourceDescriptionResolver()));
         ManagementResourceRegistration parentReg = subsystemRegistration.registerSubModel(
-                new SimpleResourceDefinition(PARENT_ELEMENT, new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PARENT_ELEMENT, new NonResolvingResourceDescriptionResolver()).setRuntime()));
         ManagementResourceRegistration runtimeResource = parentReg.registerSubModel(
-                new SimpleResourceDefinition(CHILD_WILDCARD_ELEMENT, new NonResolvingResourceDescriptionResolver()));
-        runtimeResource.setRuntimeOnly(true);
-        parentReg.setRuntimeOnly(true);
+                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(CHILD_WILDCARD_ELEMENT, new NonResolvingResourceDescriptionResolver()).setRuntime()));
         AttributeDefinition runtimeAttr = TestUtils.createAttribute(ATTR, ModelType.LONG, GROUP);
         runtimeResource.registerReadOnlyAttribute(runtimeAttr, new OperationStepHandler() {
             @Override

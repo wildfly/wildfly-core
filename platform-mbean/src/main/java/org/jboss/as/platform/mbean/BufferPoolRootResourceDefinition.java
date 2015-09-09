@@ -35,8 +35,8 @@ class BufferPoolRootResourceDefinition extends SimpleResourceDefinition {
     static final BufferPoolRootResourceDefinition INSTANCE = new BufferPoolRootResourceDefinition();
 
     private BufferPoolRootResourceDefinition() {
-        super(PlatformMBeanConstants.BUFFER_POOL_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.BUFFER_POOL));
+        super(new Parameters(PlatformMBeanConstants.BUFFER_POOL_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.BUFFER_POOL)).setRuntime());
     }
 
     @Override
@@ -49,9 +49,6 @@ class BufferPoolRootResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(BufferPoolResourceDefinition.INSTANCE);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }
 

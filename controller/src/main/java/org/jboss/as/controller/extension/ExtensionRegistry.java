@@ -796,6 +796,7 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public void setRuntimeOnly(final boolean runtimeOnly) {
             deployments.setRuntimeOnly(runtimeOnly);
             subdeployments.setRuntimeOnly(runtimeOnly);
