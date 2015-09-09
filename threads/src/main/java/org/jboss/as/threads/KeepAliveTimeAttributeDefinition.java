@@ -19,12 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.threads;
-
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -33,21 +28,28 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import javax.xml.stream.XMLStreamException;
-
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
-import org.jboss.as.controller.PropagatingCorrector;
+import org.jboss.as.controller.ParameterCorrector;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.controller.transform.TransformationContext;
+import org.jboss.as.controller.transform.description.AttributeConverter;
+import org.jboss.as.controller.transform.description.AttributeConverter.DefaultAttributeConverter;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 
 /**
  * {@link org.jboss.as.controller.AttributeDefinition} for a thread pool resource's keepalive-time attribute.
@@ -58,6 +60,7 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
 
     static final SimpleAttributeDefinition KEEPALIVE_TIME_TIME = new SimpleAttributeDefinitionBuilder(CommonAttributes.TIME, ModelType.LONG, false)
             .setAllowExpression(true)
+            .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .build();
 
     static final SimpleAttributeDefinition KEEPALIVE_TIME_UNIT = new SimpleAttributeDefinitionBuilder(CommonAttributes.UNIT, ModelType.STRING, false)
@@ -65,10 +68,11 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
             .setValidator(new EnumValidator<TimeUnit>(TimeUnit.class, false, true))
             .build();
 
-
     static final RejectAttributeChecker TRANSFORMATION_CHECKER;
-    static {
 
+    static final AttributeConverter TIME_UNIT_TRANSFORMER = new TimeUnitAttributeConverter();
+
+    static {
         Map<String, RejectAttributeChecker> fieldCheckers = new HashMap<String, RejectAttributeChecker>();
         fieldCheckers.put(KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_TIME.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
         fieldCheckers.put(KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_UNIT.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
@@ -76,8 +80,7 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
     }
 
     KeepAliveTimeAttributeDefinition() {
-        super(Builder.of(CommonAttributes.KEEPALIVE_TIME, KEEPALIVE_TIME_TIME, KEEPALIVE_TIME_UNIT)
-                .setCorrector(PropagatingCorrector.INSTANCE));
+        super(Builder.of(CommonAttributes.KEEPALIVE_TIME, KEEPALIVE_TIME_TIME).setCorrector(new UnitConvertor()));
     }
 
     @Override
@@ -97,7 +100,13 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
         ModelNode model = new ModelNode();
 
         final int attrCount = reader.getAttributeCount();
-        Set<Attribute> required = EnumSet.of(Attribute.TIME, Attribute.UNIT);
+        Set<Attribute> required;
+        Namespace namespace = Namespace.forUri(reader.getNamespaceURI());
+        if (namespace == Namespace.THREADS_1_0 || namespace == Namespace.THREADS_1_1) {
+            required = EnumSet.of(Attribute.TIME, Attribute.UNIT);
+        } else {
+            required = EnumSet.of(Attribute.TIME);
+        }
         for (int i = 0; i < attrCount; i++) {
             requireNoNamespaceAttribute(reader, i);
             final String value = reader.getAttributeValue(i);
@@ -124,5 +133,31 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
         ParseUtils.requireNoContent(reader);
 
         operation.get(getName()).set(model);
+    }
+
+    private static class UnitConvertor implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            if (newValue.isDefined()) {
+                if (newValue.hasDefined(CommonAttributes.TIME) && newValue.get(CommonAttributes.TIME).getType() != ModelType.EXPRESSION) {
+                    if (newValue.hasDefined(CommonAttributes.UNIT) && newValue.get(CommonAttributes.UNIT).getType() != ModelType.EXPRESSION) {
+                        TimeUnit unit = TimeUnit.valueOf(newValue.get(CommonAttributes.UNIT).asString());
+                        newValue.get(CommonAttributes.TIME).set(unit.toMillis(newValue.get(CommonAttributes.TIME).asLong()));
+                        newValue.remove(CommonAttributes.UNIT);
+                    }
+                }
+            }
+            return newValue;
+        }
+    }
+
+    private static class TimeUnitAttributeConverter extends DefaultAttributeConverter {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (attributeValue.hasDefined(CommonAttributes.TIME) && !attributeValue.hasDefined(CommonAttributes.UNIT)) {
+                attributeValue.get(CommonAttributes.UNIT).set(TimeUnit.MILLISECONDS.name());
+            }
+        }
     }
 }

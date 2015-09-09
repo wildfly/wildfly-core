@@ -57,7 +57,6 @@ import static org.jboss.as.threads.CommonAttributes.THREAD_FACTORY;
 import static org.jboss.as.threads.CommonAttributes.THREAD_NAME_PATTERN;
 import static org.jboss.as.threads.CommonAttributes.TIME;
 import static org.jboss.as.threads.CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.UNIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -161,9 +160,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
                 .asType());
         assertEquals(ModelType.LONG, blockingBoundedQueueThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE)
                 .require(TIME).require(TYPE).asType());
-        assertEquals(ModelType.STRING,
-                blockingBoundedQueueThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE).require(UNIT)
-                        .require(TYPE).asType());
         assertEquals(ModelType.BOOLEAN, blockingBoundedQueueThreadPoolDesc.require(ATTRIBUTES).require(ALLOW_CORE_TIMEOUT)
                 .require(TYPE).asType());
         assertFalse(blockingBoundedQueueThreadPoolDesc.require(ATTRIBUTES).has(HANDOFF_EXECUTOR));
@@ -183,9 +179,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
                 .asType());
         assertEquals(ModelType.LONG, boundedQueueThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE)
                 .require(TIME).require(TYPE).asType());
-        assertEquals(ModelType.STRING,
-                boundedQueueThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE).require(UNIT)
-                        .require(TYPE).asType());
         assertEquals(ModelType.BOOLEAN, boundedQueueThreadPoolDesc.require(ATTRIBUTES).require(ALLOW_CORE_TIMEOUT)
                 .require(TYPE).asType());
         assertEquals(ModelType.STRING, boundedQueueThreadPoolDesc.require(ATTRIBUTES).require(HANDOFF_EXECUTOR).require(TYPE)
@@ -198,9 +191,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(ModelType.INT, blockingQueueLessThreadPoolDesc.require(ATTRIBUTES).require(MAX_THREADS).require(TYPE).asType());
         assertEquals(ModelType.LONG, blockingQueueLessThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE)
                 .require(TIME).require(TYPE).asType());
-        assertEquals(ModelType.STRING,
-                blockingQueueLessThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE).require(UNIT)
-                        .require(TYPE).asType());
         assertFalse(blockingQueueLessThreadPoolDesc.require(ATTRIBUTES).has(HANDOFF_EXECUTOR));
 
         ModelNode queueLessThreadPoolDesc = threadsDescription.get(CHILDREN, QUEUELESS_THREAD_POOL, MODEL_DESCRIPTION, "*");
@@ -210,9 +200,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(ModelType.INT, queueLessThreadPoolDesc.require(ATTRIBUTES).require(MAX_THREADS).require(TYPE).asType());
         assertEquals(ModelType.LONG, queueLessThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE)
                 .require(TIME).require(TYPE).asType());
-        assertEquals(ModelType.STRING,
-                queueLessThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE).require(UNIT)
-                        .require(TYPE).asType());
         assertEquals(ModelType.STRING, queueLessThreadPoolDesc.require(ATTRIBUTES).require(HANDOFF_EXECUTOR).require(TYPE)
                 .asType());
 
@@ -223,9 +210,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(ModelType.INT, scheduledThreadPoolDesc.require(ATTRIBUTES).require(MAX_THREADS).require(TYPE).asType());
         assertEquals(ModelType.LONG, scheduledThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE)
                 .require(TIME).require(TYPE).asType());
-        assertEquals(ModelType.STRING,
-                scheduledThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE).require(UNIT)
-                        .require(TYPE).asType());
 
         ModelNode unboundedThreadPoolDesc = threadsDescription.get(CHILDREN, UNBOUNDED_QUEUE_THREAD_POOL, MODEL_DESCRIPTION,
                 "*");
@@ -235,9 +219,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(ModelType.INT, unboundedThreadPoolDesc.require(ATTRIBUTES).require(MAX_THREADS).require(TYPE).asType());
         assertEquals(ModelType.LONG, unboundedThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE)
                 .require(TIME).require(TYPE).asType());
-        assertEquals(ModelType.STRING,
-                unboundedThreadPoolDesc.require(ATTRIBUTES).require(KEEPALIVE_TIME).require(VALUE_TYPE).require(UNIT)
-                        .require(TYPE).asType());
 
     }
 
@@ -387,7 +368,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(1, threadPool.keys().size());
         assertEquals(100, threadPool.require("test-pool").require(MAX_THREADS).asInt());
         assertEquals(1000L, threadPool.require("test-pool").require(KEEPALIVE_TIME).require(TIME).asLong());
-        assertEquals("MILLISECONDS", threadPool.require("test-pool").require(KEEPALIVE_TIME).require(UNIT).asString());
     }
 
     @Test
@@ -507,7 +487,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(1, threadPool.keys().size());
         assertEquals(100, threadPool.require("test-pool").require(MAX_THREADS).asInt());
         assertEquals(1000L, threadPool.require("test-pool").require(KEEPALIVE_TIME).get(TIME).asLong());
-        assertEquals("MILLISECONDS", threadPool.require("test-pool").require(KEEPALIVE_TIME).get(UNIT).asString());
     }
 
     @Test
@@ -636,7 +615,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(2, threadPool.keys().size());
         assertEquals(100, threadPool.require("test-pool").require(MAX_THREADS).asInt());
         assertEquals(1000L, threadPool.require("test-pool").require(KEEPALIVE_TIME).require(TIME).asLong());
-        assertEquals("MILLISECONDS", threadPool.require("test-pool").require(KEEPALIVE_TIME).require(UNIT).asString());
         assertEquals("other", threadPool.require("test-pool").require("handoff-executor").asString());
     }
 
@@ -741,7 +719,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(1, threadPool.keys().size());
         assertEquals(100, threadPool.require("test-pool").require(MAX_THREADS).asInt());
         assertEquals(1000L, threadPool.require("test-pool").require(KEEPALIVE_TIME).require(TIME).asLong());
-        assertEquals("MILLISECONDS", threadPool.require("test-pool").require(KEEPALIVE_TIME).require(UNIT).asString());
         assertFalse(threadPool.has("handoff-executor"));
     }
 
@@ -878,7 +855,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(300, threadPool.require("test-pool").require(QUEUE_LENGTH).asInt());
         assertEquals(100, threadPool.require("test-pool").require(MAX_THREADS).asInt());
         assertEquals(1000L, threadPool.require("test-pool").require(KEEPALIVE_TIME).require(TIME).asLong());
-        assertEquals("MILLISECONDS", threadPool.require("test-pool").require(KEEPALIVE_TIME).require(UNIT).asString());
         assertEquals("other", threadPool.require("test-pool").require("handoff-executor").asString());
     }
 
@@ -1010,7 +986,6 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
         assertEquals(300, threadPool.require("test-pool").require(QUEUE_LENGTH).asInt());
         assertEquals(100, threadPool.require("test-pool").require(MAX_THREADS).asInt());
         assertEquals(1000L, threadPool.require("test-pool").require(KEEPALIVE_TIME).require(TIME).asLong());
-        assertEquals("MILLISECONDS", threadPool.require("test-pool").require(KEEPALIVE_TIME).require(UNIT).asString());
         assertFalse(threadPool.has(HANDOFF_EXECUTOR));
     }
 
