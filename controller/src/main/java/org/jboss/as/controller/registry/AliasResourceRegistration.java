@@ -64,6 +64,16 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    public int getMaxOccurs() {
+        return target.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return target.getMaxOccurs();
+    }
+
+    @Override
     OperationEntry getOperationEntry(final ListIterator<PathElement> iterator, final String operationName, OperationEntry inherited) {
         OperationEntry targetOp = target.getOperationEntry(iterator, operationName, inherited);
         if (targetOp == null) {

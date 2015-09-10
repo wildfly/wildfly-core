@@ -95,6 +95,16 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public int getMaxOccurs() {
+        return getDelegate().getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return getDelegate().getMinOccurs();
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         return getDelegate().isRuntimeOnly();
     }

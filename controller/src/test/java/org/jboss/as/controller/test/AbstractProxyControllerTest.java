@@ -485,7 +485,7 @@ public abstract class AbstractProxyControllerTest {
 
     private void checkHostSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
 
-        assertEquals(5, result.keys().size());
+        assertEquals(result.toString(), 6, result.keys().size());
         assertEquals("description", result.get(DESCRIPTION).asString());
         assertEquals("serverchild", result.get(CHILDREN, "serverchild", DESCRIPTION).asString());
         assertEquals(1, result.get(CHILDREN, "serverchild", MODEL_DESCRIPTION).keys().size());

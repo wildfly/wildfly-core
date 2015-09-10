@@ -60,6 +60,16 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     }
 
     @Override
+    public int getMaxOccurs() {
+        return delegate.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return delegate.getMinOccurs();
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         return delegate.isRuntimeOnly();
     }
