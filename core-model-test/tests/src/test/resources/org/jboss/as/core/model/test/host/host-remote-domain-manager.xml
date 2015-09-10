@@ -28,7 +28,9 @@
     </management>
 
     <domain-controller>
-       <remote host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm" protocol="remote" />
+       <!-- ignore-unused-configuration is set here so the XML comparision test with pass w
+hen this file is loaded with .getResource() and compared to the built model -->
+       <remote host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm" protocol="remote" ignore-unused-configuration="true"/>
     </domain-controller>
 
     <interfaces>

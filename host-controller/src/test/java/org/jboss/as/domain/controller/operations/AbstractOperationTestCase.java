@@ -168,6 +168,11 @@ public abstract class AbstractOperationTestCase {
         public Collection<String> getAllowedOrigins() {
             return Collections.EMPTY_LIST;
         }
+
+        @Override
+        public boolean isBackupDc() {
+            return false;
+        }
     };
 
     MockOperationContext getOperationContext() {
