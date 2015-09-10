@@ -27,8 +27,10 @@ package org.jboss.as.cli.handlers.ifelse;
  */
 public class EqualsOperation extends SameTypeOperation {
 
+    static final String SYMBOL = "==";
+
     EqualsOperation() {
-        super(ExpressionParser.EQ);
+        super(SYMBOL);
     }
 
     @Override

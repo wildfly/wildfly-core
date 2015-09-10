@@ -58,14 +58,14 @@ class IfElseControlFlow implements CommandLineRedirection {
     private List<String> elseBlock;
     private boolean inElse;
 
-    IfElseControlFlow(CommandContext ctx, String ifCondition, String ifRequest) throws CommandLineException {
+    IfElseControlFlow(CommandContext ctx, Operation ifCondition, String ifRequest) throws CommandLineException {
         if(ifCondition == null) {
             throw new IllegalArgumentException("Condition is null");
         }
         if(ifRequest == null) {
             throw new IllegalArgumentException("Condition request is null");
         }
-        this.ifCondition = new ExpressionParser().parseExpression(ifCondition);
+        this.ifCondition = ifCondition;
         this.ifRequest = ctx.buildRequest(ifRequest);
         ctx.set(CTX_KEY, this);
     }

@@ -25,20 +25,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.AND;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.OR;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.EQ;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.NOT_EQ;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.GT;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.LT;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.NGT;
-import static org.jboss.as.cli.handlers.ifelse.ExpressionParser.NLT;
-
 import java.util.List;
 
-import org.jboss.as.cli.handlers.ifelse.ExpressionParser;
+import org.jboss.as.cli.CommandFormatException;
+import org.jboss.as.cli.completion.mock.MockCommandContext;
+import org.jboss.as.cli.handlers.ifelse.ConditionArgument;
+import org.jboss.as.cli.handlers.ifelse.IfHandler;
+import org.jboss.as.cli.handlers.ifelse.ModelNodePathOperand;
 import org.jboss.as.cli.handlers.ifelse.Operand;
 import org.jboss.as.cli.handlers.ifelse.Operation;
+import org.jboss.as.cli.handlers.ifelse.StringValueOperand;
+import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
+import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -47,12 +46,32 @@ import org.junit.Test;
  */
 public class IfExpressionParsingTestCase {
 
-    private ExpressionParser parser = new ExpressionParser();
+    static final String AND = "&&";
+    static final String OR = "||";
+    static final String EQ = "==";
+    static final String NOT_EQ = "!=";
+    static final String GT = ">";
+    static final String LT = "<";
+    static final String NGT = "<=";
+    static final String NLT = ">=";
+
+    private static MockCommandContext CTX;
+    private static DefaultOperationRequestAddress ADDRESS;
+    private static DefaultCallbackHandler LINE;
+    private static ConditionArgument CONDITION;
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        CTX = new MockCommandContext();
+        ADDRESS = new DefaultOperationRequestAddress();
+        LINE = new DefaultCallbackHandler();
+        final IfHandler ifHandler = new IfHandler();
+        CONDITION = ifHandler.getConditionArgument();
+    }
 
     @Test
     public void testParenthesesMixed() throws Exception {
-        parser.reset();
-        Operation op = parser.parseExpression("((a==b || c<=d && e>f) && g!=h || i>=j) && (k<l && m>n || o==p)");
+        Operation op = parseExpression("(((a==b || c<=d && e>f) && g!=h || i>=j) && (k<l && m>n || o==p))");
         assertOperation(op, AND, 2);
         final List<Operand> topOperands = op.getOperands();
 
@@ -92,8 +111,7 @@ public class IfExpressionParsingTestCase {
 
     @Test
     public void testSimpleParentheses() throws Exception {
-        parser.reset();
-        Operation op = parser.parseExpression("  a >=b && (c<d || e> f )&&  g  !=  h ");
+        Operation op = parseExpression("(  a >=b && (c<d || e> f )&&  g  !=  h )");
         assertOperation(op, AND, 3);
         final List<Operand> operands = op.getOperands();
 
@@ -111,8 +129,7 @@ public class IfExpressionParsingTestCase {
 
     @Test
     public void testMixNoParentheses() throws Exception {
-        parser.reset();
-        Operation op = parser.parseExpression("  a>b && c>=d && e<f ||  g <= h && i==j || k != l");
+        Operation op = parseExpression("(  a>b && c>=d && e<f ||  g <= h && i==j || k != l)");
         assertOperation(op, OR, 3);
         final List<Operand> operands = op.getOperands();
 
@@ -133,8 +150,7 @@ public class IfExpressionParsingTestCase {
 
     @Test
     public void testOrSequence() throws Exception {
-        parser.reset();
-        Operation op = parser.parseExpression("a == b || c== d||e==f");
+        Operation op = parseExpression("(a == b || c== d||e==f)");
         assertOperation(op, OR, 3);
         final List<Operand> operands = op.getOperands();
         assertComparison(operands.get(0), EQ, "a", "b");
@@ -144,13 +160,66 @@ public class IfExpressionParsingTestCase {
 
     @Test
     public void testAndSequence() throws Exception {
-        parser.reset();
-        Operation op = parser.parseExpression("a==b && c == d && e == f");
+        Operation op = parseExpression("(a==b && c == d && e == f)");
         assertOperation(op, AND, 3);
         final List<Operand> operands = op.getOperands();
         assertComparison(operands.get(0), EQ, "a", "b");
         assertComparison(operands.get(1), EQ, "c", "d");
         assertComparison(operands.get(2), EQ, "e", "f");
+    }
+
+
+    @Test
+    public void testOrAndSequence() throws Exception {
+        Operand op = parseExpression("(a == b || c == d && e == f)");
+        assertOperation(op, "||", 2);
+        List<Operand> operands = ((Operation) op).getOperands();
+        assertComparison(operands.get(0), EQ, "a", "b");
+
+        op = operands.get(1);
+        assertOperation(op, "&&", 2);
+        operands = ((Operation) op).getOperands();
+        assertComparison(operands.get(0), EQ, "c", "d");
+        assertComparison(operands.get(1), EQ, "e", "f");
+    }
+
+    @Test
+    public void testAndOrSequence() throws Exception {
+        Operand op = parseExpression("(a == b && c == d || e == f)");
+        assertOperation(op, "||", 2);
+        List<Operand> operands = ((Operation) op).getOperands();
+
+        assertComparison(operands.get(1), EQ, "e", "f");
+
+        op = operands.get(0);
+        assertOperation(op, "&&", 2);
+        operands = ((Operation) op).getOperands();
+        assertComparison(operands.get(0), EQ, "a", "b");
+        assertComparison(operands.get(1), EQ, "c", "d");
+    }
+
+    @Test
+    public void testNoParenthesis() throws Exception {
+        Operand op = parseExpression("result.value==true");
+        assertOperation(op, "==", 2);
+        List<Operand> operands = ((Operation) op).getOperands();
+        assertEquals("result.value", operands.get(0).toString());
+        assertEquals("true", operands.get(1).toString());
+        assertTrue(operands.get(0) instanceof ModelNodePathOperand);
+    }
+
+    @Test
+    public void testQuotedSpecialCharacters() throws Exception {
+
+        Operation op = parseExpression("(outcome == success && result.value != \"a64180c0)e7187af86b435229de904104\\\"\")");
+        assertOperation(op, AND, 2);
+        assertComparison(((Operation)op).getOperands().get(0), EQ, "outcome", "success");
+        assertComparison(((Operation)op).getOperands().get(1), NOT_EQ, "result.value", "\"a64180c0)e7187af86b435229de904104\"\"");
+
+        op = parseExpression("(outcome == success && result.value != a64180c0\\)e7187af86b435229de904104\\\")");
+        assertOperation(op, AND, 2);
+        assertComparison(((Operation)op).getOperands().get(0), EQ, "outcome", "success");
+        assertComparison(((Operation)op).getOperands().get(1), NOT_EQ, "result.value", "a64180c0)e7187af86b435229de904104\"");
     }
 
     protected void assertOperation(Operand operand, String opName, int operandsTotal) {
@@ -168,5 +237,13 @@ public class IfExpressionParsingTestCase {
         assertEquals(2, op.getOperands().size());
         assertEquals(left, op.getOperands().get(0).toString());
         assertEquals(right, op.getOperands().get(1).toString());
+        // for the given impl the below is expected to be true
+        assertTrue(op.getOperands().get(0) instanceof ModelNodePathOperand);
+        assertTrue(op.getOperands().get(1) instanceof StringValueOperand);
+    }
+
+    protected Operation parseExpression(String condition) throws CommandFormatException {
+        LINE.parse(ADDRESS, "if " + condition + " of /a=b:c", CTX);
+        return CONDITION.resolveOperation(LINE);
     }
 }
