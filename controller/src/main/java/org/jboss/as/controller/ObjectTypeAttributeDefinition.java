@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -123,7 +122,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
     @Override
     public ModelNode addResourceAttributeDescription(ResourceBundle bundle, String prefix, ModelNode resourceDescription) {
         final ModelNode result = super.addResourceAttributeDescription(bundle, prefix, resourceDescription);
-        addValueTypeDescription(result, prefix, bundle, null, null);
+        addValueTypeDescription(result, prefix, bundle, false, null, null);
         return result;
     }
 
@@ -131,14 +130,14 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                                                       final ResourceDescriptionResolver resolver,
                                                       final Locale locale, final ResourceBundle bundle) {
         final ModelNode result = super.addOperationParameterDescription(resourceDescription, operationName, resolver, locale, bundle);
-        addValueTypeDescription(result, getName(), bundle, resolver, locale);
+        addValueTypeDescription(result, getName(), bundle, true, resolver, locale);
         return result;
     }
 
     public ModelNode addResourceAttributeDescription(final ModelNode resourceDescription, final ResourceDescriptionResolver resolver,
                                                      final Locale locale, final ResourceBundle bundle) {
         final ModelNode result = super.addResourceAttributeDescription(resourceDescription, resolver, locale, bundle);
-        addValueTypeDescription(result, getName(), bundle, resolver, locale);
+        addValueTypeDescription(result, getName(), bundle, false, resolver, locale);
         return result;
     }
 
@@ -146,7 +145,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
     @Override
     public ModelNode addOperationParameterDescription(ResourceBundle bundle, String prefix, ModelNode operationDescription) {
         final ModelNode result = super.addOperationParameterDescription(bundle, prefix, operationDescription);
-        addValueTypeDescription(result, prefix, bundle, null, null);
+        addValueTypeDescription(result, prefix, bundle, true, null, null);
         return result;
     }
 
@@ -194,10 +193,25 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
+    /**
+     *
+     * @deprecated use #addValueTypeDescription(ModelNode, String, ResourceBundle, boolean, ResourceDescriptionResolver, Locale)
+     */
+    @Deprecated
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
+                                               final ResourceDescriptionResolver resolver,
+                                               final Locale locale) {
+        addValueTypeDescription(node, prefix, bundle, false, resolver, locale);
+    }
+
+    protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
+                                           boolean forOperation,
                                            final ResourceDescriptionResolver resolver,
                                            final Locale locale) {
         for (AttributeDefinition valueType : valueTypes) {
+            if (forOperation && valueType.isResourceOnly()) {
+                continue; //WFCORE-597
+            }
             // get the value type description of the attribute
             final ModelNode valueTypeDesc = valueType.getNoTextDescription(false);
             if(valueTypeDesc.has(ModelDescriptionConstants.ATTRIBUTE_GROUP)) {
@@ -228,7 +242,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             // if it is of type OBJECT itself (add its nested descriptions)
             // seeing that OBJECT represents a grouping, use prefix+"."+suffix for naming the entries
             if (valueType instanceof ObjectTypeAttributeDefinition) {
-                ObjectTypeAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, resolver, locale);
+                ObjectTypeAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, forOperation, resolver, locale);
             }
             // if it is of type LIST, and its value type
             // seeing that LIST represents a grouping, use prefix+"."+suffix for naming the entries
