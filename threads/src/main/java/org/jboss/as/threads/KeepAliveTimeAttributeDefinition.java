@@ -85,7 +85,7 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
 
 
     @Override
-    protected void addValueTypeDescription(ModelNode node, String prefix, ResourceBundle bundle, final ResourceDescriptionResolver resolver, Locale locale) {
+    protected void addValueTypeDescription(ModelNode node, String prefix, ResourceBundle bundle, boolean forOperation, final ResourceDescriptionResolver resolver, Locale locale) {
         // Swap out the resolver to use the threadpool.common keys
         ResourceDescriptionResolver override = new StandardResourceDescriptionResolver("threadpool.common", "", getClass().getClassLoader()) {
             @Override
@@ -93,7 +93,7 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
                 return resolver.getResourceBundle(locale);
             }
         };
-        super.addValueTypeDescription(node, prefix, bundle, override, locale);
+        super.addValueTypeDescription(node, prefix, bundle, forOperation, override, locale);
     }
 
     public void parseAndSetParameter(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
