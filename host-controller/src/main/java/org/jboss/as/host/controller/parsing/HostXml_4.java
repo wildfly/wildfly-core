@@ -688,7 +688,6 @@ class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
 
         requireDiscoveryOptions = parseRemoteDomainControllerAttributes(reader, address, list);
 
-
         Set<String> types = new HashSet<String>();
         Set<String> staticDiscoveryOptionNames = new HashSet<String>();
         Set<String> discoveryOptionNames = new HashSet<String>();
