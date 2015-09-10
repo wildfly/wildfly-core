@@ -21,7 +21,6 @@
  */
 package org.jboss.as.cli.operation.impl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,6 +53,8 @@ import org.jboss.dmr.Property;
  * @author Alexey Loubyansky
  */
 public class DefaultOperationCandidatesProvider implements OperationCandidatesProvider {
+
+    private static final SimpleTabCompleter NO_CANDIDATES_COMPLETER = new SimpleTabCompleter(new String[]{});
 
     private static final CommandLineCompleter BOOLEAN_HEADER_COMPLETER = new CommandLineCompleter(){
 
@@ -397,22 +398,40 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             @Override
             public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
                 final String propName = ctx.getParsedCommandLine().getPropertyValue(Util.NAME);
-                if (propName != null) {
-                    final ModelNode req = new ModelNode();
-                    final ModelNode addrNode = req.get(Util.ADDRESS);
-                    for (OperationRequestAddress.Node node : address) {
-                        addrNode.add(node.getType(), node.getName());
-                    }
-                    req.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
-                    try {
-                        ModelNode response = ctx.getModelControllerClient().execute(req);
-                        if (response.get(Util.RESULT, Util.ATTRIBUTES, propName, Util.FILESYSTEM_PATH).asBoolean()) {
-                            return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-                        }
-                    } catch (IOException e) {
-                    }
+                if(propName == null) {
+                    return NO_CANDIDATES_COMPLETER;
                 }
-                return new SimpleDependentValueCompleter(address, Util.NAME);
+
+                final ModelNode req = new ModelNode();
+                final ModelNode addrNode = req.get(Util.ADDRESS);
+                for (OperationRequestAddress.Node node : address) {
+                    addrNode.add(node.getType(), node.getName());
+                }
+                req.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
+                final ModelNode response;
+                try {
+                    response = ctx.getModelControllerClient().execute(req);
+                } catch (Exception e) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+                final ModelNode result = response.get(Util.RESULT);
+                if (!result.isDefined()) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+                final ModelNode attrs = result.get(Util.ATTRIBUTES);
+                if(!attrs.isDefined()) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+                final ModelNode attrDescr = attrs.get(propName);
+                if(!attrDescr.isDefined()) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+
+                if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
+                    return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+                }
+
+                return new AttributeTypeDescrValueCompleter(attrDescr);
             }});
         addGlobalOpPropCompleter(Util.READ_OPERATION_DESCRIPTION, Util.NAME, new CommandLineCompleterFactory(){
             @Override
