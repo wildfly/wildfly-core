@@ -279,6 +279,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     // If the CLI is not in interact mode, act like there is no console.
     private boolean interact = false;
 
+    // whether the CLI should prompt for security related input
+    // in the non-interactive mode or terminate abruptly instead
+    private boolean securityPrompts = true;
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -323,6 +327,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.username = configuration.getUsername();
         this.password = configuration.getPassword();
         this.disableLocalAuth = configuration.isDisableLocalAuth();
+        this.securityPrompts = configuration.isSecurityPrompts();
         this.clientBindAddress = configuration.getClientBindAddress();
 
         resolveParameterValues = config.isResolveParameterValues();
@@ -1061,7 +1066,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      *
      * @return true if the certificate validation should be retried.
      */
-    private boolean handleSSLFailure(Certificate[] lastChain) throws CommandLineException {
+    private void handleSSLFailure(Certificate[] lastChain) throws CommandLineException {
         printLine("Unable to connect due to unrecognised server certificate");
         for (Certificate current : lastChain) {
             if (current instanceof X509Certificate) {
@@ -1078,6 +1083,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
         }
 
+        if(!securityPrompts) {
+            printLine("Security prompts are disabled for this session.");
+            return;
+        }
+
         for (;;) {
             String response;
             if (trustManager.isModifyTrustStore()) {
@@ -1087,18 +1097,18 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
 
             if (response == null)
-                return false;
+                break;
             else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
-                        return false;
+                        break;
                     case 't':
                         trustManager.storeChainTemporarily(lastChain);
-                        return true;
+                        break;
                     case 'p':
                         if (trustManager.isModifyTrustStore()) {
                             trustManager.storeChainPermenantly(lastChain);
-                            return true;
+                            break;
                         }
                 }
             }
@@ -1605,13 +1615,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     if (username == null) {
                         showRealm();
                         try {
+                            if(!securityPrompts) {
+                                throw new CommandLineException("security prompts are disabled for this session");
+                            }
+                            if(console == null) {
+                                initBasicConsole(null);
+                            }
                             console.setCompletion(false);
                             console.getHistory().setUseHistory(false);
                             username = readLine("Username: ", false);
                             console.getHistory().setUseHistory(true);
                             console.setCompletion(true);
                         } catch (CommandLineException e) {
-                            throw new IOException("Failed to read username.", e);
+                            // the messages of the cause are lost if nested here
+                            throw new IOException("Failed to read username: " + e.getLocalizedMessage());
                         }
                         if (username == null || username.length() == 0) {
                             throw new SaslException("No username supplied.");
@@ -1626,13 +1643,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         showRealm();
                         String temp;
                         try {
+                            if(!securityPrompts) {
+                                throw new CommandLineException("security prompts are disabled for this session");
+                            }
+                            if(console == null) {
+                                initBasicConsole(null);
+                            }
                             console.setCompletion(false);
                             console.getHistory().setUseHistory(false);
                             temp = readLine("Password: ", true);
                             console.getHistory().setUseHistory(true);
                             console.setCompletion(true);
                         } catch (CommandLineException e) {
-                            throw new IOException("Failed to read password.", e);
+                            // the messages of the cause are lost if nested here
+                            throw new IOException("Failed to read password: " + e.getLocalizedMessage());
                         }
                         if (temp != null) {
                             password = temp.toCharArray();
