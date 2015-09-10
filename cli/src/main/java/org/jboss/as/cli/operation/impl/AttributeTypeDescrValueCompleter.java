@@ -30,67 +30,29 @@ import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.DefaultCompleter;
-import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * This completer completes values of a parameter that depends on the value
- * of the other parameter whose value is the name of the resource property.
- * E.g. this completer can be used for parameter 'value' of the write-attribute
- * operation where parameter 'name' defines the value set for the parameter 'value'.
+ * This completer completes values of a parameter based on its description.
  *
  * @author Alexey Loubyansky
  */
-public class SimpleDependentValueCompleter extends DefaultCompleter {
+public class AttributeTypeDescrValueCompleter extends DefaultCompleter {
 
     private static final List<String> BOOLEAN = Arrays.asList(new String[]{"false", "true"});
 
-    public SimpleDependentValueCompleter(final OperationRequestAddress address, final String idProperty) {
+    public AttributeTypeDescrValueCompleter(final ModelNode attrDescr) {
         super(new CandidatesProvider(){
-
-            ModelNode allAttrs;
 
             @Override
             public Collection<String> getAllCandidates(CommandContext ctx) {
-                final String propName = ctx.getParsedCommandLine().getPropertyValue(idProperty);
-                if(propName == null) {
-                    return Collections.emptyList();
-                }
 
-                if(allAttrs == null) {
-                    final ModelNode req = new ModelNode();
-                    final ModelNode addrNode = req.get(Util.ADDRESS);
-                    for(OperationRequestAddress.Node node : address) {
-                        addrNode.add(node.getType(), node.getName());
-                    }
-                    req.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
-                    final ModelNode response;
-                    try {
-                        response = ctx.getModelControllerClient().execute(req);
-                    } catch (Exception e) {
-                        return Collections.emptyList();
-                    }
-                    final ModelNode result = response.get(Util.RESULT);
-                    if(!result.isDefined()) {
-                        return Collections.emptyList();
-                    }
-                    allAttrs = result.get(Util.ATTRIBUTES);
-                }
-
-                if(!allAttrs.isDefined()) {
-                    return Collections.emptyList();
-                }
-                final ModelNode propDescr = allAttrs.get(propName);
-                if(!propDescr.isDefined()) {
-                    return Collections.emptyList();
-                }
-
-                final ModelNode typeNode = propDescr.get(Util.TYPE);
+                final ModelNode typeNode = attrDescr.get(Util.TYPE);
                 if(typeNode.isDefined() && typeNode.asType().equals(ModelType.BOOLEAN)) {
                     return BOOLEAN;
-                } else if(propDescr.has(Util.ALLOWED)) {
-                    final ModelNode allowedNode = propDescr.get(Util.ALLOWED);
+                } else if(attrDescr.has(Util.ALLOWED)) {
+                    final ModelNode allowedNode = attrDescr.get(Util.ALLOWED);
                     if(allowedNode.isDefined()) {
                         final List<ModelNode> nodeList = allowedNode.asList();
                         final List<String> values = new ArrayList<String>(nodeList.size());
