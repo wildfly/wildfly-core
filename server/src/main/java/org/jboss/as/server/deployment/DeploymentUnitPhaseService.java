@@ -155,7 +155,11 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             }
         }
 
-        final Phase nextPhase = phase.next();
+        Phase nextPhase = phase.next();
+        // Skip CLEANUP phase if we allow restart, since the processors associated with this phase can't restore their state on undeploy
+        if (allowRestart && (nextPhase == Phase.CLEANUP)) {
+            nextPhase = nextPhase.next();
+        }
         if (nextPhase != null) {
             final ServiceName serviceName = DeploymentUtils.getDeploymentUnitPhaseServiceName(deploymentUnit, nextPhase);
             final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, nextPhase);
