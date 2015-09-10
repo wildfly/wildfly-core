@@ -501,4 +501,27 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         Assert.assertEquals("test456", executeForResult(ra).asString());
     }
 
+    @Test
+    public void testComplexListValue()throws Exception{
+
+        //test List<Object>
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName());
+        ModelNode value = new ModelNode();
+        value.get(ATTR_1.getName()).set("complex value");
+        value.get(ATTR_2.getName()).set(true);
+        op.get("value").set(value);
+        executeCheckNoFailure(op);
+
+        ModelNode readOp = createOperation("read-attribute", TEST_ADDRESS);
+        readOp.get("name").set(OBJECT_LIST.getName());
+        ModelNode result = executeForResult(readOp);
+        Assert.assertEquals(1, result.asList().size());
+
+        executeCheckNoFailure(op);
+
+        result = executeForResult(readOp);
+        Assert.assertEquals(2, result.asList().size());
+    }
+
 }
