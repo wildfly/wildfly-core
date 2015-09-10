@@ -77,7 +77,6 @@ public interface PoolAttributeDefinitions {
             .build();
 
     // Metrics
-
     AttributeDefinition CURRENT_THREAD_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.CURRENT_THREAD_COUNT, ModelType.INT)
             .setUndefinedMetricValue(new ModelNode(0))
             .build();

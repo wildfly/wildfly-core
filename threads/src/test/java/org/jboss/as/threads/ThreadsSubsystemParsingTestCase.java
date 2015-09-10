@@ -63,8 +63,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import javax.xml.stream.XMLStreamException;
 import java.util.List;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
@@ -1071,7 +1071,7 @@ public class ThreadsSubsystemParsingTestCase extends AbstractSubsystemTest {
 
 
     private List<ModelNode> createSubSystem(String subsystemContents) throws Exception {
-        return createSubSystem(subsystemContents, Namespace.CURRENT);
+        return createSubSystem(subsystemContents, Namespace.THREADS_1_1);
     }
 
     private List<ModelNode> createSubSystem(String subsystemContents, Namespace namespace) throws Exception {
