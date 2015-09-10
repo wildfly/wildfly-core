@@ -141,6 +141,8 @@
         </server>
         <server name="reload-two" group="reload-test-group"  auto-start="false">
             <jvm name="default" />
+            <!-- this is for ServerRestartRequiredTestCase.testSocketBinding() unless the socket-binding-group is actually used for something it is ignored on the slaves, this is a quick fix before correcting the test -->
+            <socket-bindings socket-binding-group="reload-sockets" port-offset="1550"/>
         </server>
     </servers>
 

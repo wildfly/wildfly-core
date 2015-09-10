@@ -54,6 +54,14 @@ public interface LocalHostControllerInfo {
      boolean isMasterDomainController();
 
     /**
+     * Whether we are acting as a backup DC or not (started with the --backup option)
+     *
+     * @return {@code true} if we intend to be able to take over as DC
+     *
+     */
+    boolean isBackupDc();
+
+    /**
      * Gets the name of the interface on which the host listens for native management requests.
      *
      * @return the logical interface name
