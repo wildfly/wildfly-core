@@ -24,6 +24,8 @@ package org.wildfly.extension.security.manager.logging;
 
 import static org.jboss.logging.Logger.Level.INFO;
 
+import javax.xml.namespace.QName;
+import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.logging.BasicLogger;
@@ -31,6 +33,7 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.Param;
 
 /**
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
@@ -46,7 +49,7 @@ public interface SecurityManagerLogger extends BasicLogger {
     void installingWildFlySecurityManager();
 
     /**
-     * Create {@link javax.xml.stream.XMLStreamException} to indicate an invalid version was found in the permissions element.
+     * Creates a {@link javax.xml.stream.XMLStreamException} to indicate an invalid version was found in the permissions element.
      *
      * @param found the version that was found in the element.
      * @param expected the expected version.
@@ -55,4 +58,64 @@ public interface SecurityManagerLogger extends BasicLogger {
     @Message(id = 2, value = "Invalid version found in the permissions element. Found %s, expected %s")
     XMLStreamException invalidPermissionsXMLVersion(String found, String expected);
 
+    /**
+     * Creates a {@link javax.xml.stream.XMLStreamException} to indicate an unexpected element was found in the permissions.xml file.
+     *
+     * @param name the unexpected element name.
+     * @param location the location of the error.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    @Message(id = 3, value = "Unexpected element '%s' encountered")
+    XMLStreamException unexpectedElement(QName name, @Param Location location);
+
+    /**
+     * Creates a {@link javax.xml.stream.XMLStreamException} to indicate an unexpected attribute was found in the permissions.xml file.
+     *
+     * @param name the unexpected attribute name.
+     * @param location the location of the error.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    @Message(id = 4, value = "Unexpected attribute '%s' encountered")
+    XMLStreamException unexpectedAttribute(QName name, @Param Location location);
+
+    /**
+     * Create a {@link javax.xml.stream.XMLStreamException} to indicate an unexpected end of document.
+     *
+     * @param location the location of the error.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    @Message(id = 5, value = "Unexpected end of document")
+    XMLStreamException unexpectedEndOfDocument(@Param Location location);
+
+    /**
+     * Creates a {@link javax.xml.stream.XMLStreamException} indicating there are missing required attribute(s).
+     *
+     * @param sb the missing attributes.
+     * @param location the location of the error.
+     *
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    @Message(id = 6, value = "Missing required attribute(s): %s")
+    XMLStreamException missingRequiredAttributes(StringBuilder sb, @Param Location location);
+
+    /**
+     * Creates a {@link javax.xml.stream.XMLStreamException} indicating there are missing required element(s).
+     *
+     * @param sb the missing elements.
+     * @param location the location of the error.
+     *
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    @Message(id = 7, value = "Missing required element(s): %s")
+    XMLStreamException missingRequiredElements(StringBuilder sb, @Param Location location);
+
+    /**
+     * Creates a {@link javax.xml.stream.XMLStreamException} indicating the presence of an unexpected content type.
+     *
+     * @param type the unexpected type.
+     * @param location the location of the error.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    @Message(id = 8, value = "Unexpected content of type %s")
+    XMLStreamException unexpectedContentType(String type, @Param Location location);
 }

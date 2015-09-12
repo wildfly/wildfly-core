@@ -189,6 +189,7 @@
         <module>protocol</module>
         <module>remoting</module>
         <module>request-controller</module>
+        <module>security-manager</module>
         <module>self-contained</module>
         <module>server</module>
         <module>subsystem-test</module>
@@ -817,6 +818,12 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-request-controller</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-security-manager</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

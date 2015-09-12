@@ -36,7 +36,6 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.metadata.parser.util.NoopXMLResolver;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.PermissionFactory;
@@ -168,7 +167,6 @@ public class PermissionsParseProcessor implements DeploymentUnitProcessor {
         try {
             inputStream = file.openStream();
             final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            inputFactory.setXMLResolver(NoopXMLResolver.create());
             XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(inputStream);
             return PermissionsParser.parse(xmlReader, loader, identifier);
         } catch (Exception e) {

@@ -25,15 +25,15 @@ package org.wildfly.extension.security.manager.deployment;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.metadata.parser.util.MetaDataElementParser;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.ModularPermissionFactory;
@@ -46,7 +46,7 @@ import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class PermissionsParser extends MetaDataElementParser {
+public class PermissionsParser {
 
     public static List<PermissionFactory> parse(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
             throws XMLStreamException {
@@ -62,7 +62,7 @@ public class PermissionsParser extends MetaDataElementParser {
                             return parsePermissions(reader, loader, identifier);
                         }
                         default: {
-                            throw MetaDataElementParser.unexpectedElement(reader);
+                            throw unexpectedElement(reader);
                         }
                     }
                 }
@@ -71,7 +71,7 @@ public class PermissionsParser extends MetaDataElementParser {
                 }
             }
         }
-        throw endOfDocument(reader.getLocation());
+        throw unexpectedEndOfDocument(reader);
     }
 
     private static List<PermissionFactory> parsePermissions(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
@@ -95,7 +95,7 @@ public class PermissionsParser extends MetaDataElementParser {
                     break;
                 }
                 default: {
-                    throw MetaDataElementParser.unexpectedAttribute(reader, i);
+                    throw unexpectedAttribute(reader, i);
                 }
             }
             requiredAttributes.remove(attribute);
@@ -103,7 +103,7 @@ public class PermissionsParser extends MetaDataElementParser {
 
         // check if all required attributes were parsed.
         if (!requiredAttributes.isEmpty())
-            throw MetaDataElementParser.missingRequired(reader, requiredAttributes);
+            throw missingRequiredAttributes(reader, requiredAttributes);
 
         // parse the permissions sub-elements.
         while (reader.hasNext()) {
@@ -120,7 +120,7 @@ public class PermissionsParser extends MetaDataElementParser {
                             break;
                         }
                         default: {
-                            throw MetaDataElementParser.unexpectedElement(reader);
+                            throw unexpectedElement(reader);
                         }
                     }
                     break;
@@ -130,14 +130,14 @@ public class PermissionsParser extends MetaDataElementParser {
                 }
             }
         }
-        throw endOfDocument(reader.getLocation());
+        throw unexpectedEndOfDocument(reader);
     }
 
     private static PermissionFactory parsePermission(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
             throws XMLStreamException {
 
         // permission element has no attributes.
-        MetaDataElementParser.requireNoAttributes(reader);
+        requireNoAttributes(reader);
 
         String permissionClass = null;
         String permissionName = null;
@@ -161,22 +161,22 @@ public class PermissionsParser extends MetaDataElementParser {
                     requiredElements.remove(element);
                     switch (element) {
                         case CLASS_NAME: {
-                            MetaDataElementParser.requireNoAttributes(reader);
+                            requireNoAttributes(reader);
                             permissionClass = reader.getElementText();
                             break;
                         }
                         case NAME: {
-                            MetaDataElementParser.requireNoAttributes(reader);
+                            requireNoAttributes(reader);
                             permissionName = reader.getElementText();
                             break;
                         }
                         case ACTIONS: {
-                            MetaDataElementParser.requireNoAttributes(reader);
+                            requireNoAttributes(reader);
                             permissionActions = reader.getElementText();
                             break;
                         }
                         default: {
-                            throw MetaDataElementParser.unexpectedElement(reader);
+                            throw unexpectedElement(reader);
                         }
                     }
                     break;
@@ -186,7 +186,7 @@ public class PermissionsParser extends MetaDataElementParser {
                 }
             }
         }
-        throw endOfDocument(reader.getLocation());
+        throw unexpectedEndOfDocument(reader);
     }
 
     private static XMLStreamException unexpectedContent(final XMLStreamReader reader) {
@@ -241,19 +241,92 @@ public class PermissionsParser extends MetaDataElementParser {
                 kind = "unknown";
                 break;
         }
-        final StringBuilder b = new StringBuilder("Unexpected content of type '").append(kind).append('\'');
-        if (reader.hasName()) {
-            b.append(" named '").append(reader.getName()).append('\'');
-        }
-        if (reader.hasText()) {
-            b.append(", text is: '").append(reader.getText()).append('\'');
-        }
-        return new XMLStreamException(b.toString(), reader.getLocation());
+        return SecurityManagerLogger.ROOT_LOGGER.unexpectedContentType(kind, reader.getLocation());
     }
 
-    private static XMLStreamException endOfDocument(final Location location) {
-        return new XMLStreamException("Unexpected end of document", location);
+    /**
+     * Gets an exception reporting an unexpected end of XML document.
+     *
+     * @param reader a reference to the stream reader.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    private static XMLStreamException unexpectedEndOfDocument(final XMLStreamReader reader) {
+        return SecurityManagerLogger.ROOT_LOGGER.unexpectedEndOfDocument(reader.getLocation());
     }
+
+    /**
+     * Gets an exception reporting an unexpected XML element.
+     *
+     * @param reader a reference to the stream reader.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    private static XMLStreamException unexpectedElement(final XMLStreamReader reader) {
+        return SecurityManagerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), reader.getLocation());
+    }
+
+    /**
+     * Gets an exception reporting an unexpected XML attribute.
+     *
+     * @param reader a reference to the stream reader.
+     * @param index the attribute index.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    private static XMLStreamException unexpectedAttribute(final XMLStreamReader reader, final int index) {
+        return SecurityManagerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), reader.getLocation());
+    }
+
+    /**
+     * Checks that the current element has no attributes, throwing an {@link javax.xml.stream.XMLStreamException} if one is found.
+     *
+     * @param reader a reference to the stream reader.
+     * @throws {@link javax.xml.stream.XMLStreamException} if an error occurs.
+     */
+    private static void requireNoAttributes(final XMLStreamReader reader) throws XMLStreamException {
+        if (reader.getAttributeCount() > 0) {
+            throw unexpectedAttribute(reader, 0);
+        }
+    }
+
+    /**
+     * Gets an exception reporting missing required XML attribute(s).
+     *
+     * @param reader a reference to the stream reader
+     * @param required a set of enums whose toString method returns the attribute name.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    private static XMLStreamException missingRequiredAttributes(final XMLStreamReader reader, final Set<?> required) {
+        final StringBuilder builder = new StringBuilder();
+        Iterator<?> iterator = required.iterator();
+        while (iterator.hasNext()) {
+            final Object o = iterator.next();
+            builder.append(o.toString());
+            if (iterator.hasNext()) {
+                builder.append(", ");
+            }
+        }
+        return SecurityManagerLogger.ROOT_LOGGER.missingRequiredAttributes(builder, reader.getLocation());
+    }
+
+    /**
+     * Get an exception reporting missing required XML element(s).
+     *
+     * @param reader a reference to the stream reader.
+     * @param required a set of enums whose toString method returns the element name.
+     * @return the constructed {@link javax.xml.stream.XMLStreamException}.
+     */
+    private static XMLStreamException missingRequiredElement(final XMLStreamReader reader, final Set<?> required) {
+        final StringBuilder builder = new StringBuilder();
+        Iterator<?> iterator = required.iterator();
+        while (iterator.hasNext()) {
+            final Object o = iterator.next();
+            builder.append(o.toString());
+            if (iterator.hasNext()) {
+                builder.append(", ");
+            }
+        }
+        return SecurityManagerLogger.ROOT_LOGGER.missingRequiredElements(builder, reader.getLocation());
+    }
+
 
     /**
      * <p>
