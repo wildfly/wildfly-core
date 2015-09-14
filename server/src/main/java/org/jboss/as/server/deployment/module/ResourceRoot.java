@@ -27,15 +27,17 @@ import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.SimpleAttachable;
+import org.jboss.modules.ResourceLoader;
 import org.jboss.vfs.VirtualFile;
 
 /**
  * @author John E. Bailey
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ResourceRoot extends SimpleAttachable {
 
-
+    private final ResourceLoader loader;
     private final String rootName;
     private final VirtualFile root;
     private final MountHandle mountHandle;
@@ -50,18 +52,30 @@ public final class ResourceRoot extends SimpleAttachable {
         this.rootName = rootName;
         this.root = root;
         this.mountHandle = mountHandle;
+        this.loader = null;
+    }
+
+    public ResourceRoot(final ResourceLoader loader) {
+        this.loader = loader;
+        this.rootName = null;
+        this.root = null;
+        this.mountHandle = null;
     }
 
     public String getRootName() {
-        return rootName;
+        return loader != null ? loader.getRootName() : rootName;
     }
 
     public VirtualFile getRoot() {
-        return root;
+        return loader != null ? null : root;
+    }
+
+    public ResourceLoader getLoader() {
+        return loader;
     }
 
     public MountHandle getMountHandle() {
-        return mountHandle;
+        return loader != null ? null : mountHandle; // TODO: eliminate this method
     }
 
     public List<FilterSpecification> getExportFilters() {
@@ -74,6 +88,8 @@ public final class ResourceRoot extends SimpleAttachable {
         builder.append("ResourceRoot [");
         if (root != null)
             builder.append("root=").append(root);
+        if (loader != null)
+            builder.append("loader=").append(loader);
         builder.append("]");
         return builder.toString();
     }
