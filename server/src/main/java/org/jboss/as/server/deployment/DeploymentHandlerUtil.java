@@ -183,7 +183,6 @@ public class DeploymentHandlerUtil {
                 registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), vaultReader, overlays);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
-                .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.getPathManagerInjector())
                 .addDependency(contentsServiceName, File.class, service.contentsInjector)
                 .setInitialMode(ServiceController.Mode.ACTIVE)

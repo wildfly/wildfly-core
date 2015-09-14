@@ -30,7 +30,6 @@ import java.util.Locale;
 import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
-import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -56,17 +55,11 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
         if(deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT) != null) {
             return;
         }
-        final DeploymentMountProvider deploymentMountProvider = deploymentUnit.getAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY);
-        if(deploymentMountProvider == null) {
-            throw ServerLogger.ROOT_LOGGER.noDeploymentRepositoryAvailable();
-        }
-
         final File deploymentContentsFile = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
         final VirtualFile deploymentContents = VFS.getChild(deploymentContentsFile.toURI());
 
         // internal deployments do not have any contents, so there is nothing to mount
-        if (deploymentContents == null)
-            return;
+        if (deploymentContents == null) return;
 
         final VirtualFile deploymentRoot;
         final MountHandle mountHandle;
@@ -92,7 +85,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
                 } else {
                     type = MountType.ZIP;
                 }
-                handle = deploymentMountProvider.mountDeploymentContent(deploymentContents, deploymentRoot, type);
+                handle = mountDeploymentContent(deploymentContents, deploymentRoot, type);
                 mountHandle = new MountHandle(handle);
             } catch (IOException e) {
                 failed = true;
@@ -107,6 +100,19 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
         ModuleRootMarker.mark(resourceRoot);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, resourceRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());
+    }
+
+    private Closeable mountDeploymentContent(final VirtualFile contents, VirtualFile mountPoint, MountType type) throws IOException {
+        switch (type) {
+            case ZIP:
+                return VFS.mountZip(contents, mountPoint);
+            case EXPANDED:
+                return VFS.mountZipExpanded(contents, mountPoint);
+            case REAL:
+                return VFS.mountReal(contents.getPhysicalFile(), mountPoint);
+            default:
+                throw ServerLogger.ROOT_LOGGER.unknownMountType(type);
+        }
     }
 
     private boolean explode(final String depName) {

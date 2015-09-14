@@ -32,7 +32,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.services.security.AbstractVaultReader;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.value.InjectedValue;
 
@@ -43,7 +42,6 @@ import org.jboss.msc.value.InjectedValue;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
-    private final InjectedValue<DeploymentMountProvider> serverDeploymentRepositoryInjector = new InjectedValue<DeploymentMountProvider>();
     private final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<PathManager>();
     private final String name;
     private final String managementName;
@@ -89,17 +87,10 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, deploymentOverlays);
         deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManagerInjector.getValue());
 
-        // Attach the deployment repo
-        deploymentUnit.putAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY, serverDeploymentRepositoryInjector.getValue());
-
         // For compatibility only
         addSVH(deploymentUnit);
 
         return deploymentUnit;
-    }
-
-    Injector<DeploymentMountProvider> getServerDeploymentRepositoryInjector() {
-        return serverDeploymentRepositoryInjector;
     }
 
     InjectedValue<PathManager> getPathManagerInjector() {

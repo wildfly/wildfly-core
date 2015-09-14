@@ -38,7 +38,6 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.selfcontained.SelfContainedContentRepository;
 import org.jboss.as.server.deployment.ContentCleanerService;
-import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.RemoteFileRepositoryService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
@@ -149,7 +148,6 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
             RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir());
         }
         ContentCleanerService.addService(serviceTarget, ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
-        DeploymentMountProvider.Factory.addService(serviceTarget);
         ServiceModuleLoader.addService(serviceTarget, configuration);
         ExternalModuleService.addService(serviceTarget);
         ModuleIndexService.addService(serviceTarget);

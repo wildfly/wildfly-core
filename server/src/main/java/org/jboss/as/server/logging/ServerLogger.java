@@ -901,9 +901,6 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 158, value = "Failed to instantiate a %s")
     DeploymentUnitProcessingException failedToInstantiateClassFileTransformer(String clazz, @Cause Exception cause);
 
-    @Message(id = 159, value = "No deployment repository available.")
-    DeploymentUnitProcessingException noDeploymentRepositoryAvailable();
-
     @Message(id = 160, value = "Failed to mount deployment content")
     DeploymentUnitProcessingException deploymentMountFailed(@Cause IOException cause);
 

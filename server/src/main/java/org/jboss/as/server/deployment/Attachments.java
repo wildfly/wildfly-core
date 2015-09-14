@@ -163,11 +163,6 @@ public final class Attachments {
     public static final AttachmentKey<ExtensionInfo> EXTENSION_INFORMATION = AttachmentKey.create(ExtensionInfo.class);
 
     /**
-     * The server deployment repository
-     */
-    public static final AttachmentKey<DeploymentMountProvider> SERVER_DEPLOYMENT_REPOSITORY = AttachmentKey.create(DeploymentMountProvider.class);
-
-    /**
      * An annotation index for a (@link ResourceRoot). This is attached to the {@link ResourceRoot}s of the deployment that contain
      * the annotations
      */
