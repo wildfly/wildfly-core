@@ -43,7 +43,7 @@ import org.jboss.dmr.ModelType;
 abstract class AbstractCollectionHandler implements OperationStepHandler {
 
     static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinition("name", ModelType.STRING, false);
-    static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinition("value", ModelType.STRING, true);
+    static final SimpleAttributeDefinition VALUE = GlobalOperationAttributes.VALUE;
 
     private final AttributeDefinition[] attributes;
     private final boolean requiredReadWriteAccess;
@@ -61,7 +61,11 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
     protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
         NAME.validateAndSet(operation, model);
         for (AttributeDefinition attr : attributes) {
-            attr.validateAndSet(operation, model);
+            if (attr == VALUE){//don't validate VALUE attribute WFCORE-826
+                model.get(VALUE.getName()).set(operation.get(VALUE.getName()));
+            }else {
+                attr.validateAndSet(operation, model);
+            }
         }
     }
 

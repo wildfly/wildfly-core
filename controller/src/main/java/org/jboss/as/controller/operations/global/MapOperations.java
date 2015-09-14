@@ -135,7 +135,7 @@ public class MapOperations {
 
         void updateModel(final OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException {
             String key = KEY.resolveModelAttribute(context, model).asString();
-            ModelNode value = VALUE.resolveModelAttribute(context, model);
+            ModelNode value = model.get(VALUE.getName());
             attribute.get(key).set(value);
         }
     }
