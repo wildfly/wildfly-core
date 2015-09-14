@@ -21,6 +21,8 @@
  */
 package org.jboss.as.server.deployment.module;
 
+import org.jboss.modules.Resource;
+import org.jboss.modules.ResourceLoader;
 import org.jboss.vfs.VirtualFile;
 
 import java.io.IOException;
@@ -39,33 +41,28 @@ final class Utils {
         // forbidden instantiation
     }
 
-    /**
-     * Get a manifest from a virtual file, assuming the virtual file is the root of an archive
-     *
-     * @param archive the root the archive
-     * @return the manifest or null if not found
-     * @throws IOException if there is an error reading the manifest or the virtual file is closed
-     */
-    static Manifest getManifest(final VirtualFile archive) throws IOException {
-        if (archive == null) {
-            return null;
+    static Manifest getManifest(final ResourceRoot resourceRoot) throws IOException {
+        final ResourceLoader loader = resourceRoot.getLoader();
+        if (loader != null) {
+            return readManifest(loader.getResource(JarFile.MANIFEST_NAME));
+        } else {
+            return readManifest(resourceRoot.getRoot().getChild(JarFile.MANIFEST_NAME));
         }
-        final VirtualFile manifest = archive.getChild(JarFile.MANIFEST_NAME);
-        if (manifest == null || !manifest.exists()) {
-            return null;
-        }
-        return readManifest(manifest);
     }
 
-    /**
-     * Read the manifest from given manifest VirtualFile.
-     *
-     * @param manifest the VF to read from
-     * @return JAR's manifest
-     * @throws IOException if problems while opening VF stream occur
-     */
     private static Manifest readManifest(final VirtualFile manifest) throws IOException {
+        if (manifest == null || !manifest.exists()) return null;
         final InputStream stream = new PaddedManifestStream(manifest.openStream());
+        try {
+            return new Manifest(stream);
+        } finally {
+            if (stream != null) try { stream.close(); } catch (final Throwable ignored) {}
+        }
+    }
+
+    private static Manifest readManifest(final Resource manifestResource) throws IOException {
+        if (manifestResource == null) return null;
+        final InputStream stream = new PaddedManifestStream(manifestResource.openStream());
         try {
             return new Manifest(stream);
         } finally {

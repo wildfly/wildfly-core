@@ -48,18 +48,19 @@ public final class ResourceRoot extends SimpleAttachable {
         this(root.getName(), root, mountHandle);
     }
 
+    public ResourceRoot(final ResourceLoader loader, final VirtualFile root, final MountHandle mountHandle) {
+        this(loader, root.getName(), root, mountHandle);
+    }
+
     public ResourceRoot(final String rootName, final VirtualFile root, final MountHandle mountHandle) {
+        this(null, rootName, root, mountHandle);
+    }
+
+    public ResourceRoot(final ResourceLoader loader, final String rootName, final VirtualFile root, final MountHandle mountHandle) {
         this.rootName = rootName;
         this.root = root;
         this.mountHandle = mountHandle;
-        this.loader = null;
-    }
-
-    public ResourceRoot(final ResourceLoader loader) {
         this.loader = loader;
-        this.rootName = null;
-        this.root = null;
-        this.mountHandle = null;
     }
 
     public String getRootName() {

@@ -33,7 +33,6 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentUtils;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * Deployment unit processor that attaches the deployment root manifest to the context.
@@ -42,6 +41,7 @@ import org.jboss.vfs.VirtualFile;
  *
  * @author Thomas.Diesler@jboss.com
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  * @since 14-Oct-2010
  */
 public class ManifestAttachmentProcessor implements DeploymentUnitProcessor {
@@ -70,11 +70,10 @@ public class ManifestAttachmentProcessor implements DeploymentUnitProcessor {
     public static Manifest getManifest(ResourceRoot resourceRoot) throws DeploymentUnitProcessingException {
         Manifest manifest = resourceRoot.getAttachment(Attachments.MANIFEST);
         if (manifest == null) {
-            final VirtualFile deploymentRoot = resourceRoot.getRoot();
             try {
-                manifest = Utils.getManifest(deploymentRoot);
+                manifest = Utils.getManifest(resourceRoot);
             } catch (IOException e) {
-                throw ServerLogger.ROOT_LOGGER.failedToGetManifest(deploymentRoot, e);
+                throw ServerLogger.ROOT_LOGGER.failedToGetManifest(resourceRoot.getRoot(), e);
             }
         }
         return manifest;

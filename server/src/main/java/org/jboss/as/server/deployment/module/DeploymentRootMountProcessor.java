@@ -26,6 +26,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.jar.JarFile;
 
 import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -36,6 +37,8 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
 import org.jboss.as.server.deployment.MountType;
+import org.jboss.modules.ResourceLoader;
+import org.jboss.modules.ResourceLoaders;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -96,7 +99,17 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
                 }
             }
         }
-        final ResourceRoot resourceRoot = new ResourceRoot(deploymentRoot, mountHandle);
+        ResourceLoader loader;
+        if (deploymentContentsFile.isDirectory()) {
+            loader = ResourceLoaders.createFileResourceLoader(deploymentContentsFile.getName(), deploymentContentsFile);
+        } else {
+            try {
+                loader = ResourceLoaders.createJarResourceLoader(deploymentContentsFile.getName(), new JarFile(deploymentContentsFile));
+            } catch (IOException e) {
+                throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
+            }
+        }
+        final ResourceRoot resourceRoot = new ResourceRoot(loader, deploymentRoot, mountHandle);
         ModuleRootMarker.mark(resourceRoot);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, resourceRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());

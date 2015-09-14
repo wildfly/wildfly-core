@@ -237,7 +237,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
 
         final Manifest manifest;
         try {
-            manifest = Utils.getManifest(resourceRoot.getRoot());
+            manifest = Utils.getManifest(resourceRoot);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
