@@ -48,9 +48,6 @@ import org.jboss.vfs.VirtualFile;
  */
 public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
 
-    static final String EAR_EXTENSION = ".ear";
-    static final String RAR_EXTENSION = ".rar";
-    static final String SAR_EXTENSION = ".sar";
     static final String WAR_EXTENSION = ".war";
     static final String WAB_EXTENSION = ".wab";
 
@@ -113,12 +110,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
     }
 
     private boolean explode(final String depName) {
-        if (depName.endsWith(EAR_EXTENSION)) return true;
-        if (depName.endsWith(RAR_EXTENSION)) return true;
-        if (depName.endsWith(SAR_EXTENSION)) return true;
-        if (depName.endsWith(WAR_EXTENSION)) return true;
-        if (depName.endsWith(WAB_EXTENSION)) return true;
-        return false;
+        return depName.endsWith(WAR_EXTENSION) || depName.endsWith(WAB_EXTENSION);
     }
 
     public void undeploy(DeploymentUnit context) {
