@@ -163,7 +163,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
             if (profile.equals(name)) {
                 return false;
             }
-            processProfiles(domainResource, profile, profiles);
+            processProfiles(domainResource, name, profiles);
         }
         return !profiles.contains(name);
     }
@@ -217,7 +217,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
                 if (serverConfig.getSocketBindingGroup().equals(name)) {
                     return false;
                 }
-                socketBindingGroup = serverConfig.getSocketBindingGroup();
             } else {
                 if (seenGroups.contains(serverConfig.getServerGroup())) {
                     continue;
@@ -229,7 +228,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
                     return false;
                 }
             }
-            processSocketBindingGroups(domainResource, socketBindingGroup, socketBindingGroups);
+            processSocketBindingGroups(domainResource, name, socketBindingGroups);
         }
         return !socketBindingGroups.contains(name);
     }
