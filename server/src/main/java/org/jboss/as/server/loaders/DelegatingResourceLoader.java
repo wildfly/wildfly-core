@@ -32,15 +32,15 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * IterableResourceLoader that delegates all method calls to its delegate.
+ * ResourceLoader that delegates all method calls to its delegate.
  *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class DelegatingIterableResourceLoader implements IterableResourceLoader {
+class DelegatingResourceLoader implements ResourceLoader {
 
     private final IterableResourceLoader delegate;
 
-    DelegatingIterableResourceLoader(final IterableResourceLoader delegate) {
+    DelegatingResourceLoader(final IterableResourceLoader delegate) {
         this.delegate = delegate;
     }
 
@@ -86,6 +86,11 @@ class DelegatingIterableResourceLoader implements IterableResourceLoader {
     @Override
     public void close() {
         getDelegate().close();
+    }
+
+    @Override
+    public ResourceLoader getParent() {
+        return null;
     }
 
 }

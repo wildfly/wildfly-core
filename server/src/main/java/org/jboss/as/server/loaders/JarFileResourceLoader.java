@@ -24,7 +24,6 @@ package org.jboss.as.server.loaders;
 
 import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.ClassSpec;
-import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.PathUtils;
 import org.jboss.modules.Resource;
@@ -66,9 +65,10 @@ import java.util.zip.ZipOutputStream;
  * @author Thomas.Diesler@jboss.com
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class JarFileResourceLoader extends AbstractResourceLoader implements IterableResourceLoader {
+final class JarFileResourceLoader extends AbstractResourceLoader implements ResourceLoader {
     private static final String INDEX_FILE = "META-INF/PATHS.LIST";
 
+    private final ResourceLoader parent;
     private final JarFile jarFile;
     private final String rootName;
     private final URL rootUrl;
@@ -78,11 +78,11 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Iter
     // protected by {@code this}
     private final Map<CodeSigners, CodeSource> codeSources = new HashMap<>();
 
-    JarFileResourceLoader(final String rootName, final JarFile jarFile) {
-        this(rootName, jarFile, null);
+    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile) {
+        this(parent, rootName, jarFile, null);
     }
 
-    JarFileResourceLoader(final String rootName, final JarFile jarFile, final String relativePath) {
+    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String relativePath) {
         if (jarFile == null) {
             throw new IllegalArgumentException("jarFile is null");
         }
@@ -90,6 +90,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Iter
             throw new IllegalArgumentException("rootName is null");
         }
         fileOfJar = new File(jarFile.getName());
+        this.parent = parent;
         this.jarFile = jarFile;
         this.rootName = rootName;
         String realPath = relativePath == null ? null : PathUtils.canonicalize(relativePath);
@@ -102,6 +103,11 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Iter
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Invalid root file specified", e);
         }
+    }
+
+    @Override
+    public ResourceLoader getParent() {
+        return parent;
     }
 
     File getFile() {

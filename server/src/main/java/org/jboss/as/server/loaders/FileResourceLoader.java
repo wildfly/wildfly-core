@@ -23,8 +23,7 @@
 package org.jboss.as.server.loaders;
 
 import org.jboss.modules.ClassSpec;
-import org.jboss.modules.IterableResourceLoader;
-import org.jboss.modules.NativeLibraryResourceLoader;
+import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.PathUtils;
 import org.jboss.modules.Resource;
@@ -59,16 +58,18 @@ import java.util.jar.Manifest;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class FileResourceLoader extends NativeLibraryResourceLoader implements IterableResourceLoader {
+final class FileResourceLoader extends AbstractResourceLoader implements ResourceLoader {
 
+    private final File root;
+    private final ResourceLoader parent;
     private final String rootName;
     private final Manifest manifest;
     private final CodeSource codeSource;
     private final AccessControlContext context;
 
-    FileResourceLoader(final String rootName, final File root, final AccessControlContext context) {
-        super(root);
+    FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final AccessControlContext context) {
         if (root == null) {
             throw new IllegalArgumentException("root is null");
         }
@@ -78,6 +79,8 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
         if (context == null) {
             throw new IllegalArgumentException("context is null");
         }
+        this.parent = parent;
+        this.root = root;
         this.rootName = rootName;
         final File manifestFile = new File(root, "META-INF" + File.separatorChar + "MANIFEST.MF");
         manifest = readManifestFile(manifestFile);
@@ -100,6 +103,11 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
         }
         this.context = context;
         codeSource = new CodeSource(rootUrl, (CodeSigner[])null);
+    }
+
+    @Override
+    public ResourceLoader getParent() {
+        return parent;
     }
 
     private static Manifest readManifestFile(final File manifestFile) {
@@ -140,7 +148,7 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
     }
 
     private ClassSpec doGetClassSpec(final String fileName) throws IOException {
-        final File file = new File(getRoot(), fileName);
+        final File file = new File(root, fileName);
         if (! file.exists()) {
             return null;
         }
@@ -174,7 +182,7 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
             try {
                 return doPrivileged(new PrivilegedExceptionAction<PackageSpec>() {
                     public PackageSpec run() throws IOException {
-                        return getPackageSpec(name, manifest, getRoot().toURI().toURL());
+                        return getPackageSpec(name, manifest, root.toURI().toURL());
                     }
                 }, context);
             } catch (PrivilegedActionException e) {
@@ -189,13 +197,13 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
                 }
             }
         } else {
-            return getPackageSpec(name, manifest, getRoot().toURI().toURL());
+            return getPackageSpec(name, manifest, root.toURI().toURL());
         }
     }
 
     public Resource getResource(final String name) {
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(name));
-        final File file = new File(getRoot(), canonPath);
+        final File file = new File(root, canonPath);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return doPrivileged(new PrivilegedAction<Resource>() {
@@ -247,7 +255,7 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
             while (i < names.length) {
                 final String current = names[i];
                 final String full = base.isEmpty() ? current : base + "/" + current;
-                final File file = new File(getRoot(), full);
+                final File file = new File(root, full);
                 if (recursive && nested == null) {
                     final String[] children = file.list();
                     if (children != null && children.length > 0) {
@@ -290,7 +298,7 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
 
     public Iterator<Resource> iterateResources(final String startPath, final boolean recursive) {
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
-        final File start = new File(getRoot(), canonPath);
+        final File start = new File(root, canonPath);
         final String[] children = start.list();
         if (children == null || children.length == 0) {
             return Collections.<Resource>emptySet().iterator();
@@ -300,7 +308,7 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
 
     public Collection<String> getPaths() {
         final List<String> index = new ArrayList<String>();
-        final File indexFile = new File(getRoot().getPath() + ".index");
+        final File indexFile = new File(root.getPath() + ".index");
         if (ResourceLoaders.USE_INDEXES) {
             // First check for an index file
             if (indexFile.exists()) {
@@ -323,7 +331,7 @@ final class FileResourceLoader extends NativeLibraryResourceLoader implements It
         }
         // Manually build index, starting with the root path
         index.add("");
-        buildIndex(index, getRoot(), "");
+        buildIndex(index, root, "");
         if (ResourceLoaders.WRITE_INDEXES) {
             // Now try to write it
             boolean ok = false;

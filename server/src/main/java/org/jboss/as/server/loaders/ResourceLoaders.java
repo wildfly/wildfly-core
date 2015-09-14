@@ -41,10 +41,10 @@ import org.jboss.modules.filter.PathFilter;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ResourceLoaders {
-    private static final String JBOSS_TMP_DIR_PROPERTY = "jboss.server.temp.dir";
-    private static final String JVM_TMP_DIR_PROPERTY = "java.io.tmpdir";
     static final boolean USE_INDEXES;
     static final boolean WRITE_INDEXES;
+    private static final String JBOSS_TMP_DIR_PROPERTY = "jboss.server.temp.dir";
+    private static final String JVM_TMP_DIR_PROPERTY = "java.io.tmpdir";
     static final File TMP_ROOT;
 
     static {
@@ -58,20 +58,29 @@ public final class ResourceLoaders {
     private ResourceLoaders() {
     }
 
-    public static IterableResourceLoader createIterableFileResourceLoader(final String name, final File root) {
-        return new FileResourceLoader(name, root, AccessController.getContext());
+    /**
+     * Creates a new deployment resource loader.
+     * @param root deployment file or directory
+     * @return new deployment resource loader
+     * @throws IOException if some I/O error occurs
+     */
+    public static ResourceLoader newResourceLoader(final File root) throws IOException {
+        return newResourceLoader(root.getName(), root);
     }
 
     /**
-     * Create a JAR-backed iterable resource loader.  JAR resource loaders do not have native library support.
-     * Created classes have a code source with a {@code jar:} URL; nested JARs are not supported.
-     *
-     * @param name the name of the resource root
-     * @param jarFile the backing JAR file
-     * @return the resource loader
+     * Creates a new deployment resource loader.
+     * @param name deployment loader name
+     * @param root deployment file or directory
+     * @return new deployment resource loader
+     * @throws IOException if some I/O error occurs
      */
-    public static IterableResourceLoader createIterableJarResourceLoader(final String name, final JarFile jarFile) {
-        return new JarFileResourceLoader(name, jarFile);
+    public static ResourceLoader newResourceLoader(final String name, final File root) throws IOException {
+        if (root.isDirectory()) {
+            return new FileResourceLoader(null, name, root, AccessController.getContext());
+        } else {
+            return new JarFileResourceLoader(null, name, new JarFile(root));
+        }
     }
 
     /**
@@ -82,58 +91,58 @@ public final class ResourceLoaders {
      * @param originalLoader the original loader to apply to
      * @return the filtered resource loader
      */
-    public static IterableResourceLoader createIterableFilteredResourceLoader(final PathFilter pathFilter, final IterableResourceLoader originalLoader) {
+    public static ResourceLoader newFilteredResourceLoader(final PathFilter pathFilter, final IterableResourceLoader originalLoader) {
         return new FilteredIterableResourceLoader(pathFilter, originalLoader);
     }
 
     /**
-     * Creates a subresource filtered view of an iterable resource loader.
-     * Only resources under subresource path will be accessible by new loader.
+     * Creates a subdeployment filtered view of a deployment resource loader.
+     * Only resources under subdeployment path will be accessible by new loader.
      *
      * @param name the name of the resource root
-     * @param originalLoader the original loader to create filtered view from
+     * @param parentLoader the parent loader to create filtered view from
      * @param subresourcePath subresource path that will behave like the root of the archive
      * @return a subresource filtered view of an iterable resource loader.
      */
-    public static IterableResourceLoader createSubresourceIterableResourceLoader(final String name, final IterableResourceLoader originalLoader, final String subresourcePath) throws IOException {
-        if (name == null || originalLoader == null || subresourcePath == null) {
+    public static ResourceLoader newResourceLoader(final String name, final IterableResourceLoader parentLoader, final String subresourcePath) throws IOException {
+        if (name == null || parentLoader == null || subresourcePath == null) {
             throw new NullPointerException("Method parameter cannot be null");
         }
         final String subResPath = PathUtils.relativize(PathUtils.canonicalize(subresourcePath));
         if (subResPath.equals("")) {
             throw new IllegalArgumentException("Cannot create subresource loader for archive root");
         }
-        final Resource resource = originalLoader.getResource(subResPath);
+        final Resource resource = parentLoader.getResource(subResPath);
         if (resource == null) {
             throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
         }
-        IterableResourceLoader loader = originalLoader;
+        IterableResourceLoader loader = parentLoader;
         while (true) {
             if (loader instanceof FilteredIterableResourceLoader) {
                 loader = ((FilteredIterableResourceLoader)loader).getLoader();
                 continue;
             }
-            if (loader instanceof DelegatingIterableResourceLoader) {
-                loader = ((DelegatingIterableResourceLoader)loader).getDelegate();
+            if (loader instanceof DelegatingResourceLoader) {
+                loader = ((DelegatingResourceLoader)loader).getDelegate();
                 continue;
             }
             break;
         }
         if (subResPath.endsWith("/")) {
             if (loader instanceof FileResourceLoader) {
-                return new FileResourceLoader(name, new File(resource.getURL().getFile()), AccessController.getContext());
+                return new FileResourceLoader((ResourceLoader)loader, name, new File(resource.getURL().getFile()), AccessController.getContext());
             } else if (loader instanceof JarFileResourceLoader) {
-                return new JarFileResourceLoader(name, new JarFile(((JarFileResourceLoader) loader).getFile()), subResPath);
+                return new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(((JarFileResourceLoader) loader).getFile()), subResPath);
             } else {
                 throw new UnsupportedOperationException();
             }
         } else {
             if (loader instanceof FileResourceLoader) {
-                return new JarFileResourceLoader(name, new JarFile(resource.getURL().getFile()));
+                return new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(resource.getURL().getFile()));
             } else if (loader instanceof JarFileResourceLoader) {
                 final File tempFile = new File(TMP_ROOT, getLastToken(subResPath) + ".tmp" + System.currentTimeMillis());
                 IOUtils.copyAndClose(resource.openStream(), new FileOutputStream(tempFile));
-                return new DelegatingIterableResourceLoader(new JarFileResourceLoader(name, new JarFile(tempFile))) {
+                return new DelegatingResourceLoader(new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(tempFile))) {
                     @Override
                     public void close() {
                         try {

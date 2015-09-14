@@ -38,7 +38,7 @@ import org.jboss.modules.filter.PathFilters;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class FilteredIterableResourceLoader implements IterableResourceLoader {
+final class FilteredIterableResourceLoader implements ResourceLoader {
 
     private final PathFilter filter;
     private final IterableResourceLoader loader;
@@ -80,6 +80,10 @@ final class FilteredIterableResourceLoader implements IterableResourceLoader {
 
     public void close() {
         loader.close();
+    }
+
+    public ResourceLoader getParent() {
+        return null;
     }
 
     IterableResourceLoader getLoader() {

@@ -24,8 +24,6 @@ package org.jboss.as.server.loaders;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
-import static org.jboss.as.server.loaders.ResourceLoaders.createIterableFileResourceLoader;
-import static org.jboss.as.server.loaders.ResourceLoaders.createIterableJarResourceLoader;
 
 import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.Resource;
@@ -37,7 +35,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.jar.JarFile;
 
 /**
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
@@ -112,15 +109,11 @@ public class ResourceLoadersTest {
     }
 
     private IterableResourceLoader wrap(File resourceRoot) throws IOException {
-        if (resourceRoot.isDirectory()) {
-            return createIterableFileResourceLoader(EAR_RESOURCE_NAME, resourceRoot);
-        } else {
-            return createIterableJarResourceLoader(EAR_RESOURCE_NAME, new JarFile(resourceRoot));
-        }
+        return ResourceLoaders.newResourceLoader(EAR_RESOURCE_NAME, resourceRoot);
     }
 
     private IterableResourceLoader nest(String subResourceLoaderName, IterableResourceLoader delegate, String subResourcePath) throws IOException {
-        return ResourceLoaders.createSubresourceIterableResourceLoader(subResourceLoaderName, delegate, subResourcePath);
+        return ResourceLoaders.newResourceLoader(subResourceLoaderName, delegate, subResourcePath);
     }
 
     private void dumpResourceLoader(IterableResourceLoader loader) throws Exception {

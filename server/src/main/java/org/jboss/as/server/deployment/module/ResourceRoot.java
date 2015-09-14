@@ -68,7 +68,7 @@ public final class ResourceRoot extends SimpleAttachable {
     }
 
     public VirtualFile getRoot() {
-        return loader != null ? null : root;
+        return root;
     }
 
     public ResourceLoader getLoader() {
@@ -76,7 +76,7 @@ public final class ResourceRoot extends SimpleAttachable {
     }
 
     public MountHandle getMountHandle() {
-        return loader != null ? null : mountHandle; // TODO: eliminate this method
+        return mountHandle; // TODO: eliminate this method
     }
 
     public List<FilterSpecification> getExportFilters() {
