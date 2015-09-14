@@ -52,8 +52,6 @@ import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.PathUtils;
 import org.jboss.modules.Resource;
-import org.jboss.modules.filter.PathFilter;
-import org.jboss.modules.filter.PathFilters;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
@@ -67,6 +65,7 @@ import static java.security.AccessController.doPrivileged;
  *
  * @author John Bailey
  * @author Thomas.Diesler@jboss.com
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class VFSResourceLoader extends AbstractResourceLoader implements IterableResourceLoader {
 
@@ -81,26 +80,13 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
     /**
      * Construct new instance.
      *
-     * @param rootName The module root name
-     * @param root The root virtual file
+     * @param resourceRoot resource root
      * @throws IOException if the manifest could not be read or the root URL is invalid
      */
-    public VFSResourceLoader(final String rootName, final VirtualFile root) throws IOException {
-        this(rootName, root, false);
-    }
-
-    /**
-     * Construct new instance.
-     *
-     * @param rootName The module root name
-     * @param root The root virtual file
-     * @param usePhysicalCodeSource {@code true} to use the physical root URL for code sources, {@code false} to use the VFS URL
-     * @throws IOException if the manifest could not be read or the root URL is invalid
-     */
-    public VFSResourceLoader(final String rootName, final VirtualFile root, final boolean usePhysicalCodeSource) throws IOException {
+    public VFSResourceLoader(final ResourceRoot resourceRoot) throws IOException {
         final boolean checking = WildFlySecurityManager.isChecking();
-        this.root = root;
-        this.rootName = rootName;
+        this.root = resourceRoot.getRoot();
+        this.rootName = resourceRoot.getRootName();
         try {
             manifest = checking ? doPrivileged(new PrivilegedExceptionAction<Manifest>() {
                 public Manifest run() throws IOException {
@@ -116,7 +102,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                 throw new UndeclaredThrowableException(e);
             }
         }
-        rootUrl = usePhysicalCodeSource ? VFSUtils.getRootURL(root) : root.asFileURL();
+        rootUrl = resourceRoot.isUsePhysicalCodeSource() ? VFSUtils.getRootURL(root) : root.asFileURL();
     }
 
     /** {@inheritDoc} */
@@ -186,11 +172,6 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
     /** {@inheritDoc} */
     public String getRootName() {
         return rootName;
-    }
-
-    /** {@inheritDoc} */
-    public PathFilter getExportFilter() {
-        return PathFilters.acceptAll();
     }
 
     /** {@inheritDoc} */

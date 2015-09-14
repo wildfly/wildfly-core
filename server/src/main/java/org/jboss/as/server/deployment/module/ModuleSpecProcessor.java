@@ -57,7 +57,6 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * Processor responsible for creating the module spec service for this deployment. Once the module spec service is created the
@@ -67,6 +66,7 @@ import org.jboss.vfs.VirtualFile;
  * @author Stuart Douglas
  * @author Marius Bogoevici
  * @author Thomas.Diesler@jboss.com
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
@@ -329,20 +329,16 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    private void addResourceRoot(final ModuleSpec.Builder specBuilder, final ResourceRoot resource)
-            throws DeploymentUnitProcessingException {
+    private void addResourceRoot(final ModuleSpec.Builder specBuilder, final ResourceRoot resource) throws DeploymentUnitProcessingException {
         try {
-            final VirtualFile root = resource.getRoot();
             if (resource.getExportFilters().isEmpty()) {
-                specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource
-                        .getRootName(), root, resource.isUsePhysicalCodeSource())));
+                specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource)));
             } else {
                 final MultiplePathFilterBuilder filterBuilder = PathFilters.multiplePathFilterBuilder(true);
                 for (final FilterSpecification filter : resource.getExportFilters()) {
                     filterBuilder.addFilter(filter.getPathFilter(), filter.isInclude());
                 }
-                specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource
-                        .getRootName(), root, resource.isUsePhysicalCodeSource()), filterBuilder.create()));
+                specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource), filterBuilder.create()));
             }
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.failedToCreateVFSResourceLoader(resource.getRootName(), e);
