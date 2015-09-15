@@ -56,7 +56,7 @@ public class SyncDomainModelOperationHandler extends SyncModelHandlerBase {
     Transformers.ResourceIgnoredTransformationRegistry createRegistry(OperationContext context, Resource remoteModel, Set<String> remoteExtensions) {
         final ReadMasterDomainModelUtil.RequiredConfigurationHolder rc =
                 ReadMasterDomainModelUtil.populateHostResolutionContext(hostInfo, remoteModel, extensionRegistry);
-        return ReadMasterDomainModelUtil.createHostIgnoredRegistry(hostInfo, rc, true);
+        return ReadMasterDomainModelUtil.createHostIgnoredRegistry(hostInfo, rc);
     }
 
 }
